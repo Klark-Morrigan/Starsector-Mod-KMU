@@ -13,15 +13,14 @@ import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
-import kmu.maplayers.politicalmap.base.tooltip.SystemStandingsTooltip.ListedGroup;
 
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
@@ -129,45 +128,32 @@ public final class StandingsTooltipSeamsFake {
     }
 
     /**
-     * Hands the box the groups it is about: each ranked standing together with the line the resolver
-     * would have named it with, standing in for both the economy walk that ranks them and the faction
-     * and grouping lookups that name them.
+     * Hands the box the groups it is about, as the entries the resolver would have named them with -
+     * standing in for both the economy walk that ranks them and the faction and grouping lookups that
+     * turn each into a line.
      *
-     * <p>Taken as pairs rather than as two stubs a case sets one at a time, because a box reads them
-     * as pairs: a case that stubbed the lines and forgot the standings would fail on a seam it never
-     * meant to be about, which is a fixture inventing a state the game cannot produce.
+     * <p>The ranking behind them is stood up to match, one standing per entry, because a box forwards
+     * the ranked standings into the resolution: a case stubbing the entries alone would leave the box
+     * naming a different number of groups than it ranked, which is a fixture inventing a state the
+     * game cannot produce. What each of those standings carries is deliberately nothing worth reading,
+     * since a case about how groups are laid out is not about what any of them is made of.
      *
-     * @param listedGroups the system's groups in ranked order, each with the line naming it
+     * @param groupEntries the system's groups in ranked order, each as the entry naming it
      */
-    public static void stubListedGroups(ListedGroup... listedGroups) {
+    public static void stubGroupEntries(CellTooltipEntry... groupEntries) {
 
         standingsMock
             .when(() -> SystemStandings.rankByDominationScore(
                 any(SectorAPI.class),
                 any(StarSystemAPI.class),
                 any(DominancePass.class)))
-            .thenReturn(Stream
-                .of(listedGroups)
-                .map(ListedGroup::standing)
-                .toList());
+            .thenReturn(Collections.nCopies(
+                groupEntries.length,
+                new GroupStanding(ANY_BLOC_ID, ANY_SCORE, List.of())));
 
         rowResolverMock
-            .when(() -> StandingRowResolver.resolveRows(any(), any(), any()))
-            .thenReturn(Stream
-                .of(listedGroups)
-                .map(ListedGroup::entry)
-                .toList());
-    }
-
-    /**
-     * Pairs a group's line with a standing carrying nothing worth reading, for the cases about how a
-     * box lays groups out rather than about what any of them is made of.
-     *
-     * @param groupEntry the line naming the group
-     * @return the pair, ready to hand to {@link #stubListedGroups}
-     */
-    public static ListedGroup listAnyGroup(CellTooltipEntry groupEntry) {
-        return new ListedGroup(groupEntry, new GroupStanding(ANY_BLOC_ID, ANY_SCORE, List.of()));
+            .when(() -> StandingRowResolver.resolveRows(any(), any(), any(), any()))
+            .thenReturn(List.of(groupEntries));
     }
 
     /**
@@ -197,7 +183,20 @@ public final class StandingsTooltipSeamsFake {
     /** Asserts the ranked groups were named under that same grouping. */
     public static void verifyGroupsResolvedUnderTheViewsGrouping(SectorAPI sector) {
         rowResolverMock.verify(
-            () -> StandingRowResolver.resolveRows(same(sector), any(), same(VIEW_GROUPING)));
+            () -> StandingRowResolver.resolveRows(same(sector), any(), same(VIEW_GROUPING), any()));
+    }
+
+    /**
+     * Asserts the factions were named with the account the box itself asked for, which is the one
+     * thing a box adds to the shared resolution.
+     *
+     * @param accountResolver the resolver the box under test hands over
+     */
+    public static void verifyGroupsResolvedWithTheBoxsAccounts(
+            FactionAccountResolver accountResolver) {
+
+        rowResolverMock.verify(
+            () -> StandingRowResolver.resolveRows(any(), any(), any(), same(accountResolver)));
     }
 
     /**

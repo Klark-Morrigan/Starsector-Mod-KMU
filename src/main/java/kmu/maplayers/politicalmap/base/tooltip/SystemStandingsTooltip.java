@@ -10,7 +10,6 @@ import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
 import kmu.util.KmuStrings;
 
@@ -41,7 +40,7 @@ import java.util.Optional;
  * the groups are resolved into their lines by the one resolver - so a box stating more detail
  * cannot rank a system a shade differently, judge it populated where the other called it empty,
  * name a bloc by another crest, or answer a decree one way where the other answered it another.
- * What is left open is the one thing the detail is: what, if anything, a listed group breaks down
+ * What is left open is the one thing the detail is: what, if anything, a listed faction breaks down
  * into.
  *
  * <p>Stateless past the reader it is built around - the view, the live economy, and the settings
@@ -78,9 +77,14 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             sections,
             SystemStatusRow.resolveStatusRow(sector, system, pass.shouldIncludeUndiscoveredMarkets()));
 
-        appendStandingSections(
-            sections,
-            resolveGroupEntries(sector, system, listGroups(sector, standings, pass), pass));
+        // The account is settled once for the whole box, before any group is named, so a box reading
+        // the economy to build one reads it once however many groups hold the system - and every
+        // faction listed is explained from that one read rather than from a read of its own.
+        appendStandingSections(sections, StandingRowResolver.resolveRows(
+            sector,
+            standings,
+            pass.grouping(),
+            createFactionAccountResolver(sector, system, pass)));
 
         return sections;
     }
@@ -113,53 +117,30 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     }
 
     /**
-     * Resolves what the two blocks list, from the groups already resolved into the lines naming
-     * them. The seam the whole class exists around: which groups are listed, under which heading,
-     * above what, and how each presents are all settled by the time this is called, so what is left
-     * to answer is only whether a listed group breaks down further and into what.
+     * Resolves what hangs beneath each faction the box lists, as the account of where that faction's
+     * score came from. The seam the whole class exists around: which groups are listed, under which
+     * heading, above what, and how each presents are all settled by the time this is called, so what
+     * is left to answer is only whether a listed faction breaks down further and into what.
      *
-     * <p>Listing each group as the line naming it is the ordinary answer and the default, so a box
+     * <p>Asked once per paint rather than once per faction, so a box that has to read the economy to
+     * account for a score reads it once for the whole box.
+     *
+     * <p>Listing a faction as the line naming it is the ordinary answer and the default, so a box
      * with nothing further to say overrides nothing.
      *
-     * @param sector       the live sector, whose economy and factions the content may read
-     * @param system       the star system under the cursor
-     * @param listedGroups the system's groups in ranked order, each already resolved into the line
-     *                     naming it; empty when the system holds no counted colony
-     * @param pass         the weighting rule, dev reveal, and grouping the ranking resolved under,
-     *                     so a box reading further into the economy reads it under the same knobs
-     * @return one entry per group in the order given; empty leaves the box its status line alone
+     * @param sector the live sector, whose economy and factions the account may read
+     * @param system the star system under the cursor
+     * @param pass   the weighting rule, dev reveal, and grouping the ranking resolved under, so a box
+     *               reading further into the economy reads it under the same knobs
+     * @return what to hang beneath each listed faction; {@link FactionAccountResolver#NO_ACCOUNT}
+     *         leaves every one of them listed as its line alone
      */
-    protected List<CellTooltipEntry> resolveGroupEntries(
+    protected FactionAccountResolver createFactionAccountResolver(
             SectorAPI sector,
             StarSystemAPI system,
-            List<ListedGroup> listedGroups,
             DominancePass pass) {
 
-        return listedGroups
-            .stream()
-            .map(ListedGroup::entry)
-            .toList();
-    }
-
-    // Each ranked group paired with the line naming it. Resolved here rather than by the boxes so
-    // a bloc presents under one name and one crest however much detail is being stated, and paired
-    // rather than handed over as two lists in the same order, since a box walking them by index is
-    // one edit away from explaining one bloc's score under another's name.
-    private static List<ListedGroup> listGroups(
-            SectorAPI sector,
-            List<GroupStanding> standings,
-            DominancePass pass) {
-
-        var groupEntries = StandingRowResolver.resolveRows(sector, standings, pass.grouping());
-        var listedGroups = new ArrayList<ListedGroup>(groupEntries.size());
-
-        // The resolver answers one entry per group in the order the standings were given, which is
-        // what makes the two safe to pair off here - and pairing them here is what stops every box
-        // below having to rely on that.
-        for (var index = 0; index < groupEntries.size(); index++) {
-            listedGroups.add(new ListedGroup(groupEntries.get(index), standings.get(index)));
-        }
-        return List.copyOf(listedGroups);
+        return FactionAccountResolver.NO_ACCOUNT;
     }
 
     // The standings as the two blocks they are read in: whoever dominates the system, then whoever
@@ -185,21 +166,5 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
                 .stream()
                 .skip(DOMINATING_GROUP_COUNT)
                 .toList());
-    }
-
-    /**
-     * One ranked group as a box has it: the line naming it, and the standing that line was resolved
-     * from.
-     *
-     * <p>Carried as a pair rather than as two lists a box reads at the same index, because the only
-     * thing making that index meaningful is a contract two classes away - and a box that got it
-     * wrong would explain one bloc's score beneath another bloc's name, which reads as a fact
-     * rather than as a bug.
-     *
-     * @param entry    the line naming the group, as every box lists it
-     * @param standing the group's ranked place - its summed score and the member factions it is
-     *                 made up of - for a box with more to say about where that score came from
-     */
-    public record ListedGroup(CellTooltipEntry entry, GroupStanding standing) {
     }
 }

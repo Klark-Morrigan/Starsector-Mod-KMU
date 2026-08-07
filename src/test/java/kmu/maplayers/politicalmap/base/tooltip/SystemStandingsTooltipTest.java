@@ -16,6 +16,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
+import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -33,7 +34,6 @@ import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.VIEW_GROUPING;
-import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.listAnyGroup;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -136,7 +136,32 @@ final class SystemStandingsTooltipTest {
     }
 
     @Nested
+    class CreateFactionAccountResolver {
+
+        @Test
+        void createFactionAccountResolverListsAFactionAsItsLineAlone() {
+            // The shared default, and what the glance box relies on: a box with nothing further to say
+            // overrides nothing and every faction it lists reads as its line alone.
+            assertThat(tooltip
+                    .createFactionAccountResolver(sectorMock, systemMock, ANY_PASS)
+                    .resolveAccountEntries(new FactionStanding("hegemony", 900)))
+                .isEmpty();
+        }
+    }
+
+    @Nested
     class BuildBodySections {
+
+        @Test
+        void buildBodySectionsResolvesTheFactionsWithTheAccountTheBoxAsksFor() {
+            // The one thing a box adds to the shared resolution has to reach it: asked for and then
+            // dropped, every box would draw the glance and the detail mode would show nothing new.
+            new AccountingStandingsTooltip(claimBreakdownReaderFake)
+                .buildBodySections(sectorMock, systemMock);
+
+            StandingsTooltipSeamsFake.verifyGroupsResolvedWithTheBoxsAccounts(
+                AccountingStandingsTooltip.FACTION_ACCOUNTS);
+        }
 
         @Test
         void buildBodySectionsShowsNothingWhenNoViewIsPainting() {
@@ -168,9 +193,9 @@ final class SystemStandingsTooltipTest {
             // The two headings are what turn a ranked list into an answer: the map fills the system in
             // the leader's colour, so the box says outright that the leader holds it and the others are
             // merely present, rather than leaving that to be read off the row order.
-            StandingsTooltipSeamsFake.stubListedGroups(
-                listAnyGroup(createLeadingGroupEntry()),
-                listAnyGroup(createRivalGroupEntry()));
+            StandingsTooltipSeamsFake.stubGroupEntries(
+                createLeadingGroupEntry(),
+                createRivalGroupEntry());
 
             assertThat(readBodyLabelTexts())
                 .containsExactly(
@@ -186,9 +211,9 @@ final class SystemStandingsTooltipTest {
             // and the number the map ranked it by, so the player can see how close the contest is.
             var rivalHeaderRow = 3;
 
-            StandingsTooltipSeamsFake.stubListedGroups(
-                listAnyGroup(createLeadingGroupEntry()),
-                listAnyGroup(createRivalGroupEntry()));
+            StandingsTooltipSeamsFake.stubGroupEntries(
+                createLeadingGroupEntry(),
+                createRivalGroupEntry());
 
             var rivalHeader = readTableRow(readBodyRows(), rivalHeaderRow);
 
@@ -202,7 +227,7 @@ final class SystemStandingsTooltipTest {
         void buildBodySectionsOmitsContestedWhenOneGroupHoldsTheSystemAlone() {
             // An uncontested system has to read as uncontested, and a heading standing over no groups
             // would read as a contest whose challengers failed to resolve.
-            StandingsTooltipSeamsFake.stubListedGroups(listAnyGroup(createLeadingGroupEntry()));
+            StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
 
             assertThat(readBodyLabelTexts())
                 .containsExactly("Dominated by:", "Rebel Pact");
@@ -216,9 +241,9 @@ final class SystemStandingsTooltipTest {
             var dominatedSection = 0;
             var contestedSection = 1;
 
-            StandingsTooltipSeamsFake.stubListedGroups(
-                listAnyGroup(createLeadingGroupEntry()),
-                listAnyGroup(createRivalGroupEntry()));
+            StandingsTooltipSeamsFake.stubGroupEntries(
+                createLeadingGroupEntry(),
+                createRivalGroupEntry());
 
             var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
@@ -235,7 +260,7 @@ final class SystemStandingsTooltipTest {
             // What the review found here: a heading laid inside the crest gutter starts where the group
             // labels below it start and so reads as indented under nothing, and drawn in their own
             // bright it is told apart from them only by lacking a crest.
-            StandingsTooltipSeamsFake.stubListedGroups(listAnyGroup(createLeadingGroupEntry()));
+            StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
 
             var heading = readTableRow(readBodyRows(), DOMINATED_HEADING_ROW);
 
@@ -255,7 +280,7 @@ final class SystemStandingsTooltipTest {
             // What the system is first, then the contest over it, so the standings read as a contest
             // over a known system rather than as the whole of what the box has to say.
             StandingsTooltipSeamsFake.stubStatusRow("Decivilised");
-            StandingsTooltipSeamsFake.stubListedGroups(listAnyGroup(createLeadingGroupEntry()));
+            StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
 
             assertThat(readBodyLabelTexts())
                 .containsExactly(
@@ -341,6 +366,29 @@ final class SystemStandingsTooltipTest {
 
         private ListingStandingsTooltip(ClaimBreakdownReader claimBreakdownReader) {
             super(claimBreakdownReader);
+        }
+    }
+
+    /**
+     * A box that does have something to hang beneath the factions it lists - the shared shape's other
+     * side, and the only way to tell a box's own account reaching the resolution apart from the
+     * default reaching it. What the account says is never read; that it is this box's is the point.
+     */
+    private static final class AccountingStandingsTooltip extends SystemStandingsTooltip {
+
+        private static final FactionAccountResolver FACTION_ACCOUNTS = standing -> List.of();
+
+        private AccountingStandingsTooltip(ClaimBreakdownReader claimBreakdownReader) {
+            super(claimBreakdownReader);
+        }
+
+        @Override
+        protected FactionAccountResolver createFactionAccountResolver(
+                SectorAPI sector,
+                StarSystemAPI system,
+                DominancePass pass) {
+
+            return FACTION_ACCOUNTS;
         }
     }
 }

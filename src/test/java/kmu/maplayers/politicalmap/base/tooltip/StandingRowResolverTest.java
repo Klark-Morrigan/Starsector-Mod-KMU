@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.politicalmap.base.tooltip.FactionAccountResolver.NO_ACCOUNT;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.buildEmptySector;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,9 +29,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>And that a bloc's members are gathered as its peers rather than subordinated as its account, which
  * is the one relation this resolver is in a position to state - membership - and what keeps a faction's
- * own breakdown reading alike whether the faction is allied or standing alone.
+ * own breakdown reading alike whether the faction is allied or standing alone. The account itself is
+ * asked for rather than known here, so what is pinned about it is only that each faction gets its own
+ * and that it hangs beneath that faction subordinated.
  */
 final class StandingRowResolverTest {
+
+    // An account naming the faction it was resolved for, so a case reads whose colonies landed under
+    // which line - the one thing hanging accounts off a two-tier ranking can silently get wrong.
+    private static final FactionAccountResolver FACTION_ACCOUNTS = standing -> List.of(
+        CellTooltipEntry.createEntry(
+            CellTooltipEntryLine.createLine(null, standing.factionId() + " colony", "1")));
 
     @Nested
     class ResolveRows {
@@ -48,7 +57,8 @@ final class StandingRowResolverTest {
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
                 standings,
-                HolderGrouping.identity());
+                HolderGrouping.identity(),
+                NO_ACCOUNT);
 
             // A lone faction is made up of nothing: its one member would only repeat the line above it.
             assertThat(entries)
@@ -75,7 +85,8 @@ final class StandingRowResolverTest {
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
                 standings,
-                HolderGrouping.identity());
+                HolderGrouping.identity(),
+                NO_ACCOUNT);
 
             assertThat(entries.get(0).line().valueText())
                 .isEqualTo("1,200");
@@ -95,7 +106,8 @@ final class StandingRowResolverTest {
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
                 standings,
-                HolderGrouping.identity());
+                HolderGrouping.identity(),
+                NO_ACCOUNT);
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry.createEntry(
@@ -117,7 +129,8 @@ final class StandingRowResolverTest {
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
                 standings,
-                buildAllianceGrouping());
+                buildAllianceGrouping(),
+                NO_ACCOUNT);
 
             // The bloc takes its own name and its lead (colour) member's crest, and the members stay in
             // the ranking order the standing placed them.
@@ -155,7 +168,8 @@ final class StandingRowResolverTest {
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
                 standings,
-                buildAllianceGrouping());
+                buildAllianceGrouping(),
+                NO_ACCOUNT);
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry
@@ -175,7 +189,8 @@ final class StandingRowResolverTest {
             assertThat(StandingRowResolver.resolveRows(
                     buildEmptySector(),
                     List.of(),
-                    HolderGrouping.identity()))
+                    HolderGrouping.identity(),
+                    NO_ACCOUNT))
                 .isEmpty();
         }
 
@@ -198,7 +213,8 @@ final class StandingRowResolverTest {
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
                 standings,
-                HolderGrouping.identity());
+                HolderGrouping.identity(),
+                NO_ACCOUNT);
 
             assertThat(entries)
                 .extracting(entry -> entry.line().labelText())
@@ -217,7 +233,8 @@ final class StandingRowResolverTest {
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
                 standings,
-                HolderGrouping.identity());
+                HolderGrouping.identity(),
+                NO_ACCOUNT);
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry.createEntry(
@@ -241,7 +258,8 @@ final class StandingRowResolverTest {
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
                 standings,
-                buildAllianceGrouping());
+                buildAllianceGrouping(),
+                NO_ACCOUNT);
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry
@@ -272,7 +290,8 @@ final class StandingRowResolverTest {
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
                 standings,
-                buildAllianceGrouping());
+                buildAllianceGrouping(),
+                NO_ACCOUNT);
 
             assertThat(entries.get(0).isSubordinatingChildren())
                 .isFalse();
@@ -281,9 +300,59 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsLeavesALoneFactionWithNoMembersToGather() {
-            // A lone faction states the whole answer on its own line, so there is no finer granularity
-            // to gather - the relation the step settles simply does not arise for it.
+        void resolveRowsHangsEachAllianceMembersOwnAccountBeneathIt() {
+            // The regression this guards: pairing accounts with lines outside the resolver means
+            // walking two lists at the same index, and one off-by-one lists a faction's colonies under
+            // an ally's name - which a player reads as a fact about the sector rather than as a bug.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
+            stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
+
+            var standings = List.of(new GroupStanding("alliance-1", 11, List.of(
+                new FactionStanding("hegemony", 8),
+                new FactionStanding("astral_armada", 3))));
+
+            var memberEntries = StandingRowResolver
+                .resolveRows(sectorMock, standings, buildAllianceGrouping(), FACTION_ACCOUNTS)
+                .get(0)
+                .children();
+
+            assertThat(readAccountLabelTexts(memberEntries.get(0)))
+                .containsExactly("hegemony colony");
+            assertThat(readAccountLabelTexts(memberEntries.get(1)))
+                .containsExactly("astral_armada colony");
+        }
+
+        @Test
+        void resolveRowsSubordinatesAnAccountBeneathTheFactionItExplains() {
+            // The two relations meeting on one line: the bloc gathers its members as peers, and each
+            // member subordinates the account of its own score. Read as one relation, the colonies
+            // would sit at the members' own level and stop reading as the reason for their numbers.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
+
+            var standings = List.of(new GroupStanding(
+                "alliance-1",
+                8,
+                List.of(new FactionStanding("hegemony", 8))));
+
+            var groupEntry = StandingRowResolver
+                .resolveRows(sectorMock, standings, buildAllianceGrouping(), FACTION_ACCOUNTS)
+                .get(0);
+
+            assertThat(groupEntry.isSubordinatingChildren())
+                .isFalse();
+            assertThat(groupEntry.children().get(0).isSubordinatingChildren())
+                .isTrue();
+        }
+
+        @Test
+        void resolveRowsHangsALoneFactionsAccountBeneathItsGroupLine() {
+            // A lone-faction group is that faction under another name, so there is no member line
+            // beneath to carry its account: dropping the member without moving the account up would
+            // leave the faction view with a box that can explain nothing.
             var sectorMock = buildEmptySector();
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
@@ -294,12 +363,17 @@ final class StandingRowResolverTest {
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
                 standings,
-                HolderGrouping.identity());
+                HolderGrouping.identity(),
+                FACTION_ACCOUNTS);
 
-            assertThat(entries.get(0).children())
-                .isEmpty();
-            assertThat(entries.get(0).isSubordinatingChildren())
-                .isFalse();
+            assertThat(entries)
+                .containsExactly(CellTooltipEntry
+                    .createEntry(CellTooltipEntryLine.createLine(
+                        "graphics/heg.png",
+                        "The Hegemony",
+                        "7"))
+                    .nesting(List.of(CellTooltipEntry.createEntry(
+                        CellTooltipEntryLine.createLine(null, "hegemony colony", "1")))));
         }
     }
 
@@ -310,5 +384,15 @@ final class StandingRowResolverTest {
             Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
             Map.of("alliance-1", "hegemony"),
             Map.of("alliance-1", "Allied Powers"));
+    }
+
+    // What one faction's account was listed as, so a case reads whose colonies landed under which line
+    // rather than comparing whole entry trees to say the same thing.
+    private static List<String> readAccountLabelTexts(CellTooltipEntry factionEntry) {
+        return factionEntry
+            .children()
+            .stream()
+            .map(accountEntry -> accountEntry.line().labelText())
+            .toList();
     }
 }

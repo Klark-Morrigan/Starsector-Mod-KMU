@@ -46,8 +46,9 @@ public final class FactionTooltipEntry {
     }
 
     /**
-     * Builds the faction as an entry in its own right - a faction that breaks down no further, which is
-     * every faction listed anywhere but under an alliance.
+     * Builds the faction as an entry in its own right, carrying nothing beneath it. Whatever a caller
+     * has to hang under it - the account of the number on the line, say - is layered on by that caller,
+     * which is the only side that knows there is any.
      *
      * @param sector    the sector the faction's name and crest are read from
      * @param factionId the id of the faction the entry names; an id the sector no longer knows is shown

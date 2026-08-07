@@ -36,7 +36,6 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.VIEW_GROUPING;
-import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.listAnyGroup;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.mock;
@@ -120,7 +119,7 @@ final class SystemDominationTooltipTest {
         void buildBodySectionsDrawsAGroupMadeUpOfNothingAsOneFlatLine() {
             // The faction view's shape: a lone faction resolves to a group made up of nothing, so the
             // box lists it and nothing beneath it - and its number reads called-out like every value.
-            StandingsTooltipSeamsFake.stubListedGroups(listAnyGroup(createLoneGroupEntry()));
+            StandingsTooltipSeamsFake.stubGroupEntries(createLoneGroupEntry());
 
             var rows = readBodyRows();
 
@@ -146,9 +145,9 @@ final class SystemDominationTooltipTest {
         void buildBodySectionsDrawsAnAllianceAboveItsIndentedMembers() {
             // The alliances view's shape: the bloc is listed and its members read as belonging to it, by
             // the indent and the plainer colour rather than by any label saying so.
-            StandingsTooltipSeamsFake.stubListedGroups(listAnyGroup(createGroupEntry(
+            StandingsTooltipSeamsFake.stubGroupEntries(createGroupEntry(
                 createMemberLine(MEMBER_SCORE),
-                createMemberLine(OTHER_MEMBER_SCORE))));
+                createMemberLine(OTHER_MEMBER_SCORE)));
 
             var rows = readBodyRows();
 
@@ -204,14 +203,15 @@ final class SystemDominationTooltipTest {
         return TooltipSection.readRowsInOrder(tooltip.buildBodySections(sectorMock, systemMock));
     }
 
-    // One group as the resolver hands it over: a bloc carrying its crest and summed score, made up of
-    // the factions in it. Whether a group is made up of anything is the resolver's decision, so a case
-    // here states it by handing over the members or none. A member faction breaks down no further, so
-    // each is entered as an entry carrying nothing.
+    // One group as the resolver hands it over: a bloc carrying its crest and summed score, gathering
+    // the factions in it as its peers, since a bloc and its members answer who holds the system at two
+    // granularities rather than one accounting for the other. Whether a group gathers anything is the
+    // resolver's decision, so a case here states it by handing over the members or none. A member
+    // faction breaks down no further, so each is entered as an entry carrying nothing.
     private static CellTooltipEntry createGroupEntry(CellTooltipEntryLine... memberLines) {
         return CellTooltipEntry
             .createEntry(CellTooltipEntryLine.createLine(BLOC_CREST, "Rebel Pact", BLOC_SCORE))
-            .nesting(Arrays
+            .grouping(Arrays
                 .stream(memberLines)
                 .map(CellTooltipEntry::createEntry)
                 .toList());

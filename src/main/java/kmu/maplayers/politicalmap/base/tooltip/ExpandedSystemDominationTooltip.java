@@ -5,15 +5,10 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
-import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The domination breakdown stated in full: the same ranked groups the ordinary box shows, each opened
@@ -23,12 +18,14 @@ import java.util.Map;
  * box answers who holds the system; this one answers why, which is a different question and a far
  * longer answer - so it is a box the player asks for rather than one they are always given.
  *
- * <p>It is the same contest either way. The ranking, the status line, the decree, the two headings and
- * the lines naming the blocs are all the shared shape's ({@link SystemStandingsTooltip}), read from the
- * one pass, so the two boxes cannot differ on anything but how far into a group they go. What differs
- * is only that: a group is listed here over its colonies rather than over its member factions, because
- * the account being made is of where the score came from, and a score comes from colonies whichever
- * bloc they are flying for.
+ * <p>It is the same contest either way. The ranking, the status line, the decree, the two headings, the
+ * lines naming the blocs and the member factions inside them are all the shared shape's
+ * ({@link SystemStandingsTooltip}), read from the one pass, so the two boxes cannot differ on anything
+ * but how far into a group they go. What differs is only that: every faction listed is opened up here
+ * into the colonies it holds the system with. The colonies hang under the faction flying them rather
+ * than under the bloc, because a colony belongs to a faction and a bloc's score is the sum over its
+ * members' - so a reader following the arithmetic upward reads each sum beneath the thing it is the sum
+ * of, and the grouping the alliances view exists to show survives being explained.
  *
  * <p>The parts are read from the very arithmetic the scores above them were summed over
  * ({@link KnownMarketFootprints#readBreakdownByFaction}), so the lines always add up to the number the
@@ -44,45 +41,24 @@ public final class ExpandedSystemDominationTooltip extends SystemStandingsToolti
     }
 
     @Override
-    protected List<CellTooltipEntry> resolveGroupEntries(
+    protected FactionAccountResolver createFactionAccountResolver(
             SectorAPI sector,
             StarSystemAPI system,
-            List<ListedGroup> listedGroups,
             DominancePass pass) {
 
-        // Read once for the whole box rather than per group: every bloc's colonies come out of the one
-        // walk of the system's economy, which is also what guarantees no two blocs are explained from
-        // different reads of it.
+        // Read once for the whole box rather than per faction: every colony in the system comes out of
+        // the one walk of its economy, which is what guarantees no two factions are explained from
+        // different reads of it - and the walk is the most expensive thing a hover does.
         var breakdownsByFactionId = KnownMarketFootprints.readBreakdownByFaction(
             sector,
             system,
             pass.rules(),
             pass.shouldIncludeUndiscoveredMarkets());
 
-        // The line naming the bloc is left exactly as it arrived - it is the ordinary box's line - and
-        // only what hangs beneath it is this box's own.
-        return listedGroups
-            .stream()
-            .map(listedGroup -> listedGroup
-                .entry()
-                .nesting(MarketWeightRowResolver.resolveMarketRows(
-                    collectGroupBreakdowns(listedGroup.standing(), breakdownsByFactionId),
-                    pass.rules())))
-            .toList();
-    }
-
-    // Every colony behind one group's score, its member factions' gathered together. A bloc's score is
-    // the sum over its members' colonies, so the account of it is those colonies ranked against each
-    // other rather than partitioned back out by owner - which would answer "which faction" a second
-    // time and bury the colonies a level deeper for it.
-    private static List<MarketWeightBreakdown> collectGroupBreakdowns(
-            GroupStanding standing,
-            Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId) {
-
-        var breakdowns = new ArrayList<MarketWeightBreakdown>();
-        for (var member : standing.members()) {
-            breakdowns.addAll(breakdownsByFactionId.getOrDefault(member.factionId(), List.of()));
-        }
-        return breakdowns;
+        // A faction the read found nothing for is listed as its line alone rather than as a heading
+        // over an empty account, which is what an empty answer means to the shape above.
+        return standing -> MarketWeightRowResolver.resolveMarketRows(
+            breakdownsByFactionId.getOrDefault(standing.factionId(), List.of()),
+            pass.rules());
     }
 }

@@ -137,14 +137,16 @@ boxes with the decree holding the system: either box may have to say a system is
 decree resolved - or drawn - one way on one view and another way on the next would answer one hover two
 ways a keystroke apart.
 The domination box has a second, fuller version - `ExpandedSystemDominationTooltip`, the counterpart
-it offers the framework's detail mode - which lists a bloc over the colonies its score was summed
-from and each colony over the factors behind its weight, down to a garrison's patrol tiers. Both sit
-on `SystemStandingsTooltip`, which settles everything but that nesting - one pass read from the
-active view, the ranking, the status line, the two headings, and the lines naming the blocs, handed
-down as a standing already paired with its line so no box can explain one bloc's score beneath
-another's name - because two boxes over one system have to be two amounts of detail about the same
-contest rather than two contests. Listing a group as that line and nothing beneath is the shared
-default, so the ordinary box overrides nothing at all. What that pair offers the player is named
+it offers the framework's detail mode - which lists every faction holding the system over the
+colonies its score was summed from and each colony over the factors behind its weight, down to a
+garrison's patrol tiers. Both sit on `SystemStandingsTooltip`, which settles everything but that
+nesting - one pass read from the active view, the ranking, the status line, the two headings, the
+lines naming the blocs and the member factions inside them - because two boxes over one system have
+to be two amounts of detail about the same contest rather than two contests. What a box adds is one
+answer: what to hang beneath a faction as the account of its score (`FactionAccountResolver`), asked
+for once per paint and applied by `StandingRowResolver` where the standing and the line named from
+it are both in hand, so no box can list one faction's colonies under another's name. Hanging nothing
+is the shared default, so the ordinary box overrides nothing at all. What that pair offers the player is named
 there too, once for both: "score contributions", which the framework puts at the foot of whichever
 of the two is drawn, beside the key that switches between them. Named here rather than by the
 framework because only this layer knows what its counterpart holds, and once rather than per box

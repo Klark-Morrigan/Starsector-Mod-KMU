@@ -16,12 +16,12 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Resolves the arithmetic behind a bloc's dominance score into the entries a block lists it as:
+ * Resolves the arithmetic behind a faction's dominance score into the entries a block lists it as:
  * each of its colonies, and beneath each the factors its weight was summed from.
  *
  * <p>What turns the numbers the map painted by into an account a player can follow. The score a
- * bloc holds a system with is a sum of sums, and the only useful way to read a sum is to see it
- * broken apart - so a colony is listed under the bloc holding it, a factor under the colony it
+ * faction holds a system with is a sum of sums, and the only useful way to read a sum is to see it
+ * broken apart - so a colony is listed under the faction holding it, a factor under the colony it
  * moved, and a patrol tier under the garrison it is part of, each level being one step of the same
  * arithmetic.
  *
@@ -49,7 +49,7 @@ public final class MarketWeightRowResolver {
             .reversed()
             .thenComparing(MarketWeightBreakdown::marketName);
 
-    // A colony and its factors are named rather than crested: the bloc line above already carries
+    // A colony and its factors are named rather than crested: the faction line above already carries
     // the crest, and repeating it down every line below would read as a second holder each time.
     private static final String NO_CREST = null;
 
@@ -61,14 +61,14 @@ public final class MarketWeightRowResolver {
     }
 
     /**
-     * Resolves the colonies behind one bloc's score into the entries listed beneath it, strongest
+     * Resolves the colonies behind one faction's score into the entries listed beneath it, strongest
      * first, each carrying the factors its own weight was summed from.
      *
-     * @param breakdowns the bloc's counted colonies in the hovered system, in any order
+     * @param breakdowns the faction's counted colonies in the hovered system, in any order
      * @param rules      the weighting rules the pass resolved under, which decide whether stability
      *                   is a cause worth stating
      * @return one entry per colony in ranked order, each carrying its factor lines; empty when the
-     *         bloc holds no counted colony in the system
+     *         faction holds no counted colony in the system
      */
     public static List<CellTooltipEntry> resolveMarketRows(
             List<MarketWeightBreakdown> breakdowns,
