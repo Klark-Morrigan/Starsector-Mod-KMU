@@ -13,6 +13,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
+import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -171,6 +172,21 @@ final class SystemDominationTooltipTest {
             // Ranked as the standing ranked them, so the box reads strongest first like the fills.
             assertThat(readTableRow(rows, SECOND_MEMBER_ROW).labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan(OTHER_MEMBER_SCORE, TEXT)));
+        }
+    }
+
+    @Nested
+    class CreateFactionAccountResolver {
+
+        @Test
+        void createFactionAccountResolverHangsNothingBeneathAFaction() {
+            // What keeps the glance a glance: this box answers who holds the system on the score
+            // alone, so it asks for no account and every faction it lists reads as its line alone.
+            // The account behind those scores is the counterpart's, an F1 away.
+            assertThat(tooltip
+                    .createFactionAccountResolver(sectorMock, systemMock, ANY_PASS)
+                    .resolveAccountEntries(new FactionStanding(CORE_FACTION, 900)))
+                .isEmpty();
         }
     }
 

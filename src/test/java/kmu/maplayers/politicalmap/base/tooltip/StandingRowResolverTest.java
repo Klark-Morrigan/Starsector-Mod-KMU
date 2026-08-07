@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.tooltip.FactionAccountResolver.NO_ACCOUNT;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.buildEmptySector;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
@@ -318,9 +319,9 @@ final class StandingRowResolverTest {
                 .get(0)
                 .children();
 
-            assertThat(readAccountLabelTexts(memberEntries.get(0)))
+            assertThat(readLabelTexts(memberEntries.get(0).children()))
                 .containsExactly("hegemony colony");
-            assertThat(readAccountLabelTexts(memberEntries.get(1)))
+            assertThat(readLabelTexts(memberEntries.get(1).children()))
                 .containsExactly("astral_armada colony");
         }
 
@@ -384,15 +385,5 @@ final class StandingRowResolverTest {
             Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
             Map.of("alliance-1", "hegemony"),
             Map.of("alliance-1", "Allied Powers"));
-    }
-
-    // What one faction's account was listed as, so a case reads whose colonies landed under which line
-    // rather than comparing whole entry trees to say the same thing.
-    private static List<String> readAccountLabelTexts(CellTooltipEntry factionEntry) {
-        return factionEntry
-            .children()
-            .stream()
-            .map(accountEntry -> accountEntry.line().labelText())
-            .toList();
     }
 }

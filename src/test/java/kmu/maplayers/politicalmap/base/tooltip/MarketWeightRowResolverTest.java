@@ -22,13 +22,14 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
+import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins which lines a colony breaks down into and what hangs beneath what: the colonies ranked under
- * their bloc, the factors under the colony they moved, and the tiers under the garrison they are part
- * of.
+ * the faction holding them, the factors under the colony they moved, and the tiers under the garrison
+ * they are part of.
  *
  * <p>What a factor that did not run looks like is most of what is asserted here, because it is the
  * difference between an account and a form: a switched-off factor has no line at all, rather than a
@@ -66,7 +67,7 @@ final class MarketWeightRowResolverTest {
                     buildBreakdown("Jangala", new BaseSizeFactor(6, 6.0, 6.0, 0.0))),
                 buildRules());
 
-            assertThat(readLabels(rows))
+            assertThat(readLabelTexts(rows))
                 .containsExactly("Jangala", "Culann");
         }
 
@@ -82,7 +83,7 @@ final class MarketWeightRowResolverTest {
                     buildBreakdown("Culann", evenSize)),
                 buildRules());
 
-            assertThat(readLabels(rows))
+            assertThat(readLabelTexts(rows))
                 .containsExactly("Culann", "Jangala");
         }
 
@@ -106,7 +107,7 @@ final class MarketWeightRowResolverTest {
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
                 buildRules());
 
-            assertThat(readLabels(rows.get(0).children()))
+            assertThat(readLabelTexts(rows.get(0).children()))
                 .containsExactly("Stability", "Size");
         }
 
@@ -122,7 +123,7 @@ final class MarketWeightRowResolverTest {
                     buildStationWeighting(),
                     buildPatrolWeighting()));
 
-            assertThat(readLabels(rows.get(0).children()))
+            assertThat(readLabelTexts(rows.get(0).children()))
                 .containsExactly("Size");
         }
 
@@ -174,7 +175,7 @@ final class MarketWeightRowResolverTest {
                 List.of(buildStationedBreakdown("Fort Ludd")),
                 buildRules());
 
-            assertThat(readLabels(rows.get(0).children()))
+            assertThat(readLabelTexts(rows.get(0).children()))
                 .containsExactly("Stability", "Size", "Fort Ludd");
         }
 
@@ -190,7 +191,7 @@ final class MarketWeightRowResolverTest {
 
             assertThat(patrolEntry.line().labelText())
                 .isEqualTo("Patrols");
-            assertThat(readLabels(patrolEntry.children()))
+            assertThat(readLabelTexts(patrolEntry.children()))
                 .containsExactly("Small: 2", "Medium: 1");
         }
 
@@ -201,7 +202,7 @@ final class MarketWeightRowResolverTest {
                 List.of(buildGarrisonedBreakdown(0, 0, 3)),
                 buildRules());
 
-            assertThat(readLabels(rows.get(0).children().get(2).children()))
+            assertThat(readLabelTexts(rows.get(0).children().get(2).children()))
                 .containsExactly("Large: 3");
         }
 
@@ -227,13 +228,6 @@ final class MarketWeightRowResolverTest {
     // The size line of the sole colony's parts, which every hidden-colony case reads.
     private static CellTooltipEntryLine readSizeLine(List<CellTooltipEntry> rows) {
         return rows.get(0).children().get(1).line();
-    }
-
-    private static List<String> readLabels(List<CellTooltipEntry> entries) {
-        return entries
-            .stream()
-            .map(entry -> entry.line().labelText())
-            .toList();
     }
 
     // A plain colony's parts - no station, no garrison - at full stability.

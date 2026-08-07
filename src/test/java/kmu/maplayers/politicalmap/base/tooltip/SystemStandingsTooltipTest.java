@@ -376,7 +376,11 @@ final class SystemStandingsTooltipTest {
      */
     private static final class AccountingStandingsTooltip extends SystemStandingsTooltip {
 
-        private static final FactionAccountResolver FACTION_ACCOUNTS = standing -> List.of();
+        // Answers something rather than nothing, so this box's account cannot be mistaken for the
+        // default reaching the resolution by another route. What it says is never read.
+        private static final FactionAccountResolver FACTION_ACCOUNTS = standing -> List.of(
+            CellTooltipEntry.createEntry(
+                CellTooltipEntryLine.createLine(null, standing.factionId(), "1")));
 
         private AccountingStandingsTooltip(ClaimBreakdownReader claimBreakdownReader) {
             super(claimBreakdownReader);

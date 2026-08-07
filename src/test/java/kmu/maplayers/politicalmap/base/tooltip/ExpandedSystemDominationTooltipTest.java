@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -29,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.VIEW_GROUPING;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -231,14 +231,5 @@ final class ExpandedSystemDominationTooltipTest {
             new BaseSizeFactor(4, 4.0, contribution, 0.0),
             Optional.empty(),
             Optional.empty());
-    }
-
-    // What a listing states, line by line, which is what these cases are about - the numbers beside
-    // them are the weight read's and are pinned where that read is.
-    private static List<String> readLabelTexts(List<CellTooltipEntry> entries) {
-        return entries
-            .stream()
-            .map(entry -> entry.line().labelText())
-            .toList();
     }
 }
