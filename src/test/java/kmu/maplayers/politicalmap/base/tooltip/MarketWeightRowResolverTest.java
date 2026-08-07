@@ -149,19 +149,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsMarksAFixedRatingAsNotTheColonysSize() {
             // Under fixed scaling the rating is a token the player pinned hidden colonies to, and an
             // unmarked one reads as a size this colony has.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(new MarketWeightBreakdown(
-                    "Selkie Station",
-                    true,
-                    FULL_STABILITY,
-                    new BaseSizeFactor(7, 2.5, 2.5, 0.0),
-                    Optional.empty(),
-                    Optional.empty())),
-                new DominanceRules(
-                    true,
-                    buildBaseSizeWeighting(HiddenMarketScalingChoice.FIXED),
-                    buildStationWeighting(),
-                    buildPatrolWeighting()));
+            var rows = resolveFixedRatedHiddenMarketRows();
 
             assertThat(readSizeLine(rows).valueText())
                 .isEqualTo("2.5 (fixed) :: 2,500");
@@ -171,19 +159,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsOpensAFixedRatingOnTheColonysRealSize() {
             // The token says what the colony counted as and nothing about how big it is, which is the
             // one case a player is most likely to read as the map miscounting a large secret base.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(new MarketWeightBreakdown(
-                    "Selkie Station",
-                    true,
-                    FULL_STABILITY,
-                    new BaseSizeFactor(7, 2.5, 2.5, 0.0),
-                    Optional.empty(),
-                    Optional.empty())),
-                new DominanceRules(
-                    true,
-                    buildBaseSizeWeighting(HiddenMarketScalingChoice.FIXED),
-                    buildStationWeighting(),
-                    buildPatrolWeighting()));
+            var rows = resolveFixedRatedHiddenMarketRows();
 
             assertThat(readSizeLine(rows).valueWorkingText())
                 .isEqualTo("7 ::");
@@ -307,6 +283,25 @@ final class MarketWeightRowResolverTest {
             baseSize,
             Optional.empty(),
             Optional.empty());
+    }
+
+    // A hidden colony under Fixed scaling: the one case where the size that entered the weight and the
+    // size the colony actually is part company, which is what both halves of its size line are read
+    // from. Built here rather than at each case, since neither is about how the colony was composed.
+    private static List<CellTooltipEntry> resolveFixedRatedHiddenMarketRows() {
+        return MarketWeightRowResolver.resolveMarketRows(
+            List.of(new MarketWeightBreakdown(
+                "Selkie Station",
+                true,
+                FULL_STABILITY,
+                new BaseSizeFactor(7, 2.5, 2.5, 0.0),
+                Optional.empty(),
+                Optional.empty())),
+            new DominanceRules(
+                true,
+                buildBaseSizeWeighting(HiddenMarketScalingChoice.FIXED),
+                buildStationWeighting(),
+                buildPatrolWeighting()));
     }
 
     // A colony whose station factor ran, named for the case asserting the line names it.

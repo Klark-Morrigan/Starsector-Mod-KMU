@@ -226,7 +226,8 @@ about what the overlay means.
   allow. It is not content: a box with nothing to say about the system stays undrawn rather than
   appearing as a lone offer to expand into nothing. How
   far apart those blocks stand is never a line's own request: KMLib parts one block from the next by
-  one measurement, so the gap under the heading is the same gap as every gap below it. A layer states
+  one measurement, and a listing nested inside a block by a narrower one, so what sets two things
+  apart is what they are rather than which line happens to open them. A layer states
   only *what* each block lists, as `CellTooltipEntry` / `CellTooltipEntryLine` values - an entry being
   a line over the entries beneath it, so how deep a listing goes follows the subject matter rather
   than the model. What those entries are to it is stated too, since depth alone cannot say: `grouping`
@@ -244,7 +245,9 @@ about what the overlay means.
   (`derivesValueFrom`) and the vocabulary greys the working against whatever colour the line speaks
   in, exactly as it golds a qualifier: run together in one string they could only be drawn in one
   shade, and the reader would take a value joined by a separator for a single number.
-  `CellTooltipSections` walks that depth-first into a block, carrying the indent and the demotion as
+  `CellTooltipSections` walks that depth-first into a block, each entry becoming a nested block of its
+  own line over its account - which is what lets KMLib set one entry's whole breakdown apart from the
+  next entry at its tier rather than from its last line - carrying the indent and the demotion as
   one `CellTooltipEntryLevel`, and drops a block that resolved empty; `CellTooltipRows` is the line
   vocabulary it lays them in, which reads the tier and the indent off that level rather than off a
   choice the block makes,

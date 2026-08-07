@@ -10,13 +10,18 @@ import kmu.maplayers.politicalmap.base.dominance.StationFactor;
 import kmu.util.KmuStrings;
 
 /**
- * How one dominance factor's arithmetic reads as words: the rating or headcount that went in, the
- * weight that came out, and each cut taken along the way.
+ * How one dominance factor's arithmetic reads as words: the rating that went in, the weight that came
+ * out, and each cut taken along the way.
  *
  * <p>Every one of these values answers the same question - "where did this number come from" - so
  * they are worded to one grammar rather than each factor inventing its own: what went in, then the
  * weight it became, then the cuts, in the order the weight read applied them. A reader who has
  * worked out one factor's line has worked out them all.
+ *
+ * <p>A factor states no rating where none would mean anything. A garrison's is the one case: its
+ * three tiers count for different amounts, so the headcount across them explains nothing about the
+ * weight beside it, and the tiers state their own counts on their own lines where the rate beside
+ * each makes the count mean something.
  *
  * <p>Two units meet in that grammar and are kept apart by which separator joins them. A rating is
  * what the player set or the colony is - a size, a station's worth, what one patrol counts for -
