@@ -166,7 +166,12 @@ default). `ClaimScoreRowResolver` decides those lines: the faction's strongest m
 out as `strongest`, because the number on the faction's line above is that one market's score and
 not the total of the list, which is what a reader will otherwise take it for - then the rest in
 descending order, each over its own size and its garrison bonus where it earned one. The call-out is
-dropped over a system held by decree, where nothing any market scored settled anything. Closing the
+dropped over a system held by decree, where nothing any market scored settled anything. Every market
+also states where the economy lists it, as a quiet `[n]` run after its name
+(`MarketClaimBreakdown.listingPosition`, numbered across the system's owned markets rather than
+within one faction's): the contest is settled on a strictly greater score, so a tie - between two of
+one faction's markets or between two factions' best - falls to whichever the economy reached first,
+and nothing else in the box says which that was. Closing the
 list is the presence term, which is the faction's rather than any one market's, since the mechanic
 gives every market of a faction the same point per other market it holds there: stated once beneath
 the very markets its count can be checked against, and worked out from that count

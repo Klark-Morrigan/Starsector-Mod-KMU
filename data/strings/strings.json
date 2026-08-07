@@ -51,6 +51,7 @@
     "political_map_tooltip_core_marker": "(core)",
     "political_map_tooltip_claim_none": "None",
     "political_map_tooltip_claim_strongest": "strongest",
+    "political_map_tooltip_claim_listing_position": "[%s]",
     "political_map_tooltip_claim_other_markets": "Other same-faction markets",
     "political_map_tooltip_claim_other_markets_total": "(%s markets) - 1 = +%s",
     "political_map_tooltip_claim_military": "Military",

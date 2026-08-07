@@ -53,6 +53,12 @@ final class ClaimScoreRowResolverTest {
     private static final int ONE_SIBLING_MARKET = 1;
     private static final int TWO_SIBLING_MARKETS = 2;
 
+    // Where each market falls in the system's economy listing - the order a tied contest is settled
+    // in. The strongest market heads the listing throughout, since no case here is about a tie.
+    private static final int FIRST_LISTED = 1;
+    private static final int SECOND_LISTED = 2;
+    private static final int THIRD_LISTED = 3;
+
     private static final boolean IS_TERRITORIAL = true;
 
     // Whether the contest is what settled the system, or a decree was imposed over it - the one thing
@@ -80,7 +86,7 @@ final class ClaimScoreRowResolverTest {
             // reading the number as the total of the list.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET))));
+                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))));
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Culann", PRESENCE_LINE);
@@ -89,12 +95,43 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
+        void resolveMarketRowsStatesWhereTheEconomyListsEachMarket() {
+            // The whole of the answer to what the scores cannot settle: a tie falls to whichever
+            // market the economy reached first, and nothing else in the box says which that was.
+            var rows = ClaimScoreRowResolver.resolveMarketRows(
+                buildStanding(
+                    buildStrongestMarket(ONE_SIBLING_MARKET),
+                    List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))),
+                CONTEST_SETTLED_THE_SYSTEM);
+
+            assertThat(rows.get(0).line().indexText())
+                .isEqualTo("[1]");
+            assertThat(rows.get(1).line().indexText())
+                .isEqualTo("[2]");
+        }
+
+        @Test
+        void resolveMarketRowsStatesNoListingPlaceOnATermLine() {
+            // A term is arithmetic, not a market, so it sits in no listing and has no place to
+            // state - and the presence line below the markets is the faction's rather than one of
+            // them, so it has none either.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(TWO_SIBLING_MARKETS),
+                List.of()));
+
+            assertThat(rows.get(0).children())
+                .allSatisfy(term -> assertThat(term.line().indexText()).isNull());
+            assertThat(rows.get(1).line().indexText())
+                .isNull();
+        }
+
+        @Test
         void resolveMarketRowsCallsOutNoMarketBesidesTheFactionsStrongest() {
             // A second marked line would say the faction is represented by two markets at once, which
             // is exactly what the mechanic does not do.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET))));
+                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))));
 
             assertThat(rows.get(1).line().qualifierText())
                 .isNull();
@@ -108,7 +145,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildStanding(
                     buildStrongestMarket(ONE_SIBLING_MARKET),
-                    List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET))),
+                    List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))),
                 DECREE_SETTLED_THE_SYSTEM);
 
             assertThat(rows.get(0).line().qualifierText())
@@ -122,7 +159,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildStanding(
                     buildStrongestMarket(ONE_SIBLING_MARKET),
-                    List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET))),
+                    List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))),
                 DECREE_SETTLED_THE_SYSTEM);
 
             assertThat(readLabelTexts(rows))
@@ -136,8 +173,8 @@ final class ClaimScoreRowResolverTest {
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(TWO_SIBLING_MARKETS),
                 List.of(
-                    buildMarket("Culann", 3, TWO_SIBLING_MARKETS),
-                    buildMarket("Eventide", 5, TWO_SIBLING_MARKETS))));
+                    buildMarket("Culann", 3, TWO_SIBLING_MARKETS, SECOND_LISTED),
+                    buildMarket("Eventide", 5, TWO_SIBLING_MARKETS, THIRD_LISTED))));
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Eventide", "Culann", PRESENCE_LINE);
@@ -150,8 +187,8 @@ final class ClaimScoreRowResolverTest {
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(TWO_SIBLING_MARKETS),
                 List.of(
-                    buildMarket("Eventide", 4, TWO_SIBLING_MARKETS),
-                    buildMarket("Culann", 4, TWO_SIBLING_MARKETS))));
+                    buildMarket("Eventide", 4, TWO_SIBLING_MARKETS, SECOND_LISTED),
+                    buildMarket("Culann", 4, TWO_SIBLING_MARKETS, THIRD_LISTED))));
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Culann", "Eventide", PRESENCE_LINE);
@@ -242,6 +279,7 @@ final class ClaimScoreRowResolverTest {
             var garrisoned = resolveContestedRows(buildStanding(
                 new MarketClaimBreakdown(
                     STRONGEST_MARKET,
+                    FIRST_LISTED,
                     STRONGEST_MARKET_SIZE,
                     NO_SIBLING_MARKETS,
                     OptionalInt.of(MILITARY_BONUS)),
@@ -295,6 +333,7 @@ final class ClaimScoreRowResolverTest {
     private static MarketClaimBreakdown buildStrongestMarket(int siblingMarketCount) {
         return new MarketClaimBreakdown(
             STRONGEST_MARKET,
+            FIRST_LISTED,
             STRONGEST_MARKET_SIZE,
             siblingMarketCount,
             OptionalInt.empty());
@@ -305,6 +344,7 @@ final class ClaimScoreRowResolverTest {
     private static MarketClaimBreakdown buildFullyScoredMarket() {
         return new MarketClaimBreakdown(
             STRONGEST_MARKET,
+            FIRST_LISTED,
             STRONGEST_MARKET_SIZE,
             TWO_SIBLING_MARKETS,
             OptionalInt.of(MILITARY_BONUS));
@@ -315,10 +355,12 @@ final class ClaimScoreRowResolverTest {
     private static MarketClaimBreakdown buildMarket(
             String marketName,
             int marketSize,
-            int siblingMarketCount) {
+            int siblingMarketCount,
+            int listingPosition) {
 
         return new MarketClaimBreakdown(
             marketName,
+            listingPosition,
             marketSize,
             siblingMarketCount,
             OptionalInt.empty());

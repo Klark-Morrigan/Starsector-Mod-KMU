@@ -18,6 +18,8 @@ import java.util.Objects;
  *
  * @param iconSpritePath   the leading mark's texture path, or null for a line carrying none
  * @param labelText        what the line is called
+ * @param indexText        the line's place in the ordering it belongs to, run on after its name in
+ *                         the quiet shade, or null where the line has no place worth stating
  * @param qualifierText    the status called out at the end of the line, or null when it states none
  * @param valueText        what the block counts this line in, or {@link CellTooltipRows#NO_SCORE} for a
  *                         line carrying no number
@@ -27,9 +29,15 @@ import java.util.Objects;
 public record CellTooltipEntryLine(
     String iconSpritePath,
     String labelText,
+    String indexText,
     String qualifierText,
     String valueText,
     String valueWorkingText) {
+
+    // What a line with no place to state carries in the index slot, for the same reason the two
+    // absences below are named: the factory says what the plainest line has rather than passing
+    // three unexplained nulls a reader has to count off against the components.
+    private static final String NO_INDEX = null;
 
     // What a line states nothing beside its name and its number carries in the qualifier slot. Named
     // rather than passed as a bare null, so the factory below reads as "this line calls nothing out"
@@ -72,6 +80,7 @@ public record CellTooltipEntryLine(
         return new CellTooltipEntryLine(
             iconSpritePath,
             labelText,
+            NO_INDEX,
             NO_QUALIFIER,
             valueText,
             NO_WORKING);
@@ -102,6 +111,31 @@ public record CellTooltipEntryLine(
         return new CellTooltipEntryLine(
             iconSpritePath,
             labelText,
+            indexText,
+            qualifierText,
+            valueText,
+            valueWorkingText);
+    }
+
+    /**
+     * Returns a copy of this line stating {@code indexText} after its name - where the thing on the
+     * line falls in whatever ordering it belongs to, such as the listing that settles a tie between
+     * two of them.
+     *
+     * <p>Read quietly rather than in the qualifier's gold, and set before it, because it identifies
+     * the line rather than saying anything about it: a reader scanning names should meet it as part
+     * of the name and not as a second finding. Its own part rather than run into the label, so the
+     * block can draw it in that quieter shade at all.
+     *
+     * @param indexText the line's place in its ordering, unspaced - the line parts it from the name
+     *                  when it is laid out
+     * @return an otherwise-identical line stating that place
+     */
+    public CellTooltipEntryLine indexedAt(String indexText) {
+        return new CellTooltipEntryLine(
+            iconSpritePath,
+            labelText,
+            indexText,
             qualifierText,
             valueText,
             valueWorkingText);
@@ -125,6 +159,7 @@ public record CellTooltipEntryLine(
         return new CellTooltipEntryLine(
             iconSpritePath,
             labelText,
+            indexText,
             qualifierText,
             valueText,
             valueWorkingText);

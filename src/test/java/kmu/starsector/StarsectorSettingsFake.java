@@ -81,6 +81,7 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_MARKER, "(core)");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_NONE, "None");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_STRONGEST, "strongest");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_LISTING_POSITION, "[%s]");
         stringsByKey.put(
             KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_OTHER_MARKETS,
             "Other same-faction markets");

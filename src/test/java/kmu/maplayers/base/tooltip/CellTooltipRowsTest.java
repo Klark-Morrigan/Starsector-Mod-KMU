@@ -62,10 +62,14 @@ final class CellTooltipRowsTest {
     private static final boolean RESERVING_CREST_COLUMN = true;
     private static final boolean NOT_RESERVING_CREST_COLUMN = false;
 
-    // The runs a line reads as, in order: what it names, then any qualifier picked out beside it. A
-    // banner led by a crest opens on that image instead, so its words sit one run later.
+    // The runs a line reads as, in order: what it names, then any place it holds in an ordering, then
+    // any qualifier picked out beside it. A line stating no place closes the gap, so its qualifier
+    // takes the run the place would have. A banner led by a crest opens on that image instead, so its
+    // words sit one run later.
     private static final int LABEL_RUN = 0;
     private static final int QUALIFIER_RUN = 1;
+    private static final int INDEX_RUN = 1;
+    private static final int INDEXED_QUALIFIER_RUN = 2;
     private static final int BANNER_CREST_RUN = 0;
     private static final int BANNER_LABEL_RUN = 1;
     private static final int BANNER_QUALIFIER_RUN = 2;
@@ -322,6 +326,55 @@ final class CellTooltipRowsTest {
                 .isEqualTo(new TextSpan(" worsening", HIGHLIGHT));
             assertThat(row.indent())
                 .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
+        }
+
+        @Test
+        void buildListedRowRunsAPlaceOnAfterTheNameInTheQuietShade() {
+            // A place identifies the line rather than saying something about it, so it is drawn in the
+            // shade the working behind a value is - not the gold a finding reads in - and sits with the
+            // name it belongs to rather than at the end of the line.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(null, "Chicomoztoc", "19")
+                    .indexedAt("[2]"),
+                MEMBER_LEVEL,
+                NOT_RESERVING_CREST_COLUMN);
+
+            assertThat(readLabelTextRun(row, INDEX_RUN))
+                .isEqualTo(new TextSpan(" [2]", GRAY));
+        }
+
+        @Test
+        void buildListedRowRunsAPlaceAheadOfWhatTheLineCallsOut() {
+            // The two runs answer different questions, and in that order: which one this is, then what
+            // is true of it. Reversed, the gold status would break the name from the number naming it.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(null, "Chicomoztoc", "19")
+                    .indexedAt("[2]")
+                    .qualifiedWith("strongest"),
+                MEMBER_LEVEL,
+                NOT_RESERVING_CREST_COLUMN);
+
+            assertThat(readLabelTextRun(row, INDEX_RUN))
+                .isEqualTo(new TextSpan(" [2]", GRAY));
+            assertThat(readLabelTextRun(row, INDEXED_QUALIFIER_RUN))
+                .isEqualTo(new TextSpan(" strongest", HIGHLIGHT));
+        }
+
+        @Test
+        void buildListedRowAddsNoRunForALineWithNoPlaceToState() {
+            // The ordinary line, and every line of the box that is not part of an ordering: it keeps the
+            // runs it had rather than opening one that draws nothing between its name and its status.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(null, "Ion Storm", CellTooltipRows.NO_SCORE)
+                    .qualifiedWith("worsening"),
+                MEMBER_LEVEL,
+                NOT_RESERVING_CREST_COLUMN);
+
+            assertThat(readLabelTextRun(row, QUALIFIER_RUN))
+                .isEqualTo(new TextSpan(" worsening", HIGHLIGHT));
         }
 
         @Test

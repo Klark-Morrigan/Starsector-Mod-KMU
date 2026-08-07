@@ -267,6 +267,21 @@ final class MarketWeightRowResolverTest {
             assertThat(MarketWeightRowResolver.resolveMarketRows(List.of(), buildRules()))
                 .isEmpty();
         }
+
+        @Test
+        void resolveMarketRowsStatesNoListingPlaceOnAnyLine() {
+            // The shared line vocabulary can state where something falls in an ordering, and this box
+            // has no use for one: dominance is settled by weight and distance, with no tie rule a
+            // listing order could explain. A place stated here would be a number meaning nothing.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildGarrisonedBreakdown(2, 1, 0)),
+                buildRules());
+
+            assertThat(rows.get(0).line().indexText())
+                .isNull();
+            assertThat(rows.get(0).children())
+                .allSatisfy(factor -> assertThat(factor.line().indexText()).isNull());
+        }
     }
 
     // The size line of the sole colony's parts, which every hidden-colony case reads.

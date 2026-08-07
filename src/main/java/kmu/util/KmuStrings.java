@@ -60,6 +60,8 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_TOOLTIP_CLAIM_NONE = "political_map_tooltip_claim_none";
     public static final String POLITICAL_MAP_TOOLTIP_CLAIM_STRONGEST =
         "political_map_tooltip_claim_strongest";
+    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_LISTING_POSITION =
+        "political_map_tooltip_claim_listing_position";
     public static final String POLITICAL_MAP_TOOLTIP_CLAIM_OTHER_MARKETS =
         "political_map_tooltip_claim_other_markets";
     public static final String POLITICAL_MAP_TOOLTIP_CLAIM_OTHER_MARKETS_TOTAL =

@@ -25,7 +25,8 @@ final class CellTooltipEntryLineTest {
             var line = CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200");
 
             assertThat(line)
-                .isEqualTo(new CellTooltipEntryLine(CREST, "The Hegemony", null, "1,200", null));
+                .isEqualTo(
+                    new CellTooltipEntryLine(CREST, "The Hegemony", null, null, "1,200", null));
         }
 
         @Test
@@ -85,7 +86,8 @@ final class CellTooltipEntryLineTest {
                 .qualifiedWith("(core)");
 
             assertThat(line)
-                .isEqualTo(new CellTooltipEntryLine(CREST, "The Hegemony", "(core)", "1,200", null));
+                .isEqualTo(
+                    new CellTooltipEntryLine(CREST, "The Hegemony", null, "(core)", "1,200", null));
         }
 
         @Test
@@ -101,6 +103,48 @@ final class CellTooltipEntryLineTest {
     }
 
     @Nested
+    class IndexedAt {
+
+        @Test
+        void indexedAtStatesThePlaceLeavingTheRestOfTheLineAsItWas() {
+
+            var line = CellTooltipEntryLine
+                .createLine(CREST, "The Hegemony", "1,200")
+                .indexedAt("[2]");
+
+            assertThat(line)
+                .isEqualTo(
+                    new CellTooltipEntryLine(CREST, "The Hegemony", "[2]", null, "1,200", null));
+        }
+
+        @Test
+        void indexedAtKeepsAStatusTheLineAlreadyCallsOut() {
+            // The two runs answer different questions - which one this is, and what is true of it -
+            // so a line stating both keeps both rather than the later refinement dropping the first.
+            var line = CellTooltipEntryLine
+                .createLine(CREST, "The Hegemony", "1,200")
+                .qualifiedWith("(core)")
+                .indexedAt("[2]");
+
+            assertThat(line.qualifierText())
+                .isEqualTo("(core)");
+            assertThat(line.indexText())
+                .isEqualTo("[2]");
+        }
+
+        @Test
+        void indexedAtLeavesTheLineItWasBuiltFromUnplaced() {
+            // A refinement returns a new value, so a caller numbering one line of a resolved list
+            // cannot reach into the line another caller is still holding.
+            var plainLine = CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200");
+            plainLine.indexedAt("[2]");
+
+            assertThat(plainLine.indexText())
+                .isNull();
+        }
+    }
+
+    @Nested
     class DerivesValueFrom {
 
         @Test
@@ -111,7 +155,8 @@ final class CellTooltipEntryLineTest {
                 .derivesValueFrom("0.25 /");
 
             assertThat(line)
-                .isEqualTo(new CellTooltipEntryLine(null, "Small: 2", null, "500", "0.25 /"));
+                .isEqualTo(
+                    new CellTooltipEntryLine(null, "Small: 2", null, null, "500", "0.25 /"));
         }
 
         @Test

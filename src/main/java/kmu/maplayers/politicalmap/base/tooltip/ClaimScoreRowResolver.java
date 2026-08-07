@@ -30,6 +30,12 @@ import java.util.Optional;
  * where nothing about the contest settled anything and a called-out market would be credited with an
  * outcome it did not produce.
  *
+ * <p>Every market states where the economy lists it. The contest is settled on a strictly greater
+ * score, so two markets that tie are parted by nothing but which of them the economy reached first -
+ * a rule with no trace anywhere else in the box, and one a reader would otherwise have to take a tied
+ * outcome as arbitrary for. The number is the market's place among the system's owned markets, so it
+ * counts across factions: a tie between two <em>factions'</em> best markets is settled the same way.
+ *
  * <p>The presence term is the faction's rather than any one market's, so it is stated once beneath the
  * list instead of on each market in it. The mechanic gives every market of a faction a point for each of
  * that faction's others in the system, which is the same number on all of them - repeated per market it
@@ -150,11 +156,21 @@ public final class ClaimScoreRowResolver {
 
     // The shape every market's own line takes: named, uncrested, and carrying what it scored - the
     // whole score, presence included, since that is the number the contest weighed it at.
+    //
+    // The name runs on into where the economy lists the market, because that number is the whole of
+    // the answer to the one question the scores cannot settle: two markets on the same score are
+    // parted by nothing but which the economy reached first. Stated on every market rather than only
+    // on a tied one, so a reader meets the ordering before they need it and a tie reads as a rule
+    // they already understand rather than as an outcome the box declines to explain.
     private static CellTooltipEntryLine createMarketLine(MarketClaimBreakdown market) {
-        return CellTooltipEntryLine.createLine(
-            NO_MARK,
-            market.marketName(),
-            KmlibNumbers.formatGroupedInteger(market.computeTotalScore()));
+        return CellTooltipEntryLine
+            .createLine(
+                NO_MARK,
+                market.marketName(),
+                KmlibNumbers.formatGroupedInteger(market.computeTotalScore()))
+            .indexedAt(KmuStrings.format(
+                KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_LISTING_POSITION,
+                KmlibNumbers.formatGroupedInteger(market.listingPosition())));
     }
 
     // The terms of one market's score that are the market's own: the size it starts from, and what a

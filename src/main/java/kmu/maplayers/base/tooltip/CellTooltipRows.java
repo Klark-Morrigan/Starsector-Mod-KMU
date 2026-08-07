@@ -181,10 +181,12 @@ public final class CellTooltipRows {
             .carriesCrest(line.iconSpritePath());
 
         return appendQualifier(
-            placeRow(
-                appendValue(row, line, StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve()),
-                level,
-                isReservingCrestColumn),
+            appendIndex(
+                placeRow(
+                    appendValue(row, line, StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve()),
+                    level,
+                    isReservingCrestColumn),
+                line),
             line);
     }
 
@@ -216,7 +218,9 @@ public final class CellTooltipRows {
             .indentsBy(level.indentDepth() * MEMBER_INDENT);
 
         return appendQualifier(
-            placeRow(appendValue(row, line, textColour), level, isReservingCrestColumn),
+            appendIndex(
+                placeRow(appendValue(row, line, textColour), level, isReservingCrestColumn),
+                line),
             line);
     }
 
@@ -270,6 +274,26 @@ public final class CellTooltipRows {
         return isReservingCrestColumn
             ? subordinatedRow
             : subordinatedRow.clearsCrestColumn();
+    }
+
+    // Runs a line on into where the thing on it falls in its ordering. Drawn in the quiet shade and
+    // laid before any qualifier, because it identifies the line rather than saying something about
+    // it: the eye scanning names meets it as part of the name, and the gold run after it stays the
+    // one thing on the line that reads as a finding.
+    //
+    // A capability of the vocabulary rather than a decision it makes - a line states a place only
+    // where the thing on it belongs to an ordering a reader has some use for, which is the resolver's
+    // to know. Applied at every tier through one helper, for the reason the two runs around it are.
+    private static TooltipRow.TableRow appendIndex(
+            TooltipRow.TableRow row,
+            CellTooltipEntryLine line) {
+
+        if (!KmlibStrings.hasText(line.indexText())) {
+            return row;
+        }
+        return row.continuesWith(new TextSpan(
+            CONTINUATION_GAP + line.indexText(),
+            StarsectorUiColour.VANILLA_GRAY.resolve()));
     }
 
     // Runs a line on into whatever it calls out. Applied at every tier through one helper, so a status

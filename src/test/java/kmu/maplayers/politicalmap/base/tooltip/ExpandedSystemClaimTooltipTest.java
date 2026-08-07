@@ -75,6 +75,10 @@ final class ExpandedSystemClaimTooltipTest {
     // posed here is built from - no case below is about the sibling term.
     private static final int NO_SIBLING_MARKETS = 0;
 
+    // Where a market falls in the system's economy listing. No case here is about a tie, so every
+    // market posed takes the head of the listing.
+    private static final int FIRST_LISTED = 1;
+
     private static final boolean IS_TERRITORIAL = true;
 
     // A system the contest itself settled - no decree over it - which is the state an account is
@@ -291,11 +295,13 @@ final class ExpandedSystemClaimTooltipTest {
             .get(rowIndex);
     }
 
-    // A colony scoring its size alone, for a standing a case states by the colonies under it rather
-    // than by the arithmetic inside one.
+    // A market scoring its size alone, for a standing a case states by the markets under it rather
+    // than by the arithmetic inside one. Every one of them heads the listing, since no case here is
+    // about a tie or where the economy put anything.
     private static MarketClaimBreakdown buildMarket(String marketName, int marketSize) {
         return new MarketClaimBreakdown(
             marketName,
+            FIRST_LISTED,
             marketSize,
             NO_SIBLING_MARKETS,
             OptionalInt.empty());
