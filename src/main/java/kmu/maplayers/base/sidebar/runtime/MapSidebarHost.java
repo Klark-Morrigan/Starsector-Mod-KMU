@@ -2,9 +2,9 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.starsector.ui.map.presence.CampaignMapView;
-import kmlib.starsector.ui.render.gl.WidgetStyle;
+import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
-import kmlib.starsector.ui.widgets.tabs.TabStyle;
+import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;

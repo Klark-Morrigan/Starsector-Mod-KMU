@@ -4,7 +4,7 @@ import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.starsector.ui.input.TabPanelController;
-import kmlib.starsector.ui.render.gl.WidgetStyle;
+import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;

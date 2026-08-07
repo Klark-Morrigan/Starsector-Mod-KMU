@@ -2,7 +2,7 @@ package kmu.maplayers.base.sidebar.style;
 
 import com.fs.starfarer.api.util.Misc;
 
-import kmlib.starsector.ui.render.gl.WidgetStyle;
+import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.sound.StarsectorUiSound;
 import kmlib.starsector.ui.sound.UiSoundScheme;
 

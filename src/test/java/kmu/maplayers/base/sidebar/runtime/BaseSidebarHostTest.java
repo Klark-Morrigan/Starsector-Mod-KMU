@@ -5,7 +5,7 @@ import com.fs.starfarer.api.input.InputEventAPI;
 import kmlib.animation.TraverseDurations;
 import kmlib.math.geometry.BoxEdge;
 import kmlib.starsector.ui.input.UiCursor;
-import kmlib.starsector.ui.render.gl.WidgetStyle;
+import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;

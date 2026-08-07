@@ -1,7 +1,7 @@
 package kmu.maplayers.base.sidebar.style;
 
 import kmlib.starsector.ui.colour.StarsectorUiColour;
-import kmlib.starsector.ui.render.gl.NotchColours;
+import kmlib.starsector.ui.render.gl.style.NotchColours;
 
 import kmu.settings.NotchChevronColourChoice;
 

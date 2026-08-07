@@ -5,8 +5,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
-import kmlib.starsector.ui.render.gl.CursorTooltipRenderer;
-import kmlib.starsector.ui.render.gl.CursorTooltipStyle;
+import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipRenderer;
+import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipStyle;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.text.TextStyle;
 import kmlib.starsector.ui.widgets.tooltip.TooltipLineStyle;

@@ -7,9 +7,9 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 import kmlib.math.geometry.Rectangle;
 import kmlib.profiling.Timings;
 import kmlib.starsector.ui.input.HoverFade;
-import kmlib.starsector.ui.render.gl.NotchState;
-import kmlib.starsector.ui.render.gl.TabPanelRenderer;
-import kmlib.starsector.ui.render.gl.WidgetStyle;
+import kmlib.starsector.ui.render.gl.panel.NotchState;
+import kmlib.starsector.ui.render.gl.style.WidgetStyle;
+import kmlib.starsector.ui.render.gl.tabs.TabPanelRenderer;
 import kmlib.starsector.ui.widgets.BoxBorder;
 
 import kmu.settings.KmuMapLayerSettings;

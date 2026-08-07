@@ -4,14 +4,14 @@ import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.layout.TabsControlLayout;
-import kmlib.starsector.ui.render.gl.AccentColours;
-import kmlib.starsector.ui.render.gl.BoxColours;
-import kmlib.starsector.ui.render.gl.WidgetStyle;
+import kmlib.starsector.ui.render.gl.style.AccentColours;
+import kmlib.starsector.ui.render.gl.style.BoxColours;
+import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.sound.UiSoundScheme;
-import kmlib.starsector.ui.widgets.tabs.HotkeyStyle;
-import kmlib.starsector.ui.widgets.tabs.TabChrome;
-import kmlib.starsector.ui.widgets.tabs.TabPalette;
-import kmlib.starsector.ui.widgets.tabs.TabStyle;
+import kmlib.starsector.ui.widgets.tabs.style.HotkeyStyle;
+import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
+import kmlib.starsector.ui.widgets.tabs.style.TabPalette;
+import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.settings.KmuMapLayerSettings;
 
