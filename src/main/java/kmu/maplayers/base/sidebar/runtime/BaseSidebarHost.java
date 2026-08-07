@@ -3,6 +3,7 @@ package kmu.maplayers.base.sidebar.runtime;
 import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.starsector.ui.input.TabPanelController;
+import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
 import kmlib.starsector.ui.widgets.tabs.TabPanelHotkeys;
 import kmlib.starsector.ui.widgets.tabs.TabStrip;
 
@@ -10,6 +11,7 @@ import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
+import kmu.maplayers.base.sidebar.style.SidebarStyles;
 import kmu.settings.KmuMapLayerSettings;
 
 import java.util.ArrayList;
@@ -114,12 +116,22 @@ public abstract class BaseSidebarHost implements SidebarHost {
         return layerSelection;
     }
 
-    // A controller opened at the given fold. The docked seed and the expanded default are the widget's own
-    // two constructors, so the fold a host opens at is chosen here rather than animated into.
+    // A controller opened at the given fold, answering by the sidebar's own sound scheme. The docked seed
+    // and the expanded default are the widget's own two constructors, so the fold a host opens at is chosen
+    // here rather than animated into.
+    //
+    // The scheme comes from where the look is composed rather than from the widget's vanilla default, so a
+    // sidebar that ever wants quieter controls has one value to change and not two places to remember.
     private static TabPanelController createControllerAtFold(boolean isRailDocked) {
+
+        // Bound once so the two folds differ in the fold alone: the sound wiring is the same either way,
+        // and written twice it would be a place for the docked panel to drift from the expanded one.
+        var soundPlayer = new VanillaUiSoundPlayer();
+        var soundScheme = SidebarStyles.SIDEBAR_SOUND_SCHEME;
+
         return isRailDocked
-            ? TabPanelController.createStartingDocked()
-            : new TabPanelController();
+            ? TabPanelController.createStartingDocked(soundPlayer, soundScheme)
+            : new TabPanelController(soundPlayer, soundScheme);
     }
 
     // Each layer's bound keycode in registry order, so a matched index maps back to its layer. A cleared

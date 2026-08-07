@@ -4,7 +4,10 @@ import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.layout.TabsControlLayout;
+import kmlib.starsector.ui.render.gl.AccentColours;
+import kmlib.starsector.ui.render.gl.BoxColours;
 import kmlib.starsector.ui.render.gl.WidgetStyle;
+import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.widgets.tabs.HotkeyStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPalette;
 import kmlib.starsector.ui.widgets.tabs.TabStyle;
@@ -23,6 +26,16 @@ import kmu.settings.KmuMapLayerSettings;
  * so building one needs no live GL context and no drawn frame - only the running game's colours.
  */
 public final class SidebarStyles {
+
+    /**
+     * How the sidebar answers a press and the pointer arriving: the engine's own scheme, the sidebar
+     * being drawn to sit among vanilla chrome.
+     *
+     * <p>Public because the panel's controller is handed this directly rather than reading it off the
+     * widget style each frame - the moments it answers are pointer events, not paint passes - so the
+     * scheme has to be one named value both sides take, or the panel would look and sound from two.
+     */
+    public static final UiSoundScheme SIDEBAR_SOUND_SCHEME = UiSoundScheme.createVanillaSoundScheme();
 
     // The body face: the insignia body font, the narrower face the body-control labels read in. The tab
     // face is separate below, since the tabs are both measured and drawn in theirs.
@@ -64,12 +77,12 @@ public final class SidebarStyles {
     /**
      * The sidebar's look in the player's own accents, built fresh from the live colours: a black body
      * backdrop, the frame in that same accent, the base and bright player accents for the controls, the
-     * insignia body face, the given tab style, and the collapse handle's chevron shades for the colour
-     * the player picked.
+     * insignia body face, the given tab style, the collapse handle's chevron shades for the colour the
+     * player picked, and the vanilla button sounds its controls answer by.
      *
      * <p>The frame takes the accent because a panel floating free on its screen has no neighbouring
      * chrome to match; a host drawn against another panel's frame supplies its own colour there instead,
-     * which is why the two are separate fields on the style at all.
+     * which is why the box's shades and the controls' travel as separate values at all.
      *
      * @param tabStyle the tab style the host laid its band out with, so the row is painted from the
      *                 value it was measured against
@@ -81,22 +94,23 @@ public final class SidebarStyles {
         var brightAccent = StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve();
 
         return new WidgetStyle(
-            // The body backdrop is black; the opacity the render pass fades it by leaves the body a
-            // translucent-black pane the map shows through rather than a solid block. Black, not the
-            // player-dark tint, so the body stays neutral - only the tabs header, accents, and the
-            // notch carry colour. This is the body fill alone; the tabs' own fills live in the tab
-            // style, a separate field, so the body's colour never couples to the header's. The header
-            // also opts out of that opacity fade and paints opaque, so the tabs read solid over the
-            // faded body.
-            StarsectorUiColour.BLACK.resolve(), // Panel fill.
-            accent, // Border colour.
-            accent,
-            brightAccent,
+            new BoxColours(
+                // The body backdrop is black; the opacity the render pass fades it by leaves the body a
+                // translucent-black pane the map shows through rather than a solid block. Black, not the
+                // player-dark tint, so the body stays neutral - only the tabs header, accents, and the
+                // notch carry colour. This is the body fill alone; the tabs' own fills live in the tab
+                // style, a separate field, so the body's colour never couples to the header's. The header
+                // also opts out of that opacity fade and paints opaque, so the tabs read solid over the
+                // faded body.
+                StarsectorUiColour.BLACK.resolve(),
+                accent),
+            new AccentColours(accent, brightAccent),
             BODY_FONT,
             tabStyle,
             SidebarPalettes.resolveNotchColours(
                 KmuMapLayerSettings.getMapSidebarChevronColour(),
                 accent,
-                brightAccent));
+                brightAccent),
+            SIDEBAR_SOUND_SCHEME);
     }
 }

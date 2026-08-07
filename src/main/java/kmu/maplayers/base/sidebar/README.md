@@ -251,6 +251,11 @@ colour, the player faction's base and bright accents, the insignia body face, an
 style. Nothing of it is held between frames - every shade reads the running game's colours and the
 player's live settings - and nothing of it is persisted.
 
+The look also says how the panel *sounds*, and the sidebar takes the engine's own scheme through
+`SidebarStyles.SIDEBAR_SOUND_SCHEME`. It is the one part of the look the panel's controller is
+handed directly rather than rebuilt each frame - the moments it answers are pointer events, not paint
+passes - so both sides read that one constant.
+
 Both hosts build through the one factory rather than each spelling the look out, so two screens
 meant to look alike cannot drift into two spellings of it; a host that wants to differ passes
 different arguments or composes its own. The factory sits beside `SidebarPalettes` and out of the
@@ -262,10 +267,10 @@ whose body is empty is its row and nothing else - no frame, no handle. The row n
 are opaque surfaces in their own right, so it reads the same over the body, over the bare map, or over
 whatever the panel floats on.
 
-The frame colour is a field of its own on `WidgetStyle`, separate from the accent the controls wash
-and label with, so a host whose surrounding chrome is drawn in another colour can match it without
-recolouring its controls. The map passes its base player accent for both, the sidebar having no
-neighbouring chrome to match.
+The frame colour rides in `WidgetStyle`'s `BoxColours` beside the body fill, apart from the
+`AccentColours` the controls wash and label with, so a host whose surrounding chrome is drawn in
+another colour can match it without recolouring its controls. The map passes its base player accent
+for both, the sidebar having no neighbouring chrome to match.
 
 That one `TabStyle` carries a strip end to end - band height, `TabPalette`, `HotkeyStyle`, and the
 orbitron face - so the value the layout snapped tabs against is the value the renderer paints them
