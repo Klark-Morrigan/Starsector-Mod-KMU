@@ -48,6 +48,12 @@ public final class CellTooltipRows {
     // no reader could tell apart.
     private static final float MEMBER_INDENT = 14f;
 
+    // What parts a qualifier from the words it continues. A run is laid down straight after the run
+    // before it, so without this the two words touch - "Sizehidden". Carried by the run rather than
+    // written into each string, so no author can ship a qualifier that runs into its line and none
+    // has to remember the space that keeps it apart.
+    private static final String QUALIFIER_SEPARATOR = " ";
+
     private CellTooltipRows() {
     }
 
@@ -55,13 +61,17 @@ public final class CellTooltipRows {
      * Builds the run a line ends on to call something out - a status or flag stated on the line it
      * qualifies rather than on a line of its own, in the highlight colour. Hand it to
      * {@code TooltipRow.continuesWith} on whichever line it qualifies. One place decides that such a
-     * qualifier reads gold, so two layers calling out different facts still call them out alike.
+     * qualifier reads gold and stands clear of the words it follows, so two layers calling out
+     * different facts still call them out alike.
      *
-     * @param text the qualifier continuing a line's label
+     * @param text the qualifier continuing a line's label, unspaced - the run parts itself from
+     *             what it follows
      * @return the run, ready to continue a line
      */
     public static TextSpan buildQualifierSpan(String text) {
-        return new TextSpan(text, StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve());
+        return new TextSpan(
+            QUALIFIER_SEPARATOR + text,
+            StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve());
     }
 
     /**
