@@ -74,7 +74,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // Stated on the shape every layer's box shares rather than on the one box that first listed something
     // deep enough to want it: how far a line stands under the box is a fact any box can carry, so two
     // layers demoting a line by different amounts would be a difference the reader cannot account for.
-    private static final float LEVEL_SHRINK = 2f;
+    private static final float LEVEL_SHRINK = 3f;
 
     @Override
     public final void renderFor(SectorAPI sector, StarSystemAPI system) {
