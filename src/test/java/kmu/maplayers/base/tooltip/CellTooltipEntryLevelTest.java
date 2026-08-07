@@ -14,6 +14,38 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class CellTooltipEntryLevelTest {
 
     @Nested
+    class ListedLevel {
+
+        @Test
+        void listedLevelStandsFlushAndSpeaksInTheBoxsOwnVoice() {
+            // The floor both counts are measured up from, so every case below states steps taken from
+            // here rather than an absolute - which only holds while here is actually zero.
+            assertThat(CellTooltipEntryLevel.LISTED_LEVEL.indentDepth())
+                .isEqualTo(0);
+            assertThat(CellTooltipEntryLevel.LISTED_LEVEL.subordinationLevel())
+                .isEqualTo(0);
+        }
+    }
+
+    @Nested
+    class CellTooltipEntryLevelConstruction {
+
+        @Test
+        void cellTooltipEntryLevelFloorsBothCountsAtABlocksOwnLine() {
+            // Neither count can be walked below the block's own line, so the only way past the floor is
+            // a level built directly: a negative depth would draw further left than the box's content
+            // edge, and a negative demotion would resolve a size larger than the body's for a line
+            // meant to be quieter than it.
+            var level = new CellTooltipEntryLevel(-1, -2);
+
+            assertThat(level.indentDepth())
+                .isEqualTo(0);
+            assertThat(level.subordinationLevel())
+                .isEqualTo(0);
+        }
+    }
+
+    @Nested
     class GroupedUnder {
 
         @Test

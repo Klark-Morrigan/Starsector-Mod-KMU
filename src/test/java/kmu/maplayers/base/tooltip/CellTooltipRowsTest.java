@@ -40,16 +40,18 @@ final class CellTooltipRowsTest {
     private static final String CREST = "graphics/ion_storm_icon.png";
 
     // Where a line was found: one of the block's own, one of the things that line breaks down into, and
-    // one level deeper again - which is the shape a breakdown three levels down takes. Built by walking
-    // down from the block's own level, as the walk that lays a listing out does, so a case here is
-    // about a level a body can actually reach.
-    private static final CellTooltipEntryLevel LISTED_LEVEL = CellTooltipEntryLevel.LISTED_LEVEL;
-    private static final CellTooltipEntryLevel MEMBER_LEVEL = LISTED_LEVEL.subordinatedUnder();
-    private static final CellTooltipEntryLevel NESTED_MEMBER_LEVEL = MEMBER_LEVEL.subordinatedUnder();
-
-    // Where a line gathered under another as its peer sits: one step in, at the level of the line it
-    // sits under. The one case that tells the indent and the demotion apart.
-    private static final CellTooltipEntryLevel PEER_LEVEL = LISTED_LEVEL.groupedUnder();
+    // one level deeper again - which is the shape a breakdown three levels down takes. Plus the line
+    // gathered under another as its peer, one step in yet speaking at the level of the line it sits
+    // under, which is the one case telling the indent and the demotion apart.
+    //
+    // Stated as the two counts each level is rather than walked down to from the block's own, for the
+    // reason the indents beside them are: a level built by calling the refinements under test would be
+    // edited alongside them and could never fail, while these have to be changed deliberately when what
+    // a tier means does.
+    private static final CellTooltipEntryLevel LISTED_LEVEL = new CellTooltipEntryLevel(0, 0);
+    private static final CellTooltipEntryLevel PEER_LEVEL = new CellTooltipEntryLevel(1, 0);
+    private static final CellTooltipEntryLevel MEMBER_LEVEL = new CellTooltipEntryLevel(1, 1);
+    private static final CellTooltipEntryLevel NESTED_MEMBER_LEVEL = new CellTooltipEntryLevel(2, 2);
 
     // What the block around a line answered about its crest gutter: reserved where something it lists
     // leads with a mark, dropped where nothing does.
