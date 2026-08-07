@@ -35,11 +35,12 @@ import java.util.List;
  * name and crest and is made up of nothing, so a singleton reads identically to the member it wraps and
  * the flat faction view falls out for free; an alliance group takes its name from the grouping and its
  * crest from the alliance's colour (lead) faction - the same crest the alliances view paints the bloc's
- * cluster by - over the members that make it up. Keying that on the group's kind rather than its size is
- * what keeps a one-member alliance a bloc over its member rather than collapsing it into a lone faction,
- * and it is settled here because this is the only side that knows the kind. A blank or absent crest
- * resolves to a null path the render layer draws around, so a group or member with no authored crest
- * still shows its name and score.
+ * cluster by - gathering the members that make it up as its peers rather than as its account, since
+ * membership states the same answer more finely and explains nothing. Keying that on the group's kind
+ * rather than its size is what keeps a one-member alliance a bloc over its member rather than collapsing
+ * it into a lone faction, and it is settled here because this is the only side that knows the kind. A
+ * blank or absent crest resolves to a null path the render layer draws around, so a group or member with
+ * no authored crest still shows its name and score.
  */
 public final class StandingRowResolver {
 
@@ -48,13 +49,13 @@ public final class StandingRowResolver {
 
     /**
      * Resolves a hovered system's ranked groups into the entries a block lists, in the same order, each
-     * group's members resolved beneath it.
+     * group's members gathered beneath it as its peers.
      *
      * @param sector    the sector whose {@link FactionAPI} names and crests are read
      * @param standings the two-tier standings ranked by {@code SystemStandings}, in draw order
      * @param grouping  the active view's grouping, supplying an alliance's name and colour faction; the
      *                  identity grouping makes every group a lone faction
-     * @return one entry per group in ranked order, each carrying its members' lines; empty when the
+     * @return one entry per group in ranked order, each gathering its members' lines; empty when the
      *         standings are empty
      */
     public static List<CellTooltipEntry> resolveRows(
@@ -101,15 +102,20 @@ public final class StandingRowResolver {
             grouping.resolveAllianceName(blocId),
             aggregateScoreText);
 
+        // Gathered rather than subordinated: a bloc's line and the factions inside it are one answer to
+        // who holds the system, stated at two granularities, so the members read inset beneath the bloc
+        // without being demoted under the box's voice. Nothing has been broken down yet - that is what a
+        // box explaining where a score came from hangs below a faction, and it must read the same size
+        // whether the faction it hangs under is allied or standing alone.
         return CellTooltipEntry
             .createEntry(allianceLine)
-            .nesting(memberEntries);
+            .grouping(memberEntries);
     }
 
     // Resolves each ranked member standing into the entry it is listed as, preserving the ranking order,
-    // so a group's members read in the order the standing placed them. A member is a faction and a
-    // faction breaks down no further under a bloc, so each carries nothing beneath it - the depth this
-    // resolver produces is the two tiers the standings actually have.
+    // so a group's members read in the order the standing placed them. Each carries nothing beneath it:
+    // this resolver states the two tiers the standings have, and whatever accounts for a faction's score
+    // is hung on by whichever box asked for that account.
     private static List<CellTooltipEntry> resolveMemberEntries(
             SectorAPI sector,
             List<FactionStanding> members) {

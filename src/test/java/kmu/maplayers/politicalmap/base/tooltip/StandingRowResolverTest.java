@@ -25,6 +25,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Also that whether a group breaks down at all is settled here, which is the one place that knows a
  * group's kind: a lone faction resolves to an entry made up of nothing and an alliance to one carrying
  * its members however few it holds, so the box below simply lays out what it is handed.
+ *
+ * <p>And that a bloc's members are gathered as its peers rather than subordinated as its account, which
+ * is the one relation this resolver is in a position to state - membership - and what keeps a faction's
+ * own breakdown reading alike whether the faction is allied or standing alone.
  */
 final class StandingRowResolverTest {
 
@@ -123,7 +127,7 @@ final class StandingRowResolverTest {
                         "graphics/heg.png",
                         "Allied Powers",
                         "11"))
-                    .nesting(List.of(
+                    .grouping(List.of(
                         CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
                             "graphics/heg.png",
                             "The Hegemony",
@@ -156,7 +160,7 @@ final class StandingRowResolverTest {
             assertThat(entries)
                 .containsExactly(CellTooltipEntry
                     .createEntry(CellTooltipEntryLine.createLine(null, "Allied Powers", "11"))
-                    .nesting(List.of(
+                    .grouping(List.of(
                         CellTooltipEntry.createEntry(
                             CellTooltipEntryLine.createLine(null, "The Hegemony", "8")),
                         CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
@@ -221,7 +225,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsNestsASingleMemberAllianceRatherThanCollapsingIt() {
+        void resolveRowsGroupsASingleMemberAllianceRatherThanCollapsingIt() {
             // The regression this guards: keying on the member count instead of the group's kind would
             // silently flatten a one-member alliance into a lone faction, so the same bloc would read
             // as two different things depending on how many members it happens to hold.
@@ -245,10 +249,57 @@ final class StandingRowResolverTest {
                         "graphics/heg.png",
                         "Allied Powers",
                         "8"))
-                    .nesting(List.of(CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
+                    .grouping(List.of(CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
                         "graphics/heg.png",
                         "The Hegemony",
                         "8")))));
+        }
+
+        @Test
+        void resolveRowsGathersAllianceMembersAsPeersRatherThanAsItsAccount() {
+            // The regression this guards: subordinating the members would demote everything hung below
+            // them a level, so an allied faction's colonies would draw a size smaller than an unallied
+            // faction's in the same list - a difference the alliance has nothing to do with.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
+            stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
+
+            var standings = List.of(new GroupStanding("alliance-1", 11, List.of(
+                new FactionStanding("hegemony", 8),
+                new FactionStanding("astral_armada", 3))));
+
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                buildAllianceGrouping());
+
+            assertThat(entries.get(0).isSubordinatingChildren())
+                .isFalse();
+            assertThat(entries.get(0).children())
+                .hasSize(2);
+        }
+
+        @Test
+        void resolveRowsLeavesALoneFactionWithNoMembersToGather() {
+            // A lone faction states the whole answer on its own line, so there is no finer granularity
+            // to gather - the relation the step settles simply does not arise for it.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
+
+            var standings = List.of(
+                new GroupStanding("hegemony", 7, List.of(new FactionStanding("hegemony", 7))));
+
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                HolderGrouping.identity());
+
+            assertThat(entries.get(0).children())
+                .isEmpty();
+            assertThat(entries.get(0).isSubordinatingChildren())
+                .isFalse();
         }
     }
 
