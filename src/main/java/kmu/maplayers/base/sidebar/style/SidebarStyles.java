@@ -110,12 +110,7 @@ public final class SidebarStyles {
      * @return the look to paint this sidebar's panel from
      */
     public static WidgetStyle buildAccentFramedStyle(TabStyle tabStyle) {
-
-        // Resolved once and spent twice, so the frame is demonstrably the same shade as the controls
-        // rather than a second read that a scheme change could catch part-way.
-        var accents = resolveAccentColours();
-
-        return composeStyle(tabStyle, accents, accents.base());
+        return composeStyle(tabStyle, SidebarFraming.OWN_ACCENT);
     }
 
     /**
@@ -133,17 +128,27 @@ public final class SidebarStyles {
      * @return the look to paint this sidebar's panel from
      */
     public static WidgetStyle buildChromeFramedStyle(TabStyle tabStyle) {
-        return composeStyle(
-            tabStyle,
-            resolveAccentColours(),
-            StarsectorUiColour.VANILLA_GRAY.resolve());
+        return composeStyle(tabStyle, SidebarFraming.CHROME_GREY);
     }
 
-    // The accent pair the whole panel is ruled in, under whichever palette the player pointed it at.
-    // Read here rather than at each use so the frame, the controls, the notch, and the tab row cannot
-    // end up describing themselves from different halves of one scheme change.
+    // The accent pair the panel is ruled in, under whichever palette the player pointed it at. One place
+    // the choice is turned into shades, so the widget style and the tab row cannot come to read it
+    // differently - but two call sites, since a tab style is also built for the layout pass, where no
+    // panel style exists to hand one down from. Both land in the same frame on a live read of one stored
+    // value, so the two agree; what the single seam buys is that they agree by construction rather than
+    // by two spellings of the same switch.
     private static AccentColours resolveAccentColours() {
         return SidebarPalettes.resolveAccentColours(KmuMapLayerSettings.getMapSidebarColourScheme());
+    }
+
+    // Which colour a framing convention paints the panel's border in. The accent it takes is the one the
+    // controls are already ruled in rather than a second resolve, which is what makes a panel framed in
+    // one palette and ruled in another unrepresentable rather than merely avoided.
+    private static Color resolveFrameColour(SidebarFraming framing, AccentColours accentColours) {
+        return switch (framing) {
+            case OWN_ACCENT -> accentColours.base();
+            case CHROME_GREY -> StarsectorUiColour.VANILLA_GRAY.resolve();
+        };
     }
 
     // A tab style over the shared paint: the vanilla map-tab palette - its per-state fills and its
@@ -168,15 +173,19 @@ public final class SidebarStyles {
             new TextFace(TAB_FONT, TabsControlLayout.TAB_FONT_SIZE));
     }
 
-    // The sidebar's look built fresh from the live colours, framed in the given colour: a black body
-    // backdrop, the given accent pair for the controls, the insignia body face, the given tab style, the
-    // collapse handle's chevron shades for the colour the player picked, and the vanilla button sounds
-    // its controls answer by. Everything but the frame is shared by every screen the sidebar draws on,
-    // so a screen choosing its frame chooses nothing else by accident.
-    private static WidgetStyle composeStyle(
-            TabStyle tabStyle,
-            AccentColours accentColours,
-            Color frameColour) {
+    // The sidebar's look built fresh from the live colours, framed by the given convention: a black body
+    // backdrop, the colour scheme's accent pair for the controls, the insignia body face, the given tab
+    // style, the collapse handle's chevron shades for the colour the player picked, and the vanilla
+    // button sounds its controls answer by. Everything but the framing is shared by every screen the
+    // sidebar draws on, so a screen choosing its frame chooses nothing else by accident.
+    //
+    // The pair is resolved here and spent on both the controls and the frame, so the one scheme reaches
+    // every part of the panel. A frame colour taken as an argument beside the pair would let the two
+    // arrive from different schemes - the mismatch the scheme exists to remove - so the caller names its
+    // convention and nothing else.
+    private static WidgetStyle composeStyle(TabStyle tabStyle, SidebarFraming framing) {
+
+        var accentColours = resolveAccentColours();
 
         return new WidgetStyle(
             new BoxColours(
@@ -188,7 +197,7 @@ public final class SidebarStyles {
                 // also opts out of that opacity fade and paints opaque, so the tabs read solid over the
                 // faded body.
                 StarsectorUiColour.BLACK.resolve(),
-                frameColour),
+                resolveFrameColour(framing, accentColours)),
             accentColours,
             BODY_FONT,
             tabStyle,
@@ -197,5 +206,24 @@ public final class SidebarStyles {
                 accentColours.base(),
                 accentColours.bright()),
             SIDEBAR_SOUND_SCHEME);
+    }
+
+    /**
+     * Which of the two framing conventions a look is composed with. A convention rather than a colour,
+     * because the accent-framed one is not free to name its shade: it takes whatever the panel's controls
+     * are ruled in, and a caller allowed to pass a colour instead could hand over one from another
+     * palette entirely.
+     *
+     * <p>Private, and so not a third thing a host chooses. The two public factories are the surface a
+     * host picks its convention through, this being the argument they differ by once the pair of them
+     * has already named the choice.
+     */
+    private enum SidebarFraming {
+
+        /** Framed in the panel's own control accent - what a panel with no neighbouring chrome takes. */
+        OWN_ACCENT,
+
+        /** Framed in the fixed UI grey - what a panel abutting another screen's frames takes. */
+        CHROME_GREY
     }
 }

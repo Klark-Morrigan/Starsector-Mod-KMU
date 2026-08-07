@@ -55,6 +55,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the Java fallback beside each getter cannot stand in for that - it answers only while LunaLib has
  * no stored value, so it is this column a fresh player is actually given.
  *
+ * <p>That same fallback is held against a choice row's default column, for the case the sentence above
+ * sets aside: the two answer at different moments - the constant while LunaLib has nothing stored, the
+ * column once it has - so two spellings of one default give a panel one look before the settings load
+ * and another after, with nothing on screen to say why. The constants are private, so the walk reads
+ * them out of the source text rather than calling the getters.
+ *
  * <p>The last column fails the same way one column at a time: LunaLib creates a tab by being named, so a
  * mistyped tab name opens a new tab holding that row alone rather than raising anything. The tab walk
  * holds every row's placement against the set the screen is laid out into, which is why the layout is
@@ -122,6 +128,58 @@ final class LunaSettingsCsvIntegrationTest {
     // pretending the row is choice-backed.
     private static final List<String> NON_CHOICE_BACKED_RADIO_FIELDS = List.of("kmu_logLevel");
 
+    // The Radio fields whose stored label a LabeledChoice enum maps back to a choice, each with the
+    // constant its getter names as a fallback. Listed here rather than read from the settings classes
+    // because the field ids and the constants are private there - a typo in this table fails loudly
+    // (no such row, or no such declaration) rather than quietly skipping a field.
+    private static final List<ChoiceBackedRadio> CHOICE_BACKED_RADIOS = List.of(
+        new ChoiceBackedRadio(
+            "kmu_politicalMapSidebarColourScheme",
+            "DEFAULT_SIDEBAR_COLOUR_SCHEME",
+            SidebarColourSchemeChoice.values()),
+        new ChoiceBackedRadio(
+            "kmu_politicalMapSidebarChevronColor",
+            "DEFAULT_SIDEBAR_CHEVRON_COLOUR",
+            NotchChevronColourChoice.values()),
+        new ChoiceBackedRadio(
+            "kmu_politicalMapHiddenMarketScaling",
+            "DEFAULT_HIDDEN_MARKET_SCALING",
+            HiddenMarketScalingChoice.values()),
+        new ChoiceBackedRadio(
+            "kmu_politicalMapFactionOuterBorderColor",
+            "DEFAULT_FACTION_OUTER_BORDER_COLOUR",
+            FactionPaletteChoice.values()),
+        new ChoiceBackedRadio(
+            "kmu_politicalMapFactionInnerBorderColor",
+            "DEFAULT_FACTION_INNER_BORDER_COLOUR",
+            FactionPaletteChoice.values()),
+        new ChoiceBackedRadio(
+            "kmu_politicalMapFactionFillColor",
+            "DEFAULT_FACTION_FILL_COLOUR",
+            FactionPaletteChoice.values()),
+        new ChoiceBackedRadio(
+            "kmu_politicalMapIndependentOuterBorderColor",
+            "DEFAULT_INDEPENDENT_OUTER_BORDER_COLOUR",
+            FactionPaletteChoice.values()),
+        new ChoiceBackedRadio(
+            "kmu_politicalMapIndependentInnerBorderColor",
+            "DEFAULT_INDEPENDENT_INNER_BORDER_COLOUR",
+            FactionPaletteChoice.values()),
+        new ChoiceBackedRadio(
+            "kmu_politicalMapIndependentFillColor",
+            "DEFAULT_INDEPENDENT_FILL_COLOUR",
+            FactionPaletteChoice.values()),
+        new ChoiceBackedRadio(
+            "kmu_politicalMapHoverHighlightColor",
+            "DEFAULT_HOVER_HIGHLIGHT_COLOUR",
+            FactionPaletteChoice.values()));
+
+    // A named Java fallback as the settings classes declare it: the constant, then the enum constant
+    // it is assigned. Anchored on the constant's own name so the two rows backed by the same enum
+    // with different defaults are still told apart, and the enum is left unnamed so a choice moved to
+    // another type still resolves.
+    private static final String CHOICE_DEFAULT_PATTERN = "\\b%s\\s*=\\s*\\w+\\.([A-Z][A-Z0-9_]*)\\s*;";
+
     // Section captions carry an id so LunaLib can place them, but store nothing, so no source reads
     // one. Every other row holds a value.
     private static final String HEADER_FIELD_TYPE = "Header";
@@ -168,6 +226,29 @@ final class LunaSettingsCsvIntegrationTest {
 
             assertThat(readOptions(fieldId))
                 .contains(readColumn(fieldId, DEFAULT_VALUE_COLUMN, RADIO_FIELD_TYPE));
+        }
+    }
+
+    @Nested
+    class RadioFallbackDefaults {
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource("kmu.settings.LunaSettingsCsvIntegrationTest#provideChoiceBackedRadioDefaults")
+        void radioFallbackDefaultsNameTheirRowsOwnDefault(
+                String fieldId,
+                String defaultConstant,
+                LabeledChoice[] choices) {
+
+            assertThat(readFallbackLabel(defaultConstant, choices))
+                .as(
+                    "%s in the settings sources against the default of %s in %s: the row's default"
+                        + " is what a fresh player is given and the constant is what answers while"
+                        + " LunaLib has none, so two spellings give one look before the settings"
+                        + " load and another after, with nothing to say why",
+                    defaultConstant,
+                    fieldId,
+                    SETTINGS_CSV)
+                .isEqualTo(readColumn(fieldId, DEFAULT_VALUE_COLUMN, RADIO_FIELD_TYPE));
         }
     }
 
@@ -306,21 +387,18 @@ final class LunaSettingsCsvIntegrationTest {
         }
     }
 
-    // The Radio fields whose stored label a LabeledChoice enum maps back to a choice. Listed here
-    // rather than read from the settings classes because the field ids are private there - a typo
-    // in this table fails loudly (no such row) rather than quietly skipping a field.
     private static Stream<Arguments> provideChoiceBackedRadioFields() {
-        return Stream.of(
-            Arguments.of("kmu_politicalMapSidebarColourScheme", SidebarColourSchemeChoice.values()),
-            Arguments.of("kmu_politicalMapSidebarChevronColor", NotchChevronColourChoice.values()),
-            Arguments.of("kmu_politicalMapHiddenMarketScaling", HiddenMarketScalingChoice.values()),
-            Arguments.of("kmu_politicalMapFactionOuterBorderColor", FactionPaletteChoice.values()),
-            Arguments.of("kmu_politicalMapFactionInnerBorderColor", FactionPaletteChoice.values()),
-            Arguments.of("kmu_politicalMapFactionFillColor", FactionPaletteChoice.values()),
-            Arguments.of("kmu_politicalMapIndependentOuterBorderColor", FactionPaletteChoice.values()),
-            Arguments.of("kmu_politicalMapIndependentInnerBorderColor", FactionPaletteChoice.values()),
-            Arguments.of("kmu_politicalMapIndependentFillColor", FactionPaletteChoice.values()),
-            Arguments.of("kmu_politicalMapHoverHighlightColor", FactionPaletteChoice.values()));
+        return CHOICE_BACKED_RADIOS
+            .stream()
+            .map(radio -> Arguments.of(radio.fieldId(), radio.choices()));
+    }
+
+    // The same table's field ids paired with the constant naming each row's Java fallback, for the
+    // walk that holds the two defaults together.
+    private static Stream<Arguments> provideChoiceBackedRadioDefaults() {
+        return CHOICE_BACKED_RADIOS
+            .stream()
+            .map(radio -> Arguments.of(radio.fieldId(), radio.defaultConstant(), radio.choices()));
     }
 
     // The rows hovering is switched at, one case each, so a row shipped off is named by the failure
@@ -482,6 +560,51 @@ final class LunaSettingsCsvIntegrationTest {
         }
     }
 
+    // The option label the named Java fallback constant resolves to. Read out of the source text
+    // rather than restated in the table above, so this holds the shipped constant and not a copy of
+    // it - the constants are private, so there is no other way to reach one.
+    private static String readFallbackLabel(String defaultConstant, LabeledChoice[] choices) {
+
+        var declaredChoice = findDeclaredChoiceName(defaultConstant);
+
+        return Arrays
+            .stream(choices)
+            .filter(choice -> ((Enum<?>) choice).name().equals(declaredChoice))
+            .map(LabeledChoice::getLabel)
+            .findFirst()
+            .orElseThrow(() -> new AssertionError(
+                defaultConstant + " is declared as " + declaredChoice
+                    + ", which is no option of the enum this row's table names"));
+    }
+
+    // The enum constant a fallback is declared as. Exactly one declaration is expected: none means
+    // the table names a constant the sources no longer hold, and two would leave the walk holding
+    // whichever the file listed first.
+    private static String findDeclaredChoiceName(String defaultConstant) {
+
+        var pattern = Pattern.compile(CHOICE_DEFAULT_PATTERN.formatted(defaultConstant));
+
+        try (var sources = Files.walk(MAIN_SOURCE_ROOT)) {
+
+            var declarations = sources
+                .filter(source -> source.toString().endsWith(JAVA_SOURCE_SUFFIX))
+                .flatMap(source -> pattern.matcher(readSource(source)).results())
+                .map(match -> match.group(1))
+                .toList();
+
+            assertThat(declarations)
+                .as("declarations of %s under %s", defaultConstant, MAIN_SOURCE_ROOT)
+                .hasSize(1);
+
+            return declarations.get(0);
+
+        } catch (IOException failure) {
+            throw new UncheckedIOException(
+                "Could not walk " + MAIN_SOURCE_ROOT.toAbsolutePath(),
+                failure);
+        }
+    }
+
     // The row's offered option labels, trimmed of the spacing the authored rows use.
     private static List<String> readOptions(String fieldId) {
         return Arrays
@@ -551,5 +674,21 @@ final class LunaSettingsCsvIntegrationTest {
         }
         cells.add(cell.toString().trim());
         return cells;
+    }
+
+    /**
+     * One choice-backed Radio row, as the two sides of it are spelt: the field the CSV declares, the
+     * constant the reading class declares its fallback as, and the enum whose labels the row's options
+     * have to be. Held together because every walk over these rows needs some pair of the three, and a
+     * row described in two tables is a row that can be listed in one and forgotten in the other.
+     *
+     * @param fieldId         the LunaLib field id the row is stored under
+     * @param defaultConstant the name of the private constant the getter passes as its fallback
+     * @param choices         the enum constants the row's options are the labels of
+     */
+    private record ChoiceBackedRadio(
+        String fieldId,
+        String defaultConstant,
+        LabeledChoice[] choices) {
     }
 }

@@ -15,15 +15,13 @@ import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.settings.KmuMapLayerSettings;
-import kmu.settings.NotchChevronColourChoice;
-import kmu.settings.SidebarColourSchemeChoice;
+import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.util.List;
 
@@ -152,29 +150,19 @@ final class IntelSidebarHostTest {
         // same live colours: the look is composed from several of them at once and reads them all
         // whichever field the case then asserts on.
         private StarsectorUiColoursMock uiColoursMock;
-        private MockedStatic<KmuMapLayerSettings> settingsMock;
+        private SidebarSettingsMock sidebarSettingsMock;
 
         @BeforeEach
         void mockLiveColoursAndSettings() {
 
             uiColoursMock = StarsectorUiColoursMock.install();
-
-            // The chevron and the colour scheme are the player's rather than the engine's, so both are
-            // named here: without them the notch shades and the accent pair cannot resolve and no case
-            // in this class reaches its own assertion.
-            settingsMock = mockStatic(KmuMapLayerSettings.class);
-            settingsMock
-                .when(KmuMapLayerSettings::getMapSidebarChevronColour)
-                .thenReturn(NotchChevronColourChoice.PANEL_ACCENT);
-            settingsMock
-                .when(KmuMapLayerSettings::getMapSidebarColourScheme)
-                .thenReturn(SidebarColourSchemeChoice.UI_PALETTE);
+            sidebarSettingsMock = SidebarSettingsMock.install();
         }
 
         @AfterEach
         void closeLiveColoursAndSettings() {
 
-            settingsMock.close();
+            sidebarSettingsMock.close();
             uiColoursMock.close();
         }
 

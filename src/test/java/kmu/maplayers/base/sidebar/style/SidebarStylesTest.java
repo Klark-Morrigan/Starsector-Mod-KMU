@@ -5,17 +5,14 @@ import kmlib.starsector.ui.sound.StarsectorUiSound;
 import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 
-import kmu.settings.KmuMapLayerSettings;
-import kmu.settings.NotchChevronColourChoice;
 import kmu.settings.SidebarColourSchemeChoice;
+import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
 import java.awt.Color;
 
@@ -41,30 +38,19 @@ final class SidebarStylesTest {
     private static final float HEADER_BAND_HEIGHT = 19f;
 
     private StarsectorUiColoursMock uiColoursMock;
-    private MockedStatic<KmuMapLayerSettings> settingsMock;
+    private SidebarSettingsMock sidebarSettingsMock;
 
     @BeforeEach
     void mockLiveColoursAndSettings() {
 
         uiColoursMock = StarsectorUiColoursMock.install();
-
-        // The two colour choices are the player's rather than the engine's, so both are named here:
-        // without them the notch shades and the accent pair cannot resolve and no case in this class
-        // reaches its own assertion. The scheme is stubbed to the one the file ships with, so the cases
-        // below describe the look a fresh player is given; the case that varies it says so itself.
-        settingsMock = Mockito.mockStatic(KmuMapLayerSettings.class);
-        settingsMock
-            .when(KmuMapLayerSettings::getMapSidebarChevronColour)
-            .thenReturn(NotchChevronColourChoice.PANEL_ACCENT);
-        settingsMock
-            .when(KmuMapLayerSettings::getMapSidebarColourScheme)
-            .thenReturn(SidebarColourSchemeChoice.UI_PALETTE);
+        sidebarSettingsMock = SidebarSettingsMock.install();
     }
 
     @AfterEach
     void closeLiveColoursAndSettings() {
 
-        settingsMock.close();
+        sidebarSettingsMock.close();
         uiColoursMock.close();
     }
 
@@ -100,9 +86,7 @@ final class SidebarStylesTest {
             // The frame is a separate knob from the controls, which is exactly how the two could come to
             // answer different palettes: this pins that the accent-framed look spends one resolved pair
             // on both, so a scheme change cannot leave a panel ruled in one palette and framed in another.
-            settingsMock
-                .when(KmuMapLayerSettings::getMapSidebarColourScheme)
-                .thenReturn(SidebarColourSchemeChoice.PLAYER_FACTION);
+            sidebarSettingsMock.selectColourScheme(SidebarColourSchemeChoice.PLAYER_FACTION);
 
             var style = buildAccentFramedStyle();
 
@@ -147,6 +131,23 @@ final class SidebarStylesTest {
                 .isEqualTo(StarsectorUiColoursMock.BUTTON_TEXT);
             assertThat(accentColours.bright())
                 .isEqualTo(StarsectorUiColoursMock.LIGHT_HIGHLIGHT);
+        }
+
+        @Test
+        void buildChromeFramedStyleHoldsItsFrameGreyWhileTheSchemeMovesItsControls() {
+            // The mirror of the accent-framed case, and the one that makes the frame worth being its own
+            // knob: this framing answers what the panel abuts rather than what the player picked, so a
+            // scheme change has to move the controls and leave the border where it is. Wiring the frame
+            // to the accent - the obvious tidy, the two being one colour under the other framing - would
+            // pass every other case in this file.
+            sidebarSettingsMock.selectColourScheme(SidebarColourSchemeChoice.PLAYER_FACTION);
+
+            var style = buildChromeFramedStyle();
+
+            assertThat(style.boxColours().border())
+                .isEqualTo(StarsectorUiColoursMock.UI_GRAY);
+            assertThat(style.accentColours().base())
+                .isEqualTo(StarsectorUiColoursMock.PLAYER_BASE);
         }
 
         @Test
