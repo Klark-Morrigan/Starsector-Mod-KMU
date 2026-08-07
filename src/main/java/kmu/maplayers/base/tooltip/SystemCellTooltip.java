@@ -69,6 +69,14 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     private static final float BORDER_WIDTH = 1f;
     private static final float OPACITY = 0.9f;
 
+    // How much smaller each step under the box's own voice draws than the step above it. A breakdown
+    // several levels deep is hard to read at one size however far it is indented, so the size gives the
+    // eye a second cue agreeing with the first. Two units is small enough that neighbouring levels stay
+    // comfortably legible and large enough to tell apart at a glance - off the body's 15 that is a holder
+    // at 15, what it holds at 13, a term of that at 11 and a tier of that at 9, before the widget's own
+    // floor takes over.
+    private static final float LEVEL_SHRINK = 2f;
+
     @Override
     public final void renderFor(SectorAPI sector, StarSystemAPI system) {
         // Bodies read the live economy for what a layer holds in the system, so a sector without one
@@ -248,6 +256,11 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // beside 15pt content reads as fine print rather than as a quieter line of the same box. It is drawn
     // at the body's size instead, scaled off its atlas - what sets it apart from the content is its
     // narrowness and its colours, neither of which costs it a size of its own.
+    //
+    // The per-level step is asked for here, on the shape every layer's box shares, rather than on the one
+    // box that first listed something deep enough to want it: how far a line stands under the box is a
+    // fact any box can carry, so two layers demoting a line by different amounts would be a difference
+    // the reader has no way to account for.
     private static CursorTooltipStyle buildStyle() {
         return new CursorTooltipStyle(
             TooltipStyle
@@ -256,7 +269,8 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
                     TextStyle.createStyle(BODY_FONT))
                 .footnotedIn(TextStyle
                     .createStyle(FOOTNOTE_FONT)
-                    .sizedAt(BODY_FONT.getNativeSize())),
+                    .sizedAt(BODY_FONT.getNativeSize()))
+                .shrunkPerLevel(LEVEL_SHRINK),
             OPACITY,
             BORDER_WIDTH,
             StarsectorUiColour.BLACK.resolve(),

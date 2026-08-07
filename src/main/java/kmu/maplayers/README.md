@@ -233,7 +233,13 @@ about what the overlay means.
   gathers peers - a bloc and the factions in it are one answer at two granularities - while `nesting`
   carries the account of why the line above reads as it does. Both sit inset; only the second stands a
   step further under the box's voice, so an allied holder's markets read exactly as loudly as a lone
-  holder's instead of being demoted by a level the account had nothing to do with.
+  holder's instead of being demoted by a level the account had nothing to do with. What the demotion
+  buys is a size: `SystemCellTooltip` asks the widget for two units per step, so a listing several
+  levels deep gives the eye a cue agreeing with its indent - off the body's 15 that is a holder at
+  15, what it holds at 13, a term of that at 11 and a tier of that at 9, before KMLib's own floor
+  takes over. Asked for on the shared box rather than on the one layer that first listed anything
+  that deep, since two layers demoting a line by different amounts is a difference a reader has no
+  way to account for.
   `CellTooltipSections` walks that depth-first into a block, carrying the indent and the demotion as
   one `CellTooltipEntryLevel`, and drops a block that resolved empty; `CellTooltipRows` is the line
   vocabulary it lays them in, which reads the tier and the indent off that level rather than off a

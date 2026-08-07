@@ -13,6 +13,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipLabelPlacement;
 import kmlib.starsector.ui.widgets.tooltip.TooltipLineStyle;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
+import kmlib.starsector.ui.widgets.tooltip.TooltipStyle;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,6 +65,29 @@ final class SystemCellTooltipTest {
     // sets it apart. Stated as its own literal rather than as the body's constant, so a box that stopped
     // matching the body would fail here rather than agree with itself.
     private static final double FOOTNOTE_FONT_SIZE = 15d;
+
+    // How much smaller each step under the box's own voice draws than the step above it, restated rather
+    // than read off the class under test: how far the levels are set apart is the decision, and an
+    // expectation taking it from the value the box handed over would hold whatever step it asked for.
+    private static final float LEVEL_SHRINK = 2f;
+
+    // How far under the box's own voice a line stands - a holder speaking in that voice, what it holds,
+    // a term of that, and a tier of that, which is as deep as the boxes go.
+    private static final int IN_THE_BOXS_VOICE = 0;
+    private static final int ONE_STEP_UNDER = 1;
+    private static final int TWO_STEPS_UNDER = 2;
+    private static final int THREE_STEPS_UNDER = 3;
+
+    // The sizes those steps land on, as literals rather than as the body size less the step, so the
+    // arithmetic is asserted here rather than restated.
+    private static final double ONE_STEP_UNDER_SIZE = 13d;
+    private static final double TWO_STEPS_UNDER_SIZE = 11d;
+    private static final double THREE_STEPS_UNDER_SIZE = 9d;
+
+    // A stack deeper than the step can carry, and the size the widget stops it at: further down, no atlas
+    // renders legibly and the shrink would arrive at zero and then below it.
+    private static final int DEEPER_THAN_THE_FLOOR = 6;
+    private static final double SMALLEST_LEVEL_SIZE = 8d;
 
     // The blocks the box lays out, in draw order: the heading it is titled with, then the layer's own,
     // then the hint at the foot where the box offers one.
@@ -167,6 +191,49 @@ final class SystemCellTooltipTest {
                 .isEqualTo(new TextFace(StarsectorFont.VANILLA_ORBITRON_20AA, HEADER_FONT_SIZE));
             assertThat(typography.paragraphStyle().face())
                 .isEqualTo(new TextFace(StarsectorFont.VANILLA_INSIGNIA_15, BODY_FONT_SIZE));
+        }
+
+        @Test
+        void renderForAsksForAStepPerLevelUnderTheBoxsOwnVoice() {
+            // A breakdown several levels deep is hard to read at one size however far it is indented, so
+            // the box asks the widget for a second cue agreeing with the indent. Asked for on the shape
+            // every layer shares, so no test of one layer's box has to pin it again.
+            var typography = captureDrawnBox(buildTooltipSayingSomething())
+                .style()
+                .typography();
+
+            assertThat(typography.levelShrink())
+                .isEqualTo(LEVEL_SHRINK);
+        }
+
+        @Test
+        void renderForDrawsEachStepUnderTheBoxsOwnVoiceSmallerThanTheOneAbove() {
+            // Where the levels actually land, which is what a reader sees: the step is only worth asking
+            // for if neighbouring levels stay comfortably legible while still telling apart at a glance.
+            var typography = captureDrawnBox(buildTooltipSayingSomething())
+                .style()
+                .typography();
+
+            assertThat(resolveBodySizeAt(typography, IN_THE_BOXS_VOICE))
+                .isEqualTo(BODY_FONT_SIZE);
+            assertThat(resolveBodySizeAt(typography, ONE_STEP_UNDER))
+                .isEqualTo(ONE_STEP_UNDER_SIZE);
+            assertThat(resolveBodySizeAt(typography, TWO_STEPS_UNDER))
+                .isEqualTo(TWO_STEPS_UNDER_SIZE);
+            assertThat(resolveBodySizeAt(typography, THREE_STEPS_UNDER))
+                .isEqualTo(THREE_STEPS_UNDER_SIZE);
+        }
+
+        @Test
+        void renderForStopsShrinkingAtTheSmallestLegibleSize() {
+            // A listing is as deep as its subject matter, so nothing about the box bounds how far under
+            // its voice a line can stand - the deepest levels share the floor rather than shrinking away.
+            var typography = captureDrawnBox(buildTooltipSayingSomething())
+                .style()
+                .typography();
+
+            assertThat(resolveBodySizeAt(typography, DEEPER_THAN_THE_FLOOR))
+                .isEqualTo(SMALLEST_LEVEL_SIZE);
         }
 
         @Test
@@ -392,6 +459,16 @@ final class SystemCellTooltipTest {
                     styleCaptor.capture()));
         }
         return new DrawnBox(sectionsCaptor.getValue(), styleCaptor.getValue());
+    }
+
+    // The size a line of the box's body draws at when it stands the given number of steps under the box's
+    // own voice - the one lookup a renderer makes per row, read off the look the paint was handed rather
+    // than off any row, since the sizing is the box's decision and not any one line's.
+    private static double resolveBodySizeAt(TooltipStyle typography, int subordinationLevel) {
+        return typography
+            .resolveStyleFor(TooltipLineStyle.PARAGRAPH, subordinationLevel)
+            .face()
+            .size();
     }
 
     // One line of the drawn box, named by the block it sits in and its place inside that block - the two
