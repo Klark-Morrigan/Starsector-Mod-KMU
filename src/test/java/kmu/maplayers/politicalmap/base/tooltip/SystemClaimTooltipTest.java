@@ -484,10 +484,11 @@ final class SystemClaimTooltipTest {
 
         @Test
         void resolveAccountEntriesHangsNothingBeneathAFaction() {
-            // What keeps the glance a glance: this box answers who claims the system on the standing
-            // alone, so every faction it lists reads as its line alone. The colonies behind those
-            // standings are the counterpart's, an F1 away.
+            // What keeps the glance a glance: this box answers who claims the system on the score
+            // alone, so every faction it lists reads as its line alone. The markets behind those
+            // scores are the counterpart's, an F1 away.
             assertThat(tooltip.resolveAccountEntries(
+                    new SystemClaimBreakdown(null, HEGEMONY, List.of()),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true)))
                 .isEmpty();
         }

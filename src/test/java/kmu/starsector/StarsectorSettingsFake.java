@@ -80,8 +80,13 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY, "core territory");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_MARKER, "(core)");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_NONE, "None");
-        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_STANDING, "standing");
-        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_COLONIES, "Colonies");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_STRONGEST, "strongest");
+        stringsByKey.put(
+            KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_OTHER_MARKETS,
+            "Other same-faction markets");
+        stringsByKey.put(
+            KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_OTHER_MARKETS_TOTAL,
+            "(%s markets) - 1 = +%s");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_MILITARY, "Military");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_BONUS, "+%s");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM, "Claim:");

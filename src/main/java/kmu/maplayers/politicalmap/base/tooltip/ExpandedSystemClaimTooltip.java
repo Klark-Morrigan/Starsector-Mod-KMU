@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimScore;
+import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 
@@ -33,7 +35,15 @@ public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip 
     }
 
     @Override
-    protected List<CellTooltipEntry> resolveAccountEntries(FactionClaimScore standing) {
-        return ClaimScoreRowResolver.resolveMarketRows(standing);
+    protected List<CellTooltipEntry> resolveAccountEntries(
+            SystemClaimBreakdown breakdown,
+            FactionClaimScore standing) {
+
+        // A decree settles the system before a single market is weighed, so over one the account is
+        // the arithmetic that would have decided it rather than the arithmetic that did - and the
+        // strongest market goes uncalled-out, since nothing it scored took the system.
+        return ClaimScoreRowResolver.resolveMarketRows(
+            standing,
+            !KmlibStrings.hasText(breakdown.overrideFactionId()));
     }
 }

@@ -86,6 +86,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
             buildFactionEntries(
                 sector,
+                breakdown,
                 selectRivalScores(breakdown, claimantFactionId, FactionClaimScore::isTerritorial)));
 
         CellTooltipSections.appendSection(
@@ -93,6 +94,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL),
             buildFactionEntries(
                 sector,
+                breakdown,
                 selectRivalScores(breakdown, claimantFactionId, score -> !score.isTerritorial())));
 
         return sections;
@@ -123,17 +125,24 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      * which heading, above what, and how each presents are all settled by the time this is called, so
      * what is left to answer is only whether a listed faction breaks down further and into what.
      *
-     * <p>Asked per faction rather than once per paint, since a standing already carries the colonies
-     * behind it - there is no second read of the economy for a box to save by asking earlier.
+     * <p>Asked per faction rather than once per paint, since a standing already carries the markets
+     * behind it - there is no second read of the economy for a box to save by asking earlier. The
+     * whole contest is handed over beside it because an account may turn on how the system was
+     * settled rather than on the faction alone, and reading that a second way here is what would let
+     * the account and the claim line above it disagree.
      *
      * <p>Listing a faction as the line naming it is the ordinary answer and the default, so a box with
      * nothing further to say overrides nothing.
      *
-     * @param standing the faction's ranked place in the hovered system's claim contest
+     * @param breakdown the whole contest the box is being built from, in case the account turns on it
+     * @param standing  the faction's ranked place in that contest
      * @return the entries listed beneath its line, in the order they are read; empty leaves the faction
      *         listed as its line alone
      */
-    protected List<CellTooltipEntry> resolveAccountEntries(FactionClaimScore standing) {
+    protected List<CellTooltipEntry> resolveAccountEntries(
+            SystemClaimBreakdown breakdown,
+            FactionClaimScore standing) {
+
         return List.of();
     }
 
@@ -189,7 +198,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         return CellTooltipEntry
             .createEntry(claimantLine)
             .nesting(standing
-                .map(this::resolveAccountEntries)
+                .map(score -> resolveAccountEntries(breakdown, score))
                 .orElseGet(List::of));
     }
 
@@ -223,6 +232,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     // restating it more finely.
     private List<CellTooltipEntry> buildFactionEntries(
             SectorAPI sector,
+            SystemClaimBreakdown breakdown,
             List<FactionClaimScore> scores) {
 
         var entries = new ArrayList<CellTooltipEntry>(scores.size());
@@ -233,7 +243,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                     sector,
                     score.factionId(),
                     KmlibNumbers.formatGroupedInteger(score.score()))
-                .nesting(resolveAccountEntries(score)));
+                .nesting(resolveAccountEntries(breakdown, score)));
         }
         return entries;
     }

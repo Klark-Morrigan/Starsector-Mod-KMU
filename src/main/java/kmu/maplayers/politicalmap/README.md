@@ -139,7 +139,7 @@ answer one hover two ways a keystroke apart.
 The domination box has a second, fuller version - `ExpandedSystemDominationTooltip`, the counterpart
 it offers the framework's detail mode - which lists every faction holding the system over the
 colonies its score was summed from and each colony over the factors behind its weight, down to a
-garrison's patrol tiers. Both sit on `SystemStandingsTooltip`, which settles everything but that
+colony's patrol tiers. Both sit on `SystemStandingsTooltip`, which settles everything but that
 nesting - one pass read from the active view, the ranking, the status line, the two headings, the
 lines naming the blocs and the member factions inside them - because two boxes over one system have
 to be two amounts of detail about the same contest rather than two contests. What a box adds is one
@@ -158,15 +158,24 @@ line's numbers read - a rating as the player set it, a weight on the grid the re
 in, no cut that took nothing, and a patrol tier's rate stated apart from the total it explains so the
 box draws the arithmetic quieter than the finding).
 The claims box has a counterpart of its own on the same terms - `ExpandedSystemClaimTooltip`, which
-opens every faction the contest names into the colonies it holds the system with and each colony
-into the three terms its claim score is the sum of. Both claim boxes sit on
-`SystemClaimContestTooltip`, which settles the one read behind them, the claimant, the decree
-marker, and the three blocks, and leaves open only what hangs beneath a faction
-(`resolveAccountEntries`, hanging nothing by default). `ClaimScoreRowResolver` decides those lines:
-the colony the standing rests on first and marked as such, then the rest strongest first, each over
-its size and whichever of the sibling and garrison terms actually arose. It shares the entry model
-and the block vocabulary with the domination pair but not their number grammar - a claim score is a
-small whole number of points with no grid behind it, so no rating-to-weight change is stated),
+opens every faction the contest names into the markets it holds the system with and each market
+into the terms its claim score is built from. Both claim boxes sit on `SystemClaimContestTooltip`,
+which settles the one read behind them, the claimant, the decree marker, and the three blocks, and
+leaves open only what hangs beneath a faction (`resolveAccountEntries`, hanging nothing by
+default). `ClaimScoreRowResolver` decides those lines: the faction's strongest market first - called
+out as `strongest`, because the number on the faction's line above is that one market's score and
+not the total of the list, which is what a reader will otherwise take it for - then the rest in
+descending order, each over its own size and its garrison bonus where it earned one. The call-out is
+dropped over a system held by decree, where nothing any market scored settled anything. Closing the
+list is the presence term, which is the faction's rather than any one market's, since the mechanic
+gives every market of a faction the same point per other market it holds there: stated once beneath
+the very markets its count can be checked against, and worked out from that count
+(`(3 markets) - 1 = +2`, the subtraction being the market being scored, which is not its own
+sibling) rather than as a bare result nobody can check. Note that a market's own line carries the
+whole score the contest weighed it at, presence included, so its listed terms are what it adds that
+its siblings' do not. The resolver shares the entry model and the block
+vocabulary with the domination pair but not their number grammar - a claim score is a small whole
+number of points with no grid behind it, so no rating-to-weight change is stated),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 reached through [the sidebar](../base/sidebar/README.md) one level up (the picker is KMLib's, bound

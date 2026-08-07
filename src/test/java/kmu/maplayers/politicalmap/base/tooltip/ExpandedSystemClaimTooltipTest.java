@@ -77,6 +77,11 @@ final class ExpandedSystemClaimTooltipTest {
 
     private static final boolean IS_TERRITORIAL = true;
 
+    // A system the contest itself settled - no decree over it - which is the state an account is
+    // ordinarily resolved under and the one in which the strongest market is called out.
+    private static final SystemClaimBreakdown CONTESTED_SYSTEM =
+        new SystemClaimBreakdown(null, HEGEMONY, List.of());
+
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final ExpandedSystemClaimTooltip tooltip =
         new ExpandedSystemClaimTooltip(claimBreakdownReaderFake);
@@ -128,28 +133,53 @@ final class ExpandedSystemClaimTooltipTest {
     class ResolveAccountEntries {
 
         @Test
-        void resolveAccountEntriesAccountsForAFactionWithTheColoniesItHolds() {
-            // The point of the mode, and the one thing the faction's line cannot state: a standing is
-            // one colony's score, so the colonies it was read from are what its account lists.
+        void resolveAccountEntriesAccountsForAFactionWithTheMarketsItHolds() {
+            // The point of the mode, and the one thing the faction's line cannot state: its number is
+            // one market's score, so the markets it was read from are what its account lists.
             var standing = new FactionClaimScore(
                 HEGEMONY,
                 IS_TERRITORIAL,
                 buildMarket("Chicomoztoc", TOP_SCORE),
                 List.of(buildMarket("Culann", LESSER_SCORE)));
 
-            assertThat(readLabelTexts(tooltip.resolveAccountEntries(standing)))
+            assertThat(readLabelTexts(tooltip.resolveAccountEntries(CONTESTED_SYSTEM, standing)))
                 .containsExactly("Chicomoztoc", "Culann");
         }
 
         @Test
-        void resolveAccountEntriesBreaksEachColonyDownIntoItsTerms() {
-            // A colony's own line is a sum too, so the account goes one level further: the terms that
+        void resolveAccountEntriesBreaksEachMarketDownIntoItsTerms() {
+            // A market's own line is a sum too, so the account goes one level further: the terms that
             // built its score hang beneath it rather than the number being left to be taken on trust.
             var entries = tooltip.resolveAccountEntries(
+                CONTESTED_SYSTEM,
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL));
 
             assertThat(readLabelTexts(entries.get(0).children()))
                 .containsExactly("Size");
+        }
+
+        @Test
+        void resolveAccountEntriesCallsOutTheStrongestMarketOfAContestedSystem() {
+            // The box's half of the rule: it reads how the system was settled off the very contest it
+            // is drawing, so the call-out appears exactly where the contest decided something.
+            var entries = tooltip.resolveAccountEntries(
+                CONTESTED_SYSTEM,
+                buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL));
+
+            assertThat(entries.get(0).line().qualifierText())
+                .isEqualTo("strongest");
+        }
+
+        @Test
+        void resolveAccountEntriesCallsOutNoMarketOfASystemHeldByDecree() {
+            // The other half: a decree took the system before any market was weighed, so no market's
+            // score decided anything and none is called out for it.
+            var entries = tooltip.resolveAccountEntries(
+                new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()),
+                buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL));
+
+            assertThat(entries.get(0).line().qualifierText())
+                .isNull();
         }
     }
 
