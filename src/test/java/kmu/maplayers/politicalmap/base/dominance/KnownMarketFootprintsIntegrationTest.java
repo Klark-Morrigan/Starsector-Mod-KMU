@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
+import com.fs.starfarer.api.campaign.CampaignFleetAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
@@ -50,7 +51,8 @@ import static org.mockito.Mockito.when;
  * skipped, the discovery / un-hidden gate), the hidden-market scaling (its real size
  * under Normal, the fixed weight under Fixed), the colony-size weight scaling each base
  * rating, the three weight factors (colony size, the station presence bonus with its
- * hidden-market rate and opt-out, and the patrol strength read from the economy), the
+ * hidden-market rate and the two shapes that disqualify a tagged entity - the opt-out
+ * and a missing station fleet - and the patrol strength read from the economy), the
  * per-factor low-stability penalties under the master stability toggle, and the
  * zero-factor short-circuits that skip the station scan, the patrol read, and the
  * stability read.
@@ -533,6 +535,25 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
+        void readByFactionIgnoresAStationTaggedEntityRaisingNoStationFleet() {
+            // A market sited on a station is connected to its own primary entity, which is
+            // "station"-tagged for what the place is. Without the fleet an orbital-station
+            // industry raises it defends nothing, so the market is worth its size alone
+            // rather than being fortified by itself.
+            var sector = buildSectorWith(
+                "station-sited-system",
+                buildStationSitedMarket(buildFaction("hegemony"), 5));
+
+            var footprints = KnownMarketFootprints.readByFaction(
+                sector,
+                buildOnlySystem(sector),
+                buildRules().withStationWeighting().build());
+
+            assertThat(footprints.get("hegemony").totalWeight())
+                .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
+        }
+
+        @Test
         void readByFactionSkipsTheStationScanWhenTheStationWeightIsZero() {
             // A zero station weight can add nothing, so the connected-entity station scan
             // is skipped and the stationed market folds in at its size alone.
@@ -941,6 +962,21 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
+        void readBreakdownByFactionCarriesNoStationPartForAStationSitedMarket() {
+            // The box must not label a station-sited market with itself: the tagged entity
+            // it is built on raises no fleet, so the factor never ran and there is no
+            // station line to print.
+            var sector = buildSectorWith(
+                "station-sited-system",
+                withName(buildStationSitedMarket(buildFaction("hegemony"), 4), "Derinkuyu"));
+
+            var breakdown = readOnlyBreakdown(sector, buildRules().withStationWeighting().build());
+
+            assertThat(breakdown.station())
+                .isEmpty();
+        }
+
+        @Test
         void readBreakdownByFactionCarriesNoStationPartWhenStationWeightingIsOff() {
             // The player has the factor switched off, so no station moved this market's
             // number even though it owns one.
@@ -1195,6 +1231,13 @@ class KnownMarketFootprintsIntegrationTest {
         return withConnectedEntities(buildVisibleMarket(faction, size), buildOptedOutStationEntity());
     }
 
+    // A market that is itself a station: its only connected "station"-tagged entity raises
+    // no station fleet, so the place is built on a station rather than defended by one and
+    // earns no bonus.
+    private static MarketAPI buildStationSitedMarket(FactionAPI faction, int size) {
+        return withConnectedEntities(buildVisibleMarket(faction, size), buildFleetlessStationEntity());
+    }
+
     // A visible owned market that fields the given small/medium/large patrol counts,
     // stubbed onto its dynamic stats the way vanilla's military industries write them,
     // with the $patrol flag set so it reads as garrisoned by a functional patrol HQ.
@@ -1305,18 +1348,17 @@ class KnownMarketFootprintsIntegrationTest {
         return modMock;
     }
 
-    // A station entity: carries the "station" tag and no opt-out, so the scan counts it
-    // as the market's orbital station.
+    // A station entity: carries the "station" tag, no opt-out, and the station fleet an
+    // orbital-station industry raises, so the scan counts it as the market's orbital
+    // station.
     private static SectorEntityToken buildStationEntity() {
+        return buildStationTaggedEntity(mock(CampaignFleetAPI.class));
+    }
 
-        var entityMock = mock(SectorEntityToken.class);
-
-        when(entityMock.hasTag(Tags.STATION))
-            .thenReturn(true);
-        when(entityMock.getName())
-            .thenReturn(STATION_NAME);
-
-        return entityMock;
+    // A "station"-tagged entity raising no station fleet: what the place is, not that it
+    // defends anything, so the scan passes over it and no station bonus is earned.
+    private static SectorEntityToken buildFleetlessStationEntity() {
+        return buildStationTaggedEntity(null);
     }
 
     // A "station"-tagged entity flagged NO_ORBITAL_STATION, vanilla's own opt-out, so
@@ -1327,6 +1369,29 @@ class KnownMarketFootprintsIntegrationTest {
 
         when(entityMock.hasTag("NO_ORBITAL_STATION"))
             .thenReturn(true);
+
+        return entityMock;
+    }
+
+    // The shared wiring behind the station shapes: the tag, the name the breakdown labels
+    // the factor with, and whatever the entity's memory answers for the station-fleet key.
+    // Vanilla's fleet read is a memory lookup the scan runs on every tagged entity, so the
+    // memory is always stubbed even where the fleet itself is absent.
+    private static SectorEntityToken buildStationTaggedEntity(CampaignFleetAPI stationFleet) {
+
+        var memoryMock = mock(MemoryAPI.class);
+
+        when(memoryMock.get(MemFlags.STATION_FLEET))
+            .thenReturn(stationFleet);
+
+        var entityMock = mock(SectorEntityToken.class);
+
+        when(entityMock.hasTag(Tags.STATION))
+            .thenReturn(true);
+        when(entityMock.getMemoryWithoutUpdate())
+            .thenReturn(memoryMock);
+        when(entityMock.getName())
+            .thenReturn(STATION_NAME);
 
         return entityMock;
     }
