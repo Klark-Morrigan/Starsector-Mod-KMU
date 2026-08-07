@@ -35,6 +35,7 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.bu
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildUndiscoveredHiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnOneEntity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -186,7 +187,7 @@ class KnownMarketFootprintsIntegrationTest {
             var supersededMarket = buildVisibleMarket(independent, 3);
             var supersedingMarket = buildVisibleMarket(independent, 5);
 
-            placeOnOneEntity(supersededMarket, supersedingMarket);
+            placeMarketsOnOneEntity(supersededMarket, supersedingMarket);
 
             var sector = buildSectorWith("academy-system", supersededMarket, supersedingMarket);
             var footprints = KnownMarketFootprints.readByFaction(
@@ -205,7 +206,7 @@ class KnownMarketFootprintsIntegrationTest {
             var hegemonyMarket = buildVisibleMarket(buildFaction("hegemony"), 3);
             var pirateMarket = buildVisibleMarket(buildFaction("pirates"), 5);
 
-            placeOnOneEntity(hegemonyMarket, pirateMarket);
+            placeMarketsOnOneEntity(hegemonyMarket, pirateMarket);
 
             var sector = buildSectorWith("contested-station-system", hegemonyMarket, pirateMarket);
             var footprints = KnownMarketFootprints.readByFaction(
@@ -759,6 +760,30 @@ class KnownMarketFootprintsIntegrationTest {
         private static final int FORTRESS_WEIGHT = 7 * DOMINANCE_WEIGHT_SCALE / 2;
 
         @Test
+        void readBreakdownByFactionListsOneColonyOnceWhenTwoMarketsShareItsEntity() {
+            // The detail box hangs a line under the faction per breakdown, so a place carrying
+            // two market objects would be read out to the player as two colonies at one
+            // station - the same duplicate the summed weight hides, here with a name on it.
+            var independent = buildFaction("independent");
+            var supersededMarket = withName(buildVisibleMarket(independent, 3), "Galatia Academy");
+            var supersedingMarket = withName(buildVisibleMarket(independent, 5), "Galatia Academy");
+
+            placeMarketsOnOneEntity(supersededMarket, supersedingMarket);
+
+            var sector = buildSectorWith("academy-system", supersededMarket, supersedingMarket);
+            var breakdowns = KnownMarketFootprints.readBreakdownByFaction(
+                sector,
+                buildOnlySystem(sector),
+                buildRules().build(),
+                false);
+
+            assertThat(breakdowns.get("independent"))
+                .singleElement()
+                .extracting(MarketWeightBreakdown::computeTotalWeight)
+                .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
+        }
+
+        @Test
         void readBreakdownByFactionSumsAMarketsPartsIntoTheWeightTheFootprintFolds() {
             // The scalar weight is the sum over the breakdown, so the parts the tooltip
             // explains and the total the map paints by are one arithmetic, not two.
@@ -1132,19 +1157,6 @@ class KnownMarketFootprintsIntegrationTest {
             .thenReturn(name);
 
         return market;
-    }
-
-    // Re-sites the given markets onto one shared entity - the shape a mod makes when it
-    // supersedes a market by adding its own beside vanilla's rather than replacing it, and
-    // the only way two market objects come to stand for the same place.
-    private static void placeOnOneEntity(MarketAPI... markets) {
-
-        var entityMock = mock(SectorEntityToken.class);
-
-        for (var market : markets) {
-            when(market.getPrimaryEntity())
-                .thenReturn(entityMock);
-        }
     }
 
     // A hidden market at the given stability, for pinning that its token rating scales

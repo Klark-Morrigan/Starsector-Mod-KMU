@@ -248,6 +248,23 @@ public final class SectorPoliticsFixtures {
     }
 
     /**
+     * Re-sites the given markets onto one shared primary entity, so they stand for the same
+     * place - the shape a mod makes when it supersedes a market by adding its own beside
+     * vanilla's rather than replacing it, and the only way two market objects come to name
+     * one colony.
+     *
+     * @param markets the markets to place on one entity
+     */
+    public static void placeMarketsOnOneEntity(MarketAPI... markets) {
+
+        var entityMock = mock(SectorEntityToken.class);
+
+        for (var market : markets) {
+            when(market.getPrimaryEntity()).thenReturn(entityMock);
+        }
+    }
+
+    /**
      * Centres a system on a star - both its centre and its one star - so a distance-from-centre
      * read resolves that star as its reference.
      *
