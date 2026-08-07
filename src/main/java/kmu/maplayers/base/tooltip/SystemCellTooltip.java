@@ -184,8 +184,8 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // shared mode, which is the only way the two cannot disagree - a mode read here could say "hide"
     // over a box that never expanded.
     private Optional<TooltipSection> buildFooterSection(SectorAPI sector, StarSystemAPI system) {
-        return resolveExpandedDetailName(sector, system).map(detailName -> new TooltipSection(List.of(
-            buildFooterRow(KmuStrings.format(
+        return resolveExpandedDetailName(sector, system).map(detailName -> TooltipSection.createSection(
+            List.of(buildFooterRow(KmuStrings.format(
                 resolveExpandedVariant().isPresent()
                     ? KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_SHOW
                     : KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_HIDE,
@@ -204,7 +204,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         rows.add(buildHeaderRow(system));
         rows.addAll(titleRows);
 
-        return new TooltipSection(rows);
+        return TooltipSection.createSection(rows);
     }
 
     // The header every cell tooltip opens with: the hovered system's own name, crestless and drawn in

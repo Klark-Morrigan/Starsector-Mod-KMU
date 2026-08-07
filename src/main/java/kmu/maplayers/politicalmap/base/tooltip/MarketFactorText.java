@@ -77,6 +77,22 @@ public final class MarketFactorText {
     }
 
     /**
+     * Words the size a colony actually is, run on into the separator parting it from the rating that
+     * entered its weight instead - the working a hidden colony's size line opens on, so the reader is
+     * shown "how big it is" before "what it counted as" rather than only the second.
+     *
+     * <p>Stated apart from the rating below so the line can draw the two in different shades, the same
+     * split a patrol tier's rate and total are stated in. Asked for only where the two part company: a
+     * colony counting by its own size would open on the number it is about to repeat.
+     *
+     * @param rawMarketSize the colony's own size, as the economy reports it
+     * @return the real size the line opens its value on
+     */
+    public static String formatRawSizeWorking(int rawMarketSize) {
+        return formatRatedWorking(KmlibNumbers.formatGroupedInteger(rawMarketSize));
+    }
+
+    /**
      * Words the station factor: what a station is worth, what this one became, and its two cuts in
      * the order the weight read took them - the hidden-market rate first, then low stability.
      *
@@ -94,18 +110,21 @@ public final class MarketFactorText {
     }
 
     /**
-     * Words the patrol factor as a whole: how many patrols the colony fields, what the garrison
-     * became, and what low stability took off it. The headcount is what the player can count on
-     * the map, so it heads the line rather than the summed tier worth behind it.
+     * Words the patrol factor as a whole: what the garrison came to, and what low stability took off
+     * it.
+     *
+     * <p>No headcount heads it. The three tiers are weighted differently, so a summed count is a
+     * number that explains nothing - two colonies fielding six patrols each can be worth wildly
+     * different amounts - and stating it beside the weight invites the reader to divide one by the
+     * other. What each tier fielded is on the tier's own line, where the rate beside it makes the
+     * count mean something.
      *
      * @param factor the market's fielded-patrol part
      * @return the factor as the line states it
      */
     public static String formatPatrols(PatrolFactor factor) {
         return appendPenalty(
-            formatCounted(
-                KmlibNumbers.formatGroupedInteger(factor.computeTotalCount()),
-                factor.computeContribution()),
+            formatWeight(factor.computeContribution()),
             factor.stabilityPenaltyFraction());
     }
 
@@ -119,7 +138,7 @@ public final class MarketFactorText {
      * @return the rate the tier's line opens its value on
      */
     public static String formatPatrolTierWorking(PatrolTierFactor tier) {
-        return formatWorking(KmlibNumbers.formatCompactDecimal(tier.weight()));
+        return formatCountedWorking(KmlibNumbers.formatCompactDecimal(tier.weight()));
     }
 
     /**
@@ -134,34 +153,36 @@ public final class MarketFactorText {
         return formatWeight(tier.contribution());
     }
 
-    // A rating and the weight it became. The separator says the two are the same quantity stated
-    // twice - before the grid and on it - rather than two quantities to be read against each other.
+    // A rating and the weight it became, as one run. Composed from the half below rather than
+    // stating the separator itself, so a line drawn in one shade and a line that opens on the same
+    // half in grey read one separator: two spellings of it would eventually part company.
     private static String formatWeighed(String ratingText, double contribution) {
-        return KmuStrings.format(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_WEIGHED,
-            ratingText,
-            formatWeight(contribution));
+        return joinToWeight(formatRatedWorking(ratingText), contribution);
     }
 
-    // A count and the weight it earned. Kept off the rating separator above because the two sides
+    // The left half of a rated value: what the colony is or the player set, run on into the
+    // separator saying the number past it is that same quantity on the dominance grid. The one home
+    // of that separator, whether the value is drawn as one run or as the two a line colours apart.
+    private static String formatRatedWorking(String ratingText) {
+        return KmuStrings.format(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_RATED, ratingText);
+    }
+
+    // The left half of a counted value: how many of a thing there are, run on into the separator
+    // parting them from what they earned. Kept off the rating separator above because the two sides
     // are different quantities here - so many patrols, so much weight - and a reader tracing one
     // into the other would otherwise expect the units to match.
-    //
-    // Joined through the working below rather than stating the separator itself, so the whole line
-    // and the split the tier lines draw read the same separator: two spellings of it would let a
-    // line drawn in one shade and a line drawn in two part company over what parts their halves.
-    private static String formatCounted(String countText, double contribution) {
-        return KmuStrings.format(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_COUNTED,
-            formatWorking(countText),
-            formatWeight(contribution));
+    private static String formatCountedWorking(String countText) {
+        return KmuStrings.format(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_COUNTED, countText);
     }
 
-    // The left half of a counted value: what went in, run on into the separator parting it from
-    // what it earned. The one home of that separator, whether the value is drawn as one run or as
-    // the two a line colours apart.
-    private static String formatWorking(String countText) {
-        return KmuStrings.format(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_WORKING, countText);
+    // A working half and the weight it resolves to, set side by side. The one place a value's two
+    // halves are run together, so however a half was worded the whole reads at the same spacing the
+    // lines that colour their halves apart are drawn at.
+    private static String joinToWeight(String workingText, double contribution) {
+        return KmuStrings.format(
+            KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED,
+            workingText,
+            formatWeight(contribution));
     }
 
     // A worth in size points as the weight the rest of the box counts in, so a factor line, its

@@ -42,36 +42,4 @@ class PatrolFactorTest {
                 .isEqualTo(1.5);
         }
     }
-
-    @Nested
-    class ComputeTotalCount {
-
-        @Test
-        void sumsEveryTiersHeadcount() {
-
-            var factor = new PatrolFactor(
-                new PatrolTierFactor(2, 0.25, 0.375),
-                new PatrolTierFactor(1, 0.5, 0.375),
-                new PatrolTierFactor(3, 1.0, 2.25),
-                0.25);
-
-            // The headcount is unweighted, so three heavy patrols count as three rather
-            // than as the six size points they are worth.
-            assertThat(factor.computeTotalCount())
-                .isEqualTo(6);
-        }
-
-        @Test
-        void countsAGarrisonThatFieldsNothingAsNone() {
-
-            var factor = new PatrolFactor(
-                new PatrolTierFactor(0, 0.25, 0.0),
-                new PatrolTierFactor(0, 0.5, 0.0),
-                new PatrolTierFactor(0, 1.0, 0.0),
-                0.5);
-
-            assertThat(factor.computeTotalCount())
-                .isZero();
-        }
-    }
 }

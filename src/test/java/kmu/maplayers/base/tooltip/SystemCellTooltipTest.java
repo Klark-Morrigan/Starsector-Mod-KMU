@@ -207,7 +207,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForDrawsEachStepUnderTheBoxsOwnVoiceSmallerThanTheOneAbove() {
+        void renderForDrawsEachStepUnderTheBoxsOwnVoiceAtTheSizeTheStepResolvesTo() {
             // Where the levels actually land, which is what a reader sees: the step is only worth asking
             // for if neighbouring levels stay comfortably legible while still telling apart at a glance.
             var typography = captureDrawnBox(buildTooltipSayingSomething())
@@ -243,7 +243,7 @@ final class SystemCellTooltipTest {
             // block the layer composed.
             var sections = captureDrawnBox(buildTooltipSayingSomething()).sections();
 
-            assertThat(sections.get(TITLE_SECTION).rows())
+            assertThat(sections.get(TITLE_SECTION).readRowsInOrder())
                 .hasSize(BARE_TITLE_ROW_COUNT);
         }
 
@@ -273,9 +273,9 @@ final class SystemCellTooltipTest {
 
             var titleSection = captureDrawnBox(tooltipFake).sections().get(TITLE_SECTION);
 
-            assertThat(titleSection.rows())
+            assertThat(titleSection.readRowsInOrder())
                 .hasSize(HEADED_TITLE_ROW_COUNT);
-            assertThat(titleSection.rows().get(TITLE_ROW))
+            assertThat(titleSection.readRowsInOrder().get(TITLE_ROW))
                 .isEqualTo(titleRow);
         }
 
@@ -302,9 +302,9 @@ final class SystemCellTooltipTest {
 
             assertThat(sections)
                 .hasSize(1);
-            assertThat(sections.get(TITLE_SECTION).rows())
+            assertThat(sections.get(TITLE_SECTION).readRowsInOrder())
                 .hasSize(HEADED_TITLE_ROW_COUNT);
-            assertThat(sections.get(TITLE_SECTION).rows().get(TITLE_ROW))
+            assertThat(sections.get(TITLE_SECTION).readRowsInOrder().get(TITLE_ROW))
                 .isEqualTo(titleRow);
         }
 
@@ -349,7 +349,7 @@ final class SystemCellTooltipTest {
 
             var sections = captureDrawnBox(tooltipFake).sections();
 
-            assertThat(sections.get(FOOTER_SECTION).rows())
+            assertThat(sections.get(FOOTER_SECTION).readRowsInOrder())
                 .hasSize(LONE_FOOTER_ROW_COUNT);
             assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).lineStyle())
                 .isEqualTo(TooltipLineStyle.FOOTNOTE);
@@ -480,7 +480,7 @@ final class SystemCellTooltipTest {
 
         return sections
             .get(sectionIndex)
-            .rows()
+            .readRowsInOrder()
             .get(rowIndex);
     }
 
@@ -494,7 +494,7 @@ final class SystemCellTooltipTest {
     // A one-line block, which is all most cases here need: what a layer groups is its own business, and
     // these cases are about what the shared shape does with the blocks rather than what fills them.
     private static TooltipSection buildSection(String text) {
-        return new TooltipSection(List.of(buildRow(text)));
+        return TooltipSection.createSection(List.of(buildRow(text)));
     }
 
     // A line stated with its own colour, so the test's rows carry no dependency on which shade a row

@@ -204,7 +204,7 @@ final class ExpandedSystemDominationTooltipTest {
 
             assertThat(sections)
                 .hasSize(1);
-            assertThat(sections.get(0).rows())
+            assertThat(sections.get(0).readRowsInOrder())
                 .containsExactly(statusRow);
         }
     }

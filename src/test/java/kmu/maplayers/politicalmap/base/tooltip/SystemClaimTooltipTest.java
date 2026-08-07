@@ -198,9 +198,9 @@ final class SystemClaimTooltipTest {
 
             assertThat(sections)
                 .hasSize(2);
-            assertThat(sections.get(CLAIM_SECTION).rows())
+            assertThat(sections.get(CLAIM_SECTION).readRowsInOrder())
                 .hasSize(HEADED_ONE_ENTRY_ROW_COUNT);
-            assertThat(sections.get(SECOND_SECTION).rows())
+            assertThat(sections.get(SECOND_SECTION).readRowsInOrder())
                 .hasSize(HEADED_ONE_ENTRY_ROW_COUNT);
         }
 
@@ -427,10 +427,10 @@ final class SystemClaimTooltipTest {
             var statusSection = 0;
             var claimSectionUnderTheStatus = 1;
 
-            assertThat(sections.get(statusSection).rows())
+            assertThat(sections.get(statusSection).readRowsInOrder())
                 .containsExactly(statusRow);
             assertThat(readLabelTextRun(
-                    sections.get(claimSectionUnderTheStatus).rows().get(0),
+                    sections.get(claimSectionUnderTheStatus).readRowsInOrder().get(0),
                     LABEL_RUN)
                     .text())
                 .isEqualTo("Claim:");

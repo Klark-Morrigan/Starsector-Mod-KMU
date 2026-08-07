@@ -178,7 +178,7 @@ final class PoliticalMapStatusRevealIntegrationTest {
         if (sections.isEmpty()) {
             return null;
         }
-        var firstRow = sections.get(STATUS_SECTION).rows().get(0);
+        var firstRow = sections.get(STATUS_SECTION).readRowsInOrder().get(0);
 
         return firstRow instanceof TooltipRow.CentredRow
             ? readLabelTextRun(firstRow, STATUS_RUN).text()

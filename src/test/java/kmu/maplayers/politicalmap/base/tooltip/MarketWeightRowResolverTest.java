@@ -168,6 +168,40 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
+        void resolveMarketRowsOpensAFixedRatingOnTheColonysRealSize() {
+            // The token says what the colony counted as and nothing about how big it is, which is the
+            // one case a player is most likely to read as the map miscounting a large secret base.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(new MarketWeightBreakdown(
+                    "Selkie Station",
+                    true,
+                    FULL_STABILITY,
+                    new BaseSizeFactor(7, 2.5, 2.5, 0.0),
+                    Optional.empty(),
+                    Optional.empty())),
+                new DominanceRules(
+                    true,
+                    buildBaseSizeWeighting(HiddenMarketScalingChoice.FIXED),
+                    buildStationWeighting(),
+                    buildPatrolWeighting()));
+
+            assertThat(readSizeLine(rows).valueWorkingText())
+                .isEqualTo("7 ::");
+        }
+
+        @Test
+        void resolveMarketRowsStatesNoRealSizeWhereTheColonyCountedByItsOwn() {
+            // An openly held colony's rating is its size, so opening the line on it would state the
+            // same number twice and imply a change that never happened.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
+                buildRules());
+
+            assertThat(readSizeLine(rows).valueWorkingText())
+                .isNull();
+        }
+
+        @Test
         void resolveMarketRowsNamesTheStationThatEarnedTheBonus() {
             // The station's own name is what ties the number to something the player can find on the
             // map, which a line reading "Station" would not.
@@ -213,15 +247,20 @@ final class MarketWeightRowResolverTest {
 
         @Test
         void resolveMarketRowsStatesTheGarrisonsOwnValueWhole() {
-            // Only the tiers split. The garrison's line opens on a headcount the player checks against
-            // the map, which is a finding rather than arithmetic - drawn quieter it would read as the
-            // working behind the number instead of as the number itself.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildGarrisonedBreakdown(2, 0, 0)),
-                buildRules());
+            // Only the tiers split. The garrison's line is the weight alone - there is no working
+            // behind it worth drawing quieter, since a headcount summed over tiers that count for
+            // different amounts explains nothing about the number beside it.
+            var garrisonLine = MarketWeightRowResolver
+                .resolveMarketRows(List.of(buildGarrisonedBreakdown(2, 0, 0)), buildRules())
+                .get(0)
+                .children()
+                .get(2)
+                .line();
 
-            assertThat(rows.get(0).children().get(2).line().valueWorkingText())
+            assertThat(garrisonLine.valueWorkingText())
                 .isNull();
+            assertThat(garrisonLine.valueText())
+                .isEqualTo("500");
         }
 
         @Test

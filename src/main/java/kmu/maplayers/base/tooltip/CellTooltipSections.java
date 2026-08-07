@@ -55,10 +55,12 @@ public final class CellTooltipSections {
         if (entries.isEmpty()) {
             return;
         }
-        var rows = new ArrayList<TooltipRow>();
-        rows.add(CellTooltipRows.buildSectionHeadingRow(headingText));
-        appendEntryRows(rows, entries, CellTooltipEntryLevel.LISTED_LEVEL, hasAnyMark(entries));
-        sections.add(new TooltipSection(rows));
+        sections.add(TooltipSection
+            .createSection(List.of(CellTooltipRows.buildSectionHeadingRow(headingText)))
+            .nesting(resolveEntrySections(
+                entries,
+                CellTooltipEntryLevel.LISTED_LEVEL,
+                hasAnyMark(entries))));
     }
 
     /**
@@ -84,28 +86,39 @@ public final class CellTooltipSections {
             List<TooltipSection> sections,
             Optional<? extends TooltipRow> bannerRow) {
 
-        bannerRow.ifPresent(row -> sections.add(new TooltipSection(List.of(row))));
+        bannerRow.ifPresent(row -> sections.add(TooltipSection.createSection(List.of(row))));
     }
 
-    // Lays a listing out in reading order: each entry's own line, then everything it is made up of
-    // directly beneath it, before the next entry at this level. Depth-first is what puts a breakdown
-    // where a reader looks for it - under the thing it breaks down - and the level carried along is the
-    // only thing the vocabulary needs to lay each line where it belongs, so any shape of listing draws
+    // Lays a listing out in reading order: each entry as a nested block of its own line over everything
+    // it is made up of, before the next entry at this level. Depth-first is what puts a breakdown where
+    // a reader looks for it - under the thing it breaks down - and the level carried along is the only
+    // thing the vocabulary needs to lay each line where it belongs, so any shape of listing draws
     // through this one walk.
-    private static void appendEntryRows(
-            List<TooltipRow> rows,
+    //
+    // Nested rather than flattened because the grouping is what the box spaces by: an entry that broke
+    // down into an account of its own is one thing, and the next entry at its tier stands clear of the
+    // whole of it rather than of its last line. The walk states only what is part of what; how far that
+    // sets two of them apart - and that a nested parting never piles onto the one above it - is the
+    // widget's.
+    private static List<TooltipSection> resolveEntrySections(
             List<CellTooltipEntry> entries,
             CellTooltipEntryLevel level,
             boolean isReservingCrestColumn) {
 
+        var entrySections = new ArrayList<TooltipSection>();
         for (var entry : entries) {
-            rows.add(CellTooltipRows.buildListedRow(entry.line(), level, isReservingCrestColumn));
-            appendEntryRows(
-                rows,
-                entry.children(),
-                resolveChildLevel(entry, level),
-                isReservingCrestColumn);
+
+            entrySections.add(TooltipSection
+                .createSection(List.of(CellTooltipRows.buildListedRow(
+                    entry.line(),
+                    level,
+                    isReservingCrestColumn)))
+                .nesting(resolveEntrySections(
+                    entry.children(),
+                    resolveChildLevel(entry, level),
+                    isReservingCrestColumn)));
         }
+        return entrySections;
     }
 
     // Where the things one entry carries stand. Both relations set them in a step, so the listing reads

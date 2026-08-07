@@ -127,14 +127,23 @@ public final class MarketWeightRowResolver {
     // The base-size factor's line. A hidden colony calls that out on the line itself rather than on
     // one of its own, since being hidden is not a further factor but the reason two of them rate
     // this colony the way they do.
+    //
+    // Where the fixed token replaced the colony's own size, the line opens on that real size in the
+    // quiet shade. Without it the value states a size the colony does not have and nothing to read
+    // it against, which is the one case a player is most likely to take for a bug in the map.
     private static CellTooltipEntry resolveBaseSizeEntry(
             MarketWeightBreakdown breakdown,
             DominanceRules rules) {
 
+        var isFixedRating = isFixedRating(breakdown, rules);
         var line = createFactorLine(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE),
-            MarketFactorText.formatBaseSize(breakdown.baseSize(), isFixedRating(breakdown, rules)));
+            MarketFactorText.formatBaseSize(breakdown.baseSize(), isFixedRating));
 
+        if (isFixedRating) {
+            line = line.derivesValueFrom(
+                MarketFactorText.formatRawSizeWorking(breakdown.baseSize().rawMarketSize()));
+        }
         if (breakdown.isHiddenMarket()) {
             line = line.qualifiedWith(
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_HIDDEN));

@@ -249,9 +249,9 @@ final class SystemStandingsTooltipTest {
 
             assertThat(sections)
                 .hasSize(2);
-            assertThat(readLabelTexts(sections.get(dominatedSection).rows()))
+            assertThat(readLabelTexts(sections.get(dominatedSection).readRowsInOrder()))
                 .containsExactly("Dominated by:", "Rebel Pact");
-            assertThat(readLabelTexts(sections.get(contestedSection).rows()))
+            assertThat(readLabelTexts(sections.get(contestedSection).readRowsInOrder()))
                 .containsExactly("Contested by:", "Persean League");
         }
 
@@ -299,7 +299,7 @@ final class SystemStandingsTooltipTest {
 
             assertThat(sections)
                 .hasSize(1);
-            assertThat(sections.get(0).rows())
+            assertThat(sections.get(0).readRowsInOrder())
                 .containsExactly(statusRow);
         }
 

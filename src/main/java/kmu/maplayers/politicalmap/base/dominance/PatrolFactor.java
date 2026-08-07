@@ -9,8 +9,10 @@ package kmu.maplayers.politicalmap.base.dominance;
  * factor on and a functional patrol HQ garrisons the colony - so its presence is itself the
  * answer to "did a garrison move this number".
  *
- * <p>The totals are summed from the tiers rather than stored beside them, so a reader adding
- * the tier lines up always lands on the total the same value reports.
+ * <p>The total is summed from the tiers rather than stored beside them, so a reader adding
+ * the tier lines up always lands on the total the same value reports. Only the weighted
+ * total is offered: a headcount across tiers that count for different amounts is a number
+ * nothing can be concluded from, so what each tier fielded is read off the tier itself.
  *
  * @param small                    the light-patrol tier
  * @param medium                   the medium-patrol tier
@@ -32,15 +34,5 @@ public record PatrolFactor(
      */
     public double computeContribution() {
         return small.contribution() + medium.contribution() + large.contribution();
-    }
-
-    /**
-     * How many patrols the colony fields across all three tiers, unweighted - the plain
-     * headcount behind the weighted worth.
-     *
-     * @return the summed tier counts
-     */
-    public int computeTotalCount() {
-        return small.count() + medium.count() + large.count();
     }
 }

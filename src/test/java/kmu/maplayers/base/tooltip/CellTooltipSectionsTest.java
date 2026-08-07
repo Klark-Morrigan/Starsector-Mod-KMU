@@ -92,7 +92,7 @@ final class CellTooltipSectionsTest {
 
             assertThat(sections)
                 .hasSize(1);
-            assertThat(sections.get(0).rows())
+            assertThat(sections.get(0).readRowsInOrder())
                 .hasSize(3);
         }
 
@@ -427,6 +427,55 @@ final class CellTooltipSectionsTest {
                 .isEqualTo(new RowSlot.Text(TextSpan.createBlank(HIGHLIGHT)));
         }
 
+        @Test
+        void appendSectionNestsEachEntryAsABlockUnderTheHeading() {
+            // What the box spaces by. Laid as one flat run, an entry that broke down into an account of
+            // its own could not be set apart from the next entry at its tier - the widget would have no
+            // way to tell the last line of one from the first line of another.
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Contested by:",
+                List.of(createEntry("The Hegemony"), createEntry("Tri-Tachyon")));
+
+            assertThat(sections.get(0).openingRows())
+                .hasSize(1);
+            assertThat(sections.get(0).members())
+                .hasSize(2);
+        }
+
+        @Test
+        void appendSectionNestsWhatAnEntryBreaksDownIntoBeneathThatEntry() {
+            // The nesting goes as deep as the listing does, so a colony's terms are part of the colony
+            // and not of the faction above it - which is what stops a parting landing inside a
+            // breakdown.
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Dominated by:",
+                List.of(CellTooltipEntry
+                    .createEntry(CellTooltipEntryLine.createLine(
+                        null,
+                        "The Hegemony",
+                        CellTooltipRows.NO_SCORE))
+                    .nesting(List.of(CellTooltipEntry
+                        .createEntry(CellTooltipEntryLine.createLine(
+                            null,
+                            "Jangala",
+                            CellTooltipRows.NO_SCORE))
+                        .nesting(List.of(createEntry("Size")))))));
+
+            var factionSection = sections.get(0).members().get(0);
+            var marketSection = factionSection.members().get(0);
+
+            assertThat(factionSection.countLines())
+                .isEqualTo(3);
+            assertThat(marketSection.countLines())
+                .isEqualTo(2);
+        }
+
     }
 
     @Nested
@@ -443,7 +492,7 @@ final class CellTooltipSectionsTest {
 
             assertThat(sections)
                 .hasSize(1);
-            assertThat(sections.get(0).rows())
+            assertThat(sections.get(0).readRowsInOrder())
                 .containsExactly(bannerRow);
         }
 

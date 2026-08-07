@@ -82,6 +82,26 @@ final class MarketFactorTextTest {
     }
 
     @Nested
+    class FormatRawSizeWorking {
+
+        @Test
+        void formatRawSizeWorkingStatesTheSizeTheColonyActuallyIs() {
+            // The half a hidden colony's size line opens on, ending on the separator that parts it
+            // from what the colony counted as instead.
+            assertThat(MarketFactorText.formatRawSizeWorking(6))
+                .isEqualTo("6 ::");
+        }
+
+        @Test
+        void formatRawSizeWorkingOpensOnTheSameSeparatorARatedValueIsJoinedBy() {
+            // One separator for both, so a value drawn in one shade and a value whose halves are
+            // coloured apart cannot part company over what parts them.
+            assertThat(MarketFactorText.formatBaseSize(new BaseSizeFactor(6, 1.0, 1.0, 0.0), true))
+                .startsWith("1 (fixed) ::");
+        }
+    }
+
+    @Nested
     class FormatStation {
 
         @Test
@@ -107,15 +127,26 @@ final class MarketFactorTextTest {
     class FormatPatrols {
 
         @Test
-        void formatPatrolsHeadsTheLineWithTheHeadcount() {
-            // The count is what a player can check against the map, so it is what the garrison's line
-            // leads on rather than the summed tier worth behind it.
+        void formatPatrolsStatesWhatTheGarrisonCameToAndTheCutItTook() {
             assertThat(MarketFactorText.formatPatrols(new PatrolFactor(
                     new PatrolTierFactor(2, 0.25, 0.45),
                     new PatrolTierFactor(1, 0.5, 0.45),
                     new PatrolTierFactor(0, 1.0, 0.0),
                     0.1)))
-                .isEqualTo("3 / 900 (-10%)");
+                .isEqualTo("900 (-10%)");
+        }
+
+        @Test
+        void formatPatrolsStatesNoHeadcountAcrossTheTiers() {
+            // The tiers count for different amounts, so a summed headcount beside the weight is a
+            // number nothing follows from - and one a reader would try to divide the weight by. Three
+            // patrols here, and no "3" anywhere on the line.
+            assertThat(MarketFactorText.formatPatrols(new PatrolFactor(
+                    new PatrolTierFactor(2, 0.25, 0.5),
+                    new PatrolTierFactor(1, 0.5, 0.5),
+                    new PatrolTierFactor(0, 1.0, 0.0),
+                    0.0)))
+                .isEqualTo("1,000");
         }
     }
 
@@ -130,17 +161,6 @@ final class MarketFactorTextTest {
                 .isEqualTo("0.25 /");
         }
 
-        @Test
-        void formatPatrolTierWorkingOpensTheSameValueTheGarrisonsOwnLineOpensOn() {
-            // One separator for both, so a line drawn in one shade and a line drawn in two cannot
-            // part company over what parts their halves.
-            assertThat(MarketFactorText.formatPatrols(new PatrolFactor(
-                    new PatrolTierFactor(2, 0.25, 0.5),
-                    new PatrolTierFactor(0, 0.5, 0.0),
-                    new PatrolTierFactor(0, 1.0, 0.0),
-                    0.0)))
-                .startsWith("2 /");
-        }
     }
 
     @Nested
