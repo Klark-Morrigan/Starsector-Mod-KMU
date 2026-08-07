@@ -161,8 +161,11 @@ final class PoliticalMapCellTooltipTest {
     private static Stream<Arguments> provideEveryPoliticalMapBox() {
         return Stream.of(
             describeBox("the faction and alliance views' box", SystemDominationTooltip::new),
-            describeBox("that box's expanded counterpart", ExpandedSystemDominationTooltip::new),
-            describeBox("the claims view's box", SystemClaimTooltip::new));
+            describeBox(
+                "the faction and alliance views' expanded counterpart",
+                ExpandedSystemDominationTooltip::new),
+            describeBox("the claims view's box", SystemClaimTooltip::new),
+            describeBox("the claims view's expanded counterpart", ExpandedSystemClaimTooltip::new));
     }
 
     // Names one box for the cases above. A method rather than an inline pair so the factory infers its

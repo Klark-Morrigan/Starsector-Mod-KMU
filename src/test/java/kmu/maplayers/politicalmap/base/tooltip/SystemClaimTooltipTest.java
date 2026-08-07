@@ -51,7 +51,8 @@ import static org.mockito.Mockito.when;
  *
  * <p>The breakdown itself is stood in for through the reader seam - it has its own suite in KMLib -
  * so what is left is the part this class alone decides: which lines are emitted, under which heading,
- * in what order, and grouped into which blocks.
+ * in what order, and grouped into which blocks. What the counterpart box goes on to hang beneath those
+ * lines is {@link ExpandedSystemClaimTooltipTest}'s.
  */
 final class SystemClaimTooltipTest {
 
@@ -475,6 +476,44 @@ final class SystemClaimTooltipTest {
 
             assertThat(readLabelTextRun(claimRow, LABEL_RUN).text())
                 .isEqualTo("ghost_faction");
+        }
+    }
+
+    @Nested
+    class ResolveAccountEntries {
+
+        @Test
+        void resolveAccountEntriesHangsNothingBeneathAFaction() {
+            // What keeps the glance a glance: this box answers who claims the system on the standing
+            // alone, so every faction it lists reads as its line alone. The colonies behind those
+            // standings are the counterpart's, an F1 away.
+            assertThat(tooltip.resolveAccountEntries(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true)))
+                .isEmpty();
+        }
+    }
+
+    @Nested
+    class ResolveExpandedVariant {
+
+        @Test
+        void resolveExpandedVariantOffersTheColoniesBehindTheStandings() {
+            // The ordinary box answers who claims the system; the detail mode has a fuller answer to
+            // offer, so this box opts into it by naming a counterpart rather than by branching on a
+            // mode of its own.
+            assertThat(tooltip.resolveExpandedVariant())
+                .containsInstanceOf(ExpandedSystemClaimTooltip.class);
+        }
+
+        @Test
+        void resolveExpandedVariantAnswersAContestThroughThisBoxsOwnReader() {
+            // A contest read one way on the glance and another on the detail would answer one hover two
+            // ways, an F1 apart, so the counterpart is built on this box's reader rather than reaching
+            // for the layer's shared one.
+            var expandedVariant = (PoliticalMapCellTooltip) tooltip.resolveExpandedVariant().get();
+
+            assertThat(expandedVariant.claimBreakdownReader)
+                .isSameAs(claimBreakdownReaderFake);
         }
     }
 
