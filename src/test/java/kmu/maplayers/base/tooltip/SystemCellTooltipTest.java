@@ -69,7 +69,7 @@ final class SystemCellTooltipTest {
     // How much smaller each step under the box's own voice draws than the step above it, restated rather
     // than read off the class under test: how far the levels are set apart is the decision, and an
     // expectation taking it from the value the box handed over would hold whatever step it asked for.
-    private static final float LEVEL_SHRINK = 4f;
+    private static final float LEVEL_SHRINK = 3f;
 
     // How far under the box's own voice a line stands - a holder speaking in that voice, what it holds,
     // a term of that, and a tier of that, which is as deep as the boxes go.
@@ -79,11 +79,11 @@ final class SystemCellTooltipTest {
     private static final int THREE_STEPS_UNDER = 3;
 
     // The sizes those steps land on, as literals rather than as the body size less the step, so the
-    // arithmetic is asserted here rather than restated. Two steps down already meets the widget's own
-    // floor, so the third shares it - which is the reading the current step resolves to, not a rounding
+    // arithmetic is asserted here rather than restated. Three steps down undercuts the widget's own
+    // floor and takes it instead - which is the reading the current step resolves to, not a rounding
     // slip in the case.
-    private static final double ONE_STEP_UNDER_SIZE = 11d;
-    private static final double TWO_STEPS_UNDER_SIZE = 7d;
+    private static final double ONE_STEP_UNDER_SIZE = 12d;
+    private static final double TWO_STEPS_UNDER_SIZE = 9d;
     private static final double THREE_STEPS_UNDER_SIZE = 7d;
 
     // A stack deeper than the step can carry, and the size the widget stops it at: further down, no atlas
