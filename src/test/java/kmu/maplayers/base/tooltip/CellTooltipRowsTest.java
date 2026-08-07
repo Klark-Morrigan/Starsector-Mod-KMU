@@ -17,7 +17,10 @@ import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NESTED_MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_SUBORDINATION;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.ONE_LEVEL_SUBORDINATED;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TWO_LEVELS_SUBORDINATED;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,11 +39,17 @@ final class CellTooltipRowsTest {
 
     private static final String CREST = "graphics/ion_storm_icon.png";
 
-    // How deep a line was found: one of the block's own, one of the things that line is made up of, and
-    // one level deeper again - which is the shape a breakdown three levels down takes.
-    private static final int LISTED_DEPTH = 0;
-    private static final int MEMBER_DEPTH = 1;
-    private static final int NESTED_MEMBER_DEPTH = 2;
+    // Where a line was found: one of the block's own, one of the things that line breaks down into, and
+    // one level deeper again - which is the shape a breakdown three levels down takes. Built by walking
+    // down from the block's own level, as the walk that lays a listing out does, so a case here is
+    // about a level a body can actually reach.
+    private static final CellTooltipEntryLevel LISTED_LEVEL = CellTooltipEntryLevel.LISTED_LEVEL;
+    private static final CellTooltipEntryLevel MEMBER_LEVEL = LISTED_LEVEL.subordinatedUnder();
+    private static final CellTooltipEntryLevel NESTED_MEMBER_LEVEL = MEMBER_LEVEL.subordinatedUnder();
+
+    // Where a line gathered under another as its peer sits: one step in, at the level of the line it
+    // sits under. The one case that tells the indent and the demotion apart.
+    private static final CellTooltipEntryLevel PEER_LEVEL = LISTED_LEVEL.groupedUnder();
 
     // What the block around a line answered about its crest gutter: reserved where something it lists
     // leads with a mark, dropped where nothing does.
@@ -103,7 +112,7 @@ final class CellTooltipRowsTest {
 
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(CREST, "Ion Storm", "42"),
-                LISTED_DEPTH,
+                LISTED_LEVEL,
                 RESERVING_CREST_COLUMN);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).text())
@@ -126,7 +135,7 @@ final class CellTooltipRowsTest {
             // two does not read as two staggered columns.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(null, "Independent", CellTooltipRows.NO_SCORE),
-                LISTED_DEPTH,
+                LISTED_LEVEL,
                 RESERVING_CREST_COLUMN);
 
             assertThat(row.labelledRow().leadingRowSlot())
@@ -142,7 +151,7 @@ final class CellTooltipRowsTest {
             // under their own heading rather than as an empty column.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(null, "None", CellTooltipRows.NO_SCORE),
-                LISTED_DEPTH,
+                LISTED_LEVEL,
                 NOT_RESERVING_CREST_COLUMN);
 
             assertThat(row.labelPlacement())
@@ -155,7 +164,7 @@ final class CellTooltipRowsTest {
             // line steps in from the same column its parent opened at rather than from a gutter away.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(null, "Size", "8"),
-                MEMBER_DEPTH,
+                MEMBER_LEVEL,
                 NOT_RESERVING_CREST_COLUMN);
 
             assertThat(row.labelPlacement())
@@ -173,7 +182,7 @@ final class CellTooltipRowsTest {
                 CellTooltipEntryLine
                     .createLine(CREST, "Ion Storm", CellTooltipRows.NO_SCORE)
                     .qualifiedWith("worsening"),
-                LISTED_DEPTH,
+                LISTED_LEVEL,
                 RESERVING_CREST_COLUMN);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
@@ -190,7 +199,7 @@ final class CellTooltipRowsTest {
             // plain line measures as the words it actually says.
             var row = CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(CREST, "Ion Storm", "42"),
-                LISTED_DEPTH,
+                LISTED_LEVEL,
                 RESERVING_CREST_COLUMN);
 
             assertThat(row.labelRuns())
@@ -202,7 +211,7 @@ final class CellTooltipRowsTest {
 
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(CREST, "Ion Storm", "17"),
-                MEMBER_DEPTH,
+                MEMBER_LEVEL,
                 RESERVING_CREST_COLUMN);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
@@ -220,7 +229,7 @@ final class CellTooltipRowsTest {
             // indent with the level above it.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(null, "Light patrol", "3"),
-                NESTED_MEMBER_DEPTH,
+                NESTED_MEMBER_LEVEL,
                 RESERVING_CREST_COLUMN);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
@@ -235,7 +244,7 @@ final class CellTooltipRowsTest {
             // value column collapses for it rather than the line claiming a width it cannot use.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(null, "Decivilised", CellTooltipRows.NO_SCORE),
-                MEMBER_DEPTH,
+                MEMBER_LEVEL,
                 RESERVING_CREST_COLUMN);
 
             assertThat(row.labelledRow().trailingRowSlot())
@@ -251,7 +260,7 @@ final class CellTooltipRowsTest {
                 CellTooltipEntryLine
                     .createLine(CREST, "Ion Storm", CellTooltipRows.NO_SCORE)
                     .qualifiedWith("worsening"),
-                MEMBER_DEPTH,
+                MEMBER_LEVEL,
                 RESERVING_CREST_COLUMN);
 
             assertThat(readLabelTextRun(row, LABEL_RUN).colour())
@@ -260,6 +269,53 @@ final class CellTooltipRowsTest {
                 .isEqualTo(new TextSpan("worsening", HIGHLIGHT));
             assertThat(row.indent())
                 .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
+        }
+
+        @Test
+        void buildListedRowSpeaksInTheBoxsOwnVoiceForOneOfTheBlocksOwnLines() {
+
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200"),
+                LISTED_LEVEL,
+                RESERVING_CREST_COLUMN);
+
+            assertThat(row.subordinationLevel())
+                .isEqualTo(NO_SUBORDINATION);
+        }
+
+        @Test
+        void buildListedRowSetsAPeerInWithoutQuietingIt() {
+            // The distinction the level exists for, read off the drawn line: a faction inside the alliance
+            // naming it is inset beneath it while still saying who holds the system, so it is stepped
+            // in without being demoted.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(CREST, "The Hegemony", "900"),
+                PEER_LEVEL,
+                RESERVING_CREST_COLUMN);
+
+            assertThat(row.indent())
+                .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
+            assertThat(row.subordinationLevel())
+                .isEqualTo(NO_SUBORDINATION);
+        }
+
+        @Test
+        void buildListedRowQuietensEachLevelOfAnAccount() {
+            // The other half: what a line breaks down into is the box explaining itself, and a factor's
+            // own tiers explain that, so each step of the account reads one step quieter.
+            var factor = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(null, "Patrols", "120"),
+                MEMBER_LEVEL,
+                RESERVING_CREST_COLUMN);
+            var tier = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(null, "Light patrol", "3"),
+                NESTED_MEMBER_LEVEL,
+                RESERVING_CREST_COLUMN);
+
+            assertThat(factor.subordinationLevel())
+                .isEqualTo(ONE_LEVEL_SUBORDINATED);
+            assertThat(tier.subordinationLevel())
+                .isEqualTo(TWO_LEVELS_SUBORDINATED);
         }
     }
 

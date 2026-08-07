@@ -21,6 +21,8 @@ import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NESTED_MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_SUBORDINATION;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.ONE_LEVEL_SUBORDINATED;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
@@ -254,6 +256,88 @@ final class CellTooltipSectionsTest {
                 .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
             assertThat(((TooltipRow.TableRow) readRow(sections, grandchildRow)).indent())
                 .isCloseTo(NESTED_MEMBER_INDENT, within(TOLERANCE));
+        }
+
+        @Test
+        void appendSectionSetsAGatheredPeerInWithoutQuietingIt() {
+            // An alliance and the factions inside it are one answer at two granularities, so the members
+            // read inset beneath it while still speaking as loudly - nothing has been broken down yet.
+            var sections = new ArrayList<TooltipSection>();
+            var memberRow = 2;
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Dominated by:",
+                List.of(createEntry("Rebel Pact")
+                    .grouping(List.of(createEntry("The Hegemony")))));
+
+            var member = (TooltipRow.TableRow) readRow(sections, memberRow);
+
+            assertThat(member.indent())
+                .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
+            assertThat(member.subordinationLevel())
+                .isEqualTo(NO_SUBORDINATION);
+        }
+
+        @Test
+        void appendSectionQuietensWhatAnEntryBreaksDownInto() {
+            // The other relation, through the same walk: a market beneath the faction holding it is the
+            // box accounting for that faction's line rather than restating it.
+            var sections = new ArrayList<TooltipSection>();
+            var marketRow = 2;
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Dominated by:",
+                List.of(createEntry("The Hegemony")
+                    .nesting(List.of(createEntry("Chicomoztoc")))));
+
+            assertThat(((TooltipRow.TableRow) readRow(sections, marketRow)).subordinationLevel())
+                .isEqualTo(ONE_LEVEL_SUBORDINATED);
+        }
+
+        @Test
+        void appendSectionPutsAGatheredLinesAccountWhereAnUngatheredOnesLands() {
+            // The consistency the whole split exists for: a market under a faction inside an alliance
+            // and a market under a lone faction are the same kind of statement, so they read at the
+            // same volume however many levels of grouping stand above them.
+            var sections = new ArrayList<TooltipSection>();
+            var alliedMarketRow = 3;
+            var loneMarketRow = 5;
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Dominated by:",
+                List.of(
+                    createEntry("Rebel Pact")
+                        .grouping(List.of(createEntry("The Hegemony")
+                            .nesting(List.of(createEntry("Chicomoztoc"))))),
+                    createEntry("Tri-Tachyon")
+                        .nesting(List.of(createEntry("Culann")))));
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly(
+                    "Dominated by:",
+                    "Rebel Pact",
+                    "The Hegemony",
+                    "Chicomoztoc",
+                    "Tri-Tachyon",
+                    "Culann");
+
+            var alliedMarket = (TooltipRow.TableRow) readRow(sections, alliedMarketRow);
+            var loneMarket = (TooltipRow.TableRow) readRow(sections, loneMarketRow);
+
+            assertThat(alliedMarket.subordinationLevel())
+                .isEqualTo(ONE_LEVEL_SUBORDINATED);
+            assertThat(loneMarket.subordinationLevel())
+                .isEqualTo(ONE_LEVEL_SUBORDINATED);
+
+            // The indent still follows where each landed, which is what makes the two numbers worth
+            // carrying apart: the allied market sits a level further in for the alliance above it.
+            assertThat(alliedMarket.indent())
+                .isCloseTo(NESTED_MEMBER_INDENT, within(TOLERANCE));
+            assertThat(loneMarket.indent())
+                .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
         }
 
         @Test

@@ -32,6 +32,15 @@ public final class CellTooltipRowReads {
     /** Where a top-tier line sits: at no indent of its own, before the crest gutter is reserved. */
     public static final float NO_INDENT = 0f;
 
+    /** What a line speaking in the box's own voice stands at - a block's own lines, and their peers. */
+    public static final int NO_SUBORDINATION = 0;
+
+    /** What a line breaking down the line above it stands at - the box's account of a finding. */
+    public static final int ONE_LEVEL_SUBORDINATED = 1;
+
+    /** What a line breaking down an account stands at - a factor's own tiers. */
+    public static final int TWO_LEVELS_SUBORDINATED = 2;
+
     /** Float comparison slack for the indents above, which are laid out in UI units. */
     public static final float TOLERANCE = 0.001f;
 

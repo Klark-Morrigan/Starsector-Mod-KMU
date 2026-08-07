@@ -8,7 +8,8 @@ import kmlib.text.KmlibStrings;
 
 /**
  * The line vocabulary a cell tooltip's content is written in: a heading that names a block, a listed
- * line inside it laid at the depth it was found at, a banner row centred across the box to state
+ * line inside it laid at the {@linkplain CellTooltipEntryLevel level} it was found at, a banner row
+ * centred across the box to state
  * something about the hovered system as a whole, and the qualifier run any of them may end on. Each
  * shape fixes its own indent and colours, and its placement bar the crest gutter - that one column being
  * shared by everything a block lists, so whether it is reserved arrives as the block's answer rather than
@@ -28,9 +29,9 @@ import kmlib.text.KmlibStrings;
  * how a listed thing reads - its tier, its colours, its gutter, its value, and the status it calls out -
  * is settled here and a caller destructures nothing. They are the block's alone
  * ({@link CellTooltipSections}), which is why they are not offered past this package: a body states what
- * its blocks list and the block lays those lines out. Which tier a line takes is read off how deep it
- * sits rather than chosen at the call site, so a heading and a listed line cannot drift into each other
- * and no body can list something at a tier it authored itself. What stays open is what a line is
+ * its blocks list and the block lays those lines out. Which tier a line takes is read off the level it
+ * sits at rather than chosen at the call site, so a heading and a listed line cannot drift into each
+ * other and no body can list something at a tier it authored itself. What stays open is what a line is
  * composed from wherever one is authored - the banner and the qualifier run.
  */
 public final class CellTooltipRows {
@@ -41,21 +42,11 @@ public final class CellTooltipRows {
      */
     public static final String NO_SCORE = "";
 
-    // The inset one level of nesting adds, so a line reads as belonging to the line above it; a line the
-    // block lists in its own right sits flush at zero. Applied per level rather than per tier, so a
-    // breakdown three deep steps in evenly instead of collapsing everything below the first level onto
-    // one indent no reader could tell apart.
+    // The inset one level down adds, so a line reads as belonging to the line above it; a line the block
+    // lists in its own right sits flush at zero. Applied per level rather than per tier, so a breakdown
+    // three deep steps in evenly instead of collapsing everything below the first level onto one indent
+    // no reader could tell apart.
     private static final float MEMBER_INDENT = 14f;
-
-    /**
-     * The depth a line the block lists in its own right sits at - the tier that reads as being listed
-     * rather than as part of whatever is listed above it. Anything deeper belongs to the line above.
-     *
-     * <p>Offered to the block ({@link CellTooltipSections}) as the depth its own walk starts from, so
-     * where a listing begins and what that depth looks like are one value rather than two that agree
-     * until one of them is edited.
-     */
-    static final int LISTED_DEPTH = 0;
 
     private CellTooltipRows() {
     }
@@ -124,32 +115,32 @@ public final class CellTooltipRows {
     }
 
     /**
-     * Builds the line for one listed thing, in the shape its depth calls for: a thing the block lists in
+     * Builds the line for one listed thing, in the shape its level calls for: a thing the block lists in
      * its own right reads flush and bright, and anything found beneath one reads plainer and stepped in
      * once per level, so how far a reader is inside a breakdown is legible from the line alone.
      *
-     * <p>Taking the depth rather than a choice of tier is what keeps the two apart from the block's side
-     * too: the walk that found the line states only how deep it went, and this decides what that depth
-     * looks like, so a listing three levels deep needs no new shape and no new call.
+     * <p>Taking the level rather than a choice of tier is what keeps the two apart from the block's side
+     * too: the walk that found the line states only where it went, and this decides what that looks
+     * like, so a listing three levels deep needs no new shape and no new call.
      *
      * <p>Whether the crest gutter is reserved is the block's answer rather than this line's, since the
      * gutter is one column shared by everything the block lists - which is why it arrives as a parameter.
      *
      * @param line                   the thing being listed
-     * @param depth                  how far beneath the block the line was found; zero for one of the
-     *                               block's own
+     * @param level                  where beneath the block the line was found, and how far under the
+     *                               box's own voice it speaks
      * @param isReservingCrestColumn whether the block reserves the crest gutter for every line in it
      * @return the row, ready to add to a block
      */
     static TooltipRow buildListedRow(
             CellTooltipEntryLine line,
-            int depth,
+            CellTooltipEntryLevel level,
             boolean isReservingCrestColumn) {
 
-        if (depth <= LISTED_DEPTH) {
-            return buildEntryRow(line, isReservingCrestColumn);
+        if (level.isListedInItsOwnRight()) {
+            return buildEntryRow(line, level, isReservingCrestColumn);
         }
-        return buildMemberRow(line, depth, isReservingCrestColumn);
+        return buildMemberRow(line, level, isReservingCrestColumn);
     }
 
     /**
@@ -158,11 +149,14 @@ public final class CellTooltipRows {
      * is listed beneath it.
      *
      * @param line                   what the block lists there
+     * @param level                  where the line was found; a block's own line speaks in the box's
+     *                               voice
      * @param isReservingCrestColumn whether the block reserves the crest gutter for every line in it
      * @return the row, ready to add to a block
      */
     private static TooltipRow buildEntryRow(
             CellTooltipEntryLine line,
+            CellTooltipEntryLevel level,
             boolean isReservingCrestColumn) {
 
         var row = TooltipRow
@@ -174,28 +168,28 @@ public final class CellTooltipRows {
                 line.valueText(),
                 StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve()));
 
-        return appendQualifier(placeLabel(row, isReservingCrestColumn), line);
+        return appendQualifier(placeRow(row, level, isReservingCrestColumn), line);
     }
 
     /**
      * Builds a member line: indented once per level beneath the block and drawn in the plain text
-     * colour, so one of the things an entry is made up of reads as belonging to that entry rather than
-     * as something the block lists in its own right, and a level deeper again reads as belonging to
-     * that.
+     * colour, so one of the things an entry carries reads as belonging to that entry rather than as
+     * something the block lists in its own right, and a level deeper again reads as belonging to that.
      *
-     * <p>Every level below the first shares this one shape, differing only in how far it steps in. A
-     * tier of its own per level would mean a colour or a weight nobody has designed the moment a
-     * breakdown grows a level, whereas the indent already says the one thing the reader needs - what
-     * this line is part of.
+     * <p>Every level below the first shares this one shape, differing only in how far it steps in and
+     * how far under the box's voice it stands. A tier of its own per level would mean a colour or a
+     * weight nobody has designed the moment a breakdown grows a level, whereas the indent already says
+     * the one thing the reader needs - what this line is part of.
      *
-     * @param line                   one of the things the line above is made up of
-     * @param depth                  how far beneath the block the line was found; at least one level
+     * @param line                   one of the things the line above carries
+     * @param level                  where beneath the block the line was found, and how far under the
+     *                               box's own voice it speaks; at least one step in
      * @param isReservingCrestColumn whether the block reserves the crest gutter for every line in it
      * @return the row, ready to add to a block
      */
     private static TooltipRow buildMemberRow(
             CellTooltipEntryLine line,
-            int depth,
+            CellTooltipEntryLevel level,
             boolean isReservingCrestColumn) {
 
         var textColour = StarsectorUiColour.VANILLA_TEXT.resolve();
@@ -203,23 +197,35 @@ public final class CellTooltipRows {
             .createRow(new TextSpan(line.labelText(), textColour))
             .carriesCrest(line.iconSpritePath())
             .carriesValue(new TextSpan(line.valueText(), textColour))
-            .indentsBy(depth * MEMBER_INDENT);
+            .indentsBy(level.indentDepth() * MEMBER_INDENT);
 
-        return appendQualifier(placeLabel(row, isReservingCrestColumn), line);
+        return appendQualifier(placeRow(row, level, isReservingCrestColumn), line);
     }
 
-    // Where a line's label starts across the box: behind the crest gutter where the block reserves one,
-    // so a line carrying no mark still lines up with the crested lines around it, and at the content edge
-    // where the block reserves none - a gutter no line in the block fills has nothing to align to, and
-    // reads as the line being indented under the heading above it. Applied at every tier through one
-    // helper, so an entry and the members beneath it cannot start from different columns.
-    private static TooltipRow.TableRow placeLabel(
+    // Where a line sits across the box and how loudly it speaks, the two facts a line's own level and
+    // its block settle between them.
+    //
+    // The label starts behind the crest gutter where the block reserves one, so a line carrying no mark
+    // still lines up with the crested lines around it, and at the content edge where the block reserves
+    // none - a gutter no line in the block fills has nothing to align to, and reads as the line being
+    // indented under the heading above it.
+    //
+    // The subordination is stated from the level rather than from the indent, so a line set in as a
+    // peer - a faction inside the alliance naming it - stays as loud as the line it sits under, while
+    // the account beneath either of them quietens by the same step whichever it hangs from.
+    //
+    // Applied at every tier through one helper, so an entry and the members beneath it cannot start
+    // from different columns or read the same level two ways.
+    private static TooltipRow.TableRow placeRow(
             TooltipRow.TableRow row,
+            CellTooltipEntryLevel level,
             boolean isReservingCrestColumn) {
 
+        var subordinatedRow = row.subordinatedAt(level.subordinationLevel());
+
         return isReservingCrestColumn
-            ? row
-            : row.clearsCrestColumn();
+            ? subordinatedRow
+            : subordinatedRow.clearsCrestColumn();
     }
 
     // Runs a line on into whatever it calls out. Applied at every tier through one helper, so a status

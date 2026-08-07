@@ -228,10 +228,16 @@ about what the overlay means.
   far apart those blocks stand is never a line's own request: KMLib parts one block from the next by
   one measurement, so the gap under the heading is the same gap as every gap below it. A layer states
   only *what* each block lists, as `CellTooltipEntry` / `CellTooltipEntryLine` values - an entry being
-  a line over the entries it breaks down into, so how deep a listing goes follows the subject matter
-  rather than the model. `CellTooltipSections` walks that depth-first into a block, and drops one that
-  resolved empty; `CellTooltipRows` is the line vocabulary it lays them in, which reads the tier and
-  the indent off how deep the line was found rather than off a choice the block makes,
+  a line over the entries beneath it, so how deep a listing goes follows the subject matter rather
+  than the model. What those entries are to it is stated too, since depth alone cannot say: `grouping`
+  gathers peers - a bloc and the factions in it are one answer at two granularities - while `nesting`
+  carries the account of why the line above reads as it does. Both sit inset; only the second stands a
+  step further under the box's voice, so an allied holder's markets read exactly as loudly as a lone
+  holder's instead of being demoted by a level the account had nothing to do with.
+  `CellTooltipSections` walks that depth-first into a block, carrying the indent and the demotion as
+  one `CellTooltipEntryLevel`, and drops a block that resolved empty; `CellTooltipRows` is the line
+  vocabulary it lays them in, which reads the tier and the indent off that level rather than off a
+  choice the block makes,
   plus the banner centred under the title (its crest set among the words as a label run, so crest and
   words centre as one). The one thing the block does answer is its crest gutter, because that column
   is shared by everything it lists and the box measures a single one across every block at once: a

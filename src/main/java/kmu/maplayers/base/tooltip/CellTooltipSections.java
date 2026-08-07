@@ -12,11 +12,12 @@ import java.util.Optional;
  * naming what follows it, over the entries it names and whatever those entries are made up of.
  *
  * <p>A block takes {@linkplain CellTooltipEntry entries} rather than built lines, which is the whole
- * point of it. <em>What</em> a block lists, and how far each of those things breaks down, is the layer's -
- * it is the only side that knows the subject matter - while which shape each line is laid in follows from
- * how deep the walk here found it, drawn from the one vocabulary. So two layers listing unrelated content
- * still list it alike, and neither can author a tier of its own by reaching past the entries it hands
- * over.
+ * point of it. <em>What</em> a block lists, how far each of those things breaks down, and whether what it
+ * carries are its peers or its account, is the layer's - it is the only side that knows the subject
+ * matter - while which shape each line is laid in follows from the {@linkplain CellTooltipEntryLevel
+ * level} the walk here found it at, drawn from the one vocabulary. So two layers listing unrelated
+ * content still list it alike, and neither can author a tier of its own by reaching past the entries it
+ * hands over.
  *
  * <p>Whether a heading appears at all is likewise a rule about the block and not about the body holding
  * it: a heading left standing over no entries reads as a block whose contents failed to resolve, which
@@ -56,7 +57,7 @@ public final class CellTooltipSections {
         }
         var rows = new ArrayList<TooltipRow>();
         rows.add(CellTooltipRows.buildSectionHeadingRow(headingText));
-        appendEntryRows(rows, entries, CellTooltipRows.LISTED_DEPTH, hasAnyMark(entries));
+        appendEntryRows(rows, entries, CellTooltipEntryLevel.LISTED_LEVEL, hasAnyMark(entries));
         sections.add(new TooltipSection(rows));
     }
 
@@ -88,19 +89,38 @@ public final class CellTooltipSections {
 
     // Lays a listing out in reading order: each entry's own line, then everything it is made up of
     // directly beneath it, before the next entry at this level. Depth-first is what puts a breakdown
-    // where a reader looks for it - under the thing it breaks down - and the depth carried along is the
-    // only thing the vocabulary needs to lay each line at the right tier, so any shape of listing draws
+    // where a reader looks for it - under the thing it breaks down - and the level carried along is the
+    // only thing the vocabulary needs to lay each line where it belongs, so any shape of listing draws
     // through this one walk.
     private static void appendEntryRows(
             List<TooltipRow> rows,
             List<CellTooltipEntry> entries,
-            int depth,
+            CellTooltipEntryLevel level,
             boolean isReservingCrestColumn) {
 
         for (var entry : entries) {
-            rows.add(CellTooltipRows.buildListedRow(entry.line(), depth, isReservingCrestColumn));
-            appendEntryRows(rows, entry.children(), depth + 1, isReservingCrestColumn);
+            rows.add(CellTooltipRows.buildListedRow(entry.line(), level, isReservingCrestColumn));
+            appendEntryRows(
+                rows,
+                entry.children(),
+                resolveChildLevel(entry, level),
+                isReservingCrestColumn);
         }
+    }
+
+    // Where the things one entry carries stand. Both relations set them in a step, so the listing reads
+    // as a tree either way; only an entry whose children are its account puts them a step further under
+    // the box's voice, so an alliance's member factions stay as loud as the alliance while a market
+    // beneath one of them quietens. Read off the entry rather than off the depth reached, since depth
+    // cannot tell the two apart - and read here, since the walk is the one place holding both the entry
+    // and the level it was found at.
+    private static CellTooltipEntryLevel resolveChildLevel(
+            CellTooltipEntry entry,
+            CellTooltipEntryLevel level) {
+
+        return entry.isSubordinatingChildren()
+            ? level.subordinatedUnder()
+            : level.groupedUnder();
     }
 
     // Whether anything the block lists, however deep, leads with a mark. Answered over the whole block
