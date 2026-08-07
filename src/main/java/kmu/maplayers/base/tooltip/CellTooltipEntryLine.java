@@ -4,8 +4,8 @@ import java.util.Objects;
 
 /**
  * One thing a cell-tooltip block lists: what it is called, the mark it is shown by, whatever the block
- * counts it in, and any status called out beside it. What is listed - and nothing whatever about how it
- * is laid.
+ * counts it in, any working that number came out of, and any status called out beside it. What is
+ * listed - and nothing whatever about how it is laid.
  *
  * <p>Held as a value rather than as a built line because the two decisions belong on opposite sides of
  * the box. A layer knows what its block lists; the block ({@link CellTooltipSections}) knows the tier,
@@ -16,22 +16,30 @@ import java.util.Objects;
  * <p>Nothing here is faction-shaped. The mark is a texture path a caller may simply not have, so a list
  * of things that carry none - industries, conditions, hazards - is this same shape with a null in it.
  *
- * @param iconSpritePath the leading mark's texture path, or null for a line carrying none
- * @param labelText      what the line is called
- * @param qualifierText  the status called out at the end of the line, or null when it states none
- * @param valueText      what the block counts this line in, or {@link CellTooltipRows#NO_SCORE} for a
- *                       line carrying no number
+ * @param iconSpritePath   the leading mark's texture path, or null for a line carrying none
+ * @param labelText        what the line is called
+ * @param qualifierText    the status called out at the end of the line, or null when it states none
+ * @param valueText        what the block counts this line in, or {@link CellTooltipRows#NO_SCORE} for a
+ *                         line carrying no number
+ * @param valueWorkingText the arithmetic the number came out of, stated before it, or null where the
+ *                         line shows its number alone
  */
 public record CellTooltipEntryLine(
     String iconSpritePath,
     String labelText,
     String qualifierText,
-    String valueText) {
+    String valueText,
+    String valueWorkingText) {
 
     // What a line states nothing beside its name and its number carries in the qualifier slot. Named
     // rather than passed as a bare null, so the factory below reads as "this line calls nothing out"
     // instead of as an unexplained absence.
     private static final String NO_QUALIFIER = null;
+
+    // What a line showing its number alone carries where the working would go. Named for the same
+    // reason the absence above is: the factory says the line shows no working rather than passing an
+    // unexplained null.
+    private static final String NO_WORKING = null;
 
     /**
      * Rejects a nameless or valueless line at construction, where the caller that composed it is still
@@ -65,7 +73,8 @@ public record CellTooltipEntryLine(
             iconSpritePath,
             labelText,
             NO_QUALIFIER,
-            valueText);
+            valueText,
+            NO_WORKING);
     }
 
     /**
@@ -94,6 +103,30 @@ public record CellTooltipEntryLine(
             iconSpritePath,
             labelText,
             qualifierText,
-            valueText);
+            valueText,
+            valueWorkingText);
+    }
+
+    /**
+     * Returns a copy of this line stating {@code valueWorkingText} before its number - the arithmetic
+     * the number came out of, such as the rate one of a counted thing is worth. The block draws the two
+     * apart, so a reader can tell the finding from the working behind it at a glance.
+     *
+     * <p>Stated as its own part rather than folded into the value's text, because the two halves read
+     * differently and the line is the only thing that knows where one ends: run together in one string
+     * they can only be drawn in one shade, and a block splitting a value back apart would be guessing
+     * at a separator its author never stated.
+     *
+     * @param valueWorkingText the arithmetic behind the line's number, unspaced - the line parts it from
+     *                         the number when it is laid out
+     * @return an otherwise-identical line showing that working
+     */
+    public CellTooltipEntryLine derivesValueFrom(String valueWorkingText) {
+        return new CellTooltipEntryLine(
+            iconSpritePath,
+            labelText,
+            qualifierText,
+            valueText,
+            valueWorkingText);
     }
 }

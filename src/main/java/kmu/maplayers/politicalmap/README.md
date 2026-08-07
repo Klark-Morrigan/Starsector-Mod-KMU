@@ -155,7 +155,8 @@ from the very arithmetic the scores were summed over (`KnownMarketFootprints.rea
 so the lines always add up to the number the ordinary box and the fills show;
 `MarketWeightRowResolver` decides which lines a colony breaks into and `MarketFactorText` how one
 line's numbers read - a rating as the player set it, a weight on the grid the rest of the box counts
-in, and no cut that took nothing),
+in, no cut that took nothing, and a patrol tier's rate stated apart from the total it explains so the
+box draws the arithmetic quieter than the finding),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 reached through [the sidebar](../base/sidebar/README.md) one level up (the picker is KMLib's, bound

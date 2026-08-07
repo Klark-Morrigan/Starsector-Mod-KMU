@@ -120,14 +120,38 @@ final class MarketFactorTextTest {
     }
 
     @Nested
-    class FormatPatrolTier {
+    class FormatPatrolTierWorking {
 
         @Test
-        void formatPatrolTierStatesWhatOnePatrolCountsForAndWhatTheTierBecame() {
+        void formatPatrolTierWorkingStatesWhatOnePatrolOfTheTierCountsFor() {
+            // The rate ends on the separator parting it from the total, so the two halves drawn in
+            // different shades still read as the one value they are.
+            assertThat(MarketFactorText.formatPatrolTierWorking(new PatrolTierFactor(2, 0.25, 0.45)))
+                .isEqualTo("0.25 /");
+        }
+
+        @Test
+        void formatPatrolTierWorkingOpensTheSameValueTheGarrisonsOwnLineOpensOn() {
+            // One separator for both, so a line drawn in one shade and a line drawn in two cannot
+            // part company over what parts their halves.
+            assertThat(MarketFactorText.formatPatrols(new PatrolFactor(
+                    new PatrolTierFactor(2, 0.25, 0.5),
+                    new PatrolTierFactor(0, 0.5, 0.0),
+                    new PatrolTierFactor(0, 1.0, 0.0),
+                    0.0)))
+                .startsWith("2 /");
+        }
+    }
+
+    @Nested
+    class FormatPatrolTierTotal {
+
+        @Test
+        void formatPatrolTierTotalStatesWhatTheTierBecameOnTheGrid() {
             // The tier restates no cut: all three took the one the garrison's line above states, and
             // repeating it per tier would read as three separate deductions.
-            assertThat(MarketFactorText.formatPatrolTier(new PatrolTierFactor(2, 0.25, 0.45)))
-                .isEqualTo("0.25 / 450");
+            assertThat(MarketFactorText.formatPatrolTierTotal(new PatrolTierFactor(2, 0.25, 0.45)))
+                .isEqualTo("450");
         }
     }
 }

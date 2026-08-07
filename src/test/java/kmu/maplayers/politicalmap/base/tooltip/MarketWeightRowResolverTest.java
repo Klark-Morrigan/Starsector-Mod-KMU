@@ -196,6 +196,35 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
+        void resolveMarketRowsStatesATiersRateApartFromWhatItCameTo() {
+            // The two halves reach the box separately so it can draw the rate quieter than the total
+            // it explains; run together they would read as one number with a stray separator in it.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildGarrisonedBreakdown(2, 0, 0)),
+                buildRules());
+
+            var tierLine = rows.get(0).children().get(2).children().get(0).line();
+
+            assertThat(tierLine.valueWorkingText())
+                .isEqualTo("0.25 /");
+            assertThat(tierLine.valueText())
+                .isEqualTo("500");
+        }
+
+        @Test
+        void resolveMarketRowsStatesTheGarrisonsOwnValueWhole() {
+            // Only the tiers split. The garrison's line opens on a headcount the player checks against
+            // the map, which is a finding rather than arithmetic - drawn quieter it would read as the
+            // working behind the number instead of as the number itself.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildGarrisonedBreakdown(2, 0, 0)),
+                buildRules());
+
+            assertThat(rows.get(0).children().get(2).line().valueWorkingText())
+                .isNull();
+        }
+
+        @Test
         void resolveMarketRowsListsNoTierTheColonyFieldsNoneOf() {
             // A tier line for patrols that do not exist states a garrison the colony does not have.
             var rows = MarketWeightRowResolver.resolveMarketRows(

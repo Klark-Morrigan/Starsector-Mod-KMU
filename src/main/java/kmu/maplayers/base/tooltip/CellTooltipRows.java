@@ -6,12 +6,15 @@ import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.text.KmlibStrings;
 
+import java.awt.Color;
+import java.util.List;
+
 /**
  * The line vocabulary a cell tooltip's content is written in: a heading that names a block, a listed
  * line inside it laid at the {@linkplain CellTooltipEntryLevel level} it was found at, a banner row
  * centred across the box to state
- * something about the hovered system as a whole, and the qualifier run any of them may end on. Each
- * shape fixes its own indent and colours, and its placement bar the crest gutter - that one column being
+ * something about the hovered system as a whole, the qualifier run any of them may end on, and the quiet
+ * working a value may open on. Each shape fixes its own indent and colours, and its placement bar the crest gutter - that one column being
  * shared by everything a block lists, so whether it is reserved arrives as the block's answer rather than
  * as this line's. What a layer says is otherwise the only thing that varies between two hover boxes.
  *
@@ -175,12 +178,14 @@ public final class CellTooltipRows {
             .createRow(new TextSpan(
                 line.labelText(),
                 StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve()))
-            .carriesCrest(line.iconSpritePath())
-            .carriesValue(new TextSpan(
-                line.valueText(),
-                StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve()));
+            .carriesCrest(line.iconSpritePath());
 
-        return appendQualifier(placeRow(row, level, isReservingCrestColumn), line);
+        return appendQualifier(
+            placeRow(
+                appendValue(row, line, StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve()),
+                level,
+                isReservingCrestColumn),
+            line);
     }
 
     /**
@@ -208,10 +213,37 @@ public final class CellTooltipRows {
         var row = TooltipRow
             .createRow(new TextSpan(line.labelText(), textColour))
             .carriesCrest(line.iconSpritePath())
-            .carriesValue(new TextSpan(line.valueText(), textColour))
             .indentsBy(level.indentDepth() * MEMBER_INDENT);
 
-        return appendQualifier(placeRow(row, level, isReservingCrestColumn), line);
+        return appendQualifier(
+            placeRow(appendValue(row, line, textColour), level, isReservingCrestColumn),
+            line);
+    }
+
+    // Fills a line's value column: its number in the line's own colour, opened where the line states
+    // one on the working it came out of, in the quiet shade.
+    //
+    // Greying the working is the same move the qualifier run makes in gold - it says which part of the
+    // line is the finding and which is the arithmetic behind it. Drawn in one colour the two read as a
+    // single number with a stray separator in it, which is exactly what a value like a rate over a total
+    // is not.
+    //
+    // Applied at every tier through one helper, so a value stated on a member is split exactly as one
+    // stated on the entry it belongs to - and a line stating no working keeps the single run it had,
+    // rather than one opening on a run that draws nothing.
+    private static TooltipRow.TableRow appendValue(
+            TooltipRow.TableRow row,
+            CellTooltipEntryLine line,
+            Color valueColour) {
+
+        var valueSpan = new TextSpan(line.valueText(), valueColour);
+
+        if (!KmlibStrings.hasText(line.valueWorkingText())) {
+            return row.carriesValue(valueSpan);
+        }
+        return row.carriesValueRuns(List.of(
+            new TextSpan(line.valueWorkingText(), StarsectorUiColour.VANILLA_GRAY.resolve()),
+            valueSpan));
     }
 
     // Where a line sits across the box and how loudly it speaks, the two facts a line's own level and

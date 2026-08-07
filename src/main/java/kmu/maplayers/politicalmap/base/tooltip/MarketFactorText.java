@@ -110,17 +110,28 @@ public final class MarketFactorText {
     }
 
     /**
-     * Words one patrol tier: what a single patrol of it counts for, and what the tier became. The
-     * cut is not restated here - all three tiers took the one stability cut the line above states,
-     * and repeating it per tier would read as three separate deductions.
+     * Words the working behind one patrol tier's line: what a single patrol of that tier counts
+     * for, run on into the separator parting it from what the tier came to. Stated apart from the
+     * total below so the line can draw the two in different shades - the rate is the arithmetic, the
+     * total is the finding - rather than as one number with a stray separator in it.
      *
      * @param tier one of the market's patrol tiers
-     * @return the tier as the line states it
+     * @return the rate the tier's line opens its value on
      */
-    public static String formatPatrolTier(PatrolTierFactor tier) {
-        return formatCounted(
-            KmlibNumbers.formatCompactDecimal(tier.weight()),
-            tier.contribution());
+    public static String formatPatrolTierWorking(PatrolTierFactor tier) {
+        return formatWorking(KmlibNumbers.formatCompactDecimal(tier.weight()));
+    }
+
+    /**
+     * Words what one patrol tier came to. The cut is not restated here - all three tiers took the
+     * one stability cut the line above states, and repeating it per tier would read as three
+     * separate deductions.
+     *
+     * @param tier one of the market's patrol tiers
+     * @return the weight the tier folded in at
+     */
+    public static String formatPatrolTierTotal(PatrolTierFactor tier) {
+        return formatWeight(tier.contribution());
     }
 
     // A rating and the weight it became. The separator says the two are the same quantity stated
@@ -135,11 +146,22 @@ public final class MarketFactorText {
     // A count and the weight it earned. Kept off the rating separator above because the two sides
     // are different quantities here - so many patrols, so much weight - and a reader tracing one
     // into the other would otherwise expect the units to match.
+    //
+    // Joined through the working below rather than stating the separator itself, so the whole line
+    // and the split the tier lines draw read the same separator: two spellings of it would let a
+    // line drawn in one shade and a line drawn in two part company over what parts their halves.
     private static String formatCounted(String countText, double contribution) {
         return KmuStrings.format(
             KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_COUNTED,
-            countText,
+            formatWorking(countText),
             formatWeight(contribution));
+    }
+
+    // The left half of a counted value: what went in, run on into the separator parting it from
+    // what it earned. The one home of that separator, whether the value is drawn as one run or as
+    // the two a line colours apart.
+    private static String formatWorking(String countText) {
+        return KmuStrings.format(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_WORKING, countText);
     }
 
     // A worth in size points as the weight the rest of the box counts in, so a factor line, its

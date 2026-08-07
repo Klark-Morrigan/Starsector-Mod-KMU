@@ -7,10 +7,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Pins what a listed thing is composed of and what it leaves unstated: a plain line calls nothing out,
- * a qualifier is layered onto one without disturbing what it already carried, and a line with no name
- * or no value is refused where the caller that composed it is still on the stack rather than surfacing
- * inside a draw with nothing to say which line was meant.
+ * Pins what a listed thing is composed of and what it leaves unstated: a plain line calls nothing out
+ * and shows its number alone, a qualifier and a working are each layered onto one without disturbing
+ * what it already carried, and a line with no name or no value is refused where the caller that composed
+ * it is still on the stack rather than surfacing inside a draw with nothing to say which line was meant.
  */
 final class CellTooltipEntryLineTest {
 
@@ -25,7 +25,7 @@ final class CellTooltipEntryLineTest {
             var line = CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200");
 
             assertThat(line)
-                .isEqualTo(new CellTooltipEntryLine(CREST, "The Hegemony", null, "1,200"));
+                .isEqualTo(new CellTooltipEntryLine(CREST, "The Hegemony", null, "1,200", null));
         }
 
         @Test
@@ -85,7 +85,7 @@ final class CellTooltipEntryLineTest {
                 .qualifiedWith("(core)");
 
             assertThat(line)
-                .isEqualTo(new CellTooltipEntryLine(CREST, "The Hegemony", "(core)", "1,200"));
+                .isEqualTo(new CellTooltipEntryLine(CREST, "The Hegemony", "(core)", "1,200", null));
         }
 
         @Test
@@ -96,6 +96,44 @@ final class CellTooltipEntryLineTest {
             plainLine.qualifiedWith("(core)");
 
             assertThat(plainLine.qualifierText())
+                .isNull();
+        }
+    }
+
+    @Nested
+    class DerivesValueFrom {
+
+        @Test
+        void derivesValueFromStatesTheWorkingLeavingTheRestOfTheLineAsItWas() {
+
+            var line = CellTooltipEntryLine
+                .createLine(null, "Small: 2", "500")
+                .derivesValueFrom("0.25 /");
+
+            assertThat(line)
+                .isEqualTo(new CellTooltipEntryLine(null, "Small: 2", null, "500", "0.25 /"));
+        }
+
+        @Test
+        void derivesValueFromKeepsAStatusTheLineAlreadyCallsOut() {
+            // The working and the qualifier are stated at opposite ends of the line, so a line can
+            // carry both - and a refinement that dropped one would silently lose it.
+            var line = CellTooltipEntryLine
+                .createLine(null, "Size", "5,000")
+                .qualifiedWith("hidden")
+                .derivesValueFrom("5 ::");
+
+            assertThat(line.qualifierText())
+                .isEqualTo("hidden");
+        }
+
+        @Test
+        void derivesValueFromLeavesTheLineItWasBuiltFromShowingItsNumberAlone() {
+
+            var plainLine = CellTooltipEntryLine.createLine(null, "Small: 2", "500");
+            plainLine.derivesValueFrom("0.25 /");
+
+            assertThat(plainLine.valueWorkingText())
                 .isNull();
         }
     }

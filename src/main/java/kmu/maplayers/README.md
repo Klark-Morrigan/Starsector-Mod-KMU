@@ -239,6 +239,11 @@ about what the overlay means.
   Asked for on the shared box rather than on the one layer that first listed anything that deep,
   since two layers demoting a line by different amounts is a difference a reader has no way to
   account for.
+  A line's number may itself be two things - a finding and the working it came out of, such as the
+  rate one of a counted thing is worth over what the count came to. The line states the halves apart
+  (`derivesValueFrom`) and the vocabulary greys the working against whatever colour the line speaks
+  in, exactly as it golds a qualifier: run together in one string they could only be drawn in one
+  shade, and the reader would take a value joined by a separator for a single number.
   `CellTooltipSections` walks that depth-first into a block, carrying the indent and the demotion as
   one `CellTooltipEntryLevel`, and drops a block that resolved empty; `CellTooltipRows` is the line
   vocabulary it lays them in, which reads the tier and the indent off that level rather than off a

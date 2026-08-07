@@ -63,7 +63,8 @@
     "political_map_tooltip_factor_hidden": "hidden",
     "political_map_tooltip_factor_fixed": "%s (fixed)",
     "political_map_tooltip_factor_weighed": "%s :: %s",
-    "political_map_tooltip_factor_counted": "%s / %s",
+    "political_map_tooltip_factor_working": "%s /",
+    "political_map_tooltip_factor_counted": "%s %s",
     "political_map_tooltip_factor_penalty": "%s (-%d%%)",
 
     "political_map_tooltip_patrol_tier": "%s: %d",

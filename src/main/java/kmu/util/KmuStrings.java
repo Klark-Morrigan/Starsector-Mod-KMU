@@ -71,6 +71,7 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_HIDDEN = "political_map_tooltip_factor_hidden";
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_FIXED = "political_map_tooltip_factor_fixed";
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_WEIGHED = "political_map_tooltip_factor_weighed";
+    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_WORKING = "political_map_tooltip_factor_working";
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_COUNTED = "political_map_tooltip_factor_counted";
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_PENALTY = "political_map_tooltip_factor_penalty";
     public static final String POLITICAL_MAP_TOOLTIP_PATROL_TIER = "political_map_tooltip_patrol_tier";

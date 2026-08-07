@@ -131,8 +131,7 @@ public final class MarketWeightRowResolver {
             MarketWeightBreakdown breakdown,
             DominanceRules rules) {
 
-        var line = CellTooltipEntryLine.createLine(
-            NO_CREST,
+        var line = createFactorLine(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE),
             MarketFactorText.formatBaseSize(breakdown.baseSize(), isFixedRating(breakdown, rules)));
 
@@ -178,6 +177,10 @@ public final class MarketWeightRowResolver {
     // One tier's line, and nothing at all for a tier the colony fields none of. The count sits in
     // the label beside the tier's name because it is what the tier is, while the value column
     // carries what it was worth - the same split every line in the box reads by.
+    //
+    // The value is stated in its two halves rather than as one number, because a tier's is two
+    // things joined by a separator: what one patrol of the tier is worth, and what the tier came to.
+    // Handed over apart, the box draws the rate quieter than the total it explains.
     private static void appendTierEntry(
             List<CellTooltipEntry> entries,
             String tierNameKey,
@@ -186,17 +189,26 @@ public final class MarketWeightRowResolver {
         if (tier.count() <= NO_PATROLS) {
             return;
         }
-        entries.add(createFactorEntry(
-            KmuStrings.format(
-                KmuStrings.POLITICAL_MAP_TOOLTIP_PATROL_TIER,
-                KmuStrings.get(tierNameKey),
-                tier.count()),
-            MarketFactorText.formatPatrolTier(tier)));
+        var line = createFactorLine(
+                KmuStrings.format(
+                    KmuStrings.POLITICAL_MAP_TOOLTIP_PATROL_TIER,
+                    KmuStrings.get(tierNameKey),
+                    tier.count()),
+                MarketFactorText.formatPatrolTierTotal(tier))
+            .derivesValueFrom(MarketFactorText.formatPatrolTierWorking(tier));
+
+        entries.add(CellTooltipEntry.createEntry(line));
     }
 
     // A factor line that breaks down no further, which is every one of them bar the garrison.
     private static CellTooltipEntry createFactorEntry(String labelText, String valueText) {
-        return CellTooltipEntry.createEntry(
-            CellTooltipEntryLine.createLine(NO_CREST, labelText, valueText));
+        return CellTooltipEntry.createEntry(createFactorLine(labelText, valueText));
+    }
+
+    // The shape every line beneath a colony takes: named, uncrested, and carrying its number. Shared
+    // by the lines that go on to state something more - a hidden colony's size, a tier's rate - so
+    // that stating more is one refinement rather than a second spelling of the line itself.
+    private static CellTooltipEntryLine createFactorLine(String labelText, String valueText) {
+        return CellTooltipEntryLine.createLine(NO_CREST, labelText, valueText);
     }
 }

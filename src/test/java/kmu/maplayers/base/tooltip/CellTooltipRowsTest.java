@@ -11,6 +11,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
@@ -31,9 +34,10 @@ import static org.assertj.core.api.Assertions.within;
  * of the box sees: a heading stands clear of the crest gutter in gold to name a block, a line the block
  * lists in its own right sits flush in the bright colour, a line found beneath one belongs to it by its
  * indent and plainer colour and steps in again per level below that, a banner leaves the table altogether
- * to be set across the box with its crest carried inside its own words, and a line calling something out
- * ends on it in gold at whichever tier it sits. Two layers writing content through these cannot drift on
- * any of it.
+ * to be set across the box with its crest carried inside its own words, a line calling something out
+ * ends on it in gold at whichever tier it sits, and a value stating the working behind it opens on that
+ * working in the quiet shade whatever colour the line itself speaks in. Two layers writing content
+ * through these cannot drift on any of it.
  */
 final class CellTooltipRowsTest {
 
@@ -238,6 +242,53 @@ final class CellTooltipRowsTest {
                 .isEqualTo(TEXT);
             assertThat(row.indent())
                 .isCloseTo(NESTED_MEMBER_INDENT, within(TOLERANCE));
+        }
+
+        @Test
+        void buildListedRowOpensAValueOnItsWorkingInTheQuietShade() {
+            // The split says which part of the value is the finding and which is the arithmetic
+            // behind it; drawn in one shade the two read as a single number with a stray separator.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(CREST, "Ion Storm", "42")
+                    .derivesValueFrom("0.25 /"),
+                LISTED_LEVEL,
+                RESERVING_CREST_COLUMN);
+
+            assertThat(row.labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.TextRuns(List.of(
+                    new TextSpan("0.25 /", GRAY),
+                    new TextSpan("42", HIGHLIGHT))));
+        }
+
+        @Test
+        void buildListedRowKeepsAWorkingQuietAgainstAMembersOwnColour() {
+            // The working is quieter than whatever the line it opens speaks in, so the same split
+            // reads the same way at a tier the box draws in the plain colour.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(null, "Small: 2", "500")
+                    .derivesValueFrom("0.25 /"),
+                MEMBER_LEVEL,
+                RESERVING_CREST_COLUMN);
+
+            assertThat(row.labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.TextRuns(List.of(
+                    new TextSpan("0.25 /", GRAY),
+                    new TextSpan("500", TEXT))));
+        }
+
+        @Test
+        void buildListedRowShowsANumberAloneAsOneRunWhereTheLineStatesNoWorking() {
+            // Which is almost every line in the box: a value of one run is what a stack of rows is
+            // aligned by, and a run drawing nothing in front of it would be a gap held open for it.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(null, "Size", "8"),
+                MEMBER_LEVEL,
+                RESERVING_CREST_COLUMN);
+
+            assertThat(row.labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.Text(new TextSpan("8", TEXT)));
         }
 
         @Test
