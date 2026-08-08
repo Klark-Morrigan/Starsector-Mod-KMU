@@ -1,5 +1,6 @@
 package kmu.maplayers.base.sidebar.style;
 
+import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.sound.StarsectorUiSound;
 import kmlib.starsector.ui.sound.UiSoundScheme;
@@ -23,8 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * look is built fresh every frame from the running game's colours, so what is worth pinning is not a
  * shade but a wiring - that the box takes the black backdrop, that a frame takes the step of the chosen
  * scheme its framing names while the controls stay on that scheme's base whichever framing is chosen,
- * that the row's chrome rule follows that same scheme, that each tab chrome carries the palette and the
- * hotkey convention belonging to it, and that the panel's sound scheme is the engine's own.
+ * that the row's chrome rule follows that same scheme, that each tab chrome carries the palette, the
+ * face, and the hotkey convention belonging to it, and that the panel's sound scheme is the engine's own.
  *
  * <p>The sound scheme is here rather than only in KMLib because this is where the sidebar's two halves
  * meet: the widget style carries the scheme to the paint side and the host hands the same constant to
@@ -191,6 +192,20 @@ final class SidebarStylesTest {
             assertThat(SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT).palette().chromeAccent())
                 .isEqualTo(StarsectorUiColoursMock.BUTTON_TEXT);
         }
+
+        @Test
+        void buildStripTabStyleLettersTheRowInTheMapsOwnOrbitronAtTheLayoutsTabSize() {
+            // The face the vanilla tabs a strip sits beneath are set in, scaled to the tab size rather
+            // than drawn at its atlas's own - orbitron is a smooth face and reads clean either way. The
+            // claim is that the strip kept it: the face travels per chrome, so the row that took the
+            // pixel face below could have taken this one with it.
+            var face = SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT).face();
+
+            assertThat(face.font())
+                .isEqualTo(StarsectorFont.VANILLA_ORBITRON_20AA);
+            assertThat(face.size())
+                .isEqualTo(15d);
+        }
     }
 
     @Nested
@@ -248,6 +263,19 @@ final class SidebarStylesTest {
                 .isEqualTo(StarsectorUiColoursMock.PLAYER_DARK);
             assertThat(palette.selected().label())
                 .isEqualTo(StarsectorUiColoursMock.PLAYER_BRIGHT);
+        }
+
+        @Test
+        void buildRaisedButtonTabStyleLettersTheRowInVanillasPixelFaceAtItsAtlasSize() {
+            // The face the intel screen's own map toggles are lettered in, and at the size its atlas was
+            // drawn at: a pixel face is crisp at one size only, so a row copying those buttons scaled to
+            // any other would read as a blurred imitation of the row beside it.
+            var face = SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).face();
+
+            assertThat(face.font())
+                .isEqualTo(StarsectorFont.VANILLA_VICTOR_10);
+            assertThat(face.size())
+                .isEqualTo(10d);
         }
     }
 

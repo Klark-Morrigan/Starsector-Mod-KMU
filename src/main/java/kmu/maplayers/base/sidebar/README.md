@@ -299,8 +299,10 @@ which is the whole point of the frame being its own knob. The two framings there
 step of one scheme they take, never by which palette.
 
 That one `TabStyle` carries a strip end to end - band height, `TabPalette`, `HotkeyStyle`, and the
-orbitron face - so the value the layout snapped tabs against is the value the renderer paints them
-from and a snapped tab width cannot part from the text drawn into it. The palette holds both flavours
+face - so the value the layout snapped tabs against is the value the renderer paints them
+from and a snapped tab width cannot part from the text drawn into it. That holds for the size as well
+as the atlas: `TabsControlLayout.layoutHeaderControl` snaps at the size its style names, keeping
+`TAB_FONT_SIZE` as the baseline for a body tabs row, which carries no style. The palette holds both flavours
 of tab paint: an absolute `TabLook` per `TabLookState` (unselected, selected, hovered) and a relative
 `TabWash` per `TabWashState` (clicked), the pulse lifting whichever look the tab has settled on.
 
@@ -410,10 +412,19 @@ at, which is the opposite of what a keypress needs to say. All three animations 
 reports two fractions per tab - one look, one lift - and the paint pass binds them to the palette, so
 it is handed a look already blended and a lift already scaled - so both tab chromes animate alike,
 neither of them having any timing to compute. What the two screens set apart is the band height, the
-chrome its shades are painted onto, and the two things that travel with that chrome because vanilla
-keeps them together: the palette its shades come from and the hotkey convention. The timings, the
-channels, and the order they resolve in are shared, which is why one animator serves either row. Both faces are named through KMLib's `StarsectorFont` enum
+chrome its shades are painted onto, and the three things that travel with that chrome because vanilla
+keeps them together: the palette its shades come from, the face it is lettered in, and the hotkey
+convention. The timings, the
+channels, and the order they resolve in are shared, which is why one animator serves either row. Every face is named through KMLib's `StarsectorFont` enum
 rather than by atlas basename.
+
+The strip is lettered in `VANILLA_ORBITRON_20AA` scaled to the tab size, the face the vanilla tabs it
+sits beneath are set in; the buttons in `VANILLA_VICTOR_10` at that atlas's own size, the pixel face
+the intel screen's map toggles are set in. A pixel face is crisp at one size only, so the button row
+takes its native 10 rather than the strip's 15 - scaled, it would read as a blurred copy of the row it
+was drawn to match. Its capitals come with the atlas: every glyph sits on the same 5x5 cell with
+lowercase included and no descenders, so a mixed-case label needs no upper-casing pass and the width
+it is snapped to is the width it draws at.
 
 Where a tab says which key it answers to is `TabShortcutText`'s call, following the engine's rule: a
 single-glyph key whose letter already stands in the label lights that letter where it is, and only a

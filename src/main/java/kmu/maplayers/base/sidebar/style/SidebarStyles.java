@@ -55,10 +55,21 @@ public final class SidebarStyles {
     // face is separate below, since the tabs are both measured and drawn in theirs.
     private static final StarsectorFont BODY_FONT = StarsectorFont.VANILLA_INSIGNIA_15;
 
-    // The tabs read in the sector map's own orbitron face - the AA orbitron atlas vanilla uses for its
+    // The strip reads in the sector map's own orbitron face - the AA orbitron atlas vanilla uses for its
     // map tabs, scaled to the tab size. It travels inside the tab style, which both the layout's measurer
     // and the paint pass read, so a snapped tab width matches the text drawn into it.
-    private static final StarsectorFont TAB_FONT = StarsectorFont.VANILLA_ORBITRON_20AA;
+    private static final TextFace STRIP_FACE = new TextFace(
+        StarsectorFont.VANILLA_ORBITRON_20AA,
+        TabsControlLayout.TAB_FONT_SIZE);
+
+    // The buttons read in the pixel face vanilla letters its own intel-screen map toggles in, at the size
+    // that atlas was drawn at: a bitmap face is crisp at one size only, and a row copying those buttons
+    // wants the same glyphs on the same grid rather than a scaled approximation of them. Its capitals
+    // come with the face - every glyph sits on one cell whatever case it is written in - so the labels
+    // need no upper-casing pass to match the row beside them.
+    private static final TextFace RAISED_BUTTON_FACE = new TextFace(
+        StarsectorFont.VANILLA_VICTOR_10,
+        StarsectorFont.VANILLA_VICTOR_10.getNativeSize());
 
     // Composes only; never instantiated.
     private SidebarStyles() {
@@ -169,10 +180,22 @@ public final class SidebarStyles {
         };
     }
 
+    // The face a row is lettered in, which is the chrome's own for the same reason its palette is: the
+    // vanilla tabs a strip copies and the vanilla buttons a raised row copies are set in different faces,
+    // so a row sharing one would letter itself unlike the very chrome it was drawn to match. It is the
+    // one field both tiers read - the layout snaps a tab to it and the paint pass draws in it - so the
+    // choice made here is what a tab is measured by as well as what it says.
+    private static TextFace resolveTabFace(TabChrome chrome) {
+        return switch (chrome) {
+            case STRIP -> STRIP_FACE;
+            case RAISED_BUTTON -> RAISED_BUTTON_FACE;
+        };
+    }
+
     // A tab style over the shared paint: the chrome's own palette - its per-state fills and its
-    // interaction lifts - resolved live so it tracks a restyled install, and the orbitron face at the
-    // layout's tab size. Only the chrome, the palette that belongs to it, and the hotkey convention part
-    // the two screens' rows, so the values every row shares are written once here.
+    // interaction lifts - resolved live so it tracks a restyled install, and the chrome's own face. Only
+    // the chrome, and the palette, face, and hotkey convention that belong to it, part the two screens'
+    // rows, so the values every row shares are written once here.
     private static TabStyle composeTabStyle(
             TabChrome chrome,
             HotkeyStyle hotkey,
@@ -183,7 +206,7 @@ public final class SidebarStyles {
             headerBandHeight,
             composeTabPalette(chrome, resolveAccentColours()),
             hotkey,
-            new TextFace(TAB_FONT, TabsControlLayout.TAB_FONT_SIZE));
+            resolveTabFace(chrome));
     }
 
     // The sidebar's look built fresh from the live colours, framed by the given convention: a black body
