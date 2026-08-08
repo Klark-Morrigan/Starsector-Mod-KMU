@@ -173,9 +173,23 @@ Every market also states where the economy lists it, as a quiet `[n]` run after 
 (`MarketClaimBreakdown.listingPosition`, numbered across the system's owned markets rather than
 within one faction's): the contest is settled on a strictly greater score, so a tie - between two of
 one faction's markets or between two factions' best - falls to whichever the economy reached first,
-and nothing else in the box says which that was. Where a tie is actually drawn the place stops being
-a bare identifier and reads in vanilla's positive or negative shade, the market reached first having
-won it and the rest having lost. A market the player has not found is left off the list, since
+and nothing else in the box says which that was. Where a tie the mechanic actually consulted is
+drawn, the place stops being a bare identifier and reads in vanilla's positive or negative shade -
+the market reached first having won it, the rest having lost. Which ties those are is
+`ClaimTieOutcomes`, judged over the whole contest exactly as vanilla's single `max` walk compares:
+the two points that walk consults the order at are which market stands for its faction and which
+faction claims the system, so a tie at either is marked and equal scores anywhere else are not. Two
+kinds of market carry a score yet never compete and are never marked - a hidden one, which the walk
+skips outright, and a non-territorial faction's, which can never take the lead - and under a decree
+the claimant tie goes unjudged, the system having been settled before a market was weighed.
+A hidden market is listed at nought: the mechanic skips it before scoring, so it brought nothing to
+the contest however large it is, and printing the score it would have carried would sort a market
+that took no part above the one that took the system. It is listed rather than dropped because it is
+one of the markets the presence term counts, and a reader checking that count has to be able to see
+it; it breaks down into no terms, nothing having been computed for it. Nothing calls its hiddenness
+out - the nought is the whole of what the contest has to say about it, and the word would raise a
+question about the mechanic the box would then owe an answer to.
+A market the player has not found is left off the list, since
 vanilla settles a claim over colonies nobody has found and repeating what it learned there would
 name something the player has no way of knowing about; the rule is
 `MarketClaimBreakdown.isKnownToPlayer`, the same one the faction and alliance tabs fog by, so all

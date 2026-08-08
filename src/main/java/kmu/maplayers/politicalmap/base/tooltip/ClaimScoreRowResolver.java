@@ -2,7 +2,9 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
+import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.text.KmlibNumbers;
+import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
@@ -31,6 +33,13 @@ import java.util.stream.Stream;
  * that order rather than by being put there, and the list reads as the contest rather than as a ranking
  * laid over it.
  *
+ * <p>A hidden market is listed at nought. The mechanic skips it before scoring, so it brought nothing
+ * to the contest however large it is - and printing the score it would have carried would put a market
+ * that took no part above the one that took the system. It is listed all the same rather than dropped:
+ * it is one of the markets the presence term counts, so a reader checking that count against the list
+ * has to be able to see it. Nothing calls its hiddenness out, the nought being the whole of what the
+ * contest has to say about it.
+ *
  * <p>Exactly one market in the whole box is called out as the claim holder: the one that actually took
  * the system. Every faction is represented by its strongest, but only one of those won anything, and a
  * marker on each would read as several holders of a system that can only have one. It goes unsaid
@@ -41,8 +50,10 @@ import java.util.stream.Stream;
  * a rule with no trace anywhere else in the box, and one a reader would otherwise have to take a tied
  * outcome as arbitrary for. The number is the market's place among the system's owned markets, so it
  * counts across factions: a tie between two <em>factions'</em> best markets is settled the same way.
- * Where a tie is actually drawn, the place stops being a bare identifier and says which way it went:
- * the market reached first reads as having won it and the rest as having lost.
+ * Where a tie the mechanic actually consulted is drawn, the place stops being a bare identifier and
+ * says which way it went - the market reached first as having won it, the rest as having lost. Which
+ * ties those are is {@link ClaimTieOutcomes}'s answer, judged over the whole contest rather than over
+ * this faction's list, exactly as the walk it explains compares.
  *
  * <p>The presence term is the faction's rather than any one market's, so it is stated once beneath the
  * list instead of on each market in it. The mechanic gives every market of a faction a point for each of
@@ -64,13 +75,17 @@ import java.util.stream.Stream;
  */
 public final class ClaimScoreRowResolver {
 
-    // The faction's markets rank descending by what they scored, a tie falling to the earlier place in
-    // the economy's listing - which is the mechanic's own tie rule, so the list reads in the order the
-    // contest would settle it and the market representing the faction comes out on top by that order
-    // rather than by being put there.
+    // The faction's markets rank descending by what they brought to the contest, a tie falling to the
+    // earlier place in the economy's listing - which is the mechanic's own tie rule, so the list reads
+    // in the order the contest would settle it and the market representing the faction comes out on
+    // top by that order rather than by being put there.
+    //
+    // Ranked on the contest score rather than the arithmetic one, or a hidden market the mechanic
+    // never weighed would sort above the market that actually took the system - which is exactly the
+    // reading the order exists to rule out.
     private static final Comparator<MarketClaimBreakdown> MARKET_ORDER =
         Comparator
-            .comparingInt(MarketClaimBreakdown::computeTotalScore)
+            .comparingInt(ClaimScoreRowResolver::resolveContestScore)
             .reversed()
             .thenComparingInt(MarketClaimBreakdown::listingPosition);
 
@@ -81,6 +96,11 @@ public final class ClaimScoreRowResolver {
     // The sibling count of a faction holding this system with one market alone - the reading at which
     // the term never arose rather than one at which it counted for nothing.
     private static final int NO_SIBLING_MARKETS = 0;
+
+    // What a market the mechanic never scored brought to the contest. Nought rather than absent,
+    // because the market is on the list and the reader is being told what it counted for: a blank
+    // column would read as a number the box failed to work out.
+    private static final int NO_CONTEST_SCORE = 0;
 
     // The market a sibling count is being counted for, which is what parts that count from how many
     // the faction holds here: a market is not its own sibling. Named because the line states the
@@ -95,21 +115,25 @@ public final class ClaimScoreRowResolver {
      * strongest first, each carrying the terms of its own score - closed by the presence its several
      * holdings earned every one of them.
      *
-     * @param standing               the faction's ranked place in the hovered system's claim contest
-     * @param isHoldingTheClaim      whether this faction is the one the contest handed the system to.
-     *                               Only its own strongest market is called out as the claim holder,
-     *                               since only one market in the whole box took anything; false for
-     *                               every rival, and for every faction where a decree settled the
-     *                               system before a market was weighed
+     * @param breakdown              the whole contest the standing was ranked in - what settles who
+     *                               the claim holder is and which listing ties actually decided
+     *                               something, neither of which one faction's standing can answer
+     * @param standing               the faction's ranked place in that contest
      * @param isListingUnfoundMarkets whether a market the player has not found may be listed. False
      *                               is the ordinary state and leaves those markets off; true is the
      *                               dev reveal, under which the account is stated in full
      * @return the entries in the order they are read
      */
     public static List<CellTooltipEntry> resolveMarketRows(
+            SystemClaimBreakdown breakdown,
             FactionClaimScore standing,
-            boolean isHoldingTheClaim,
             boolean isListingUnfoundMarkets) {
+
+        // Whether this faction is the one the contest handed the system to, and so whose strongest
+        // market is the one that took it. A decree settles the system before a single market is
+        // weighed, so under one no market is the holder however the scores fell.
+        var isHoldingTheClaim = !KmlibStrings.hasText(breakdown.overrideFactionId())
+            && standing.factionId().equals(breakdown.claimantFactionId());
 
         // A market the player has not found is left off rather than blanked on the list: it carries
         // nothing the account needs, and a run of redacted lines would state the very count the
@@ -125,7 +149,10 @@ public final class ClaimScoreRowResolver {
 
         for (var market : listedMarkets) {
             entries.add(resolveMarketEntry(
-                createMarketLine(market, resolveIndexOutcome(market, listedMarkets)),
+                createMarketLine(market, ClaimTieOutcomes.resolveOutcome(
+                    breakdown,
+                    standing,
+                    market)),
                 market,
                 isHoldingTheClaim && market == standing.standingMarket()));
         }
@@ -138,33 +165,6 @@ public final class ClaimScoreRowResolver {
             resolveSiblingEntry(standing).ifPresent(entries::add);
         }
         return List.copyOf(entries);
-    }
-
-    // What a market's place in the listing decided, judged against the markets listed beside it: it
-    // won where something else scored exactly the same and this one was reached first, lost where
-    // something equal was reached before it, and settled nothing where its score stands alone.
-    //
-    // Judged over what is drawn rather than over the faction's whole holdings, because the marking
-    // exists to answer a question the drawn list raises - why does that one sit above this one, when
-    // the numbers beside them match - and a tie with a market nobody can see is not that question.
-    private static CellTooltipIndexOutcome resolveIndexOutcome(
-            MarketClaimBreakdown market,
-            List<MarketClaimBreakdown> listedMarkets) {
-
-        var isTied = false;
-        var isFirstReached = true;
-
-        for (var other : listedMarkets) {
-            if (other == market || other.computeTotalScore() != market.computeTotalScore()) {
-                continue;
-            }
-            isTied = true;
-            isFirstReached &= market.listingPosition() < other.listingPosition();
-        }
-        if (!isTied) {
-            return CellTooltipIndexOutcome.UNCONTESTED;
-        }
-        return isFirstReached ? CellTooltipIndexOutcome.WON : CellTooltipIndexOutcome.LOST;
     }
 
     // The presence term, stated once at the foot of the list rather than on each market's own
@@ -212,14 +212,20 @@ public final class ClaimScoreRowResolver {
             .nesting(resolveTermEntries(market));
     }
 
-    // The shape every market's own line takes: named, uncrested, and carrying what it scored - the
-    // whole score, presence included, since that is the number the contest weighed it at.
+    // The shape every market's own line takes: named, uncrested, and carrying what it brought to the
+    // contest - for an open market the whole score, presence included, since that is the number the
+    // contest weighed it at.
     //
     // The name runs on into where the economy lists the market, because that number is the whole of
     // the answer to the one question the scores cannot settle: two markets on the same score are
     // parted by nothing but which the economy reached first. Stated on every market rather than only
     // on a tied one, so a reader meets the ordering before they need it and a tie reads as a rule
     // they already understand rather than as an outcome the box declines to explain.
+    //
+    // A market the mechanic never scored says so with its number alone. Nothing calls its
+    // hiddenness out: the word would raise a question about the mechanic that the box would then owe
+    // an answer to, where the nought beside a listed market already says the one thing that matters
+    // about it here - it counted for nothing in this contest.
     private static CellTooltipEntryLine createMarketLine(
             MarketClaimBreakdown market,
             CellTooltipIndexOutcome indexOutcome) {
@@ -228,7 +234,7 @@ public final class ClaimScoreRowResolver {
             .createLine(
                 NO_MARK,
                 market.marketName(),
-                KmlibNumbers.formatGroupedInteger(market.computeTotalScore()))
+                KmlibNumbers.formatGroupedInteger(resolveContestScore(market)))
             .indexedAt(
                 KmuStrings.format(
                     KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_LISTING_POSITION,
@@ -236,11 +242,30 @@ public final class ClaimScoreRowResolver {
                 indexOutcome);
     }
 
+    // What a market brought to the contest. An open market brings its score; a hidden one brings
+    // nothing, because the mechanic skips it before scoring - it reaches the contest only through
+    // the presence term, which counts it without ever weighing it.
+    //
+    // Read here rather than off the breakdown, which faithfully reports the score a market
+    // <em>would</em> carry: what a skipped market is worth to the contest is the box's question, not
+    // the arithmetic's, and a nought printed against a size the reader can see needs the word beside
+    // it to be a finding rather than a fault.
+    private static int resolveContestScore(MarketClaimBreakdown market) {
+        return market.isHiddenMarket() ? NO_CONTEST_SCORE : market.computeTotalScore();
+    }
+
     // The terms of one market's score that are the market's own: the size it starts from, and what a
     // garrison adds. The presence every market of the faction shares is stated once below the list
     // rather than here, so these two are what the line above them adds that its siblings' do not.
+    //
+    // A hidden market breaks down into nothing, because nothing was computed for it: its size and
+    // its garrison never entered any sum, and listing them would invite a reader to add up to a
+    // number the line above deliberately does not carry.
     private static List<CellTooltipEntry> resolveTermEntries(MarketClaimBreakdown market) {
 
+        if (market.isHiddenMarket()) {
+            return List.of();
+        }
         var entries = new ArrayList<CellTooltipEntry>();
 
         // Always stated, even where it is the whole score: it is the term the sum starts from, and a

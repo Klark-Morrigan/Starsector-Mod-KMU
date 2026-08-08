@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
-import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
@@ -40,22 +39,15 @@ public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip 
             SystemClaimBreakdown breakdown,
             FactionClaimScore standing) {
 
-        // Which faction the contest handed the system to, and so whose strongest market is the one
-        // that took it. A decree settles the system before a single market is weighed, so under one
-        // no market is the holder however the scores fell - the account then reads as the arithmetic
-        // that would have decided it rather than the arithmetic that did.
-        var isHoldingTheClaim = !KmlibStrings.hasText(breakdown.overrideFactionId())
-            && standing.factionId().equals(breakdown.claimantFactionId());
-
         // The mechanic settles a claim over colonies nobody has found, and the box declines to
         // repeat what it learned there. Read live off the same toggle the status line and the
         // faction layer's pass sample, so the three cannot disagree about what the player knows.
         var isListingUnfoundMarkets =
             PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions();
 
-        return ClaimScoreRowResolver.resolveMarketRows(
-            standing,
-            isHoldingTheClaim,
-            isListingUnfoundMarkets);
+        // The whole contest travels with the standing: who the claim holder is and which listing
+        // ties actually decided something are facts of the contest, not of one faction's list, and
+        // the resolver reads both off the very breakdown this box is drawing.
+        return ClaimScoreRowResolver.resolveMarketRows(breakdown, standing, isListingUnfoundMarkets);
     }
 }
