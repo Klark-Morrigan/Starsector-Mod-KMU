@@ -1,10 +1,10 @@
 package kmu.maplayers.base.sidebar.style;
 
+import kmlib.starsector.ui.colour.AccentColours;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.layout.TabsControlLayout;
-import kmlib.starsector.ui.render.gl.style.AccentColours;
 import kmlib.starsector.ui.render.gl.style.BoxColours;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.sound.UiSoundScheme;
@@ -163,13 +163,9 @@ public final class SidebarStyles {
             // A vanilla tab takes no accent at all beyond the rule around the row, which has no vanilla
             // counterpart to copy - so the panel's own base is what the strip is ruled in.
             case STRIP -> TabPalette.createMapTabPalette(accentColours.base());
-            // A vanilla button takes nothing but its accent: the dark step fills and frames it, the base
-            // is what the pointer adds and what an untouched label reads in, and the bright step marks the
-            // one being shown.
-            case RAISED_BUTTON -> TabPalette.createRaisedButtonPalette(
-                accentColours.dark(),
-                accentColours.base(),
-                accentColours.bright());
+            // A vanilla button takes nothing but its accent, and takes all of it - so the whole set goes
+            // over rather than the steps picked out one at a time.
+            case RAISED_BUTTON -> TabPalette.createRaisedButtonPalette(accentColours);
         };
     }
 

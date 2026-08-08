@@ -1,8 +1,8 @@
 package kmu.maplayers.base.sidebar.style;
 
 import kmlib.colour.Colours;
+import kmlib.starsector.ui.colour.AccentColours;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
-import kmlib.starsector.ui.render.gl.style.AccentColours;
 import kmlib.starsector.ui.render.gl.style.NotchColours;
 
 import kmu.settings.NotchChevronColourChoice;
