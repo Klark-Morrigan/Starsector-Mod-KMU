@@ -31,6 +31,8 @@ import java.util.OptionalInt;
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildStandingOnOneMarket;
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_LABEL_RUN;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_QUALIFIER_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
@@ -57,11 +59,6 @@ final class ExpandedSystemClaimTooltipTest {
 
     private static final String HEGEMONY = "hegemony";
     private static final String TRITACHYON = "tritachyon";
-
-    // A faction line opens on the crest it is marked with, so its name and the marker a decreed claim
-    // line goes on to call out each sit one run later.
-    private static final int MARKED_LABEL_RUN = 1;
-    private static final int MARKED_MARKER_RUN = 2;
 
     // Where the claim lands in a box over a populated system: under the heading the box opens with.
     private static final int CLAIM_ROW = 1;
@@ -245,7 +242,7 @@ final class ExpandedSystemClaimTooltipTest {
 
             assertThat(readLabelTextRun(claimRow, MARKED_LABEL_RUN).text())
                 .isEqualTo("The Hegemony");
-            assertThat(readLabelRun(claimRow, MARKED_MARKER_RUN))
+            assertThat(readLabelRun(claimRow, MARKED_QUALIFIER_RUN))
                 .isEqualTo(new TextSpan(" (core)", HIGHLIGHT));
         }
 

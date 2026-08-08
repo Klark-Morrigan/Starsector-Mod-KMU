@@ -19,6 +19,10 @@ import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT_GREEN;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT_RED;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.LABEL_RUN;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_LABEL_RUN;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_QUALIFIER_RUN;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARK_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NESTED_MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
@@ -62,20 +66,16 @@ final class CellTooltipRowsTest {
     private static final CellTooltipEntryLevel MEMBER_LEVEL = new CellTooltipEntryLevel(1, 1);
     private static final CellTooltipEntryLevel NESTED_MEMBER_LEVEL = new CellTooltipEntryLevel(2, 2);
 
-    // The runs a line reads as, in order: what it names, then any place it holds in an ordering, then
-    // any qualifier picked out beside it. A line stating no place closes the gap, so its qualifier
-    // takes the run the place would have.
-    private static final int LABEL_RUN = 0;
+    // Where a place a line holds in an ordering sits, and what that pushes the qualifier to. Held here
+    // rather than beside the shared indices because only the vocabulary's own cases state a place: a
+    // line stating none closes the gap, so its qualifier takes the run the place would have.
     private static final int QUALIFIER_RUN = 1;
     private static final int INDEX_RUN = 1;
     private static final int INDEXED_QUALIFIER_RUN = 2;
 
-    // The same reading for a line led by a mark, whichever shape it is: the image takes the opening run
-    // and everything the line says sits one run later. Stated once for listed lines and banners together,
-    // since carrying the mark in the label is exactly what they now have in common.
-    private static final int MARK_RUN = 0;
-    private static final int MARKED_LABEL_RUN = 1;
-    private static final int MARKED_QUALIFIER_RUN = 2;
+    // The same two runs on a line led by a mark, each pushed along by the image it opens on.
+    private static final int MARKED_INDEX_RUN = 2;
+    private static final int MARKED_INDEXED_QUALIFIER_RUN = 3;
 
     @BeforeEach
     void installColours() {
@@ -355,6 +355,28 @@ final class CellTooltipRowsTest {
             assertThat(readLabelTextRun(row, INDEX_RUN))
                 .isEqualTo(new TextSpan(" [2]", GRAY));
             assertThat(readLabelTextRun(row, INDEXED_QUALIFIER_RUN))
+                .isEqualTo(new TextSpan(" strongest", HIGHLIGHT));
+        }
+
+        @Test
+        void buildListedRowRunsAMarkedLinesPlaceAndStatusOnPastItsMark() {
+            // The fullest line the vocabulary can build, and the one place the mark's cost to every run
+            // after it is legible: name, place and status each sit a run further along than they would
+            // on the same line unmarked, in that order, and the mark still opens the line.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(CREST, "Chicomoztoc", "19")
+                    .indexedAt("[2]", CellTooltipIndexOutcome.UNCONTESTED)
+                    .qualifiedWith("strongest"),
+                MEMBER_LEVEL);
+
+            assertThat(readLabelRun(row, MARK_RUN))
+                .isEqualTo(new ImageSpan(CREST));
+            assertThat(readLabelTextRun(row, MARKED_LABEL_RUN).text())
+                .isEqualTo("Chicomoztoc");
+            assertThat(readLabelTextRun(row, MARKED_INDEX_RUN))
+                .isEqualTo(new TextSpan(" [2]", GRAY));
+            assertThat(readLabelTextRun(row, MARKED_INDEXED_QUALIFIER_RUN))
                 .isEqualTo(new TextSpan(" strongest", HIGHLIGHT));
         }
 

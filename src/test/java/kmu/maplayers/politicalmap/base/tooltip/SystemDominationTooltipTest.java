@@ -31,6 +31,8 @@ import java.util.List;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_LABEL_RUN;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARK_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
@@ -71,11 +73,6 @@ final class SystemDominationTooltipTest {
     private static final int GROUP_HEADER_ROW = 1;
     private static final int FIRST_MEMBER_ROW = 2;
     private static final int SECOND_MEMBER_ROW = 3;
-
-    // Every line these cases read is crested, so each opens on that image and says its name in the run
-    // after it. No case below writes a qualifier onto one.
-    private static final int MARK_RUN = 0;
-    private static final int MARKED_LABEL_RUN = 1;
 
     // The scores reach this box already worded by the resolver, so they stand in as the text they draw
     // as - what the box does with them is carry them into the value column.

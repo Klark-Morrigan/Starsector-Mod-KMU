@@ -173,15 +173,11 @@ public final class CellTooltipRows {
             CellTooltipEntryLine line,
             CellTooltipEntryLevel level) {
 
-        var row = openLabel(line, StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve());
-
-        return appendQualifier(
-            appendIndex(
-                placeRow(
-                    appendValue(row, line, StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve()),
-                    level),
-                line),
-            line);
+        return finishListedRow(
+            openLabel(line, StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve()),
+            line,
+            level,
+            StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve());
     }
 
     /**
@@ -204,12 +200,30 @@ public final class CellTooltipRows {
             CellTooltipEntryLevel level) {
 
         var textColour = StarsectorUiColour.VANILLA_TEXT.resolve();
-        var row = openLabel(line, textColour)
-            .indentsBy(level.indentDepth() * MEMBER_INDENT);
+
+        return finishListedRow(
+            openLabel(line, textColour).indentsBy(level.indentDepth() * MEMBER_INDENT),
+            line,
+            level,
+            textColour);
+    }
+
+    // Finishes a listed line once its label is open: its number, where the line sits and how loudly it
+    // speaks, then the place and the status it runs on into.
+    //
+    // Shared by both tiers rather than spelled at each, because everything here is the same at either -
+    // which leaves the two shapes differing in exactly what they are meant to differ in, the colours
+    // they speak in and the indent they sit at. Spelled twice, a part added to a line would eventually
+    // be added to one tier and not the other.
+    private static TooltipRow finishListedRow(
+            TooltipRow.TableRow row,
+            CellTooltipEntryLine line,
+            CellTooltipEntryLevel level,
+            Color valueColour) {
 
         return appendQualifier(
             appendIndex(
-                placeRow(appendValue(row, line, textColour), level),
+                placeRow(appendValue(row, line, valueColour), level),
                 line),
             line);
     }

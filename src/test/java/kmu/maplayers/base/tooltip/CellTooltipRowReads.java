@@ -7,11 +7,11 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import java.util.List;
 
 /**
- * How a test reads one line of a cell tooltip, and the tier values the vocabulary lays lines out at.
- * Shared because a row is authored in one place ({@link CellTooltipRows}) and asserted in several - the
- * vocabulary's own tests plus every resolver that contributes a single line - and a copy of the indent
- * per test class is a value that can drift from the one the tooltip actually draws at while every copy
- * goes on agreeing with itself.
+ * How a test reads one line of a cell tooltip, the tier values the vocabulary lays lines out at, and
+ * where each stretch of a line's label falls. Shared because a row is authored in one place
+ * ({@link CellTooltipRows}) and asserted in several - the vocabulary's own tests plus every resolver
+ * that contributes a single line - and a copy of the indent per test class is a value that can drift
+ * from the one the tooltip actually draws at while every copy goes on agreeing with itself.
  *
  * <p>The values are restated here rather than read from {@link CellTooltipRows}, whose own are private:
  * a constant read from the class under test would be edited alongside it and could never fail, while
@@ -43,6 +43,24 @@ public final class CellTooltipRowReads {
 
     /** Float comparison slack for the indents above, which are laid out in UI units. */
     public static final float TOLERANCE = 0.001f;
+
+    /** Where a line carrying no mark says its name: its opening run. */
+    public static final int LABEL_RUN = 0;
+
+    /**
+     * Where a marked line's mark sits: the opening run, ahead of the words. Shared with the run
+     * indices below because a mark shifts every run after it, so a test reading the wrong index on a
+     * marked line finds an image where it expected words - and every box in the mod marks its lines
+     * through the one vocabulary, which is exactly the sort of fact three copies agree on until one
+     * is edited.
+     */
+    public static final int MARK_RUN = 0;
+
+    /** Where a marked line says its name: one run past the mark it opens on. */
+    public static final int MARKED_LABEL_RUN = 1;
+
+    /** Where a marked line's closing qualifier sits, that being the run after its name. */
+    public static final int MARKED_QUALIFIER_RUN = 2;
 
     private CellTooltipRowReads() {
     }

@@ -19,6 +19,9 @@ import java.util.Optional;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.LABEL_RUN;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_LABEL_RUN;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARK_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NESTED_MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
@@ -42,13 +45,6 @@ import static org.assertj.core.api.Assertions.within;
 final class CellTooltipSectionsTest {
 
     private static final String CREST = "graphics/hegemony_crest.png";
-
-    // What a line is called, which is the run every case here reads it by; how a line calling something
-    // out ends is the vocabulary's and pinned there. A line led by a mark opens on that image instead,
-    // so its words sit one run later.
-    private static final int LABEL_RUN = 0;
-    private static final int MARK_RUN = 0;
-    private static final int MARKED_LABEL_RUN = 1;
 
     // Where the heading sits inside the block it opens, and where the first entry it names follows.
     private static final int HEADING_ROW = 0;

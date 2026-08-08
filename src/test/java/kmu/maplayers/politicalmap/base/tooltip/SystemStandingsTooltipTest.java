@@ -32,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.LABEL_RUN;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARK_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.VIEW_GROUPING;
@@ -62,11 +64,6 @@ final class SystemStandingsTooltipTest {
 
     // The lines a box with no status and no decree lays out, in draw order.
     private static final int DOMINATED_HEADING_ROW = 0;
-
-    // A markless line - a heading - says its words in its opening run, while a crested group line opens
-    // on that image instead. No case below writes a qualifier onto one.
-    private static final int LABEL_RUN = 0;
-    private static final int MARK_RUN = 0;
 
     // The scores reach a box already worded by the resolver, so they stand in as the text they draw as.
     private static final String BLOC_SCORE = "1,200";

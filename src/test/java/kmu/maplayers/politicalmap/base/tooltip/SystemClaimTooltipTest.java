@@ -30,6 +30,10 @@ import java.util.Optional;
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildStandingOnOneMarket;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.LABEL_RUN;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_LABEL_RUN;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_QUALIFIER_RUN;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARK_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
@@ -65,14 +69,6 @@ final class SystemClaimTooltipTest {
     private static final String PIRATES = "pirates";
 
     private static final String HEGEMONY_CREST = "graphics/hegemony_crest.png";
-
-    // A markless line - a heading, or a claim of nobody - says its words in its opening run. A faction
-    // line opens on the crest it is marked with instead, so its name and anything the line goes on to
-    // call out each sit one run later.
-    private static final int LABEL_RUN = 0;
-    private static final int MARK_RUN = 0;
-    private static final int MARKED_LABEL_RUN = 1;
-    private static final int MARKED_MARKER_RUN = 2;
 
     // The two lines a box over a populated system opens with, whatever the contest below them holds, by
     // their place in the flat run the box draws.
@@ -293,7 +289,7 @@ final class SystemClaimTooltipTest {
 
             assertThat(readLabelRun(claimRow, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
-            assertThat(readLabelRun(claimRow, MARKED_MARKER_RUN))
+            assertThat(readLabelRun(claimRow, MARKED_QUALIFIER_RUN))
                 .isEqualTo(new TextSpan(" (core)", HIGHLIGHT));
             assertThat(claimRow.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan("1,200", HIGHLIGHT)));
@@ -418,7 +414,7 @@ final class SystemClaimTooltipTest {
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Unpopulated", "Claim:", "The Hegemony");
-            assertThat(readLabelRun(readTableRow(sections, DECREED_CLAIM_ROW), MARKED_MARKER_RUN))
+            assertThat(readLabelRun(readTableRow(sections, DECREED_CLAIM_ROW), MARKED_QUALIFIER_RUN))
                 .isEqualTo(new TextSpan(" (core)", HIGHLIGHT));
         }
 

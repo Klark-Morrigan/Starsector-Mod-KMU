@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_LABEL_RUN;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARK_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.buildEmptySector;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
@@ -27,10 +29,6 @@ final class FactionTooltipBannerTest {
 
     private static final String HEGEMONY = "hegemony";
     private static final String HEGEMONY_CREST = "graphics/hegemony_crest.png";
-
-    // A banner led by a crest opens on that image, so its words sit one run later.
-    private static final int CREST_RUN = 0;
-    private static final int LABEL_RUN = 1;
 
     @BeforeEach
     void installColours() {
@@ -47,14 +45,14 @@ final class FactionTooltipBannerTest {
 
         @Test
         void buildFactionBannerCarriesTheCrestAndTheNameAsOneSentence() {
-            // The crest rides inside the label rather than in the gutter the entries below align to, so
-            // a verdict about the system centres as one line instead of anchoring to a column it has
-            // left.
+            // The crest rides inside the label, so a verdict about the system centres as one line
+            // instead of anchoring its image to a column a centred line has left - and it opens on that
+            // image exactly as the listed lines below it do.
             var row = FactionTooltipBanner.buildFactionBanner(buildSectorKnowingHegemony(), HEGEMONY);
 
-            assertThat(readLabelRun(row, CREST_RUN))
+            assertThat(readLabelRun(row, MARK_RUN))
                 .isEqualTo(new ImageSpan(HEGEMONY_CREST));
-            assertThat(readLabelRun(row, LABEL_RUN))
+            assertThat(readLabelRun(row, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", TEXT));
         }
 
