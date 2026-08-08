@@ -391,7 +391,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowQuietensTheNameOfALineThatIsWorkingThroughout() {
+        void buildListedRowQuietensTheNameOfAnAside() {
             // An aside stating how a number above it was arrived at is not one of the things the block
             // lists, so it reads in the shade a value's working does - name and all - and only the
             // number it arrives at stays a finding.

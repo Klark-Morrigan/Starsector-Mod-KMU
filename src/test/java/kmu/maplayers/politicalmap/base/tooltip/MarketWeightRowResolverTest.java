@@ -277,10 +277,10 @@ final class MarketWeightRowResolverTest {
                 List.of(buildPatrollingBreakdown(2, 1, 0)),
                 buildRules());
 
-            assertThat(rows.get(0).line().indexText())
+            assertThat(rows.get(0).line().indexPlace())
                 .isNull();
             assertThat(rows.get(0).children())
-                .allSatisfy(factor -> assertThat(factor.line().indexText()).isNull());
+                .allSatisfy(factor -> assertThat(factor.line().indexPlace()).isNull());
         }
     }
 

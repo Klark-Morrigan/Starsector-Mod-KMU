@@ -18,11 +18,9 @@ import java.util.Objects;
  *
  * @param iconSpritePath   the leading mark's texture path, or null for a line carrying none
  * @param labelText        what the line is called
- * @param indexText        the line's place in the ordering it belongs to, run on after its name in
- *                         the quiet shade, or null where the line has no place worth stating
- * @param indexOutcome     what that place did for the line - nothing, or the winning or losing of
- *                         what the ordering settles; {@link CellTooltipIndexOutcome#UNCONTESTED} for
- *                         a place that decided nothing, and for a line stating none at all
+ * @param indexPlace       where the line falls in the ordering it belongs to and what that place
+ *                         decided, run on after its name, or null where the line has no place worth
+ *                         stating
  * @param qualifierText    the status called out at the end of the line, or null when it states none
  * @param valueText        what the block counts this line in, or {@link CellTooltipRows#NO_SCORE} for a
  *                         line carrying no number
@@ -39,8 +37,7 @@ import java.util.Objects;
 public record CellTooltipEntryLine(
     String iconSpritePath,
     String labelText,
-    String indexText,
-    CellTooltipIndexOutcome indexOutcome,
+    CellTooltipIndexPlace indexPlace,
     String qualifierText,
     String valueText,
     String valueWorkingText,
@@ -50,7 +47,7 @@ public record CellTooltipEntryLine(
     // What a line with no place to state carries in the index slot, for the same reason the two
     // absences below are named: the factory says what the plainest line has rather than passing
     // three unexplained nulls a reader has to count off against the components.
-    private static final String NO_INDEX = null;
+    private static final CellTooltipIndexPlace NO_PLACE = null;
 
     // What an ordinary line is: one of the things the block lists rather than a note about them, and
     // carrying a number it earned. Both are the plain case and what every factory below builds.
@@ -77,10 +74,6 @@ public record CellTooltipEntryLine(
     public CellTooltipEntryLine {
         Objects.requireNonNull(labelText, "labelText");
         Objects.requireNonNull(valueText, "valueText");
-
-        // An outcome handed over as null reads as one nothing turned on, so a hand-built line cannot
-        // fail inside a draw over a part it never meant to state.
-        indexOutcome = indexOutcome == null ? CellTooltipIndexOutcome.UNCONTESTED : indexOutcome;
     }
 
     /**
@@ -102,8 +95,7 @@ public record CellTooltipEntryLine(
         return new CellTooltipEntryLine(
             iconSpritePath,
             labelText,
-            NO_INDEX,
-            CellTooltipIndexOutcome.UNCONTESTED,
+            NO_PLACE,
             NO_QUALIFIER,
             valueText,
             NO_WORKING,
@@ -136,8 +128,7 @@ public record CellTooltipEntryLine(
         return new CellTooltipEntryLine(
             iconSpritePath,
             labelText,
-            indexText,
-            indexOutcome,
+            indexPlace,
             qualifierText,
             valueText,
             valueWorkingText,
@@ -168,8 +159,7 @@ public record CellTooltipEntryLine(
         return new CellTooltipEntryLine(
             iconSpritePath,
             labelText,
-            indexText,
-            indexOutcome,
+            new CellTooltipIndexPlace(indexText, indexOutcome),
             qualifierText,
             valueText,
             valueWorkingText,
@@ -193,8 +183,7 @@ public record CellTooltipEntryLine(
         return new CellTooltipEntryLine(
             iconSpritePath,
             labelText,
-            indexText,
-            indexOutcome,
+            indexPlace,
             qualifierText,
             valueText,
             valueWorkingText,
@@ -219,8 +208,7 @@ public record CellTooltipEntryLine(
         return new CellTooltipEntryLine(
             iconSpritePath,
             labelText,
-            indexText,
-            indexOutcome,
+            indexPlace,
             qualifierText,
             valueText,
             valueWorkingText,
@@ -246,8 +234,7 @@ public record CellTooltipEntryLine(
         return new CellTooltipEntryLine(
             iconSpritePath,
             labelText,
-            indexText,
-            indexOutcome,
+            indexPlace,
             qualifierText,
             valueText,
             valueWorkingText,

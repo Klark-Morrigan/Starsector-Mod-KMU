@@ -16,6 +16,10 @@ final class CellTooltipEntryLineTest {
 
     private static final String CREST = "graphics/hegemony_crest.png";
 
+    // What a line with no place in any ordering carries there - the plain case, and what every line
+    // built through the factory has until one is stated on it.
+    private static final CellTooltipIndexPlace NO_PLACE = null;
+
     // What every line built through the factory is: one of the things a block lists rather than a note
     // about them, carrying a number it earned rather than one an account recorded for it.
     private static final boolean IS_LISTED_IN_ITS_OWN_RIGHT = false;
@@ -34,8 +38,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         CREST,
                         "The Hegemony",
-                        null,
-                        CellTooltipIndexOutcome.UNCONTESTED,
+                        NO_PLACE,
                         null,
                         "1,200",
                         null,
@@ -104,8 +107,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         CREST,
                         "The Hegemony",
-                        null,
-                        CellTooltipIndexOutcome.UNCONTESTED,
+                        NO_PLACE,
                         "(core)",
                         "1,200",
                         null,
@@ -140,8 +142,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         CREST,
                         "The Hegemony",
-                        "[2]",
-                        CellTooltipIndexOutcome.WON,
+                        new CellTooltipIndexPlace("[2]", CellTooltipIndexOutcome.WON),
                         null,
                         "1,200",
                         null,
@@ -160,7 +161,7 @@ final class CellTooltipEntryLineTest {
 
             assertThat(line.qualifierText())
                 .isEqualTo("(core)");
-            assertThat(line.indexText())
+            assertThat(line.indexPlace().text())
                 .isEqualTo("[2]");
         }
 
@@ -171,7 +172,7 @@ final class CellTooltipEntryLineTest {
             var plainLine = CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200");
             plainLine.indexedAt("[2]", CellTooltipIndexOutcome.WON);
 
-            assertThat(plainLine.indexText())
+            assertThat(plainLine.indexPlace())
                 .isNull();
         }
     }
@@ -234,7 +235,7 @@ final class CellTooltipEntryLineTest {
                 .isEqualTo("(3 markets) - 1 =");
             assertThat(line.valueText())
                 .isEqualTo("+2");
-            assertThat(line.indexText())
+            assertThat(line.indexPlace().text())
                 .isEqualTo("[2]");
         }
 
@@ -265,8 +266,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         null,
                         "Small: 2",
-                        null,
-                        CellTooltipIndexOutcome.UNCONTESTED,
+                        NO_PLACE,
                         null,
                         "500",
                         "0.25 /",

@@ -245,6 +245,22 @@ about what the overlay means.
   (`derivesValueFrom`) and the vocabulary greys the working against whatever colour the line speaks
   in, exactly as it golds a qualifier: run together in one string they could only be drawn in one
   shade, and the reader would take a value joined by a separator for a single number.
+  Two further readings take that same quiet shade, and they are deliberately different sizes.
+  `readsAsAside` says the whole line is a note *about* the list rather than one of the things in it -
+  the arithmetic of a term its members share, stated once beneath them - so it quietens down to its
+  name and only the number it arrives at stays a finding. `statesUncountedValue` is the narrower one:
+  the line *is* one of the things listed and is named as loudly as its neighbours, but its number is
+  one nothing earned - what an account recorded for it rather than anything it did. Drawn as loudly
+  as the numbers around it, such a nought invites the one comparison it cannot bear.
+  A line may also state where it falls in an ordering (`indexedAt`), as a `CellTooltipIndexPlace` -
+  the number the reader sees and, as one value with it, what that place decided
+  (`CellTooltipIndexOutcome`). It runs on after the name in the quiet shade, ahead of any qualifier,
+  because it identifies the line rather than saying anything about it. Where the ordering actually
+  settled something between two otherwise-equal lines the place stops being an identifier and reads
+  in vanilla's positive or negative shade instead, since at that moment the number *is* the reason
+  one line beat another. Text and outcome travel as one value because neither is separately true, and
+  carried apart they could drift - an outcome left behind by a re-numbered place would mark the wrong
+  line as having won.
   `CellTooltipSections` walks that depth-first into a block, each entry becoming a nested block of its
   own line over its account - which is what lets KMLib set one entry's whole breakdown apart from the
   next entry at its tier rather than from its last line - carrying the indent and the demotion as

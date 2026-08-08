@@ -99,9 +99,7 @@ final class ClaimScoreRowResolverTest {
             // The faction's number above is this one market's score, so the reader following it
             // downward has to be told which of the markets listed here it came out of - and kept from
             // reading the number as the total of the list.
-            var rows = resolveContestedRows(buildStanding(
-                buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))));
+            var rows = resolveContestedRows(buildStandingOverOneSibling());
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Culann", PRESENCE_LINE);
@@ -113,13 +111,11 @@ final class ClaimScoreRowResolverTest {
         void resolveMarketRowsStatesWhereTheEconomyListsEachMarket() {
             // The whole of the answer to what the scores cannot settle: a tie falls to whichever
             // market the economy reached first, and nothing else in the box says which that was.
-            var rows = resolveContestedRows(buildStanding(
-                buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))));
+            var rows = resolveContestedRows(buildStandingOverOneSibling());
 
-            assertThat(rows.get(0).line().indexText())
+            assertThat(rows.get(0).line().indexPlace().text())
                 .isEqualTo("[1]");
-            assertThat(rows.get(1).line().indexText())
+            assertThat(rows.get(1).line().indexPlace().text())
                 .isEqualTo("[2]");
         }
 
@@ -138,11 +134,11 @@ final class ClaimScoreRowResolverTest {
                         TWO_SIBLING_MARKETS,
                         SECOND_LISTED))));
 
-            assertThat(rows.get(0).line().indexOutcome())
+            assertThat(rows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.WON);
-            assertThat(rows.get(1).line().indexOutcome())
+            assertThat(rows.get(1).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.LOST);
-            assertThat(rows.get(2).line().indexOutcome())
+            assertThat(rows.get(2).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.LOST);
         }
 
@@ -165,9 +161,9 @@ final class ClaimScoreRowResolverTest {
                 rival,
                 WITHHOLDING_UNFOUND_MARKETS);
 
-            assertThat(claimantRows.get(0).line().indexOutcome())
+            assertThat(claimantRows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.WON);
-            assertThat(rivalRows.get(0).line().indexOutcome())
+            assertThat(rivalRows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.LOST);
         }
 
@@ -182,7 +178,7 @@ final class ClaimScoreRowResolverTest {
                 claimant,
                 WITHHOLDING_UNFOUND_MARKETS);
 
-            assertThat(rows.get(0).line().indexOutcome())
+            assertThat(rows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
         }
 
@@ -209,9 +205,9 @@ final class ClaimScoreRowResolverTest {
                 outsider,
                 WITHHOLDING_UNFOUND_MARKETS);
 
-            assertThat(claimantRows.get(0).line().indexOutcome())
+            assertThat(claimantRows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
-            assertThat(outsiderRows.get(0).line().indexOutcome())
+            assertThat(outsiderRows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
         }
 
@@ -226,21 +222,22 @@ final class ClaimScoreRowResolverTest {
                 claimant,
                 WITHHOLDING_UNFOUND_MARKETS);
 
-            assertThat(rows.get(0).line().indexOutcome())
+            assertThat(rows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
         }
 
         @Test
         void resolveMarketRowsLeavesAPlaceThatDecidedNothingUnmarked() {
             // Markets on different scores are told apart by the scores, so their places settled
-            // nothing and a marked one would claim an outcome the numbers already gave.
-            var rows = resolveContestedRows(buildStanding(
-                buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))));
+            // nothing and a marked one would claim an outcome the numbers already gave. Asserted on
+            // the markets alone: the presence line below them sits in no listing at all, which is a
+            // different thing from a place that decided nothing.
+            var rows = resolveContestedRows(buildStandingOverOneSibling());
 
-            assertThat(rows)
-                .allSatisfy(entry -> assertThat(entry.line().indexOutcome())
-                    .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED));
+            assertThat(rows.get(0).line().indexPlace().outcome())
+                .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
+            assertThat(rows.get(1).line().indexPlace().outcome())
+                .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
         }
 
         @Test
@@ -309,7 +306,7 @@ final class ClaimScoreRowResolverTest {
                 List.of(buildMarket("Kanta's Den", STRONGEST_MARKET_SIZE, ONE_SIBLING_MARKET,
                     SECOND_LISTED, IS_UNFOUND_BY_PLAYER))));
 
-            assertThat(rows.get(0).line().indexOutcome())
+            assertThat(rows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
         }
 
@@ -341,8 +338,8 @@ final class ClaimScoreRowResolverTest {
                 List.of()));
 
             assertThat(rows.get(0).children())
-                .allSatisfy(term -> assertThat(term.line().indexText()).isNull());
-            assertThat(rows.get(1).line().indexText())
+                .allSatisfy(term -> assertThat(term.line().indexPlace()).isNull());
+            assertThat(rows.get(1).line().indexPlace())
                 .isNull();
         }
 
@@ -397,9 +394,7 @@ final class ClaimScoreRowResolverTest {
         void resolveMarketRowsCallsOutNoMarketBesidesTheFactionsStrongest() {
             // A second marked line would say one system has two holders, which is exactly what a
             // contest cannot produce.
-            var rows = resolveContestedRows(buildStanding(
-                buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED))));
+            var rows = resolveContestedRows(buildStandingOverOneSibling());
 
             assertThat(rows.get(1).line().qualifierText())
                 .isNull();
@@ -410,9 +405,7 @@ final class ClaimScoreRowResolverTest {
             // Every faction is represented by its strongest market, but only one of those won
             // anything. A rival's is called out nowhere, since the line would credit it with an
             // outcome it did not produce.
-            var standing = buildStanding(
-                buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED)));
+            var standing = buildStandingOverOneSibling();
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(TRITACHYON, standing),
@@ -427,9 +420,7 @@ final class ClaimScoreRowResolverTest {
         void resolveMarketRowsCallsOutNoMarketOfASystemHeldByDecree() {
             // A decree settles the system before a market is weighed, so no market's score decided
             // anything and none is called out for it - the claimant's least of all.
-            var standing = buildStanding(
-                buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED)));
+            var standing = buildStandingOverOneSibling();
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of(standing)),
@@ -444,9 +435,7 @@ final class ClaimScoreRowResolverTest {
         void resolveMarketRowsStillLeadsWithTheStrongestMarketOfAFactionThatTookNothing() {
             // Only the call-out goes. The markets are still read strongest first, since that is the
             // order a contest is read in whether or not this faction won it.
-            var standing = buildStanding(
-                buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED)));
+            var standing = buildStandingOverOneSibling();
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(TRITACHYON, standing),
@@ -625,6 +614,15 @@ final class ClaimScoreRowResolverTest {
     // The one market a rival stands on, holding nothing else in the system.
     private static MarketClaimBreakdown buildRivalMarket(int listingPosition, int marketSize) {
         return buildMarket("Eventide", marketSize, NO_SIBLING_MARKETS, listingPosition);
+    }
+
+    // The faction most cases here are posed on: its strongest market, and one weaker market listed
+    // after it. Named rather than restated per case so a case states only what it varies - which is
+    // the tie, the withholding or the call-out it is actually about.
+    private static FactionClaimScore buildStandingOverOneSibling() {
+        return buildStanding(
+            buildStrongestMarket(ONE_SIBLING_MARKET),
+            List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED)));
     }
 
     // A faction standing on the given market and holding the given others in the system. Territorial

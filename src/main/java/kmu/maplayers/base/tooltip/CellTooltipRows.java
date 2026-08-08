@@ -307,12 +307,12 @@ public final class CellTooltipRows {
             TooltipRow.TableRow row,
             CellTooltipEntryLine line) {
 
-        if (!KmlibStrings.hasText(line.indexText())) {
+        if (line.indexPlace() == null) {
             return row;
         }
         return row.continuesWith(new TextSpan(
-            CONTINUATION_GAP + line.indexText(),
-            resolveIndexColour(line.indexOutcome())));
+            CONTINUATION_GAP + line.indexPlace().text(),
+            resolveIndexColour(line.indexPlace().outcome())));
     }
 
     // The shade a place reads in, by what it decided. Settled here rather than at whatever resolved
