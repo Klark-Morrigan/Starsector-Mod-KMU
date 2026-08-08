@@ -211,10 +211,9 @@ below - save state this mod cannot move and a shared library has no business hol
 
 `FilterSelection` holds one selected id per opaque scope, so each scope keeps its own choice and
 switching scopes neither clears nor cross-reads another's. Beyond the read, pick, and clear it
-heals a stored id a caller-supplied predicate no longer accepts (for a save whose selection stopped
-being on offer between sessions) and carries a pre-per-scope save's single shared slot into a scope
-slot on load. Binding that predicate to a live source of what is selectable *now* is the reading
-layer's, since the source is exactly the knowledge these classes refuse.
+heals a stored id a caller-supplied predicate no longer accepts, for a save whose selection stopped
+being on offer between sessions. Binding that predicate to a live source of what is selectable
+*now* is the reading layer's, since the source is exactly the knowledge these classes refuse.
 
 `FilterSelectionBinder` is the one binder that also builds, because the picker's three ties resolve
 at one point: it reads the scope's spotlighted id on the way in, resolves the columns caption out of
@@ -234,7 +233,6 @@ notes](../../../../../../../docs/dev/caching.md) own that model in full.
 | `$kmu_political_sort_direction` | the picked direction (`asc` / `desc`), absent until first flipped |
 | `$kmu_political_list_columns` | the picked column count's key, absent until first picked |
 | `$kmu_political_filter_bloc_<scope>` | one scope's filtered-to id, absent while un-filtered |
-| `$kmu_political_filter_bloc` | the pre-per-scope shared slot, read once by the load migration and retired |
 
 The keys read as the political map's because this state shipped alongside it, before the framework
 was carved out; like the fold keys they are save-serialised identities and frozen, so renaming one
@@ -243,8 +241,8 @@ would reset every existing save to the default.
 The sort and column stores raise no refresh: both values are read on the per-frame body build, so
 the next frame re-sorts or re-wraps on its own, and nothing on the map depends on either.
 `FilterSelection` is the exception - its value changes what a layer paints, so a landed pick or
-clear raises `MapLayerCommonRefreshSignal.FILTER`; the heal and the migration run on load before
-anything paints, so they move values without raising it.
+clear raises `MapLayerCommonRefreshSignal.FILTER`; the heal runs on load before anything paints, so
+it clears without raising it.
 
 ## Styling
 
@@ -283,9 +281,12 @@ the same reason: a look is a value, so building one needs no live GL context.
 
 That fill is the body's alone. The tab row stands *on* the framed box rather than inside it, the way
 a strip of tabs sits on the panel it selects, so nothing of the body reaches behind the tabs and a tab
-whose body is empty is its row and nothing else - no frame, no handle. The row needs none: its fills
-are opaque surfaces in their own right, so it reads the same over the body, over the bare map, or over
-whatever the panel floats on.
+whose body is empty is its row and nothing else - no frame, no handle. The row needs none, and each
+chrome carries its own surface to do without one: the strip's fills are opaque in their own right,
+and a raised button stands on a black backing at three-quarter alpha that its own chrome lays down.
+Either way the row reads the same over the body, over the bare map, or over whatever the panel floats
+on - which is the requirement, the two chromes meeting it differently being the point of their being
+two.
 
 The frame colour rides in `WidgetStyle`'s `BoxColours` beside the body fill, apart from the
 `AccentColours` the controls wash and label with, so a host whose surrounding chrome is drawn in
@@ -303,8 +304,16 @@ from and a snapped tab width cannot part from the text drawn into it. The palett
 of tab paint: an absolute `TabLook` per `TabLookState` (unselected, selected, hovered) and a relative
 `TabWash` per `TabWashState` (clicked), the pulse lifting whichever look the tab has settled on.
 
-The three looks are not three shades but one at the engine's three glow amounts, worked out by
-`VanillaTabFills` from the two settings colours a vanilla tab is painted with (`buttonBgDark` and
+A palette is the chrome's own, built by the factory named for it - `createMapTabPalette` for the strip,
+`createRaisedButtonPalette` for the buttons. The two chromes cannot share one, because the engine's own
+tab and its own button are painted from different colours by different rules: a tab from the button
+roles in settings, taking no faction tint at all, and a button from the whole three-step accent and
+nothing else. A single palette worn by both would have one of them copying shades its vanilla
+counterpart never wears, which is exactly what the intel row did while it was built to a description
+of that screen rather than to its source.
+
+The **strip's** three looks are not three shades but one at the engine's three glow amounts, worked out
+by `VanillaTabFills` from the two settings colours a vanilla tab is painted with (`buttonBgDark` and
 `buttonText`) rather than sampled off one - so a restyled install moves this strip exactly as it moves
 the tabs above it, and the fills answer to settings and not to the player faction because vanilla's
 own tabs take no faction colour. A tab rests unlit, the shown tab lights at `SELECTED_GLOW`, and the
@@ -312,7 +321,7 @@ tab under the pointer at the full `POINTED_GLOW`. That the pointer's is the brig
 amounts is load-bearing: nothing else marks the shown tab, no bar capping it, so a pointed-at tab has
 to outshine it rather than match it.
 
-The **labels** are not lit at all. The engine parts a resting tab's text from a lit tab's by *colour*,
+Its **labels** are not lit at all. The engine parts a resting tab's text from a lit tab's by *colour*,
 switching between two of its own roles rather than brightening one: `buttonText` (170, 222, 255), the
 blue every button's text is, while the tab is untouched, and `standardTextColor` (220, 220, 220), the
 grey the rest of the interface reads in, once the tab is shown or pointed at. Both lit states take the
@@ -330,6 +339,30 @@ KMLib so a divergence has to be deliberate.
 A faction-tinted label, which is what this replaced first, would additionally have recoloured the
 strip with the player's faction where the engine's own tabs take no faction colour at all.
 
+The **buttons** invert that shape: theirs is a constant frame around a changing interior, where a tab is
+a fill that moves whole. Every button carries the same two hairlines - the outer in the accent's dark
+step, the inner in black - over the backing, whatever state it is in, and only the interior quad inside
+them answers to the look. That is the engine's own arrangement, and mistaking it is what made the first
+pass read as a foreign box: an outline that brightened with its fill was the one thing on the row moving
+that the row it was drawn to match holds still.
+
+Their three interiors come from `VanillaButtonFills`, and by a different rule from the strip's, because
+a vanilla button brightens differently: it adds its **base** accent undiluted where a tab adds its own
+label colour half-way to white. A button being shown wears the dark step composited onto the backing,
+one under the pointer that shade plus `POINTED_GLOW` (0.175) of the base, and a resting one wears
+*nothing* - its interior is that same shade at zero alpha, so the state is a value the palette states
+rather than a quad the paint pass learns to skip. Their labels take the accent's base step untouched
+and its bright step once shown or pointed at. The weight is fitted rather than read - solving the
+sampled hovered shade (`#346a7c`) against the resting one (`#17424f`) gives the same 0.175 on all three
+channels against the base accent and no consistent answer at all against a tab's whitened glow, which
+is the evidence the *shape* of the rule is right; the engine's own constant sits behind an obfuscated
+widget where it cannot be looked up.
+
+That resting interior is why a look's alpha became load-bearing. Every fill on the strip is opaque, so a
+fade between two looks had never had to carry alpha; `TabLook.computeBlendedLook` now interpolates all
+four channels through `Colours.blendTowards`, which is a no-op on the strip only for as long as
+`VanillaTabFills` keeps returning opaque shades.
+
 Hovering is a look rather than a lift because a tab lands on one shade whatever it was showing
 before, which no fraction applied to each tab's own fill could produce. A tab travels onto that shade
 rather than switching to it, paced by `HoverFade.DEFAULT_DURATIONS`.
@@ -338,11 +371,21 @@ A press rides the `clicked` wash up over whatever look the tab has settled on an
 the button comes up**, the way a vanilla tab does: a press is an act the player is still making, so
 its length comes from the act rather than from a duration of ours, and only the rise and the fall are
 paced. The release is unaimed - a press begun on a tab and let go over a neighbour, over the map, or
-off the panel entirely still ends that tab's lift, because what it reported was the press. That wash
-travels along the glow (the label colour half-way to white, `VanillaTabFills.resolveGlowColour`)
-rather than toward white: the engine brightens a tab by adding its own glow, so a lift aimed at white
-would be the one shade on the strip moving in a direction none of the fills do, and most visible
-exactly when the player is looking at it.
+off the panel entirely still ends that tab's lift, because what it reported was the press. On the strip
+that wash travels along the glow (the label colour half-way to white,
+`VanillaTabFills.resolveGlowColour`) rather than toward white: the engine brightens a tab by adding its
+own glow, so a lift aimed at white would be the one shade on the strip moving in a direction none of the
+fills do, and most visible exactly when the player is looking at it.
+
+On the intel screen that press **paints nothing**, by the same imitation: vanilla's tab headers hold a
+lit shade while the button is down, its intel buttons take no press state at all and answer a click with
+their sound alone. So the raised-button palette states its `clicked` lift at zero strength rather than
+having the chrome opt out of the channel. The envelope still runs - the press sound is gated on there
+having been a held lift to let go of, not on the wash having painted anything - so an invisible press is
+still a press that sounds, and it comes out that way precisely because the controller cannot see the
+palette and so cannot skip a pulse it would paint nothing with. The two screens therefore swap which
+gesture carries the feedback: the map's click leads and its blink echoes, intel's click is silent and
+its blink carries the press. Neither moves channel for it.
 
 `HoverFade.DEFAULT_DURATIONS` is a pair rather than one value, and the two halves are not equal: a tab
 arrives at the shade it is heading for in half the time it takes to let go of one. A rise answers
@@ -367,8 +410,9 @@ at, which is the opposite of what a keypress needs to say. All three animations 
 reports two fractions per tab - one look, one lift - and the paint pass binds them to the palette, so
 it is handed a look already blended and a lift already scaled - so both tab chromes animate alike,
 neither of them having any timing to compute. What the two screens set apart is the band height, the
-chrome its shades are painted onto, and the hotkey convention that comes with that chrome; every
-other value in the tab style is shared. Both faces are named through KMLib's `StarsectorFont` enum
+chrome its shades are painted onto, and the two things that travel with that chrome because vanilla
+keeps them together: the palette its shades come from and the hotkey convention. The timings, the
+channels, and the order they resolve in are shared, which is why one animator serves either row. Both faces are named through KMLib's `StarsectorFont` enum
 rather than by atlas basename.
 
 Where a tab says which key it answers to is `TabShortcutText`'s call, following the engine's rule: a

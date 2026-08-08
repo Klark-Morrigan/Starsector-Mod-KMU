@@ -2,17 +2,22 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * The three per-view decisions the shared political-map pipeline reads, gathered into
@@ -154,18 +159,18 @@ public interface PoliticalMapView {
      *
      * <p>Only blocs present somewhere qualify - a bloc holding a visible market in at least one system
      * (the {@code presence > 0} gate the shared stats read applies), so a bloc is selectable exactly
-     * when it holds territory it could paint. The view supplies its own grouping and name resolver;
-     * there is no new per-bloc seam, so a view decides which of its blocs are targets (every faction,
-     * or only the alliance blocs) inside its own implementation. Each option carries that bloc's
-     * whole-sector stats for the picker to sort and label by. The convenience overload reads the
-     * player's live dominance and dev-reveal toggles so a caller with no pass of its own need not
-     * thread them.
+     * when it holds territory it could paint. There is no new per-bloc seam: a view decides which of
+     * its blocs are targets (every faction, or only the alliance blocs) by handing that one test to
+     * {@link #buildSelectableBlocs}, which assembles the options the same way for every view. Each
+     * option carries that bloc's whole-sector stats for the picker to sort and label by. The
+     * convenience overload reads the player's live dominance and dev-reveal toggles so a caller with
+     * no pass of its own need not thread them.
      *
-     * <p>The spotlight is optional: the default offers no selectable blocs, so a view that paints an
-     * whose holders the shared market-presence gate cannot rank (the claims view, whose presence is claim
-     * presence, not market presence) inherits an empty picker rather than overriding with three
-     * arguments it would ignore. A view opts into the spotlight by overriding this, the same way it
-     * opts into its own body controls.
+     * <p>The spotlight is optional: the default offers no selectable blocs, so a view whose holders
+     * the shared market-presence gate cannot rank (the claims view, whose presence is claim presence,
+     * not market presence) inherits an empty picker rather than overriding with three arguments it
+     * would ignore. A view opts into the spotlight by overriding this, the same way it opts into its
+     * own body controls.
      *
      * @param sector                           the sector whose economy the visibility gate reads; null
      *                                         yields an empty list
@@ -197,6 +202,50 @@ public interface PoliticalMapView {
             sector,
             DominanceRules.readFromLunaSettings(),
             PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions());
+    }
+
+    /**
+     * Turns a bloc-keyed stats read into the picker options a view offers, so an overriding view
+     * declares only what distinguishes it - which of the present blocs are targets - rather than
+     * repeating the crest, name, and option assembly every view resolves identically.
+     *
+     * <p>The crest comes from the bloc's colour faction, which is an alliance's lead member and, for
+     * a faction bloc, the faction itself, so one lookup serves a grouped and an ungrouped view alike.
+     * A bloc with no authored crest keeps its option and simply draws its name alone. The label is
+     * this view's own {@link #resolveName}, always in the short form: the picker labels a bloc by its
+     * short name regardless of the map's name-format setting, so a long-form map label never widens
+     * the sidebar's option rows.
+     *
+     * @param sector         the sector a bloc's colour faction is read from
+     * @param grouping       the grouping the stats were folded under, so the colour faction and the
+     *                       name resolve against the same snapshot the numbers came from
+     * @param statsByBlocId  each present bloc's whole-sector stats, in the order the economy walk
+     *                       surfaced them, which the returned options preserve
+     * @param isSelectable   which of the present blocs this view offers as spotlight targets; the
+     *                       one thing that differs between views, so a view that offers every
+     *                       present bloc passes an always-true test
+     * @return the selectable blocs in stats order, each carrying the stats the picker sorts by
+     */
+    default List<SelectableBloc> buildSelectableBlocs(
+            SectorAPI sector,
+            HolderGrouping grouping,
+            Map<String, DominanceStats> statsByBlocId,
+            Predicate<String> isSelectable) {
+
+        var selectableBlocs = new ArrayList<SelectableBloc>();
+        for (var entry : statsByBlocId.entrySet()) {
+            var blocId = entry.getKey();
+            if (!isSelectable.test(blocId)) {
+                continue;
+            }
+            var colourFaction = sector.getFaction(grouping.resolveColourFactionId(blocId));
+            selectableBlocs.add(new SelectableBloc(
+                blocId,
+                resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT),
+                FactionCrests.resolveCrestPath(colourFaction),
+                entry.getValue()));
+        }
+        return selectableBlocs;
     }
 
     /**

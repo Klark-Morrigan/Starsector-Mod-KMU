@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.hashing.Fingerprints;
-import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
@@ -25,7 +24,6 @@ import kmu.maplayers.politicalmap.factions.FactionsView;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStrings;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -166,40 +164,15 @@ public final class AlliancesView implements PoliticalMapView {
         // Under this view only alliances are filter targets - a lone faction is not spotlightable
         // here, matching the view's role of grouping holders by alliance. The alliance grouping
         // folds each alliance's members into one bloc, so the shared stats read already ranks an
-        // alliance as a unit; the view just drops the present blocs that are lone factions and
-        // carries each surviving alliance's stats onto its option for the picker to sort and label by.
+        // alliance as a unit; the gate just drops the present blocs that are lone factions.
         var grouping = resolveGrouping();
         var pass = new DominancePass(rules, shouldIncludeUndiscoveredMarkets, grouping);
-        var selectableBlocs = new ArrayList<SelectableBloc>();
 
-        for (var entry : DominanceStatsAggregator.aggregateDominanceStats(sector, pass).entrySet()) {
-            var blocId = entry.getKey();
-            if (!grouping.isAlliance(blocId)) {
-                continue;
-            }
-
-            // An alliance paints in its lead member's palette, so its picker row carries that
-            // member's crest and reads like a faction row rather than a blank one.
-            // resolveColourFactionId names the colour (lead) faction; a member with no authored
-            // crest leaves the row to draw its name alone, so a null path is a valid option.
-            var colourFaction = sector.getFaction(grouping.resolveColourFactionId(blocId));
-            var crestSpritePath = FactionCrests.resolveCrestPath(colourFaction);
-
-            // The name comes from the grouping via resolveName, so the format argument never
-            // matters here.
-            var displayName = resolveName(
-                blocId,
-                grouping,
-                sector,
-                FactionNameFormatChoice.SHORT);
-
-            selectableBlocs.add(new SelectableBloc(
-                blocId,
-                displayName,
-                crestSpritePath,
-                entry.getValue()));
-        }
-        return selectableBlocs;
+        return buildSelectableBlocs(
+            sector,
+            grouping,
+            DominanceStatsAggregator.aggregateDominanceStats(sector, pass),
+            grouping::isAlliance);
     }
 
     @Override

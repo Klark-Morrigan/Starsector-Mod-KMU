@@ -41,10 +41,6 @@ final class FilterSelectionTest {
     // save's filter choice back to none, so a change must break this test first.
     private static final String SELECTED_ID_KEY = "$kmu_political_filter_bloc_scope_a";
 
-    // The pre-per-scope single shared key the migration reads and retires; pinned so its retirement
-    // path keeps finding it on an un-migrated save.
-    private static final String LEGACY_KEY = "$kmu_political_filter_bloc";
-
     private static final String SELECTED_ID = "picked_a";
 
     @Nested
@@ -358,51 +354,4 @@ final class FilterSelectionTest {
         }
     }
 
-    @Nested
-    class MigrateLegacySharedSelection {
-
-        @Test
-        void migrateMovesTheLegacyChoiceIntoTheScopeSlotAndRetiresTheOldKey() {
-            // A pre-per-scope save holds its single shared choice under the old key; the migration
-            // copies it into the given scope's slot and unsets the old key, so the choice survives
-            // the split.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(LEGACY_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getString(LEGACY_KEY))
-                    .thenReturn(SELECTED_ID);
-
-                FilterSelection.migrateLegacySharedSelection(SCOPE_ID);
-
-                verify(memoryMock).set(SELECTED_ID_KEY, SELECTED_ID);
-                verify(memoryMock).unset(LEGACY_KEY);
-            }
-        }
-
-        @Test
-        void migrateNoOpsWhenNoLegacyChoiceIsStored() {
-            // An already-migrated save (or one that never filtered) holds no old key, so the migration
-            // writes no slot and unsets nothing.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                FilterSelection.migrateLegacySharedSelection(SCOPE_ID);
-
-                verify(memoryMock, never()).set(anyString(), anyString());
-                verify(memoryMock, never()).unset(anyString());
-            }
-        }
-    }
 }
