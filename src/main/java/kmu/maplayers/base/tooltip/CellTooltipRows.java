@@ -240,7 +240,12 @@ public final class CellTooltipRows {
             CellTooltipEntryLine line,
             Color valueColour) {
 
-        var valueSpan = new TextSpan(line.valueText(), valueColour);
+        // A number an account recorded for the line rather than one the line achieved reads in that
+        // same quiet shade. Drawn as loudly as the numbers around it, such a value invites the reader
+        // to compare it with them - which is the one thing it cannot be compared with.
+        var valueSpan = new TextSpan(
+            line.valueText(),
+            line.isValueUncounted() ? StarsectorUiColour.VANILLA_GRAY.resolve() : valueColour);
 
         if (!KmlibStrings.hasText(line.valueWorkingText())) {
             return row.carriesValue(valueSpan);
@@ -276,11 +281,12 @@ public final class CellTooltipRows {
             : subordinatedRow.clearsCrestColumn();
     }
 
-    // What a line's own name reads in: the tier's colour, or the quiet shade for a line that is
-    // working throughout. One rule for both tiers, so an aside beneath a listed thing and one beneath
-    // a member read alike, and the shade a working reads in is the same one a value's working takes.
+    // What a line's own name reads in: the tier's colour, or the quiet shade for a line that is a note
+    // about the list rather than one of the things in it. One rule for both tiers, so an aside beneath
+    // a listed thing and one beneath a member read alike - and in the same shade a value's working
+    // takes, since both are arithmetic rather than a finding.
     private static Color resolveLabelColour(CellTooltipEntryLine line, Color tierColour) {
-        return line.isWorkingOnly()
+        return line.isAside()
             ? StarsectorUiColour.VANILLA_GRAY.resolve()
             : tierColour;
     }

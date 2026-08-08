@@ -399,7 +399,7 @@ final class CellTooltipRowsTest {
                 CellTooltipEntryLine
                     .createLine(null, "Same-faction market bonus", "+2")
                     .derivesValueFrom("(3 markets) - 1 =")
-                    .readsAsWorking(),
+                    .readsAsAside(),
                 MEMBER_LEVEL,
                 NOT_RESERVING_CREST_COLUMN);
 
@@ -409,6 +409,24 @@ final class CellTooltipRowsTest {
                 .isEqualTo(new RowSlot.TextRuns(List.of(
                     new TextSpan("(3 markets) - 1 =", GRAY),
                     new TextSpan("+2", TEXT))));
+        }
+
+        @Test
+        void buildListedRowQuietensANumberAnAccountRecordedRatherThanOneTheLineAchieved() {
+            // Only the number moves. The line is one of the things the block lists, so its name reads
+            // as loudly as its neighbours' - while the nought beside it, drawn in their colour, would
+            // invite a comparison with the very scores it took no part in.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(null, "Tigra City", "0")
+                    .statesUncountedValue(),
+                MEMBER_LEVEL,
+                NOT_RESERVING_CREST_COLUMN);
+
+            assertThat(readLabelTextRun(row, LABEL_RUN))
+                .isEqualTo(new TextSpan("Tigra City", TEXT));
+            assertThat(row.labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.Text(new TextSpan("0", GRAY)));
         }
 
         @Test

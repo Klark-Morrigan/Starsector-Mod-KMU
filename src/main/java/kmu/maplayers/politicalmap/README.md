@@ -186,9 +186,13 @@ A hidden market is listed at nought: the mechanic skips it before scoring, so it
 the contest however large it is, and printing the score it would have carried would sort a market
 that took no part above the one that took the system. It is listed rather than dropped because it is
 one of the markets the presence term counts, and a reader checking that count has to be able to see
-it; it breaks down into no terms, nothing having been computed for it. Nothing calls its hiddenness
-out - the nought is the whole of what the contest has to say about it, and the word would raise a
-question about the mechanic the box would then owe an answer to.
+it; it breaks down into no terms, nothing having been computed for it. The nought reads in the quiet
+shade (`statesUncountedValue` - only the number quietens, the market being named as loudly as its
+neighbours, unlike the `readsAsAside` the bonus line takes): it is the contest's statement about the
+market rather than anything the market scored, and in the list's own colour it would pass for a
+score competed with and lost on. Nothing calls its hiddenness out - the nought is the whole of what the
+contest has to say about it, and the word would raise a question about the mechanic the box would
+then owe an answer to.
 A market the player has not found is left off the list, since
 vanilla settles a claim over colonies nobody has found and repeating what it learned there would
 name something the player has no way of knowing about; the rule is

@@ -181,16 +181,16 @@ public final class ClaimScoreRowResolver {
         if (siblingMarketCount <= NO_SIBLING_MARKETS) {
             return Optional.empty();
         }
-        // Working throughout bar the number it arrives at: the line is not one of the faction's
-        // holdings but the arithmetic of a term all of them share, so it reads as quietly as the
-        // working inside any other value and only the points it came to stay a finding.
+        // A note about the list rather than one of the faction's holdings - the arithmetic of a term
+        // all of them share - so it reads as quietly as the working inside any other value, down to
+        // its name, and only the points it comes to stay a finding.
         return Optional.of(CellTooltipEntry.createEntry(CellTooltipEntryLine
             .createLine(
                 NO_MARK,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_BONUS),
                 formatBonus(siblingMarketCount))
             .derivesValueFrom(formatSiblingWorking(siblingMarketCount))
-            .readsAsWorking()));
+            .readsAsAside()));
     }
 
     // One market as the entry it is listed as: its line over the terms its score is built from.
@@ -226,11 +226,15 @@ public final class ClaimScoreRowResolver {
     // hiddenness out: the word would raise a question about the mechanic that the box would then owe
     // an answer to, where the nought beside a listed market already says the one thing that matters
     // about it here - it counted for nothing in this contest.
+    //
+    // That nought reads quiet, because it is the contest's statement about the market rather than
+    // anything the market scored. In the list's own colour it would read as a score competed with
+    // and lost on, which is the one thing it is not - the market was never weighed at all.
     private static CellTooltipEntryLine createMarketLine(
             MarketClaimBreakdown market,
             CellTooltipIndexOutcome indexOutcome) {
 
-        return CellTooltipEntryLine
+        var line = CellTooltipEntryLine
             .createLine(
                 NO_MARK,
                 market.marketName(),
@@ -240,6 +244,8 @@ public final class ClaimScoreRowResolver {
                     KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_LISTING_POSITION,
                     KmlibNumbers.formatGroupedInteger(market.listingPosition())),
                 indexOutcome);
+
+        return market.isHiddenMarket() ? line.statesUncountedValue() : line;
     }
 
     // What a market brought to the contest. An open market brings its score; a hidden one brings

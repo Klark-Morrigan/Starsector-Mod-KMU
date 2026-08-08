@@ -257,6 +257,13 @@ final class ClaimScoreRowResolverTest {
                 .containsExactly(STRONGEST_MARKET, "Tigra City", PRESENCE_LINE);
             assertThat(rows.get(1).line().valueText())
                 .isEqualTo("0");
+
+            // The nought is the contest's statement about the market rather than anything it scored,
+            // so it reads quiet: in the list's own colour it would pass for a score competed with.
+            assertThat(rows.get(1).line().isValueUncounted())
+                .isTrue();
+            assertThat(rows.get(0).line().isValueUncounted())
+                .isFalse();
         }
 
         @Test
@@ -316,7 +323,7 @@ final class ClaimScoreRowResolverTest {
 
             var bonusLine = rows.get(1).line();
 
-            assertThat(bonusLine.isWorkingOnly())
+            assertThat(bonusLine.isAside())
                 .isTrue();
             assertThat(bonusLine.valueWorkingText())
                 .isEqualTo("(3 markets) - 1 =");

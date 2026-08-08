@@ -28,10 +28,13 @@ import java.util.Objects;
  *                         line carrying no number
  * @param valueWorkingText the arithmetic the number came out of, stated before it, or null where the
  *                         line shows its number alone
- * @param isWorkingOnly    whether the line is working throughout rather than one of the things the
- *                         block lists - an aside stating how a number above it was arrived at. Such a
- *                         line reads in the quiet shade its name and all, and only the number it
- *                         arrives at stays a finding
+ * @param isAside          whether the line is a note about the list rather than one of the things in
+ *                         it - the arithmetic of a term its members share, say. Such a line is drawn
+ *                         quiet down to its name, and only the number it arrives at stays a finding
+ * @param isValueUncounted whether the line's number is one nothing earned - what an account recorded
+ *                         for the thing on the line rather than anything it did. Only the number
+ *                         quietens: the line is one of the things the list holds and is named as
+ *                         loudly as its neighbours
  */
 public record CellTooltipEntryLine(
     String iconSpritePath,
@@ -41,16 +44,18 @@ public record CellTooltipEntryLine(
     String qualifierText,
     String valueText,
     String valueWorkingText,
-    boolean isWorkingOnly) {
+    boolean isAside,
+    boolean isValueUncounted) {
 
     // What a line with no place to state carries in the index slot, for the same reason the two
     // absences below are named: the factory says what the plainest line has rather than passing
     // three unexplained nulls a reader has to count off against the components.
     private static final String NO_INDEX = null;
 
-    // What a line the block lists in its own right carries: it is a finding rather than the working
-    // behind one, which is the ordinary case and what every factory below builds.
-    private static final boolean IS_A_FINDING = false;
+    // What an ordinary line is: one of the things the block lists rather than a note about them, and
+    // carrying a number it earned. Both are the plain case and what every factory below builds.
+    private static final boolean IS_LISTED_IN_ITS_OWN_RIGHT = false;
+    private static final boolean IS_VALUE_EARNED = false;
 
     // What a line states nothing beside its name and its number carries in the qualifier slot. Named
     // rather than passed as a bare null, so the factory below reads as "this line calls nothing out"
@@ -102,7 +107,8 @@ public record CellTooltipEntryLine(
             NO_QUALIFIER,
             valueText,
             NO_WORKING,
-            IS_A_FINDING);
+            IS_LISTED_IN_ITS_OWN_RIGHT,
+            IS_VALUE_EARNED);
     }
 
     /**
@@ -135,7 +141,8 @@ public record CellTooltipEntryLine(
             qualifierText,
             valueText,
             valueWorkingText,
-            isWorkingOnly);
+            isAside,
+            isValueUncounted);
     }
 
     /**
@@ -166,22 +173,23 @@ public record CellTooltipEntryLine(
             qualifierText,
             valueText,
             valueWorkingText,
-            isWorkingOnly);
+            isAside,
+            isValueUncounted);
     }
 
     /**
-     * Returns a copy of this line read as working throughout - an aside stating how a number above it
-     * was arrived at, rather than one of the things the block lists.
+     * Returns a copy of this line read as a note about the list rather than one of the things in it -
+     * the arithmetic of a term its members share, say, stated once beneath them.
      *
-     * <p>The box already parts a finding from the working behind it inside a value, in the shade each
-     * is drawn in. A line that is <em>all</em> working - the arithmetic of a term the list above it
-     * shares - says the same thing about itself, so it takes the same quiet shade for its name as its
-     * working does, and only the number it arrives at stays bright. Left as a fact about the line
-     * rather than a colour, so which shade means "working" is settled in one place for both.
+     * <p>The box already parts a finding from the arithmetic behind it inside a value, in the shade
+     * each is drawn in. A line that is arithmetic all the way to its name says the same thing about
+     * itself, so it takes that quiet shade throughout and only the number it arrives at stays a
+     * finding. Left as a fact about the line rather than a colour, so which shade means what is
+     * settled in one place for every line that reads quietly.
      *
-     * @return an otherwise-identical line read as the working behind a number rather than as a finding
+     * @return an otherwise-identical line read as a note about the list rather than a member of it
      */
-    public CellTooltipEntryLine readsAsWorking() {
+    public CellTooltipEntryLine readsAsAside() {
         return new CellTooltipEntryLine(
             iconSpritePath,
             labelText,
@@ -190,6 +198,33 @@ public record CellTooltipEntryLine(
             qualifierText,
             valueText,
             valueWorkingText,
+            true,
+            isValueUncounted);
+    }
+
+    /**
+     * Returns a copy of this line whose number is one nothing earned - what an account recorded for
+     * the thing on the line rather than anything it did.
+     *
+     * <p>The narrower of the two quiet readings, and the difference is the point: unlike an
+     * {@linkplain #readsAsAside aside}, this line <em>is</em> one of the things the list holds, so it
+     * is named as loudly as its neighbours and only its number quietens. A thing an account passed
+     * over carries a nought that is the account's statement about it and not its own - drawn as
+     * loudly as the numbers around it, that nought reads as a figure it competed with and lost on,
+     * inviting exactly the comparison it cannot bear.
+     *
+     * @return an otherwise-identical line whose number reads as one nothing earned
+     */
+    public CellTooltipEntryLine statesUncountedValue() {
+        return new CellTooltipEntryLine(
+            iconSpritePath,
+            labelText,
+            indexText,
+            indexOutcome,
+            qualifierText,
+            valueText,
+            valueWorkingText,
+            isAside,
             true);
     }
 
@@ -216,6 +251,7 @@ public record CellTooltipEntryLine(
             qualifierText,
             valueText,
             valueWorkingText,
-            isWorkingOnly);
+            isAside,
+            isValueUncounted);
     }
 }

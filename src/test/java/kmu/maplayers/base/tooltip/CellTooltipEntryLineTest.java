@@ -16,9 +16,10 @@ final class CellTooltipEntryLineTest {
 
     private static final String CREST = "graphics/hegemony_crest.png";
 
-    // What every line built through the factory is: one of the things a block lists, rather than the
-    // working behind a number above it.
-    private static final boolean IS_A_FINDING = false;
+    // What every line built through the factory is: one of the things a block lists rather than a note
+    // about them, carrying a number it earned rather than one an account recorded for it.
+    private static final boolean IS_LISTED_IN_ITS_OWN_RIGHT = false;
+    private static final boolean IS_VALUE_EARNED = false;
 
     @Nested
     class CreateLine {
@@ -38,7 +39,8 @@ final class CellTooltipEntryLineTest {
                         null,
                         "1,200",
                         null,
-                        IS_A_FINDING));
+                        IS_LISTED_IN_ITS_OWN_RIGHT,
+                        IS_VALUE_EARNED));
         }
 
         @Test
@@ -107,7 +109,8 @@ final class CellTooltipEntryLineTest {
                         "(core)",
                         "1,200",
                         null,
-                        IS_A_FINDING));
+                        IS_LISTED_IN_ITS_OWN_RIGHT,
+                        IS_VALUE_EARNED));
         }
 
         @Test
@@ -142,7 +145,8 @@ final class CellTooltipEntryLineTest {
                         null,
                         "1,200",
                         null,
-                        IS_A_FINDING));
+                        IS_LISTED_IN_ITS_OWN_RIGHT,
+                        IS_VALUE_EARNED));
         }
 
         @Test
@@ -173,28 +177,58 @@ final class CellTooltipEntryLineTest {
     }
 
     @Nested
-    class ReadsAsWorking {
+    class StatesUncountedValue {
 
         @Test
-        void readsAsWorkingMarksTheLineAsTheArithmeticBehindANumberRatherThanAFinding() {
+        void statesUncountedValueQuietensTheNumberWithoutQuietingTheLine() {
+            // The narrower of the two quiet readings, and the difference they exist for: this line is
+            // one of the things the block lists, so it stays named as loudly as its neighbours and
+            // only the number an account recorded for it quietens.
+            var line = CellTooltipEntryLine
+                .createLine(null, "Tigra City", "0")
+                .statesUncountedValue();
+
+            assertThat(line.isValueUncounted())
+                .isTrue();
+            assertThat(line.isAside())
+                .isFalse();
+        }
+
+        @Test
+        void statesUncountedValueLeavesTheLineItWasBuiltFromAFinding() {
+            // A refinement returns a new value, so a caller quietening one number of a resolved list
+            // cannot reach into the line another caller is still holding.
+            var plainLine = CellTooltipEntryLine.createLine(null, "Culann", "6");
+            plainLine.statesUncountedValue();
+
+            assertThat(plainLine.isValueUncounted())
+                .isFalse();
+        }
+    }
+
+    @Nested
+    class ReadsAsAside {
+
+        @Test
+        void readsAsAsideMarksTheLineAsTheArithmeticBehindANumberRatherThanAFinding() {
 
             var line = CellTooltipEntryLine
                 .createLine(null, "Same-faction market bonus", "+2")
-                .readsAsWorking();
+                .readsAsAside();
 
-            assertThat(line.isWorkingOnly())
+            assertThat(line.isAside())
                 .isTrue();
         }
 
         @Test
-        void readsAsWorkingLeavesEveryOtherPartOfTheLineAsItWas() {
+        void readsAsAsideLeavesEveryOtherPartOfTheLineAsItWas() {
             // The refinement says how the line reads, not what it states, so a line that already
             // carries a working and a place keeps both.
             var line = CellTooltipEntryLine
                 .createLine(null, "Same-faction market bonus", "+2")
                 .derivesValueFrom("(3 markets) - 1 =")
                 .indexedAt("[2]", CellTooltipIndexOutcome.WON)
-                .readsAsWorking();
+                .readsAsAside();
 
             assertThat(line.valueWorkingText())
                 .isEqualTo("(3 markets) - 1 =");
@@ -205,13 +239,13 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void readsAsWorkingLeavesTheLineItWasBuiltFromAFinding() {
+        void readsAsAsideLeavesTheLineItWasBuiltFromAFinding() {
             // A refinement returns a new value, so a caller quietening one line of a resolved list
             // cannot reach into the line another caller is still holding.
             var plainLine = CellTooltipEntryLine.createLine(null, "Culann", "6");
-            plainLine.readsAsWorking();
+            plainLine.readsAsAside();
 
-            assertThat(plainLine.isWorkingOnly())
+            assertThat(plainLine.isAside())
                 .isFalse();
         }
     }
@@ -236,7 +270,8 @@ final class CellTooltipEntryLineTest {
                         null,
                         "500",
                         "0.25 /",
-                        IS_A_FINDING));
+                        IS_LISTED_IN_ITS_OWN_RIGHT,
+                        IS_VALUE_EARNED));
         }
 
         @Test
