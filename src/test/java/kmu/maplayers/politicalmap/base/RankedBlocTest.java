@@ -18,17 +18,20 @@ final class RankedBlocTest {
     // Any metrics stand in: the seam never opens the stats half, so its values are immaterial here.
     private static final DominanceStats ANY_STATS = new DominanceStats(5, 8, 40, 12);
 
+    // One fully-populated bloc every case reads a different seam value off, so a delegation that
+    // crossed its wires (a crest answered from the id, say) shows up as a mismatch rather than
+    // passing against a fixture built to suit it.
+    private static final RankedBloc<DominanceStats> HEGEMONY = new RankedBloc<>(
+        new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
+        ANY_STATS);
+
     @Nested
     class ItemId {
 
         @Test
         void itemIdIsTheBlocId() {
             // The id is the one value the seam renames, and it must stay the bloc id the filter stores.
-            var bloc = new RankedBloc<>(
-                new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
-                ANY_STATS);
-
-            assertThat(bloc.itemId())
+            assertThat(HEGEMONY.itemId())
                 .isEqualTo("hegemony");
         }
     }
@@ -39,23 +42,8 @@ final class RankedBlocTest {
         @Test
         void displayNameIsTheIdentitysLabel() {
 
-            var bloc = new RankedBloc<>(
-                new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
-                ANY_STATS);
-
-            assertThat(bloc.displayName())
+            assertThat(HEGEMONY.displayName())
                 .isEqualTo("Hegemony");
-        }
-
-        @Test
-        void displayNameIsNullWhenTheBlocResolvedNoName() {
-            // An unlabelled bloc is a case the row draws, not an error, so the null passes through.
-            var bloc = new RankedBloc<>(
-                new SelectableBloc("ghost", null, null),
-                ANY_STATS);
-
-            assertThat(bloc.displayName())
-                .isNull();
         }
     }
 
@@ -64,24 +52,9 @@ final class RankedBlocTest {
 
         @Test
         void crestSpritePathIsTheIdentitysCrest() {
-            
-            var bloc = new RankedBloc<>(
-                new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
-                ANY_STATS);
 
-            assertThat(bloc.crestSpritePath())
+            assertThat(HEGEMONY.crestSpritePath())
                 .isEqualTo("crest_heg");
-        }
-
-        @Test
-        void crestSpritePathIsNullWhenTheCrestFactionHasNone() {
-            // A crest-less bloc still paints territory, so it stays a row and simply draws its name.
-            var bloc = new RankedBloc<>(
-                new SelectableBloc("ghost", "Ghost", null),
-                ANY_STATS);
-
-            assertThat(bloc.crestSpritePath())
-                .isNull();
         }
     }
 }

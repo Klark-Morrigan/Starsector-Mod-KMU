@@ -20,7 +20,9 @@ import static org.mockito.Mockito.when;
  * Pins the option assembly every view shares: which present blocs survive the view's own gate, and
  * how a surviving one is turned into a picker option. The two concrete views pin their own gates;
  * this pins what the shared default owns whichever view calls it - the stats-walk order, the crest
- * read off the bloc's colour faction, and an option surviving a crest that will not resolve.
+ * read off the bloc's colour faction, an option surviving a crest that will not resolve, and the
+ * metrics riding through untouched whatever their type, which is what lets a layer ranked by other
+ * numbers reuse the assembly.
  */
 final class PoliticalMapViewTest {
 
@@ -117,5 +119,33 @@ final class PoliticalMapViewTest {
                     new SelectableBloc("ghost", "Ghost", null),
                     ANY_STATS));
         }
+
+        @Test
+        void buildSelectableBlocsCarriesAPayloadFromOutsideTheDominanceMetrics() {
+            // The assembly is what every layer's picker shares, so it must build an option over
+            // metrics it has never heard of - a layer painted by some other mechanic ranks by its own
+            // numbers. Run against a payload no view declares: this stops compiling the moment the
+            // assembly narrows back to the dominance metrics, which the dominance-typed cases above
+            // would not notice.
+            var sectorMock = mock(SectorAPI.class);
+            var viewFake = new PoliticalMapViewFake(Map.of("pirates", "Pirates"));
+            var rating = new HazardRating(4);
+
+            assertThat(viewFake.buildSelectableBlocs(
+                    sectorMock,
+                    HolderGrouping.identity(),
+                    Map.of("pirates", rating),
+                    blocId -> true))
+                .containsExactly(new RankedBloc<>(
+                    new SelectableBloc("pirates", "Pirates", null),
+                    rating));
+        }
+    }
+
+    // A metrics payload no political-map view declares, standing in for whatever a layer painted by
+    // another mechanic ranks its blocs by. It shares no supertype with the dominance metrics beyond
+    // Object, so the case above passes only while the assembly leaves its payload type open.
+    private record HazardRating(
+        int severity) {
     }
 }
