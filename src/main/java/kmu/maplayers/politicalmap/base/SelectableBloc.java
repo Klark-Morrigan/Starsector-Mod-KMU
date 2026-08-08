@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import kmlib.starsector.ui.widgets.lists.SelectableListItem;
 
-import kmu.maplayers.politicalmap.base.politics.BlocStats;
+import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 
 /**
  * One option in the political-map filter picker: a bloc the player can spotlight, reduced to what the
@@ -10,12 +10,12 @@ import kmu.maplayers.politicalmap.base.politics.BlocStats;
  * ranks it by. A bloc is a faction under the factions view and an alliance under the alliances view,
  * so this carries the stable id the selection serialises ({@link
  * kmu.maplayers.base.sidebar.FilterSelection}), the label and crest the row renders, and
- * the {@link BlocStats} its whole-sector standing is scored from - nothing about how the id resolves
+ * the {@link DominanceStats} its whole-sector standing is scored from - nothing about how the id resolves
  * into presence-aware territory, which is the resolver's concern.
  *
  * <p>This is the political map's declaration of the picker's {@link SelectableListItem} seam: the
- * id, label, and crest are what the picker draws and reports, while the {@link BlocStats} beside them
- * are read only by {@link BlocSortMode}'s comparators and trailing values - the part of an item the
+ * id, label, and crest are what the picker draws and reports, while the {@link DominanceStats} beside them
+ * are read only by {@link DominanceSortMode}'s comparators and trailing values - the part of an item the
  * picker never opens.
  *
  * <p>Plain data with no Starsector types - the crest is the faction's crest sprite path, not a loaded
@@ -38,12 +38,12 @@ public record SelectableBloc(
     String blocId,
     String displayName,
     String crestSpritePath,
-    BlocStats stats) implements SelectableListItem {
+    DominanceStats stats) implements SelectableListItem {
 
     /**
      * A selectable bloc listed without whole-sector stats, for a context that only ever reads its id,
      * name, or crest and never ranks it by the numeric metrics - the stale-selection heal, which
-     * matches on id alone. Defaults {@link #stats} to {@link BlocStats#EMPTY} so such a caller need
+     * matches on id alone. Defaults {@link #stats} to {@link DominanceStats#EMPTY} so such a caller need
      * not synthesise numbers it never reads.
      *
      * @param blocId          the bloc's save-stable id
@@ -51,7 +51,7 @@ public record SelectableBloc(
      * @param crestSpritePath the crest sprite path, or null when the crest faction has none
      */
     public SelectableBloc(String blocId, String displayName, String crestSpritePath) {
-        this(blocId, displayName, crestSpritePath, BlocStats.EMPTY);
+        this(blocId, displayName, crestSpritePath, DominanceStats.EMPTY);
     }
 
     /**

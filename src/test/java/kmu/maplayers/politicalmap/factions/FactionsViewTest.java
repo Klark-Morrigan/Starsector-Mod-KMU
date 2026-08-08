@@ -14,14 +14,13 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
-import kmu.maplayers.politicalmap.base.politics.BlocStats;
-import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
+import kmu.maplayers.politicalmap.base.politics.DominanceStats;
+import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.util.Map;
 
@@ -51,7 +50,7 @@ final class FactionsViewTest {
         void resolveGroupingReturnsTheIdentityGrouping() {
             // Every faction is its own bloc, so the pipeline resolves plain faction holding.
             assertThat(FactionsView.INSTANCE.resolveGrouping())
-                    .isSameAs(HolderGrouping.identity());
+                .isSameAs(HolderGrouping.identity());
         }
     }
 
@@ -64,7 +63,7 @@ final class FactionsViewTest {
             // each system's dominant holder, extended with the systems it merely claims - so it
             // inherits the shared claim-augmented default rather than supplying one of its own.
             assertThat(FactionsView.INSTANCE.resolveHolderProvider())
-                    .isSameAs(ClaimAugmentedHolderProvider.INSTANCE);
+                .isSameAs(ClaimAugmentedHolderProvider.INSTANCE);
         }
     }
 
@@ -78,9 +77,11 @@ final class FactionsViewTest {
             // view's contribution fixed - that is what keeps an alliance change from churning
             // the faction view.
             var before = FactionsView.INSTANCE.getContentRevision();
+
             MapLayerRefresh.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
 
-            assertThat(FactionsView.INSTANCE.getContentRevision()).isEqualTo(before);
+            assertThat(FactionsView.INSTANCE.getContentRevision())
+                .isEqualTo(before);
         }
     }
 
@@ -90,13 +91,19 @@ final class FactionsViewTest {
         @Test
         void shouldUseIndependentStyleIsTrueForIndependentSpace() {
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    Factions.INDEPENDENT, ANY_GROUPING, ElementStyleAdjustment.NONE)).isTrue();
+                    Factions.INDEPENDENT,
+                    ANY_GROUPING,
+                    ElementStyleAdjustment.NONE))
+                .isTrue();
         }
 
         @Test
         void shouldUseIndependentStyleIsFalseForACoreFaction() {
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ANY_GROUPING, ElementStyleAdjustment.NONE)).isFalse();
+                    "hegemony",
+                    ANY_GROUPING,
+                    ElementStyleAdjustment.NONE))
+                .isFalse();
         }
 
         @Test
@@ -105,7 +112,10 @@ final class FactionsViewTest {
             // the independent borders and seams paired with the desaturation palette - the same
             // classification the alliances view makes for a desaturated non-allied bloc.
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ANY_GROUPING, new ElementStyleAdjustment(0.3, true))).isTrue();
+                    "hegemony",
+                    ANY_GROUPING,
+                    new ElementStyleAdjustment(0.3, true)))
+                .isTrue();
         }
 
         @Test
@@ -113,7 +123,10 @@ final class FactionsViewTest {
             // Muting dims a bloc but does not desaturate it, so a merely muted faction keeps its
             // faction bundle: dimming alone never swaps border weight or the palette slot.
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ANY_GROUPING, new ElementStyleAdjustment(0.3, false))).isFalse();
+                    "hegemony",
+                    ANY_GROUPING,
+                    new ElementStyleAdjustment(0.3, false)))
+                .isFalse();
         }
     }
 
@@ -124,10 +137,15 @@ final class FactionsViewTest {
         void resolveBlocStyleAdjustmentIsNoneForAnyBloc() {
             // The faction view adjusts no bloc - a core faction and independent space alike
             // draw exactly as classified, so the pipeline has nothing to dim or recolour.
-            assertThat(FactionsView.INSTANCE.resolveBlocStyleAdjustment("hegemony", ANY_GROUPING))
-                    .isEqualTo(ElementStyleAdjustment.NONE);
             assertThat(FactionsView.INSTANCE.resolveBlocStyleAdjustment(
-                    Factions.INDEPENDENT, ANY_GROUPING)).isEqualTo(ElementStyleAdjustment.NONE);
+                    "hegemony",
+                    ANY_GROUPING))
+                .isEqualTo(ElementStyleAdjustment.NONE);
+
+            assertThat(FactionsView.INSTANCE.resolveBlocStyleAdjustment(
+                    Factions.INDEPENDENT,
+                    ANY_GROUPING))
+                .isEqualTo(ElementStyleAdjustment.NONE);
         }
     }
 
@@ -136,24 +154,40 @@ final class FactionsViewTest {
 
         @Test
         void resolveNameReadsTheLongNameForTheFullFormat() {
+
             var sectorMock = mock(SectorAPI.class);
             var factionMock = mock(FactionAPI.class);
-            when(sectorMock.getFaction("hegemony")).thenReturn(factionMock);
-            when(factionMock.getDisplayNameLong()).thenReturn("The Hegemony");
 
-            assertThat(FactionsView.INSTANCE.resolveName("hegemony", ANY_GROUPING, sectorMock,
-                    FactionNameFormatChoice.FULL)).isEqualTo("The Hegemony");
+            when(sectorMock.getFaction("hegemony"))
+                .thenReturn(factionMock);
+            when(factionMock.getDisplayNameLong())
+                .thenReturn("The Hegemony");
+
+            assertThat(FactionsView.INSTANCE.resolveName(
+                    "hegemony",
+                    ANY_GROUPING,
+                    sectorMock,
+                    FactionNameFormatChoice.FULL))
+                .isEqualTo("The Hegemony");
         }
 
         @Test
         void resolveNameReadsTheShortNameForTheShortFormat() {
+
             var sectorMock = mock(SectorAPI.class);
             var factionMock = mock(FactionAPI.class);
-            when(sectorMock.getFaction("hegemony")).thenReturn(factionMock);
-            when(factionMock.getDisplayName()).thenReturn("Hegemony");
 
-            assertThat(FactionsView.INSTANCE.resolveName("hegemony", ANY_GROUPING, sectorMock,
-                    FactionNameFormatChoice.SHORT)).isEqualTo("Hegemony");
+            when(sectorMock.getFaction("hegemony"))
+                .thenReturn(factionMock);
+            when(factionMock.getDisplayName())
+                .thenReturn("Hegemony");
+
+            assertThat(FactionsView.INSTANCE.resolveName(
+                    "hegemony",
+                    ANY_GROUPING,
+                    sectorMock,
+                    FactionNameFormatChoice.SHORT))
+                .isEqualTo("Hegemony");
         }
 
         @Test
@@ -161,10 +195,16 @@ final class FactionsViewTest {
             // A bloc id with no faction behind it carries no name; the label fit then sizes
             // its stand-in band instead of drawing a name.
             var sectorMock = mock(SectorAPI.class);
-            when(sectorMock.getFaction("ghost")).thenReturn(null);
 
-            assertThat(FactionsView.INSTANCE.resolveName("ghost", ANY_GROUPING, sectorMock,
-                    FactionNameFormatChoice.FULL)).isNull();
+            when(sectorMock.getFaction("ghost"))
+                .thenReturn(null);
+
+            assertThat(FactionsView.INSTANCE.resolveName(
+                    "ghost",
+                    ANY_GROUPING,
+                    sectorMock,
+                    FactionNameFormatChoice.FULL))
+                .isNull();
         }
     }
 
@@ -174,14 +214,14 @@ final class FactionsViewTest {
         // The rules are forwarded to the (mocked) stats read, so their value never reaches assertion
         // here - any rules stand in where the seam demands them.
         private static final DominanceRules ANY_RULES =
-                new DominanceRules(false,
-                        new BaseSizeWeighting(1.0, null, 1.0, 1.0),
-                        new StationWeighting(false, 1.0, 0.5, 0.5),
-                        new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
+            new DominanceRules(false,
+                new BaseSizeWeighting(1.0, null, 1.0, 1.0),
+                new StationWeighting(false, 1.0, 0.5, 0.5),
+                new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
 
         // The view forwards a present bloc's stats onto its option verbatim, so any stats value
         // stands in - these arbitrary numbers are only asserted to survive the pass unchanged.
-        private static final BlocStats ANY_STATS = new BlocStats(3, 2, 5000, 7);
+        private static final DominanceStats ANY_STATS = new DominanceStats(3, 2, 5000, 7);
 
         @Test
         void resolveSelectableBlocsCarriesEachPresentFactionsCrestShortNameAndStats() {
@@ -190,17 +230,26 @@ final class FactionsViewTest {
             // sort it. The presence gate is the shared stats read's job, stubbed here to one faction.
             var sectorMock = mock(SectorAPI.class);
             var hegemonyMock = mock(FactionAPI.class);
-            when(sectorMock.getFaction("hegemony")).thenReturn(hegemonyMock);
-            when(hegemonyMock.getCrest()).thenReturn("graphics/hegemony_crest.png");
-            when(hegemonyMock.getDisplayName()).thenReturn("Hegemony");
 
-            try (MockedStatic<BlocStatsAggregator> aggregatorMock =
-                    mockStatic(BlocStatsAggregator.class)) {
-                aggregatorMock.when(() -> BlocStatsAggregator.aggregateBlocStats(any(), any())).thenReturn(Map.of("hegemony", ANY_STATS));
+            when(sectorMock.getFaction("hegemony"))
+                .thenReturn(hegemonyMock);
+
+            when(hegemonyMock.getCrest())
+                .thenReturn("graphics/hegemony_crest.png");
+            when(hegemonyMock.getDisplayName())
+                .thenReturn("Hegemony");
+
+            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
+                    .thenReturn(Map.of("hegemony", ANY_STATS));
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
-                        .containsExactly(new SelectableBloc(
-                                "hegemony", "Hegemony", "graphics/hegemony_crest.png", ANY_STATS));
+                    .containsExactly(new SelectableBloc(
+                        "hegemony",
+                        "Hegemony",
+                        "graphics/hegemony_crest.png",
+                        ANY_STATS));
             }
         }
 
@@ -210,17 +259,22 @@ final class FactionsViewTest {
             // crest path and the row draws its name alone, rather than being dropped.
             var sectorMock = mock(SectorAPI.class);
             var factionMock = mock(FactionAPI.class);
-            when(sectorMock.getFaction("luddic_path")).thenReturn(factionMock);
-            when(factionMock.getCrest()).thenReturn(null);
-            when(factionMock.getDisplayName()).thenReturn("Path");
 
-            try (MockedStatic<BlocStatsAggregator> aggregatorMock =
-                    mockStatic(BlocStatsAggregator.class)) {
-                aggregatorMock.when(() -> BlocStatsAggregator.aggregateBlocStats(any(), any()))
-                        .thenReturn(Map.of("luddic_path", ANY_STATS));
+            when(sectorMock.getFaction("luddic_path"))
+                .thenReturn(factionMock);
+
+            when(factionMock.getCrest())
+                .thenReturn(null);
+            when(factionMock.getDisplayName())
+                .thenReturn("Path");
+
+            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
+                    .thenReturn(Map.of("luddic_path", ANY_STATS));
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
-                        .containsExactly(new SelectableBloc("luddic_path", "Path", null, ANY_STATS));
+                    .containsExactly(new SelectableBloc("luddic_path", "Path", null, ANY_STATS));
             }
         }
 
@@ -230,12 +284,13 @@ final class FactionsViewTest {
             // none.
             var sectorMock = mock(SectorAPI.class);
 
-            try (MockedStatic<BlocStatsAggregator> aggregatorMock =
-                    mockStatic(BlocStatsAggregator.class)) {
-                aggregatorMock.when(() -> BlocStatsAggregator.aggregateBlocStats(any(), any())).thenReturn(Map.of());
+            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
+                    .thenReturn(Map.of());
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
-                        .isEmpty();
+                    .isEmpty();
             }
         }
     }

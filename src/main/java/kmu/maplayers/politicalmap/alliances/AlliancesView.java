@@ -18,7 +18,7 @@ import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
+import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.factions.FactionsView;
@@ -172,7 +172,7 @@ public final class AlliancesView implements PoliticalMapView {
         var pass = new DominancePass(rules, shouldIncludeUndiscoveredMarkets, grouping);
         var selectableBlocs = new ArrayList<SelectableBloc>();
 
-        for (var entry : BlocStatsAggregator.aggregateBlocStats(sector, pass).entrySet()) {
+        for (var entry : DominanceStatsAggregator.aggregateDominanceStats(sector, pass).entrySet()) {
             var blocId = entry.getKey();
             if (!grouping.isAlliance(blocId)) {
                 continue;

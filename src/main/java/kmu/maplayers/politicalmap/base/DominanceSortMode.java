@@ -6,7 +6,7 @@ import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
 import kmu.maplayers.base.sidebar.SortSelectionBinder;
-import kmu.maplayers.politicalmap.base.politics.BlocStats;
+import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.util.KmuStrings;
 
 import java.util.Comparator;
@@ -16,7 +16,7 @@ import java.util.function.ToIntFunction;
 /**
  * The political map's declaration of the framework's {@link ListSortMode} seam: the metrics the
  * filter picker ranks its selectable blocs by, one per row of the sort selector. Four of the five
- * promote one of {@link BlocStats}'s numbers to the primary sort key; the fifth sorts by name.
+ * promote one of {@link DominanceStats}'s numbers to the primary sort key; the fifth sorts by name.
  * Each mode owns what the seam asks of it and nothing else: the save-stable key its choice
  * persists under, the label its selector row draws, its natural direction, the comparator that
  * lays the bloc list out under it, and the trailing value a row shows.
@@ -33,7 +33,7 @@ import java.util.function.ToIntFunction;
  * <p>{@link #DEFAULT} is domination, the metric a fresh save and any unrecognised stored key fall back
  * to, so the picker always has a live ordering even before the player picks one.
  */
-public enum BlocSortMode implements ListSortMode<SelectableBloc> {
+public enum DominanceSortMode implements ListSortMode<SelectableBloc> {
 
     // Listed in the order the sort selector stacks its rows top to bottom: name first, then the four
     // numeric metrics. This is the display order, distinct from the tie-break chain below.
@@ -45,31 +45,31 @@ public enum BlocSortMode implements ListSortMode<SelectableBloc> {
     DOMINATION(
         "domination",
         KmuStrings.POLITICAL_MAP_CTL_SORT_DOMINATION,
-        BlocStats::domination),
+        DominanceStats::domination),
 
     PRESENCE(
         "presence",
         KmuStrings.POLITICAL_MAP_CTL_SORT_PRESENCE,
-        BlocStats::presence),
+        DominanceStats::presence),
 
     SCORE(
         "score",
         KmuStrings.POLITICAL_MAP_CTL_SORT_SCORE,
-        BlocStats::score),
+        DominanceStats::score),
 
     MARKET_SIZE(
         "market_size",
         KmuStrings.POLITICAL_MAP_CTL_SORT_MARKET_SIZE,
-        BlocStats::marketSize);
+        DominanceStats::marketSize);
 
     // The numeric metrics in their canonical tie-break order - the chain every mode breaks ties down.
     // A numeric mode moves its own metric to the front of this chain; the name mode appends the whole
     // chain after the name.
-    private static final List<BlocSortMode> CANONICAL_NUMERIC_ORDER =
+    private static final List<DominanceSortMode> CANONICAL_NUMERIC_ORDER =
         List.of(DOMINATION, PRESENCE, SCORE, MARKET_SIZE);
 
     /** The metric a fresh save and any unrecognised stored key fall back to, so an ordering always exists. */
-    public static final BlocSortMode DEFAULT = DOMINATION;
+    public static final DominanceSortMode DEFAULT = DOMINATION;
 
     /**
      * The political map's whole sort vocabulary - every mode in selector display order with
@@ -85,9 +85,9 @@ public enum BlocSortMode implements ListSortMode<SelectableBloc> {
     // The numeric this mode reads off a bloc's stats, or null for the name mode, which sorts on the
     // bloc's label rather than any stat. Kept as the accessor so the comparator and the trailing value
     // read the same number.
-    private final ToIntFunction<BlocStats> metric;
+    private final ToIntFunction<DominanceStats> metric;
 
-    BlocSortMode(String persistenceKey, String labelKey, ToIntFunction<BlocStats> metric) {
+    DominanceSortMode(String persistenceKey, String labelKey, ToIntFunction<DominanceStats> metric) {
         this.persistenceKey = persistenceKey;
         this.labelKey = labelKey;
         this.metric = metric;
@@ -210,7 +210,7 @@ public enum BlocSortMode implements ListSortMode<SelectableBloc> {
     // sorts with the blanks rather than throwing.
     private static Comparator<SelectableBloc> byNameAscending() {
         return Comparator.comparing(
-            BlocSortMode::displayNameOrEmpty,
+            DominanceSortMode::displayNameOrEmpty,
             String.CASE_INSENSITIVE_ORDER);
     }
 

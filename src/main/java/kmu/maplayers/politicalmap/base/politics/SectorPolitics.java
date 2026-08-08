@@ -23,7 +23,7 @@ import java.util.Map;
  * render layer clear of Starsector economy and faction types.
  *
  * <p>Resolves one render holder per system; the picker's whole-sector bloc totals are
- * {@link BlocStatsAggregator}'s job, walking the same economy through the same
+ * {@link DominanceStatsAggregator}'s job, walking the same economy through the same
  * {@link DominancePass} so the two never drift on which blocs hold territory.
  *
  * <p>The rule, dev reveal, and grouping a pass resolves under travel together as a

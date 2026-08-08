@@ -13,7 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Aggregates the whole-sector {@link BlocStats} the filter picker sorts and labels its options by,
+ * Aggregates the whole-sector {@link DominanceStats} the filter picker sorts and labels its options by,
  * from one grouped per-system dominance pass.
  *
  * <p>The picker half of the holder pipeline, kept apart from {@link SectorPolitics}'s per-system
@@ -23,9 +23,9 @@ import java.util.Map;
  * {@link DominancePass}, so the picker's "which blocs are selectable" gate stays honest against the
  * territory the render pass actually paints rather than drifting to a second definition of presence.
  */
-public final class BlocStatsAggregator {
+public final class DominanceStatsAggregator {
 
-    private BlocStatsAggregator() {
+    private DominanceStatsAggregator() {
     }
 
     /**
@@ -45,8 +45,8 @@ public final class BlocStatsAggregator {
      * @return each present bloc's stats, keyed by bloc id in economy-walk order; empty when no bloc
      *         holds a visible market
      */
-    public static Map<String, BlocStats> aggregateBlocStats(SectorAPI sector, DominancePass pass) {
-        var statsByBlocId = new LinkedHashMap<String, BlocStats>();
+    public static Map<String, DominanceStats> aggregateDominanceStats(SectorAPI sector, DominancePass pass) {
+        var statsByBlocId = new LinkedHashMap<String, DominanceStats>();
         if (sector == null || sector.getEconomy() == null) {
             return statsByBlocId;
         }
@@ -62,7 +62,7 @@ public final class BlocStatsAggregator {
     // taking a domination count. A bloc holding markets in several systems accumulates rather than
     // overwrites, and under an alliance grouping the members fold into the alliance's one bloc.
     private static void accumulateSystemStats(
-            Map<String, BlocStats> statsByBlocId,
+            Map<String, DominanceStats> statsByBlocId,
             SectorAPI sector,
             StarSystemAPI system,
             DominancePass pass) {
@@ -89,7 +89,7 @@ public final class BlocStatsAggregator {
 
         for (var entry : contributionByBlocId.entrySet()) {
             var blocId = entry.getKey();
-            var stats = statsByBlocId.getOrDefault(blocId, BlocStats.EMPTY);
+            var stats = statsByBlocId.getOrDefault(blocId, DominanceStats.EMPTY);
             statsByBlocId.put(
                 blocId,
                 stats.addSystem(

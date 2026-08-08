@@ -92,7 +92,7 @@ public final class PoliticalMapLayer implements MapLayer {
 
             // The stored sort (mode and direction), resolved live so a save with no stored direction
             // reads the mode's natural order.
-            var sort = BlocSortMode.resolveStoredSort();
+            var sort = DominanceSortMode.resolveStoredSort();
 
             // The stored column count, resolved to the default (one column) when a save has never
             // picked one, so the list always lays out under a live count.

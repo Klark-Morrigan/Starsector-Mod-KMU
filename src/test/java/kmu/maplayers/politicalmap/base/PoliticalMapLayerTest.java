@@ -240,7 +240,7 @@ final class PoliticalMapLayerTest {
                 assertThat(sortRow.leftColumn())
                     .hasSize(1);
                 assertThat(sortRow.leftColumn().get(0).labels())
-                    .hasSize(BlocSortMode.values().length);
+                    .hasSize(DominanceSortMode.values().length);
 
                 // The right half is the recede: its caption, then the two toggles.
                 assertThat(sortRow.rightColumn().get(0))

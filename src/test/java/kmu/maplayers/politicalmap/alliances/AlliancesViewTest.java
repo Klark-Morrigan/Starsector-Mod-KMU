@@ -20,8 +20,8 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
-import kmu.maplayers.politicalmap.base.politics.BlocStats;
-import kmu.maplayers.politicalmap.base.politics.BlocStatsAggregator;
+import kmu.maplayers.politicalmap.base.politics.DominanceStats;
+import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.settings.KmuPoliticalMapSettings;
@@ -263,7 +263,7 @@ final class AlliancesViewTest {
 
         // The view forwards a surviving alliance's stats onto its option verbatim, so any stats value
         // stands in - these arbitrary numbers are only asserted to survive the pass unchanged.
-        private static final BlocStats ANY_STATS = new BlocStats(4, 3, 8000, 12);
+        private static final DominanceStats ANY_STATS = new DominanceStats(4, 3, 8000, 12);
 
         @Test
         void resolveSelectableBlocsOffersOnlyAllianceBlocsCrestedFromTheLeadMemberWithStats() {
@@ -282,10 +282,10 @@ final class AlliancesViewTest {
             when(sectorMock.getFaction("rebels")).thenReturn(leadFactionMock);
             when(leadFactionMock.getCrest()).thenReturn("graphics/rebels_crest.png");
 
-            try (MockedStatic<BlocStatsAggregator> aggregatorMock =
-                    mockStatic(BlocStatsAggregator.class)) {
-                aggregatorMock.when(() -> BlocStatsAggregator.aggregateBlocStats(any(), any()))
-                        .thenReturn(Map.of("rebel_pact", ANY_STATS, "hegemony", BlocStats.EMPTY));
+            try (MockedStatic<DominanceStatsAggregator> aggregatorMock =
+                    mockStatic(DominanceStatsAggregator.class)) {
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
+                        .thenReturn(Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY));
 
                 assertThat(view.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
                         .containsExactly(new SelectableBloc(

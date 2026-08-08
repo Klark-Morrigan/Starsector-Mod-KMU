@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmu.maplayers.politicalmap.base.politics.BlocStats;
+import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,7 +24,7 @@ final class SelectableBlocTest {
                 "hegemony",
                 "Hegemony",
                 "crest_heg",
-                new BlocStats(5, 8, 40, 12));
+                new DominanceStats(5, 8, 40, 12));
 
             assertThat(bloc.itemId())
                 .isEqualTo("hegemony");

@@ -4,7 +4,7 @@ import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
 import kmu.maplayers.base.sidebar.SortSelection;
-import kmu.maplayers.politicalmap.base.politics.BlocStats;
+import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.mockStatic;
  * hand-built blocs, since the mode carries no Starsector types; the sort selection store is stubbed
  * where the resolution is pinned, so it runs free of a live save.
  */
-final class BlocSortModeTest {
+final class DominanceSortModeTest {
 
     @Nested
     class ResolveStoredSort {
@@ -36,13 +36,13 @@ final class BlocSortModeTest {
 
                 selectionMock
                     .when(SortSelection::getSortModeKey)
-                    .thenReturn(BlocSortMode.PRESENCE.persistenceKey());
+                    .thenReturn(DominanceSortMode.PRESENCE.persistenceKey());
                 selectionMock
                     .when(SortSelection::getSortDirectionKey)
                     .thenReturn(SortDirection.ASCENDING.persistenceKey());
 
-                assertThat(BlocSortMode.resolveStoredSort())
-                    .isEqualTo(new ListSort<>(BlocSortMode.PRESENCE, SortDirection.ASCENDING, BlocSortMode.MODES));
+                assertThat(DominanceSortMode.resolveStoredSort())
+                    .isEqualTo(new ListSort<>(DominanceSortMode.PRESENCE, SortDirection.ASCENDING, DominanceSortMode.MODES));
             }
         }
 
@@ -52,13 +52,13 @@ final class BlocSortModeTest {
             // default mode in that mode's own natural direction.
             try (MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
 
-                assertThat(BlocSortMode.resolveStoredSort())
+                assertThat(DominanceSortMode.resolveStoredSort())
                     .isEqualTo(new ListSort<>(
-                        BlocSortMode.DEFAULT,
-                        BlocSortMode.DEFAULT.defaultDirection(),
-                        BlocSortMode.MODES));
-                assertThat(BlocSortMode.DEFAULT)
-                    .isEqualTo(BlocSortMode.DOMINATION);
+                        DominanceSortMode.DEFAULT,
+                        DominanceSortMode.DEFAULT.defaultDirection(),
+                        DominanceSortMode.MODES));
+                assertThat(DominanceSortMode.DEFAULT)
+                    .isEqualTo(DominanceSortMode.DOMINATION);
             }
         }
 
@@ -72,11 +72,11 @@ final class BlocSortModeTest {
                     .when(SortSelection::getSortModeKey)
                     .thenReturn("no_such_mode");
 
-                assertThat(BlocSortMode.resolveStoredSort())
+                assertThat(DominanceSortMode.resolveStoredSort())
                     .isEqualTo(new ListSort<>(
-                        BlocSortMode.DEFAULT,
-                        BlocSortMode.DEFAULT.defaultDirection(),
-                        BlocSortMode.MODES));
+                        DominanceSortMode.DEFAULT,
+                        DominanceSortMode.DEFAULT.defaultDirection(),
+                        DominanceSortMode.MODES));
             }
         }
 
@@ -88,13 +88,13 @@ final class BlocSortModeTest {
 
                 selectionMock
                     .when(SortSelection::getSortModeKey)
-                    .thenReturn(BlocSortMode.PRESENCE.persistenceKey());
+                    .thenReturn(DominanceSortMode.PRESENCE.persistenceKey());
 
-                assertThat(BlocSortMode.resolveStoredSort())
+                assertThat(DominanceSortMode.resolveStoredSort())
                     .isEqualTo(new ListSort<>(
-                        BlocSortMode.PRESENCE,
-                        BlocSortMode.PRESENCE.defaultDirection(),
-                        BlocSortMode.MODES));
+                        DominanceSortMode.PRESENCE,
+                        DominanceSortMode.PRESENCE.defaultDirection(),
+                        DominanceSortMode.MODES));
             }
         }
     }
@@ -107,15 +107,15 @@ final class BlocSortModeTest {
 
             // Pinned as literals: renaming a key silently resets every save that stored that mode back
             // to the default, so a change must break this test before it ships.
-            assertThat(BlocSortMode.NAME.persistenceKey())
+            assertThat(DominanceSortMode.NAME.persistenceKey())
                 .isEqualTo("name");
-            assertThat(BlocSortMode.DOMINATION.persistenceKey())
+            assertThat(DominanceSortMode.DOMINATION.persistenceKey())
                 .isEqualTo("domination");
-            assertThat(BlocSortMode.PRESENCE.persistenceKey())
+            assertThat(DominanceSortMode.PRESENCE.persistenceKey())
                 .isEqualTo("presence");
-            assertThat(BlocSortMode.SCORE.persistenceKey())
+            assertThat(DominanceSortMode.SCORE.persistenceKey())
                 .isEqualTo("score");
-            assertThat(BlocSortMode.MARKET_SIZE.persistenceKey())
+            assertThat(DominanceSortMode.MARKET_SIZE.persistenceKey())
                 .isEqualTo("market_size");
         }
     }
@@ -129,15 +129,15 @@ final class BlocSortModeTest {
             var bloc = buildBloc(
                 "hegemony",
                 "Hegemony",
-                new BlocStats(5, 8, 40, 12));
+                new DominanceStats(5, 8, 40, 12));
 
-            assertThat(BlocSortMode.DOMINATION.resolveTrailingValue(bloc))
+            assertThat(DominanceSortMode.DOMINATION.resolveTrailingValue(bloc))
                 .isEqualTo("5");
-            assertThat(BlocSortMode.PRESENCE.resolveTrailingValue(bloc))
+            assertThat(DominanceSortMode.PRESENCE.resolveTrailingValue(bloc))
                 .isEqualTo("8");
-            assertThat(BlocSortMode.SCORE.resolveTrailingValue(bloc))
+            assertThat(DominanceSortMode.SCORE.resolveTrailingValue(bloc))
                 .isEqualTo("40");
-            assertThat(BlocSortMode.MARKET_SIZE.resolveTrailingValue(bloc))
+            assertThat(DominanceSortMode.MARKET_SIZE.resolveTrailingValue(bloc))
                 .isEqualTo("12");
         }
 
@@ -145,10 +145,10 @@ final class BlocSortModeTest {
         void resolveTrailingValueIsBlankUnderTheNameMode() {
 
             // The name mode ranks on the label, so there is no number to show and the row draws blank.
-            assertThat(BlocSortMode.NAME.resolveTrailingValue(buildBloc(
+            assertThat(DominanceSortMode.NAME.resolveTrailingValue(buildBloc(
                     "hegemony",
                     "Hegemony",
-                    new BlocStats(5, 8, 40, 12))))
+                    new DominanceStats(5, 8, 40, 12))))
                 .isEmpty();
         }
     }
@@ -160,9 +160,9 @@ final class BlocSortModeTest {
         void defaultDirectionIsDescendingForANumericMode() {
 
             // A numeric mode leads with the bigger bloc, so its natural order runs high-to-low.
-            assertThat(BlocSortMode.DOMINATION.defaultDirection())
+            assertThat(DominanceSortMode.DOMINATION.defaultDirection())
                 .isEqualTo(SortDirection.DESCENDING);
-            assertThat(BlocSortMode.MARKET_SIZE.defaultDirection())
+            assertThat(DominanceSortMode.MARKET_SIZE.defaultDirection())
                 .isEqualTo(SortDirection.DESCENDING);
         }
 
@@ -170,7 +170,7 @@ final class BlocSortModeTest {
         void defaultDirectionIsAscendingForTheNameMode() {
 
             // The name mode reads A-to-Z, so its natural order runs ascending.
-            assertThat(BlocSortMode.NAME.defaultDirection())
+            assertThat(DominanceSortMode.NAME.defaultDirection())
                 .isEqualTo(SortDirection.ASCENDING);
         }
     }
@@ -184,13 +184,13 @@ final class BlocSortModeTest {
             var low = buildBloc(
                 "low",
                 "Low",
-                new BlocStats(1, 0, 0, 0));
+                new DominanceStats(1, 0, 0, 0));
             var high = buildBloc(
                 "high",
                 "High",
-                new BlocStats(9, 0, 0, 0));
+                new DominanceStats(9, 0, 0, 0));
 
-            assertThat(listIdsSortedBy(BlocSortMode.DOMINATION, low, high))
+            assertThat(listIdsSortedBy(DominanceSortMode.DOMINATION, low, high))
                 .containsExactly("high", "low");
         }
 
@@ -202,13 +202,13 @@ final class BlocSortModeTest {
             var lowerPresence = buildBloc(
                 "a",
                 "A",
-                new BlocStats(5, 2, 0, 0));
+                new DominanceStats(5, 2, 0, 0));
             var higherPresence = buildBloc(
                 "b",
                 "B",
-                new BlocStats(5, 7, 0, 0));
+                new DominanceStats(5, 7, 0, 0));
 
-            assertThat(listIdsSortedBy(BlocSortMode.DOMINATION, lowerPresence, higherPresence))
+            assertThat(listIdsSortedBy(DominanceSortMode.DOMINATION, lowerPresence, higherPresence))
                 .containsExactly("b", "a");
         }
 
@@ -220,23 +220,23 @@ final class BlocSortModeTest {
             var dominant = buildBloc(
                 "dominant",
                 "Dominant",
-                new BlocStats(9, 0, 10, 0));
+                new DominanceStats(9, 0, 10, 0));
             var scorer = buildBloc(
                 "scorer",
                 "Scorer",
-                new BlocStats(1, 0, 50, 0));
+                new DominanceStats(1, 0, 50, 0));
 
-            assertThat(listIdsSortedBy(BlocSortMode.SCORE, dominant, scorer))
+            assertThat(listIdsSortedBy(DominanceSortMode.SCORE, dominant, scorer))
                 .containsExactly("scorer", "dominant");
         }
 
         @Test
         void comparatorRanksTheNameModeAlphabetically() {
 
-            var zeta = buildBloc("z", "Zeta", BlocStats.EMPTY);
-            var alpha = buildBloc("a", "Alpha", BlocStats.EMPTY);
+            var zeta = buildBloc("z", "Zeta", DominanceStats.EMPTY);
+            var alpha = buildBloc("a", "Alpha", DominanceStats.EMPTY);
 
-            assertThat(listIdsSortedBy(BlocSortMode.NAME, zeta, alpha))
+            assertThat(listIdsSortedBy(DominanceSortMode.NAME, zeta, alpha))
                 .containsExactly("a", "z");
         }
 
@@ -248,13 +248,13 @@ final class BlocSortModeTest {
             var low = buildBloc(
                 "low",
                 "Low",
-                new BlocStats(1, 0, 0, 0));
+                new DominanceStats(1, 0, 0, 0));
             var high = buildBloc(
                 "high",
                 "High",
-                new BlocStats(9, 0, 0, 0));
+                new DominanceStats(9, 0, 0, 0));
 
-            assertThat(listIdsSortedBy(BlocSortMode.DOMINATION, SortDirection.ASCENDING, low, high))
+            assertThat(listIdsSortedBy(DominanceSortMode.DOMINATION, SortDirection.ASCENDING, low, high))
                 .containsExactly("low", "high");
         }
 
@@ -266,14 +266,14 @@ final class BlocSortModeTest {
             var lowerPresence = buildBloc(
                 "a",
                 "A",
-                new BlocStats(5, 2, 0, 0));
+                new DominanceStats(5, 2, 0, 0));
             var higherPresence = buildBloc(
                 "b",
                 "B",
-                new BlocStats(5, 7, 0, 0));
+                new DominanceStats(5, 7, 0, 0));
 
             assertThat(listIdsSortedBy(
-                    BlocSortMode.DOMINATION,
+                    DominanceSortMode.DOMINATION,
                     SortDirection.ASCENDING,
                     lowerPresence,
                     higherPresence))
@@ -284,10 +284,10 @@ final class BlocSortModeTest {
         void comparatorFlipsTheNameModeToDescendingWhenTheDirectionIsDescending() {
 
             // The name mode's default is ascending, so descending reverses it to Z-to-A.
-            var zeta = buildBloc("z", "Zeta", BlocStats.EMPTY);
-            var alpha = buildBloc("a", "Alpha", BlocStats.EMPTY);
+            var zeta = buildBloc("z", "Zeta", DominanceStats.EMPTY);
+            var alpha = buildBloc("a", "Alpha", DominanceStats.EMPTY);
 
-            assertThat(listIdsSortedBy(BlocSortMode.NAME, SortDirection.DESCENDING, zeta, alpha))
+            assertThat(listIdsSortedBy(DominanceSortMode.NAME, SortDirection.DESCENDING, zeta, alpha))
                 .containsExactly("z", "a");
         }
 
@@ -299,13 +299,13 @@ final class BlocSortModeTest {
             var weaker = buildBloc(
                 "weaker",
                 "Same",
-                new BlocStats(1, 0, 0, 0));
+                new DominanceStats(1, 0, 0, 0));
             var stronger = buildBloc(
                 "stronger",
                 "Same",
-                new BlocStats(8, 0, 0, 0));
+                new DominanceStats(8, 0, 0, 0));
 
-            assertThat(listIdsSortedBy(BlocSortMode.NAME, weaker, stronger))
+            assertThat(listIdsSortedBy(DominanceSortMode.NAME, weaker, stronger))
                 .containsExactly("stronger", "weaker");
         }
 
@@ -317,13 +317,13 @@ final class BlocSortModeTest {
             var second = buildBloc(
                 "bbb",
                 "Same",
-                new BlocStats(3, 3, 3, 3));
+                new DominanceStats(3, 3, 3, 3));
             var first = buildBloc(
                 "aaa",
                 "Same",
-                new BlocStats(3, 3, 3, 3));
+                new DominanceStats(3, 3, 3, 3));
 
-            assertThat(listIdsSortedBy(BlocSortMode.SCORE, second, first))
+            assertThat(listIdsSortedBy(DominanceSortMode.SCORE, second, first))
                 .containsExactly("aaa", "bbb");
         }
     }
@@ -331,14 +331,14 @@ final class BlocSortModeTest {
     // Sorts the blocs by the mode's comparator in the mode's own default direction and returns their
     // ids in the resulting order, so an assertion reads the default arrangement without spelling out
     // the direction. The direction-flip tests use the direction overload.
-    private static List<String> listIdsSortedBy(BlocSortMode mode, SelectableBloc... blocs) {
+    private static List<String> listIdsSortedBy(DominanceSortMode mode, SelectableBloc... blocs) {
         return listIdsSortedBy(mode, mode.defaultDirection(), blocs);
     }
 
     // Sorts the blocs by the mode's comparator in the given direction and returns their ids in order,
     // so an assertion reads the arrangement without the blocs' other fields getting in the way.
     private static List<String> listIdsSortedBy(
-            BlocSortMode mode,
+            DominanceSortMode mode,
             SortDirection direction,
             SelectableBloc... blocs) {
 
@@ -352,7 +352,7 @@ final class BlocSortModeTest {
         return ids;
     }
 
-    private static SelectableBloc buildBloc(String id, String name, BlocStats stats) {
+    private static SelectableBloc buildBloc(String id, String name, DominanceStats stats) {
         return new SelectableBloc(id, name, null, stats);
     }
 }
