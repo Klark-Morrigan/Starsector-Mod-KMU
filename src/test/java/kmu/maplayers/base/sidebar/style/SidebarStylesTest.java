@@ -23,8 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * look is built fresh every frame from the running game's colours, so what is worth pinning is not a
  * shade but a wiring - that the box takes the black backdrop, that a frame takes the step of the chosen
  * scheme its framing names while the controls stay on that scheme's base whichever framing is chosen,
- * that the row's chrome rule follows that same scheme, that each tab chrome carries the hotkey
- * convention belonging to it, and that the panel's sound scheme is the engine's own.
+ * that the row's chrome rule follows that same scheme, that each tab chrome carries the palette and the
+ * hotkey convention belonging to it, and that the panel's sound scheme is the engine's own.
  *
  * <p>The sound scheme is here rather than only in KMLib because this is where the sidebar's two halves
  * meet: the widget style carries the scheme to the paint side and the host hands the same constant to
@@ -216,11 +216,38 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildRaisedButtonTabStyleTakesTheSameTabPaletteTheStripDoes() {
-            // The chromes differ in what the shades are painted onto, not in the shades: one palette for
-            // both is what keeps a tab fading, pulsing, and blinking alike on either screen.
-            assertThat(SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).palette())
-                .isEqualTo(SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT).palette());
+        void buildRaisedButtonTabStyleRulesTheRowInTheChosenSchemesDarkStep() {
+            // Where the strip's rule is the scheme's base, a button's is its dark step: the engine frames
+            // and fills its own buttons from the dark member of the accent it builds them with. The two
+            // chromes sharing one palette - which they did while this chrome was built to a description of
+            // the intel screen rather than to its source - is what outlined this row in a step no button
+            // beside it wears.
+            assertThat(SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).palette().chromeAccent())
+                .isEqualTo(StarsectorUiColoursMock.BUTTON_BG_DARK);
+        }
+
+        @Test
+        void buildRaisedButtonTabStyleLabelsTheShownButtonInTheSchemesBrightStep() {
+            // The third of the accent's three steps, so this pins that the whole set reaches the row: a
+            // button is built from all three and the palette would take the wrong one silently.
+            assertThat(SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).palette()
+                    .selected().label())
+                .isEqualTo(StarsectorUiColoursMock.LIGHT_HIGHLIGHT);
+        }
+
+        @Test
+        void buildRaisedButtonTabStyleMovesItsWholeRowWhenTheSchemeChanges() {
+            // The row answers the one scheme the rest of the panel does, at every step it reads - so a
+            // player pointing the sidebar elsewhere cannot leave its buttons outlined in one palette and
+            // labelled from another.
+            sidebarSettingsMock.selectColourScheme(SidebarColourSchemeChoice.PLAYER_FACTION);
+
+            var palette = SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).palette();
+
+            assertThat(palette.chromeAccent())
+                .isEqualTo(StarsectorUiColoursMock.PLAYER_DARK);
+            assertThat(palette.selected().label())
+                .isEqualTo(StarsectorUiColoursMock.PLAYER_BRIGHT);
         }
     }
 

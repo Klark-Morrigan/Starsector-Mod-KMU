@@ -154,15 +154,29 @@ public final class SidebarStyles {
         };
     }
 
-    // A tab style over the shared paint: the vanilla map-tab palette - its per-state fills and its
+    // The paint a row wears, which is the chrome's own: the engine paints a tab and a button from
+    // different colours, so a palette shared between the two would leave one of them copying shades its
+    // vanilla counterpart never wears. Both are resolved from the one scheme the panel answers to, so the
+    // rows part by which vanilla control they imitate and never by which palette.
+    private static TabPalette composeTabPalette(TabChrome chrome, AccentColours accentColours) {
+        return switch (chrome) {
+            // A vanilla tab takes no accent at all beyond the rule around the row, which has no vanilla
+            // counterpart to copy - so the panel's own base is what the strip is ruled in.
+            case STRIP -> TabPalette.createMapTabPalette(accentColours.base());
+            // A vanilla button takes nothing but its accent: the dark step fills and frames it, the base
+            // is what the pointer adds and what an untouched label reads in, and the bright step marks the
+            // one being shown.
+            case RAISED_BUTTON -> TabPalette.createRaisedButtonPalette(
+                accentColours.dark(),
+                accentColours.base(),
+                accentColours.bright());
+        };
+    }
+
+    // A tab style over the shared paint: the chrome's own palette - its per-state fills and its
     // interaction lifts - resolved live so it tracks a restyled install, and the orbitron face at the
-    // layout's tab size. Only the chrome and the hotkey convention part the two screens' rows, and they
-    // part together, so the values every row shares are written once here.
-    //
-    // The row's chrome rule is the panel's accent rather than the palette's own pick: KMLib works a tab's
-    // fills out from the engine's tab colours but has no vanilla counterpart to copy for the rule around
-    // them, so the shade a strip is ruled in travels down from the panel it belongs to and follows the
-    // same scheme its frame and controls do.
+    // layout's tab size. Only the chrome, the palette that belongs to it, and the hotkey convention part
+    // the two screens' rows, so the values every row shares are written once here.
     private static TabStyle composeTabStyle(
             TabChrome chrome,
             HotkeyStyle hotkey,
@@ -171,7 +185,7 @@ public final class SidebarStyles {
         return new TabStyle(
             chrome,
             headerBandHeight,
-            TabPalette.createMapTabPalette(resolveAccentColours().base()),
+            composeTabPalette(chrome, resolveAccentColours()),
             hotkey,
             new TextFace(TAB_FONT, TabsControlLayout.TAB_FONT_SIZE));
     }
