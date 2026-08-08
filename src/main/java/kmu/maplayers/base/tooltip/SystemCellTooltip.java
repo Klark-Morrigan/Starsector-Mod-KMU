@@ -66,15 +66,15 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
 
     // How much smaller each step under the box's own voice draws than the step above it. A breakdown
     // several levels deep is hard to read at one size however far it is indented, so the size gives the
-    // eye a second cue agreeing with the first. Three units tells neighbouring levels apart at a glance
-    // without running the deepest of them below what the atlas renders legibly - off the body's 15 that
-    // is a holder at 15, what it holds at 12, a term of that at 9, and a tier of that on the widget's
-    // own floor, which every level below it shares.
+    // eye a second cue agreeing with the first. Two units tells neighbouring levels apart while keeping
+    // every level a box actually reaches comfortably legible - off the body's 15 that is a holder at 15,
+    // what it holds at 13, a term of that at 11, and a tier of that at 9, all clear of the widget's own
+    // floor, which only a stack deeper than any box lists would reach.
     //
     // Stated on the shape every layer's box shares rather than on the one box that first listed something
     // deep enough to want it: how far a line stands under the box is a fact any box can carry, so two
     // layers demoting a line by different amounts would be a difference the reader cannot account for.
-    private static final float LEVEL_SHRINK = 3f;
+    private static final float LEVEL_SHRINK = 2f;
 
     @Override
     public final void renderFor(SectorAPI sector, StarSystemAPI system) {
