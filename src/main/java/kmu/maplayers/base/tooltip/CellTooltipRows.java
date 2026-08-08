@@ -14,14 +14,20 @@ import java.util.List;
  * line inside it laid at the {@linkplain CellTooltipEntryLevel level} it was found at, a banner row
  * centred across the box to state
  * something about the hovered system as a whole, the qualifier run any of them may end on, and the quiet
- * working a value may open on. Each shape fixes its own indent and colours, and its placement bar the crest gutter - that one column being
- * shared by everything a block lists, so whether it is reserved arrives as the block's answer rather than
- * as this line's. What a layer says is otherwise the only thing that varies between two hover boxes.
+ * working a value may open on. Each shape fixes its own indent, colours, and placement. What a layer says
+ * is the only thing that varies between two hover boxes.
  *
  * <p>The split that matters is the table shapes against the banner: a heading and every listed line lay
- * into the box's table, lining up against the crest gutter and the value column, while a banner has left
- * that table to speak for the box. So the choice of builder is a statement about whether a line is one of
- * the findings or a verdict over all of them.
+ * into the box's table, lining up against the value column, while a banner has left that table to speak
+ * for the box. So the choice of builder is a statement about whether a line is one of the findings or a
+ * verdict over all of them.
+ *
+ * <p>A mark travels inside the label on every shape here, never in a leading column. A column is one
+ * gutter shared down a stack, and it earns its keep only where markless lines have marked ones to align
+ * with; a listing four levels deep has no such stack, so a mark several levels in and reserved as a
+ * column would draw in the gutter the shallowest marked line widened, well left of the name it belongs
+ * to. Set as a run it lands where the indent already put the line - which is what a banner has always
+ * done, so the box has one rule for images rather than two.
  *
  * <p>Held apart from {@link SystemCellTooltip} because the two answer different questions - that class
  * decides how the box is framed, these decide how one line inside it reads - and because a body is
@@ -29,7 +35,7 @@ import java.util.List;
  * the tooltip composing them, without either having to be the other's subclass.
  *
  * <p>The table shapes take a whole {@link CellTooltipEntryLine} rather than its parts, so the entirety of
- * how a listed thing reads - its tier, its colours, its gutter, its value, and the status it calls out -
+ * how a listed thing reads - its tier, its colours, its mark, its value, and the status it calls out -
  * is settled here and a caller destructures nothing. They are the block's alone
  * ({@link CellTooltipSections}), which is why they are not offered past this package: a body states what
  * its blocks list and the block lays those lines out. Which tier a line takes is read off the level it
@@ -86,10 +92,10 @@ public final class CellTooltipRows {
      * nobody is another.
      *
      * <p>Centred rather than laid in the columns because the line speaks for the whole box: a line
-     * indented under the title, or aligned to a crest gutter the entries below reserve, reads as the
-     * first entry of a list it is not part of. The crest travels as a run of the line rather than in
-     * that gutter for the same reason - it belongs to the sentence, and centring is what a line clear of
-     * the table is free to do.
+     * indented under the title, or opening at the content edge the listed lines below open at, reads as
+     * the first entry of a list it is not part of. Its crest travels as a run of the line for the reason
+     * every mark in the box does - it belongs to the sentence rather than to a column - and centring is
+     * what a line clear of the table is then free to do.
      *
      * <p>Its qualifier, where it has one, is the shared {@link #buildQualifierSpan} added by the caller,
      * so a banner calls something out in the same shade every other line does.
@@ -112,13 +118,13 @@ public final class CellTooltipRows {
     }
 
     /**
-     * Builds the line naming a block: flush at the box's left content edge, clear of the crest gutter
-     * the entries under it lead with, in the highlight colour and carrying neither crest nor value.
+     * Builds the line naming a block: flush at the box's left content edge, in the highlight colour and
+     * carrying neither mark nor value.
      *
-     * <p>Both of those are what tells a heading from its own entries. Laid inside the gutter it starts
-     * where their labels start and so reads as indented under nothing; drawn in the entries' own bright
-     * it is told apart only by lacking a crest - and a block whose heading reads as one of its entries
-     * is a flat list of equals with a stray line on top.
+     * <p>Those two absences are what tells a heading from its own entries, since every line in the box
+     * opens at that same edge: drawn in the entries' own bright it would be told apart by lacking a mark
+     * alone, and a block whose heading reads as one of its entries is a flat list of equals with a stray
+     * line on top.
      *
      * @param text the block's name
      * @return the row, ready to open a block
@@ -138,24 +144,20 @@ public final class CellTooltipRows {
      * too: the walk that found the line states only where it went, and this decides what that looks
      * like, so a listing three levels deep needs no new shape and no new call.
      *
-     * <p>Whether the crest gutter is reserved is the block's answer rather than this line's, since the
-     * gutter is one column shared by everything the block lists - which is why it arrives as a parameter.
+     * <p>Whatever mark the line leads with rides inside its label at either tier, so a line's indent is
+     * the only thing that says how deep it sits and a mark never anchors to a column the indent has
+     * already left.
      *
-     * @param line                   the thing being listed
-     * @param level                  where beneath the block the line was found, and how far under the
-     *                               box's own voice it speaks
-     * @param isReservingCrestColumn whether the block reserves the crest gutter for every line in it
+     * @param line  the thing being listed
+     * @param level where beneath the block the line was found, and how far under the box's own voice it
+     *              speaks
      * @return the row, ready to add to a block
      */
-    static TooltipRow buildListedRow(
-            CellTooltipEntryLine line,
-            CellTooltipEntryLevel level,
-            boolean isReservingCrestColumn) {
-
+    static TooltipRow buildListedRow(CellTooltipEntryLine line, CellTooltipEntryLevel level) {
         if (level.isListedInItsOwnRight()) {
-            return buildEntryRow(line, level, isReservingCrestColumn);
+            return buildEntryRow(line, level);
         }
-        return buildMemberRow(line, level, isReservingCrestColumn);
+        return buildMemberRow(line, level);
     }
 
     /**
@@ -163,29 +165,21 @@ public final class CellTooltipRows {
      * colour, so one of the things a block lists reads as being listed rather than as part of whatever
      * is listed beneath it.
      *
-     * @param line                   what the block lists there
-     * @param level                  where the line was found; a block's own line speaks in the box's
-     *                               voice
-     * @param isReservingCrestColumn whether the block reserves the crest gutter for every line in it
+     * @param line  what the block lists there
+     * @param level where the line was found; a block's own line speaks in the box's voice
      * @return the row, ready to add to a block
      */
     private static TooltipRow buildEntryRow(
             CellTooltipEntryLine line,
-            CellTooltipEntryLevel level,
-            boolean isReservingCrestColumn) {
+            CellTooltipEntryLevel level) {
 
-        var row = TooltipRow
-            .createRow(new TextSpan(
-                line.labelText(),
-                resolveLabelColour(line, StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve())))
-            .carriesCrest(line.iconSpritePath());
+        var row = openLabel(line, StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve());
 
         return appendQualifier(
             appendIndex(
                 placeRow(
                     appendValue(row, line, StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve()),
-                    level,
-                    isReservingCrestColumn),
+                    level),
                 line),
             line);
     }
@@ -200,28 +194,45 @@ public final class CellTooltipRows {
      * weight nobody has designed the moment a breakdown grows a level, whereas the indent already says
      * the one thing the reader needs - what this line is part of.
      *
-     * @param line                   one of the things the line above carries
-     * @param level                  where beneath the block the line was found, and how far under the
-     *                               box's own voice it speaks; at least one step in
-     * @param isReservingCrestColumn whether the block reserves the crest gutter for every line in it
+     * @param line  one of the things the line above carries
+     * @param level where beneath the block the line was found, and how far under the box's own voice it
+     *              speaks; at least one step in
      * @return the row, ready to add to a block
      */
     private static TooltipRow buildMemberRow(
             CellTooltipEntryLine line,
-            CellTooltipEntryLevel level,
-            boolean isReservingCrestColumn) {
+            CellTooltipEntryLevel level) {
 
         var textColour = StarsectorUiColour.VANILLA_TEXT.resolve();
-        var row = TooltipRow
-            .createRow(new TextSpan(line.labelText(), resolveLabelColour(line, textColour)))
-            .carriesCrest(line.iconSpritePath())
+        var row = openLabel(line, textColour)
             .indentsBy(level.indentDepth() * MEMBER_INDENT);
 
         return appendQualifier(
             appendIndex(
-                placeRow(appendValue(row, line, textColour), level, isReservingCrestColumn),
+                placeRow(appendValue(row, line, textColour), level),
                 line),
             line);
+    }
+
+    // Opens a listed line: on the mark it leads with where it carries one, its name following as the
+    // next run of the same sentence, and on the name alone otherwise.
+    //
+    // The mark is a run rather than a leading column because it belongs to the subject of the line it
+    // sits on, at whatever indent that line landed at. Charged to a column it would draw in the gutter
+    // the shallowest marked line in the box widened, well left of the name it prefixes, and every
+    // markless line of the same breakdown would open past a gutter none of them can fill.
+    //
+    // A line carrying no mark opens on its words rather than on an image run with nothing to load, the
+    // same absence rule the banner shape holds to.
+    private static TooltipRow.TableRow openLabel(CellTooltipEntryLine line, Color labelColour) {
+        var labelSpan = new TextSpan(line.labelText(), resolveLabelColour(line, labelColour));
+
+        if (!line.hasMark()) {
+            return TooltipRow.createRow(labelSpan);
+        }
+        return TooltipRow
+            .createRow(new ImageSpan(line.iconSpritePath()))
+            .continuesWith(labelSpan);
     }
 
     // Fills a line's value column: its number in the line's own colour, opened where the line states
@@ -255,13 +266,12 @@ public final class CellTooltipRows {
             valueSpan));
     }
 
-    // Where a line sits across the box and how loudly it speaks, the two facts a line's own level and
-    // its block settle between them.
+    // Where a line sits across the box and how loudly it speaks.
     //
-    // The label starts behind the crest gutter where the block reserves one, so a line carrying no mark
-    // still lines up with the crested lines around it, and at the content edge where the block reserves
-    // none - a gutter no line in the block fills has nothing to align to, and reads as the line being
-    // indented under the heading above it.
+    // Every listed line opens at the content edge, because a mark rides in the label and no line here
+    // fills a leading column: a gutter nothing fills has nothing to align to, and reads as the whole
+    // block being indented under its own heading. Where a line does sit is then its indent alone, which
+    // is the one number a reader can follow down a breakdown.
     //
     // The subordination is stated from the level rather than from the indent, so a line set in as a
     // peer - a faction inside the alliance naming it - stays as loud as the line it sits under, while
@@ -271,14 +281,11 @@ public final class CellTooltipRows {
     // from different columns or read the same level two ways.
     private static TooltipRow.TableRow placeRow(
             TooltipRow.TableRow row,
-            CellTooltipEntryLevel level,
-            boolean isReservingCrestColumn) {
+            CellTooltipEntryLevel level) {
 
-        var subordinatedRow = row.subordinatedAt(level.subordinationLevel());
-
-        return isReservingCrestColumn
-            ? subordinatedRow
-            : subordinatedRow.clearsCrestColumn();
+        return row
+            .subordinatedAt(level.subordinationLevel())
+            .clearsCrestColumn();
     }
 
     // What a line's own name reads in: the tier's colour, or the quiet shade for a line that is a note

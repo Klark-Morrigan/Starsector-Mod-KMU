@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
+import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.tooltip.TooltipLabelPlacement;
@@ -62,8 +63,10 @@ final class SystemStandingsTooltipTest {
     // The lines a box with no status and no decree lays out, in draw order.
     private static final int DOMINATED_HEADING_ROW = 0;
 
-    // A line's label is one run here - no case below writes a qualifier onto one.
+    // A markless line - a heading - says its words in its opening run, while a crested group line opens
+    // on that image instead. No case below writes a qualifier onto one.
     private static final int LABEL_RUN = 0;
+    private static final int MARK_RUN = 0;
 
     // The scores reach a box already worded by the resolver, so they stand in as the text they draw as.
     private static final String BLOC_SCORE = "1,200";
@@ -217,8 +220,8 @@ final class SystemStandingsTooltipTest {
 
             var rivalHeader = readTableRow(readBodyRows(), rivalHeaderRow);
 
-            assertThat(rivalHeader.labelledRow().leadingRowSlot())
-                .isEqualTo(new RowSlot.Image(RIVAL_CREST));
+            assertThat(readLabelRun(rivalHeader, MARK_RUN))
+                .isEqualTo(new ImageSpan(RIVAL_CREST));
             assertThat(rivalHeader.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan(RIVAL_SCORE, HIGHLIGHT)));
         }

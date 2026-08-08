@@ -23,10 +23,9 @@ import java.util.Optional;
  * it: a heading left standing over no entries reads as a block whose contents failed to resolve, which
  * tells the player something untrue.
  *
- * <p>So is whether the crest gutter is reserved. The gutter is one column shared by everything a block
- * lists, and the box measures it across every block at once, so a block listing nothing that carries a
- * mark would open its lines behind a gutter another block's crests widened - an indent under its own
- * heading, standing for a column none of its lines can fill.
+ * <p>Nothing here is answered about a block's marks. A mark rides inside the label of the line carrying
+ * it ({@link CellTooltipRows}), so the walk states only what is part of what and how deep it went - what
+ * a block lists has no bearing on where another block's lines open.
  *
  * <p>Held apart from {@link CellTooltipRows} because the two answer different questions - that decides
  * how one line reads, this which lines a block is and which shape each takes - so a body states only
@@ -57,10 +56,7 @@ public final class CellTooltipSections {
         }
         sections.add(TooltipSection
             .createSection(List.of(CellTooltipRows.buildSectionHeadingRow(headingText)))
-            .nesting(resolveEntrySections(
-                entries,
-                CellTooltipEntryLevel.LISTED_LEVEL,
-                hasAnyMark(entries))));
+            .nesting(resolveEntrySections(entries, CellTooltipEntryLevel.LISTED_LEVEL)));
     }
 
     /**
@@ -102,21 +98,14 @@ public final class CellTooltipSections {
     // widget's.
     private static List<TooltipSection> resolveEntrySections(
             List<CellTooltipEntry> entries,
-            CellTooltipEntryLevel level,
-            boolean isReservingCrestColumn) {
+            CellTooltipEntryLevel level) {
 
         var entrySections = new ArrayList<TooltipSection>();
         for (var entry : entries) {
 
             entrySections.add(TooltipSection
-                .createSection(List.of(CellTooltipRows.buildListedRow(
-                    entry.line(),
-                    level,
-                    isReservingCrestColumn)))
-                .nesting(resolveEntrySections(
-                    entry.children(),
-                    resolveChildLevel(entry, level),
-                    isReservingCrestColumn)));
+                .createSection(List.of(CellTooltipRows.buildListedRow(entry.line(), level)))
+                .nesting(resolveEntrySections(entry.children(), resolveChildLevel(entry, level))));
         }
         return entrySections;
     }
@@ -134,20 +123,5 @@ public final class CellTooltipSections {
         return entry.isSubordinatingChildren()
             ? level.subordinatedUnder()
             : level.groupedUnder();
-    }
-
-    // Whether anything the block lists, however deep, leads with a mark. Answered over the whole block
-    // because the crest gutter is one column shared by all of its lines: reserved for a block where some
-    // line carries a mark, so the markless ones stay aligned with it, and dropped for a block where none
-    // does, since a gutter nothing fills is read as the block's lines being indented under their own
-    // heading rather than as an empty column. The whole listing counts, not just its top level - a
-    // breakdown carrying the marks would otherwise open its gutter under lines laid clear of it.
-    private static boolean hasAnyMark(List<CellTooltipEntry> entries) {
-        for (var entry : entries) {
-            if (entry.line().hasMark() || hasAnyMark(entry.children())) {
-                return true;
-            }
-        }
-        return false;
     }
 }

@@ -9,7 +9,7 @@ import java.util.Objects;
  *
  * <p>Held as a value rather than as a built line because the two decisions belong on opposite sides of
  * the box. A layer knows what its block lists; the block ({@link CellTooltipSections}) knows the tier,
- * the colours, the crest gutter, and the value column a listed thing is laid in. So two layers listing
+ * the colours, and the value column a listed thing is laid in. So two layers listing
  * unrelated content still list it alike, and a body cannot quietly author a third look by reaching for
  * the line vocabulary itself.
  *
@@ -104,10 +104,9 @@ public record CellTooltipEntryLine(
     }
 
     /**
-     * Whether this line leads with a mark at all. The one place the absence is judged, so whatever reads
-     * a listing to decide something about its marks - whether a block reserves the crest gutter, say -
-     * and whatever lays the line out afterwards cannot disagree over a line neither of them can show a
-     * mark for.
+     * Whether this line opens on an image run - a mark set at the head of its label, before the words -
+     * rather than on its name. The one place the absence is judged, so a line the game gives no mark for
+     * cannot end up opening on an image run with nothing to load.
      *
      * @return true where the line carries a mark to lead with
      */

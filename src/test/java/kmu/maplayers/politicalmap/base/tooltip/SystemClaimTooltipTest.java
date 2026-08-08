@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.tooltip.TooltipLabelPlacement;
@@ -12,6 +13,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
+import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 
@@ -64,10 +66,13 @@ final class SystemClaimTooltipTest {
 
     private static final String HEGEMONY_CREST = "graphics/hegemony_crest.png";
 
-    // A line's label is one run, except the claim line of a decreed system, which continues into the
-    // marker calling the decree out.
+    // A markless line - a heading, or a claim of nobody - says its words in its opening run. A faction
+    // line opens on the crest it is marked with instead, so its name and anything the line goes on to
+    // call out each sit one run later.
     private static final int LABEL_RUN = 0;
-    private static final int MARKER_RUN = 1;
+    private static final int MARK_RUN = 0;
+    private static final int MARKED_LABEL_RUN = 1;
+    private static final int MARKED_MARKER_RUN = 2;
 
     // The two lines a box over a populated system opens with, whatever the contest below them holds, by
     // their place in the flat run the box draws.
@@ -151,10 +156,12 @@ final class SystemClaimTooltipTest {
 
             var claimRow = readTableRow(sections, CLAIM_ROW);
 
-            assertThat(readLabelRun(claimRow, LABEL_RUN))
+            assertThat(readLabelRun(claimRow, MARK_RUN))
+                .isEqualTo(new ImageSpan(HEGEMONY_CREST));
+            assertThat(readLabelRun(claimRow, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
             assertThat(claimRow.labelledRow().leadingRowSlot())
-                .isEqualTo(new RowSlot.Image(HEGEMONY_CREST));
+                .isEqualTo(RowSlot.EMPTY);
             assertThat(claimRow.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan("1,200", HIGHLIGHT)));
         }
@@ -284,9 +291,9 @@ final class SystemClaimTooltipTest {
 
             var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
 
-            assertThat(readLabelRun(claimRow, LABEL_RUN))
+            assertThat(readLabelRun(claimRow, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
-            assertThat(readLabelRun(claimRow, MARKER_RUN))
+            assertThat(readLabelRun(claimRow, MARKED_MARKER_RUN))
                 .isEqualTo(new TextSpan(" (core)", HIGHLIGHT));
             assertThat(claimRow.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan("1,200", HIGHLIGHT)));
@@ -357,10 +364,10 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsOpensAnUnclaimedSystemsClaimAtTheContentEdge() {
-            // The crest gutter is the box's one column, widened here by the crested line in the block
-            // below - so the claim block, listing only the word for nobody, has to open flush under its
-            // own heading rather than behind a gutter no line of it can fill.
+        void buildBodySectionsOpensEveryClaimLineAtTheContentEdge() {
+            // A crest rides in the label of the line carrying it, so the claim block listing only the
+            // word for nobody opens flush under its own heading - level with the crested line in the
+            // block below rather than a gutter's width apart from it.
             var nonTerritorialEntryRow = 3;
 
             stubBreakdown(new SystemClaimBreakdown(
@@ -376,7 +383,7 @@ final class SystemClaimTooltipTest {
             assertThat(readTableRow(sections, CLAIM_ROW).labelPlacement())
                 .isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
             assertThat(readTableRow(sections, nonTerritorialEntryRow).labelPlacement())
-                .isEqualTo(TooltipLabelPlacement.ALIGNED_WITH_CRESTS);
+                .isEqualTo(TooltipLabelPlacement.AT_CONTENT_EDGE);
         }
 
         @Test
@@ -411,7 +418,7 @@ final class SystemClaimTooltipTest {
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Unpopulated", "Claim:", "The Hegemony");
-            assertThat(readLabelRun(readTableRow(sections, DECREED_CLAIM_ROW), MARKER_RUN))
+            assertThat(readLabelRun(readTableRow(sections, DECREED_CLAIM_ROW), MARKED_MARKER_RUN))
                 .isEqualTo(new TextSpan(" (core)", HIGHLIGHT));
         }
 
@@ -540,19 +547,20 @@ final class SystemClaimTooltipTest {
     // The box read top to bottom as the words a player sees, headings and entries alike - the shape
     // most of these cases are about, which asserting block by block would bury. How those lines are
     // grouped is the subject of one case of its own.
+    //
+    // Read as each line's opening words rather than as its first run, since a faction line opens on its
+    // crest - so one expected list covers a box mixing crested faction lines with markless headings.
     private static List<String> readLabelTexts(List<TooltipSection> sections) {
         return TooltipSection
             .readRowsInOrder(sections)
             .stream()
-            .map(row -> readLabelTextRun(row, LABEL_RUN).text())
+            .map(CellTooltipRowReads::readOpeningWords)
             .toList();
     }
 
     private static String readLabelText(List<TooltipSection> sections, int rowIndex) {
-        return readLabelTextRun(
-            TooltipSection.readRowsInOrder(sections).get(rowIndex),
-            LABEL_RUN)
-            .text();
+        return CellTooltipRowReads.readOpeningWords(
+            TooltipSection.readRowsInOrder(sections).get(rowIndex));
     }
 
     // Reads one body line as the table row it is. A block's lines are typed on the row supertype, since

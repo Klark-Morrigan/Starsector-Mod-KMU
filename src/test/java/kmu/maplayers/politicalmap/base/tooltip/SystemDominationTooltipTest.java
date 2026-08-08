@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
@@ -71,8 +72,10 @@ final class SystemDominationTooltipTest {
     private static final int FIRST_MEMBER_ROW = 2;
     private static final int SECOND_MEMBER_ROW = 3;
 
-    // A line's label is one run here - no case below writes a qualifier onto one.
-    private static final int LABEL_RUN = 0;
+    // Every line these cases read is crested, so each opens on that image and says its name in the run
+    // after it. No case below writes a qualifier onto one.
+    private static final int MARK_RUN = 0;
+    private static final int MARKED_LABEL_RUN = 1;
 
     // The scores reach this box already worded by the resolver, so they stand in as the text they draw
     // as - what the box does with them is carry them into the value column.
@@ -129,14 +132,17 @@ final class SystemDominationTooltipTest {
 
             var header = readTableRow(rows, GROUP_HEADER_ROW);
 
-            assertThat(readLabelRun(header, LABEL_RUN))
+            assertThat(readLabelRun(header, MARK_RUN))
+                .isEqualTo(new ImageSpan(BLOC_CREST));
+
+            assertThat(readLabelRun(header, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("Rebel Pact", PLAYER_BRIGHT));
 
             assertThat(header.indent())
                 .isCloseTo(NO_INDENT, within(TOLERANCE));
 
             assertThat(header.labelledRow().leadingRowSlot())
-                .isEqualTo(new RowSlot.Image(BLOC_CREST));
+                .isEqualTo(RowSlot.EMPTY);
 
             assertThat(header.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan(BLOC_SCORE, HIGHLIGHT)));
@@ -157,10 +163,10 @@ final class SystemDominationTooltipTest {
 
             var firstMember = readTableRow(rows, FIRST_MEMBER_ROW);
 
-            assertThat(readLabelRun(readTableRow(rows, GROUP_HEADER_ROW), LABEL_RUN))
+            assertThat(readLabelRun(readTableRow(rows, GROUP_HEADER_ROW), MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("Rebel Pact", PLAYER_BRIGHT));
 
-            assertThat(readLabelRun(firstMember, LABEL_RUN))
+            assertThat(readLabelRun(firstMember, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", TEXT));
 
             assertThat(firstMember.indent())

@@ -211,7 +211,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // the highlight colour, so the body below it never has to repeat which system it describes and the
     // one proper name in the box is the one span that reads gold. Centred over the box rather than laid
     // into the columns below it, since it titles the whole box rather than sitting in its table - which
-    // also frees it of the crest gutter and the value column those rows align to.
+    // also frees it of the value column those rows align to.
     //
     // Reading as a heading is the row saying what it is, not which face it wants: the box's typography
     // below turns that into the title face, so the two decisions - what a line is, how that kind of line

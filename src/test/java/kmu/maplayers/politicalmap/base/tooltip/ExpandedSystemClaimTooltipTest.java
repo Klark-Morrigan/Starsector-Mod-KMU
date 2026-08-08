@@ -58,10 +58,10 @@ final class ExpandedSystemClaimTooltipTest {
     private static final String HEGEMONY = "hegemony";
     private static final String TRITACHYON = "tritachyon";
 
-    // A line's label is one run, except the claim line of a decreed system, which continues into the
-    // marker calling the decree out.
-    private static final int LABEL_RUN = 0;
-    private static final int MARKER_RUN = 1;
+    // A faction line opens on the crest it is marked with, so its name and the marker a decreed claim
+    // line goes on to call out each sit one run later.
+    private static final int MARKED_LABEL_RUN = 1;
+    private static final int MARKED_MARKER_RUN = 2;
 
     // Where the claim lands in a box over a populated system: under the heading the box opens with.
     private static final int CLAIM_ROW = 1;
@@ -243,9 +243,9 @@ final class ExpandedSystemClaimTooltipTest {
 
             var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
 
-            assertThat(readLabelTextRun(claimRow, LABEL_RUN).text())
+            assertThat(readLabelTextRun(claimRow, MARKED_LABEL_RUN).text())
                 .isEqualTo("The Hegemony");
-            assertThat(readLabelRun(claimRow, MARKER_RUN))
+            assertThat(readLabelRun(claimRow, MARKED_MARKER_RUN))
                 .isEqualTo(new TextSpan(" (core)", HIGHLIGHT));
         }
 

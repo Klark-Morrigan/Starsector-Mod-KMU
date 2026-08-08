@@ -1,5 +1,6 @@
 package kmu.maplayers.base.tooltip;
 
+import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
 import kmlib.starsector.ui.widgets.tooltip.TooltipLabelPlacement;
@@ -25,16 +26,15 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_SUBORDINATION;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.ONE_LEVEL_SUBORDINATED;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
-import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins how a body divides into blocks and how a block lays out what it lists, since both are exactly
- * what a reader of the box sees: a heading stands clear of the crest gutter in gold above the entries it
- * names, an entry sits flush with whatever it is made up of inset beneath it, a line speaking for the
- * whole system stands as a block of its own, and a block with nothing to list contributes nothing rather
- * than leaving its heading standing over an absence a player would read as a failure to resolve one.
+ * what a reader of the box sees: a heading stands in gold above the entries it names, an entry sits flush
+ * with whatever it is made up of inset beneath it, a line speaking for the whole system stands as a block
+ * of its own, and a block with nothing to list contributes nothing rather than leaving its heading
+ * standing over an absence a player would read as a failure to resolve one.
  *
  * <p>How far apart the blocks then stand is the widget's and pinned there; what is fixed here is that a
  * heading and the entries it names are one block, which is what that spacing follows from.
@@ -44,8 +44,11 @@ final class CellTooltipSectionsTest {
     private static final String CREST = "graphics/hegemony_crest.png";
 
     // What a line is called, which is the run every case here reads it by; how a line calling something
-    // out ends is the vocabulary's and pinned there.
+    // out ends is the vocabulary's and pinned there. A line led by a mark opens on that image instead,
+    // so its words sit one run later.
     private static final int LABEL_RUN = 0;
+    private static final int MARK_RUN = 0;
+    private static final int MARKED_LABEL_RUN = 1;
 
     // Where the heading sits inside the block it opens, and where the first entry it names follows.
     private static final int HEADING_ROW = 0;
@@ -127,10 +130,8 @@ final class CellTooltipSectionsTest {
 
         @Test
         void appendSectionLaysTheHeadingAtTheBoxsContentEdgeInGold() {
-            // Where the review found the fault: a crestless heading at no indent still reserves the
-            // gutter its entries lead with, so it begins where their labels do and reads as indented
-            // under nothing. Placement, not indent, is what moves it - and gold is what stops it
-            // reading as one of the entries it names.
+            // A heading opens where every other line of the box does, so what stops it reading as one of
+            // the entries it names is the gold it speaks in and the two columns it leaves empty.
             var sections = new ArrayList<TooltipSection>();
 
             CellTooltipSections.appendSection(
@@ -153,8 +154,8 @@ final class CellTooltipSectionsTest {
         @Test
         void appendSectionLaysAnEntryFlushWithItsMarkAndItsValueCalledOut() {
             // An entry is one of the things being listed, so it opens flush rather than inset under the
-            // heading that names it, and its number reads in the called-out shade like every value in
-            // the box.
+            // heading that names it, its mark rides at the head of its own label, and its number reads in
+            // the called-out shade like every value in the box.
             var sections = new ArrayList<TooltipSection>();
 
             CellTooltipSections.appendSection(
@@ -165,12 +166,14 @@ final class CellTooltipSectionsTest {
 
             var entry = (TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW);
 
-            assertThat(readLabelRun(entry, LABEL_RUN))
+            assertThat(readLabelRun(entry, MARK_RUN))
+                .isEqualTo(new ImageSpan(CREST));
+            assertThat(readLabelRun(entry, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
             assertThat(entry.indent())
                 .isCloseTo(NO_INDENT, within(TOLERANCE));
             assertThat(entry.labelledRow().leadingRowSlot())
-                .isEqualTo(new RowSlot.Image(CREST));
+                .isEqualTo(RowSlot.EMPTY);
             assertThat(entry.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan("1,200", HIGHLIGHT)));
         }
@@ -196,7 +199,7 @@ final class CellTooltipSectionsTest {
 
             var member = (TooltipRow.TableRow) readRow(sections, memberRow);
 
-            assertThat(readLabelRun(member, LABEL_RUN))
+            assertThat(readLabelRun(member, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", TEXT));
             assertThat(member.indent())
                 .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
@@ -341,10 +344,10 @@ final class CellTooltipSectionsTest {
         }
 
         @Test
-        void appendSectionOpensNoGutterForAnEntryCarryingNoMark() {
+        void appendSectionLeavesTheLeadingSlotUnfilledForAnEntryCarryingNoMark() {
             // A list of things that carry no mark - industries, conditions, hazards - lays through the
-            // same construct: the leading slot is left unfilled, and the box reserves a crest column
-            // only for the boxes that have one.
+            // same construct: no line of the box fills its leading slot, so the box reserves no column
+            // for one whatever a block happens to list.
             var sections = new ArrayList<TooltipSection>();
 
             CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("None")));
@@ -357,10 +360,9 @@ final class CellTooltipSectionsTest {
 
         @Test
         void appendSectionOpensABlockListingNothingMarkedAtTheContentEdge() {
-            // Where the fault showed: the crest gutter is the box's one column, widened by whichever
-            // block does carry crests, so a block listing nothing marked opened its lines behind a
-            // gutter none of them could fill - a claim of "None" reading as indented under the very
-            // heading naming it.
+            // A block listing nothing marked opens flush under its own heading rather than behind a
+            // gutter none of its lines could fill - a claim of "None" would otherwise read as indented
+            // under the very heading naming it.
             var sections = new ArrayList<TooltipSection>();
 
             CellTooltipSections.appendSection(
@@ -373,10 +375,9 @@ final class CellTooltipSectionsTest {
         }
 
         @Test
-        void appendSectionReservesTheGutterForAMarkFoundOnlyInsideABreakdown() {
-            // The whole listing counts towards the block's answer, not just its top level: a line
-            // carrying no mark of its own over the marked things it breaks down into would otherwise
-            // open its gutter halfway down, under lines already laid clear of it.
+        void appendSectionKeepsEveryLineAtTheContentEdgeWhenABreakdownCarriesAMark() {
+            // A mark found deep in a listing moves no line: it rides in the label of the line carrying
+            // it, so the markless lines above it are not pushed past a gutter they could not fill.
             var sections = new ArrayList<TooltipSection>();
 
             CellTooltipSections.appendSection(
@@ -387,17 +388,14 @@ final class CellTooltipSectionsTest {
                         CellTooltipEntryLine.createLine(CREST, "The Hegemony", "900"))))));
 
             assertThat(readLabelPlacements(sections))
-                .containsExactly(
-                    TooltipLabelPlacement.AT_CONTENT_EDGE,
-                    TooltipLabelPlacement.ALIGNED_WITH_CRESTS,
-                    TooltipLabelPlacement.ALIGNED_WITH_CRESTS);
+                .containsOnly(TooltipLabelPlacement.AT_CONTENT_EDGE);
         }
 
         @Test
-        void appendSectionHoldsAMarklessLineInTheGutterABlockDoesReserve() {
-            // The other half of the same rule: the gutter is answered for the block rather than per
-            // line, so a faction the game gives no crest stays aligned with the crested lines beside it
-            // instead of stepping out of the column they share.
+        void appendSectionStartsAMarkedAndAMarklessEntryAtTheSameInset() {
+            // The other half of the same rule: two entries of one block begin their labels at the same
+            // place whether either carries a mark, so a block mixing the two reads as one column rather
+            // than as two staggered ones.
             var sections = new ArrayList<TooltipSection>();
             var marklessEntryRow = 2;
 
@@ -409,8 +407,13 @@ final class CellTooltipSectionsTest {
                         CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200")),
                     createEntry("Independent")));
 
-            assertThat(((TooltipRow.TableRow) readRow(sections, marklessEntryRow)).labelPlacement())
-                .isEqualTo(TooltipLabelPlacement.ALIGNED_WITH_CRESTS);
+            var markedEntry = (TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW);
+            var marklessEntry = (TooltipRow.TableRow) readRow(sections, marklessEntryRow);
+
+            assertThat(marklessEntry.labelPlacement())
+                .isEqualTo(markedEntry.labelPlacement());
+            assertThat(marklessEntry.indent())
+                .isCloseTo(markedEntry.indent(), within(TOLERANCE));
         }
 
         @Test
@@ -549,11 +552,14 @@ final class CellTooltipSectionsTest {
             .toList();
     }
 
+    // What each line of a body says, in draw order. Read as the line's opening words rather than as its
+    // first run, since a line led by a mark opens on an image - so one expected list covers a block
+    // mixing marked lines with markless ones.
     private static List<String> readLabelTexts(List<TooltipSection> sections) {
         return TooltipSection
             .readRowsInOrder(sections)
             .stream()
-            .map(row -> readLabelTextRun(row, LABEL_RUN).text())
+            .map(CellTooltipRowReads::readOpeningWords)
             .toList();
     }
 }
