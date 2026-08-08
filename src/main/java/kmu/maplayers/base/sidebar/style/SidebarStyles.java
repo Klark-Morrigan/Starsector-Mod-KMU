@@ -91,7 +91,7 @@ public final class SidebarStyles {
      * @return the tab style to lay the band out with and paint it from
      */
     public static TabStyle buildStripTabStyle(float headerBandHeight) {
-        return composeTabStyle(TabChrome.STRIP, HotkeyStyle.createUnderlined(), headerBandHeight);
+        return composeTabStyle(TabChrome.STRIP, headerBandHeight);
     }
 
     /**
@@ -108,7 +108,7 @@ public final class SidebarStyles {
      * @return the tab style to lay the band out with and paint it from
      */
     public static TabStyle buildRaisedButtonTabStyle(float headerBandHeight) {
-        return composeTabStyle(TabChrome.RAISED_BUTTON, HotkeyStyle.createPlain(), headerBandHeight);
+        return composeTabStyle(TabChrome.RAISED_BUTTON, headerBandHeight);
     }
 
     /**
@@ -192,20 +192,29 @@ public final class SidebarStyles {
         };
     }
 
-    // A tab style over the shared paint: the chrome's own palette - its per-state fills and its
-    // interaction lifts - resolved live so it tracks a restyled install, and the chrome's own face. Only
-    // the chrome, and the palette, face, and hotkey convention that belong to it, part the two screens'
-    // rows, so the values every row shares are written once here.
-    private static TabStyle composeTabStyle(
-            TabChrome chrome,
-            HotkeyStyle hotkey,
-            float headerBandHeight) {
+    // How a row marks the key it answers to, which the chrome decides for the same reason it decides
+    // the palette and the face: the vanilla tabs a strip copies underline their key and the vanilla
+    // buttons a raised row copies leave theirs bare. Resolved from the chrome rather than handed in
+    // beside it, so a row marked one way while wearing the other chrome cannot be composed at all - the
+    // mismatch the styled hotkey exists to avoid is unrepresentable rather than merely avoided.
+    private static HotkeyStyle resolveHotkeyStyle(TabChrome chrome) {
+        return switch (chrome) {
+            case STRIP -> HotkeyStyle.createUnderlined();
+            case RAISED_BUTTON -> HotkeyStyle.createPlain();
+        };
+    }
 
+    // A tab style over the shared paint: the chrome's own palette - its per-state fills and its
+    // interaction lifts - resolved live so it tracks a restyled install, plus the face and the hotkey
+    // convention that chrome carries. All three follow from the chrome rather than travelling beside it,
+    // since each is a convention of the vanilla control the row imitates and not a free choice; the band
+    // height alone is the host's, being the one dimension the two screens genuinely set apart.
+    private static TabStyle composeTabStyle(TabChrome chrome, float headerBandHeight) {
         return new TabStyle(
             chrome,
             headerBandHeight,
             composeTabPalette(chrome, resolveAccentColours()),
-            hotkey,
+            resolveHotkeyStyle(chrome),
             resolveTabFace(chrome));
     }
 
