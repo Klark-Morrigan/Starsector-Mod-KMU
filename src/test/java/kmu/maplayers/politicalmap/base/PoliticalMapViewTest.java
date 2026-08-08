@@ -47,7 +47,9 @@ final class PoliticalMapViewTest {
                     HolderGrouping.identity(),
                     statsByBlocId,
                     blocId -> blocId.equals("kept")))
-                .containsExactly(new SelectableBloc("kept", "Kept", null, ANY_STATS));
+                .containsExactly(new RankedBloc<>(
+                    new SelectableBloc("kept", "Kept", null),
+                    ANY_STATS));
         }
 
         @Test
@@ -66,7 +68,7 @@ final class PoliticalMapViewTest {
                     HolderGrouping.identity(),
                     statsByBlocId,
                     blocId -> true))
-                .extracting(SelectableBloc::blocId)
+                .extracting(RankedBloc::itemId)
                 .containsExactly("second", "first");
         }
 
@@ -91,8 +93,9 @@ final class PoliticalMapViewTest {
                         Map.of("rebel_pact", "Rebel Pact")),
                     Map.of("rebel_pact", ANY_STATS),
                     blocId -> true))
-                .containsExactly(new SelectableBloc(
-                    "rebel_pact", "Rebel Pact", "graphics/rebels_crest.png", ANY_STATS));
+                .containsExactly(new RankedBloc<>(
+                    new SelectableBloc("rebel_pact", "Rebel Pact", "graphics/rebels_crest.png"),
+                    ANY_STATS));
         }
 
         @Test
@@ -110,7 +113,9 @@ final class PoliticalMapViewTest {
                     HolderGrouping.identity(),
                     Map.of("ghost", ANY_STATS),
                     blocId -> true))
-                .containsExactly(new SelectableBloc("ghost", "Ghost", null, ANY_STATS));
+                .containsExactly(new RankedBloc<>(
+                    new SelectableBloc("ghost", "Ghost", null),
+                    ANY_STATS));
         }
     }
 }

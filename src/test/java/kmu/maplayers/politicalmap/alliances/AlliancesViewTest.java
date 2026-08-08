@@ -14,6 +14,7 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
+import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
@@ -50,6 +51,7 @@ import static org.mockito.Mockito.when;
  * in-game test's concern.
  */
 final class AlliancesViewTest {
+
     private static final String NEXERELIN_MOD_ID = "nexerelin";
 
     // The alliances view's own non-allied recede set keys, driven here through sector memory so the
@@ -61,9 +63,9 @@ final class AlliancesViewTest {
     // An alliance grouping with one alliance bloc "rebel_pact" fusing two members, coloured off the
     // sorted-first member and named "Rebel Pact"; a faction not in the map stays its own lone bloc.
     private static final HolderGrouping ALLIANCE_GROUPING = new HolderGrouping(
-            Map.of("rebels", "rebel_pact", "pirates", "rebel_pact"),
-            Map.of("rebel_pact", "rebels"),
-            Map.of("rebel_pact", "Rebel Pact"));
+        Map.of("rebels", "rebel_pact", "pirates", "rebel_pact"),
+        Map.of("rebel_pact", "rebels"),
+        Map.of("rebel_pact", "Rebel Pact"));
 
     @Nested
     class GetId {
@@ -71,7 +73,8 @@ final class AlliancesViewTest {
         @Test
         void getIdIsTheFrozenAlliancesId() {
             // Frozen: renaming it silently resets any save that selected this view to the default.
-            assertThat(AlliancesView.INSTANCE.getId()).isEqualTo("alliances");
+            assertThat(AlliancesView.INSTANCE.getId())
+                .isEqualTo("alliances");
         }
     }
 
@@ -84,9 +87,11 @@ final class AlliancesViewTest {
             // the revision - that is what folds it into the content token and repaints the view
             // without a reload.
             var before = AlliancesView.INSTANCE.getContentRevision();
+
             MapLayerRefresh.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
 
-            assertThat(AlliancesView.INSTANCE.getContentRevision()).isNotEqualTo(before);
+            assertThat(AlliancesView.INSTANCE.getContentRevision())
+                .isNotEqualTo(before);
         }
 
         @Test
@@ -95,9 +100,11 @@ final class AlliancesViewTest {
             // never move settingsRevision, so the recede-style revision must fold in here for a flip
             // to repaint the overlay live.
             var before = AlliancesView.INSTANCE.getContentRevision();
+
             MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
 
-            assertThat(AlliancesView.INSTANCE.getContentRevision()).isNotEqualTo(before);
+            assertThat(AlliancesView.INSTANCE.getContentRevision())
+                .isNotEqualTo(before);
         }
     }
 
@@ -108,11 +115,12 @@ final class AlliancesViewTest {
         void resolveGroupingFallsBackToIdentityWhenNexIsAbsent() {
             // Without Nex the gate returns the identity grouping, so the view degrades to the faction
             // grouping rather than touching any exerelin class.
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+            try (var globalMock = mockStatic(Global.class)) {
+
                 stubNexEnabled(globalMock, false);
 
                 assertThat(AlliancesView.INSTANCE.resolveGrouping())
-                        .isSameAs(HolderGrouping.identity());
+                    .isSameAs(HolderGrouping.identity());
             }
         }
     }
@@ -127,7 +135,7 @@ final class AlliancesViewTest {
             // uses - extended with claimed systems - so it inherits the shared claim-augmented
             // default rather than supplying one of its own.
             assertThat(AlliancesView.INSTANCE.resolveHolderProvider())
-                    .isSameAs(ClaimAugmentedHolderProvider.INSTANCE);
+                .isSameAs(ClaimAugmentedHolderProvider.INSTANCE);
         }
     }
 
@@ -145,7 +153,10 @@ final class AlliancesViewTest {
             // Genuine independent space always takes the independent style, exactly as the faction
             // view classifies it - short-circuiting before the adjustment is even read.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    Factions.INDEPENDENT, ALLIANCE_GROUPING, ElementStyleAdjustment.NONE)).isTrue();
+                    Factions.INDEPENDENT,
+                    ALLIANCE_GROUPING,
+                    ElementStyleAdjustment.NONE))
+                .isTrue();
         }
 
         @Test
@@ -153,7 +164,10 @@ final class AlliancesViewTest {
             // An alliance always paints in the full faction style so it stands out, whatever the
             // adjustment says.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    "rebel_pact", ALLIANCE_GROUPING, DESATURATED)).isFalse();
+                    "rebel_pact",
+                    ALLIANCE_GROUPING,
+                    DESATURATED))
+                .isFalse();
         }
 
         @Test
@@ -161,7 +175,10 @@ final class AlliancesViewTest {
             // Undesaturated, a non-allied faction keeps its own faction style, so it reads exactly as
             // the faction view draws it.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ALLIANCE_GROUPING, ElementStyleAdjustment.NONE)).isFalse();
+                    "hegemony",
+                    ALLIANCE_GROUPING,
+                    ElementStyleAdjustment.NONE))
+                .isFalse();
         }
 
         @Test
@@ -169,7 +186,10 @@ final class AlliancesViewTest {
             // Muting only dims the active style through the opacity modifier; it never swaps the
             // bundle, so a merely dimmed faction keeps its faction borders and seams.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ALLIANCE_GROUPING, MUTED_ONLY)).isFalse();
+                    "hegemony",
+                    ALLIANCE_GROUPING,
+                    MUTED_ONLY))
+                .isFalse();
         }
 
         @Test
@@ -180,7 +200,10 @@ final class AlliancesViewTest {
             // view's own toggle, or the filter recede unioned in upstream. Nothing here touches
             // sector memory, since the view no longer resolves the choice a second time.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony", ALLIANCE_GROUPING, DESATURATED)).isTrue();
+                    "hegemony",
+                    ALLIANCE_GROUPING,
+                    DESATURATED))
+                .isTrue();
         }
     }
 
@@ -198,7 +221,9 @@ final class AlliancesViewTest {
             // recede set is consulted, so recede can never dim or desaturate an alliance - and no
             // memory is touched.
             assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
-                    "rebel_pact", ALLIANCE_GROUPING)).isEqualTo(ElementStyleAdjustment.NONE);
+                    "rebel_pact",
+                    ALLIANCE_GROUPING))
+                .isEqualTo(ElementStyleAdjustment.NONE);
         }
 
         @Test
@@ -206,20 +231,32 @@ final class AlliancesViewTest {
             // A non-allied faction is backdrop, so the view returns exactly what its own
             // non-allied recede set resolves - the one adjustment every faction outside an alliance
             // takes, driven here through that set's mute and desaturate keys.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                            mockStatic(SectorMemoryAccess.class);
-                    MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class);
+                    var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                when(memoryMock.contains(ALLIANCE_MUTE_KEY)).thenReturn(true);
-                when(memoryMock.getBoolean(ALLIANCE_MUTE_KEY)).thenReturn(true);
-                when(memoryMock.contains(ALLIANCE_DESATURATE_KEY)).thenReturn(true);
-                when(memoryMock.getBoolean(ALLIANCE_DESATURATE_KEY)).thenReturn(true);
-                settingsMock.when(KmuPoliticalMapSettings::getPoliticalMapAllianceMutedOpacityModifier)
-                        .thenReturn(MUTED_MODIFIER);
+
+                memoryAccessMock
+                    .when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                when(memoryMock.contains(ALLIANCE_MUTE_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getBoolean(ALLIANCE_MUTE_KEY))
+                    .thenReturn(true);
+                when(memoryMock.contains(ALLIANCE_DESATURATE_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getBoolean(ALLIANCE_DESATURATE_KEY))
+                    .thenReturn(true);
+
+                settingsMock
+                    .when(KmuPoliticalMapSettings::getPoliticalMapAllianceMutedOpacityModifier)
+                    .thenReturn(MUTED_MODIFIER);
 
                 assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
-                        "hegemony", ALLIANCE_GROUPING)).isEqualTo(RECEDED);
+                        "hegemony",
+                        ALLIANCE_GROUPING))
+                    .isEqualTo(RECEDED);
             }
         }
     }
@@ -233,8 +270,12 @@ final class AlliancesViewTest {
             // sector - which is therefore never consulted.
             var sectorMock = mock(SectorAPI.class);
 
-            assertThat(AlliancesView.INSTANCE.resolveName("rebel_pact", ALLIANCE_GROUPING, sectorMock,
-                    FactionNameFormatChoice.FULL)).isEqualTo("Rebel Pact");
+            assertThat(AlliancesView.INSTANCE.resolveName(
+                    "rebel_pact",
+                    ALLIANCE_GROUPING,
+                    sectorMock,
+                    FactionNameFormatChoice.FULL))
+                .isEqualTo("Rebel Pact");
         }
 
         @Test
@@ -242,11 +283,19 @@ final class AlliancesViewTest {
             // A non-alliance bloc is a lone faction, named as the faction view names it.
             var sectorMock = mock(SectorAPI.class);
             var factionMock = mock(FactionAPI.class);
-            when(sectorMock.getFaction("hegemony")).thenReturn(factionMock);
-            when(factionMock.getDisplayNameLong()).thenReturn("The Hegemony");
 
-            assertThat(AlliancesView.INSTANCE.resolveName("hegemony", ALLIANCE_GROUPING, sectorMock,
-                    FactionNameFormatChoice.FULL)).isEqualTo("The Hegemony");
+            when(sectorMock.getFaction("hegemony"))
+                .thenReturn(factionMock);
+
+            when(factionMock.getDisplayNameLong())
+                .thenReturn("The Hegemony");
+
+            assertThat(AlliancesView.INSTANCE.resolveName(
+                    "hegemony",
+                    ALLIANCE_GROUPING,
+                    sectorMock,
+                    FactionNameFormatChoice.FULL))
+                .isEqualTo("The Hegemony");
         }
     }
 
@@ -256,10 +305,10 @@ final class AlliancesViewTest {
         // The rules are forwarded to the (mocked) stats read, so their value never reaches assertion
         // here - any rules stand in where the seam demands them.
         private static final DominanceRules ANY_RULES =
-                new DominanceRules(false,
-                        new BaseSizeWeighting(1.0, null, 1.0, 1.0),
-                        new StationWeighting(false, 1.0, 0.5, 0.5),
-                        new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
+            new DominanceRules(false,
+                new BaseSizeWeighting(1.0, null, 1.0, 1.0),
+                new StationWeighting(false, 1.0, 0.5, 0.5),
+                new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
 
         // The view forwards a surviving alliance's stats onto its option verbatim, so any stats value
         // stands in - these arbitrary numbers are only asserted to survive the pass unchanged.
@@ -274,31 +323,52 @@ final class AlliancesViewTest {
             // stats read is keyed against; the presence gate is the shared read's job, so both blocs
             // arrive already present.
             var view = spy(AlliancesView.INSTANCE);
-            doReturn(ALLIANCE_GROUPING).when(view).resolveGrouping();
+
+            doReturn(ALLIANCE_GROUPING)
+                .when(view)
+                .resolveGrouping();
+
             var sectorMock = mock(SectorAPI.class);
+
             // "rebels" is rebel_pact's colour faction in ALLIANCE_GROUPING, so its crest is the one
             // the alliance row draws.
             var leadFactionMock = mock(FactionAPI.class);
-            when(sectorMock.getFaction("rebels")).thenReturn(leadFactionMock);
-            when(leadFactionMock.getCrest()).thenReturn("graphics/rebels_crest.png");
 
-            try (MockedStatic<DominanceStatsAggregator> aggregatorMock =
-                    mockStatic(DominanceStatsAggregator.class)) {
-                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
-                        .thenReturn(Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY));
+            when(sectorMock.getFaction("rebels"))
+                .thenReturn(leadFactionMock);
+
+            when(leadFactionMock.getCrest())
+                .thenReturn("graphics/rebels_crest.png");
+
+            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
+
+                aggregatorMock
+                    .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
+                    .thenReturn(Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY));
 
                 assertThat(view.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
-                        .containsExactly(new SelectableBloc(
-                                "rebel_pact", "Rebel Pact", "graphics/rebels_crest.png", ANY_STATS));
+                    .containsExactly(new RankedBloc<>(
+                        new SelectableBloc(
+                            "rebel_pact",
+                            "Rebel Pact",
+                            "graphics/rebels_crest.png"),
+                        ANY_STATS));
             }
         }
     }
 
     private static void stubNexEnabled(MockedStatic<Global> globalMock, boolean isEnabled) {
+
         var settingsMock = mock(SettingsAPI.class);
         var modManagerMock = mock(ModManagerAPI.class);
-        globalMock.when(Global::getSettings).thenReturn(settingsMock);
-        when(settingsMock.getModManager()).thenReturn(modManagerMock);
-        when(modManagerMock.isModEnabled(NEXERELIN_MOD_ID)).thenReturn(isEnabled);
+
+        globalMock.when(Global::getSettings)
+            .thenReturn(settingsMock);
+            
+        when(settingsMock.getModManager())
+            .thenReturn(modManagerMock);
+
+        when(modManagerMock.isModEnabled(NEXERELIN_MOD_ID))
+            .thenReturn(isEnabled);
     }
 }

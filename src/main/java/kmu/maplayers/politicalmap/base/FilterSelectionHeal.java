@@ -41,7 +41,9 @@ public final class FilterSelectionHeal {
         }
         var selectableBlocIds = new HashSet<String>();
         for (var bloc : view.resolveSelectableBlocs(Global.getSector())) {
-            selectableBlocIds.add(bloc.blocId());
+            // Read through the picker seam rather than the bloc identity: the heal matches on the id
+            // alone, so it needs nothing a view's own metrics carry and stays valid for any of them.
+            selectableBlocIds.add(bloc.itemId());
         }
         FilterSelection.healStaleSelection(view.getId(), selectableBlocIds::contains);
     }

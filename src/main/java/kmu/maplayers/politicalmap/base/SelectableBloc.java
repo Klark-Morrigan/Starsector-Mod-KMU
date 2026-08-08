@@ -1,22 +1,16 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmlib.starsector.ui.widgets.lists.SelectableListItem;
-
-import kmu.maplayers.politicalmap.base.politics.DominanceStats;
-
 /**
- * One option in the political-map filter picker: a bloc the player can spotlight, reduced to what the
- * picker row needs to draw, what the filter needs to store, and the numbers the picker sorts and
- * ranks it by. A bloc is a faction under the factions view and an alliance under the alliances view,
- * so this carries the stable id the selection serialises ({@link
- * kmu.maplayers.base.sidebar.FilterSelection}), the label and crest the row renders, and
- * the {@link DominanceStats} its whole-sector standing is scored from - nothing about how the id resolves
- * into presence-aware territory, which is the resolver's concern.
+ * Who a political-map picker row is about: a bloc the player can spotlight, reduced to what the row
+ * draws and what the filter stores. A bloc is a faction under the factions view, an alliance under the
+ * alliances view, and a claimant under the claims view, so this carries the stable id the selection
+ * serialises ({@link kmu.maplayers.base.sidebar.FilterSelection}) plus the label and crest the row
+ * renders - nothing about how the id resolves into territory, which is the resolver's concern, and
+ * nothing about how the bloc ranks, which varies by view.
  *
- * <p>This is the political map's declaration of the picker's {@link SelectableListItem} seam: the
- * id, label, and crest are what the picker draws and reports, while the {@link DominanceStats} beside them
- * are read only by {@link DominanceSortMode}'s comparators and trailing values - the part of an item the
- * picker never opens.
+ * <p>It carries no metrics and answers no picker seam of its own: those ride on {@link RankedBloc},
+ * which pairs one of these with the stats type its own view ranks by. Keeping identity separate is
+ * what stops a layer's option from having to carry another layer's numbers.
  *
  * <p>Plain data with no Starsector types - the crest is the faction's crest sprite path, not a loaded
  * {@code SpriteAPI} - so the selectable list can be built and asserted on hand-built inputs and the
@@ -31,39 +25,9 @@ import kmu.maplayers.politicalmap.base.politics.DominanceStats;
  * @param crestSpritePath the crest sprite path the row draws beside the name - a faction bloc's own
  *                        crest, or an alliance bloc's lead (colour) member's crest - or null when that
  *                        crest faction has no authored crest
- * @param stats           the bloc's whole-sector metrics (domination, presence, score, market size)
- *                        the picker sorts and displays it by
  */
 public record SelectableBloc(
     String blocId,
     String displayName,
-    String crestSpritePath,
-    DominanceStats stats) implements SelectableListItem {
-
-    /**
-     * A selectable bloc listed without whole-sector stats, for a context that only ever reads its id,
-     * name, or crest and never ranks it by the numeric metrics - the stale-selection heal, which
-     * matches on id alone. Defaults {@link #stats} to {@link DominanceStats#EMPTY} so such a caller need
-     * not synthesise numbers it never reads.
-     *
-     * @param blocId          the bloc's save-stable id
-     * @param displayName     the bloc's picker-row label, or null when none resolves
-     * @param crestSpritePath the crest sprite path, or null when the crest faction has none
-     */
-    public SelectableBloc(String blocId, String displayName, String crestSpritePath) {
-        this(blocId, displayName, crestSpritePath, DominanceStats.EMPTY);
-    }
-
-    /**
-     * The seam's neutral name for {@link #blocId()}, so the picker reports an id without
-     * learning it names a bloc. The record keeps its own domain-named accessor, which is what the
-     * political side reads - the resolvers and the heal key presence off a bloc id, not off "an
-     * item".
-     *
-     * @return the bloc's save-stable id
-     */
-    @Override
-    public String itemId() {
-        return blocId;
-    }
+    String crestSpritePath) {
 }

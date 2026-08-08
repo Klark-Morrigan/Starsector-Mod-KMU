@@ -162,9 +162,9 @@ public interface PoliticalMapView {
      * when it holds territory it could paint. There is no new per-bloc seam: a view decides which of
      * its blocs are targets (every faction, or only the alliance blocs) by handing that one test to
      * {@link #buildSelectableBlocs}, which assembles the options the same way for every view. Each
-     * option carries that bloc's whole-sector stats for the picker to sort and label by. The
-     * convenience overload reads the player's live dominance and dev-reveal toggles so a caller with
-     * no pass of its own need not thread them.
+     * option pairs a bloc's identity with that bloc's whole-sector {@link DominanceStats} for the
+     * picker to sort and label by. The convenience overload reads the player's live dominance and
+     * dev-reveal toggles so a caller with no pass of its own need not thread them.
      *
      * <p>The spotlight is optional: the default offers no selectable blocs, so a view whose holders
      * the shared market-presence gate cannot rank (the claims view, whose presence is claim presence,
@@ -182,7 +182,7 @@ public interface PoliticalMapView {
      * @return the selectable blocs, in the order the economy walk surfaces them; empty when no bloc
      *         holds a visible weighted market, and empty by default for a view with no spotlight
      */
-    default List<SelectableBloc> resolveSelectableBlocs(
+    default List<RankedBloc<DominanceStats>> resolveSelectableBlocs(
             SectorAPI sector,
             DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
@@ -197,7 +197,7 @@ public interface PoliticalMapView {
      * @param sector the sector whose economy the visibility gate reads; null yields an empty list
      * @return the selectable blocs under the player's live settings; empty when none qualify
      */
-    default List<SelectableBloc> resolveSelectableBlocs(SectorAPI sector) {
+    default List<RankedBloc<DominanceStats>> resolveSelectableBlocs(SectorAPI sector) {
         return resolveSelectableBlocs(
             sector,
             DominanceRules.readFromLunaSettings(),
@@ -216,34 +216,43 @@ public interface PoliticalMapView {
      * short name regardless of the map's name-format setting, so a long-form map label never widens
      * the sidebar's option rows.
      *
+     * <p>It is parameterised on the stats rather than fixed to {@link DominanceStats} because a view
+     * ranks by whatever metrics its own layer is painted from: the identity half of an option is
+     * assembled the same way for every view, while the payload half is the calling view's alone. That
+     * also keeps this a default method rather than a static - the label is <em>this</em> view's
+     * {@link #resolveName}, so no view has to reach into a sibling for a name.
+     *
+     * @param <S>            the calling view's own metrics type, ranked by that view's vocabulary
      * @param sector         the sector a bloc's colour faction is read from
      * @param grouping       the grouping the stats were folded under, so the colour faction and the
      *                       name resolve against the same snapshot the numbers came from
-     * @param statsByBlocId  each present bloc's whole-sector stats, in the order the economy walk
-     *                       surfaced them, which the returned options preserve
+     * @param statsByBlocId  each present bloc's metrics, in the order the source walk surfaced them,
+     *                       which the returned options preserve
      * @param isSelectable   which of the present blocs this view offers as spotlight targets; the
      *                       one thing that differs between views, so a view that offers every
      *                       present bloc passes an always-true test
-     * @return the selectable blocs in stats order, each carrying the stats the picker sorts by
+     * @return the selectable blocs in stats order, each pairing a bloc's identity with the metrics
+     *         this view's picker sorts by
      */
-    default List<SelectableBloc> buildSelectableBlocs(
+    default <S> List<RankedBloc<S>> buildSelectableBlocs(
             SectorAPI sector,
             HolderGrouping grouping,
-            Map<String, DominanceStats> statsByBlocId,
+            Map<String, S> statsByBlocId,
             Predicate<String> isSelectable) {
 
-        var selectableBlocs = new ArrayList<SelectableBloc>();
+        var selectableBlocs = new ArrayList<RankedBloc<S>>();
         for (var entry : statsByBlocId.entrySet()) {
             var blocId = entry.getKey();
             if (!isSelectable.test(blocId)) {
                 continue;
             }
             var colourFaction = sector.getFaction(grouping.resolveColourFactionId(blocId));
-            selectableBlocs.add(new SelectableBloc(
+            var identity = new SelectableBloc(
                 blocId,
                 resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT),
-                FactionCrests.resolveCrestPath(colourFaction),
-                entry.getValue()));
+                FactionCrests.resolveCrestPath(colourFaction));
+
+            selectableBlocs.add(new RankedBloc<>(identity, entry.getValue()));
         }
         return selectableBlocs;
     }

@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.sidebar.FilterSelection;
+import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,39 +39,52 @@ final class FilterSelectionHealTest {
 
         @Test
         void healStaleSelectionAgainstActiveViewDoesNothingWhenNoViewIsSelected() {
-            try (MockedStatic<PoliticalMapViewRegistry> registryMock =
-                            mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<FilterSelection> selectionMock =
-                            mockStatic(FilterSelection.class)) {
-                registryMock.when(PoliticalMapViewRegistry::getSelectedView).thenReturn(null);
+            try (var registryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
+                registryMock
+                    .when(PoliticalMapViewRegistry::getSelectedView)
+                    .thenReturn(null);
 
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView();
 
                 // No active view means no grouping to judge selectability under, so a persisted filter
                 // is left untouched rather than cleared against nothing.
                 selectionMock.verify(
-                        () -> FilterSelection.healStaleSelection(any(), any()), never());
+                    () -> FilterSelection.healStaleSelection(any(), any()),
+                    never());
             }
         }
 
         @Test
         void healStaleSelectionAgainstActiveViewHealsWithTheActiveViewsSelectableBlocs() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class);
-                    MockedStatic<PoliticalMapViewRegistry> registryMock =
-                            mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<FilterSelection> selectionMock =
-                            mockStatic(FilterSelection.class)) {
-                globalMock.when(Global::getSector).thenReturn(sectorMock);
-                registryMock.when(PoliticalMapViewRegistry::getSelectedView).thenReturn(viewMock);
-                when(viewMock.getId()).thenReturn("factions");
+            try (var globalMock = mockStatic(Global.class);
+                    var registryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(sectorMock);
+
+                registryMock
+                    .when(PoliticalMapViewRegistry::getSelectedView)
+                    .thenReturn(viewMock);
+
+                when(viewMock.getId())
+                    .thenReturn("factions");
+
+                // The heal matches on the id alone, so the stats half of the option stands in.
                 when(viewMock.resolveSelectableBlocs(sectorMock))
-                        .thenReturn(List.of(new SelectableBloc("hegemony", "Hegemony", "crest_heg")));
+                    .thenReturn(List.of(new RankedBloc<>(
+                        new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
+                        DominanceStats.EMPTY)));
 
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView();
 
                 // The predicate handed to the heal reports a bloc selectable exactly when the active
                 // view still lists it, so a still-listed bloc survives and a vanished one is stale.
                 var predicate = capturePredicate(selectionMock);
+                
                 assertThat(predicate.test("hegemony")).isTrue();
                 assertThat(predicate.test("vanished")).isFalse();
             }

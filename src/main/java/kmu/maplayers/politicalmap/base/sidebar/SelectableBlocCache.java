@@ -5,7 +5,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.ui.widgets.lists.RevisionMemo;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.RankedBloc;
+import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.settings.KmuLunaSettings;
 
 import java.util.List;
@@ -28,7 +29,8 @@ public final class SelectableBlocCache {
 
     // One memo for the whole tab, not one per view: the picker draws a single view at a time, so a
     // switch is a miss on the view id and the switched-in view's list replaces the previous one.
-    private static final RevisionMemo<List<SelectableBloc>> blocCache = new RevisionMemo<>();
+    private static final RevisionMemo<List<RankedBloc<DominanceStats>>> blocCache =
+        new RevisionMemo<>();
 
     private SelectableBlocCache() {
     }
@@ -42,7 +44,7 @@ public final class SelectableBlocCache {
      *               view's empty list
      * @return the memoised selectable blocs; the same list instance while nothing it depends on moves
      */
-    public static List<SelectableBloc> resolveSelectableBlocs(
+    public static List<RankedBloc<DominanceStats>> resolveSelectableBlocs(
             PoliticalMapView view,
             SectorAPI sector) {
 

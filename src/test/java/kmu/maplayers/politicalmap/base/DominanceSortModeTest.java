@@ -331,28 +331,35 @@ final class DominanceSortModeTest {
     // Sorts the blocs by the mode's comparator in the mode's own default direction and returns their
     // ids in the resulting order, so an assertion reads the default arrangement without spelling out
     // the direction. The direction-flip tests use the direction overload.
-    private static List<String> listIdsSortedBy(DominanceSortMode mode, SelectableBloc... blocs) {
+    @SafeVarargs
+    private static List<String> listIdsSortedBy(
+            DominanceSortMode mode,
+            RankedBloc<DominanceStats>... blocs) {
         return listIdsSortedBy(mode, mode.defaultDirection(), blocs);
     }
 
     // Sorts the blocs by the mode's comparator in the given direction and returns their ids in order,
     // so an assertion reads the arrangement without the blocs' other fields getting in the way.
+    @SafeVarargs
     private static List<String> listIdsSortedBy(
             DominanceSortMode mode,
             SortDirection direction,
-            SelectableBloc... blocs) {
+            RankedBloc<DominanceStats>... blocs) {
 
         var sorted = new ArrayList<>(List.of(blocs));
         sorted.sort(mode.comparator(direction));
-        
+
         var ids = new ArrayList<String>(sorted.size());
         for (var bloc : sorted) {
-            ids.add(bloc.blocId());
+            ids.add(bloc.itemId());
         }
         return ids;
     }
 
-    private static SelectableBloc buildBloc(String id, String name, DominanceStats stats) {
-        return new SelectableBloc(id, name, null, stats);
+    private static RankedBloc<DominanceStats> buildBloc(
+            String id,
+            String name,
+            DominanceStats stats) {
+        return new RankedBloc<>(new SelectableBloc(id, name, null), stats);
     }
 }

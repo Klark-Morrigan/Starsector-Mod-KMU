@@ -14,9 +14,11 @@ import java.util.List;
 import java.util.function.ToIntFunction;
 
 /**
- * The political map's declaration of the framework's {@link ListSortMode} seam: the metrics the
- * filter picker ranks its selectable blocs by, one per row of the sort selector. Four of the five
- * promote one of {@link DominanceStats}'s numbers to the primary sort key; the fifth sorts by name.
+ * The dominance-painted views' declaration of the framework's {@link ListSortMode} seam: the metrics
+ * their filter picker ranks its selectable blocs by, one per row of the sort selector. Four of the
+ * five promote one of {@link DominanceStats}'s numbers to the primary sort key; the fifth sorts by
+ * name. It ranks {@link RankedBloc} over {@link DominanceStats} alone, so a view painted by some
+ * other mechanic cannot be offered a vocabulary that reads numbers its blocs do not carry.
  * Each mode owns what the seam asks of it and nothing else: the save-stable key its choice
  * persists under, the label its selector row draws, its natural direction, the comparator that
  * lays the bloc list out under it, and the trailing value a row shows.
@@ -33,7 +35,7 @@ import java.util.function.ToIntFunction;
  * <p>{@link #DEFAULT} is domination, the metric a fresh save and any unrecognised stored key fall back
  * to, so the picker always has a live ordering even before the player picks one.
  */
-public enum DominanceSortMode implements ListSortMode<SelectableBloc> {
+public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>> {
 
     // Listed in the order the sort selector stacks its rows top to bottom: name first, then the four
     // numeric metrics. This is the display order, distinct from the tie-break chain below.
@@ -76,7 +78,7 @@ public enum DominanceSortMode implements ListSortMode<SelectableBloc> {
      * {@link #DEFAULT} as the fallback - declared once so the stored-sort resolution and the sort
      * selector read the same pair.
      */
-    public static final ListSortModes<SelectableBloc> MODES =
+    public static final ListSortModes<RankedBloc<DominanceStats>> MODES =
         new ListSortModes<>(List.of(values()), DEFAULT);
 
     private final String persistenceKey;
@@ -102,7 +104,7 @@ public enum DominanceSortMode implements ListSortMode<SelectableBloc> {
      *
      * @return the stored sort
      */
-    public static ListSort<SelectableBloc> resolveStoredSort() {
+    public static ListSort<RankedBloc<DominanceStats>> resolveStoredSort() {
         return SortSelectionBinder.resolveStoredSort(MODES);
     }
 
@@ -136,7 +138,7 @@ public enum DominanceSortMode implements ListSortMode<SelectableBloc> {
      * @return the metric's value as text, or "" when this mode sorts by name
      */
     @Override
-    public String resolveTrailingValue(SelectableBloc bloc) {
+    public String resolveTrailingValue(RankedBloc<DominanceStats> bloc) {
         return metric == null ? "" : String.valueOf(metric.applyAsInt(bloc.stats()));
     }
 
@@ -162,8 +164,8 @@ public enum DominanceSortMode implements ListSortMode<SelectableBloc> {
      * @return the bloc comparator for this mode in the requested direction
      */
     @Override
-    public Comparator<SelectableBloc> comparator(SortDirection direction) {
-        Comparator<SelectableBloc> order = primaryComparator(direction);
+    public Comparator<RankedBloc<DominanceStats>> comparator(SortDirection direction) {
+        Comparator<RankedBloc<DominanceStats>> order = primaryComparator(direction);
         if (metric == null) {
             // Name mode leads with the label, then breaks ties down the whole numeric chain.
             for (var mode : CANONICAL_NUMERIC_ORDER) {
@@ -181,15 +183,15 @@ public enum DominanceSortMode implements ListSortMode<SelectableBloc> {
         }
         // A final by-id key gives a total order, so two blocs level on every visible key keep a fixed
         // position rather than reshuffling as the per-frame sort re-runs.
-        return order.thenComparing(SelectableBloc::blocId);
+        return order.thenComparing(RankedBloc::itemId);
     }
 
     // This mode's primary key in the requested direction: the default-direction primary (numerics
     // high-to-low, name A-to-Z), reversed when the requested direction is the opposite of the mode's
     // default. Only the primary flips - the tie-break chain the caller appends stays canonical.
-    private Comparator<SelectableBloc> primaryComparator(SortDirection direction) {
+    private Comparator<RankedBloc<DominanceStats>> primaryComparator(SortDirection direction) {
 
-        Comparator<SelectableBloc> defaultOrder = metric == null
+        Comparator<RankedBloc<DominanceStats>> defaultOrder = metric == null
             ? byNameAscending()
             : byMetricDescending();
 
@@ -200,21 +202,21 @@ public enum DominanceSortMode implements ListSortMode<SelectableBloc> {
 
     // This mode's metric as a high-to-low bloc comparator, so the bigger bloc ranks first. Only ever
     // built for a numeric mode, where the metric accessor is non-null.
-    private Comparator<SelectableBloc> byMetricDescending() {
+    private Comparator<RankedBloc<DominanceStats>> byMetricDescending() {
         return Comparator
-            .comparingInt((SelectableBloc bloc) -> metric.applyAsInt(bloc.stats()))
+            .comparingInt((RankedBloc<DominanceStats> bloc) -> metric.applyAsInt(bloc.stats()))
             .reversed();
     }
 
     // Blocs by label, A-to-Z, case-insensitively, treating a null name as empty so an unlabelled bloc
     // sorts with the blanks rather than throwing.
-    private static Comparator<SelectableBloc> byNameAscending() {
+    private static Comparator<RankedBloc<DominanceStats>> byNameAscending() {
         return Comparator.comparing(
             DominanceSortMode::displayNameOrEmpty,
             String.CASE_INSENSITIVE_ORDER);
     }
 
-    private static String displayNameOrEmpty(SelectableBloc bloc) {
+    private static String displayNameOrEmpty(RankedBloc<DominanceStats> bloc) {
         return bloc.displayName() == null ? "" : bloc.displayName();
     }
 }

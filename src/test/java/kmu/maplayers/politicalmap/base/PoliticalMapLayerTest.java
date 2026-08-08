@@ -11,6 +11,7 @@ import kmlib.starsector.ui.text.TextSpan;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
+import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 
@@ -269,7 +270,9 @@ final class PoliticalMapLayerTest {
             .thenReturn(List.of());
 
         when(view.resolveSelectableBlocs(any()))
-            .thenReturn(List.of(new SelectableBloc("hegemony", "Hegemony", null)));
+            .thenReturn(List.of(new RankedBloc<>(
+                new SelectableBloc("hegemony", "Hegemony", null),
+                DominanceStats.EMPTY)));
 
         var hostTabMock = mock(MapLayer.class);
 

@@ -8,6 +8,7 @@ import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
@@ -245,10 +246,11 @@ final class FactionsViewTest {
                     .thenReturn(Map.of("hegemony", ANY_STATS));
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
-                    .containsExactly(new SelectableBloc(
-                        "hegemony",
-                        "Hegemony",
-                        "graphics/hegemony_crest.png",
+                    .containsExactly(new RankedBloc<>(
+                        new SelectableBloc(
+                            "hegemony",
+                            "Hegemony",
+                            "graphics/hegemony_crest.png"),
                         ANY_STATS));
             }
         }
@@ -274,7 +276,9 @@ final class FactionsViewTest {
                     .thenReturn(Map.of("luddic_path", ANY_STATS));
 
                 assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
-                    .containsExactly(new SelectableBloc("luddic_path", "Path", null, ANY_STATS));
+                    .containsExactly(new RankedBloc<>(
+                        new SelectableBloc("luddic_path", "Path", null),
+                        ANY_STATS));
             }
         }
 

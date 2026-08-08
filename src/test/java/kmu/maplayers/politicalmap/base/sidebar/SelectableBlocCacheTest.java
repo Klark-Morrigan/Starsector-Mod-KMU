@@ -3,7 +3,9 @@ package kmu.maplayers.politicalmap.base.sidebar;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,8 +30,10 @@ import static org.mockito.Mockito.when;
 final class SelectableBlocCacheTest {
 
     // The list the stubbed view returns; the memo forwards it verbatim, so its contents only stand in.
-    private static final List<SelectableBloc> BLOCS =
-        List.of(new SelectableBloc("hegemony", "Hegemony", null));
+    private static final List<RankedBloc<DominanceStats>> BLOCS =
+        List.of(new RankedBloc<>(
+            new SelectableBloc("hegemony", "Hegemony", null),
+            DominanceStats.EMPTY));
 
     @Nested
     class ResolveSelectableBlocs {
