@@ -25,7 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * shade but a wiring - that the box takes the black backdrop, that a frame takes the step of the chosen
  * scheme its framing names while the controls stay on that scheme's base whichever framing is chosen,
  * that the row's chrome rule follows that same scheme, that each tab chrome carries the palette, the
- * face, and the hotkey convention belonging to it, and that the panel's sound scheme is the engine's own.
+ * face, the ring around it, and the hotkey convention belonging to it, and that the panel's sound scheme
+ * is the engine's own.
  *
  * <p>The sound scheme is here rather than only in KMLib because this is where the sidebar's two halves
  * meet: the widget style carries the scheme to the paint side and the host hands the same constant to
@@ -206,6 +207,14 @@ final class SidebarStylesTest {
             assertThat(face.size())
                 .isEqualTo(15d);
         }
+
+        @Test
+        void buildStripTabStyleLeavesItsSmoothFaceUnringed() {
+            // The halo travels with the face, so the row that kept orbitron keeps the bare text that goes
+            // with it: a smooth face has weight enough at size and reads muddier for a ring around it.
+            assertThat(SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT).textHalo().isHaloDrawn())
+                .isFalse();
+        }
     }
 
     @Nested
@@ -276,6 +285,19 @@ final class SidebarStylesTest {
                 .isEqualTo(StarsectorFont.VANILLA_VICTOR_10);
             assertThat(face.size())
                 .isEqualTo(10d);
+        }
+
+        @Test
+        void buildRaisedButtonTabStyleRingsItsPixelFaceInBlack() {
+            // The pair the face comes in: this chrome is lettered in a hard-edged bitmap face standing
+            // over whatever the visor is showing, so its strokes need an edge of their own. A row taking
+            // the face without the ring reads thin against a nebula.
+            var textHalo = SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).textHalo();
+
+            assertThat(textHalo.isHaloDrawn())
+                .isTrue();
+            assertThat(textHalo.colour())
+                .isEqualTo(Color.BLACK);
         }
     }
 

@@ -12,6 +12,7 @@ import kmlib.starsector.ui.widgets.tabs.style.HotkeyStyle;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabPalette;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
+import kmlib.starsector.ui.widgets.tabs.style.TextHalo;
 
 import kmu.settings.KmuMapLayerSettings;
 
@@ -204,18 +205,31 @@ public final class SidebarStyles {
         };
     }
 
+    // Whether a row's labels stand inside a dark ring of themselves, which follows the face and so follows
+    // the chrome with it: the buttons are lettered in a hard-edged pixel face over whatever the visor is
+    // showing, so their strokes want an edge to sit against, where the smooth face the strip is set in has
+    // weight enough at size and reads muddier for a ring around it.
+    private static TextHalo resolveTextHalo(TabChrome chrome) {
+        return switch (chrome) {
+            case STRIP -> TextHalo.NONE;
+            case RAISED_BUTTON -> TextHalo.createBlackHairline();
+        };
+    }
+
     // A tab style over the shared paint: the chrome's own palette - its per-state fills and its
-    // interaction lifts - resolved live so it tracks a restyled install, plus the face and the hotkey
-    // convention that chrome carries. All three follow from the chrome rather than travelling beside it,
-    // since each is a convention of the vanilla control the row imitates and not a free choice; the band
-    // height alone is the host's, being the one dimension the two screens genuinely set apart.
+    // interaction lifts - resolved live so it tracks a restyled install, plus the face, the ring around
+    // it, and the hotkey convention that chrome carries. All four follow from the chrome rather than
+    // travelling beside it, since each is a convention of the vanilla control the row imitates and not a
+    // free choice; the band height alone is the host's, being the one dimension the two screens genuinely
+    // set apart.
     private static TabStyle composeTabStyle(TabChrome chrome, float headerBandHeight) {
         return new TabStyle(
             chrome,
             headerBandHeight,
             composeTabPalette(chrome, resolveAccentColours()),
             resolveHotkeyStyle(chrome),
-            resolveTabFace(chrome));
+            resolveTabFace(chrome),
+            resolveTextHalo(chrome));
     }
 
     // The sidebar's look built fresh from the live colours, framed by the given convention: a black body

@@ -412,9 +412,9 @@ at, which is the opposite of what a keypress needs to say. All three animations 
 reports two fractions per tab - one look, one lift - and the paint pass binds them to the palette, so
 it is handed a look already blended and a lift already scaled - so both tab chromes animate alike,
 neither of them having any timing to compute. What the two screens set apart is the band height, the
-chrome its shades are painted onto, and the three things that travel with that chrome because vanilla
-keeps them together: the palette its shades come from, the face it is lettered in, and the hotkey
-convention. The timings, the
+chrome its shades are painted onto, and the four things that travel with that chrome because vanilla
+keeps them together: the palette its shades come from, the face it is lettered in, the ring around
+that face, and the hotkey convention. The timings, the
 channels, and the order they resolve in are shared, which is why one animator serves either row. Every face is named through KMLib's `StarsectorFont` enum
 rather than by atlas basename.
 
@@ -425,6 +425,18 @@ takes its native 10 rather than the strip's 15 - scaled, it would read as a blur
 was drawn to match. Its capitals come with the atlas: every glyph sits on the same 5x5 cell with
 lowercase included and no descenders, so a mixed-case label needs no upper-casing pass and the width
 it is snapped to is the width it draws at.
+
+The ring comes with the face. `victor10`'s atlas is hard pixels - every one of them fully on or fully
+off, with no anti-aliased edge - so over a live visor its strokes have nothing but the map to read
+against. The buttons take `TextHalo.createBlackHairline()`, a black copy laid a pixel out on each of
+the four sides at half strength, and the strip takes `TextHalo.NONE`, a smooth face at size having
+weight enough and reading muddier for a ring around it. A ring rather than a drop shadow: an offset
+copy falls to one side, announcing a light source the flat chrome has none of, and leaves the opposite
+edge as bare as it found it. `TabLabelRenderer` lays the whole group down once per side and then in
+place, shifting the box the runs centre in rather than each draw site, so the key's underline travels
+with the text it marks; the runs are separate single-colour drawables, which is what lets one resolve
+serve every pass, and the ring's colour is set once for all four rather than per copy - setting a
+drawable's colour is what costs it a rebuild.
 
 Where a tab says which key it answers to is `TabShortcutText`'s call, following the engine's rule: a
 single-glyph key whose letter already stands in the label lights that letter where it is, and only a
