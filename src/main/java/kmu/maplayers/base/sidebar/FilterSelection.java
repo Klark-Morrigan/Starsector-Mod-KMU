@@ -42,12 +42,6 @@ public final class FilterSelection {
     // scope ids appended to it).
     private static final String SELECTED_ID_KEY_PREFIX = "$kmu_political_filter_bloc_";
 
-    // The pre-per-scope single slot every scope once shared. Read only by the one-time load
-    // migration that moves its value into a scope's slot, then retires it; frozen in its original
-    // spelling so that migration keeps finding it on an un-migrated save.
-    private static final SectorMemoryString legacySharedSelection =
-        new SectorMemoryString("$kmu_political_filter_bloc");
-
     private FilterSelection() {
     }
 
@@ -103,23 +97,6 @@ public final class FilterSelection {
         if (selectedId != null && !isSelectable.test(selectedId)) {
             slot.clear();
         }
-    }
-
-    /**
-     * Carries a pre-per-scope save's single shared selection into one scope's slot, then retires
-     * the old key, so a save made before the split keeps its choice under the scope it belongs to.
-     * A no-op once migrated, or on a save that never held a selection. Runs on load before the
-     * reading layer paints, so it moves the value without requesting a refresh.
-     *
-     * @param scopeId the scope to receive the legacy selection - the caller's judgement of where
-     *                the old shared choice belongs
-     */
-    public static void migrateLegacySharedSelection(String scopeId) {
-        if (!legacySharedSelection.isSet()) {
-            return;
-        }
-        resolveSlot(scopeId).set(legacySharedSelection.get());
-        legacySharedSelection.clear();
     }
 
     // The sector-memory slot holding one scope's selection, keyed by the scope's id. A fresh
