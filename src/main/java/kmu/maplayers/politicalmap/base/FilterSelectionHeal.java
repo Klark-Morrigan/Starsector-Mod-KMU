@@ -45,23 +45,4 @@ public final class FilterSelectionHeal {
         }
         FilterSelection.healStaleSelection(view.getId(), selectableBlocIds::contains);
     }
-
-    /**
-     * Carries a pre-per-view save's single shared spotlight into the slot of the view it was picked
-     * under, then retires the old key. The view is the one active in the save, or - when the save was
-     * made with the map off, so no view is attributable - the default view, so the choice is not lost.
-     * Supplies that view to {@link FilterSelection#migrateLegacySharedSelection}, which stays ignorant
-     * of the registry. A no-op once migrated, on a save that never held a selection, or before the
-     * views are registered. Runs on game load, after the active view is settled and before the heal.
-     */
-    public static void migrateLegacySharedSelectionToActiveView() {
-        var view = PoliticalMapViewRegistry.getSelectedView();
-        if (view == null) {
-            view = PoliticalMapViewRegistry.getDefaultView();
-        }
-        if (view == null) {
-            return;
-        }
-        FilterSelection.migrateLegacySharedSelection(view.getId());
-    }
 }
