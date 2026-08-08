@@ -2,6 +2,7 @@ package kmu.maplayers.base.sidebar;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ListColumns;
+import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.starsector.ui.widgets.lists.ListPickerControl;
 import kmlib.starsector.ui.widgets.lists.ListPickerStore;
 import kmlib.starsector.ui.widgets.lists.ListSort;
@@ -23,6 +24,11 @@ import java.util.List;
  * {@link SortSelectionBinder} and {@link ColumnSelectionBinder} unchanged. A layer that composed
  * the picker itself would have to name all three, which is exactly the knowledge the binders exist
  * to hold.
+ *
+ * <p>It is also where the wildcard a layer's picker travels under is captured, once for the mod
+ * rather than in each layer: every picker-owning layer would otherwise write the same capture
+ * helper, and the helper needs both the selection slot and the sort binder to do its job, so it
+ * belongs beside them.
  */
 public final class FilterSelectionBinder {
 
@@ -30,33 +36,54 @@ public final class FilterSelectionBinder {
     }
 
     /**
-     * Builds the picker for one scope against this mod's stores: the spotlighted id read live off
-     * {@link FilterSelection}, the columns caption resolved out of this mod's strings, and every
-     * pick wired back to the slot that keeps it.
+     * Builds the picker for one scope against this mod's stores: the spotlighted id and the stored
+     * sort read live off this scope's slots, the columns caption resolved out of this mod's
+     * strings, and every pick wired back to the slot that keeps it.
      *
-     * @param <T>              the calling layer's own item type, ranked by its own comparators
+     * <p>The picker arrives wildcarded because what a layer ranks is the layer's own: it hands over
+     * its list bundled with the vocabulary that reads it, and this captures the pair once so no
+     * layer writes that capture for itself. That is also why the stored sort is resolved here
+     * rather than passed in - resolving it needs the vocabulary, which only arrives inside the
+     * bundle.
+     *
      * @param scopeId          the scope a pick or clear is read from and written into, so the
      *                         choice is remembered against this scope alone
-     * @param items            the selectable items in this scope; order here is immaterial since
-     *                         the sort mode reorders them for display
-     * @param sort             how the list is ranked - the metric, its direction, and the layer's
-     *                         sort vocabulary the selector draws its rows from
+     * @param picker           the layer's selectable items and the vocabulary that ranks them
      * @param columns          how many columns the item list wraps its rows across
      * @param trailingControls the controls filling the right half of the sort row; empty leaves the
      *                         sort selector alone on the row
-     * @return the picker controls, top to bottom; empty when {@code items} is empty
+     * @return the picker controls, top to bottom; empty when the picker offers no items
      */
-    public static <T extends SelectableListItem> List<ControlSpec> buildPicker(
+    public static List<ControlSpec> buildPicker(
             String scopeId,
-            List<T> items,
-            ListSort<T> sort,
+            ListPicker<?> picker,
             ListColumns columns,
             List<ControlSpec> trailingControls) {
 
+        return buildCapturedPicker(scopeId, picker, columns, trailingControls);
+    }
+
+    // The picker built under a captured item type, which is what lets the items and their
+    // vocabulary meet again as one type after travelling through the wildcard - the record's own
+    // type bound is what makes the capture legal.
+    //
+    // The empty check comes before the stored sort is resolved, and must stay there: an offers-
+    // nothing picker carries no vocabulary to fall back to, so reading the sort first would resolve
+    // against nothing. Nothing is lost by the order, since an empty list contributes no controls.
+    private static <T extends SelectableListItem> List<ControlSpec> buildCapturedPicker(
+            String scopeId,
+            ListPicker<T> picker,
+            ListColumns columns,
+            List<ControlSpec> trailingControls) {
+
+        if (picker.items().isEmpty()) {
+            return List.of();
+        }
+
         return ListPickerControl.buildPicker(
-            items,
+            picker.items(),
             FilterSelection.getSelectedIdOf(scopeId),
-            sort,
+            SortSelectionBinder.resolveStoredSort(picker.sortModes()),
             columns,
             KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION),
             trailingControls,

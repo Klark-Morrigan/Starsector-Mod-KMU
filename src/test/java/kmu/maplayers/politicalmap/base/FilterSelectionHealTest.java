@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.ui.widgets.lists.ListPicker;
+
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 
@@ -17,6 +19,7 @@ import java.util.function.Predicate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -73,11 +76,17 @@ final class FilterSelectionHealTest {
                 when(viewMock.getId())
                     .thenReturn("factions");
 
-                // The heal matches on the id alone, so the stats half of the option stands in.
-                when(viewMock.resolveSelectableBlocs(sectorMock))
-                    .thenReturn(List.of(new RankedBloc<>(
-                        new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
-                        DominanceStats.EMPTY)));
+                // The heal matches on the id alone, so the stats half of the option and the
+                // vocabulary bundled beside the list both stand in. Stubbed through doReturn
+                // because the seam answers a wildcarded picker, whose captured item type a when()
+                // stub would have to name.
+                doReturn(new ListPicker<>(
+                        List.of(new RankedBloc<>(
+                            new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
+                            DominanceStats.EMPTY)),
+                        DominanceSortMode.MODES))
+                    .when(viewMock)
+                    .resolveBlocPicker(sectorMock);
 
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView();
 

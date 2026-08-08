@@ -11,7 +11,7 @@ import java.util.HashSet;
  * {@link FilterSelection#healStaleSelection}'s pure "clear if not selectable" rule to a concrete
  * source of which blocs are selectable now. {@link FilterSelection} stays ignorant of views (it takes
  * only a predicate); this supplies that predicate from the active view's {@link
- * PoliticalMapView#resolveSelectableBlocs}, so a faction removed or an alliance dissolved between
+ * PoliticalMapView#resolveBlocPicker}, so a faction removed or an alliance dissolved between
  * sessions clears the dangling filter instead of spotlighting a bloc no longer on the map.
  *
  * <p>Only heals while a view is selected. A filter may persist while the political map is toggled off,
@@ -40,9 +40,10 @@ public final class FilterSelectionHeal {
             return;
         }
         var selectableBlocIds = new HashSet<String>();
-        for (var bloc : view.resolveSelectableBlocs(Global.getSector())) {
+        for (var bloc : view.resolveBlocPicker(Global.getSector()).items()) {
             // Read through the picker seam rather than the bloc identity: the heal matches on the id
             // alone, so it needs nothing a view's own metrics carry and stays valid for any of them.
+            // That is also why the view's sort vocabulary is passed over - a heal ranks nothing.
             selectableBlocIds.add(bloc.itemId());
         }
         FilterSelection.healStaleSelection(view.getId(), selectableBlocIds::contains);

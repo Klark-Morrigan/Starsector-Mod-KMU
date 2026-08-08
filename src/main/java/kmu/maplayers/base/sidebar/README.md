@@ -201,7 +201,7 @@ without learning what any one layer's list holds.
 
 The picker itself is not here at all - `ListPickerControl`, `SelectableListItem`, `ListPickerStore`,
 `RevisionMemo`, and the sort and column model behind them (`ListSortMode`, `ListSortModes`,
-`ListSort`, `SortDirection`, `ListColumns`, and the two selector controls) are KMLib's
+`ListSort`, `ListPicker`, `SortDirection`, `ListColumns`, and the two selector controls) are KMLib's
 (`kmlib.starsector.ui.widgets.lists`), since a sortable, column-laid, spotlight-picking list knows
 nothing about a map. The split is that **KMLib owns the model, the composition, and the resolution
 rule; KMU owns where the answer is kept.**
@@ -216,15 +216,23 @@ being on offer between sessions. Binding that predicate to a live source of what
 *now* is the reading layer's, since the source is exactly the knowledge these classes refuse.
 
 `FilterSelectionBinder` is the one binder that also builds, because the picker's three ties resolve
-at one point: it reads the scope's spotlighted id on the way in, resolves the columns caption out of
-this mod's strings, and routes each of the picker's three reported picks to the slot that keeps it -
-the item pick to `FilterSelection` under that scope, the other two through the binders beside it. A
-layer that composed the picker itself would have to name all three slots, which is exactly the
-knowledge these binders exist to hold, so a calling layer hands over its items, its sort, its column
-count, and whatever it pairs beside the sort selector, and names no store at all.
+at one point: it reads the scope's spotlighted id and the stored sort on the way in, resolves the
+columns caption out of this mod's strings, and routes each of the picker's three reported picks to
+the slot that keeps it - the item pick to `FilterSelection` under that scope, the other two through
+the binders beside it. A layer that composed the picker itself would have to name all three slots,
+which is exactly the knowledge these binders exist to hold, so a calling layer hands over its
+`ListPicker`, its column count, and whatever it pairs beside the sort selector, and names no store
+at all.
 
-`SelectableBlocCache` (the political map's) is where a layer holds the resolved list between frames,
-over KMLib's `RevisionMemo`; what invalidates it is the layer's own judgement. [The caching
+The picker arrives wildcarded (`ListPicker<?>`), because what a layer ranks its rows by is that
+layer's own, and this is where the wildcard is captured - once for the mod, rather than in each
+layer, since the capture needs both the selection slot and the sort binder to finish the job. The
+stored sort is resolved here for the same reason: resolving it needs the vocabulary, which only
+arrives inside the bundle. An offers-nothing picker is answered before that resolution, since it
+carries no fallback mode to land on.
+
+`SelectableBlocCache` (the political map's) is where a layer holds its resolved picker between
+frames, over KMLib's `RevisionMemo`; what invalidates it is the layer's own judgement. [The caching
 notes](../../../../../../../docs/dev/caching.md) own that model in full.
 
 | Key | Holds |

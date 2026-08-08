@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -151,54 +152,57 @@ public interface PoliticalMapView {
         FactionNameFormatChoice nameFormat);
 
     /**
-     * The blocs the filter picker offers under this view: factions with a visible weighted market
-     * under the factions view, current alliances under the alliances view. Each carries the id the
-     * filter stores, its picker label, and (for a faction) its crest. The list is what the picker
-     * draws and what {@link kmu.maplayers.base.sidebar.FilterSelection} heals a stale
-     * saved selection against, so a bloc that is no longer here is no longer spotlightable.
+     * The spotlight picker this view offers: the blocs it lists - factions with a visible weighted
+     * market under the factions view, current alliances under the alliances view - together with the
+     * sort vocabulary that ranks them. Each bloc carries the id the filter stores, its picker label,
+     * and (for a faction) its crest. The list is what the picker draws and what
+     * {@link kmu.maplayers.base.sidebar.FilterSelection} heals a stale saved selection against, so a
+     * bloc that is no longer here is no longer spotlightable.
      *
-     * <p>Only blocs present somewhere qualify - a bloc holding a visible market in at least one system
-     * (the {@code presence > 0} gate the shared stats read applies), so a bloc is selectable exactly
-     * when it holds territory it could paint. There is no new per-bloc seam: a view decides which of
-     * its blocs are targets (every faction, or only the alliance blocs) by handing that one test to
-     * {@link #buildSelectableBlocs}, which assembles the options the same way for every view. Each
-     * option pairs a bloc's identity with that bloc's whole-sector {@link DominanceStats} for the
-     * picker to sort and label by. The convenience overload reads the player's live dominance and
-     * dev-reveal toggles so a caller with no pass of its own need not thread them.
+     * <p>The list and the vocabulary are answered together because a view owns its picker end to
+     * end: which blocs it offers, what numbers those blocs carry, and which metrics rank them are
+     * one decision, and a view painted by one mechanic must never be handed a vocabulary reading
+     * numbers its blocs do not carry. That is why the return type is wildcarded - the metrics a
+     * view's blocs carry are its own, so the layer above passes the picker on without naming them.
      *
-     * <p>The spotlight is optional: the default offers no selectable blocs, so a view whose holders
-     * the shared market-presence gate cannot rank (the claims view, whose presence is claim presence,
-     * not market presence) inherits an empty picker rather than overriding with three arguments it
-     * would ignore. A view opts into the spotlight by overriding this, the same way it opts into its
-     * own body controls.
+     * <p>There is no new per-bloc seam behind the list: a view decides which of its blocs are
+     * targets (every faction, or only the alliance blocs) by handing that one test to
+     * {@link #buildSelectableBlocs}, which assembles the options the same way for every view. The
+     * convenience overload reads the player's live dominance and dev-reveal toggles so a caller with
+     * no pass of its own need not thread them.
+     *
+     * <p>The spotlight is optional: the default offers an empty picker, so a view with no list to
+     * spotlight inherits one rather than overriding with three arguments it would ignore. A view
+     * opts into the spotlight by overriding this, the same way it opts into its own body controls.
      *
      * @param sector                           the sector whose economy the visibility gate reads; null
-     *                                         yields an empty list
+     *                                         yields an empty picker
      * @param rules                            the dominance-weighting rules for this read, so selectable
      *                                         blocs are gated under the same rule the map paints under
      * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward a bloc's
      *                                         visibility (the "show all factions" dev reveal); false
      *                                         applies the normal known-to-player filter
-     * @return the selectable blocs, in the order the economy walk surfaces them; empty when no bloc
-     *         holds a visible weighted market, and empty by default for a view with no spotlight
+     * @return this view's picker - its blocs in the order the source walk surfaces them, and the
+     *         vocabulary ranking them; empty when no bloc qualifies, and empty by default for a view
+     *         with no spotlight
      */
-    default List<RankedBloc<DominanceStats>> resolveSelectableBlocs(
+    default ListPicker<?> resolveBlocPicker(
             SectorAPI sector,
             DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
-        return List.of();
+        return ListPicker.empty();
     }
 
     /**
-     * The selectable blocs under this view, gated by the player's current dominance and dev-reveal
-     * settings - the live entry the picker and the stale-selection heal call, so neither has to read
-     * the toggles a running pass would already hold.
+     * This view's picker under the player's current dominance and dev-reveal settings - the live
+     * entry the sidebar and the stale-selection heal call, so neither has to read the toggles a
+     * running pass would already hold.
      *
-     * @param sector the sector whose economy the visibility gate reads; null yields an empty list
-     * @return the selectable blocs under the player's live settings; empty when none qualify
+     * @param sector the sector whose economy the visibility gate reads; null yields an empty picker
+     * @return this view's picker under the player's live settings; empty when no bloc qualifies
      */
-    default List<RankedBloc<DominanceStats>> resolveSelectableBlocs(SectorAPI sector) {
-        return resolveSelectableBlocs(
+    default ListPicker<?> resolveBlocPicker(SectorAPI sector) {
+        return resolveBlocPicker(
             sector,
             DominanceRules.readFromLunaSettings(),
             PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions());
@@ -280,7 +284,7 @@ public interface PoliticalMapView {
      * holders that breakdown does not describe - injects the claim breakdown instead, so each view's
      * box explains the same mechanic its fills were painted by.
      * Defaulting to empty makes "no tooltip" the base case, the same shape as
-     * {@link #resolveSelectableBlocs} defaulting to no spotlight, so a new view opts in only when it
+     * {@link #resolveBlocPicker} defaulting to no spotlight, so a new view opts in only when it
      * has a tooltip to show.
      *
      * @return this view's hover tooltip, or empty for a view that shows none

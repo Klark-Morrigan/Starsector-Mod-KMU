@@ -90,19 +90,17 @@ public final class PoliticalMapLayer implements MapLayer {
 
         if (selectedView != null) {
 
-            // The stored sort (mode and direction), resolved live so a save with no stored direction
-            // reads the mode's natural order.
-            var sort = DominanceSortMode.resolveStoredSort();
-
             // The stored column count, resolved to the default (one column) when a save has never
             // picked one, so the list always lays out under a live count.
             var columns = ColumnSelectionBinder.resolveStoredColumns();
             var viewId = selectedView.getId();
 
-            // The picker lists the selected view's own selectable blocs under the player's live
-            // dominance and dev-reveal settings; empty (no present bloc) contributes no picker. Read
-            // through the memo so this per-frame body build reads a cached list rather than re-walking
-            // the economy every frame the map is open.
+            // The picker is the selected view's own - its selectable blocs under the player's live
+            // dominance and dev-reveal settings, bundled with the vocabulary that ranks them, so this
+            // layer names neither the metrics a view's blocs carry nor the modes that sort them and a
+            // view painted by another mechanic needs no edit here. Empty (no present bloc)
+            // contributes no picker. Read through the memo so this per-frame body build reads a cached
+            // list rather than re-walking the economy every frame the map is open.
             //
             // KMLib's picker composes the block and the binder ties its picks to this mod's save
             // slots; what pairs with its sort selector is this layer's to decide, and the political
@@ -113,8 +111,7 @@ public final class PoliticalMapLayer implements MapLayer {
             // filter recede set rather than the non-allied one.
             controls.addAll(FilterSelectionBinder.buildPicker(
                 viewId,
-                SelectableBlocCache.resolveSelectableBlocs(selectedView, Global.getSector()),
-                sort,
+                SelectableBlocCache.resolveBlocPicker(selectedView, Global.getSector()),
                 columns,
                 RecedeControl.buildControls(
                     RecedePreferences.FILTER,

@@ -5,11 +5,13 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
+import kmu.maplayers.politicalmap.base.DominanceSortMode;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
@@ -157,7 +159,7 @@ public final class AlliancesView implements PoliticalMapView {
     }
 
     @Override
-    public List<RankedBloc<DominanceStats>> resolveSelectableBlocs(
+    public ListPicker<RankedBloc<DominanceStats>> resolveBlocPicker(
             SectorAPI sector,
             DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
@@ -169,11 +171,15 @@ public final class AlliancesView implements PoliticalMapView {
         var grouping = resolveGrouping();
         var pass = new DominancePass(rules, shouldIncludeUndiscoveredMarkets, grouping);
 
-        return buildSelectableBlocs(
-            sector,
-            grouping,
-            DominanceStatsAggregator.aggregateDominanceStats(sector, pass),
-            grouping::isAlliance);
+        // The same dominance vocabulary the factions view offers: a bloc here is a folded set of
+        // factions, but the metrics it carries are the same ones, so both views rank alike.
+        return new ListPicker<>(
+            buildSelectableBlocs(
+                sector,
+                grouping,
+                DominanceStatsAggregator.aggregateDominanceStats(sector, pass),
+                grouping::isAlliance),
+            DominanceSortMode.MODES);
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.politicalmap.base.DominanceSortMode;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
@@ -210,7 +211,7 @@ final class FactionsViewTest {
     }
 
     @Nested
-    class ResolveSelectableBlocs {
+    class ResolveBlocPicker {
 
         // The rules are forwarded to the (mocked) stats read, so their value never reaches assertion
         // here - any rules stand in where the seam demands them.
@@ -225,7 +226,7 @@ final class FactionsViewTest {
         private static final DominanceStats ANY_STATS = new DominanceStats(3, 2, 5000, 7);
 
         @Test
-        void resolveSelectableBlocsCarriesEachPresentFactionsCrestShortNameAndStats() {
+        void resolveBlocPickerCarriesEachPresentFactionsCrestShortNameAndStats() {
             // Every present faction becomes an option carrying its crest, short name, and the stats the
             // shared read computed for it, so the option reads exactly as the picker row will draw and
             // sort it. The presence gate is the shared stats read's job, stubbed here to one faction.
@@ -245,7 +246,7 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
                     .thenReturn(Map.of("hegemony", ANY_STATS));
 
-                assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
+                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc(
                             "hegemony",
@@ -256,7 +257,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveSelectableBlocsKeepsAFactionWithNoCrestAsANullCrestOption() {
+        void resolveBlocPickerKeepsAFactionWithNoCrestAsANullCrestOption() {
             // A faction with no authored crest is still selectable - its option just carries a null
             // crest path and the row draws its name alone, rather than being dropped.
             var sectorMock = mock(SectorAPI.class);
@@ -275,7 +276,7 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
                     .thenReturn(Map.of("luddic_path", ANY_STATS));
 
-                assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
+                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc("luddic_path", "Path", null),
                         ANY_STATS));
@@ -283,7 +284,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveSelectableBlocsIsEmptyWhenNoBlocIsPresent() {
+        void resolveBlocPickerOffersNoItemsWhenNoBlocIsPresent() {
             // With no present bloc the picker offers no options and a stale saved selection heals to
             // none.
             var sectorMock = mock(SectorAPI.class);
@@ -293,8 +294,26 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
                     .thenReturn(Map.of());
 
-                assertThat(FactionsView.INSTANCE.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
+                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
                     .isEmpty();
+            }
+        }
+
+        @Test
+        void resolveBlocPickerRanksItsBlocsByTheDominanceVocabulary() {
+            // The view answers the list and the modes together, so the numbers its blocs carry and
+            // the metrics the sort selector offers can never drift apart - this layer is painted by
+            // domination, so domination is what the picker ranks by.
+            var sectorMock = mock(SectorAPI.class);
+
+            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
+                    .thenReturn(Map.of());
+
+                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false)
+                        .sortModes())
+                    .isEqualTo(DominanceSortMode.MODES);
             }
         }
     }

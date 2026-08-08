@@ -142,6 +142,22 @@ final class PoliticalMapViewTest {
         }
     }
 
+    @Nested
+    class ResolveBlocPicker {
+
+        @Test
+        void resolveBlocPickerDefaultsToTheEmptyPickerSoASpotlightIsOptedInto() {
+            // The base case is "no spotlight", so a view with nothing to list inherits a whole
+            // answer rather than overriding with three arguments it would ignore. Pinned on the
+            // fake rather than on the one view that currently relies on it, since what is under
+            // test is the seam's default and not that view's choice to keep it.
+            var viewFake = new PoliticalMapViewFake(Map.of());
+
+            assertThat(viewFake.resolveBlocPicker(mock(SectorAPI.class), null, false).items())
+                .isEmpty();
+        }
+    }
+
     // A metrics payload no political-map view declares, standing in for whatever a layer painted by
     // another mechanic ranks its blocs by. It shares no supertype with the dominance metrics beyond
     // Object, so the case above passes only while the assembly leaves its payload type open.

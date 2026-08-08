@@ -2,20 +2,18 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.starsector.ui.widgets.lists.RevisionMemo;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.RankedBloc;
-import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.settings.KmuLunaSettings;
 
-import java.util.List;
 import java.util.Objects;
 
 /**
- * What invalidates the political map's memoised picker list. The memo itself is KMLib's
+ * What invalidates the political map's memoised picker. The memo itself is KMLib's
  * {@link RevisionMemo}; what this adds is the one thing the memo cannot know - which moving values a
- * selectable-bloc list actually depends on, so a stale list is rebuilt and a live one
+ * view's bloc list actually depends on, so a stale list is rebuilt and a live one
  * is not. Each list is a full grouped dominance pass over the sector, and the picker resolves its
  * options twice a frame the map is open, so getting that judgement right is what keeps the sidebar
  * from rescanning the whole economy several times a frame.
@@ -28,23 +26,24 @@ import java.util.Objects;
 public final class SelectableBlocCache {
 
     // One memo for the whole tab, not one per view: the picker draws a single view at a time, so a
-    // switch is a miss on the view id and the switched-in view's list replaces the previous one.
-    private static final RevisionMemo<List<RankedBloc<DominanceStats>>> blocCache =
-        new RevisionMemo<>();
+    // switch is a miss on the view id and the switched-in view's picker replaces the previous one.
+    // Held wildcarded because each view's blocs carry that view's own metrics, which is knowledge
+    // the memo has no use for - it caches whatever the view answered.
+    private static final RevisionMemo<ListPicker<?>> blocCache = new RevisionMemo<>();
 
     private SelectableBlocCache() {
     }
 
     /**
-     * The selected view's selectable blocs under the player's live settings, rebuilt only when the
-     * sector, the view, or the revision the list depends on has changed since the last call.
+     * The selected view's picker under the player's live settings, rebuilt only when the sector, the
+     * view, or the revision the list depends on has changed since the last call.
      *
      * @param view   the selected political-map view whose blocs the picker draws
      * @param sector the sector whose economy the list is read from; a null sector resolves to the
      *               view's empty list
-     * @return the memoised selectable blocs; the same list instance while nothing it depends on moves
+     * @return the memoised picker; the same instance while nothing it depends on moves
      */
-    public static List<RankedBloc<DominanceStats>> resolveSelectableBlocs(
+    public static ListPicker<?> resolveBlocPicker(
             PoliticalMapView view,
             SectorAPI sector) {
 
@@ -52,7 +51,7 @@ public final class SelectableBlocCache {
             sector,
             view.getId(),
             computeRevision(view),
-            () -> view.resolveSelectableBlocs(sector));
+            () -> view.resolveBlocPicker(sector));
     }
 
     // The revision the memoised list is valid for: the economy-weighting settings (the dominance

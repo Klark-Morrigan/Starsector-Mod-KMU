@@ -1,103 +1,26 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
-import kmu.maplayers.base.sidebar.SortSelection;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the sort mode's surfaces: the frozen persistence keys a save round-trips through, the stored
- * sort resolved over these modes, the trailing value each mode draws on a row, and the comparator
- * that lays a bloc list out. The comparator tests are the meat - they pin that each mode promotes
- * its own metric to the primary key, that the shared canonical chain breaks ties the same way behind
- * every mode, and that a fully-level pair falls back to a stable by-id order. All exercised on
- * hand-built blocs, since the mode carries no Starsector types; the sort selection store is stubbed
- * where the resolution is pinned, so it runs free of a live save.
+ * Pins the sort mode's surfaces: the frozen persistence keys a save round-trips through, the
+ * trailing value each mode draws on a row, and the comparator that lays a bloc list out. The
+ * comparator tests are the meat - they pin that each mode promotes its own metric to the primary
+ * key, that the shared canonical chain breaks ties the same way behind every mode, and that a
+ * fully-level pair falls back to a stable by-id order. All exercised on hand-built blocs, since the
+ * mode carries no Starsector types.
  */
 final class DominanceSortModeTest {
-
-    @Nested
-    class ResolveStoredSort {
-
-        @Test
-        void resolveStoredSortReadsTheStoredModeAndDirection() {
-            try (MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
-
-                selectionMock
-                    .when(SortSelection::getSortModeKey)
-                    .thenReturn(DominanceSortMode.PRESENCE.persistenceKey());
-                selectionMock
-                    .when(SortSelection::getSortDirectionKey)
-                    .thenReturn(SortDirection.ASCENDING.persistenceKey());
-
-                assertThat(DominanceSortMode.resolveStoredSort())
-                    .isEqualTo(new ListSort<>(DominanceSortMode.PRESENCE, SortDirection.ASCENDING, DominanceSortMode.MODES));
-            }
-        }
-
-        @Test
-        void resolveStoredSortFallsBackToDominationWhenNothingIsStored() {
-            // A save that never picked a sort holds neither key, so the sort resolves to the
-            // default mode in that mode's own natural direction.
-            try (MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
-
-                assertThat(DominanceSortMode.resolveStoredSort())
-                    .isEqualTo(new ListSort<>(
-                        DominanceSortMode.DEFAULT,
-                        DominanceSortMode.DEFAULT.defaultDirection(),
-                        DominanceSortMode.MODES));
-                assertThat(DominanceSortMode.DEFAULT)
-                    .isEqualTo(DominanceSortMode.DOMINATION);
-            }
-        }
-
-        @Test
-        void resolveStoredSortFallsBackToDefaultWhenTheModeKeyIsUnrecognised() {
-            // A key left by an older or modded build names no mode here, so the picker defaults
-            // rather than failing on it.
-            try (MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
-
-                selectionMock
-                    .when(SortSelection::getSortModeKey)
-                    .thenReturn("no_such_mode");
-
-                assertThat(DominanceSortMode.resolveStoredSort())
-                    .isEqualTo(new ListSort<>(
-                        DominanceSortMode.DEFAULT,
-                        DominanceSortMode.DEFAULT.defaultDirection(),
-                        DominanceSortMode.MODES));
-            }
-        }
-
-        @Test
-        void resolveStoredSortResolvesAnUnstoredDirectionAgainstTheStoredModesDefault() {
-            // A save with a mode but no direction (a pre-direction save, or one that never flipped)
-            // reads that mode's own default direction rather than some global default.
-            try (MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
-
-                selectionMock
-                    .when(SortSelection::getSortModeKey)
-                    .thenReturn(DominanceSortMode.PRESENCE.persistenceKey());
-
-                assertThat(DominanceSortMode.resolveStoredSort())
-                    .isEqualTo(new ListSort<>(
-                        DominanceSortMode.PRESENCE,
-                        DominanceSortMode.PRESENCE.defaultDirection(),
-                        DominanceSortMode.MODES));
-            }
-        }
-    }
 
     @Nested
     class PersistenceKey {

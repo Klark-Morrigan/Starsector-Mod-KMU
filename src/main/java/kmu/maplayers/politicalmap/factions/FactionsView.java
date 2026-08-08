@@ -5,9 +5,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.hashing.Fingerprints;
+import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
+import kmu.maplayers.politicalmap.base.DominanceSortMode;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
@@ -19,7 +21,6 @@ import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.util.KmuStrings;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -114,7 +115,7 @@ public final class FactionsView implements PoliticalMapView {
     }
 
     @Override
-    public List<RankedBloc<DominanceStats>> resolveSelectableBlocs(
+    public ListPicker<RankedBloc<DominanceStats>> resolveBlocPicker(
             SectorAPI sector,
             DominanceRules rules,
             boolean shouldIncludeUndiscoveredMarkets) {
@@ -125,11 +126,16 @@ public final class FactionsView implements PoliticalMapView {
         var grouping = resolveGrouping();
         var pass = new DominancePass(rules, shouldIncludeUndiscoveredMarkets, grouping);
 
-        return buildSelectableBlocs(
-            sector,
-            grouping,
-            DominanceStatsAggregator.aggregateDominanceStats(sector, pass),
-            blocId -> true);
+        // Paired with the dominance vocabulary because that is what this view's blocs carry: the
+        // picker ranks by the same metrics the map is painted from, so a row's number and its
+        // territory read as one answer.
+        return new ListPicker<>(
+            buildSelectableBlocs(
+                sector,
+                grouping,
+                DominanceStatsAggregator.aggregateDominanceStats(sector, pass),
+                blocId -> true),
+            DominanceSortMode.MODES);
     }
 
     // The faction's name in the player's chosen format: the abbreviated display name for

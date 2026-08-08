@@ -4,6 +4,7 @@ import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ListColumns;
+import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
@@ -21,17 +22,21 @@ import java.awt.Color;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 
 /**
  * Pins the join between KMLib's picker and this mod's save slots, which is the whole of what the
- * binder does: the spotlighted id is read off {@link FilterSelection} for the scope on the way in,
- * and each of the picker's three picks reaches the slot that keeps it on the way out. The picker's
- * own shape and click rules are KMLib's and are pinned there; the stores are mocked, so this reads
- * the wiring alone.
+ * binder does: the spotlighted id and the stored sort are read off this mod's stores for the scope
+ * on the way in, and each of the picker's three picks reaches the slot that keeps it on the way
+ * out. The picker's own shape and click rules are KMLib's and are pinned there; the stores are
+ * mocked, so this reads the wiring alone.
  *
  * <p>Run over the foreign {@link Hazard} item and {@link HazardSortMode} vocabulary, since the
- * binder is no more the political map's than the picker it binds.
+ * binder is no more one layer's than the picker it binds. That is also what proves the wildcard
+ * capture is shaped by no layer in particular: these types stand in for a second layer's list, so a
+ * capture that only worked over the first layer's own item type would not compile here.
  */
 final class FilterSelectionBinderTest {
 
@@ -46,7 +51,8 @@ final class FilterSelectionBinderTest {
     private static final Hazard STORM = new Hazard("storm_1", "Storm", "crest_storm", 9, 8);
     private static final Hazard DRIFT = new Hazard("drift_1", "Drift", null, 2, 3);
 
-    private static final List<Hazard> HAZARDS = List.of(STORM, DRIFT);
+    private static final ListPicker<Hazard> HAZARD_PICKER =
+        new ListPicker<>(List.of(STORM, DRIFT), MODES);
 
     // The rows the picker lays out, so a test names the widget it clicks rather than an index into
     // the block.
@@ -54,6 +60,11 @@ final class FilterSelectionBinderTest {
     private static final int SORT_ROW = 2;
 
     private MockedStatic<Misc> miscMock;
+
+    // Mocked for every test, since the binder now resolves the stored sort itself: left live it
+    // would read a sector memory no test JVM has. Stubbed to the alpha mode in its own direction,
+    // which is what a save that has never picked a sort reads.
+    private MockedStatic<SortSelectionBinder> sortBinderMock;
 
     @BeforeEach
     void installColours() {
@@ -65,11 +76,19 @@ final class FilterSelectionBinderTest {
         miscMock
             .when(Misc::getTextColor)
             .thenReturn(Color.LIGHT_GRAY);
+
+        sortBinderMock = Mockito.mockStatic(SortSelectionBinder.class);
+        sortBinderMock
+            .when(() -> SortSelectionBinder.resolveStoredSort(MODES))
+            .thenReturn(sortOf(HazardSortMode.ALPHA));
     }
 
     @AfterEach
     void clearColours() {
+
+        sortBinderMock.close();
         miscMock.close();
+
         StarsectorSettingsFake.clearSettings();
     }
 
@@ -80,9 +99,9 @@ final class FilterSelectionBinderTest {
         void buildPickerLightsTheRowTheScopesStoredIdNames() {
             // The id the picker lights comes from this scope's slot, which is the read half of the
             // binding - a picker handed nothing would light no row whatever the save holds.
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<FilterSelection> selectionMock =
-                        mockStatic(FilterSelection.class)) {
+            try (var stringsMock = mockStatic(KmuStrings.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
                 stubLabels(stringsMock);
 
                 selectionMock
@@ -102,9 +121,9 @@ final class FilterSelectionBinderTest {
             // The picker takes its caption as drawn text, so resolving it out of this mod's table is
             // the binder's - a caller left to pass it would be naming a string key the picker has no
             // business knowing.
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<FilterSelection> selectionMock =
-                        mockStatic(FilterSelection.class)) {
+            try (var stringsMock = mockStatic(KmuStrings.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
                 stubLabels(stringsMock);
 
                 var columnsSelector = (ControlSpec.HorizontalRadio) buildPicker()
@@ -117,13 +136,12 @@ final class FilterSelectionBinderTest {
 
         @Test
         void buildPickerWritesAnItemPickIntoTheScopesSlot() {
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<FilterSelection> selectionMock =
-                        mockStatic(FilterSelection.class)) {
+            try (var stringsMock = mockStatic(KmuStrings.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
                 stubLabels(stringsMock);
 
                 var picker = buildPickerFor(buildPicker());
-
                 picker.action().activateCell(0);
 
                 selectionMock.verify(
@@ -135,9 +153,9 @@ final class FilterSelectionBinderTest {
         void buildPickerClearsTheScopesSlotOnARePick() {
             // The picker reports a clear rather than a pick when the lit row is re-clicked, and the
             // clear lands on this scope's slot alone.
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<FilterSelection> selectionMock =
-                        mockStatic(FilterSelection.class)) {
+            try (var stringsMock = mockStatic(KmuStrings.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
                 stubLabels(stringsMock);
 
                 selectionMock
@@ -145,7 +163,6 @@ final class FilterSelectionBinderTest {
                     .thenReturn("drift_1");
 
                 var picker = buildPickerFor(buildPicker());
-
                 picker.action().activateCell(0);
 
                 selectionMock.verify(
@@ -158,9 +175,9 @@ final class FilterSelectionBinderTest {
             // The other two picks are handed to the binders that already own those slots. Asserted
             // at the binder rather than at the sector-memory key behind it: what this class decides
             // is which binder a report goes to, and the binder's own suite pins the write.
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<ColumnSelectionBinder> binderMock =
-                        mockStatic(ColumnSelectionBinder.class)) {
+            try (var stringsMock = mockStatic(KmuStrings.class);
+                    var binderMock = mockStatic(ColumnSelectionBinder.class)) {
+
                 stubLabels(stringsMock);
 
                 var columnsSelector = (ControlSpec.HorizontalRadio) buildPicker()
@@ -176,9 +193,8 @@ final class FilterSelectionBinderTest {
 
         @Test
         void buildPickerRoutesASortPickToTheSortBinder() {
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<SortSelectionBinder> binderMock =
-                        mockStatic(SortSelectionBinder.class)) {
+            try (var stringsMock = mockStatic(KmuStrings.class)) {
+
                 stubLabels(stringsMock);
 
                 var sortSelector = (ControlSpec.VerticalTable)
@@ -189,8 +205,46 @@ final class FilterSelectionBinderTest {
                 sortSelector.action().activateCell(
                     List.of(HazardSortMode.values()).indexOf(HazardSortMode.SEVERITY));
 
-                binderMock.verify(
+                sortBinderMock.verify(
                     () -> SortSelectionBinder.storeSort(sortOf(HazardSortMode.SEVERITY)));
+            }
+        }
+
+        @Test
+        void buildPickerRanksTheListByTheVocabularyTheCallersPickerCarries() {
+            // The read half of the same tie: the stored sort is resolved against the vocabulary
+            // that arrived bundled with the items, not against one this class names, which is what
+            // lets two layers holding different vocabularies share the one binder.
+            try (var stringsMock = mockStatic(KmuStrings.class)) {
+
+                stubLabels(stringsMock);
+                buildPicker();
+
+                sortBinderMock.verify(
+                    () -> SortSelectionBinder.resolveStoredSort(MODES));
+            }
+        }
+
+        @Test
+        void buildPickerContributesNothingForAnOfferNothingPickerWithoutReadingItsVocabulary() {
+            // An empty picker carries no fallback mode, so the item list has to be found empty
+            // before any stored sort is resolved - resolving first would land on nothing. Both
+            // halves are asserted, since returning no controls while still reading the vocabulary
+            // would fail only once a caller actually handed over an empty picker in play.
+            try (var stringsMock = mockStatic(KmuStrings.class)) {
+                
+                stubLabels(stringsMock);
+
+                assertThat(FilterSelectionBinder.buildPicker(
+                        SCOPE_ID,
+                        ListPicker.empty(),
+                        ListColumns.ONE,
+                        List.of()))
+                    .isEmpty();
+
+                sortBinderMock.verify(
+                    () -> SortSelectionBinder.resolveStoredSort(any()),
+                    never());
             }
         }
     }
@@ -200,14 +254,13 @@ final class FilterSelectionBinderTest {
         return (ControlSpec.VerticalTable) controls.get(controls.size() - 1);
     }
 
-    // The one call into the binder every test goes through: the two items in the alpha mode's own
-    // direction, a single column, and nothing paired beside the sort, since none of those is what
+    // The one call into the binder every test goes through: the two items with their own
+    // vocabulary, a single column, and nothing paired beside the sort, since none of those is what
     // this suite varies.
     private static List<ControlSpec> buildPicker() {
         return FilterSelectionBinder.buildPicker(
             SCOPE_ID,
-            HAZARDS,
-            sortOf(HazardSortMode.ALPHA),
+            HAZARD_PICKER,
             ListColumns.ONE,
             List.of());
     }

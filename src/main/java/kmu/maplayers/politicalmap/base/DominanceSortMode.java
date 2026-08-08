@@ -1,11 +1,9 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
-import kmu.maplayers.base.sidebar.SortSelectionBinder;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.util.KmuStrings;
 
@@ -74,9 +72,10 @@ public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>
     public static final DominanceSortMode DEFAULT = DOMINATION;
 
     /**
-     * The political map's whole sort vocabulary - every mode in selector display order with
-     * {@link #DEFAULT} as the fallback - declared once so the stored-sort resolution and the sort
-     * selector read the same pair.
+     * The dominance-painted views' whole sort vocabulary - every mode in selector display order
+     * with {@link #DEFAULT} as the fallback. It is what a view bundles with its bloc list, so the
+     * list and the modes that can rank it travel as one value and the stored-sort resolution reads
+     * the same pair the selector draws.
      */
     public static final ListSortModes<RankedBloc<DominanceStats>> MODES =
         new ListSortModes<>(List.of(values()), DEFAULT);
@@ -93,19 +92,6 @@ public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>
         this.persistenceKey = persistenceKey;
         this.labelKey = labelKey;
         this.metric = metric;
-    }
-
-    /**
-     * The player's stored sort over these modes, read live: the framework resolution run against
-     * every mode with {@link #DEFAULT} as the fallback, so a fresh save and an unrecognised stored
-     * key both read as domination in its natural order, and a save with no stored direction reads
-     * the stored mode's own default. The one place the political map resolves the stored pair,
-     * shared by the picker that ranks under it and the sort selector that acts on it.
-     *
-     * @return the stored sort
-     */
-    public static ListSort<RankedBloc<DominanceStats>> resolveStoredSort() {
-        return SortSelectionBinder.resolveStoredSort(MODES);
     }
 
     /**

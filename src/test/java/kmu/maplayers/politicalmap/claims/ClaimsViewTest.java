@@ -225,15 +225,16 @@ final class ClaimsViewTest {
     }
 
     @Nested
-    class ResolveSelectableBlocs {
+    class ResolveBlocPicker {
 
         @Test
-        void resolveSelectableBlocsIsEmptySoTheViewOffersNoSpotlight() {
-            // Claim presence is not the market presence the shared picker derives its selectable set
-            // from, so the claims view inherits the interface's no-spotlight default: the picker draws
-            // nothing and a stale saved selection heals to none. It reads none of its arguments, so
-            // this guards against a future accidental override reintroducing a spotlight.
-            assertThat(ClaimsView.INSTANCE.resolveSelectableBlocs(null, null, false))
+        void resolveBlocPickerOffersNoItemsSoTheViewShowsNoSpotlight() {
+            // Claim presence is not the market presence the dominance vocabulary derives its
+            // selectable set from, so the claims view inherits the interface's no-spotlight default:
+            // the picker draws nothing and a stale saved selection heals to none. It reads none of
+            // its arguments, so this guards against a future accidental override reintroducing a
+            // spotlight.
+            assertThat(ClaimsView.INSTANCE.resolveBlocPicker(null, null, false).items())
                 .isEmpty();
         }
     }

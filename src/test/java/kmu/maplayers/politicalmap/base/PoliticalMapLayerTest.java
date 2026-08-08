@@ -7,6 +7,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.text.TextSpan;
+import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
@@ -24,6 +25,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -126,7 +128,6 @@ final class PoliticalMapLayerTest {
                 stubSharedControlsAndSelector(controlsMock);
                 pickerMock
                     .when(() -> FilterSelectionBinder.buildPicker(
-                        any(),
                         any(),
                         any(),
                         any(),
@@ -269,10 +270,15 @@ final class PoliticalMapLayerTest {
         when(view.getViewBodyControls())
             .thenReturn(List.of());
 
-        when(view.resolveSelectableBlocs(any()))
-            .thenReturn(List.of(new RankedBloc<>(
-                new SelectableBloc("hegemony", "Hegemony", null),
-                DominanceStats.EMPTY)));
+        // Stubbed through doReturn because the seam answers a wildcarded picker, whose captured item
+        // type a when() stub would have to name.
+        doReturn(new ListPicker<>(
+                List.of(new RankedBloc<>(
+                    new SelectableBloc("hegemony", "Hegemony", null),
+                    DominanceStats.EMPTY)),
+                DominanceSortMode.MODES))
+            .when(view)
+            .resolveBlocPicker(any());
 
         var hostTabMock = mock(MapLayer.class);
 
@@ -327,18 +333,20 @@ final class PoliticalMapLayerTest {
 
     // Registers the one view as both the sole registered view and the default, with a host tab the
     // layer registry treats as active, so a sector-less read resolves this view as selected. Also
-    // stubs the view's identity and empty selectable-bloc list, since the body build now reads its
-    // picker options through the memo (keyed on the view id and its content revision) rather than off
-    // the view directly - an empty list contributes no picker, keeping these composition assertions
-    // about where the picker sits, not what it holds.
+    // stubs the view's identity and empty picker, since the body build now reads its picker options
+    // through the memo (keyed on the view id and its content revision) rather than off the view
+    // directly - an empty picker contributes no controls, keeping these composition assertions about
+    // where the picker sits, not what it holds.
     private static void registerDefaultView(PoliticalMapView view) {
 
         when(view.getId())
             .thenReturn("selected-view");
         when(view.getContentRevision())
             .thenReturn(0);
-        when(view.resolveSelectableBlocs(any()))
-            .thenReturn(List.of());
+
+        doReturn(ListPicker.empty())
+            .when(view)
+            .resolveBlocPicker(any());
 
         var hostTabMock = mock(MapLayer.class);
 

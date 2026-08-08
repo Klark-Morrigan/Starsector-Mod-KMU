@@ -117,7 +117,7 @@ public final class ClaimsView implements PoliticalMapView {
         return Optional.of(SystemClaimTooltip.INSTANCE);
     }
 
-    // resolveSelectableBlocs is left to the interface default (no selectable blocs): claim presence is
-    // not the market presence the shared picker ranks, so the claims view offers no spotlight and the
+    // resolveBlocPicker is left to the interface default (the empty picker): claim presence is not the
+    // market presence the dominance vocabulary ranks, so the claims view offers no spotlight and the
     // sidebar draws no filter for it, exactly as a view with no body controls inherits an empty list.
 }

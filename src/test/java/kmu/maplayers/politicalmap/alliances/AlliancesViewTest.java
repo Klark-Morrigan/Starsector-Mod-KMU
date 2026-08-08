@@ -300,7 +300,7 @@ final class AlliancesViewTest {
     }
 
     @Nested
-    class ResolveSelectableBlocs {
+    class ResolveBlocPicker {
 
         // The rules are forwarded to the (mocked) stats read, so their value never reaches assertion
         // here - any rules stand in where the seam demands them.
@@ -315,7 +315,7 @@ final class AlliancesViewTest {
         private static final DominanceStats ANY_STATS = new DominanceStats(4, 3, 8000, 12);
 
         @Test
-        void resolveSelectableBlocsOffersOnlyAllianceBlocsCrestedFromTheLeadMemberWithStats() {
+        void resolveBlocPickerOffersOnlyAllianceBlocsCrestedFromTheLeadMemberWithStats() {
             // Under the alliances view only an alliance is a filter target: a present lone faction is
             // dropped, and the alliance option reads its name off the grouping, carries its lead
             // (colour) member's crest, and forwards the stats the shared read computed for it.
@@ -346,7 +346,7 @@ final class AlliancesViewTest {
                     .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
                     .thenReturn(Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY));
 
-                assertThat(view.resolveSelectableBlocs(sectorMock, ANY_RULES, false))
+                assertThat(view.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc(
                             "rebel_pact",
