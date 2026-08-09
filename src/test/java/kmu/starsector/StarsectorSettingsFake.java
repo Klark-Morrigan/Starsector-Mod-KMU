@@ -1,7 +1,7 @@
 package kmu.starsector;
 
-import kmlib.starsector.testing.StarsectorSettingsFake.SettingsColourSource;
-import kmlib.starsector.testing.StarsectorSettingsFake.SettingsStringSource;
+import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.SettingsColourSource;
+import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.SettingsStringSource;
 
 import kmu.util.KmuStrings;
 
@@ -10,7 +10,7 @@ import java.util.Map;
 
 /**
  * KMU-side facade over KMLib's
- * {@link kmlib.starsector.testing.StarsectorSettingsFake} that bakes in
+ * {@link kmlib.testfixtures.starsector.settings.StarsectorSettingsFake} that bakes in
  * KMU's localised string map. KMLib owns the actual {@code SettingsAPI}
  * proxy (single source of truth) and the fetch-or-redact behaviour via
  * {@link kmlib.starsector.strings.StarsectorStrings}; this class
@@ -22,7 +22,7 @@ public final class StarsectorSettingsFake {
     }
 
     public static void installSettings() {
-        kmlib.starsector.testing.StarsectorSettingsFake.installSettings(KMU_STRINGS);
+        kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.installSettings(KMU_STRINGS);
     }
 
     /**
@@ -34,11 +34,11 @@ public final class StarsectorSettingsFake {
      * @param colourSource the shades the named engine colour keys answer with
      */
     public static void installSettings(SettingsColourSource colourSource) {
-        kmlib.starsector.testing.StarsectorSettingsFake.installSettings(KMU_STRINGS, colourSource);
+        kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.installSettings(KMU_STRINGS, colourSource);
     }
 
     public static void clearSettings() {
-        kmlib.starsector.testing.StarsectorSettingsFake.clearSettings();
+        kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.clearSettings();
     }
 
     private static final Map<String, String> STRINGS_BY_KEY = buildStringsByKey();
