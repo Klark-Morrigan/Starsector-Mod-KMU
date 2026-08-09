@@ -290,7 +290,7 @@ final class SystemClaimTooltipTest {
             assertThat(readLabelRun(claimRow, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
             assertThat(readLabelRun(claimRow, MARKED_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan(" (core)", HIGHLIGHT));
+                .isEqualTo(new TextSpan("(core)", HIGHLIGHT));
             assertThat(claimRow.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan("1,200", HIGHLIGHT)));
         }
@@ -415,7 +415,7 @@ final class SystemClaimTooltipTest {
             assertThat(readLabelTexts(sections))
                 .containsExactly("Unpopulated", "Claim:", "The Hegemony");
             assertThat(readLabelRun(readTableRow(sections, DECREED_CLAIM_ROW), MARKED_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan(" (core)", HIGHLIGHT));
+                .isEqualTo(new TextSpan("(core)", HIGHLIGHT));
         }
 
         @Test

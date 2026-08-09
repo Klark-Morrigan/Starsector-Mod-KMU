@@ -98,7 +98,7 @@ final class CoreTerritoryRowTest {
                 .orElseThrow();
 
             assertThat(readLabelRun(row, CORE_STATUS_RUN))
-                .isEqualTo(new TextSpan(" core territory", HIGHLIGHT));
+                .isEqualTo(new TextSpan("core territory", HIGHLIGHT));
         }
 
         @Test

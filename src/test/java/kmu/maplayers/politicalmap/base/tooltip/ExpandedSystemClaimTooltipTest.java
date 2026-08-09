@@ -243,7 +243,7 @@ final class ExpandedSystemClaimTooltipTest {
             assertThat(readLabelTextRun(claimRow, MARKED_LABEL_RUN).text())
                 .isEqualTo("The Hegemony");
             assertThat(readLabelRun(claimRow, MARKED_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan(" (core)", HIGHLIGHT));
+                .isEqualTo(new TextSpan("(core)", HIGHLIGHT));
         }
 
         @Test
