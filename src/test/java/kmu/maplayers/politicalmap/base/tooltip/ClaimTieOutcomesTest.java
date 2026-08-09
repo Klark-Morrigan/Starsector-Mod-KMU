@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
@@ -288,8 +289,7 @@ final class ClaimTieOutcomesTest {
             "Market " + listingPosition,
             listingPosition,
             IS_KNOWN_TO_PLAYER,
-            isHiddenMarket,
-            isOffEconomyMarket,
+            new ContestAdmission(isHiddenMarket, isOffEconomyMarket),
             marketScore,
             NO_SIBLING_MARKETS,
             OptionalInt.empty());

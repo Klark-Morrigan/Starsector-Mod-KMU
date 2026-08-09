@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
@@ -76,12 +77,10 @@ final class ExpandedSystemClaimTooltipTest {
     // market posed takes the head of the listing.
     private static final int FIRST_LISTED = 1;
 
-    // Every market posed here is one the player has found, held in the open. What the box withholds
-    // of one they have not, and which listing ties it marks, are the resolver's and pinned there;
-    // the cases below are about which faction gets an account at all.
+    // Every market posed here is one the player has found and one the mechanic weighed. What the
+    // box withholds of a market they have not found, and which listing ties it marks, are the
+    // resolver's and pinned there; the cases below are about which faction gets an account at all.
     private static final boolean IS_KNOWN_TO_PLAYER = true;
-    private static final boolean IS_NOT_HIDDEN = false;
-    private static final boolean IS_NOT_OFF_ECONOMY = false;
 
     private static final boolean IS_TERRITORIAL = true;
 
@@ -319,8 +318,7 @@ final class ExpandedSystemClaimTooltipTest {
             marketName,
             FIRST_LISTED,
             IS_KNOWN_TO_PLAYER,
-            IS_NOT_HIDDEN,
-            IS_NOT_OFF_ECONOMY,
+            ContestAdmission.WEIGHED,
             marketSize,
             NO_SIBLING_MARKETS,
             OptionalInt.empty());

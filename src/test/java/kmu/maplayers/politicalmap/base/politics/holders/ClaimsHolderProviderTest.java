@@ -98,9 +98,9 @@ final class ClaimsHolderProviderTest {
 
                 var resolution = provider.resolveHolder(sectorMock, grouping, "hegemony");
 
-                // The pick actually recedes the sector: the spotlit faction's claims fuse into its
-                // one spotlight territory at full strength, while a rival's claim keeps its plain
-                // bloc key for the style layer to mute and desaturate.
+                // The pick actually recedes the sector: the spotlit faction's claims carry the key
+                // that keeps them at full strength, while a rival's claim keeps its plain bloc key
+                // for the style layer to mute and desaturate.
                 assertThat(resolution.ownerBySystemId().get("own-claimed"))
                     .isSameAs(spotlightHolder);
                 assertThat(resolution.ownerBySystemId().get("rival-claimed"))

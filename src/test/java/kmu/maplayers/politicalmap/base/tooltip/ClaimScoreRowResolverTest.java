@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
@@ -75,17 +76,12 @@ final class ClaimScoreRowResolverTest {
     private static final boolean IS_KNOWN_TO_PLAYER = true;
     private static final boolean IS_UNFOUND_BY_PLAYER = false;
 
-    // Whether a market is concealed. The mechanic skips a hidden one before scoring, so it competes
-    // in neither comparison the listing settles, brings nothing to the contest, and no tie it
-    // appears in is marked.
-    private static final boolean IS_HIDDEN = true;
-    private static final boolean IS_NOT_HIDDEN = false;
-
-    // Whether the economy lists a market at all. The mechanic walks the economy, so a colony left off
-    // it is never reached - the second way a market can be present and never weighed, and the one that
-    // keeps it out of the presence count as well.
-    private static final boolean IS_OFF_ECONOMY = true;
-    private static final boolean IS_NOT_OFF_ECONOMY = false;
+    // How the mechanic met a market. A concealed one it skips before scoring, so it competes in
+    // neither comparison the listing settles and no tie it appears in is marked; one the economy
+    // does not list it never reaches at all, which additionally keeps that market out of the
+    // presence count. Either brings nothing to the contest.
+    private static final ContestAdmission CONCEALED = new ContestAdmission(true, false);
+    private static final ContestAdmission OFF_ECONOMY = new ContestAdmission(false, true);
 
     @BeforeEach
     void installStrings() {
@@ -608,8 +604,7 @@ final class ClaimScoreRowResolverTest {
                     STRONGEST_MARKET,
                     FIRST_LISTED,
                     IS_KNOWN_TO_PLAYER,
-                    IS_NOT_HIDDEN,
-                    IS_NOT_OFF_ECONOMY,
+                    ContestAdmission.WEIGHED,
                     STRONGEST_MARKET_SIZE,
                     NO_SIBLING_MARKETS,
                     OptionalInt.of(MILITARY_BONUS)),
@@ -701,9 +696,15 @@ final class ClaimScoreRowResolverTest {
         return buildStrongestMarket(siblingMarketCount, IS_KNOWN_TO_PLAYER);
     }
 
+    // How the mechanic met a market the player has, or has not, found. An unfound market is a
+    // concealed one - the two arms of "known" being discovery and being held in the open - so a case
+    // posing one poses both, and a found market is the ordinary competitor.
+    private static ContestAdmission admitAsFound(boolean isKnownToPlayer) {
+        return isKnownToPlayer ? ContestAdmission.WEIGHED : CONCEALED;
+    }
+
     // The same market, stated as one the player has or has not found - the two cases the withholding
-    // turns on. An unfound market is a hidden one, the two arms of "known" being discovery and being
-    // held in the open.
+    // turns on.
     private static MarketClaimBreakdown buildStrongestMarket(
             int siblingMarketCount,
             boolean isKnownToPlayer) {
@@ -712,8 +713,7 @@ final class ClaimScoreRowResolverTest {
             STRONGEST_MARKET,
             FIRST_LISTED,
             isKnownToPlayer,
-            !isKnownToPlayer,
-            IS_NOT_OFF_ECONOMY,
+            admitAsFound(isKnownToPlayer),
             STRONGEST_MARKET_SIZE,
             siblingMarketCount,
             OptionalInt.empty());
@@ -731,8 +731,7 @@ final class ClaimScoreRowResolverTest {
             marketName,
             listingPosition,
             IS_KNOWN_TO_PLAYER,
-            IS_HIDDEN,
-            IS_NOT_OFF_ECONOMY,
+            CONCEALED,
             marketSize,
             siblingMarketCount,
             OptionalInt.empty());
@@ -750,8 +749,7 @@ final class ClaimScoreRowResolverTest {
             marketName,
             listingPosition,
             IS_KNOWN_TO_PLAYER,
-            IS_NOT_HIDDEN,
-            IS_OFF_ECONOMY,
+            OFF_ECONOMY,
             marketSize,
             NO_SIBLING_MARKETS,
             OptionalInt.empty());
@@ -764,8 +762,7 @@ final class ClaimScoreRowResolverTest {
             STRONGEST_MARKET,
             FIRST_LISTED,
             IS_KNOWN_TO_PLAYER,
-            IS_NOT_HIDDEN,
-            IS_NOT_OFF_ECONOMY,
+            ContestAdmission.WEIGHED,
             STRONGEST_MARKET_SIZE,
             TWO_SIBLING_MARKETS,
             OptionalInt.of(MILITARY_BONUS));
@@ -799,8 +796,7 @@ final class ClaimScoreRowResolverTest {
             marketName,
             listingPosition,
             isKnownToPlayer,
-            !isKnownToPlayer,
-            IS_NOT_OFF_ECONOMY,
+            admitAsFound(isKnownToPlayer),
             marketSize,
             siblingMarketCount,
             OptionalInt.empty());

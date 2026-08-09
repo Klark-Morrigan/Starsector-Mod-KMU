@@ -112,10 +112,14 @@ and the box over it naming different claimants - on the memory-flag override, an
 iteration-order tie the mechanic settles equal scores by.
 
 Step for step describes the *claimant*, which is all this package takes. The standings the same read
-carries for the hover box go one market wider than vanilla scores - the player's colonies, forced
-non-territorial so they can never move the winner - because a box that dropped them would report a
-system the player holds a colony in as one they have no presence in. Nothing here can see that
-widening: a faction barred from claiming never becomes a claimant.
+carries for the hover box go wider than vanilla scores, in two directions, and neither can be seen
+from here. The player's colonies are scored, forced non-territorial so they can never move the
+winner, because a box that dropped them would report a system the player holds a colony in as one
+they have no presence in - and a faction barred from claiming never becomes a claimant. A colony the
+economy does not list at all is carried too, as vanilla builds Galatia Academy, because a box that
+dropped it would leave a station the player can see on the map out of the account of who holds the
+system - and it is carried the way a concealed market is, scored for nothing and counted toward
+nothing, so it can neither become a claimant nor move the score of one.
 
 Vanilla resolves a claimant two ways: an explicit `$claimingFaction` memory flag, or the top
 territorial market in the system. The map shows exactly what the mechanic resolves and invents
