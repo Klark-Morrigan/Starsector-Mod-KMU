@@ -19,6 +19,7 @@ import java.util.Map;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOrbitingEntity;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStarAt;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -193,7 +194,7 @@ class MarketProximityTieBreakTest {
                 // nearer the star than hegemony's does. The tie-break reads the economy alone, so
                 // it decides on hegemony's market and blackrock is placeless - the guarantee that
                 // the expanded box naming such a colony did not hand it a mechanic.
-                hangUnlistedMarketOn(
+                placeMarketsOnSystemEntities(
                     systemMock,
                     buildMarketOwnedBy("blackrock", buildOrbitingEntity(ORBIT_CLOSE, starMock)));
 
@@ -261,19 +262,6 @@ class MarketProximityTieBreakTest {
             .thenReturn(primaryEntity);
 
         return marketMock;
-    }
-
-    // Hangs a market on the system's own entity without registering it with the economy - the shape
-    // vanilla builds an unregistered colony in, and the one thing a read of the economy alone is
-    // meant not to see.
-    private static void hangUnlistedMarketOn(StarSystemAPI system, MarketAPI market) {
-
-        var entityMock = market.getPrimaryEntity();
-
-        when(entityMock.getMarket())
-            .thenReturn(market);
-        when(system.getAllEntities())
-            .thenReturn(List.of(entityMock));
     }
 
     // A system with a centre token and its stars, the two the reference-star search reads.
