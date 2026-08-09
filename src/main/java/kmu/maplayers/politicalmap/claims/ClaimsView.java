@@ -3,18 +3,28 @@ package kmu.maplayers.politicalmap.claims;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.hashing.Fingerprints;
+import kmlib.starsector.systems.claims.ClaimReader;
+import kmlib.starsector.systems.claims.VanillaClaimReader;
+import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.RankedBloc;
+import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.politics.ClaimStats;
+import kmu.maplayers.politicalmap.base.politics.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
 import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 import kmu.util.KmuStrings;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -29,14 +39,18 @@ import java.util.Optional;
  * seams delegate to {@link FactionsView} rather than restating them, which keeps the two views from
  * drifting on how a plain faction bloc paints and reads.
  *
- * <p>It offers no spotlight: the shared picker's selectable set is gated by market presence, which is
- * not the same as claim presence, so the view returns no selectable blocs and the sidebar draws no
- * filter for it. Every claim therefore paints at full strength.
+ * <p>Its spotlight picker is its own, not the held layers': the blocs it offers are the ones that
+ * claim a system, and they carry claim metrics rather than domination ones, so the sort selector can
+ * only offer numbers this layer is actually painted by.
  */
 public final class ClaimsView implements PoliticalMapView {
 
     /** The one shared instance; stateless, so every pass reuses it. */
     public static final ClaimsView INSTANCE = new ClaimsView();
+
+    // The claim source the picker's counts are read through - the same port the view's holder provider
+    // resolves its territory from, so the list and the map can never disagree on who claims what.
+    private final ClaimReader claimReader = new VanillaClaimReader();
 
     private ClaimsView() {
     }
@@ -117,7 +131,58 @@ public final class ClaimsView implements PoliticalMapView {
         return Optional.of(SystemClaimTooltip.INSTANCE);
     }
 
-    // resolveBlocPicker is left to the interface default (the empty picker): claim presence is not the
-    // market presence the dominance vocabulary ranks, so the claims view offers no spotlight and the
-    // sidebar draws no filter for it, exactly as a view with no body controls inherits an empty list.
+    /**
+     * The claims picker: every bloc that claims at least one system, carrying its whole-sector
+     * {@link ClaimStats}, paired with {@link ClaimSortMode}'s vocabulary.
+     *
+     * <p>The gate is claim presence, not the market presence the held layers list by, because a
+     * picker's job is to spotlight something the layer draws. A faction that claims a system but
+     * holds no colony anywhere is therefore listed - it paints territory here - while a faction with
+     * colonies but no claim is dropped, since spotlighting it would recede the whole sector in
+     * favour of nothing.
+     *
+     * @param sector                           the sector whose systems and economy the claim stats are
+     *                                         read from; null yields an empty picker
+     * @param rules                            the dominance-weighting rules for this read; carried by
+     *                                         the shared pass, which the market-size half of the stats
+     *                                         reads its economy through
+     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward a bloc's
+     *                                         market size (the "show all factions" dev reveal)
+     * @return this view's picker, its blocs in the order the sector walk surfaces them
+     */
+    @Override
+    public ListPicker<RankedBloc<ClaimStats>> resolveBlocPicker(
+            SectorAPI sector,
+            DominanceRules rules,
+            boolean shouldIncludeUndiscoveredMarkets) {
+
+        // The grouping is resolved once and handed to both halves, so the numbers, the crest, and the
+        // name all read against one snapshot rather than three live samples.
+        var grouping = resolveGrouping();
+        var pass = new DominancePass(rules, shouldIncludeUndiscoveredMarkets, grouping);
+
+        return new ListPicker<>(
+            buildSelectableBlocs(
+                sector,
+                grouping,
+                listClaimingBlocs(
+                    ClaimStatsAggregator.aggregateClaimStats(sector, pass, claimReader)),
+                blocId -> true),
+            ClaimSortMode.MODES);
+    }
+
+    // Drops the blocs the fold surfaced for their colonies alone, leaving the claimants in the walk
+    // order the fold produced. Gating the map rather than the option assembly is what lets the shared
+    // assembly take an always-true test: the assembly's gate reads a bloc id, which cannot answer how
+    // much that bloc claims.
+    private static Map<String, ClaimStats> listClaimingBlocs(Map<String, ClaimStats> statsByBlocId) {
+
+        var claimingBlocs = new LinkedHashMap<String, ClaimStats>();
+        for (var entry : statsByBlocId.entrySet()) {
+            if (entry.getValue().claims() > 0) {
+                claimingBlocs.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return claimingBlocs;
+    }
 }

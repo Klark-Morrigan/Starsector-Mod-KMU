@@ -53,6 +53,7 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_CTL_SORT_PRESENCE = "political_map_ctl_sort_presence";
     public static final String POLITICAL_MAP_CTL_SORT_SCORE = "political_map_ctl_sort_score";
     public static final String POLITICAL_MAP_CTL_SORT_MARKET_SIZE = "political_map_ctl_sort_market_size";
+    public static final String POLITICAL_MAP_CTL_SORT_CLAIMS = "political_map_ctl_sort_claims";
     public static final String POLITICAL_MAP_TOOLTIP_DECIVILISED = "political_map_tooltip_decivilised";
     public static final String POLITICAL_MAP_TOOLTIP_UNPOPULATED = "political_map_tooltip_unpopulated";
     public static final String POLITICAL_MAP_TOOLTIP_CORE_TERRITORY = "political_map_tooltip_core_territory";

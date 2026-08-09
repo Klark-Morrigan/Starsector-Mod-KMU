@@ -7,7 +7,15 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
+import kmu.maplayers.politicalmap.base.RankedBloc;
+import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
+import kmu.maplayers.politicalmap.base.politics.ClaimStats;
+import kmu.maplayers.politicalmap.base.politics.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
@@ -16,16 +24,21 @@ import kmu.util.KmuStrings;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
  * Pins the claims view's render rules: it is the faction view's look keyed off the vanilla claim
  * mechanic, so its grouping is identity, its holding comes from the claims-only provider, and its
- * bloc styling and label delegate to the faction view. It offers no spotlight, so its selectable set
- * is always empty. Reproducing these here is what lets the shared pipeline read the claims view
- * through {@link kmu.maplayers.politicalmap.base.PoliticalMapView} without naming it.
+ * bloc styling and label delegate to the faction view. Its picker is its own, though: it lists the
+ * blocs that claim something and ranks them by claim metrics. Reproducing these here is what lets the
+ * shared pipeline read the claims view through
+ * {@link kmu.maplayers.politicalmap.base.PoliticalMapView} without naming it.
  */
 final class ClaimsViewTest {
 
@@ -227,15 +240,133 @@ final class ClaimsViewTest {
     @Nested
     class ResolveBlocPicker {
 
+        // The rules are forwarded to the (mocked) stats read, so their value never reaches assertion
+        // here - any rules stand in where the seam demands them.
+        private static final DominanceRules ANY_RULES =
+            new DominanceRules(false,
+                new BaseSizeWeighting(1.0, null, 1.0, 1.0),
+                new StationWeighting(false, 1.0, 0.5, 0.5),
+                new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
+
+        // A claimant's stats: the view forwards them onto its option verbatim, so these arbitrary
+        // numbers are only asserted to survive the pass unchanged. Non-zero claims, so the gate keeps
+        // the bloc.
+        private static final ClaimStats ANY_CLAIMANT_STATS = new ClaimStats(2, 7);
+
         @Test
-        void resolveBlocPickerOffersNoItemsSoTheViewShowsNoSpotlight() {
-            // Claim presence is not the market presence the dominance vocabulary derives its
-            // selectable set from, so the claims view inherits the interface's no-spotlight default:
-            // the picker draws nothing and a stale saved selection heals to none. It reads none of
-            // its arguments, so this guards against a future accidental override reintroducing a
-            // spotlight.
-            assertThat(ClaimsView.INSTANCE.resolveBlocPicker(null, null, false).items())
-                .isEmpty();
+        void resolveBlocPickerCarriesEachClaimantsCrestShortNameAndStats() {
+            // A claiming bloc becomes an option carrying its crest, short name, and the claim stats the
+            // fold computed for it, so the option reads exactly as the picker row will draw and sort it.
+            var sectorMock = mock(SectorAPI.class);
+            var hegemonyMock = mock(FactionAPI.class);
+
+            when(sectorMock.getFaction("hegemony"))
+                .thenReturn(hegemonyMock);
+
+            when(hegemonyMock.getCrest())
+                .thenReturn("graphics/hegemony_crest.png");
+            when(hegemonyMock.getDisplayName())
+                .thenReturn("Hegemony");
+
+            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                    .thenReturn(Map.of("hegemony", ANY_CLAIMANT_STATS));
+
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
+                    .containsExactly(new RankedBloc<>(
+                        new SelectableBloc(
+                            "hegemony",
+                            "Hegemony",
+                            "graphics/hegemony_crest.png"),
+                        ANY_CLAIMANT_STATS));
+            }
+        }
+
+        @Test
+        void resolveBlocPickerOffersAClaimantHoldingNoColonyAnywhere() {
+            // The gate is claim presence, not market presence: a faction claiming territory while
+            // holding nothing paints on this layer, so it must be spotlightable even at a market size
+            // of zero.
+            var sectorMock = mock(SectorAPI.class);
+            var factionMock = mock(FactionAPI.class);
+
+            when(sectorMock.getFaction("luddic_path"))
+                .thenReturn(factionMock);
+
+            when(factionMock.getDisplayName())
+                .thenReturn("Path");
+
+            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                    .thenReturn(Map.of("luddic_path", new ClaimStats(1, 0)));
+
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
+                    .extracting(RankedBloc::itemId)
+                    .containsExactly("luddic_path");
+            }
+        }
+
+        @Test
+        void resolveBlocPickerDropsABlocThatHoldsColoniesButClaimsNothing() {
+            // The fold applies no gate of its own, so a colony holder surfaces at zero claims; the view
+            // drops it, since spotlighting a bloc that paints nothing here would recede the whole
+            // sector in favour of nothing.
+            var sectorMock = mock(SectorAPI.class);
+            var claimantMock = mock(FactionAPI.class);
+
+            when(sectorMock.getFaction("hegemony"))
+                .thenReturn(claimantMock);
+
+            when(claimantMock.getDisplayName())
+                .thenReturn("Hegemony");
+
+            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                    .thenReturn(Map.of(
+                        "hegemony", new ClaimStats(1, 0),
+                        "tritachyon", new ClaimStats(0, 40)));
+
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
+                    .extracting(RankedBloc::itemId)
+                    .containsExactly("hegemony");
+            }
+        }
+
+        @Test
+        void resolveBlocPickerOffersNoItemsWhenNoBlocClaimsAnything() {
+            // With nothing claimed the picker offers no options - it draws no controls at all - and a
+            // stale saved selection heals to none.
+            var sectorMock = mock(SectorAPI.class);
+
+            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                    .thenReturn(Map.of());
+
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
+                    .isEmpty();
+            }
+        }
+
+        @Test
+        void resolveBlocPickerRanksItsBlocsByTheClaimVocabulary() {
+            // The view answers the list and the modes together, so the numbers its blocs carry and the
+            // metrics the sort selector offers can never drift apart - this layer is painted by the
+            // claim mechanic, so claims is what the picker ranks by rather than domination.
+            var sectorMock = mock(SectorAPI.class);
+
+            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                    .thenReturn(Map.of());
+
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false)
+                        .sortModes())
+                    .isEqualTo(ClaimSortMode.MODES);
+            }
         }
     }
 }
