@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
  * footprint read that never resolves colours and a palette form for the resolves that do.
  */
 public final class SectorPoliticsFixtures {
+
     /**
      * The stability band vanilla scores a colony on, at the three points the weighting rule turns on:
      * full worth, half, and a collapse. Named once for every suite that stands a colony up - the
@@ -73,9 +74,9 @@ public final class SectorPoliticsFixtures {
      */
     public static DominanceRules buildStabilityWeightedRules() {
         return new DominanceRules(true,
-                new BaseSizeWeighting(1.0, HiddenMarketScalingChoice.FIXED, 1.0, 1.0),
-                new StationWeighting(false, 1.0, 0.5, 0.5),
-                new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
+            new BaseSizeWeighting(1.0, HiddenMarketScalingChoice.FIXED, 1.0, 1.0),
+            new StationWeighting(false, 1.0, 0.5, 0.5),
+            new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
     }
 
     /**
@@ -98,8 +99,12 @@ public final class SectorPoliticsFixtures {
      * @return the faction mock
      */
     public static FactionAPI buildFaction(String id) {
+
         var factionMock = mock(FactionAPI.class);
-        when(factionMock.getId()).thenReturn(id);
+
+        when(factionMock.getId())
+            .thenReturn(id);
+
         return factionMock;
     }
 
@@ -112,9 +117,14 @@ public final class SectorPoliticsFixtures {
      * @return the faction mock with its palette stubbed
      */
     public static FactionAPI buildFaction(String id, Color bright) {
+
         var factionMock = buildFaction(id);
-        when(factionMock.getBrightUIColor()).thenReturn(bright);
-        when(factionMock.getDarkUIColor()).thenReturn(buildDarkTheme(bright));
+
+        when(factionMock.getBrightUIColor())
+            .thenReturn(bright);
+        when(factionMock.getDarkUIColor())
+            .thenReturn(buildDarkTheme(bright));
+
         return factionMock;
     }
 
@@ -178,17 +188,34 @@ public final class SectorPoliticsFixtures {
      * @param stability       the market's stability value
      * @return the market mock
      */
-    public static MarketAPI buildMarket(FactionAPI faction, int size, boolean isConditionOnly,
-            boolean isHidden, boolean isUndiscovered, float stability) {
+    public static MarketAPI buildMarket(
+            FactionAPI faction,
+            int size,
+            boolean isConditionOnly,
+            boolean isHidden,
+            boolean isUndiscovered,
+            float stability) {
+
         var entityMock = mock(SectorEntityToken.class);
-        when(entityMock.isDiscoverable()).thenReturn(isUndiscovered);
+
+        when(entityMock.isDiscoverable())
+            .thenReturn(isUndiscovered);
+
         var marketMock = mock(MarketAPI.class);
-        when(marketMock.getFaction()).thenReturn(faction);
-        when(marketMock.getSize()).thenReturn(size);
-        when(marketMock.getStabilityValue()).thenReturn(stability);
-        when(marketMock.isPlanetConditionMarketOnly()).thenReturn(isConditionOnly);
-        when(marketMock.isHidden()).thenReturn(isHidden);
-        when(marketMock.getPrimaryEntity()).thenReturn(entityMock);
+
+        when(marketMock.getFaction())
+            .thenReturn(faction);
+        when(marketMock.getSize())
+            .thenReturn(size);
+        when(marketMock.getStabilityValue())
+            .thenReturn(stability);
+        when(marketMock.isPlanetConditionMarketOnly())
+            .thenReturn(isConditionOnly);
+        when(marketMock.isHidden())
+            .thenReturn(isHidden);
+        when(marketMock.getPrimaryEntity())
+            .thenReturn(entityMock);
+
         return marketMock;
     }
 
@@ -211,9 +238,14 @@ public final class SectorPoliticsFixtures {
      * @return the star mock
      */
     public static PlanetAPI buildStarAt(float x, float y) {
+
         var starMock = mock(PlanetAPI.class);
-        when(starMock.isStar()).thenReturn(true);
-        when(starMock.getLocation()).thenReturn(new Vector2f(x, y));
+
+        when(starMock.isStar())
+            .thenReturn(true);
+        when(starMock.getLocation())
+            .thenReturn(new Vector2f(x, y));
+
         return starMock;
     }
 
@@ -226,9 +258,14 @@ public final class SectorPoliticsFixtures {
      * @return the orbiting-entity mock
      */
     public static SectorEntityToken buildOrbitingEntity(float radius, SectorEntityToken focus) {
+
         var entityMock = mock(SectorEntityToken.class);
-        when(entityMock.getCircularOrbitRadius()).thenReturn(radius);
-        when(entityMock.getOrbitFocus()).thenReturn(focus);
+
+        when(entityMock.getCircularOrbitRadius())
+            .thenReturn(radius);
+        when(entityMock.getOrbitFocus())
+            .thenReturn(focus);
+
         return entityMock;
     }
 
@@ -244,7 +281,9 @@ public final class SectorPoliticsFixtures {
         // Build the orbiting entity (which stubs its own orbit) before opening the market's
         // stubbing, so the two do not nest into an unfinished-stubbing error.
         var entityMock = buildOrbitingEntity(radius, focus);
-        when(market.getPrimaryEntity()).thenReturn(entityMock);
+
+        when(market.getPrimaryEntity())
+            .thenReturn(entityMock);
     }
 
     /**
@@ -272,8 +311,11 @@ public final class SectorPoliticsFixtures {
      * @param star   the star at its centre
      */
     public static void centreSystemOn(StarSystemAPI system, PlanetAPI star) {
-        when(system.getCenter()).thenReturn(star);
-        when(system.getPlanets()).thenReturn(List.of(star));
+
+        when(system.getCenter())
+            .thenReturn(star);
+        when(system.getPlanets())
+            .thenReturn(List.of(star));
     }
 
     /**
@@ -285,13 +327,24 @@ public final class SectorPoliticsFixtures {
      * @return the sector mock
      */
     public static SectorAPI buildSectorWith(String systemId, MarketAPI... markets) {
+
         var systemMock = mock(StarSystemAPI.class);
-        when(systemMock.getId()).thenReturn(systemId);
+
+        when(systemMock.getId())
+            .thenReturn(systemId);
+
         var economyMock = mock(EconomyAPI.class);
-        when(economyMock.getMarkets(systemMock)).thenReturn(List.of(markets));
+
+        when(economyMock.getMarkets(systemMock))
+            .thenReturn(List.of(markets));
+
         var sectorMock = mock(SectorAPI.class);
-        when(sectorMock.getStarSystems()).thenReturn(List.of(systemMock));
-        when(sectorMock.getEconomy()).thenReturn(economyMock);
+
+        when(sectorMock.getStarSystems())
+            .thenReturn(List.of(systemMock));
+        when(sectorMock.getEconomy())
+            .thenReturn(economyMock);
+
         return sectorMock;
     }
 
@@ -307,7 +360,9 @@ public final class SectorPoliticsFixtures {
     public static SectorAPI buildSectorWith(String systemId, List<FactionAPI> factions, MarketAPI... markets) {
         var sectorMock = buildSectorWith(systemId, markets);
         for (var faction : factions) {
-            when(sectorMock.getFaction(faction.getId())).thenReturn(faction);
+
+            when(sectorMock.getFaction(faction.getId()))
+                .thenReturn(faction);
         }
         return sectorMock;
     }
@@ -322,20 +377,54 @@ public final class SectorPoliticsFixtures {
      * @return the sector mock
      */
     public static SectorAPI buildSectorWithSystems(List<FactionAPI> factions, SystemMarkets... systems) {
+
         var economyMock = mock(EconomyAPI.class);
         var systemMocks = new ArrayList<StarSystemAPI>();
+
         for (var system : systems) {
             var systemMock = mock(StarSystemAPI.class);
-            when(systemMock.getId()).thenReturn(system.id());
-            when(economyMock.getMarkets(systemMock)).thenReturn(system.markets());
+
+            when(systemMock.getId())
+                .thenReturn(system.id());
+            when(economyMock.getMarkets(systemMock))
+                .thenReturn(system.markets());
+
             systemMocks.add(systemMock);
         }
         var sectorMock = mock(SectorAPI.class);
-        when(sectorMock.getStarSystems()).thenReturn(systemMocks);
-        when(sectorMock.getEconomy()).thenReturn(economyMock);
+
+        when(sectorMock.getStarSystems())
+            .thenReturn(systemMocks);
+        when(sectorMock.getEconomy())
+            .thenReturn(economyMock);
+
         for (var faction : factions) {
-            when(sectorMock.getFaction(faction.getId())).thenReturn(faction);
+
+            when(sectorMock.getFaction(faction.getId()))
+                .thenReturn(faction);
         }
+        return sectorMock;
+    }
+
+    /**
+     * Wires a sector whose systems are walkable but whose economy is absent - the shape mid-load,
+     * before the economy stands up - so a read can be pinned on what it does without one. The
+     * system is there deliberately: it makes the sector one a walk <em>could</em> enter, so a read
+     * that yields nothing is shown to have stopped at its guard rather than at an empty sector.
+     *
+     * @param systemId the id of its one star system
+     * @return the sector mock, with no economy stubbed
+     */
+    public static SectorAPI buildEconomylessSectorWithSystem(String systemId) {
+
+        var systemMock = mock(StarSystemAPI.class);
+        when(systemMock.getId())
+            .thenReturn(systemId);
+
+        var sectorMock = mock(SectorAPI.class);
+        when(sectorMock.getStarSystems())
+            .thenReturn(List.of(systemMock));
+
         return sectorMock;
     }
 
@@ -346,7 +435,9 @@ public final class SectorPoliticsFixtures {
      * @param id      the system id
      * @param markets the markets the system's economy holds
      */
-    record SystemMarkets(String id, List<MarketAPI> markets) {
+    record SystemMarkets(
+        String id,
+        List<MarketAPI> markets) {
     }
 
     /**

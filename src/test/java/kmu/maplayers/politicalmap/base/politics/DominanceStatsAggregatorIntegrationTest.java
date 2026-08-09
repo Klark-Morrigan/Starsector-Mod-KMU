@@ -16,6 +16,7 @@ import java.util.Map;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildEconomylessSectorWithSystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWithSystems;
@@ -129,6 +130,17 @@ class DominanceStatsAggregatorIntegrationTest {
                 listSystemMarkets("bare-system", buildConditionOnlyMarket(hegemony, 6)));
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(sector, STABILITY_PASS))
+                .isEmpty();
+        }
+
+        @Test
+        void aggregateDominanceStatsIsEmptyForASectorWithNoEconomy() {
+            // Every metric here is read from the economy, so a sector whose economy is not up yet
+            // yields nothing rather than walking systems it cannot price. The claims aggregation is
+            // deliberately not symmetric with this: its primary metric comes from the claim port, so
+            // it goes on counting claims without an economy and leaves only market size at zero.
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(
+                    buildEconomylessSectorWithSystem("system-a"), STABILITY_PASS))
                 .isEmpty();
         }
 
