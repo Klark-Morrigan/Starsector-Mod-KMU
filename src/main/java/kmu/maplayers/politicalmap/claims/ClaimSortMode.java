@@ -14,7 +14,7 @@ import java.util.function.ToIntFunction;
 
 /**
  * The claims view's declaration of the framework's {@link ListSortMode} seam: the metrics its filter
- * picker ranks claiming blocs by, one per row of the sort selector. It ranks {@link RankedBloc} over
+ * picker ranks its blocs by, one per row of the sort selector. It ranks {@link RankedBloc} over
  * {@link ClaimStats} alone, so the domination metrics the held layers rank by - which describe a
  * market contest this layer never paints - cannot be offered here, and neither vocabulary can be
  * widened by the other's numbers.
@@ -33,7 +33,10 @@ import java.util.function.ToIntFunction;
  * opposite direction, leaving the canonical tie-break chain fixed either way.
  *
  * <p>{@link #DEFAULT} is claims - the metric the layer is actually painted by, so a fresh save and
- * any unrecognised stored key open on the ranking that matches what the map shows.
+ * any unrecognised stored key open on the ranking that matches what the map shows. The list holds
+ * blocs that hold colonies while claiming nothing, and this is what places them: under the default
+ * they sink to a tail below every claimant, so the list still opens on what the layer paints, while
+ * the name mode interleaves them alphabetically.
  */
 public enum ClaimSortMode implements ListSortMode<RankedBloc<ClaimStats>> {
 

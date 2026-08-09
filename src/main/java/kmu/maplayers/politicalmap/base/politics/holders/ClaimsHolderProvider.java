@@ -21,8 +21,13 @@ import java.util.Set;
  * change than theirs. A claimant's systems already share one key and so already trace one border;
  * moving them to the spotlight key is a one-for-one swap that regroups nothing. What it buys is the
  * answer to {@code isSpotlitBloc}, which is what spares the pick the recede that then mutes and
- * desaturates every other claimant. The Claims picker lists exactly the blocs that claim something,
- * so a pick always has territory here to hold at full strength.
+ * desaturates every other claimant.
+ *
+ * <p>A pick with no claims anywhere recedes the whole sector and holds nothing at full strength.
+ * That is the answer rather than a degenerate case: the picker offers every bloc that claims
+ * <em>or</em> holds something, so a colony-holding faction that claims nowhere is pickable, and
+ * "this faction claims nothing" is what the empty map then says. Nothing here has to detect it -
+ * the rekey simply finds no system to move, and the recede covers the rest.
  *
  * <p>The resolution carries no fill exceptions either way. A system has exactly one claimant, so
  * there is no dominated-but-present state to hatch and nothing to leave empty - which lets the fill

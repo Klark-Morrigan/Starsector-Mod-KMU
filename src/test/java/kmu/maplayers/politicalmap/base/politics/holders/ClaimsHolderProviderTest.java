@@ -114,5 +114,45 @@ final class ClaimsHolderProviderTest {
                     .isEmpty();
             }
         }
+
+        @Test
+        void resolveHolderRecedesTheWholeSectorForAPickThatClaimsNothing() {
+            // The picker offers every bloc that claims or holds something, so a colony holder that
+            // claims nowhere is pickable. Receding the whole sector is then the answer rather than a
+            // degenerate case - it is what "this faction claims nothing" looks like - and nothing here
+            // detects it: the rekey simply finds no system belonging to the pick, and every claim
+            // keeps its own key for the style layer to mute.
+            var sectorMock = mock(SectorAPI.class);
+            var claimReaderMock = mock(ClaimReader.class);
+            var grouping = HolderGrouping.identity();
+            var spotlightHolder = new DominantHolder("$spotlit", PRIMARY, SECONDARY);
+            var claimHolder = new DominantHolder("hegemony", PRIMARY, SECONDARY);
+            var provider = new ClaimsHolderProvider(claimReaderMock);
+
+            try (var sectorClaimsMock = mockStatic(SectorClaims.class);
+                    var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
+
+                sectorClaimsMock
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
+                        sectorMock,
+                        grouping,
+                        claimReaderMock))
+                    .thenReturn(Map.of("claimed", claimHolder));
+
+                // The spotlight holder resolves as it would for any pick; what makes the difference
+                // is that no claimed system carries this bloc, not that the holder is missing.
+                filteredPoliticsMock
+                    .when(() -> FilteredPolitics
+                        .resolveSpotlitHolder(sectorMock, grouping, "tritachyon"))
+                    .thenReturn(spotlightHolder);
+
+                var resolution = provider.resolveHolder(sectorMock, grouping, "tritachyon");
+
+                assertThat(resolution.ownerBySystemId())
+                    .containsExactly(Map.entry("claimed", claimHolder));
+                assertThat(resolution.ownerBySystemId())
+                    .doesNotContainValue(spotlightHolder);
+            }
+        }
     }
 }

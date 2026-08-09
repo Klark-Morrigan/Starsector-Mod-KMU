@@ -169,6 +169,30 @@ final class ClaimSortModeTest {
         }
 
         @Test
+        void comparatorSinksTheClaimlessBlocsBelowEveryClaimantUnderTheDefaultMode() {
+            // The list holds colony holders that claim nowhere, so where they land is what keeps it
+            // readable: under the mode the view opens on they form a tail beneath every claimant, and
+            // the list still opens on what the layer actually paints. A big holder claiming nothing is
+            // what makes the point - it must not out-rank a small claimant on its market size.
+            var claimant = buildBloc("claimant", "Claimant", new ClaimStats(1, 0));
+            var holder = buildBloc("holder", "Holder", new ClaimStats(0, 90));
+
+            assertThat(listIdsSortedBy(ClaimSortMode.CLAIMS, holder, claimant))
+                .containsExactly("claimant", "holder");
+        }
+
+        @Test
+        void comparatorInterleavesTheClaimlessBlocsUnderTheNameMode() {
+            // Alphabetical means alphabetical: sorting by name mixes the claimless rows in among the
+            // claimants rather than keeping the tail the claims mode groups them into.
+            var claimant = buildBloc("b", "Beta", new ClaimStats(4, 0));
+            var holder = buildBloc("a", "Alpha", new ClaimStats(0, 90));
+
+            assertThat(listIdsSortedBy(ClaimSortMode.NAME, claimant, holder))
+                .containsExactly("a", "b");
+        }
+
+        @Test
         void comparatorFlipsANumericModesPrimaryKeyWhenTheDirectionIsAscending() {
 
             // Ascending reverses the primary metric, so the fewer-claiming bloc leads while the metric
