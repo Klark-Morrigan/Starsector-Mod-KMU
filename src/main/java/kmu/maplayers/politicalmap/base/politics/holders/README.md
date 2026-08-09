@@ -89,8 +89,13 @@ path, so a view that never contests or unfills pays nothing for the split.
   fill: the held signal wins. Under a spotlight, a claim shares the fate of its bloc - the spotlit
   bloc's claims stay at full strength, every other bloc's claims fade with its held cells.
 - **`ClaimsHolderProvider`** - the Claims view's source. Every claimed system is painted *solid*
-  in its claimant's colours, with nothing held-derived. It reads no filter, so the resolution has no
-  exceptions and takes the solid fast path.
+  in its claimant's colours, with nothing held-derived. Under a spotlight the chosen bloc's claims
+  stay at full strength and every other claimant's fade, the same trade the source above makes. A
+  system has one claimant, so nothing is ever contested or unfilled here: the resolution has no
+  exceptions and takes the solid fast path on or off filter.
+
+Both claim-reading sources get their claims from `FilteredClaims`, so which claims a spotlight moves
+is answered once rather than once per source.
 
 ## The claim mechanic
 
@@ -127,7 +132,8 @@ rare in practice. So claims mostly attach to inhabited systems.
   than by anything that paints. This package needs the winner alone.
 - The *grouping* that folds a faction into its alliance bloc is `base.dominance.HolderGrouping`,
   supplied by the view.
-- The *held resolve* and *filter resolve* the default source delegates to are `SectorPolitics` and
-  `FilteredPolitics`, in `base.politics` (no separate README; see the source).
+- The *resolves* the sources delegate to all live in `base.politics` (no separate README; see the
+  source), paired off filter and on: `SectorPolitics` / `FilteredPolitics` for held territory, and
+  `SectorClaims` / `FilteredClaims` for claims.
 - The *views* that pick a source, and the view-selector, are described in the
   [political map guide](../../../README.md), one level up under `politicalmap`.

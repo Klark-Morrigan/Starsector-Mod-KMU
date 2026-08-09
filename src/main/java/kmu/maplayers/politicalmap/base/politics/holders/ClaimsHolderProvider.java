@@ -6,7 +6,7 @@ import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.VanillaClaimReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.politics.SectorClaims;
+import kmu.maplayers.politicalmap.base.politics.FilteredClaims;
 
 import java.util.Set;
 
@@ -53,10 +53,10 @@ public final class ClaimsHolderProvider implements HolderProvider {
         // contested and no unfilled systems, which the fill split reads as its whole-cluster-solid
         // fast path. The spotlight only changes which key a claim carries, never its fill.
         return new HolderResolution(
-                ClaimSpotlight.rekeyClaimsOntoSpotlight(
+                FilteredClaims.resolveFilteredClaims(
                         sector,
                         grouping,
-                        SectorClaims.resolveClaimingHolderBySystemId(sector, grouping, claimReader),
+                        claimReader,
                         selectedBlocId),
                 Set.of(),
                 Set.of());

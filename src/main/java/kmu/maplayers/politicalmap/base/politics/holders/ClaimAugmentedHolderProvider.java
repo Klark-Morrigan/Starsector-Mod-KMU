@@ -7,7 +7,7 @@ import kmlib.starsector.systems.claims.VanillaClaimReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
-import kmu.maplayers.politicalmap.base.politics.SectorClaims;
+import kmu.maplayers.politicalmap.base.politics.FilteredClaims;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -63,12 +63,12 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
 
         var held = heldHolderProvider.resolveHolder(sector, grouping, selectedBlocId);
 
-        // The claims are put under the spotlight before the fold, so the fold only has to answer
-        // which claimed systems join the holder map, never which key each one carries.
-        var claimingHolderBySystemId = ClaimSpotlight.rekeyClaimsOntoSpotlight(
+        // The claims arrive already under whatever spotlight is active, so the fold only has to
+        // answer which claimed systems join the holder map, never which key each one carries.
+        var claimingHolderBySystemId = FilteredClaims.resolveFilteredClaims(
             sector,
             grouping,
-            SectorClaims.resolveClaimingHolderBySystemId(sector, grouping, claimReader),
+            claimReader,
             selectedBlocId);
 
         return foldClaimsIntoHeld(held, claimingHolderBySystemId);
