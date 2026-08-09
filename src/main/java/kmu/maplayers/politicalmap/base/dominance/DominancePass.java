@@ -22,10 +22,11 @@ import java.util.Objects;
  * lets a caller read the player's settings once ({@link #readFromLunaSettings}) and hand the whole
  * pass down, so no system in the walk can drift onto a different rule mid-pass.
  *
- * <p>Beyond holding the knobs, the pass performs the two per-system reads they drive - the market
- * footprints regrouped under its grouping ({@link #readBlocFootprints}) and the tie-break that
- * settles a dead heat ({@link #tieBreakFor}) - so the holder and stats resolvers share one
- * definition of each rather than re-deriving it from the loose knobs at every call site.
+ * <p>Beyond holding the knobs, the pass performs the per-system reads they drive - the market
+ * footprints regrouped under its grouping ({@link #readBlocFootprints}), the fuller contributions
+ * those footprints project from ({@link #readBlocContributions}), and the tie-break that settles a
+ * dead heat ({@link #tieBreakFor}) - so the holder and stats resolvers share one definition of each
+ * rather than re-deriving it from the loose knobs at every call site.
  *
  * @param rules                            the weighting rule scoring each market's dominance worth
  * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward dominance (the
@@ -109,6 +110,37 @@ public record DominancePass(
             readFootprintsByFaction(sector, system),
             MarketFootprint.EMPTY,
             MarketFootprint::merge);
+    }
+
+    /**
+     * This system's per-bloc contributions under the pass's rule, reveal, and grouping: each
+     * faction's markets folded into its dominance footprint and raw colony size, then regrouped so
+     * an alliance's members sum into the alliance's one contribution.
+     *
+     * <p>The whole read {@link #readBlocFootprints} projects down to, for the stats aggregations
+     * that also need raw colony size. Held here rather than at each aggregation because assembling
+     * it means naming the rule, the reveal, the grouping, and the fold identity together - four
+     * knobs a caller would otherwise thread by hand, and four chances for one aggregation to read
+     * the economy under a different set than another.
+     *
+     * @param sector the sector whose economy is read; assumed non-null with a non-null economy,
+     *               which the callers guard before delegating
+     * @param system the system whose markets are folded
+     * @return each present bloc's contribution in the system; empty when no bloc holds a folded
+     *         market
+     */
+    public Map<String, FactionMarketContribution> readBlocContributions(
+            SectorAPI sector,
+            StarSystemAPI system) {
+
+        return grouping.regroupByBloc(
+            KnownMarketFootprints.readContributionsByFaction(
+                sector,
+                system,
+                rules,
+                shouldIncludeUndiscoveredMarkets),
+            FactionMarketContribution.EMPTY,
+            FactionMarketContribution::merge);
     }
 
     /**

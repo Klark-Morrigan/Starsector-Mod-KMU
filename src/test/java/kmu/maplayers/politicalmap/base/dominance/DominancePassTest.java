@@ -11,9 +11,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * grouping through a whole economy walk and dereferences both per system, so it rejects a null of
  * either at construction to fail fast rather than deep in the walk under a less legible error.
  *
- * <p>The per-system reads the pass drives - {@link DominancePass#readBlocFootprints} and
- * {@link DominancePass#tieBreakFor} - are covered end to end by the {@link SectorPolitics} and
- * {@link FilteredPolitics} integration suites, which exercise the pass over a stubbed economy.
+ * <p>The per-system reads the pass drives - {@link DominancePass#readBlocFootprints},
+ * {@link DominancePass#readBlocContributions}, and {@link DominancePass#tieBreakFor} - are covered
+ * end to end by the {@link SectorPolitics}, {@link FilteredPolitics}, and stats-aggregation
+ * integration suites, which exercise the pass over a stubbed economy.
  */
 class DominancePassTest {
 

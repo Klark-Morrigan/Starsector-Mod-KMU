@@ -6,8 +6,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.FactionMarketContribution;
-import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -18,8 +16,8 @@ import java.util.Map;
  *
  * <p>The claims counterpart to {@link DominanceStatsAggregator}, and deliberately a separate walk
  * producing a separate output type: the two aggregators share the per-system market <em>read</em>
- * ({@link KnownMarketFootprints#readContributionsByFaction}) and nothing else, so neither stats
- * record can grow a field for the other's benefit.
+ * ({@link DominancePass#readBlocContributions}) and nothing else, so neither stats record can grow
+ * a field for the other's benefit.
  *
  * <p>The two metrics come from two different sources on the same pass over the systems. Claims come
  * from the {@link ClaimReader} port - not the {@code Misc} static behind it - so the aggregation
@@ -97,26 +95,16 @@ public final class ClaimStatsAggregator {
             statsByBlocId.getOrDefault(blocId, ClaimStats.EMPTY).addClaim());
     }
 
-    // Folds one system's colonies into the running per-bloc stats: the same per-faction contribution
-    // read the dominance aggregation walks, regrouped into blocs so an alliance's members sum into
-    // one entry, with only the raw market-size half kept - the dominance weight the read also carries
-    // means nothing to a layer painted by the claim mechanic.
+    // Folds one system's colonies into the running per-bloc stats: the same grouped contribution
+    // read the dominance aggregation walks, with only the raw market-size half kept - the dominance
+    // weight the read also carries means nothing to a layer painted by the claim mechanic.
     private static void accumulateSystemMarketSizes(
             Map<String, ClaimStats> statsByBlocId,
             SectorAPI sector,
             StarSystemAPI system,
             DominancePass pass) {
 
-        var contributionByBlocId = pass.grouping().regroupByBloc(
-            KnownMarketFootprints.readContributionsByFaction(
-                sector,
-                system,
-                pass.rules(),
-                pass.shouldIncludeUndiscoveredMarkets()),
-            FactionMarketContribution.EMPTY,
-            FactionMarketContribution::merge);
-
-        for (var entry : contributionByBlocId.entrySet()) {
+        for (var entry : pass.readBlocContributions(sector, system).entrySet()) {
             var blocId = entry.getKey();
             statsByBlocId.put(
                 blocId,

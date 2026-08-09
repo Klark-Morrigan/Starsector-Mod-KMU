@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.FactionMarketContribution;
-import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
 
@@ -67,17 +66,10 @@ public final class DominanceStatsAggregator {
             StarSystemAPI system,
             DominancePass pass) {
 
-        // One regroup folds the footprint and the raw market size together (a bloc holding markets in
-        // several systems, or an alliance's members, accumulates rather than overwrites), then the
-        // dominance rule reads the footprint half of each bloc's folded contribution.
-        var contributionByBlocId = pass.grouping().regroupByBloc(
-            KnownMarketFootprints.readContributionsByFaction(
-                sector,
-                system,
-                pass.rules(),
-                pass.shouldIncludeUndiscoveredMarkets()),
-            FactionMarketContribution.EMPTY,
-            FactionMarketContribution::merge);
+        // The pass's own grouped read folds the footprint and the raw market size together (a bloc
+        // holding markets in several systems, or an alliance's members, accumulates rather than
+        // overwrites); the dominance rule then reads the footprint half of each folded contribution.
+        var contributionByBlocId = pass.readBlocContributions(sector, system);
 
         // The one winner among the system's present blocs; null only when no bloc is present here,
         // in which case the loop below has nothing to fold and the system contributes no stats.
