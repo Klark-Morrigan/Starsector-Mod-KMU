@@ -39,7 +39,7 @@ final class FilterSelectionTest {
 
     // The save-serialised per-scope key, pinned as a literal: renaming the prefix drops every existing
     // save's filter choice back to none, so a change must break this test first.
-    private static final String SELECTED_ID_KEY = "$kmu_political_filter_bloc_scope_a";
+    private static final String SELECTED_ID_KEY = "$kmu_map_filter_bloc_scope_a";
 
     private static final String SELECTED_ID = "picked_a";
 

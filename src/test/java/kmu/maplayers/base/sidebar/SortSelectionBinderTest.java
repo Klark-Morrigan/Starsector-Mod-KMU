@@ -14,15 +14,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the join between the sort model and this mod's save slot, which is the whole of what the
- * binder does: the read hands both stored keys to the model, and the write puts both of a picked
- * sort's keys back. What the keys mean is the model's and is pinned there; the store is mocked, so
- * this reads the pass-through alone.
+ * Pins the join between the sort model and this mod's save slots, which is the whole of what the
+ * binder does: the read hands the scope's two stored keys to the model, and the write puts both of a
+ * picked sort's keys back into that same scope. What the keys mean is the model's and is pinned
+ * there; the store is mocked, so this reads the pass-through alone.
  *
  * <p>Run over the foreign {@link HazardSortMode} vocabulary, since the binder is no more the
  * political map's than the model it binds.
  */
 final class SortSelectionBinderTest {
+
+    // The scope whose slots the read and the write land on.
+    private static final String SCOPE_ID = "hazards";
 
     private static final ListSortModes<Hazard> MODES =
         new ListSortModes<>(List.of(HazardSortMode.values()), HazardSortMode.ALPHA);
@@ -31,17 +34,17 @@ final class SortSelectionBinderTest {
     class ResolveStoredSort {
 
         @Test
-        void resolveStoredSortPassesBothStoredKeysToTheModel() {
+        void resolveStoredSortPassesTheScopesStoredKeysToTheModel() {
             try (MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
 
                 selectionMock
-                    .when(SortSelection::getSortModeKey)
+                    .when(() -> SortSelection.getSortModeKeyOf(SCOPE_ID))
                     .thenReturn(HazardSortMode.SEVERITY.persistenceKey());
                 selectionMock
-                    .when(SortSelection::getSortDirectionKey)
+                    .when(() -> SortSelection.getSortDirectionKeyOf(SCOPE_ID))
                     .thenReturn(SortDirection.ASCENDING.persistenceKey());
 
-                assertThat(SortSelectionBinder.resolveStoredSort(MODES))
+                assertThat(SortSelectionBinder.resolveStoredSort(SCOPE_ID, MODES))
                     .isEqualTo(new ListSort<>(HazardSortMode.SEVERITY, SortDirection.ASCENDING, MODES));
             }
         }
@@ -51,19 +54,22 @@ final class SortSelectionBinderTest {
     class StoreSort {
 
         @Test
-        void storeSortWritesBothOfThePickedSortsKeys() {
+        void storeSortWritesBothOfThePickedSortsKeysUnderTheScope() {
             // Both halves are written whichever one a click moved, so the save never holds this
-            // pick's direction beside an earlier pick's mode.
+            // pick's direction beside an earlier pick's mode, and both land in the one scope so a
+            // pick made under one picker never reorders another's list.
             try (MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
 
                 SortSelectionBinder.storeSort(
+                    SCOPE_ID,
                     new ListSort<>(HazardSortMode.RADIUS, SortDirection.ASCENDING, MODES));
 
                 selectionMock.verify(
-                    () -> SortSelection.selectSortMode(HazardSortMode.RADIUS.persistenceKey()));
+                    () -> SortSelection.selectSortMode(
+                        SCOPE_ID, HazardSortMode.RADIUS.persistenceKey()));
                 selectionMock.verify(
                     () -> SortSelection.selectSortDirection(
-                        SortDirection.ASCENDING.persistenceKey()));
+                        SCOPE_ID, SortDirection.ASCENDING.persistenceKey()));
             }
         }
     }

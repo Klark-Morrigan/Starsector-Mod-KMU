@@ -18,31 +18,36 @@ public final class SortSelectionBinder {
     }
 
     /**
-     * The player's stored sort over the caller's vocabulary, read live: both stored keys off
-     * {@link SortSelection}, resolved by the model, so a fresh save reads the caller's default mode
-     * and a save with no stored direction reads the stored mode's own default.
+     * The player's stored sort over the caller's vocabulary in one scope, read live: both of that
+     * scope's stored keys off {@link SortSelection}, resolved by the model, so a fresh save reads the
+     * caller's default mode and a save with no stored direction reads the stored mode's own default.
+     *
+     * <p>The scope id is the same one the caller's item pick is kept under, not a second parallel
+     * notion, so a caller cannot bind its filter and its sort to different slots.
      *
      * @param <T>       the list item type the modes rank
+     * @param scopeId   the scope whose stored sort is read
      * @param sortModes the caller's sort vocabulary - the set a stored key resolves against, and the
      *                  mode it falls back to
      * @return the stored sort
      */
-    public static <T> ListSort<T> resolveStoredSort(ListSortModes<T> sortModes) {
+    public static <T> ListSort<T> resolveStoredSort(String scopeId, ListSortModes<T> sortModes) {
         return ListSort.resolveStored(
-            SortSelection.getSortModeKey(),
-            SortSelection.getSortDirectionKey(),
+            SortSelection.getSortModeKeyOf(scopeId),
+            SortSelection.getSortDirectionKeyOf(scopeId),
             sortModes);
     }
 
     /**
-     * Persists a picked sort as its two keys. Both are written whichever half a click moved, so the
-     * save always holds the whole pair the selector reported rather than one key from this pick and
-     * one left over from an earlier one.
+     * Persists a picked sort as its two keys in one scope's slots. Both are written whichever half a
+     * click moved, so the save always holds the whole pair the selector reported rather than one key
+     * from this pick and one left over from an earlier one.
      *
-     * @param sort the sort the picker reported, whose mode and direction keys are stored
+     * @param scopeId the scope the pick belongs to
+     * @param sort    the sort the picker reported, whose mode and direction keys are stored
      */
-    public static void storeSort(ListSort<?> sort) {
-        SortSelection.selectSortMode(sort.mode().persistenceKey());
-        SortSelection.selectSortDirection(sort.direction().persistenceKey());
+    public static void storeSort(String scopeId, ListSort<?> sort) {
+        SortSelection.selectSortMode(scopeId, sort.mode().persistenceKey());
+        SortSelection.selectSortDirection(scopeId, sort.direction().persistenceKey());
     }
 }

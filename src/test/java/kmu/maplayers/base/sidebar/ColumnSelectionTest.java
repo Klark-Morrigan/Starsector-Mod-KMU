@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 final class ColumnSelectionTest {
     // The save-serialised key, pinned as a literal: renaming it resets every existing save's column
     // choice, so a change must break this test first.
-    private static final String COLUMN_COUNT_KEY = "$kmu_political_list_columns";
+    private static final String COLUMN_COUNT_KEY = "$kmu_map_list_columns";
 
     private static final String CHOICE_KEY = "2";
 

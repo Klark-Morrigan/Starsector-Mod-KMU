@@ -19,13 +19,16 @@ import kmlib.starsector.memory.SectorMemoryString;
  */
 public final class ColumnSelection {
     
-    // The key reads as the political map's because this state shipped alongside it, before the
-    // framework was carved out. A key is a save-serialised identity, not a description of where the
-    // class lives: a renamed key reads as absent and silently resets every existing save's column
-    // choice back to the default, so it stays frozen in its original spelling. Absent until the player
-    // first picks a count, which the read reports as null for the column choice to default.
+    // One shared slot rather than one per scope: the count is a layout preference over a list, not a
+    // statement about what the list holds, so it means the same thing under every picker. The key is
+    // layer-neutral because every map layer's picker stores through this one class - a key naming one
+    // layer would have every other layer persisting its column count under that layer's key. A key is
+    // a save-serialised identity, not a description of where the class lives: a renamed key reads as
+    // absent and silently resets every existing save's column choice back to the default, so it stays
+    // frozen in this spelling. Absent until the player first picks a count, which the read reports as
+    // null for the column choice to default.
     private static final SectorMemoryString selectedColumnCount =
-        new SectorMemoryString("$kmu_political_list_columns");
+        new SectorMemoryString("$kmu_map_list_columns");
 
     private ColumnSelection() {
     }

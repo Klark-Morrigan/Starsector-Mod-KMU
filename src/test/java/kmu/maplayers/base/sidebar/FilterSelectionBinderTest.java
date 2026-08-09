@@ -79,7 +79,7 @@ final class FilterSelectionBinderTest {
 
         sortBinderMock = Mockito.mockStatic(SortSelectionBinder.class);
         sortBinderMock
-            .when(() -> SortSelectionBinder.resolveStoredSort(MODES))
+            .when(() -> SortSelectionBinder.resolveStoredSort(SCOPE_ID, MODES))
             .thenReturn(sortOf(HazardSortMode.ALPHA));
     }
 
@@ -206,7 +206,8 @@ final class FilterSelectionBinderTest {
                     List.of(HazardSortMode.values()).indexOf(HazardSortMode.SEVERITY));
 
                 sortBinderMock.verify(
-                    () -> SortSelectionBinder.storeSort(sortOf(HazardSortMode.SEVERITY)));
+                    () -> SortSelectionBinder.storeSort(
+                        SCOPE_ID, sortOf(HazardSortMode.SEVERITY)));
             }
         }
 
@@ -214,14 +215,16 @@ final class FilterSelectionBinderTest {
         void buildPickerRanksTheListByTheVocabularyTheCallersPickerCarries() {
             // The read half of the same tie: the stored sort is resolved against the vocabulary
             // that arrived bundled with the items, not against one this class names, which is what
-            // lets two layers holding different vocabularies share the one binder.
+            // lets two layers holding different vocabularies share the one binder. Read under the
+            // scope the item pick uses, so a layer cannot bind its filter and its sort to different
+            // slots.
             try (var stringsMock = mockStatic(KmuStrings.class)) {
 
                 stubLabels(stringsMock);
                 buildPicker();
 
                 sortBinderMock.verify(
-                    () -> SortSelectionBinder.resolveStoredSort(MODES));
+                    () -> SortSelectionBinder.resolveStoredSort(SCOPE_ID, MODES));
             }
         }
 
@@ -243,7 +246,7 @@ final class FilterSelectionBinderTest {
                     .isEmpty();
 
                 sortBinderMock.verify(
-                    () -> SortSelectionBinder.resolveStoredSort(any()),
+                    () -> SortSelectionBinder.resolveStoredSort(any(), any()),
                     never());
             }
         }

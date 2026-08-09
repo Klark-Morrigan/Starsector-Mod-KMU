@@ -20,10 +20,11 @@ import java.util.List;
  * putting it here keeps a calling layer's signature free of every slot the picker touches.
  *
  * <p>It builds rather than only binds because the picker's three ties resolve at one point: the
- * item pick is {@link FilterSelection}'s and is the only one scoped, while the other two route to
- * {@link SortSelectionBinder} and {@link ColumnSelectionBinder} unchanged. A layer that composed
- * the picker itself would have to name all three, which is exactly the knowledge the binders exist
- * to hold.
+ * item pick is {@link FilterSelection}'s and the sort is {@link SortSelectionBinder}'s, both under
+ * the one scope this class holds, while the column count routes to {@link ColumnSelectionBinder}
+ * unscoped - a layout preference over a list means the same thing under every scope. A layer that
+ * composed the picker itself would have to name all three, which is exactly the knowledge the
+ * binders exist to hold.
  *
  * <p>It is also where the wildcard a layer's picker travels under is captured, once for the mod
  * rather than in each layer: every picker-owning layer would otherwise write the same capture
@@ -83,16 +84,17 @@ public final class FilterSelectionBinder {
         return ListPickerControl.buildPicker(
             picker.items(),
             FilterSelection.getSelectedIdOf(scopeId),
-            SortSelectionBinder.resolveStoredSort(picker.sortModes()),
+            SortSelectionBinder.resolveStoredSort(scopeId, picker.sortModes()),
             columns,
             KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION),
             trailingControls,
             new ScopedPickerStore(scopeId));
     }
 
-    // The three slots one picker writes into, bound to the scope its item pick belongs to. A value
-    // rather than three loose callbacks so the scope is captured once, where it is read, rather
-    // than threaded into each write separately.
+    // The three slots one picker writes into, bound to the scope its item and sort picks belong to.
+    // A value rather than three loose callbacks so the scope is captured once, where it is read,
+    // rather than threaded into each write separately - which is also what keeps a layer's filter
+    // and its sort landing in slots of the one scope.
     private record ScopedPickerStore(String scopeId) implements ListPickerStore {
 
         @Override
@@ -112,7 +114,7 @@ public final class FilterSelectionBinder {
 
         @Override
         public void storeSortPick(ListSort<?> sort) {
-            SortSelectionBinder.storeSort(sort);
+            SortSelectionBinder.storeSort(scopeId, sort);
         }
     }
 }

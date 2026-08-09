@@ -35,12 +35,12 @@ import java.util.function.Predicate;
 public final class FilterSelection {
     
     // Per-scope key prefix; the scope's own id is appended to give one save-serialised slot per
-    // scope. The prefix reads as the political map's because this state shipped alongside it,
-    // before the framework was carved out. A key is a save-serialised identity, not a description
-    // of where the class lives: a renamed prefix reads as absent and silently drops every existing
-    // save's filter choice back to none, so it stays frozen in its original spelling (as are the
-    // scope ids appended to it).
-    private static final String SELECTED_ID_KEY_PREFIX = "$kmu_political_filter_bloc_";
+    // scope. The prefix is layer-neutral because every map layer's picker stores through this one
+    // class - a prefix naming one layer would have every other layer persisting its selection under
+    // that layer's key. A key is a save-serialised identity, not a description of where the class
+    // lives: a renamed prefix reads as absent and silently drops every existing save's filter choice
+    // back to none, so it stays frozen in this spelling (as are the scope ids appended to it).
+    private static final String SELECTED_ID_KEY_PREFIX = "$kmu_map_filter_bloc_";
 
     private FilterSelection() {
     }

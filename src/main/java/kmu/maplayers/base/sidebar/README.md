@@ -206,20 +206,29 @@ The picker itself is not here at all - `ListPickerControl`, `SelectableListItem`
 nothing about a map. The split is that **KMLib owns the model, the composition, and the resolution
 rule; KMU owns where the answer is kept.**
 
-The keys are why the split falls where it does. They are the frozen `$kmu_political_*` spellings
-below - save state this mod cannot move and a shared library has no business holding.
+The keys are why the split falls where it does. They are the frozen `$kmu_map_*` spellings below -
+save state this mod cannot move and a shared library has no business holding.
 
-`FilterSelection` holds one selected id per opaque scope, so each scope keeps its own choice and
-switching scopes neither clears nor cross-reads another's. Beyond the read, pick, and clear it
-heals a stored id a caller-supplied predicate no longer accepts, for a save whose selection stopped
-being on offer between sessions. Binding that predicate to a live source of what is selectable
-*now* is the reading layer's, since the source is exactly the knowledge these classes refuse.
+`FilterSelection` and `SortSelection` both hold their answer per opaque scope, so each scope keeps
+its own and switching scopes neither clears nor cross-reads another's. The filter is scoped because
+an id read under the wrong scope names nothing; the sort because scopes rank their rows by different
+vocabularies, so a shared mode key would resolve against nothing under half of them and make every
+switch look like a reset. `ColumnSelection` stays one shared slot: how many columns a list wraps
+across is a layout preference, not a statement about what the list holds, so it means the same thing
+under every scope.
+
+Beyond the read, pick, and clear, `FilterSelection` heals a stored id a caller-supplied predicate no
+longer accepts, for a save whose selection stopped being on offer between sessions. Binding that
+predicate to a live source of what is selectable *now* is the reading layer's, since the source is
+exactly the knowledge these classes refuse.
 
 `FilterSelectionBinder` is the one binder that also builds, because the picker's three ties resolve
-at one point: it reads the scope's spotlighted id and the stored sort on the way in, resolves the
-columns caption out of this mod's strings, and routes each of the picker's three reported picks to
-the slot that keeps it - the item pick to `FilterSelection` under that scope, the other two through
-the binders beside it. A layer that composed the picker itself would have to name all three slots,
+at one point: it reads the scope's spotlighted id and the scope's stored sort on the way in,
+resolves the columns caption out of this mod's strings, and routes each of the picker's three
+reported picks to the slot that keeps it - the item pick to `FilterSelection` under that scope, the
+other two through the binders beside it, the sort under that same scope. One scope covers both
+answers, so a layer cannot bind its filter and its sort to different slots. A layer that composed
+the picker itself would have to name all three slots,
 which is exactly the knowledge these binders exist to hold, so a calling layer hands over its
 `ListPicker`, its column count, and whatever it pairs beside the sort selector, and names no store
 at all.
@@ -237,14 +246,15 @@ notes](../../../../../../../docs/dev/caching.md) own that model in full.
 
 | Key | Holds |
 | --- | --- |
-| `$kmu_political_sort_mode` | the picked sort mode's key, absent until first picked |
-| `$kmu_political_sort_direction` | the picked direction (`asc` / `desc`), absent until first flipped |
-| `$kmu_political_list_columns` | the picked column count's key, absent until first picked |
-| `$kmu_political_filter_bloc_<scope>` | one scope's filtered-to id, absent while un-filtered |
+| `$kmu_map_sort_mode_<scope>` | one scope's picked sort mode key, absent until first picked |
+| `$kmu_map_sort_direction_<scope>` | one scope's picked direction (`asc` / `desc`), absent until first flipped |
+| `$kmu_map_list_columns` | the picked column count's key, absent until first picked |
+| `$kmu_map_filter_bloc_<scope>` | one scope's filtered-to id, absent while un-filtered |
 
-The keys read as the political map's because this state shipped alongside it, before the framework
-was carved out; like the fold keys they are save-serialised identities and frozen, so renaming one
-would reset every existing save to the default.
+The prefixes are layer-neutral because every map layer's picker stores through these classes - one
+naming a layer would have every other layer persisting under it. Like the fold keys they are
+save-serialised identities and frozen, so renaming one would reset every existing save to the
+default.
 
 The sort and column stores raise no refresh: both values are read on the per-frame body build, so
 the next frame re-sorts or re-wraps on its own, and nothing on the map depends on either.
