@@ -17,11 +17,12 @@ import java.util.Set;
  * unfilled extensions, this paints claims as the whole territory, so a claimed system fills solid
  * exactly as a held one does on the faction view.
  *
- * <p>Under a spotlight it recedes the sector the same way the held layers do: the selected bloc's
- * claims take its one spotlight key, so they fuse into a single bordered territory drawn at full
- * strength, while every rival's claim keeps its plain bloc holder for the style layer to mute and
- * desaturate. The Claims picker lists exactly the blocs that claim something, so a pick always has
- * territory here to spotlight.
+ * <p>Under a spotlight it recedes the sector the same way the held layers do, though by a smaller
+ * change than theirs. A claimant's systems already share one key and so already trace one border;
+ * moving them to the spotlight key is a one-for-one swap that regroups nothing. What it buys is the
+ * answer to {@code isSpotlitBloc}, which is what spares the pick the recede that then mutes and
+ * desaturates every other claimant. The Claims picker lists exactly the blocs that claim something,
+ * so a pick always has territory here to hold at full strength.
  *
  * <p>The resolution carries no fill exceptions either way. A system has exactly one claimant, so
  * there is no dominated-but-present state to hatch and nothing to leave empty - which lets the fill

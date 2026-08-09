@@ -14,10 +14,15 @@ import java.util.Map;
  * bloc's claims carry its one synthetic spotlight key, every rival's claim keeps its own.
  *
  * <p>The claim counterpart to {@link FilteredPolitics}, standing to {@link SectorClaims} exactly as
- * that class stands to {@link SectorPolitics} - the same resolve, answered under a spotlight. A
- * rekeyed claim fuses into the bloc's single bordered territory and draws at full strength; a claim
- * left on its plain bloc key is what the style layer reads to mute and desaturate it, so a claim
- * always shares the fate of the territory it belongs to.
+ * that class stands to {@link SectorPolitics} - the same resolve, answered under a spotlight. The
+ * key is what the style layer reads: a rekeyed claim draws at full strength, a claim left on its
+ * plain bloc key mutes and desaturates, so a claim always shares the fate of the territory it
+ * belongs to.
+ *
+ * <p>How much the rekey moves depends on the caller. Where claims extend held dominance it is a
+ * true fusion - the bloc's spotlight footprint spans systems it does not hold, which its claims
+ * could never join under their own bloc key. Where claims are the whole layer the claimant's
+ * systems already share a key, so the swap regroups nothing and buys only the spotlit answer.
  *
  * <p>Both claim-reading holder providers resolve through this, whether claims are the whole layer
  * or an unfilled extension of held dominance, so the two cannot drift into spotlighting the same

@@ -66,8 +66,13 @@ Notes on each:
   There is no alliance grouping here. The spotlight list is the claimants, not the colony holders,
   and it ranks them by claim count and market size rather than by domination - a faction that claims
   territory while holding no colony anywhere still paints here, so it is still worth spotlighting.
-  Hovering a system explains its claim: who holds it, who contests it, who is present but can never
-  claim it, and whether the hold was won on market strength or imposed by decree.
+  A claimant's systems already share one border and one colour with no filter on, so what
+  spotlighting adds here is the contrast: the picked claimant keeps its full strength while every
+  other claimant fades into the muted background. Nothing hatches: a system has exactly one
+  claimant, so no claim can be contested the way a held system can. Hovering a system explains its
+  claim: who holds it, who
+  contests it, who is present but can never claim it, and whether the hold was won on market
+  strength or imposed by decree.
 
 ## Claim extensions
 
