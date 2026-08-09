@@ -58,11 +58,13 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     public static final IntelSidebarHost INSTANCE = new IntelSidebarHost(new VanillaIntelScreenView());
 
     // How tall this screen's tab band stands: this sidebar overlays the visor under the vanilla map
-    // toggles and reads tighter than the on-map one, so it crowds the preview less. Content-space - the
-    // panel strokes its own top border above the band, so the drawn strip stands the border width taller.
-    // Package-private so the departure is checkable without a live sector, which the style built from it
-    // needs to resolve its colours.
-    static final float HEADER_BAND_HEIGHT = 17f;
+    // toggles and reads tighter than the on-map one, so it crowds the preview less. Eighteen against the
+    // vanilla row's nineteen, and the buttons drawn from it stand the full nineteen - they reach a hairline
+    // below the band to lay their bottom border on the body's own, so the band gives up that pixel to the
+    // panel beneath it while the button keeps it. Content-space - the panel strokes its own top border
+    // above the band, so the drawn strip stands the border width taller. Package-private so the departure
+    // is checkable without a live sector, which the style built from it needs to resolve its colours.
+    static final float HEADER_BAND_HEIGHT = 18f;
 
     // How close the box's bottom must sit to the visor's bottom to count as flush, in pixels: the box lands
     // on round(visor.y) when its content fills the visor's height, so a one-pixel tolerance absorbs that

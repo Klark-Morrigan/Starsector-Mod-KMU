@@ -169,9 +169,13 @@ public final class KmuMapLayerSettings {
     private static final int DEFAULT_SIDEBAR_PADDING_BOTTOM = 12;
 
     // Intel overlay top padding from the visor's top edge, pixels: clears the vanilla
-    // Starscape / fuel-range toggles at the top of the intel map by default. Mirrors the CSV
-    // row's defaultValue.
-    private static final int DEFAULT_INTEL_SIDEBAR_PADDING_TOP = 40;
+    // Starscape / fuel-range toggles at the top of the intel map by default, leaving the same
+    // three-pixel channel those toggles keep between themselves - the row below them reads as
+    // another row of that set rather than as a box parked under them. Measured against the real
+    // row rather than added up from it: the vanilla toggles' own reach past their band is theirs
+    // to know, so the offset that lands our row one channel below theirs is a read, not a sum.
+    // Mirrors the CSV row's defaultValue.
+    private static final int DEFAULT_INTEL_SIDEBAR_PADDING_TOP = 21;
 
     // A one-pixel outer border by default; 0 hides it. Mirrors the CSV row's defaultValue.
     private static final int DEFAULT_SIDEBAR_BORDER_WIDTH = 1;
@@ -508,7 +512,7 @@ public final class KmuMapLayerSettings {
     /**
      * @return how far down from the top edge of the intel screen's map preview (the "visor") the
      *         overlay sidebar box sits, in pixels, clearing the vanilla Starscape and fuel-range
-     *         toggles at the top of that map; 40 by default. The box sits flush against the visor's
+     *         toggles at the top of that map; 21 by default. The box sits flush against the visor's
      *         left edge and its height caps to the visor's bottom, so only this top offset is exposed
      */
     public static int getMapIntelSidebarPaddingTop() {

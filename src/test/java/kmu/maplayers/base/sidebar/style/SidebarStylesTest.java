@@ -276,15 +276,16 @@ final class SidebarStylesTest {
 
         @Test
         void buildRaisedButtonTabStyleLettersTheRowInVanillasPixelFaceAtItsAtlasSize() {
-            // The face the intel screen's own map toggles are lettered in, and at the size its atlas was
-            // drawn at: a pixel face is crisp at one size only, so a row copying those buttons scaled to
-            // any other would read as a blurred imitation of the row beside it.
+            // The face the intel screen's own map toggles are lettered in, and at the size its atlas draws
+            // 1:1 at - the nine its line height states, not the ten its name carries. A pixel face is crisp
+            // at one size only, so a row copying those buttons at any other would read as a blurred
+            // imitation of the row beside it.
             var face = SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).face();
 
             assertThat(face.font())
                 .isEqualTo(StarsectorFont.VANILLA_VICTOR_10);
             assertThat(face.size())
-                .isEqualTo(10d);
+                .isEqualTo(9d);
         }
 
         @Test

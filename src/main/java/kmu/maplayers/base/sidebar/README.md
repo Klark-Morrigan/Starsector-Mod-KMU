@@ -382,9 +382,14 @@ fade between two looks had never had to carry alpha; `TabLook.computeBlendedLook
 four channels through `Colours.blendTowards`, which is a no-op on the strip only for as long as
 `VanillaTabFills` keeps returning opaque shades.
 
-Hovering is a look rather than a lift because a tab lands on one shade whatever it was showing
-before, which no fraction applied to each tab's own fill could produce. A tab travels onto that shade
-rather than switching to it, paced by `HoverFade.DEFAULT_DURATIONS`.
+What a pointer does is the chrome's own rule, stated on the palette as a `TabHover`. A strip's tabs
+converge: both the resting and the shown tab land on one named shade, which no fraction applied to each
+tab's own fill could produce, and which is what lets a row marking selection by fill alone still light
+whatever the pointer is on. A button row's do not: the engine adds plain white light to whatever a button
+already wears, so the shown button and an unshown one light by the same amount from different places and
+stay apart - an unpainted interior keeps its own alpha through it, so an unshown button answers the
+pointer with its label alone. Either way a tab travels onto its lit state rather than switching to it,
+paced by `HoverFade.DEFAULT_DURATIONS`.
 
 A press rides the `clicked` wash up over whatever look the tab has settled on and **holds there until
 the button comes up**, the way a vanilla tab does: a press is an act the player is still making, so
@@ -438,8 +443,8 @@ rather than by atlas basename.
 The strip is lettered in `VANILLA_ORBITRON_20AA` scaled to the tab size, the face the vanilla tabs it
 sits beneath are set in; the buttons in `VANILLA_VICTOR_10` at that atlas's own size, the pixel face
 the intel screen's map toggles are set in. A pixel face is crisp at one size only, so the button row
-takes its native 10 rather than the strip's 15 - scaled, it would read as a blurred copy of the row it
-was drawn to match. Its capitals come with the atlas: every glyph sits on the same 5x5 cell with
+takes its native 9 - the line height its atlas states, not the 10 its name carries - rather than the
+strip's 15; scaled, it would read as a blurred copy of the row it was drawn to match. Its capitals come with the atlas: every glyph sits on the same 5x5 cell with
 lowercase included and no descenders, so a mixed-case label needs no upper-casing pass and the width
 it is snapped to is the width it draws at.
 
@@ -452,8 +457,9 @@ copy falls to one side, announcing a light source the flat chrome has none of, a
 edge as bare as it found it. `TabLabelRenderer` lays the whole group down once per side and then in
 place, shifting the box the runs centre in rather than each draw site, so the key's underline travels
 with the text it marks; the runs are separate single-colour drawables, which is what lets one resolve
-serve every pass, and the ring's colour is set once for all four rather than per copy - setting a
-drawable's colour is what costs it a rebuild.
+serve every pass and what makes their colour a live draw-time knob rather than something baked into a
+run. The ring's shade is set once for all four copies, and the key's underline reads its colour off the
+key glyph it marks rather than off the style, so no copy can be laid down in two colours.
 
 Where a tab says which key it answers to is `TabShortcutText`'s call, following the engine's rule: a
 single-glyph key whose letter already stands in the label lights that letter where it is, and only a
