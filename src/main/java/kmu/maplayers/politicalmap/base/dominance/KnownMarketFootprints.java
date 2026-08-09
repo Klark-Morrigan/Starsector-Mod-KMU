@@ -298,45 +298,47 @@ public final class KnownMarketFootprints {
         return (int) Math.round(contribution * DOMINANCE_WEIGHT_SCALE);
     }
 
-    // The system's markets that count, in the economy's own order, one per place and owner.
-    // One definition of "which markets are in play here" for both reads above, so the totals
-    // and the parts can never be folded from different sets of markets.
-    //
-    // The per-place resolution is what stops a colony being banked twice. A mod that
-    // supersedes a market by adding its own beside vanilla's rather than replacing it leaves
-    // two markets on one station entity, and a weight summed over both reads their owner as
-    // holding twice what it holds. Vanilla's own inhabited-systems filter never trips on this
-    // because it ORs presence rather than summing weight, so the duplicate has to be resolved
-    // here instead of being inherited from the economy walk.
+    // The colonies the economy lists in the system, in the order it lists them. What every weighed
+    // read walks, so the totals and the parts can never be folded from different sets of markets.
     private static List<MarketAPI> readCountedColonies(
             SectorAPI sector,
             StarSystemAPI system,
             boolean shouldIncludeUndiscoveredMarkets) {
 
-        var colonies = new ArrayList<MarketAPI>();
-        for (var market : sector.getEconomy().getMarkets(system)) {
-            if (Markets.isCountedAsColony(market, shouldIncludeUndiscoveredMarkets)) {
-                colonies.add(market);
-            }
-        }
-        return Markets.readLargestMarketsPerFaction(colonies);
+        return filterCountedColonies(
+            sector.getEconomy().getMarkets(system),
+            shouldIncludeUndiscoveredMarkets);
     }
 
-    // The system's colonies the economy does not list, one per place and owner - what the walk
-    // above cannot reach, and nothing it can, the widened read answering only what the economy
-    // leaves out.
-    //
-    // The same colony filter and the same per-place resolution as the weighed walk, so both sets
-    // are drawn under one definition of a colony that counts here. Stated again rather than left to
-    // the widened read's own sameness test, because the two walks disagreeing on which markets are
-    // colonies is the one way this read could put a colony on the box twice or leave it off.
+    // The colonies present that the economy does not list - what the walk above cannot reach, and
+    // nothing it can, the widened read answering only what the economy leaves out.
     private static List<MarketAPI> readUnweighedColonies(
             SectorAPI sector,
             StarSystemAPI system,
             boolean shouldIncludeUndiscoveredMarkets) {
 
+        return filterCountedColonies(
+            StarSystems.readMarketsUnlistedByEconomy(sector, system),
+            shouldIncludeUndiscoveredMarkets);
+    }
+
+    // Which of the markets handed over count as colonies here, one per place and owner. The one
+    // definition, shared by both walks rather than written out beside each: what a colony is cannot
+    // be allowed to differ between the set that is weighed and the set that is merely named, or a
+    // colony admitted by one and refused by the other would reach the box twice or not at all.
+    //
+    // The per-place resolution is what stops a colony being banked twice. A mod that supersedes a
+    // market by adding its own beside vanilla's rather than replacing it leaves two markets on one
+    // station entity, and a weight summed over both reads their owner as holding twice what it
+    // holds. Vanilla's own inhabited-systems filter never trips on this because it ORs presence
+    // rather than summing weight, so the duplicate has to be resolved here instead of being
+    // inherited from the walk.
+    private static List<MarketAPI> filterCountedColonies(
+            List<MarketAPI> markets,
+            boolean shouldIncludeUndiscoveredMarkets) {
+
         var colonies = new ArrayList<MarketAPI>();
-        for (var market : StarSystems.readMarketsUnlistedByEconomy(sector, system)) {
+        for (var market : markets) {
             if (Markets.isCountedAsColony(market, shouldIncludeUndiscoveredMarkets)) {
                 colonies.add(market);
             }

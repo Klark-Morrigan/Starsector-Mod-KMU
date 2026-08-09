@@ -1204,6 +1204,30 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
+        void readUnweighedColoniesByFactionKeepsAFactionsColoniesInEntityOrder() {
+            // The widened read answers in the system's own entity order and this carries it through
+            // rather than imposing one of its own - a caller wanting a ranking sorts, and cannot
+            // sort back to an order that was never there. Named against the alphabet on purpose, so
+            // the case cannot pass on an ordering it did not ask for.
+            var independent = buildFaction("independent");
+            var sector = buildSectorWith("galatia");
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                withName(buildVisibleMarket(independent, 3), "Tibicena"),
+                withName(buildVisibleMarket(independent, 4), "Galatia Academy"));
+
+            assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
+                    sector,
+                    buildOnlySystem(sector),
+                    false)
+                .get("independent"))
+                .containsExactly(
+                    new UnweighedColony("Tibicena"),
+                    new UnweighedColony("Galatia Academy"));
+        }
+
+        @Test
         void readUnweighedColoniesByFactionRefusesAMarketThatIsNoColony() {
             // The same filter both walks read: an uninhabited planet's condition-only placeholder is
             // nobody's holding, and one reaching the box would name a colony that does not exist.
