@@ -22,9 +22,6 @@ public final class SortSelectionBinder {
      * scope's stored keys off {@link SortSelection}, resolved by the model, so a fresh save reads the
      * caller's default mode and a save with no stored direction reads the stored mode's own default.
      *
-     * <p>The scope id is the same one the caller's item pick is kept under, not a second parallel
-     * notion, so a caller cannot bind its filter and its sort to different slots.
-     *
      * @param <T>       the list item type the modes rank
      * @param scopeId   the scope whose stored sort is read
      * @param sortModes the caller's sort vocabulary - the set a stored key resolves against, and the

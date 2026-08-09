@@ -93,8 +93,7 @@ public final class FilterSelectionBinder {
 
     // The three slots one picker writes into, bound to the scope its item and sort picks belong to.
     // A value rather than three loose callbacks so the scope is captured once, where it is read,
-    // rather than threaded into each write separately - which is also what keeps a layer's filter
-    // and its sort landing in slots of the one scope.
+    // rather than threaded into each write separately.
     private record ScopedPickerStore(String scopeId) implements ListPickerStore {
 
         @Override

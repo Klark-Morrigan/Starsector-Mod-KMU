@@ -25,6 +25,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -47,6 +48,10 @@ final class PoliticalMapLayerTest {
     // Sentinels standing in for the two view-agnostic pieces, so the assertions read the composition
     // order without depending on the real shared controls or selector contents. Their tone is
     // arbitrary - composition order is what is under test, not what colour a control draws in.
+    // The id the one bloc-offering view registers under, and the scope the picker must therefore be
+    // built for - shared between the registration helper and the assertion so the two cannot drift.
+    private static final String PICKER_VIEW_ID = "picker-view";
+
     private static final Color MARKER_COLOUR = Color.WHITE;
     private static final ControlSpec SHARED_MARKER = buildMarker("shared");
     private static final ControlSpec SELECTOR_MARKER = buildMarker("selector");
@@ -73,11 +78,14 @@ final class PoliticalMapLayerTest {
 
         @Test
         void getBodyControlsAppendsTheSelectedViewsControlsAfterTheSelector() {
-            when(viewWithControlsMock.getViewBodyControls()).thenReturn(List.of(VIEW_MARKER));
+
+            when(viewWithControlsMock.getViewBodyControls())
+                .thenReturn(List.of(VIEW_MARKER));
+
             registerDefaultView(viewWithControlsMock);
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class);
-                    MockedStatic<PoliticalMapBodyControls> controlsMock =
-                        mockStatic(PoliticalMapBodyControls.class)) {
+
+            try (var globalMock = mockStatic(Global.class);
+                    var controlsMock = mockStatic(PoliticalMapBodyControls.class)) {
 
                 // No sector resolves the default view as selected, so the registered view paints.
                 globalMock
@@ -104,13 +112,15 @@ final class PoliticalMapLayerTest {
 
         @Test
         void getBodyControlsPlacesTheSpotlightPickerBetweenTheSelectorAndTheViewControls() {
-            when(viewWithControlsMock.getViewBodyControls()).thenReturn(List.of(VIEW_MARKER));
+
+            when(viewWithControlsMock.getViewBodyControls())
+                .thenReturn(List.of(VIEW_MARKER));
+
             registerDefaultView(viewWithControlsMock);
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class);
-                    MockedStatic<PoliticalMapBodyControls> controlsMock =
-                        mockStatic(PoliticalMapBodyControls.class);
-                    MockedStatic<FilterSelectionBinder> pickerMock =
-                        mockStatic(FilterSelectionBinder.class)) {
+
+            try (var globalMock = mockStatic(Global.class);
+                    var controlsMock = mockStatic(PoliticalMapBodyControls.class);
+                    var pickerMock = mockStatic(FilterSelectionBinder.class)) {
 
                 globalMock
                     .when(Global::getSector)
@@ -151,9 +161,9 @@ final class PoliticalMapLayerTest {
 
             registerDefaultView(viewWithoutControlsMock);
 
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class);
-                    MockedStatic<PoliticalMapBodyControls> controlsMock =
-                        mockStatic(PoliticalMapBodyControls.class)) {
+            try (var globalMock = mockStatic(Global.class);
+                    var controlsMock = mockStatic(PoliticalMapBodyControls.class)) {
+
                 globalMock
                     .when(Global::getSector)
                     .thenReturn(null);
@@ -181,9 +191,9 @@ final class PoliticalMapLayerTest {
             // The off sentinel is stored, so no view is selected; even a view that has controls
             // contributes none, since the tab is showing but the map is dark.
             registerDefaultView(viewWithControlsMock);
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class);
-                    MockedStatic<PoliticalMapBodyControls> controlsMock =
-                        mockStatic(PoliticalMapBodyControls.class)) {
+
+            try (var globalMock = mockStatic(Global.class);
+                    var controlsMock = mockStatic(PoliticalMapBodyControls.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
                 var sectorMock = mock(SectorAPI.class);
@@ -216,9 +226,9 @@ final class PoliticalMapLayerTest {
             // Mute and Desaturate checkboxes - so the "rest of the sector" knobs read beside the
             // metric. Built for real (no picker stub), since the pairing is the thing under test.
             registerViewWithOneBloc(viewWithoutControlsMock);
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class);
-                    MockedStatic<PoliticalMapBodyControls> controlsMock =
-                        mockStatic(PoliticalMapBodyControls.class)) {
+
+            try (var globalMock = mockStatic(Global.class);
+                    var controlsMock = mockStatic(PoliticalMapBodyControls.class)) {
 
                 globalMock
                     .when(Global::getSector)
@@ -253,6 +263,42 @@ final class PoliticalMapLayerTest {
                     .isInstanceOf(ControlSpec.Checkbox.class);
             }
         }
+
+        @Test
+        void getBodyControlsScopesThePickerToTheSelectedViewsId() {
+            // The scope this layer hands over is what makes each view remember its own spotlight and
+            // its own sort: the stores partition by whatever id they are given, so a layer passing a
+            // constant would still read and write consistently and every store-level test would stay
+            // green while all three views shared one slot. Pinned here because this is the only place
+            // the id is chosen.
+            registerViewWithOneBloc(viewWithoutControlsMock);
+            try (var globalMock = mockStatic(Global.class);
+                    var controlsMock = mockStatic(PoliticalMapBodyControls.class);
+                    var pickerMock = mockStatic(FilterSelectionBinder.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                // The recede paired with the sort selector reads the engine's text tone off the live
+                // settings, so even a stubbed picker needs a settings proxy that answers a colour.
+                var settingsMock = buildSettingsAnsweringColours();
+                globalMock
+                    .when(Global::getSettings)
+                    .thenReturn(settingsMock);
+
+                stubSharedControlsAndSelector(controlsMock);
+
+                PoliticalMapLayer.INSTANCE.getBodyControls();
+
+                pickerMock.verify(
+                    () -> FilterSelectionBinder.buildPicker(
+                        eq(PICKER_VIEW_ID),
+                        any(),
+                        any(),
+                        any()));
+            }
+        }
     }
 
     // Registers a view offering one spotlightable bloc, under an id and revision of its own so the
@@ -262,7 +308,7 @@ final class PoliticalMapLayerTest {
     private static void registerViewWithOneBloc(PoliticalMapView view) {
 
         when(view.getId())
-            .thenReturn("picker-view");
+            .thenReturn(PICKER_VIEW_ID);
 
         when(view.getContentRevision())
             .thenReturn(1);

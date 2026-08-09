@@ -82,9 +82,10 @@ whole territory and the receded backdrop in neighbouring sentences of the same f
 one of those words was available. Say what is meant instead.
 
 The handful of files that may still say one of the political words are named in `build.gradle`
-rather than marked in place, so an exemption is something a reviewer reads in the diff. All of them name the political
-side's own identifiers - the frozen `$kmu_political_filter_bloc*` sector-memory keys, and the
-political class names the geometry viewer lists as pipeline stages it does not exercise.
+rather than marked in place, so an exemption is something a reviewer reads in the diff. All of them
+name an identifier rather than make a claim about the framework - the `$kmu_map_filter_bloc*`
+sector-memory keys, whose spelling is fixed by every save already holding it, and the political
+class names the geometry viewer lists as pipeline stages it does not exercise.
 
 Two words that are **not** synonyms, despite looking alike:
 

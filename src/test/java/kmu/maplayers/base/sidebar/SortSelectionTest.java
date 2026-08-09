@@ -6,7 +6,6 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

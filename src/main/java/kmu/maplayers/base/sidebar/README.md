@@ -228,10 +228,9 @@ resolves the columns caption out of this mod's strings, and routes each of the p
 reported picks to the slot that keeps it - the item pick to `FilterSelection` under that scope, the
 other two through the binders beside it, the sort under that same scope. One scope covers both
 answers, so a layer cannot bind its filter and its sort to different slots. A layer that composed
-the picker itself would have to name all three slots,
-which is exactly the knowledge these binders exist to hold, so a calling layer hands over its
-`ListPicker`, its column count, and whatever it pairs beside the sort selector, and names no store
-at all.
+the picker itself would have to name all three slots, which is exactly the knowledge these binders
+exist to hold, so a calling layer hands over its `ListPicker`, its column count, and whatever it
+pairs beside the sort selector, and names no store at all.
 
 The picker arrives wildcarded (`ListPicker<?>`), because what a layer ranks its rows by is that
 layer's own, and this is where the wildcard is captured - once for the mod, rather than in each
