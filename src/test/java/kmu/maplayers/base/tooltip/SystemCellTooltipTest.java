@@ -47,13 +47,6 @@ import static org.mockito.Mockito.when;
  */
 final class SystemCellTooltipTest {
 
-    // The two names vanilla answers for one system, and the title the box is meant to draw from them.
-    // A system named after its star is used rather than a plain one, so a header taking the composed
-    // name straight fails here instead of agreeing with the display read by coincidence.
-    private static final String COMPOSED_SYSTEM_NAME = "Penelope's Star Star System";
-    private static final String SYSTEM_NAME_PROPER = "Penelope's Star";
-    private static final String SYSTEM_TITLE = "Penelope's Star System";
-
     // What a box taking part in the detail toggle offers the player, in that box's own words. Stated as
     // something no layer says, since what a counterpart holds is the layer's to name and the shape under
     // test only puts it in a sentence.
@@ -178,12 +171,14 @@ final class SystemCellTooltipTest {
 
             // The name a surface titles a system by rather than vanilla's raw composition, which
             // stutters over a system named after its star - a stutter the box wears at its largest.
+            // The hovered system is named "Penelope's Star Star System"; a header taking that
+            // straight fails here rather than agreeing with the display read by coincidence.
             //
             // The title says it is a heading and nothing about how one looks - which face that becomes is
             // the box's typography, asserted below.
             assertThat(readRow(sections, TITLE_SECTION, HEADER_ROW))
                 .isEqualTo(TooltipRow
-                    .createCentredRow(new TextSpan(SYSTEM_TITLE, HIGHLIGHT))
+                    .createCentredRow(new TextSpan("Penelope's Star System", HIGHLIGHT))
                     .readsAs(TooltipLineStyle.HEADER));
         }
 
@@ -526,10 +521,13 @@ final class SystemCellTooltipTest {
 
         var systemMock = mock(StarSystemAPI.class);
 
+        // The two names vanilla answers for one system: the composed one every surface reads, and the
+        // base name under it. A system named after its star, so the pair carry the stutter the box's
+        // title is meant to drop.
         when(systemMock.getName())
-            .thenReturn(COMPOSED_SYSTEM_NAME);
+            .thenReturn("Penelope's Star Star System");
         when(systemMock.getNameWithNoType())
-            .thenReturn(SYSTEM_NAME_PROPER);
+            .thenReturn("Penelope's Star");
 
         return systemMock;
     }
