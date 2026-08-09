@@ -23,19 +23,21 @@ class HolderGroupingTest {
         @Test
         void mapsEveryFactionToItself() {
             assertThat(HolderGrouping.identity().resolveBlocId("hegemony"))
-                    .isEqualTo("hegemony");
+                .isEqualTo("hegemony");
         }
 
         @Test
         void coloursEveryBlocAsItself() {
             assertThat(HolderGrouping.identity().resolveColourFactionId("hegemony"))
-                    .isEqualTo("hegemony");
+                .isEqualTo("hegemony");
         }
 
         @Test
         void treatsNoBlocAsAnAlliance() {
-            assertThat(HolderGrouping.identity().isAlliance("hegemony")).isFalse();
-            assertThat(HolderGrouping.identity().resolveAllianceName("hegemony")).isNull();
+            assertThat(HolderGrouping.identity().isAlliance("hegemony"))
+                .isFalse();
+            assertThat(HolderGrouping.identity().resolveAllianceName("hegemony"))
+                .isNull();
         }
     }
 
@@ -44,12 +46,14 @@ class HolderGroupingTest {
 
         @Test
         void mapsAnAlliedFactionToItsBloc() {
-            assertThat(buildAllianceGrouping().resolveBlocId("hegemony")).isEqualTo("alliance-1");
+            assertThat(buildAllianceGrouping().resolveBlocId("hegemony"))
+                .isEqualTo("alliance-1");
         }
 
         @Test
         void leavesAnOutsiderAsItsOwnBloc() {
-            assertThat(buildAllianceGrouping().resolveBlocId("tritachyon")).isEqualTo("tritachyon");
+            assertThat(buildAllianceGrouping().resolveBlocId("tritachyon"))
+                .isEqualTo("tritachyon");
         }
     }
 
@@ -59,13 +63,13 @@ class HolderGroupingTest {
         @Test
         void namesTheAlliancesDominantMember() {
             assertThat(buildAllianceGrouping().resolveColourFactionId("alliance-1"))
-                    .isEqualTo("hegemony");
+                .isEqualTo("hegemony");
         }
 
         @Test
         void coloursAFactionBlocAsItself() {
             assertThat(buildAllianceGrouping().resolveColourFactionId("tritachyon"))
-                    .isEqualTo("tritachyon");
+                .isEqualTo("tritachyon");
         }
     }
 
@@ -75,12 +79,13 @@ class HolderGroupingTest {
         @Test
         void carriesTheAllianceName() {
             assertThat(buildAllianceGrouping().resolveAllianceName("alliance-1"))
-                    .isEqualTo("Allied Powers");
+                .isEqualTo("Allied Powers");
         }
 
         @Test
         void returnsNullForAFactionBloc() {
-            assertThat(buildAllianceGrouping().resolveAllianceName("tritachyon")).isNull();
+            assertThat(buildAllianceGrouping().resolveAllianceName("tritachyon"))
+                .isNull();
         }
     }
 
@@ -89,12 +94,45 @@ class HolderGroupingTest {
 
         @Test
         void isTrueForAnAllianceBloc() {
-            assertThat(buildAllianceGrouping().isAlliance("alliance-1")).isTrue();
+            assertThat(buildAllianceGrouping().isAlliance("alliance-1"))
+                .isTrue();
         }
 
         @Test
         void isFalseForAFactionBloc() {
-            assertThat(buildAllianceGrouping().isAlliance("tritachyon")).isFalse();
+            assertThat(buildAllianceGrouping().isAlliance("tritachyon"))
+                .isFalse();
+        }
+    }
+
+    @Nested
+    class HasAnyAlliance {
+
+        @Test
+        void isTrueWhenTheGroupingHoldsAnAlliance() {
+            assertThat(buildAllianceGrouping().hasAnyAlliance())
+                .isTrue();
+        }
+
+        @Test
+        void isFalseForTheIdentityGrouping() {
+            // Nothing is grouped, so every bloc is a lone faction - the state a render rule that sets
+            // alliances against a backdrop must tell from "grouped, and these are the outsiders".
+            assertThat(HolderGrouping.identity().hasAnyAlliance())
+                .isFalse();
+        }
+
+        @Test
+        void isFalseWhenFactionsAreFoldedButNoBlocIsNamed() {
+            // The alliance-name map alone answers this, matching isAlliance. A grouping carrying a
+            // fold with no named bloc has no alliance to read, whatever the other two maps hold.
+            var grouping = new HolderGrouping(
+                    Map.of("hegemony", "alliance-1"),
+                    Map.of("alliance-1", "hegemony"),
+                    Map.of());
+
+            assertThat(grouping.hasAnyAlliance())
+                .isFalse();
         }
     }
 
@@ -106,15 +144,17 @@ class HolderGroupingTest {
             // Two factions the grouping folds into one bloc merge their values into a single entry, so
             // an alliance's members rank as one summed unit.
             var grouping = new HolderGrouping(
-                    Map.of("hegemony", "alliance-1", "tritachyon", "alliance-1"),
-                    Map.of("alliance-1", "hegemony"),
-                    Map.of("alliance-1", "Allied Powers"));
+                Map.of("hegemony", "alliance-1", "tritachyon", "alliance-1"),
+                Map.of("alliance-1", "hegemony"),
+                Map.of("alliance-1", "Allied Powers"));
+
             var valueByFactionId = new LinkedHashMap<String, Integer>();
+
             valueByFactionId.put("hegemony", 2);
             valueByFactionId.put("tritachyon", 3);
 
             assertThat(grouping.regroupByBloc(valueByFactionId, 0, Integer::sum))
-                    .containsExactly(entry("alliance-1", 5));
+                .containsExactly(entry("alliance-1", 5));
         }
 
         @Test
@@ -122,15 +162,17 @@ class HolderGroupingTest {
             // Only the mapped faction folds into its bloc; an unmapped faction stays its own bloc, so
             // the two never merge.
             var grouping = new HolderGrouping(
-                    Map.of("hegemony", "alliance-1"),
-                    Map.of("alliance-1", "hegemony"),
-                    Map.of("alliance-1", "Allied Powers"));
+                Map.of("hegemony", "alliance-1"),
+                Map.of("alliance-1", "hegemony"),
+                Map.of("alliance-1", "Allied Powers"));
+
             var valueByFactionId = new LinkedHashMap<String, Integer>();
+
             valueByFactionId.put("hegemony", 2);
             valueByFactionId.put("tritachyon", 3);
 
             assertThat(grouping.regroupByBloc(valueByFactionId, 0, Integer::sum))
-                    .containsOnly(entry("alliance-1", 2), entry("tritachyon", 3));
+                .containsOnly(entry("alliance-1", 2), entry("tritachyon", 3));
         }
 
         @Test
@@ -138,11 +180,12 @@ class HolderGroupingTest {
             // Under identity every faction is its own bloc, so each value merges into the fold's
             // identity alone and comes out unchanged - the no-op the render's faction view relies on.
             var valueByFactionId = new LinkedHashMap<String, Integer>();
+
             valueByFactionId.put("hegemony", 2);
             valueByFactionId.put("tritachyon", 3);
 
             assertThat(HolderGrouping.identity().regroupByBloc(valueByFactionId, 0, Integer::sum))
-                    .containsOnly(entry("hegemony", 2), entry("tritachyon", 3));
+                .containsOnly(entry("hegemony", 2), entry("tritachyon", 3));
         }
 
         @Test
@@ -150,11 +193,12 @@ class HolderGroupingTest {
             // The fold keeps each bloc in the order it first appears in the faction walk, not sorted,
             // so the picker's economy-walk ordering flows straight through the regroup.
             var valueByFactionId = new LinkedHashMap<String, Integer>();
+
             valueByFactionId.put("z-faction", 1);
             valueByFactionId.put("a-faction", 2);
 
             assertThat(HolderGrouping.identity().regroupByBloc(valueByFactionId, 0, Integer::sum))
-                    .containsExactly(entry("z-faction", 1), entry("a-faction", 2));
+                .containsExactly(entry("z-faction", 1), entry("a-faction", 2));
         }
     }
 
@@ -163,8 +207,8 @@ class HolderGroupingTest {
     // test can probe both the grouped and the unowned path off one instance.
     private static HolderGrouping buildAllianceGrouping() {
         return new HolderGrouping(
-                Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
-                Map.of("alliance-1", "hegemony"),
-                Map.of("alliance-1", "Allied Powers"));
+            Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
+            Map.of("alliance-1", "hegemony"),
+            Map.of("alliance-1", "Allied Powers"));
     }
 }

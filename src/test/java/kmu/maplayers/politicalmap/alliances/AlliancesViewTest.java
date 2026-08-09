@@ -216,6 +216,10 @@ final class AlliancesViewTest {
         private static final double MUTED_MODIFIER = 0.3;
         private static final ElementStyleAdjustment RECEDED = new ElementStyleAdjustment(MUTED_MODIFIER, true);
 
+        // What an untouched save resolves to: recoloured at full opacity, since Desaturate defaults
+        // on and Mute defaults off. A literal, so a flip of either default breaks this test.
+        private static final ElementStyleAdjustment DESATURATED_ONLY = new ElementStyleAdjustment(1.0, true);
+
         @Test
         void resolveBlocStyleAdjustmentIsNoneForAnAllianceBlocEvenWhenTheBackdropRecedes() {
             // An alliance keeps its full colour: the view gates it to NONE before its non-allied
@@ -258,6 +262,50 @@ final class AlliancesViewTest {
                         "hegemony",
                         ALLIANCE_GROUPING))
                     .isEqualTo(RECEDED);
+            }
+        }
+
+        @Test
+        void resolveBlocStyleAdjustmentDesaturatesANonAlliedFactionOnAnUntouchedSave() {
+            // The view opens with the alliances already reading as the figure: with neither key
+            // stored, Desaturate's on default recolours a non-allied faction while Mute's off
+            // default leaves it at full opacity. No settings mock is needed precisely because the
+            // muted modifier goes unread while Mute is off.
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+
+                var memoryMock = mock(MemoryAPI.class);
+
+                memoryAccessMock
+                    .when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                when(memoryMock.contains(ALLIANCE_MUTE_KEY))
+                    .thenReturn(false);
+                when(memoryMock.contains(ALLIANCE_DESATURATE_KEY))
+                    .thenReturn(false);
+
+                assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
+                        "hegemony",
+                        ALLIANCE_GROUPING))
+                    .isEqualTo(DESATURATED_ONLY);
+            }
+        }
+
+        @Test
+        void resolveBlocStyleAdjustmentIsNoneForEveryBlocWhenNoAllianceExists() {
+            // No alliance means no figure, so receding would sink the whole sector rather than
+            // isolate anything - the state a fresh Nex campaign opens in, before diplomacy has
+            // formed a single alliance. The gate runs ahead of the recede set, so the on-by-default
+            // Desaturate never reaches a bloc here and sector memory is not even read.
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+
+                assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
+                        "hegemony",
+                        HolderGrouping.identity()))
+                    .isEqualTo(ElementStyleAdjustment.NONE);
+
+                memoryAccessMock
+                    .verifyNoInteractions();
             }
         }
     }

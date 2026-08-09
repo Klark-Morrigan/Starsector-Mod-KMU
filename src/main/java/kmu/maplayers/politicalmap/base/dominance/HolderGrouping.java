@@ -147,4 +147,16 @@ public record HolderGrouping(
     public boolean isAlliance(String blocId) {
         return resolveAllianceName(blocId) != null;
     }
+
+    /**
+     * Whether this grouping holds any alliance at all, which distinguishes "grouped, and these blocs
+     * are the outsiders" from "nothing is grouped, so every bloc is a lone faction". A render rule
+     * that sets alliances against a backdrop needs the difference: with no alliance there is no
+     * figure, so receding every bloc would sink the whole sector rather than isolate anything.
+     *
+     * @return true when at least one bloc is an alliance
+     */
+    public boolean hasAnyAlliance() {
+        return !allianceNameByBlocId.isEmpty();
+    }
 }

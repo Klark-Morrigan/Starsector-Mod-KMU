@@ -31,11 +31,13 @@ import java.util.function.Predicate;
  * by the muted modifier while leaving its faction style and colours intact, and Desaturate makes
  * it adopt the independent style - the independent borders and seams plus the desaturation
  * palette - so it reads as independent territory. Its fill holds the faction fill opacity, since
- * a desaturated territory reads as one uniform surface separated by colour alone. With both off it
- * paints exactly as the faction view draws it, so a lone
- * faction reads identically in both views and only the allied factions differ between the two. It
- * exists so the shared pipeline can paint alliances without knowing anything about them - the view
- * supplies only the grouping, the recede test, and the label.
+ * a desaturated territory reads as one uniform surface separated by colour alone. Desaturate
+ * starts on and Mute off, so the view opens with the alliances already reading as the figure;
+ * turn both off and a non-allied faction paints exactly as the faction view draws it, so a lone
+ * faction reads identically in both views and only the allied factions differ between the two.
+ * A sector holding no alliance recedes nothing, whatever the toggles say - there is no figure for
+ * a backdrop to sit behind. It exists so the shared pipeline can paint alliances without knowing
+ * anything about them - the view supplies only the grouping, the recede test, and the label.
  *
  * <p>The grouping is sampled live from Nexerelin, which is why the view is registered only
  * when Nex is present. It names no {@code exerelin.*} type of its own: {@link NexerelinAlliances}
@@ -122,7 +124,14 @@ public final class AlliancesView implements DominancePaintedView {
         // decision, so every non-allied faction takes the one adjustment that set resolves. Keeping
         // the gate here (like the grouping already samples Nex) leaves the pipeline a pure applier
         // that never names an alliance.
-        if (grouping.isAlliance(blocId)) {
+        //
+        // A sector holding no alliance at all recedes nothing. Every bloc would otherwise be
+        // non-allied and the whole map would sink at once, with no figure left for it to be the
+        // backdrop to - which reads as the layer having failed rather than as an answer. This
+        // matches how the filter recede is only resolved while a bloc is actually spotlit; it is
+        // load-bearing now that Desaturate starts on, since the empty-alliance case is where a
+        // fresh campaign opens.
+        if (!grouping.hasAnyAlliance() || grouping.isAlliance(blocId)) {
             return ElementStyleAdjustment.NONE;
         }
         return RecedePreferences.ALLIANCE_NON_ALLIED.resolveRecedeAdjustment();

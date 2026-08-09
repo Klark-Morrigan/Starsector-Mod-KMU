@@ -61,7 +61,9 @@ Notes on each:
   factions keep their own border and name. Two toggles fade a non-allied faction: *Mute* dims it,
   *Desaturate* makes it read as backdrop. *Desaturate* starts on so the alliances read as the figure
   without a settings hunt; *Mute* starts off. Turn both off and a lone faction looks exactly as
-  it does on the Factions view.
+  it does on the Factions view. A sector holding no alliance yet fades nothing whatever the toggles
+  say - there is no figure for a backdrop to sit behind - so the view reads as the Factions view
+  until the first alliance forms.
 - **Claims.** Shows the vanilla "system claimed by faction" mechanic - the same claim the
   colony-survey panel warns about. Every claimed system is painted solid in its claimant's colours.
   There is no alliance grouping here. The spotlight list is the claimants, not the colony holders,
