@@ -24,8 +24,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * this suite is therefore about what goes <em>un</em>marked, since a mark that appears where the
  * mechanic decided nothing is the failure that reads as a fact.
  *
- * <p>Two kinds of market carry a score yet never compete - a hidden one, which the walk skips before
- * scoring, and a non-territorial faction's, which can never take the lead - and each has its own case.
+ * <p>Three kinds of market carry a score yet never compete - a hidden one, which the walk skips before
+ * scoring; one the economy does not list, which the walk never reaches; and a non-territorial
+ * faction's, which can never take the lead - and each has its own case.
  *
  * <p>How a marked place then draws is the line vocabulary's ({@code CellTooltipRowsTest}); which
  * markets are drawn at all is {@link ClaimScoreRowResolverTest}'s.
@@ -50,6 +51,8 @@ final class ClaimTieOutcomesTest {
     private static final boolean IS_TERRITORIAL = true;
     private static final boolean IS_HIDDEN = true;
     private static final boolean IS_NOT_HIDDEN = false;
+    private static final boolean IS_OFF_ECONOMY = true;
+    private static final boolean IS_NOT_OFF_ECONOMY = false;
 
     // A market's other terms, none of which any case here turns on: the score is stated as the size
     // outright, so a tie is posed by one number rather than assembled from three.
@@ -182,6 +185,22 @@ final class ClaimTieOutcomesTest {
         }
 
         @Test
+        void resolveOutcomeLeavesAMarketTheEconomyDoesNotListUnmarkedHoweverItScored() {
+            // The walk covers the economy's markets, so one left off that listing is never reached at
+            // all - a different reason from concealment, and the same answer: it took part in neither
+            // comparison, and a standing tied only with it won nothing.
+            var standingMarket = buildMarket(FIRST_LISTED, TIED_SCORE, IS_NOT_HIDDEN);
+            var academy = buildOffEconomyMarket(SECOND_LISTED, TIED_SCORE);
+            var standing = buildStandingOver(TRITACHYON, IS_TERRITORIAL, standingMarket, academy);
+            var breakdown = buildContest(HEGEMONY, standing);
+
+            assertThat(ClaimTieOutcomes.resolveOutcome(breakdown, standing, academy))
+                .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
+            assertThat(ClaimTieOutcomes.resolveOutcome(breakdown, standing, standingMarket))
+                .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
+        }
+
+        @Test
         void resolveOutcomeStatesTheClaimantContestAheadOfTheStandingSelection() {
             // A market can draw both comparisons at once. Having lost the system is the larger fact,
             // so it is what the place says: being its faction's own best is a smaller thing than
@@ -250,11 +269,27 @@ final class ClaimTieOutcomesTest {
             int marketScore,
             boolean isHiddenMarket) {
 
+        return buildMarket(listingPosition, marketScore, isHiddenMarket, IS_NOT_OFF_ECONOMY);
+    }
+
+    // A market the economy does not list - held in the open, so the only reason the walk passed over
+    // it is the one the case posing it is about.
+    private static MarketClaimBreakdown buildOffEconomyMarket(int listingPosition, int marketScore) {
+        return buildMarket(listingPosition, marketScore, IS_NOT_HIDDEN, IS_OFF_ECONOMY);
+    }
+
+    private static MarketClaimBreakdown buildMarket(
+            int listingPosition,
+            int marketScore,
+            boolean isHiddenMarket,
+            boolean isOffEconomyMarket) {
+
         return new MarketClaimBreakdown(
             "Market " + listingPosition,
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             isHiddenMarket,
+            isOffEconomyMarket,
             marketScore,
             NO_SIBLING_MARKETS,
             OptionalInt.empty());

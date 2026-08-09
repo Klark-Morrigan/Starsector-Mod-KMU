@@ -19,11 +19,12 @@ import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
  * reached first. Equal scores anywhere else - two rivals' lesser markets, say - were never compared
  * over anything, and marking them would assert a contest that did not happen.
  *
- * <p>Two kinds of market carry a score yet never compete, and are never marked. A hidden market is
- * skipped by the walk outright - it reaches the contest only through the sibling term - so it
- * neither wins nor loses however its score reads. And a non-territorial faction's markets can never
- * take the lead, so a tie between one of them and the claimant decided nothing: the claimant did
- * not out-list it, it simply had no rival in it.
+ * <p>Several kinds of market carry a score yet never compete, and none of them are marked. A hidden
+ * market is skipped by the walk outright - it reaches the contest only through the sibling term - and
+ * one the economy does not list is never reached at all, so neither wins nor loses however its score
+ * reads. And a non-territorial faction's markets can never take the lead, so a tie between one of
+ * them and the claimant decided nothing: the claimant did not out-list it, it simply had no rival
+ * in it.
  *
  * <p>Under a decree the claimant contest is not judged at all - the system was settled before a
  * market was weighed - while the tie inside each faction still is: which market stands for a
@@ -52,7 +53,7 @@ public final class ClaimTieOutcomes {
             FactionClaimScore standing,
             MarketClaimBreakdown market) {
 
-        if (market.isHiddenMarket()) {
+        if (!market.isScoredOnItsOwnAccount()) {
             return CellTooltipIndexOutcome.UNCONTESTED;
         }
         if (market == standing.standingMarket()) {
@@ -103,12 +104,13 @@ public final class ClaimTieOutcomes {
         if (market.computeTotalScore() != standing.score()) {
             return CellTooltipIndexOutcome.UNCONTESTED;
         }
-        // The tie needs a competitor besides the standing market, and a hidden one is not it: the
-        // mechanic never compares a hidden market, so a standing tied only with one won nothing.
+        // The tie needs a competitor besides the standing market, and a market the walk passed over
+        // is not it: the mechanic never compares one, so a standing tied only with such a market
+        // won nothing.
         var isAnyOpenSiblingTied = standing
             .otherMarkets()
             .stream()
-            .anyMatch(other -> !other.isHiddenMarket()
+            .anyMatch(other -> other.isScoredOnItsOwnAccount()
                 && other.computeTotalScore() == standing.score());
 
         if (!isAnyOpenSiblingTied) {

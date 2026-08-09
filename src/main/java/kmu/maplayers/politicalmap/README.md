@@ -193,21 +193,30 @@ drawn, the place stops being a bare identifier and reads in vanilla's positive o
 the market reached first having won it, the rest having lost. Which ties those are is
 `ClaimTieOutcomes`, judged over the whole contest exactly as vanilla's single `max` walk compares:
 the two points that walk consults the order at are which market stands for its faction and which
-faction claims the system, so a tie at either is marked and equal scores anywhere else are not. Two
-kinds of market carry a score yet never compete and are never marked - a hidden one, which the walk
-skips outright, and a non-territorial faction's, which can never take the lead - and under a decree
-the claimant tie goes unjudged, the system having been settled before a market was weighed.
-A hidden market is listed at nought: the mechanic skips it before scoring, so it brought nothing to
-the contest however large it is, and printing the score it would have carried would sort a market
-that took no part above the one that took the system. It is listed rather than dropped because it is
-one of the markets the presence term counts, and a reader checking that count has to be able to see
-it; it breaks down into no terms, nothing having been computed for it. The nought reads in the quiet
+faction claims the system, so a tie at either is marked and equal scores anywhere else are not.
+Three kinds of market carry a score yet never compete and are never marked - a hidden one, which the
+walk skips outright; one the economy does not list, which the walk never reaches; and a
+non-territorial faction's, which can never take the lead - and under a decree the claimant tie goes
+unjudged, the system having been settled before a market was weighed.
+A market the mechanic never weighed is listed at nought, whichever of the first two it is
+(`MarketClaimBreakdown.isScoredOnItsOwnAccount`, the one question the box asks of the pair): it
+brought nothing to the contest however large it is, and printing the score it would have carried
+would sort a market that took no part above the one that took the system. It is listed rather than
+dropped because it is a colony the player can see on the map in a faction's colours, and for a
+hidden one because it is also among the markets the presence term counts; it breaks down into no
+terms, nothing having been computed for it. The nought reads in the quiet
 shade (`statesUncountedValue` - only the number quietens, the market being named as loudly as its
 neighbours, unlike the `readsAsAside` the bonus line takes): it is the contest's statement about the
 market rather than anything the market scored, and in the list's own colour it would pass for a
-score competed with and lost on. Nothing calls its hiddenness out - the nought is the whole of what the
-contest has to say about it, and the word would raise a question about the mechanic the box would
-then owe an answer to.
+score competed with and lost on. Nothing calls out which of the two it was - the nought is the whole
+of what the contest has to say about it, and either word would raise a question about the mechanic
+the box would then owe an answer to.
+The unlisted colony is vanilla's own doing: Galatia Academy is built as a real market on a real
+station and deliberately never registered, so the mechanic's economy walk never sees it and a box
+reading the economy alone reports that station as nobody's. `StarSystems.readMarketsUnlistedByEconomy`
+widens the read for the account only; the sibling count and every other term stay on the economy's
+own listing, since admitting an unregistered colony there would raise a real one's score above what
+the game scores it at and could hand the system to a different faction.
 A market the player has not found is left off the list, since
 vanilla settles a claim over colonies nobody has found and repeating what it learned there would
 name something the player has no way of knowing about; the rule is
@@ -219,9 +228,10 @@ once beneath the very markets its count can be checked against, and worked out f
 (`Same-faction market bonus   (3 markets) - 1 = +2`, the subtraction being the market being scored,
 which is not its own sibling) rather than as a bare result nobody can check. That line is working
 throughout bar the points it arrives at, so it reads in the quiet shade name and all, and it is
-withheld entirely where something was kept off the list above it, since a count that cannot be
-checked against what is on screen either contradicts it or states the very number the withholding
-exists to keep back. Note that a market's own line carries the
+withheld entirely wherever the list above it is not exactly the markets the count counts - something
+kept off it for being unfound, or an unlisted colony on it that the mechanic never counted - since a
+count that cannot be checked against what is on screen either contradicts it, states the very number
+the withholding exists to keep back, or reads as short by the market it never included. Note that a market's own line carries the
 whole score the contest weighed it at, presence included, so its listed terms are what it adds that
 its siblings' do not. The resolver shares the entry model and the block
 vocabulary with the domination pair but not their number grammar - a claim score is a small whole

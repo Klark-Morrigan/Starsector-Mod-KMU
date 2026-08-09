@@ -81,6 +81,7 @@ final class ExpandedSystemClaimTooltipTest {
     // the cases below are about which faction gets an account at all.
     private static final boolean IS_KNOWN_TO_PLAYER = true;
     private static final boolean IS_NOT_HIDDEN = false;
+    private static final boolean IS_NOT_OFF_ECONOMY = false;
 
     private static final boolean IS_TERRITORIAL = true;
 
@@ -319,6 +320,7 @@ final class ExpandedSystemClaimTooltipTest {
             FIRST_LISTED,
             IS_KNOWN_TO_PLAYER,
             IS_NOT_HIDDEN,
+            IS_NOT_OFF_ECONOMY,
             marketSize,
             NO_SIBLING_MARKETS,
             OptionalInt.empty());

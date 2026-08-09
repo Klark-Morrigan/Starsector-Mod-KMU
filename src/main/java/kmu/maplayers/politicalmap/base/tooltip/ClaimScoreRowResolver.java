@@ -33,12 +33,13 @@ import java.util.stream.Stream;
  * that order rather than by being put there, and the list reads as the contest rather than as a ranking
  * laid over it.
  *
- * <p>A hidden market is listed at nought. The mechanic skips it before scoring, so it brought nothing
- * to the contest however large it is - and printing the score it would have carried would put a market
- * that took no part above the one that took the system. It is listed all the same rather than dropped:
- * it is one of the markets the presence term counts, so a reader checking that count against the list
- * has to be able to see it. Nothing calls its hiddenness out, the nought being the whole of what the
- * contest has to say about it.
+ * <p>A market the mechanic never weighed is listed at nought. Two kinds reach the box that way: one
+ * held in concealment, which the walk skips before scoring, and one the economy does not list, which
+ * the walk never reaches at all. Either brought nothing to the contest however large it is - and
+ * printing the score it would have carried would put a market that took no part above the one that
+ * took the system. Both are listed all the same rather than dropped: a colony the player can see on
+ * the map, in a faction's colours, has to appear in the account of who holds the system. Nothing calls
+ * out which of the two it is, the nought being the whole of what the contest has to say about either.
  *
  * <p>Exactly one market in the whole box is called out as the claim holder: the one that actually took
  * the system. Every faction is represented by its strongest, but only one of those won anything, and a
@@ -157,14 +158,29 @@ public final class ClaimScoreRowResolver {
                 isHoldingTheClaim && market == standing.standingMarket()));
         }
 
-        // The presence term is stated only where the list above it is whole. Its whole claim on the
-        // reader is that the count can be checked against the markets it follows, so printed over a
-        // list something was withheld from it would either contradict what is on screen or state the
-        // very number the withholding exists to keep back.
-        if (listedMarkets.size() == standing.otherMarkets().size() + THE_MARKET_BEING_SCORED) {
+        // The presence term is stated only where the list above it is exactly the markets the count
+        // counts. Its whole claim on the reader is that the number can be checked against the list it
+        // follows, and it loses that either way the two can part company.
+        if (isEveryListedMarketCounted(listedMarkets, standing)) {
             resolveSiblingEntry(standing).ifPresent(entries::add);
         }
         return List.copyOf(entries);
+    }
+
+    // Whether the markets listed are neither fewer nor more than the ones the presence count counts.
+    //
+    // Fewer, where a market was withheld for being unfound: the term would then either contradict
+    // what is on screen or state the very number the withholding exists to keep back. More, where a
+    // market the economy does not list is on the list: the mechanic never reached it, so the count
+    // does not include it, and the term would read as short by exactly that market.
+    private static boolean isEveryListedMarketCounted(
+            List<MarketClaimBreakdown> listedMarkets,
+            FactionClaimScore standing) {
+
+        return listedMarkets.size() == standing.otherMarkets().size() + THE_MARKET_BEING_SCORED
+            && listedMarkets
+                .stream()
+                .noneMatch(MarketClaimBreakdown::isOffEconomyMarket);
     }
 
     // The presence term, stated once at the foot of the list rather than on each market's own
@@ -222,10 +238,11 @@ public final class ClaimScoreRowResolver {
     // on a tied one, so a reader meets the ordering before they need it and a tie reads as a rule
     // they already understand rather than as an outcome the box declines to explain.
     //
-    // A market the mechanic never scored says so with its number alone. Nothing calls its
-    // hiddenness out: the word would raise a question about the mechanic that the box would then owe
-    // an answer to, where the nought beside a listed market already says the one thing that matters
-    // about it here - it counted for nothing in this contest.
+    // A market the mechanic never scored says so with its number alone. Nothing calls out why it was
+    // passed over - concealment, or an absence from the economy's listing: either word would raise a
+    // question about the mechanic that the box would then owe an answer to, where the nought beside a
+    // listed market already says the one thing that matters about it here - it counted for nothing in
+    // this contest.
     //
     // That nought reads quiet, because it is the contest's statement about the market rather than
     // anything the market scored. In the list's own colour it would read as a score competed with
@@ -245,7 +262,7 @@ public final class ClaimScoreRowResolver {
                     KmlibNumbers.formatGroupedInteger(market.listingPosition())),
                 indexOutcome);
 
-        return market.isHiddenMarket() ? line.statesUncountedValue() : line;
+        return market.isScoredOnItsOwnAccount() ? line : line.statesUncountedValue();
     }
 
     // What a market brought to the contest. An open market brings its score; a hidden one brings
@@ -257,19 +274,19 @@ public final class ClaimScoreRowResolver {
     // the arithmetic's, and a nought printed against a size the reader can see needs the word beside
     // it to be a finding rather than a fault.
     private static int resolveContestScore(MarketClaimBreakdown market) {
-        return market.isHiddenMarket() ? NO_CONTEST_SCORE : market.computeTotalScore();
+        return market.isScoredOnItsOwnAccount() ? market.computeTotalScore() : NO_CONTEST_SCORE;
     }
 
     // The terms of one market's score that are the market's own: the size it starts from, and what a
     // garrison adds. The presence every market of the faction shares is stated once below the list
     // rather than here, so these two are what the line above them adds that its siblings' do not.
     //
-    // A hidden market breaks down into nothing, because nothing was computed for it: its size and
-    // its garrison never entered any sum, and listing them would invite a reader to add up to a
-    // number the line above deliberately does not carry.
+    // A market the mechanic passed over breaks down into nothing, because nothing was computed for
+    // it: its size and its garrison never entered any sum, and listing them would invite a reader to
+    // add up to a number the line above deliberately does not carry.
     private static List<CellTooltipEntry> resolveTermEntries(MarketClaimBreakdown market) {
 
-        if (market.isHiddenMarket()) {
+        if (!market.isScoredOnItsOwnAccount()) {
             return List.of();
         }
         var entries = new ArrayList<CellTooltipEntry>();

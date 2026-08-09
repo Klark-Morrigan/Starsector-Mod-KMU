@@ -81,6 +81,12 @@ final class ClaimScoreRowResolverTest {
     private static final boolean IS_HIDDEN = true;
     private static final boolean IS_NOT_HIDDEN = false;
 
+    // Whether the economy lists a market at all. The mechanic walks the economy, so a colony left off
+    // it is never reached - the second way a market can be present and never weighed, and the one that
+    // keeps it out of the presence count as well.
+    private static final boolean IS_OFF_ECONOMY = true;
+    private static final boolean IS_NOT_OFF_ECONOMY = false;
+
     @BeforeEach
     void installStrings() {
         StarsectorSettingsFake.installSettings();
@@ -308,6 +314,59 @@ final class ClaimScoreRowResolverTest {
 
             assertThat(rows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
+        }
+
+        @Test
+        void resolveMarketRowsListsAMarketTheEconomyDoesNotListAtNought() {
+            // Vanilla builds Galatia Academy as a real market on a real station and never registers
+            // it, so the mechanic's walk never reaches it. Listed at nought states both true things
+            // at once - the station is there, in a faction's colours, and it took no part.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(NO_SIBLING_MARKETS),
+                List.of(buildOffEconomyMarket(
+                    "Galatia Academy",
+                    STRONGEST_MARKET_SIZE,
+                    SECOND_LISTED))));
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly(STRONGEST_MARKET, "Galatia Academy");
+            assertThat(rows.get(1).line().valueText())
+                .isEqualTo("0");
+
+            // Quiet for the same reason a hidden market's nought is: it is what the contest made of
+            // the market rather than a score it competed with and lost on.
+            assertThat(rows.get(1).line().isValueUncounted())
+                .isTrue();
+        }
+
+        @Test
+        void resolveMarketRowsBreaksAMarketTheEconomyDoesNotListDownIntoNothing() {
+            // Nothing was computed for it, so terms beneath it would invite a reader to add up to a
+            // number its own line deliberately does not carry.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(NO_SIBLING_MARKETS),
+                List.of(buildOffEconomyMarket(
+                    "Galatia Academy",
+                    STRONGEST_MARKET_SIZE,
+                    SECOND_LISTED))));
+
+            assertThat(rows.get(1).children())
+                .isEmpty();
+        }
+
+        @Test
+        void resolveMarketRowsWithholdsThePresenceTermOverAListHoldingAnUncountedMarket() {
+            // The count is the mechanic's, and the mechanic never saw the off-economy market. Printed
+            // beneath a list carrying it, the term would read as short by exactly that market - the
+            // same broken promise as printing it over a list something was withheld from.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(ONE_SIBLING_MARKET),
+                List.of(
+                    buildMarket("Ancyra", 3, ONE_SIBLING_MARKET, SECOND_LISTED),
+                    buildOffEconomyMarket("Galatia Academy", 3, THIRD_LISTED))));
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly(STRONGEST_MARKET, "Ancyra", "Galatia Academy");
         }
 
         @Test
@@ -550,6 +609,7 @@ final class ClaimScoreRowResolverTest {
                     FIRST_LISTED,
                     IS_KNOWN_TO_PLAYER,
                     IS_NOT_HIDDEN,
+                    IS_NOT_OFF_ECONOMY,
                     STRONGEST_MARKET_SIZE,
                     NO_SIBLING_MARKETS,
                     OptionalInt.of(MILITARY_BONUS)),
@@ -653,6 +713,7 @@ final class ClaimScoreRowResolverTest {
             FIRST_LISTED,
             isKnownToPlayer,
             !isKnownToPlayer,
+            IS_NOT_OFF_ECONOMY,
             STRONGEST_MARKET_SIZE,
             siblingMarketCount,
             OptionalInt.empty());
@@ -671,8 +732,28 @@ final class ClaimScoreRowResolverTest {
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             IS_HIDDEN,
+            IS_NOT_OFF_ECONOMY,
             marketSize,
             siblingMarketCount,
+            OptionalInt.empty());
+    }
+
+    // A colony the economy does not list - a real market on a real entity the mechanic never reached.
+    // Held in the open and found by the player, so the only reason it took no part is the one the case
+    // is about.
+    private static MarketClaimBreakdown buildOffEconomyMarket(
+            String marketName,
+            int marketSize,
+            int listingPosition) {
+
+        return new MarketClaimBreakdown(
+            marketName,
+            listingPosition,
+            IS_KNOWN_TO_PLAYER,
+            IS_NOT_HIDDEN,
+            IS_OFF_ECONOMY,
+            marketSize,
+            NO_SIBLING_MARKETS,
             OptionalInt.empty());
     }
 
@@ -684,6 +765,7 @@ final class ClaimScoreRowResolverTest {
             FIRST_LISTED,
             IS_KNOWN_TO_PLAYER,
             IS_NOT_HIDDEN,
+            IS_NOT_OFF_ECONOMY,
             STRONGEST_MARKET_SIZE,
             TWO_SIBLING_MARKETS,
             OptionalInt.of(MILITARY_BONUS));
@@ -718,6 +800,7 @@ final class ClaimScoreRowResolverTest {
             listingPosition,
             isKnownToPlayer,
             !isKnownToPlayer,
+            IS_NOT_OFF_ECONOMY,
             marketSize,
             siblingMarketCount,
             OptionalInt.empty());
