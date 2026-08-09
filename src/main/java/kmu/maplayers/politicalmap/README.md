@@ -51,7 +51,7 @@ questions, and the pipeline paints the answer without knowing which view asked:
 | --- | --- | --- | --- | --- |
 | **Factions** | each faction on its own | held territory, per faction | any faction | always (default) |
 | **Alliances** | allied factions fused per alliance | held territory, alliances as one bloc | alliances only | Nexerelin |
-| **Claims** | each claiming faction on its own | claimed systems, per faction | any faction that claims something | always |
+| **Claims** | each claiming faction on its own | claimed systems, per faction | any faction that claims or holds something | always |
 
 Notes on each:
 
@@ -66,9 +66,13 @@ Notes on each:
   until the first alliance forms.
 - **Claims.** Shows the vanilla "system claimed by faction" mechanic - the same claim the
   colony-survey panel warns about. Every claimed system is painted solid in its claimant's colours.
-  There is no alliance grouping here. The spotlight list is the claimants, not the colony holders,
-  and it ranks them by claim count and market size rather than by domination - a faction that claims
-  territory while holding no colony anywhere still paints here, so it is still worth spotlighting.
+  There is no alliance grouping here. The spotlight list ranks by claim count and market size rather
+  than by domination, and it holds every faction that claims *or* holds something: one that claims
+  territory while holding no colony anywhere paints here, so it is worth spotlighting, and one that
+  holds colonies while claiming nowhere is listed greyed at a count of 0 rather than left out, since
+  a faction the player can plainly see going missing from the list reads as an oversight. Under the
+  default claims-descending sort the greyed rows form a tail below the claimants; sorting by name
+  interleaves them.
   A claimant's systems already share one border and one colour with no filter on, so what
   spotlighting adds here is the contrast: the picked claimant keeps its full strength while every
   other claimant fades into the muted background. Nothing hatches: a system has exactly one

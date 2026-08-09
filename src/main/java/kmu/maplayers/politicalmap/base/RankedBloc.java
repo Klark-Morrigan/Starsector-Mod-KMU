@@ -19,13 +19,18 @@ import kmlib.starsector.ui.widgets.lists.SelectableListItem;
  * generic type: a layer whose rows carry no separable identity implements the seam directly, so there
  * is nothing yet for a common form to serve.
  *
+ * <p>The payload is bounded by {@link BlocMetrics} for the one seam value neither half of the pairing
+ * can answer alone: whether the row reads back is a fact about the bloc's numbers, so the metrics
+ * answer it and this delegates, rather than the pairing growing a stated flag every layer's option
+ * would then carry.
+ *
  * @param <S>      the ranking metrics this view's picker sorts and labels by - one stats record per
  *                 sort vocabulary, never shared between vocabularies
  * @param identity the bloc this row is about: the id the filter stores plus the label and crest the
  *                 row draws
  * @param stats    the bloc's metrics under this view, read only by that view's sort vocabulary
  */
-public record RankedBloc<S>(
+public record RankedBloc<S extends BlocMetrics>(
     SelectableBloc identity,
     S stats) implements SelectableListItem {
 
@@ -56,5 +61,17 @@ public record RankedBloc<S>(
     @Override
     public String crestSpritePath() {
         return identity.crestSpritePath();
+    }
+
+    /**
+     * The one seam value answered by the payload rather than the identity: two blocs can share a
+     * name and a crest and still differ on this, because what puts a row in that state is what its
+     * numbers say.
+     *
+     * @return true when this bloc's row draws receded, as its own metrics judge it
+     */
+    @Override
+    public boolean isDimmed() {
+        return stats.isDimmed();
     }
 }

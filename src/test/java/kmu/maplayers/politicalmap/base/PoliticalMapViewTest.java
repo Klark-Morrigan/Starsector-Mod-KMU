@@ -124,8 +124,9 @@ final class PoliticalMapViewTest {
         void buildSelectableBlocsCarriesAPayloadFromOutsideTheDominanceMetrics() {
             // The assembly is what every layer's picker shares, so it must build an option over
             // metrics it has never heard of - a layer painted by some other mechanic ranks by its own
-            // numbers. Run against a payload no view declares: this stops compiling the moment the
-            // assembly narrows back to the dominance metrics, which the dominance-typed cases above
+            // numbers. Run against a payload no view declares, sharing with the dominance metrics
+            // only the seam every option's metrics answer: this stops compiling the moment the
+            // assembly narrows back to one layer's numbers, which the dominance-typed cases above
             // would not notice.
             var sectorMock = mock(SectorAPI.class);
             var viewFake = new PoliticalMapViewFake(Map.of("pirates", "Pirates"));
@@ -159,9 +160,11 @@ final class PoliticalMapViewTest {
     }
 
     // A metrics payload no political-map view declares, standing in for whatever a layer painted by
-    // another mechanic ranks its blocs by. It shares no supertype with the dominance metrics beyond
-    // Object, so the case above passes only while the assembly leaves its payload type open.
+    // another mechanic ranks its blocs by. It shares nothing with the dominance metrics but the seam
+    // every option's metrics answer, so the case above passes only while the assembly leaves its
+    // payload type open past that. It states no dim rule, which is the ordinary case: a layer whose
+    // blocs are all equally worth spotlighting takes the seam's default and says nothing further.
     private record HazardRating(
-        int severity) {
+        int severity) implements BlocMetrics {
     }
 }

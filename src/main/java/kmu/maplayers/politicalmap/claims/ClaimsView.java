@@ -23,8 +23,6 @@ import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 import kmu.util.KmuStrings;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -40,8 +38,10 @@ import java.util.Optional;
  * drifting on how a plain faction bloc paints and reads.
  *
  * <p>Its spotlight picker is its own, not the held layers': the blocs it offers are the ones that
- * claim a system, and they carry claim metrics rather than domination ones, so the sort selector can
- * only offer numbers this layer is actually painted by.
+ * claim a system or hold a colony, and they carry claim metrics rather than domination ones, so the
+ * sort selector can only offer numbers this layer is actually painted by. A bloc that holds colonies
+ * while claiming nothing is listed receded at a count of zero rather than dropped, so the list
+ * accounts for every faction the player can see instead of appearing to have forgotten one.
  */
 public final class ClaimsView implements PoliticalMapView {
 
@@ -132,14 +132,20 @@ public final class ClaimsView implements PoliticalMapView {
     }
 
     /**
-     * The claims picker: every bloc that claims at least one system, carrying its whole-sector
-     * {@link ClaimStats}, paired with {@link ClaimSortMode}'s vocabulary.
+     * The claims picker: every bloc the sector walk surfaced - each one that claims a system or
+     * holds a colony - carrying its whole-sector {@link ClaimStats}, paired with
+     * {@link ClaimSortMode}'s vocabulary.
      *
-     * <p>The gate is claim presence, not the market presence the held layers list by, because a
-     * picker's job is to spotlight something the layer draws. A faction that claims a system but
-     * holds no colony anywhere is therefore listed - it paints territory here - while a faction with
-     * colonies but no claim is dropped, since spotlighting it would recede the whole sector in
-     * favour of nothing.
+     * <p>No gate of its own, so the list is whoever paints or holds something. A faction that claims
+     * a system but holds no colony anywhere is listed because it paints territory here; a faction
+     * with colonies but no claim is listed because leaving it out reads as the map having forgotten
+     * a faction the player can plainly see, and its row says what it is - receded, with a claim count
+     * of zero - before the pick is made. A bloc with neither never reached the fold, so the list is
+     * everyone who paints or holds, not every faction in the sector.
+     *
+     * <p>A claimless bloc stays pickable. Spotlighting one recedes the whole sector in favour of
+     * nothing, which is the honest answer to "show me what this faction claims" when the answer is
+     * nowhere, and re-picking the lit row clears it as any other pick does.
      *
      * @param sector                           the sector whose systems and economy the claim stats are
      *                                         read from; null yields an empty picker
@@ -165,24 +171,8 @@ public final class ClaimsView implements PoliticalMapView {
             buildSelectableBlocs(
                 sector,
                 grouping,
-                listClaimingBlocs(
-                    ClaimStatsAggregator.aggregateClaimStats(sector, pass, claimReader)),
+                ClaimStatsAggregator.aggregateClaimStats(sector, pass, claimReader),
                 blocId -> true),
             ClaimSortMode.MODES);
-    }
-
-    // Drops the blocs the fold surfaced for their colonies alone, leaving the claimants in the walk
-    // order the fold produced. Gating the map rather than the option assembly is what lets the shared
-    // assembly take an always-true test: the assembly's gate reads a bloc id, which cannot answer how
-    // much that bloc claims.
-    private static Map<String, ClaimStats> listClaimingBlocs(Map<String, ClaimStats> statsByBlocId) {
-
-        var claimingBlocs = new LinkedHashMap<String, ClaimStats>();
-        for (var entry : statsByBlocId.entrySet()) {
-            if (entry.getValue().claims() > 0) {
-                claimingBlocs.put(entry.getKey(), entry.getValue());
-            }
-        }
-        return claimingBlocs;
     }
 }

@@ -1,13 +1,14 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import kmu.maplayers.politicalmap.base.BlocMetrics;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 
 /**
- * The four whole-sector numbers the filter picker sorts and displays a selectable bloc by, computed
- * once per grouped dominance pass and carried on {@link
- * kmu.maplayers.politicalmap.base.SelectableBloc}. It exists so the picker can rank and label a bloc
- * without re-reading the economy: a single pass folds every system the bloc holds into these totals,
- * and the sidebar then reads the totals rather than walking the sector again per frame.
+ * The four whole-sector numbers the filter picker sorts and displays a bloc by on the layers
+ * domination paints, computed once per grouped dominance pass and carried beside the bloc's identity
+ * on {@link kmu.maplayers.politicalmap.base.RankedBloc}. It exists so the picker can rank and label a
+ * bloc without re-reading the economy: a single pass folds every system the bloc holds into these
+ * totals, and the sidebar then reads the totals rather than walking the sector again per frame.
  *
  * <p>The four are deliberately distinct measures a player might sort by. Domination and presence are
  * system counts - how many systems the bloc wins outright versus how many it merely holds a market
@@ -16,6 +17,10 @@ import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
  * carries), and market size is the summed raw {@code MarketAPI.getSize()}, so a heavily-weighted bloc
  * and a merely-large one are told apart. Market size is kept here rather than in {@link
  * MarketFootprint}, which stays scoped to the dominance-weight quantities the rule compares.
+ *
+ * <p>Every bloc in these stats holds a market somewhere, so every row on these layers has something
+ * to show under the metrics they are painted by and none of them reads back - which is why the
+ * {@link BlocMetrics} default stands here unoverridden.
  *
  * <p>Plain data with no Starsector types, so the aggregation is exercised on hand-built inputs.
  *
@@ -30,7 +35,7 @@ public record DominanceStats(
     int domination,
     int presence,
     int score,
-    int marketSize) {
+    int marketSize) implements BlocMetrics {
 
     /** A bloc present in no system; the identity a per-system accumulation folds into. */
     public static final DominanceStats EMPTY = new DominanceStats(0, 0, 0, 0);

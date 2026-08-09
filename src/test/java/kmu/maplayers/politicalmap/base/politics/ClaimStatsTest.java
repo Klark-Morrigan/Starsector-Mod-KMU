@@ -7,7 +7,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the per-bloc claim stats fold: the claim count and the market-size total build up
- * independently of one another, since a system contributes a claim, a colony, both, or neither.
+ * independently of one another, since a system contributes a claim, a colony, both, or neither. Also
+ * pins the one thing these metrics answer about the bloc rather than about its numbers - whether its
+ * picker row reads back - since that is the layer's own rule and not the picker's.
  */
 final class ClaimStatsTest {
 
@@ -54,6 +56,36 @@ final class ClaimStatsTest {
             // in another leave both metrics set.
             assertThat(ClaimStats.EMPTY.addClaim().addMarketSize(4))
                 .isEqualTo(new ClaimStats(1, 4));
+        }
+    }
+
+    @Nested
+    class IsDimmed {
+
+        @Test
+        void isDimmedIsTrueForABlocThatClaimsNothing() {
+            // A colony holder that claims nowhere is listed but paints nothing on this layer, so its
+            // row reads back rather than sitting at full strength beside the claimants.
+            assertThat(new ClaimStats(0, 40).isDimmed())
+                .isTrue();
+        }
+
+        @Test
+        void isDimmedIsFalseForABlocThatClaimsAnything() {
+            // One claim is enough: the layer paints it, so the row has something to show.
+            assertThat(new ClaimStats(1, 40).isDimmed())
+                .isFalse();
+        }
+
+        @Test
+        void isDimmedReadsTheClaimCountAloneAndNotTheMarketSize() {
+            // The rule is the metric the layer is about, not how big the bloc is: a claimant that
+            // holds no colony anywhere still reads at full strength, and a large holder that claims
+            // nowhere still reads back.
+            assertThat(new ClaimStats(1, 0).isDimmed())
+                .isFalse();
+            assertThat(new ClaimStats(0, 0).isDimmed())
+                .isTrue();
         }
     }
 }

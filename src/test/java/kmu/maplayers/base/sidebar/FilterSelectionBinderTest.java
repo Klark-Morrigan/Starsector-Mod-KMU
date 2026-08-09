@@ -72,10 +72,15 @@ final class FilterSelectionBinderTest {
         // mocking it against an uninstalled settings proxy would fail on class load.
         StarsectorSettingsFake.installSettings();
 
+        // Both row tones, since the picker resolves the receded one whether or not a row uses it -
+        // an unlisted stand-in fails on the read rather than on anything under test here.
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock
             .when(Misc::getTextColor)
             .thenReturn(Color.LIGHT_GRAY);
+        miscMock
+            .when(Misc::getGrayColor)
+            .thenReturn(Color.DARK_GRAY);
 
         sortBinderMock = Mockito.mockStatic(SortSelectionBinder.class);
         sortBinderMock

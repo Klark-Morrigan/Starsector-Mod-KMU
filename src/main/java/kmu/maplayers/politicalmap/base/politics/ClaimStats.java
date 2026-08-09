@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import kmu.maplayers.politicalmap.base.BlocMetrics;
+
 /**
  * The two whole-sector numbers the claims picker sorts and displays a claiming bloc by, computed
  * once per grouped pass and carried beside the bloc's identity. The claims-layer counterpart to
@@ -15,7 +17,9 @@ package kmu.maplayers.politicalmap.base.politics;
  *
  * <p>Because the two are scoped differently, a bloc with claims and a market size of zero is normal
  * rather than a defect - a faction that claims territory but holds no colony anywhere still paints
- * here, so it is still worth spotlighting.
+ * here, so it is still worth spotlighting. The mirror case is normal too: a colony holder that
+ * claims nothing is listed, since leaving it out reads as the map having forgotten a faction the
+ * player can see. It reads back instead, which is what {@link #isDimmed} answers.
  *
  * <p>Plain data with no Starsector types, so the aggregation is exercised on hand-built inputs.
  *
@@ -25,10 +29,26 @@ package kmu.maplayers.politicalmap.base.politics;
  */
 public record ClaimStats(
     int claims,
-    int marketSize) {
+    int marketSize) implements BlocMetrics {
 
     /** A bloc claiming nothing and holding nothing; the identity a per-system fold begins from. */
     public static final ClaimStats EMPTY = new ClaimStats(0, 0);
+
+    /**
+     * A bloc with no claims reads back, since a claim count of zero is precisely "paints nothing on
+     * this layer" - the row is worth offering, because a faction the player can see going unlisted
+     * reads as an oversight, but it has nothing to show under the metric the layer is about.
+     *
+     * <p>The test is the count alone, not a faction flag: it is the fact the row already shows in
+     * its own trailing value, and it covers a territorial faction that happens to claim nowhere just
+     * as it covers one that never will.
+     *
+     * @return true when the bloc claims no system
+     */
+    @Override
+    public boolean isDimmed() {
+        return claims == 0;
+    }
 
     /**
      * Folds one system the bloc claims into these stats.

@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -36,8 +37,9 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the claims view's render rules: it is the faction view's look keyed off the vanilla claim
  * mechanic, so its grouping is identity, its holding comes from the claims-only provider, and its
- * bloc styling and label delegate to the faction view. Its picker is its own, though: it lists the
- * blocs that claim something and ranks them by claim metrics. Reproducing these here is what lets the
+ * bloc styling and label delegate to the faction view. Its picker is its own, though: it lists every
+ * bloc that claims or holds something, receding the rows that claim nothing, and ranks them by claim
+ * metrics rather than domination ones. Reproducing these here is what lets the
  * shared pipeline read the claims view through
  * {@link kmu.maplayers.politicalmap.base.PoliticalMapView} without naming it.
  */
@@ -250,8 +252,8 @@ final class ClaimsViewTest {
                 new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
 
         // A claimant's stats: the view forwards them onto its option verbatim, so these arbitrary
-        // numbers are only asserted to survive the pass unchanged. Non-zero claims, so the gate keeps
-        // the bloc.
+        // numbers are only asserted to survive the pass unchanged. Non-zero claims, so the row they
+        // ride on is an ordinary full-strength one.
         private static final ClaimStats ANY_CLAIMANT_STATS = new ClaimStats(2, 7);
 
         @Test
@@ -299,13 +301,15 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerDropsABlocThatHoldsColoniesButClaimsNothing() {
-            // The fold applies no gate of its own, so a colony holder surfaces at zero claims; the view
-            // drops it, since spotlighting a bloc that paints nothing here would recede the whole
-            // sector in favour of nothing.
+        void resolveBlocPickerOffersABlocThatHoldsColoniesButClaimsNothing() {
+            // A faction the player can plainly see going unlisted reads as the map having forgotten
+            // it, so a colony holder that claims nowhere is offered rather than dropped. What says
+            // it paints nothing here is the row itself: it carries a claim count of zero, which is
+            // what its metrics read back from.
             var sectorMock = mock(SectorAPI.class);
 
             stubNamedFaction(sectorMock, "hegemony", "Hegemony");
+            stubNamedFaction(sectorMock, "tritachyon", "Tri-Tachyon");
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
@@ -316,19 +320,48 @@ final class ClaimsViewTest {
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
                     .extracting(RankedBloc::itemId)
-                    .containsExactly("hegemony");
+                    .containsExactlyInAnyOrder("hegemony", "tritachyon");
             }
         }
 
         @Test
-        void resolveBlocPickerKeepsTheClaimantsInTheFoldsWalkOrder() {
-            // Dropping the claimless blocs must not reorder the survivors: the options come back in the
-            // order the sector walk surfaced them, which is the order the sort then arranges from. An
-            // ordered stub with a claimless bloc in the middle is what makes a reordering visible - a
-            // gate that rebuilt the map unordered would pass the drop test and fail here.
+        void resolveBlocPickerRecedesTheRowOfABlocThatClaimsNothing() {
+            // Listing the claimless is only legible because the row says which it is, so the option
+            // the view builds must carry that state through to the picker rather than reading as an
+            // ordinary claimant with a zero on it.
             var sectorMock = mock(SectorAPI.class);
 
             stubNamedFaction(sectorMock, "hegemony", "Hegemony");
+            stubNamedFaction(sectorMock, "tritachyon", "Tri-Tachyon");
+
+            var statsByBlocId = new LinkedHashMap<String, ClaimStats>();
+
+            statsByBlocId.put("hegemony", new ClaimStats(1, 0));
+            statsByBlocId.put("tritachyon", new ClaimStats(0, 40));
+
+            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                    .thenReturn(statsByBlocId);
+
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
+                    .extracting(RankedBloc::itemId, RankedBloc::isDimmed)
+                    .containsExactly(
+                        tuple("hegemony", false),
+                        tuple("tritachyon", true));
+            }
+        }
+
+        @Test
+        void resolveBlocPickerKeepsTheBlocsInTheFoldsWalkOrder() {
+            // The options come back in the order the sector walk surfaced them, which is the order
+            // the sort then arranges from. An ordered stub with a claimless bloc in the middle is
+            // what makes a reordering visible - the list must neither drop it nor sink it here, since
+            // where a receded row lands is the active sort's decision and not the assembly's.
+            var sectorMock = mock(SectorAPI.class);
+
+            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
+            stubNamedFaction(sectorMock, "tritachyon", "Tri-Tachyon");
             stubNamedFaction(sectorMock, "persean", "Persean League");
 
             var statsByBlocId = new LinkedHashMap<String, ClaimStats>();
@@ -344,14 +377,15 @@ final class ClaimsViewTest {
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
                     .extracting(RankedBloc::itemId)
-                    .containsExactly("hegemony", "persean");
+                    .containsExactly("hegemony", "tritachyon", "persean");
             }
         }
 
         @Test
-        void resolveBlocPickerOffersNoItemsWhenNoBlocClaimsAnything() {
-            // With nothing claimed the picker offers no options - it draws no controls at all - and a
-            // stale saved selection heals to none.
+        void resolveBlocPickerOffersNoItemsWhenTheFoldSurfacesNothing() {
+            // A bloc that neither claims nor holds anything never reaches the fold, so a sector with
+            // none of either offers no options - the picker draws no controls at all - and a stale
+            // saved selection heals to none.
             var sectorMock = mock(SectorAPI.class);
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {

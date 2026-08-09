@@ -226,7 +226,9 @@ public interface PoliticalMapView {
      * also keeps this a default method rather than a static - the label is <em>this</em> view's
      * {@link #resolveName}, so no view has to reach into a sibling for a name.
      *
-     * @param <S>            the calling view's own metrics type, ranked by that view's vocabulary
+     * @param <S>            the calling view's own metrics type, ranked by that view's vocabulary;
+     *                       bounded only by what every option must answer of its metrics, never by
+     *                       one layer's numbers
      * @param sector         the sector a bloc's colour faction is read from
      * @param grouping       the grouping the stats were folded under, so the colour faction and the
      *                       name resolve against the same snapshot the numbers came from
@@ -238,7 +240,7 @@ public interface PoliticalMapView {
      * @return the selectable blocs in stats order, each pairing a bloc's identity with the metrics
      *         this view's picker sorts by
      */
-    default <S> List<RankedBloc<S>> buildSelectableBlocs(
+    default <S extends BlocMetrics> List<RankedBloc<S>> buildSelectableBlocs(
             SectorAPI sector,
             HolderGrouping grouping,
             Map<String, S> statsByBlocId,

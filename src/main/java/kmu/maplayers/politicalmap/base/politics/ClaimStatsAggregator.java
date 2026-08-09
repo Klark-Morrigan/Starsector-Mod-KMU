@@ -40,9 +40,10 @@ public final class ClaimStatsAggregator {
      * pass.
      *
      * <p>No gate is applied here: a bloc that claims nothing is still returned with its market size,
-     * because deciding what belongs in a picker is the view's call rather than the fold's. The claims
-     * view drops the claimless entries, since a bloc claiming nothing paints nothing on that layer
-     * and so has nothing to spotlight.
+     * because deciding what belongs in a picker is the view's call rather than the fold's. What is
+     * <em>not</em> returned is a bloc the walk never surfaced - one that neither claims nor holds
+     * anything - so a caller listing every entry lists everyone who paints or holds something rather
+     * than every faction in the sector.
      *
      * @param sector      the sector whose systems are walked and whose economy is read; null yields
      *                    an empty map
