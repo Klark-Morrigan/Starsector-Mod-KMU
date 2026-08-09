@@ -47,114 +47,191 @@ class MarketProximityTieBreakTest {
     // The alliance grouping that folds hegemony into a hegemony-coloured bloc, so a test can
     // show the same market decides the tie under an alliance view as under the faction view.
     private static final HolderGrouping GREATER_HEGEMONY = new HolderGrouping(
-            Map.of("hegemony", "greater_hegemony"),
-            Map.of("greater_hegemony", "hegemony"),
-            Map.of("greater_hegemony", "Greater Hegemony"));
+        Map.of("hegemony", "greater_hegemony"),
+        Map.of("greater_hegemony", "hegemony"),
+        Map.of("greater_hegemony", "Greater Hegemony"));
 
     @Nested
     class ForSystem {
 
         @Test
         void ordersTheBlocWhoseNearestMarketOrbitsCloserToTheCentreFirst() {
-            try (MockedStatic<Markets> marketsMock = mockStatic(Markets.class)) {
+            try (var marketsMock = mockStatic(Markets.class)) {
+
                 stubEveryMarketOwnedAndKnown(marketsMock);
+
                 var starMock = buildStarAt(0.0f, 0.0f);
                 var systemMock = buildSystemCentredOn(starMock, starMock);
-                var sectorMock = buildSectorHolding(systemMock,
-                        buildMarketOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
-                        buildMarketOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));
+                var sectorMock = buildSectorHolding(
+                    systemMock,
+                    buildMarketOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
+                    buildMarketOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));
 
                 var comparator = MarketProximityTieBreak.forSystem(
-                        sectorMock, systemMock, false, HolderGrouping.identity());
+                    sectorMock,
+                    systemMock,
+                    false,
+                    HolderGrouping.identity());
 
                 // hegemony's market orbits nearer the star, so it is ordered before blackrock.
-                assertThat(comparator.compare("hegemony", "blackrock")).isNegative();
-                assertThat(comparator.compare("blackrock", "hegemony")).isPositive();
+                assertThat(comparator.compare("hegemony", "blackrock"))
+                    .isNegative();
+                assertThat(comparator.compare("blackrock", "hegemony"))
+                    .isPositive();
             }
         }
 
         @Test
         void fallsBackToLowestColourFactionIdWhenNearestMarketsOrbitAtTheSameDepth() {
-            try (MockedStatic<Markets> marketsMock = mockStatic(Markets.class)) {
+            try (var marketsMock = mockStatic(Markets.class)) {
+
                 stubEveryMarketOwnedAndKnown(marketsMock);
+
                 var starMock = buildStarAt(0.0f, 0.0f);
                 var systemMock = buildSystemCentredOn(starMock, starMock);
-                var sectorMock = buildSectorHolding(systemMock,
-                        buildMarketOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
-                        buildMarketOwnedBy("blackrock", buildOrbitingEntity(ORBIT_CLOSE, starMock)));
+                var sectorMock = buildSectorHolding(
+                    systemMock,
+                    buildMarketOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
+                    buildMarketOwnedBy("blackrock", buildOrbitingEntity(ORBIT_CLOSE, starMock)));
 
                 var comparator = MarketProximityTieBreak.forSystem(
-                        sectorMock, systemMock, false, GREATER_HEGEMONY);
+                    sectorMock,
+                    systemMock,
+                    false,
+                    GREATER_HEGEMONY);
 
                 // Equal distance: the colour-faction id decides - the alliance colours by
                 // hegemony, and blackrock < hegemony - so the alliance is ordered last. This
                 // backstop is grouping-invariant, so it lands the same on either view.
-                assertThat(comparator.compare("greater_hegemony", "blackrock")).isPositive();
-                assertThat(comparator.compare("blackrock", "greater_hegemony")).isNegative();
+                assertThat(comparator.compare("greater_hegemony", "blackrock"))
+                    .isPositive();
+                assertThat(comparator.compare("blackrock", "greater_hegemony"))
+                    .isNegative();
             }
         }
 
         @Test
         void resolvesTheSameWinnerUnderFactionAndAllianceGrouping() {
-            try (MockedStatic<Markets> marketsMock = mockStatic(Markets.class)) {
+            try (var marketsMock = mockStatic(Markets.class)) {
+
                 stubEveryMarketOwnedAndKnown(marketsMock);
+
                 var starMock = buildStarAt(0.0f, 0.0f);
                 var systemMock = buildSystemCentredOn(starMock, starMock);
+
                 // The same two physical markets - hegemony's nearer the centre than
                 // blackrock's - decide the tie, so the hegemony side wins whether hegemony
                 // stands alone or folds into an alliance. No id-ordering flip between views.
-                var sectorMock = buildSectorHolding(systemMock,
-                        buildMarketOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
-                        buildMarketOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));
+                var sectorMock = buildSectorHolding(
+                    systemMock,
+                    buildMarketOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
+                    buildMarketOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));
 
                 var factionComparator = MarketProximityTieBreak.forSystem(
-                        sectorMock, systemMock, false, HolderGrouping.identity());
-                var allianceComparator = MarketProximityTieBreak.forSystem(
-                        sectorMock, systemMock, false, GREATER_HEGEMONY);
+                    sectorMock,
+                    systemMock,
+                    false,
+                    HolderGrouping.identity());
 
-                assertThat(factionComparator.compare("hegemony", "blackrock")).isNegative();
+                var allianceComparator = MarketProximityTieBreak.forSystem(
+                    sectorMock,
+                    systemMock,
+                    false,
+                    GREATER_HEGEMONY);
+
+                assertThat(factionComparator.compare("hegemony", "blackrock"))
+                    .isNegative();
                 assertThat(allianceComparator.compare("greater_hegemony", "blackrock"))
-                        .isNegative();
+                    .isNegative();
             }
         }
 
         @Test
         void readsNoEconomyUntilFirstCompared() {
-            try (MockedStatic<Markets> marketsMock = mockStatic(Markets.class)) {
+            try (var marketsMock = mockStatic(Markets.class)) {
+
                 stubEveryMarketOwnedAndKnown(marketsMock);
+
                 var starMock = buildStarAt(0.0f, 0.0f);
                 var systemMock = buildSystemCentredOn(starMock, starMock);
-                var sectorMock = buildSectorHolding(systemMock,
-                        buildMarketOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
-                        buildMarketOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));
+                var sectorMock = buildSectorHolding(
+                    systemMock,
+                    buildMarketOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
+                    buildMarketOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));
 
                 var comparator = MarketProximityTieBreak.forSystem(
-                        sectorMock, systemMock, false, HolderGrouping.identity());
+                    sectorMock,
+                    systemMock,
+                    false,
+                    HolderGrouping.identity());
 
                 // Building the comparator touches no geometry; only the first compare - the
                 // first tie - walks the economy, so a system that never ties costs nothing.
-                verify(sectorMock, never()).getEconomy();
+                verify(sectorMock, never())
+                    .getEconomy();
+
                 comparator.compare("hegemony", "blackrock");
-                verify(sectorMock).getEconomy();
+
+                verify(sectorMock)
+                    .getEconomy();
+            }
+        }
+
+        @Test
+        void ignoresAColonyTheEconomyDoesNotListHoweverCloseItOrbits() {
+            try (var marketsMock = mockStatic(Markets.class)) {
+
+                stubEveryMarketOwnedAndKnown(marketsMock);
+
+                var starMock = buildStarAt(0.0f, 0.0f);
+                var systemMock = buildSystemCentredOn(starMock, starMock);
+                var sectorMock = buildSectorHolding(
+                    systemMock,
+                    buildMarketOwnedBy("hegemony", buildOrbitingEntity(ORBIT_FAR, starMock)));
+
+                // blackrock's only holding here is a market the economy does not list, orbiting
+                // nearer the star than hegemony's does. The tie-break reads the economy alone, so
+                // it decides on hegemony's market and blackrock is placeless - the guarantee that
+                // the expanded box naming such a colony did not hand it a mechanic.
+                hangUnlistedMarketOn(
+                    systemMock,
+                    buildMarketOwnedBy("blackrock", buildOrbitingEntity(ORBIT_CLOSE, starMock)));
+
+                var comparator = MarketProximityTieBreak.forSystem(
+                    sectorMock,
+                    systemMock,
+                    false,
+                    HolderGrouping.identity());
+
+                assertThat(comparator.compare("hegemony", "blackrock"))
+                    .isNegative();
             }
         }
 
         @Test
         void treatsAMarketWithNoPrimaryEntityAsFarthestFromTheCentre() {
-            try (MockedStatic<Markets> marketsMock = mockStatic(Markets.class)) {
+            try (var marketsMock = mockStatic(Markets.class)) {
+
                 stubEveryMarketOwnedAndKnown(marketsMock);
+
                 var starMock = buildStarAt(0.0f, 0.0f);
                 var systemMock = buildSystemCentredOn(starMock, starMock);
+
                 // hegemony's colony has no primary entity to place, so it is unplaceable and
                 // never wins the tie however the ids sort; the placed rival takes it.
-                var sectorMock = buildSectorHolding(systemMock,
-                        buildMarketOwnedBy("hegemony", null),
-                        buildMarketOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));
+                var sectorMock = buildSectorHolding(
+                    systemMock,
+                    buildMarketOwnedBy("hegemony", null),
+                    buildMarketOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));
 
                 var comparator = MarketProximityTieBreak.forSystem(
-                        sectorMock, systemMock, false, HolderGrouping.identity());
+                    sectorMock,
+                    systemMock,
+                    false,
+                    HolderGrouping.identity());
 
-                assertThat(comparator.compare("hegemony", "blackrock")).isPositive();
+                assertThat(comparator.compare("hegemony", "blackrock"))
+                    .isPositive();
             }
         }
     }
@@ -162,35 +239,70 @@ class MarketProximityTieBreakTest {
     // Stubs the colony filter open for every market, so the read turns on the bloc mapping over
     // the real orbit geometry rather than on which markets count as colonies.
     private static void stubEveryMarketOwnedAndKnown(MockedStatic<Markets> marketsMock) {
-        marketsMock.when(() -> Markets.isCountedAsColony(any(), anyBoolean())).thenReturn(true);
+        marketsMock
+            .when(() -> Markets.isCountedAsColony(any(), anyBoolean()))
+            .thenReturn(true);
     }
 
     // A market owned by a faction, sitting on the given primary entity - the body whose orbit
     // fixes the market's distance from the centre.
     private static MarketAPI buildMarketOwnedBy(String factionId, SectorEntityToken primaryEntity) {
+
         var factionMock = mock(FactionAPI.class);
-        when(factionMock.getId()).thenReturn(factionId);
+
+        when(factionMock.getId())
+            .thenReturn(factionId);
+
         var marketMock = mock(MarketAPI.class);
-        when(marketMock.getFaction()).thenReturn(factionMock);
-        when(marketMock.getPrimaryEntity()).thenReturn(primaryEntity);
+
+        when(marketMock.getFaction())
+            .thenReturn(factionMock);
+        when(marketMock.getPrimaryEntity())
+            .thenReturn(primaryEntity);
+
         return marketMock;
+    }
+
+    // Hangs a market on the system's own entity without registering it with the economy - the shape
+    // vanilla builds an unregistered colony in, and the one thing a read of the economy alone is
+    // meant not to see.
+    private static void hangUnlistedMarketOn(StarSystemAPI system, MarketAPI market) {
+
+        var entityMock = market.getPrimaryEntity();
+
+        when(entityMock.getMarket())
+            .thenReturn(market);
+        when(system.getAllEntities())
+            .thenReturn(List.of(entityMock));
     }
 
     // A system with a centre token and its stars, the two the reference-star search reads.
     private static StarSystemAPI buildSystemCentredOn(SectorEntityToken centre, PlanetAPI... stars) {
+
         var systemMock = mock(StarSystemAPI.class);
-        when(systemMock.getCenter()).thenReturn(centre);
-        when(systemMock.getPlanets()).thenReturn(List.of(stars));
+
+        when(systemMock.getCenter())
+            .thenReturn(centre);
+        when(systemMock.getPlanets())
+            .thenReturn(List.of(stars));
+
         return systemMock;
     }
 
     // A sector whose economy holds the given markets for the system, the walk the tie-break
     // reads once on its first compare.
     private static SectorAPI buildSectorHolding(StarSystemAPI system, MarketAPI... markets) {
+
         var economyMock = mock(EconomyAPI.class);
-        when(economyMock.getMarkets(system)).thenReturn(List.of(markets));
+
+        when(economyMock.getMarkets(system))
+            .thenReturn(List.of(markets));
+
         var sectorMock = mock(SectorAPI.class);
-        when(sectorMock.getEconomy()).thenReturn(economyMock);
+
+        when(sectorMock.getEconomy())
+            .thenReturn(economyMock);
+
         return sectorMock;
     }
 }

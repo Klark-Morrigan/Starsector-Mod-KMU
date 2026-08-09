@@ -32,6 +32,12 @@ import java.util.List;
  * ordinary box and the map's own fills show. A breakdown computed beside the weight rather than under
  * it could drift from it, and a box explaining a number it disagrees with is worse than no box.
  *
+ * <p>One kind of colony is listed that no score above it accounts for: one the economy does not list,
+ * which the weight read has nothing to weigh and so passes over entirely. It is named at nought
+ * rather than left off, because the player can see the station on the map in a faction's colours -
+ * but it is read separately and carried separately all the way to its line, so nothing it says can
+ * reach the pass that painted the system.
+ *
  * <p>Stateless past the reader it is built around, like the box it stands in for.
  */
 public final class ExpandedSystemDominationTooltip extends SystemStandingsTooltip {
@@ -55,10 +61,20 @@ public final class ExpandedSystemDominationTooltip extends SystemStandingsToolti
             pass.rules(),
             pass.shouldIncludeUndiscoveredMarkets());
 
-        // A faction the read found nothing for is listed as its line alone rather than as a heading
+        // The colonies the pass could not weigh, read beside the ones it did. They are a second read
+        // rather than a second kind of breakdown because the pass must go on seeing exactly the
+        // markets it sees today: a colony the economy does not list has nothing to weigh, and one
+        // admitted here would hand its owner weight nobody worked out.
+        var unweighedColoniesByFactionId = KnownMarketFootprints.readUnweighedColoniesByFaction(
+            sector,
+            system,
+            pass.shouldIncludeUndiscoveredMarkets());
+
+        // A faction the reads found nothing for is listed as its line alone rather than as a heading
         // over an empty account, which is what an empty answer means to the shape above.
         return standing -> MarketWeightRowResolver.resolveMarketRows(
             breakdownsByFactionId.getOrDefault(standing.factionId(), List.of()),
+            unweighedColoniesByFactionId.getOrDefault(standing.factionId(), List.of()),
             pass.rules());
     }
 }

@@ -7,6 +7,7 @@ import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
 import kmu.maplayers.politicalmap.base.dominance.StationFactor;
+import kmu.maplayers.politicalmap.base.dominance.UnweighedColony;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -35,6 +36,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * difference between an account and a form: a switched-off factor has no line at all, rather than a
  * line insisting it counted for nothing.
  *
+ * <p>A colony the pass never weighed is the other half: it is on the list at all, its nought reads as
+ * the account's own statement rather than as a weight it lost on, and it sits below every colony that
+ * was weighed - including one weighed at nought, which is the pair the ordering has to keep apart.
+ *
  * <p>How a line's numbers read is stood apart from and pinned by {@link MarketFactorTextTest}; the
  * values asserted below are read only where the case is about which line carries which.
  */
@@ -43,6 +48,10 @@ final class MarketWeightRowResolverTest {
     // A plain colony's parts: size four at full worth, no station, no patrols. The baseline the
     // cases below add one factor at a time to.
     private static final BaseSizeFactor PLAIN_SIZE = new BaseSizeFactor(4, 4.0, 4.0, 0.0);
+
+    // A faction every one of whose colonies here the economy lists, which is the ordinary system
+    // and so every case bar the ones about the colonies it does not.
+    private static final List<UnweighedColony> NO_UNWEIGHED_COLONIES = List.of();
 
     @BeforeEach
     void installStrings() {
@@ -65,6 +74,7 @@ final class MarketWeightRowResolverTest {
                 List.of(
                     buildBreakdown("Culann", new BaseSizeFactor(3, 3.0, 3.0, 0.0)),
                     buildBreakdown("Jangala", new BaseSizeFactor(6, 6.0, 6.0, 0.0))),
+                NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             assertThat(readLabelTexts(rows))
@@ -81,6 +91,7 @@ final class MarketWeightRowResolverTest {
                 List.of(
                     buildBreakdown("Jangala", evenSize),
                     buildBreakdown("Culann", evenSize)),
+                NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             assertThat(readLabelTexts(rows))
@@ -93,6 +104,7 @@ final class MarketWeightRowResolverTest {
             // checked one level at a time rather than only at the bloc.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
+                NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             assertThat(rows.get(0).line().valueText())
@@ -105,6 +117,7 @@ final class MarketWeightRowResolverTest {
             // them it would explain deductions the reader has already passed.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
+                NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             assertThat(readLabelTexts(rows.get(0).children()))
@@ -117,6 +130,7 @@ final class MarketWeightRowResolverTest {
             // cause of cuts that are all zero.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
+                NO_UNWEIGHED_COLONIES,
                 new DominanceRules(
                     false,
                     buildBaseSizeWeighting(HiddenMarketScalingChoice.NORMAL),
@@ -139,6 +153,7 @@ final class MarketWeightRowResolverTest {
                     PLAIN_SIZE,
                     Optional.empty(),
                     Optional.empty())),
+                NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             assertThat(readSizeLine(rows).qualifierText())
@@ -171,6 +186,7 @@ final class MarketWeightRowResolverTest {
             // same number twice and imply a change that never happened.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
+                NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             assertThat(readSizeLine(rows).valueWorkingText())
@@ -183,6 +199,7 @@ final class MarketWeightRowResolverTest {
             // map, which a line reading "Station" would not.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildStationedBreakdown("Fort Ludd")),
+                NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             assertThat(readLabelTexts(rows.get(0).children()))
@@ -195,6 +212,7 @@ final class MarketWeightRowResolverTest {
             // fielded, so the tiers are what make the total explicable.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildPatrollingBreakdown(2, 1, 0)),
+                NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             var patrolEntry = rows.get(0).children().get(2);
@@ -211,6 +229,7 @@ final class MarketWeightRowResolverTest {
             // it explains; run together they would read as one number with a stray separator in it.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildPatrollingBreakdown(2, 0, 0)),
+                NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             var tierLine = rows.get(0).children().get(2).children().get(0).line();
@@ -227,7 +246,10 @@ final class MarketWeightRowResolverTest {
             // behind it worth drawing quieter, since a headcount summed over tiers that count for
             // different amounts explains nothing about the number beside it.
             var patrolLine = MarketWeightRowResolver
-                .resolveMarketRows(List.of(buildPatrollingBreakdown(2, 0, 0)), buildRules())
+                .resolveMarketRows(
+                    List.of(buildPatrollingBreakdown(2, 0, 0)),
+                    NO_UNWEIGHED_COLONIES,
+                    buildRules())
                 .get(0)
                 .children()
                 .get(2)
@@ -244,6 +266,7 @@ final class MarketWeightRowResolverTest {
             // A tier line for patrols that do not exist states a force the colony does not field.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildPatrollingBreakdown(0, 0, 3)),
+                NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             assertThat(readLabelTexts(rows.get(0).children().get(2).children()))
@@ -256,6 +279,7 @@ final class MarketWeightRowResolverTest {
             // and a colony explained by lines for both would say they counted for nothing instead.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
+                NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             assertThat(rows.get(0).children())
@@ -264,8 +288,96 @@ final class MarketWeightRowResolverTest {
 
         @Test
         void resolveMarketRowsListsNothingForABlocHoldingNoColony() {
-            assertThat(MarketWeightRowResolver.resolveMarketRows(List.of(), buildRules()))
+            assertThat(MarketWeightRowResolver.resolveMarketRows(
+                    List.of(),
+                    NO_UNWEIGHED_COLONIES,
+                    buildRules()))
                 .isEmpty();
+        }
+
+        @Test
+        void resolveMarketRowsNamesAColonyTheEconomyDoesNotListAtNought() {
+            // The player can see the station on the map in the faction's colours, so an account
+            // omitting it would withhold something they are looking straight at. Nought is what it
+            // brought to the score - it is present, and it moved nothing.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(),
+                List.of(new UnweighedColony("Galatia Academy")),
+                buildRules());
+
+            assertThat(rows.get(0).line().labelText())
+                .isEqualTo("Galatia Academy");
+            assertThat(rows.get(0).line().valueText())
+                .isEqualTo("0");
+        }
+
+        @Test
+        void resolveMarketRowsCallsNothingOutBesideAnUnweighedColonysNought() {
+            // The nought is the whole of what the account has to say about it, exactly as on the
+            // claims side: a word for why it was passed over would raise a question about the rule
+            // that the box would then owe an answer to.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(),
+                List.of(new UnweighedColony("Galatia Academy")),
+                buildRules());
+
+            assertThat(rows.get(0).line().qualifierText())
+                .isNull();
+        }
+
+        @Test
+        void resolveMarketRowsDrawsAnUnweighedColonysNoughtInTheQuietShade() {
+            // The nought is the pass's statement about the colony rather than anything the colony
+            // scored; in the list's own colour it would pass for a weight competed with and lost on.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(),
+                List.of(new UnweighedColony("Galatia Academy")),
+                buildRules());
+
+            assertThat(rows.get(0).line().isValueUncounted())
+                .isTrue();
+        }
+
+        @Test
+        void resolveMarketRowsBreaksAnUnweighedColonyDownIntoNoFactors() {
+            // None of the three factors ran for it - there is nothing beneath the line to state, and
+            // factor lines at nought would invite adding up to a total nobody computed.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(),
+                List.of(new UnweighedColony("Galatia Academy")),
+                buildRules());
+
+            assertThat(rows.get(0).children())
+                .isEmpty();
+        }
+
+        @Test
+        void resolveMarketRowsListsAnUnweighedColonyBelowEveryWeighedOne() {
+            // Including one that weighed nothing: that colony was weighed and came to nought, which
+            // is a different finding from one that was never weighed, and ranking them together by a
+            // number only one of them earned would put the unweighed above it.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildBreakdown("Culann", new BaseSizeFactor(0, 0.0, 0.0, 1.0))),
+                List.of(new UnweighedColony("Galatia Academy")),
+                buildRules());
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly("Culann", "Galatia Academy");
+        }
+
+        @Test
+        void resolveMarketRowsRanksUnweighedColoniesByName() {
+            // They have no weight to be ranked by, so they take the rule the weighed ones fall back
+            // on at a tie - one order down the whole list rather than two.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(),
+                List.of(
+                    new UnweighedColony("Tibicena"),
+                    new UnweighedColony("Galatia Academy")),
+                buildRules());
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly("Galatia Academy", "Tibicena");
         }
 
         @Test
@@ -275,6 +387,7 @@ final class MarketWeightRowResolverTest {
             // listing order could explain. A place stated here would be a number meaning nothing.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildPatrollingBreakdown(2, 1, 0)),
+                NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             assertThat(rows.get(0).line().indexPlace())
@@ -312,6 +425,7 @@ final class MarketWeightRowResolverTest {
                 new BaseSizeFactor(7, 2.5, 2.5, 0.0),
                 Optional.empty(),
                 Optional.empty())),
+            NO_UNWEIGHED_COLONIES,
             new DominanceRules(
                 true,
                 buildBaseSizeWeighting(HiddenMarketScalingChoice.FIXED),

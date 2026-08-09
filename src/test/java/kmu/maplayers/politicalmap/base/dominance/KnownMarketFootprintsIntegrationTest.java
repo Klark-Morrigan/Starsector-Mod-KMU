@@ -37,6 +37,7 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.bu
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildUndiscoveredHiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnOneEntity;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -65,6 +66,11 @@ import static org.mockito.Mockito.when;
  * the one-arithmetic read exists to make impossible. The arithmetic the economy cannot
  * reach - rounding a fractional sum onto the grid - is pinned on hand-built parts in
  * {@link MarketWeightBreakdownTest}.
+ *
+ * <p>The third read - the colonies present that the economy does not list - is covered over the same
+ * economy, and beside what it finds sits what it must not move: the contributions, the footprints
+ * and the standings a system holding one resolves to are asserted to be the ones it resolves to
+ * without it, since the whole reason those colonies are read apart is that no mechanic may see them.
  */
 class KnownMarketFootprintsIntegrationTest {
 
@@ -1168,6 +1174,167 @@ class KnownMarketFootprintsIntegrationTest {
                 .iterator()
                 .next()
                 .get(0);
+        }
+    }
+
+    @Nested
+    class ReadUnweighedColoniesByFaction {
+
+        @Test
+        void readUnweighedColoniesByFactionNamesTheColonyTheEconomyDoesNotList() {
+            // Vanilla builds Galatia Academy as a real market on a real station and never registers
+            // it, so the weighed walk cannot see it and a box reading that walk alone reports the
+            // station the player is looking at as nobody's.
+            var independent = buildFaction("independent");
+            var academy = withName(buildVisibleMarket(independent, 3), "Galatia Academy");
+            var listedColony = withName(buildVisibleMarket(independent, 5), "Ancyra");
+            var sector = buildSectorWith("galatia", listedColony);
+
+            placeMarketsOnSystemEntities(buildOnlySystem(sector), listedColony, academy);
+
+            var colonies = KnownMarketFootprints.readUnweighedColoniesByFaction(
+                sector,
+                buildOnlySystem(sector),
+                false);
+
+            assertThat(colonies)
+                .containsOnlyKeys("independent");
+            assertThat(colonies.get("independent"))
+                .containsExactly(new UnweighedColony("Galatia Academy"));
+        }
+
+        @Test
+        void readUnweighedColoniesByFactionRefusesAMarketThatIsNoColony() {
+            // The same filter both walks read: an uninhabited planet's condition-only placeholder is
+            // nobody's holding, and one reaching the box would name a colony that does not exist.
+            var sector = buildSectorWith("empty-system");
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                withName(
+                    buildMarket(buildFaction("hegemony"), 0, true, false, false, FULL_STABILITY),
+                    "Barren Placeholder"));
+
+            assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
+                    sector,
+                    buildOnlySystem(sector),
+                    false))
+                .isEmpty();
+        }
+
+        @Test
+        void readUnweighedColoniesByFactionWithholdsAnUndiscoveredColonyUntilTheRevealIsOn() {
+            // Discovery decides what the box may name, exactly as it does for a weighed colony:
+            // unfound it is withheld, and the dev reveal states it like anything else.
+            var sector = buildSectorWith("hidden-system");
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                withName(
+                    buildUndiscoveredHiddenMarket(buildFaction("pirates"), 3),
+                    "Selkie Station"));
+
+            assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
+                    sector,
+                    buildOnlySystem(sector),
+                    false))
+                .isEmpty();
+            assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
+                    sector,
+                    buildOnlySystem(sector),
+                    true))
+                .containsOnlyKeys("pirates");
+        }
+
+        @Test
+        void readUnweighedColoniesByFactionNamesOnePlaceOnceWhenTwoMarketsShareIt() {
+            // A mod that supersedes a market by adding its own beside vanilla's leaves two market
+            // objects on one station. The box hangs a line per colony, so counted twice the place
+            // would be read out to the player as two separate holdings at one station.
+            var independent = buildFaction("independent");
+            var supersededMarket = withName(buildVisibleMarket(independent, 3), "Galatia Academy");
+            var supersedingMarket = withName(buildVisibleMarket(independent, 5), "Galatia Academy");
+
+            placeMarketsOnOneEntity(supersededMarket, supersedingMarket);
+
+            var sector = buildSectorWith("galatia");
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                supersededMarket,
+                supersedingMarket);
+
+            assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
+                    sector,
+                    buildOnlySystem(sector),
+                    false)
+                .get("independent"))
+                .containsExactly(new UnweighedColony("Galatia Academy"));
+        }
+
+        @Test
+        void readUnweighedColoniesByFactionLeavesTheWeighedContributionsWhereTheyWere() {
+            // The whole point of the second walk: an unlisted colony reaches the account and not the
+            // pass. Admitted to the weight it would fold in at a nominal size nobody worked out - it
+            // has no industries, no conditions and no computed stability - and could hand the system
+            // to a faction the game does not.
+            var hegemony = buildFaction("hegemony");
+            var listedColony = withName(buildVisibleMarket(hegemony, 5), "Chicomoztoc");
+            var sector = buildSectorWith("galatia", listedColony);
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                listedColony,
+                withName(buildVisibleMarket(hegemony, 4), "Galatia Academy"));
+
+            var contributions = KnownMarketFootprints.readContributionsByFaction(
+                sector,
+                buildOnlySystem(sector),
+                buildRules().build(),
+                false);
+
+            assertThat(contributions.get("hegemony").footprint().totalWeight())
+                .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
+            assertThat(contributions.get("hegemony").marketSize())
+                .isEqualTo(5);
+        }
+
+        @Test
+        void readUnweighedColoniesByFactionLeavesAFactionHoldingOnlyOneOutOfThePassEntirely() {
+            // A faction whose only colony here is unlisted takes no contribution, so it takes no
+            // standing and the box has no line to hang the colony under. That is deliberate: giving
+            // it one would mean synthesising a rank the pass never produced.
+            var sector = buildSectorWith(
+                "galatia",
+                withName(buildVisibleMarket(buildFaction("hegemony"), 5), "Chicomoztoc"));
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                withName(buildVisibleMarket(buildFaction("independent"), 3), "Galatia Academy"));
+
+            assertThat(KnownMarketFootprints.readByFaction(
+                    sector,
+                    buildOnlySystem(sector),
+                    buildRules().build()))
+                .containsOnlyKeys("hegemony");
+        }
+
+        @Test
+        void readUnweighedColoniesByFactionYieldsNothingForASystemTheEconomyListsWhole() {
+            // The ordinary system: every colony present is one the weighed walk already accounts
+            // for, so the widened read adds nothing and the box reads exactly as it did.
+            var listedColony = withName(
+                buildVisibleMarket(buildFaction("hegemony"), 5),
+                "Chicomoztoc");
+            var sector = buildSectorWith("hegemony-system", listedColony);
+
+            placeMarketsOnSystemEntities(buildOnlySystem(sector), listedColony);
+
+            assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
+                    sector,
+                    buildOnlySystem(sector),
+                    false))
+                .isEmpty();
         }
     }
 

@@ -8,6 +8,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import kmlib.starsector.markets.MarketPatrols;
 import kmlib.starsector.markets.Markets;
 import kmlib.starsector.markets.PatrolCounts;
+import kmlib.starsector.systems.StarSystems;
 
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -45,6 +46,12 @@ import java.util.Optional;
  * one that has to explain the number reads {@link #readBreakdownByFaction} for the
  * same markets' parts. Neither can show a total the other's arithmetic disagrees
  * with, because there is only the one arithmetic.
+ *
+ * <p>Beside those two sits a third read that weighs nothing:
+ * {@link #readUnweighedColoniesByFaction}, the colonies present in the system that the
+ * economy does not list. They reach a caller describing the system and no caller
+ * computing it, which is why they are a separate walk answering a separate type - the
+ * pass sees exactly the markets it sees today.
  */
 public final class KnownMarketFootprints {
 
@@ -237,6 +244,45 @@ public final class KnownMarketFootprints {
     }
 
     /**
+     * Reads each faction's colonies in one system that the economy does not list - the ones no
+     * weight was ever worked out for.
+     *
+     * <p>Vanilla builds a colony that way on purpose, so a player can be looking at a station in a
+     * faction's colours that {@link #readBreakdownByFaction} cannot see. A box accounting for the
+     * system has to name it; the pass must not, every term of a dominance weight being economy-fed
+     * - an unlisted market has no industries, no conditions and no computed stability, so admitting
+     * one would hand its owner weight nobody worked out and could change which faction the map
+     * paints the system for.
+     *
+     * <p>A second read over a second walk rather than a widening of the weighed one, so a caller
+     * that must not see these colonies cannot be handed them by accident. What the two walks share
+     * is the one thing that must not drift between them: which markets count as colonies here.
+     *
+     * @param sector                           the sector whose economy is read; assumed non-null
+     *                                         with a non-null economy, which the callers guard
+     *                                         before delegating
+     * @param system                           the system whose markets are read
+     * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
+     *                                         still counts (the "show all factions" dev reveal);
+     *                                         false applies the normal known-to-player filter
+     * @return each faction's unlisted colonies in the system, keyed by faction id and in the
+     *         system's own entity order; empty when every colony present is one the economy lists
+     */
+    public static Map<String, List<UnweighedColony>> readUnweighedColoniesByFaction(
+            SectorAPI sector,
+            StarSystemAPI system,
+            boolean shouldIncludeUndiscoveredMarkets) {
+
+        var coloniesByFactionId = new LinkedHashMap<String, List<UnweighedColony>>();
+        for (var market : readUnweighedColonies(sector, system, shouldIncludeUndiscoveredMarkets)) {
+            coloniesByFactionId
+                .computeIfAbsent(market.getFaction().getId(), factionId -> new ArrayList<>())
+                .add(new UnweighedColony(market.getName()));
+        }
+        return coloniesByFactionId;
+    }
+
+    /**
      * Rounds a worth in size points onto the dominance grid, which is the only place a
      * weight is ever expressed as an integer.
      *
@@ -269,6 +315,28 @@ public final class KnownMarketFootprints {
 
         var colonies = new ArrayList<MarketAPI>();
         for (var market : sector.getEconomy().getMarkets(system)) {
+            if (Markets.isCountedAsColony(market, shouldIncludeUndiscoveredMarkets)) {
+                colonies.add(market);
+            }
+        }
+        return Markets.readLargestMarketsPerFaction(colonies);
+    }
+
+    // The system's colonies the economy does not list, one per place and owner - what the walk
+    // above cannot reach, and nothing it can, the widened read answering only what the economy
+    // leaves out.
+    //
+    // The same colony filter and the same per-place resolution as the weighed walk, so both sets
+    // are drawn under one definition of a colony that counts here. Stated again rather than left to
+    // the widened read's own sameness test, because the two walks disagreeing on which markets are
+    // colonies is the one way this read could put a colony on the box twice or leave it off.
+    private static List<MarketAPI> readUnweighedColonies(
+            SectorAPI sector,
+            StarSystemAPI system,
+            boolean shouldIncludeUndiscoveredMarkets) {
+
+        var colonies = new ArrayList<MarketAPI>();
+        for (var market : StarSystems.readMarketsUnlistedByEconomy(sector, system)) {
             if (Markets.isCountedAsColony(market, shouldIncludeUndiscoveredMarkets)) {
                 colonies.add(market);
             }

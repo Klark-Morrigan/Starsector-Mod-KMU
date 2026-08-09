@@ -304,6 +304,36 @@ public final class SectorPoliticsFixtures {
     }
 
     /**
+     * Hangs the given markets on the system's own entities, each on the entity it already stands on,
+     * without registering any of them with the economy - the shape vanilla builds an unregistered
+     * colony in, a real market on a real station that the economy's listing never holds.
+     *
+     * <p>Whether a market is <em>also</em> in the economy is the caller's to decide by which of them
+     * it handed {@link #buildSectorWith}, so one system can be wired holding both kinds at once -
+     * which is the only wiring under which a read that answers what the economy leaves out can be
+     * shown to leave out what it lists.
+     *
+     * @param system  the system whose entities carry them
+     * @param markets the markets to hang, each on its own primary entity
+     */
+    public static void placeMarketsOnSystemEntities(StarSystemAPI system, MarketAPI... markets) {
+
+        var entities = new ArrayList<SectorEntityToken>();
+
+        for (var market : markets) {
+            var entityMock = market.getPrimaryEntity();
+
+            when(entityMock.getMarket())
+                .thenReturn(market);
+
+            entities.add(entityMock);
+        }
+
+        when(system.getAllEntities())
+            .thenReturn(entities);
+    }
+
+    /**
      * Centres a system on a star - both its centre and its one star - so a distance-from-centre
      * read resolves that star as its reference.
      *

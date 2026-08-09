@@ -179,6 +179,18 @@ so the lines always add up to the number the ordinary box and the fills show;
 line's numbers read - a rating as the player set it, a weight on the grid the rest of the box counts
 in, no cut that took nothing, and a patrol tier's rate stated apart from the total it explains so the
 box draws the arithmetic quieter than the finding).
+That box lists one kind of colony no score above it accounts for: one the economy does not list,
+which the weight read has nothing to weigh. It comes from a second walk over the same colony filter
+(`KnownMarketFootprints.readUnweighedColoniesByFaction`), carried as its own `UnweighedColony` rather
+than as a zeroed `MarketWeightBreakdown` - zero weight is not absence on this side, a weightless
+colony still marking presence and painting its system unopposed, so a value that could be summed into
+a footprint would leave the pass one forgotten branch away from painting a system for a faction the
+mechanic never counted. It is named at the foot of the faction's list, at nought in the quiet shade,
+and breaks down into no factors - the same sentence the claims box speaks for a market its own
+mechanic never weighed, and for the same reason: the colony is there and it moved nothing, which is
+the whole of what the account has to say about it. A faction whose only colony in the system is one
+of these still goes unnamed - it takes no contribution, so it takes no standing, and there is no line
+to hang the colony under.
 The claims box has a counterpart of its own on the same terms - `ExpandedSystemClaimTooltip`, which
 opens every faction the contest names into the markets it holds the system with and each market
 into the terms its claim score is built from. Both claim boxes sit on `SystemClaimContestTooltip`,

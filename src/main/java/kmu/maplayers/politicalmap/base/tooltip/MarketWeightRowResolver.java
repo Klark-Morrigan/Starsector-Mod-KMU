@@ -7,6 +7,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
+import kmu.maplayers.politicalmap.base.dominance.UnweighedColony;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.settings.HiddenMarketScalingChoice;
 import kmu.util.KmuStrings;
@@ -29,6 +30,11 @@ import java.util.List;
  * model nesting at all: the walk that lays these out reads the tier off how deep it went, so this
  * resolver states only what breaks down into what.
  *
+ * <p>A colony the pass never weighed is listed all the same, at the foot of the list and at nought.
+ * The player can see the station on the map in a faction's colours, so an account of the system that
+ * omitted it would be withholding something they are looking straight at - and the nought is the
+ * whole of what the account has to say about it: it is there, and it moved nothing.
+ *
  * <p>A factor that did not run has no line. Which of them ran is already settled by the breakdown
  * read - the station and patrol parts are absent when the player has the factor off - and only the
  * stability line, which is a cause rather than a factor, is gated here on the rule that makes it
@@ -49,9 +55,19 @@ public final class MarketWeightRowResolver {
             .reversed()
             .thenComparing(MarketWeightBreakdown::marketName);
 
+    // A colony the pass never weighed is ranked by name alone, having no weight to be ranked by -
+    // which is the rule the weighed colonies fall back on at a tie, so one order runs down the
+    // whole list rather than two.
+    private static final Comparator<UnweighedColony> UNWEIGHED_ORDER =
+        Comparator.comparing(UnweighedColony::marketName);
+
     // A colony and its factors are named rather than crested: the faction line above already carries
     // the crest, and repeating it down every line below would read as a second holder each time.
     private static final String NO_CREST = null;
+
+    // What a colony the pass never weighed folded in at. Nought rather than a blank column, because
+    // the colony is on the list and the reader is being told what it counted for.
+    private static final int NO_WEIGHT = 0;
 
     // A tier nobody fields is not listed. Its line would state patrols the colony does not have,
     // and the reader is looking for what the weight is made of, not what it is not.
@@ -62,23 +78,38 @@ public final class MarketWeightRowResolver {
 
     /**
      * Resolves the colonies behind one faction's score into the entries listed beneath it, strongest
-     * first, each carrying the factors its own weight was summed from.
+     * first, each carrying the factors its own weight was summed from - closed by the colonies the
+     * pass never weighed, which are named at nought and break down into nothing.
      *
-     * @param breakdowns the faction's counted colonies in the hovered system, in any order
-     * @param rules      the weighting rules the pass resolved under, which decide whether stability
-     *                   is a cause worth stating
-     * @return one entry per colony in ranked order, each carrying its factor lines; empty when the
-     *         faction holds no counted colony in the system
+     * @param breakdowns        the faction's counted colonies in the hovered system, in any order
+     * @param unweighedColonies the faction's colonies in the system that the economy does not list,
+     *                          which no weight was worked out for
+     * @param rules             the weighting rules the pass resolved under, which decide whether
+     *                          stability is a cause worth stating
+     * @return one entry per colony, the weighed ones ranked ahead of the unweighed; empty when the
+     *         faction holds no colony at all in the system
      */
     public static List<CellTooltipEntry> resolveMarketRows(
             List<MarketWeightBreakdown> breakdowns,
+            List<UnweighedColony> unweighedColonies,
             DominanceRules rules) {
 
-        return breakdowns
+        var entries = new ArrayList<CellTooltipEntry>();
+
+        breakdowns
             .stream()
             .sorted(MARKET_ORDER)
-            .map(breakdown -> resolveMarketEntry(breakdown, rules))
-            .toList();
+            .forEach(breakdown -> entries.add(resolveMarketEntry(breakdown, rules)));
+
+        // Last whatever they would rank at, because they never ranked: sorted in among the weighed
+        // colonies by a nought they were never given, they would sit above a colony that was
+        // weighed and came to nothing, which is a comparison neither number can bear.
+        unweighedColonies
+            .stream()
+            .sorted(UNWEIGHED_ORDER)
+            .forEach(colony -> entries.add(resolveUnweighedEntry(colony)));
+
+        return List.copyOf(entries);
     }
 
     // One colony as the entry it is listed as: its name and the weight it folded in at, over the
@@ -93,6 +124,23 @@ public final class MarketWeightRowResolver {
                 breakdown.marketName(),
                 KmlibNumbers.formatGroupedInteger(breakdown.computeTotalWeight())))
             .nesting(resolveFactorEntries(breakdown, rules));
+    }
+
+    // A colony the pass never weighed, as the entry it is listed as: named as loudly as the colonies
+    // above it, at nought, and breaking down into no factors - none of them ran, so there is nothing
+    // beneath it to state.
+    //
+    // The nought says the whole of it, exactly as the claims box's does. It is the account's
+    // statement about the colony rather than anything the colony scored, so it reads in the quiet
+    // shade: in the list's own colour it would pass for a weight competed with and lost on, which is
+    // the one thing it is not.
+    private static CellTooltipEntry resolveUnweighedEntry(UnweighedColony colony) {
+        return CellTooltipEntry.createEntry(CellTooltipEntryLine
+            .createLine(
+                NO_CREST,
+                colony.marketName(),
+                KmlibNumbers.formatGroupedInteger(NO_WEIGHT))
+            .statesUncountedValue());
     }
 
     // The factors of one colony, in the order the weight read applied them - the stability that

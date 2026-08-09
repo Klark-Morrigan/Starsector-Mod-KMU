@@ -11,6 +11,7 @@ import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
+import kmu.maplayers.politicalmap.base.dominance.UnweighedColony;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -45,6 +46,11 @@ import static org.mockito.Mockito.when;
  * colonies - the one thing a bloc's line above cannot say, since a bloc's score is the sum over its
  * members' - and that the economy behind all of them is read once for the box rather than once per
  * faction.
+ *
+ * <p>A third holds for the colonies the economy does not list: they are read apart from the weighed
+ * ones and paired to their faction the same way, so they reach the account without ever reaching the
+ * pass. That they weigh nothing is {@link MarketWeightRowResolverTest}'s; that they are the faction's
+ * own is here.
  *
  * <p>Where those colonies then hang is the shared resolution's ({@link StandingRowResolverTest}), and
  * the ranking, the status line, the decree, the two headings and the lines naming the blocs belong to
@@ -148,6 +154,41 @@ final class ExpandedSystemDominationTooltipTest {
         }
 
         @Test
+        void createFactionAccountResolverAccountsForTheColoniesTheEconomyDoesNotList() {
+            // The one colony no score above accounts for: vanilla builds it and never registers it,
+            // so the weighed read cannot see it and the player is left looking at a station in a
+            // faction's colours that the box says nothing about.
+            stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Culann", 3.0))));
+            stubUnweighedColonies(Map.of(
+                "hegemony",
+                List.of(new UnweighedColony("Galatia Academy"))));
+
+            var accountResolver =
+                tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
+
+            assertThat(readLabelTexts(accountResolver.resolveAccountEntries(LEAD_MEMBER)))
+                .containsExactly("Culann", "Galatia Academy");
+        }
+
+        @Test
+        void createFactionAccountResolverKeepsAnUnlistedColonyToTheFactionHoldingIt() {
+            // The two reads are keyed the same way and paired the same way, so an unlisted colony
+            // can no more be listed under a sibling's name than a weighed one can.
+            stubBreakdowns(Map.of());
+            stubUnweighedColonies(Map.of(
+                "tritachyon",
+                List.of(new UnweighedColony("Galatia Academy"))));
+
+            var accountResolver =
+                tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
+
+            assertThat(accountResolver.resolveAccountEntries(LEAD_MEMBER))
+                .isEmpty();
+            assertThat(readLabelTexts(accountResolver.resolveAccountEntries(OTHER_MEMBER)))
+                .containsExactly("Galatia Academy");
+        }
+
+        @Test
         void createFactionAccountResolverReadsTheColoniesUnderTheRankingsOwnPass() {
             // The parts have to be read under the rule and reveal the scores above them were ranked
             // through, or the box would explain a number with arithmetic that did not produce it.
@@ -219,6 +260,18 @@ final class ExpandedSystemDominationTooltipTest {
                 any(),
                 anyBoolean()))
             .thenReturn(breakdownsByFactionId);
+    }
+
+    // Stands in the second read, the colonies present that the economy does not list. Stubbed apart
+    // from the weighed ones because that is how the box reads them: two walks, so nothing an unlisted
+    // colony says can reach the pass.
+    private void stubUnweighedColonies(Map<String, List<UnweighedColony>> coloniesByFactionId) {
+        footprintsMock
+            .when(() -> KnownMarketFootprints.readUnweighedColoniesByFaction(
+                any(),
+                any(),
+                anyBoolean()))
+            .thenReturn(coloniesByFactionId);
     }
 
     // One colony worth the given size points on its base size alone, so a case states a colony by the
