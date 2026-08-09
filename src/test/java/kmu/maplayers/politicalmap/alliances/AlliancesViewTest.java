@@ -13,6 +13,7 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.politicalmap.base.DominanceSortMode;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
@@ -353,6 +354,30 @@ final class AlliancesViewTest {
                             "Rebel Pact",
                             "graphics/rebels_crest.png"),
                         ANY_STATS));
+            }
+        }
+
+        @Test
+        void resolveBlocPickerRanksItsBlocsByTheDominanceVocabulary() {
+            // This view's blocs are folded sets of factions, but they carry the same metrics a lone
+            // faction's do, so it ranks by the same vocabulary the factions view offers. Asserted
+            // per view rather than once on the shared assembly, since which vocabulary a view's rows
+            // can be read by is the view's own choice of what paints it.
+            var view = spy(AlliancesView.INSTANCE);
+
+            doReturn(ALLIANCE_GROUPING)
+                .when(view)
+                .resolveGrouping();
+
+            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
+
+                aggregatorMock
+                    .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
+                    .thenReturn(Map.of());
+
+                assertThat(view.resolveBlocPicker(mock(SectorAPI.class), ANY_RULES, false)
+                        .sortModes())
+                    .isEqualTo(DominanceSortMode.MODES);
             }
         }
     }

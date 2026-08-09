@@ -5,23 +5,17 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.hashing.Fingerprints;
-import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.politicalmap.base.DominanceSortMode;
+import kmu.maplayers.politicalmap.base.DominancePaintedView;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
-import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.RankedBloc;
-import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.base.politics.DominanceStats;
-import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.util.KmuStrings;
 
 import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * The faction-territory view's render rules: every faction is its own bloc, only
@@ -31,7 +25,7 @@ import java.util.Optional;
  * pipeline was carved out of, so its grouping is {@link HolderGrouping#identity()}
  * and its two per-bloc decisions read the bloc id as a plain faction id.
  */
-public final class FactionsView implements PoliticalMapView {
+public final class FactionsView implements DominancePaintedView {
 
     /** The one shared instance; stateless, so every pass reuses it. */
     public static final FactionsView INSTANCE = new FactionsView();
@@ -115,27 +109,11 @@ public final class FactionsView implements PoliticalMapView {
     }
 
     @Override
-    public ListPicker<RankedBloc<DominanceStats>> resolveBlocPicker(
-            SectorAPI sector,
-            DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets) {
-
-        // Under identity every faction is its own bloc, so every present bloc is a selectable target -
-        // the always-true gate. The presence gate (a bloc appears in the stats exactly when it holds a
-        // market somewhere) is the shared stats read's, which both views draw from.
-        var grouping = resolveGrouping();
-        var pass = new DominancePass(rules, shouldIncludeUndiscoveredMarkets, grouping);
-
-        // Paired with the dominance vocabulary because that is what this view's blocs carry: the
-        // picker ranks by the same metrics the map is painted from, so a row's number and its
-        // territory read as one answer.
-        return new ListPicker<>(
-            buildSelectableBlocs(
-                sector,
-                grouping,
-                DominanceStatsAggregator.aggregateDominanceStats(sector, pass),
-                blocId -> true),
-            DominanceSortMode.MODES);
+    public Predicate<String> resolveSelectableBlocGate(HolderGrouping grouping) {
+        // Under identity every faction is its own bloc, so every present bloc is a selectable target.
+        // The presence gate (a bloc appears in the stats exactly when it holds a market somewhere) is
+        // the shared stats read's, which every dominance-painted view draws from.
+        return blocId -> true;
     }
 
     // The faction's name in the player's chosen format: the abbreviated display name for

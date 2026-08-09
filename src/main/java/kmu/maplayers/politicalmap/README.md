@@ -96,6 +96,14 @@ What changes between views is only the two inputs, the grouping and the ownershi
 seam on, every view shapes, fills, and labels identically. The sources themselves and the three
 fill states are [ownership resolution](base/politics/holders/README.md).
 
+The spotlight list runs on the same principle one level down. `PoliticalMapView` asks a view for its
+whole picker - the blocs on offer *and* the vocabulary that ranks them - so the metrics a view's rows
+carry can never drift from the modes offered to sort them by, and the sidebar above passes the pair
+on without naming either. Factions and Alliances are painted by the same contest, so
+`DominancePaintedView` answers that once for both and leaves them only the one thing they differ on,
+which is the Spotlight targets column above. A view painted by another mechanic implements the seam
+directly and pairs its own list with its own vocabulary rather than widening theirs.
+
 ## Where each part lives
 
 - **[Ownership resolution](base/politics/holders/README.md)** - the per-view ownership seam, the

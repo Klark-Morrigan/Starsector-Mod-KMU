@@ -5,22 +5,15 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.ui.controls.ControlSpec;
-import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.politicalmap.base.DominanceSortMode;
+import kmu.maplayers.politicalmap.base.DominancePaintedView;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
-import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
-import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.base.politics.DominanceStats;
-import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.factions.FactionsView;
@@ -29,6 +22,7 @@ import kmu.util.KmuStrings;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * The alliances view's render rules: allied factions fuse into one bloc per alliance so an
@@ -48,7 +42,7 @@ import java.util.Optional;
  * is the gate that keeps every Nex reference behind its mod-enabled check, so this class is
  * safe to load on a Nex-free install even though it is never offered there.
  */
-public final class AlliancesView implements PoliticalMapView {
+public final class AlliancesView implements DominancePaintedView {
 
     /** The one shared instance; stateless, so every pass reuses it. */
     public static final AlliancesView INSTANCE = new AlliancesView();
@@ -159,27 +153,12 @@ public final class AlliancesView implements PoliticalMapView {
     }
 
     @Override
-    public ListPicker<RankedBloc<DominanceStats>> resolveBlocPicker(
-            SectorAPI sector,
-            DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets) {
-
+    public Predicate<String> resolveSelectableBlocGate(HolderGrouping grouping) {
         // Under this view only alliances are filter targets - a lone faction is not spotlightable
         // here, matching the view's role of grouping holders by alliance. The alliance grouping
         // folds each alliance's members into one bloc, so the shared stats read already ranks an
         // alliance as a unit; the gate just drops the present blocs that are lone factions.
-        var grouping = resolveGrouping();
-        var pass = new DominancePass(rules, shouldIncludeUndiscoveredMarkets, grouping);
-
-        // The same dominance vocabulary the factions view offers: a bloc here is a folded set of
-        // factions, but the metrics it carries are the same ones, so both views rank alike.
-        return new ListPicker<>(
-            buildSelectableBlocs(
-                sector,
-                grouping,
-                DominanceStatsAggregator.aggregateDominanceStats(sector, pass),
-                grouping::isAlliance),
-            DominanceSortMode.MODES);
+        return grouping::isAlliance;
     }
 
     @Override
