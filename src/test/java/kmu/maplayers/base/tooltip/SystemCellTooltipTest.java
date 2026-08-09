@@ -47,7 +47,12 @@ import static org.mockito.Mockito.when;
  */
 final class SystemCellTooltipTest {
 
-    private static final String SYSTEM_NAME = "Corvus";
+    // The two names vanilla answers for one system, and the title the box is meant to draw from them.
+    // A system named after its star is used rather than a plain one, so a header taking the composed
+    // name straight fails here instead of agreeing with the display read by coincidence.
+    private static final String COMPOSED_SYSTEM_NAME = "Penelope's Star Star System";
+    private static final String SYSTEM_NAME_PROPER = "Penelope's Star";
+    private static final String SYSTEM_TITLE = "Penelope's Star System";
 
     // What a box taking part in the detail toggle offers the player, in that box's own words. Stated as
     // something no layer says, since what a counterpart holds is the layer's to name and the shape under
@@ -171,11 +176,14 @@ final class SystemCellTooltipTest {
 
             var sections = captureDrawnBox(buildTooltipSayingSomething()).sections();
 
+            // The name a surface titles a system by rather than vanilla's raw composition, which
+            // stutters over a system named after its star - a stutter the box wears at its largest.
+            //
             // The title says it is a heading and nothing about how one looks - which face that becomes is
             // the box's typography, asserted below.
             assertThat(readRow(sections, TITLE_SECTION, HEADER_ROW))
                 .isEqualTo(TooltipRow
-                    .createCentredRow(new TextSpan(SYSTEM_NAME, HIGHLIGHT))
+                    .createCentredRow(new TextSpan(SYSTEM_TITLE, HIGHLIGHT))
                     .readsAs(TooltipLineStyle.HEADER));
         }
 
@@ -519,7 +527,9 @@ final class SystemCellTooltipTest {
         var systemMock = mock(StarSystemAPI.class);
 
         when(systemMock.getName())
-            .thenReturn(SYSTEM_NAME);
+            .thenReturn(COMPOSED_SYSTEM_NAME);
+        when(systemMock.getNameWithNoType())
+            .thenReturn(SYSTEM_NAME_PROPER);
 
         return systemMock;
     }

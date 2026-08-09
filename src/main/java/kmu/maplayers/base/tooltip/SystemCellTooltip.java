@@ -3,6 +3,7 @@ package kmu.maplayers.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipRenderer;
@@ -213,13 +214,17 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // into the columns below it, since it titles the whole box rather than sitting in its table - which
     // also frees it of the value column those rows align to.
     //
+    // Titled by the display read rather than by getName(), which composes a system named after its star
+    // into "Penelope's Star Star System" - a stutter a box heading reads badly, since the name is the
+    // largest thing in it.
+    //
     // Reading as a heading is the row saying what it is, not which face it wants: the box's typography
     // below turns that into the title face, so the two decisions - what a line is, how that kind of line
     // looks - stay on the sides that own them.
     private static TooltipRow.CentredRow buildHeaderRow(StarSystemAPI system) {
         return TooltipRow
             .createCentredRow(new TextSpan(
-                system.getName(),
+                StarSystems.readDisplayName(system),
                 StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve()))
             .readsAs(TooltipLineStyle.HEADER);
     }
