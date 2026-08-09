@@ -51,7 +51,7 @@ questions, and the pipeline paints the answer without knowing which view asked:
 | --- | --- | --- | --- | --- |
 | **Factions** | each faction on its own | held territory, per faction | any faction | always (default) |
 | **Alliances** | allied factions fused per alliance | held territory, alliances as one bloc | alliances only | Nexerelin |
-| **Claims** | each claiming faction on its own | claimed systems, per faction | none | always |
+| **Claims** | each claiming faction on its own | claimed systems, per faction | any faction that claims something | always |
 
 Notes on each:
 
@@ -63,9 +63,11 @@ Notes on each:
   it does on the Factions view.
 - **Claims.** Shows the vanilla "system claimed by faction" mechanic - the same claim the
   colony-survey panel warns about. Every claimed system is painted solid in its claimant's colours.
-  There is no alliance grouping here, and no spotlight. Hovering a system explains its claim: who
-  holds it, who contests it, who is present but can never claim it, and whether the hold was won on
-  market strength or imposed by decree.
+  There is no alliance grouping here. The spotlight list is the claimants, not the colony holders,
+  and it ranks them by claim count and market size rather than by domination - a faction that claims
+  territory while holding no colony anywhere still paints here, so it is still worth spotlighting.
+  Hovering a system explains its claim: who holds it, who contests it, who is present but can never
+  claim it, and whether the hold was won on market strength or imposed by decree.
 
 ## Claim extensions
 

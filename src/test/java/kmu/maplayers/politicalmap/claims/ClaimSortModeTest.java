@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.claims;
 
+import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
 import kmu.maplayers.politicalmap.base.RankedBloc;
@@ -23,6 +24,39 @@ import static org.assertj.core.api.Assertions.assertThat;
  * no Starsector types.
  */
 final class ClaimSortModeTest {
+
+    @Nested
+    class Modes {
+
+        @Test
+        void modesListsEveryModeInSelectorDisplayOrder() {
+
+            // This list is the order the sort selector stacks its rows top to bottom, so it is a drawn
+            // arrangement rather than an implementation detail: name first, then the two numeric
+            // metrics. Pinned separately from the tie-break chain, which orders the same modes
+            // differently and for a different reason.
+            // Copied to the seam's own element type first: the bundle declares its modes as
+            // "? extends ListSortMode", so a capture reaches the assertion and no enum constant can be
+            // named against it directly.
+            var modes = List.<ListSortMode<RankedBloc<ClaimStats>>>copyOf(ClaimSortMode.MODES.modes());
+
+            assertThat(modes)
+                .containsExactly(
+                    ClaimSortMode.NAME,
+                    ClaimSortMode.CLAIMS,
+                    ClaimSortMode.MARKET_SIZE);
+        }
+
+        @Test
+        void modesFallsBackToClaimsAsTheDefault() {
+
+            // Claims is the metric this layer is actually painted by, so a fresh save and any
+            // unrecognised stored key open on the ranking that matches what the map shows - rather
+            // than on the market-size ranking, which describes a claimant but not its territory.
+            assertThat(ClaimSortMode.MODES.defaultMode())
+                .isEqualTo(ClaimSortMode.CLAIMS);
+        }
+    }
 
     @Nested
     class PersistenceKey {

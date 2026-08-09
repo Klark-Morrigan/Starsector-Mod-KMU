@@ -24,6 +24,7 @@ import kmu.util.KmuStrings;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -258,15 +259,9 @@ final class ClaimsViewTest {
             // A claiming bloc becomes an option carrying its crest, short name, and the claim stats the
             // fold computed for it, so the option reads exactly as the picker row will draw and sort it.
             var sectorMock = mock(SectorAPI.class);
-            var hegemonyMock = mock(FactionAPI.class);
 
-            when(sectorMock.getFaction("hegemony"))
-                .thenReturn(hegemonyMock);
-
-            when(hegemonyMock.getCrest())
+            when(stubNamedFaction(sectorMock, "hegemony", "Hegemony").getCrest())
                 .thenReturn("graphics/hegemony_crest.png");
-            when(hegemonyMock.getDisplayName())
-                .thenReturn("Hegemony");
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
@@ -289,13 +284,8 @@ final class ClaimsViewTest {
             // holding nothing paints on this layer, so it must be spotlightable even at a market size
             // of zero.
             var sectorMock = mock(SectorAPI.class);
-            var factionMock = mock(FactionAPI.class);
 
-            when(sectorMock.getFaction("luddic_path"))
-                .thenReturn(factionMock);
-
-            when(factionMock.getDisplayName())
-                .thenReturn("Path");
+            stubNamedFaction(sectorMock, "luddic_path", "Path");
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
@@ -314,13 +304,8 @@ final class ClaimsViewTest {
             // drops it, since spotlighting a bloc that paints nothing here would recede the whole
             // sector in favour of nothing.
             var sectorMock = mock(SectorAPI.class);
-            var claimantMock = mock(FactionAPI.class);
 
-            when(sectorMock.getFaction("hegemony"))
-                .thenReturn(claimantMock);
-
-            when(claimantMock.getDisplayName())
-                .thenReturn("Hegemony");
+            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
@@ -332,6 +317,34 @@ final class ClaimsViewTest {
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
                     .extracting(RankedBloc::itemId)
                     .containsExactly("hegemony");
+            }
+        }
+
+        @Test
+        void resolveBlocPickerKeepsTheClaimantsInTheFoldsWalkOrder() {
+            // Dropping the claimless blocs must not reorder the survivors: the options come back in the
+            // order the sector walk surfaced them, which is the order the sort then arranges from. An
+            // ordered stub with a claimless bloc in the middle is what makes a reordering visible - a
+            // gate that rebuilt the map unordered would pass the drop test and fail here.
+            var sectorMock = mock(SectorAPI.class);
+
+            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
+            stubNamedFaction(sectorMock, "persean", "Persean League");
+
+            var statsByBlocId = new LinkedHashMap<String, ClaimStats>();
+
+            statsByBlocId.put("hegemony", new ClaimStats(1, 0));
+            statsByBlocId.put("tritachyon", new ClaimStats(0, 40));
+            statsByBlocId.put("persean", new ClaimStats(3, 12));
+
+            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                    .thenReturn(statsByBlocId);
+
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
+                    .extracting(RankedBloc::itemId)
+                    .containsExactly("hegemony", "persean");
             }
         }
 
@@ -367,6 +380,25 @@ final class ClaimsViewTest {
                         .sortModes())
                     .isEqualTo(ClaimSortMode.MODES);
             }
+        }
+
+        // Stubs a faction the sector resolves by id under a short display name - the two reads the
+        // shared option assembly makes of every listed bloc, so a test that only cares which blocs
+        // survive the gate can name one in a line. Returned so a test that also cares about the crest
+        // stubs it on the same mock.
+        private static FactionAPI stubNamedFaction(
+                SectorAPI sectorMock,
+                String factionId,
+                String displayName) {
+
+            var factionMock = mock(FactionAPI.class);
+
+            when(sectorMock.getFaction(factionId))
+                .thenReturn(factionMock);
+            when(factionMock.getDisplayName())
+                .thenReturn(displayName);
+
+            return factionMock;
         }
     }
 }
