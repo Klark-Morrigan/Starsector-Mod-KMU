@@ -7,7 +7,6 @@ import kmlib.starsector.systems.claims.VanillaClaimReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
-import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.SectorClaims;
 
 import java.util.LinkedHashMap;
@@ -63,35 +62,26 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
             String selectedBlocId) {
 
         var held = heldHolderProvider.resolveHolder(sector, grouping, selectedBlocId);
-        var claimingHolderBySystemId = SectorClaims.resolveClaimingHolderBySystemId(
+
+        // The claims are put under the spotlight before the fold, so the fold only has to answer
+        // which claimed systems join the holder map, never which key each one carries.
+        var claimingHolderBySystemId = ClaimSpotlight.rekeyClaimsOntoSpotlight(
             sector,
             grouping,
-            claimReader);
+            SectorClaims.resolveClaimingHolderBySystemId(sector, grouping, claimReader),
+            selectedBlocId);
 
-        // The spotlighted bloc's own claims fuse into its spotlight territory rather than their
-        // plain bloc colour, so its spotlight holder is resolved once here and shared across every
-        // system it claims - null off filter, or when there is no sector to read a palette from.
-        var spotlitClaimHolder = selectedBlocId == null || sector == null
-            ? null
-            : FilteredPolitics.resolveSpotlitHolder(sector, grouping, selectedBlocId);
-
-        return foldClaimsIntoHeld(
-            held,
-            claimingHolderBySystemId,
-            selectedBlocId,
-            spotlitClaimHolder);
+        return foldClaimsIntoHeld(held, claimingHolderBySystemId);
     }
 
     // Adds each claimed system the held resolve left unowned to the holder map - so held and claimed
     // cells of one bloc fuse into a single territory - and records it unfilled, so the fill split
     // leaves it empty inside that shared border. A system already held keeps its held holder and
-    // solid fill: the held signal is the stronger one. Pure over its inputs; the spotlight holder it
-    // rekeys the selected bloc's own claims onto is resolved by the caller.
+    // solid fill: the held signal is the stronger one. Pure over its inputs; the claims arrive
+    // already keyed for whatever spotlight is active, so the fold reads no filter of its own.
     private static HolderResolution foldClaimsIntoHeld(
             HolderResolution held,
-            Map<String, DominantHolder> claimingHolderBySystemId,
-            String selectedBlocId,
-            DominantHolder spotlitClaimHolder) {
+            Map<String, DominantHolder> claimingHolderBySystemId) {
 
         var ownerBySystemId = new LinkedHashMap<>(held.ownerBySystemId());
         var unfilledSystemIds = new LinkedHashSet<>(held.unfilledSystemIds());
@@ -100,33 +90,12 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
             if (ownerBySystemId.containsKey(claim.getKey())) {
                 continue;
             }
-            var holder = resolveClaimHolder(claim.getValue(), selectedBlocId, spotlitClaimHolder);
-            if (holder == null) {
-                continue;
-            }
-            ownerBySystemId.put(claim.getKey(), holder);
+            ownerBySystemId.put(claim.getKey(), claim.getValue());
             unfilledSystemIds.add(claim.getKey());
         }
         return new HolderResolution(
             ownerBySystemId,
             held.contestedSystemIds(),
             unfilledSystemIds);
-    }
-
-    // The holder a claimed system draws under. Off filter, or for any bloc other than the
-    // spotlighted one, that is the claim's plain bloc holder - full colour off filter, and receded
-    // by the style layer under a filter because its key is not the spotlight's. The spotlighted
-    // bloc's own claims instead take its spotlight holder, fusing into its one territory at full
-    // strength; a null spotlight holder (its palette gone) drops the claim, as the presence pass
-    // drops a spotlit system whose colour will not resolve.
-    private static DominantHolder resolveClaimHolder(
-            DominantHolder claimHolder,
-            String selectedBlocId,
-            DominantHolder spotlitClaimHolder) {
-                
-        if (selectedBlocId == null || !selectedBlocId.equals(claimHolder.factionId())) {
-            return claimHolder;
-        }
-        return spotlitClaimHolder;
     }
 }

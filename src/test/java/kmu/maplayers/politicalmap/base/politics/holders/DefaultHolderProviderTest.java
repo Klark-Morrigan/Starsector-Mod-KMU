@@ -36,44 +36,63 @@ final class DefaultHolderProviderTest {
 
         @Test
         void resolveHolderReturnsTheDominantHoldersAndNothingContestedOffFilter() {
+
             var sectorMock = mock(SectorAPI.class);
             var grouping = HolderGrouping.identity();
-            Map<String, DominantHolder> holders =
-                    Map.of("owned-system", new DominantHolder("hegemony", PRIMARY, SECONDARY));
+            var holders = Map.of(
+                "owned-system",
+                new DominantHolder("hegemony", PRIMARY, SECONDARY));
+
             try (var sectorPoliticsMock = mockStatic(SectorPolitics.class)) {
-                sectorPoliticsMock.when(() -> SectorPolitics
-                        .resolveDominantHolderBySystemId(sectorMock, grouping)).thenReturn(holders);
+
+                sectorPoliticsMock
+                    .when(() -> SectorPolitics
+                        .resolveDominantHolderBySystemId(sectorMock, grouping))
+                    .thenReturn(holders);
 
                 var resolution = DefaultHolderProvider.INSTANCE
-                        .resolveHolder(sectorMock, grouping, null);
+                    .resolveHolder(sectorMock, grouping, null);
 
-                assertThat(resolution.ownerBySystemId()).isEqualTo(holders);
-                assertThat(resolution.contestedSystemIds()).isEmpty();
-                assertThat(resolution.unfilledSystemIds()).isEmpty();
+                assertThat(resolution.ownerBySystemId())
+                    .isEqualTo(holders);
+                assertThat(resolution.contestedSystemIds())
+                    .isEmpty();
+                assertThat(resolution.unfilledSystemIds())
+                    .isEmpty();
             }
         }
 
         @Test
         void resolveHolderPassesThroughThePresenceAwareResolverWhenABlocIsSpotlighted() {
+
             var sectorMock = mock(SectorAPI.class);
             var grouping = HolderGrouping.identity();
-            Map<String, DominantHolder> holders =
-                    Map.of("owned-system", new DominantHolder("$spotlit", PRIMARY, SECONDARY));
-            Set<String> contested = Set.of("owned-system");
+            var holders = Map.of(
+                "owned-system",
+                new DominantHolder("$spotlit", PRIMARY, SECONDARY));
+
+            var contested = Set.of("owned-system");
             var filtered = new FilteredPolitics.FilteredHolder(holders, contested);
+
             try (var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
-                filteredPoliticsMock.when(() -> FilteredPolitics
+
+                filteredPoliticsMock
+                    .when(() -> FilteredPolitics
                         .resolveFilteredHolder(sectorMock, grouping, "hegemony"))
-                        .thenReturn(filtered);
+                    .thenReturn(filtered);
 
                 var resolution = DefaultHolderProvider.INSTANCE
-                        .resolveHolder(sectorMock, grouping, "hegemony");
+                    .resolveHolder(sectorMock, grouping, "hegemony");
 
-                assertThat(resolution.ownerBySystemId()).isEqualTo(holders);
-                assertThat(resolution.contestedSystemIds()).isEqualTo(contested);
+                assertThat(resolution.ownerBySystemId())
+                    .isEqualTo(holders);
+                assertThat(resolution.contestedSystemIds())
+                    .isEqualTo(contested);
+
                 // The presence-aware resolver reports no unfilled systems; the filter path leaves
                 // that fill state empty.
-                assertThat(resolution.unfilledSystemIds()).isEmpty();
+                assertThat(resolution.unfilledSystemIds())
+                    .isEmpty();
             }
         }
     }
