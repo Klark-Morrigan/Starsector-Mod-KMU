@@ -2,6 +2,7 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmlib.starsector.ui.input.ParkedPointerEvent;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,6 +32,7 @@ import static org.mockito.Mockito.when;
  * depend on where the panel landed, and with nothing drawn the fold is all that is left to ask.
  */
 final class SidebarInputTest {
+
     // Ahead of the core screen and of other mods' listeners, pinned so a tab click or notch press is
     // claimed before anything else can take it.
     private static final int EXPECTED_PRIORITY = 1000;
@@ -52,7 +55,8 @@ final class SidebarInputTest {
 
         @Test
         void getListenerInputPriorityRunsAheadOfTheCoreScreen() {
-            assertThat(input.getListenerInputPriority()).isEqualTo(EXPECTED_PRIORITY);
+            assertThat(input.getListenerInputPriority())
+                .isEqualTo(EXPECTED_PRIORITY);
         }
     }
 
@@ -61,25 +65,33 @@ final class SidebarInputTest {
 
         @Test
         void processCampaignInputPreCoreRoutesAKeyPressWhileThePanelPresentsItsTabs() {
-            when(controllerMock.isPresentingTabsOf(placementMock)).thenReturn(true);
+
+            when(controllerMock.isPresentingTabsOf(placementMock))
+                .thenReturn(true);
+
             var eventMock = mockKeyPress();
 
             input.processCampaignInputPreCore(List.of(eventMock));
 
-            verify(hostMock).handleKeyPress(eventMock);
+            verify(hostMock)
+                .handleKeyPress(eventMock);
         }
 
         @Test
         void processCampaignInputPreCoreLeavesAKeyPressAloneWhileThePanelPresentsNoTabs() {
             // Docked, docking, or undocking, the panel is not offering its tabs, so its hotkeys stay inert
             // and the key falls through unconsumed to whatever else claims it.
-            when(controllerMock.isPresentingTabsOf(placementMock)).thenReturn(false);
+            when(controllerMock.isPresentingTabsOf(placementMock))
+                .thenReturn(false);
+
             var eventMock = mockKeyPress();
 
             input.processCampaignInputPreCore(List.of(eventMock));
 
-            verify(hostMock, never()).handleKeyPress(any());
-            verify(eventMock, never()).consume();
+            verify(hostMock, never())
+                .handleKeyPress(any());
+            verify(eventMock, never())
+                .consume();
         }
 
         @Test
@@ -88,13 +100,17 @@ final class SidebarInputTest {
             // panel is docked, while the placement drawn says its row is there in full. Reading the fold
             // would leave that tab's keys dead for the rest of the session, with no handle to expand a body
             // it does not have.
-            when(controllerMock.isFullyExpanded()).thenReturn(false);
-            when(controllerMock.isPresentingTabsOf(placementMock)).thenReturn(true);
+            when(controllerMock.isFullyExpanded())
+                .thenReturn(false);
+            when(controllerMock.isPresentingTabsOf(placementMock))
+                .thenReturn(true);
+
             var eventMock = mockKeyPress();
 
             input.processCampaignInputPreCore(List.of(eventMock));
 
-            verify(hostMock).handleKeyPress(eventMock);
+            verify(hostMock)
+                .handleKeyPress(eventMock);
         }
 
         @Test
@@ -102,76 +118,179 @@ final class SidebarInputTest {
             // A key press needs no placement: jumping to a layer does not depend on where the box landed,
             // so a frame that drew nothing still answers its hotkeys - and with no placement to ask about,
             // the fold is the only thing left to gate on.
-            when(hostMock.resolvePlacement()).thenReturn(null);
-            when(controllerMock.isFullyExpanded()).thenReturn(true);
+            when(hostMock.resolvePlacement())
+                .thenReturn(null);
+            when(controllerMock.isFullyExpanded())
+                .thenReturn(true);
+
             var eventMock = mockKeyPress();
 
             input.processCampaignInputPreCore(List.of(eventMock));
 
-            verify(hostMock).handleKeyPress(eventMock);
+            verify(hostMock)
+                .handleKeyPress(eventMock);
         }
 
         @Test
         void processCampaignInputPreCoreRoutesAPointerEventToTheController() {
+
             var eventMock = mockPointerEvent();
 
             input.processCampaignInputPreCore(List.of(eventMock));
 
-            verify(controllerMock).handlePointer(eventMock, placementMock);
+            verify(controllerMock)
+                .handlePointer(eventMock, placementMock);
         }
 
         @Test
         void processCampaignInputPreCoreIgnoresAPointerEventWithNothingDrawnToHit() {
             // No placement means no box on screen this frame, so there is nothing to hit-test against.
-            when(hostMock.resolvePlacement()).thenReturn(null);
+            when(hostMock.resolvePlacement())
+                .thenReturn(null);
+
             var eventMock = mockPointerEvent();
 
             input.processCampaignInputPreCore(List.of(eventMock));
 
-            verify(controllerMock, never()).handlePointer(any(), any());
+            verify(controllerMock, never())
+                .handlePointer(any(), any());
         }
 
         @Test
         void processCampaignInputPreCoreSkipsAnEventAlreadyClaimedUpstream() {
+
             var eventMock = mock(InputEventAPI.class);
-            when(eventMock.isConsumed()).thenReturn(true);
-            when(controllerMock.isFullyExpanded()).thenReturn(true);
+
+            when(eventMock.isConsumed())
+                .thenReturn(true);
+            when(controllerMock.isFullyExpanded())
+                .thenReturn(true);
 
             input.processCampaignInputPreCore(List.of(eventMock));
 
-            verify(hostMock, never()).handleKeyPress(any());
-            verify(controllerMock, never()).handlePointer(any(), any());
+            verify(hostMock, never())
+                .handleKeyPress(any());
+            verify(controllerMock, never())
+                .handlePointer(any(), any());
         }
 
         @Test
         void processCampaignInputPreCoreCancelsADanglingDragWhileTheSidebarIsOff() {
             // Off the gate the sidebar's keys and clicks must be inert, and a grab left over from the
             // overlay closing mid-drag has to end here rather than hijacking the next session.
-            when(hostMock.isOverlayShowing()).thenReturn(false);
-            when(controllerMock.isFullyExpanded()).thenReturn(true);
+            when(hostMock.isOverlayShowing())
+                .thenReturn(false);
+            when(controllerMock.isFullyExpanded())
+                .thenReturn(true);
+
             var keyEventMock = mockKeyPress();
             var pointerEventMock = mockPointerEvent();
 
             input.processCampaignInputPreCore(List.of(keyEventMock, pointerEventMock));
 
-            verify(controllerMock).cancelDrag();
-            verify(hostMock, never()).handleKeyPress(any());
-            verify(controllerMock, never()).handlePointer(any(), any());
+            verify(controllerMock)
+                .cancelDrag();
+            verify(hostMock, never())
+                .handleKeyPress(any());
+            verify(controllerMock, never())
+                .handlePointer(any(), any());
+
             // Nothing is drawn off the gate, so the placement is never even resolved.
-            verify(hostMock, never()).resolvePlacement();
+            verify(hostMock, never())
+                .resolvePlacement();
         }
 
         @Test
         void processCampaignInputPreCoreRoutesEveryUnclaimedEventInTheFrame() {
             // Events arrive as a frame's worth at once, so one claimed event must not end the pass.
-            when(controllerMock.isPresentingTabsOf(placementMock)).thenReturn(true);
+            when(controllerMock.isPresentingTabsOf(placementMock))
+                .thenReturn(true);
+
             var keyEventMock = mockKeyPress();
             var pointerEventMock = mockPointerEvent();
 
             input.processCampaignInputPreCore(List.of(keyEventMock, pointerEventMock));
 
-            verify(hostMock).handleKeyPress(keyEventMock);
-            verify(controllerMock).handlePointer(pointerEventMock, placementMock);
+            verify(hostMock)
+                .handleKeyPress(keyEventMock);
+            verify(controllerMock)
+                .handlePointer(pointerEventMock, placementMock);
+        }
+    }
+
+    @Nested
+    class ParkedMoves {
+
+        @Test
+        void processCampaignInputPreCoreParksAMoveThePanelClaimed() {
+            // The screen underneath has to hear the pointer moved or a control it lit a moment ago stays
+            // lit under the panel, and it must not hear where the pointer really is or whatever sits behind
+            // the panel lights up instead. So the claimed move is replaced rather than swallowed, by a
+            // stand-in reporting a position no widget contains.
+            var events = new ArrayList<InputEventAPI>(List.of(mockClaimedMove()));
+
+            input.processCampaignInputPreCore(events);
+
+            assertThat(events.get(0))
+                .isInstanceOf(ParkedPointerEvent.class);
+            assertThat(events.get(0).getX())
+                .isNegative();
+            assertThat(events.get(0).isConsumed())
+                .isFalse();
+        }
+
+        @Test
+        void processCampaignInputPreCoreLeavesAMoveThePanelDidNotClaimWhereItIs() {
+            // A move the panel let past is already the screen's to read as it stands, and its real position
+            // is what the screen needs: parking it would blind the screen to a pointer that never touched
+            // this panel.
+            var moveMock = mock(InputEventAPI.class);
+
+            when(moveMock.isMouseEvent())
+                .thenReturn(true);
+            when(moveMock.isMouseMoveEvent())
+                .thenReturn(true);
+
+            var events = new ArrayList<InputEventAPI>(List.of(moveMock));
+
+            input.processCampaignInputPreCore(events);
+
+            assertThat(events.get(0))
+                .isSameAs(moveMock);
+        }
+
+        @Test
+        void processCampaignInputPreCoreLeavesAClaimedPressWhereItIs() {
+            // A press or a wheel the panel took is an act it claimed outright - the screen must not act on
+            // it at all, which is what claiming is for. Only the pointer's position is shared.
+            var pressMock = mock(InputEventAPI.class);
+
+            when(pressMock.isMouseEvent())
+                .thenReturn(true);
+            when(pressMock.isLMBDownEvent())
+                .thenReturn(true);
+            when(pressMock.isConsumed())
+                .thenReturn(false, true);
+
+            var events = new ArrayList<InputEventAPI>(List.of(pressMock));
+
+            input.processCampaignInputPreCore(events);
+
+            assertThat(events.get(0))
+                .isSameAs(pressMock);
+        }
+
+        @Test
+        void processCampaignInputPreCoreRoutesOnWhereTheFramesListRefusesAReplacement() {
+            // Nothing in the API promises the list may be written to. A refusal has to leave the sidebar
+            // working exactly as it did - claims made, keys answered - rather than throwing out of an input
+            // pass every frame the pointer rests on the panel.
+            var claimedMove = mockClaimedMove();
+
+            input.processCampaignInputPreCore(List.of(claimedMove));
+
+            verify(controllerMock)
+                .handlePointer(claimedMove, placementMock);
         }
     }
 
@@ -180,8 +299,8 @@ final class SidebarInputTest {
 
         @Test
         void processCampaignInputPreFleetControlLeavesEveryEventUntouched() {
-            input.processCampaignInputPreFleetControl(List.of(mockKeyPress(), mockPointerEvent()));
 
+            input.processCampaignInputPreFleetControl(List.of(mockKeyPress(), mockPointerEvent()));
             verifyNoInteractions(hostMock);
         }
     }
@@ -194,20 +313,43 @@ final class SidebarInputTest {
             // All of the sidebar's input is claimed pre-core, where consuming still stops the screen
             // underneath from seeing it.
             input.processCampaignInputPostCore(List.of(mockKeyPress(), mockPointerEvent()));
-
             verifyNoInteractions(hostMock);
         }
     }
 
     private static InputEventAPI mockKeyPress() {
+
         var eventMock = mock(InputEventAPI.class);
-        when(eventMock.isKeyDownEvent()).thenReturn(true);
+
+        when(eventMock.isKeyDownEvent())
+            .thenReturn(true);
+
         return eventMock;
     }
 
     private static InputEventAPI mockPointerEvent() {
+
         var eventMock = mock(InputEventAPI.class);
-        when(eventMock.isMouseEvent()).thenReturn(true);
+
+        when(eventMock.isMouseEvent())
+            .thenReturn(true);
+
+        return eventMock;
+    }
+
+    // A move the panel claims as it routes it, which is the pairing every parking case is about: the
+    // controller is what claims an event in the running game, so the claim is stubbed rather than acted.
+    private static InputEventAPI mockClaimedMove() {
+
+        var eventMock = mock(InputEventAPI.class);
+
+        when(eventMock.isMouseEvent())
+            .thenReturn(true);
+        when(eventMock.isMouseMoveEvent())
+            .thenReturn(true);
+        when(eventMock.isConsumed())
+            .thenReturn(false, true);
+
         return eventMock;
     }
 }

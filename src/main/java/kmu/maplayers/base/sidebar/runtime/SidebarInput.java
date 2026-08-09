@@ -3,6 +3,7 @@ package kmu.maplayers.base.sidebar.runtime;
 import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmlib.starsector.ui.input.ParkedPointerEvent;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import java.util.List;
@@ -26,6 +27,11 @@ public final class SidebarInput implements CampaignInputListener {
     // Run ahead of the core screen and of other mods' listeners, so a tab click or notch press is consumed
     // before anything else claims it.
     private static final int INPUT_PRIORITY = 1000;
+
+    // Whether the frame's event list takes a replacement at all. The engine hands this listener the list
+    // it reads back afterwards, but nothing in the API promises it may be written to, so a refusal is
+    // settled once and not met again every frame the pointer sits on the panel.
+    private boolean isEventListWritable = true;
 
     // The screen this listener routes input to: its gate, placement, controller, and key role.
     private final SidebarHost host;
@@ -52,7 +58,9 @@ public final class SidebarInput implements CampaignInputListener {
         // there is nothing to hit-test. Key presses still route, since the host needs no placement to jump
         // to a layer.
         var placement = host.resolvePlacement();
-        for (var event : events) {
+        for (var index = 0; index < events.size(); index++) {
+
+            var event = events.get(index);
             if (event.isConsumed()) {
                 continue;
             }
@@ -62,6 +70,7 @@ public final class SidebarInput implements CampaignInputListener {
                 }
             } else if (event.isMouseEvent() && placement != null) {
                 host.getController().handlePointer(event, placement);
+                parkClaimedMove(events, index, event);
             }
         }
     }
@@ -74,6 +83,35 @@ public final class SidebarInput implements CampaignInputListener {
     @Override
     public void processCampaignInputPostCore(List<InputEventAPI> events) {
         // Nothing runs after the core screen for the sidebar; all its input is claimed pre-core.
+    }
+
+    // Hands the screen underneath a parked stand-in for a pointer move the panel has claimed, in place of
+    // the claim swallowing it whole.
+    //
+    // The screen has to hear that the pointer moved, or a vanilla control hovered a moment before the
+    // pointer crossed onto this panel goes on drawing itself lit: it drops its hover when it is told the
+    // pointer is somewhere else, and a claimed event tells it nothing at all. Passing the real event
+    // through instead would trade that for the mirror of it, the position being over whatever sits behind
+    // the panel, which would then light up beneath it. Parked, no widget contains the position, so every
+    // control lets its hover go and none takes one.
+    //
+    // Only moves, and only claimed ones: a press or a wheel this panel took is an act it has claimed
+    // outright, and one it did not claim is already the screen's to read as it stands.
+    private void parkClaimedMove(List<InputEventAPI> events, int index, InputEventAPI event) {
+
+        if (!isEventListWritable
+                || !event.isMouseMoveEvent()
+                || !event.isConsumed()) {
+            return;
+        }
+        try {
+            events.set(index, new ParkedPointerEvent(event));
+        } catch (UnsupportedOperationException listRefusesWrites) {
+            // A list that will not take a replacement answers that once, not once per frame: the sidebar
+            // still claims what it claims and the screen behind keeps its stale hover, which is the state
+            // this listener is trying to improve on rather than one it can force.
+            isEventListWritable = false;
+        }
     }
 
     // Whether the panel is offering the tabs a bound key would switch between. Asked of the panel about the

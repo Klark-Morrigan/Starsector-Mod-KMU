@@ -365,17 +365,24 @@ them answers to the look. That is the engine's own arrangement, and mistaking it
 pass read as a foreign box: an outline that brightened with its fill was the one thing on the row moving
 that the row it was drawn to match holds still.
 
-Their three interiors come from `VanillaButtonFills`, and by a different rule from the strip's, because
-a vanilla button brightens differently: it adds its **base** accent undiluted where a tab adds its own
-label colour half-way to white. A button being shown wears the dark step composited onto the backing,
-one under the pointer that shade plus `POINTED_GLOW` (0.175) of the base, and a resting one wears
-*nothing* - its interior is that same shade at zero alpha, so the state is a value the palette states
-rather than a quad the paint pass learns to skip. Their labels take the accent's base step untouched
-and its bright step once shown or pointed at. The weight is fitted rather than read - solving the
-sampled hovered shade (`#346a7c`) against the resting one (`#17424f`) gives the same 0.175 on all three
-channels against the base accent and no consistent answer at all against a tab's whitened glow, which
-is the evidence the *shape* of the rule is right; the engine's own constant sits behind an obfuscated
-widget where it cannot be looked up.
+Their two settled interiors come from `VanillaButtonFills`: the button being shown wears the dark step
+composited onto the backing, and a resting one wears *nothing* - that same shade at zero alpha, so the
+state is a value the palette states rather than a quad the paint pass learns to skip. Their labels take
+the accent's base step untouched and its bright step once shown. There is no third interior, because
+what the pointer does is not a shade a button settles on: it adds **the base accent** at `POINTED_GLOW`
+(0.17) over whichever of the two the button is wearing, which is why it lives on the palette's
+`TabHover` and not among its looks. The weight is fitted rather than read - the engine's own constant
+sits behind an obfuscated widget - but fitted twice, from two pairs each sampled within one frame: an
+unshown vanilla button over a flat map fill moves `#1b1d1b` to `#364144` (+27, +36, +41, so 0.161), and
+the shown one moves `#17424f` to `#346a7c` (+29, +40, +45, so 0.176). Both sets of deltas carry the base
+accent's own proportions rather than the equal channels white would add. The bound key's gold moves by
+that identical +27, +36, +41, which says it is one light over the whole button rather than a fill rule.
+
+The black under them is read the same way: over that flat `#505850` fill an unshown button's interior
+samples `#1b1d1b`, which is the fill kept at 0.337 on every channel - untinted, so what vanilla lays
+there is plain black at about two thirds and nothing else. `BACKING_ALPHA` takes that 0.665, and it is
+why the map still shows through an unshown button rather than the row reading as a bar laid across the
+screen.
 
 That resting interior is why a look's alpha became load-bearing. Every fill on the strip is opaque, so a
 fade between two looks had never had to carry alpha; `TabLook.computeBlendedLook` now interpolates all
