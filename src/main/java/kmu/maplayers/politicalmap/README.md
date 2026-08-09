@@ -59,7 +59,8 @@ Notes on each:
   fades to the muted style. A bloc is named after its faction.
 - **Alliances.** Allied factions merge into one coloured, named cluster per alliance. Unaligned
   factions keep their own border and name. Two toggles fade a non-allied faction: *Mute* dims it,
-  *Desaturate* makes it read as backdrop. With both off, a lone faction looks exactly as
+  *Desaturate* makes it read as backdrop. *Desaturate* starts on so the alliances read as the figure
+  without a settings hunt; *Mute* starts off. Turn both off and a lone faction looks exactly as
   it does on the Factions view.
 - **Claims.** Shows the vanilla "system claimed by faction" mechanic - the same claim the
   colony-survey panel warns about. Every claimed system is painted solid in its claimant's colours.

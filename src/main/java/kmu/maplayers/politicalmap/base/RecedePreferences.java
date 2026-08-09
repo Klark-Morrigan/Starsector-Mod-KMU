@@ -26,8 +26,11 @@ import kmu.settings.KmuPoliticalMapSettings;
  * settings tab. The supplementary tuning - how far Mute dims - stays a LunaLib knob shared across
  * every set, since that is a screen control.
  *
- * <p>Both toggles default off when a save holds no choice yet, preserving the un-receded look: full-
- * colour blocs over an un-dimmed, un-recoloured background.
+ * <p>The two toggles carry different defaults for a save that holds no choice yet: Desaturate starts
+ * on, Mute starts off. A spotlight only reads as a spotlight if the rest of the sector visibly gives
+ * way, so the recolour is what a pick needs out of the box; dimming is a separate ask a player opts
+ * into. A stored choice always outranks the default - clearing a box writes a real {@code false} -
+ * so the defaults describe only an untouched save.
  */
 public final class RecedePreferences {
 
@@ -58,9 +61,15 @@ public final class RecedePreferences {
     private static final String LEGACY_DESATURATE_KEY =
         "$kmu_political_alliance_desaturate_non_allied";
 
-    // This set's two frozen memory keys and the flags over them, defaulting off so an untouched save
-    // reads un-receded. Instance fields, not statics, so each set backs a distinct backdrop; renaming a
-    // key silently resets every existing save's choice for that set, so they stay stable once shipped.
+    // What each toggle reads as while its key is absent, one constant per toggle rather than a shared
+    // literal: the two answer different questions, so they are free to differ and every set declared
+    // here takes the same pair. Desaturate on is what makes a spotlight legible from the first click.
+    private static final boolean MUTE_DEFAULT = false;
+    private static final boolean DESATURATE_DEFAULT = true;
+
+    // This set's two frozen memory keys and the flags over them, each flag carrying its toggle's own
+    // default. Instance fields, not statics, so each set backs a distinct backdrop; renaming a key
+    // silently resets every existing save's choice for that set, so they stay stable once shipped.
     private final String muteKey;
     private final String desaturateKey;
     private final SectorMemoryFlag muteFlag;
@@ -71,21 +80,21 @@ public final class RecedePreferences {
     RecedePreferences(String muteKey, String desaturateKey) {
         this.muteKey = muteKey;
         this.desaturateKey = desaturateKey;
-        this.muteFlag = new SectorMemoryFlag(muteKey, false);
-        this.desaturateFlag = new SectorMemoryFlag(desaturateKey, false);
+        this.muteFlag = new SectorMemoryFlag(muteKey, MUTE_DEFAULT);
+        this.desaturateFlag = new SectorMemoryFlag(desaturateKey, DESATURATE_DEFAULT);
     }
 
     /**
      * @return whether this set's receded backdrop dims by the muted-opacity modifier; false before a
-     *         save exists or when the toggle was never set
+     *         save exists or while the toggle is untouched, since Mute defaults off
      */
     public boolean isMuted() {
         return muteFlag.isSet();
     }
 
     /**
-     * @return whether this set's receded backdrop recolours to the desaturation profile; false before a
-     *         save exists or when the toggle was never set
+     * @return whether this set's receded backdrop recolours to the desaturation profile; true before a
+     *         save exists or while the toggle is untouched, since Desaturate defaults on
      */
     public boolean isDesaturated() {
         return desaturateFlag.isSet();

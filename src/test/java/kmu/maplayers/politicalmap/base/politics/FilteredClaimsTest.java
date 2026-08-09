@@ -103,9 +103,9 @@ final class FilteredClaimsTest {
                     claimReaderMock,
                     "hegemony");
 
-                // The selected bloc's claim carries the one spotlight key, so it fuses into that
-                // bloc's single territory at full strength; the rival's keeps its own bloc key,
-                // which is what the style layer reads to recede it.
+                // The selected bloc's claim carries the one spotlight key, which is what draws it
+                // at full strength and joins it to whatever else that bloc has spotlit; the
+                // rival's keeps its own bloc key, which is what the style layer reads to recede it.
                 assertThat(resolved.get("hegemony-claimed"))
                     .isSameAs(SPOTLIT_HOLDER);
                 assertThat(resolved.get("rival-claimed"))
