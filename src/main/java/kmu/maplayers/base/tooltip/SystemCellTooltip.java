@@ -238,7 +238,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
                 StarsectorUiColour.VANILLA_BUTTON_SHORTCUT.resolve()))
             .clearsCrestColumn()
             .continuesWith(new TextSpan(
-                CellTooltipRows.CONTINUATION_GAP + phrase,
+                phrase,
                 StarsectorUiColour.VANILLA_GRAY.resolve()))
             .readsAs(TooltipLineStyle.FOOTNOTE);
     }

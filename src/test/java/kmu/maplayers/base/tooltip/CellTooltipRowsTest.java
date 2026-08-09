@@ -321,7 +321,7 @@ final class CellTooltipRowsTest {
             assertThat(readLabelTextRun(row, MARKED_LABEL_RUN).colour())
                 .isEqualTo(TEXT);
             assertThat(readLabelTextRun(row, MARKED_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan(" worsening", HIGHLIGHT));
+                .isEqualTo(new TextSpan("worsening", HIGHLIGHT));
             assertThat(row.indent())
                 .isCloseTo(MEMBER_INDENT, within(TOLERANCE));
         }
@@ -338,7 +338,7 @@ final class CellTooltipRowsTest {
                 MEMBER_LEVEL);
 
             assertThat(readLabelTextRun(row, INDEX_RUN))
-                .isEqualTo(new TextSpan(" [2]", GRAY));
+                .isEqualTo(new TextSpan("[2]", GRAY));
         }
 
         @Test
@@ -353,9 +353,9 @@ final class CellTooltipRowsTest {
                 MEMBER_LEVEL);
 
             assertThat(readLabelTextRun(row, INDEX_RUN))
-                .isEqualTo(new TextSpan(" [2]", GRAY));
+                .isEqualTo(new TextSpan("[2]", GRAY));
             assertThat(readLabelTextRun(row, INDEXED_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan(" strongest", HIGHLIGHT));
+                .isEqualTo(new TextSpan("strongest", HIGHLIGHT));
         }
 
         @Test
@@ -375,9 +375,9 @@ final class CellTooltipRowsTest {
             assertThat(readLabelTextRun(row, MARKED_LABEL_RUN).text())
                 .isEqualTo("Chicomoztoc");
             assertThat(readLabelTextRun(row, MARKED_INDEX_RUN))
-                .isEqualTo(new TextSpan(" [2]", GRAY));
+                .isEqualTo(new TextSpan("[2]", GRAY));
             assertThat(readLabelTextRun(row, MARKED_INDEXED_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan(" strongest", HIGHLIGHT));
+                .isEqualTo(new TextSpan("strongest", HIGHLIGHT));
         }
 
         @Test
@@ -392,7 +392,7 @@ final class CellTooltipRowsTest {
                 MEMBER_LEVEL);
 
             assertThat(readLabelTextRun(wonRow, INDEX_RUN))
-                .isEqualTo(new TextSpan(" [2]", HIGHLIGHT_GREEN));
+                .isEqualTo(new TextSpan("[2]", HIGHLIGHT_GREEN));
 
             var lostRow = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine
@@ -401,7 +401,7 @@ final class CellTooltipRowsTest {
                 MEMBER_LEVEL);
 
             assertThat(readLabelTextRun(lostRow, INDEX_RUN))
-                .isEqualTo(new TextSpan(" [5]", HIGHLIGHT_RED));
+                .isEqualTo(new TextSpan("[5]", HIGHLIGHT_RED));
         }
 
         @Test
@@ -452,7 +452,7 @@ final class CellTooltipRowsTest {
                 MEMBER_LEVEL);
 
             assertThat(readLabelTextRun(row, QUALIFIER_RUN))
-                .isEqualTo(new TextSpan(" worsening", HIGHLIGHT));
+                .isEqualTo(new TextSpan("worsening", HIGHLIGHT));
         }
 
         @Test
@@ -511,11 +511,12 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildQualifierSpanPartsItselfFromTheWordsItFollows() {
-            // Runs are laid down touching, so the run opens with the gap itself - otherwise a label and
-            // the status stated on it read as one word.
+        void buildQualifierSpanCarriesTheWordsAlone() {
+            // What parts the run from the line it continues is the run vocabulary's own space, spent
+            // whichever way the label is laid, so a separator written in here would be the second one -
+            // which is what drew a qualifier two spaces clear of the words it qualifies.
             assertThat(CellTooltipRows.buildQualifierSpan("hidden").text())
-                .isEqualTo(" hidden");
+                .isEqualTo("hidden");
         }
     }
 
@@ -562,7 +563,7 @@ final class CellTooltipRowsTest {
                 .continuesWith(CellTooltipRows.buildQualifierSpan("worsening"));
 
             assertThat(readLabelRun(row, MARKED_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan(" worsening", HIGHLIGHT));
+                .isEqualTo(new TextSpan("worsening", HIGHLIGHT));
         }
     }
 }

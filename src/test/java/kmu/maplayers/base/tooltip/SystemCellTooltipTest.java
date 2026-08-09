@@ -321,7 +321,7 @@ final class SystemCellTooltipTest {
             assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).labelRuns())
                 .containsExactly(
                     new TextSpan(TOGGLE_KEY_NAME, BUTTON_SHORTCUT),
-                    new TextSpan(" show the full breakdown", GRAY));
+                    new TextSpan("show the full breakdown", GRAY));
         }
 
         @Test
@@ -337,7 +337,7 @@ final class SystemCellTooltipTest {
             assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).labelRuns())
                 .containsExactly(
                     new TextSpan(TOGGLE_KEY_NAME, BUTTON_SHORTCUT),
-                    new TextSpan(" hide the full breakdown", GRAY));
+                    new TextSpan("hide the full breakdown", GRAY));
         }
 
         @Test
