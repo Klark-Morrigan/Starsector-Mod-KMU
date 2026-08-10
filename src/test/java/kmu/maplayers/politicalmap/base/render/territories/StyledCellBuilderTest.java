@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -110,6 +111,7 @@ final class StyledCellBuilderTest {
 
         @Test
         void buildStyledCellForSystemAppliesTheOpacityMultiplierAndKeepsTheHolderPaletteWhenNotDesaturated() {
+
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(0.5, false))),
                 SYSTEM_ID,
@@ -123,6 +125,7 @@ final class StyledCellBuilderTest {
 
         @Test
         void buildStyledCellForSystemDesaturatesToThePassPaletteAtFullOpacityWhenOnlyDesaturateIsSet() {
+
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(1.0, true))),
                 SYSTEM_ID,
@@ -136,6 +139,7 @@ final class StyledCellBuilderTest {
 
         @Test
         void buildStyledCellForSystemMutesAndDesaturatesTogetherWhenBothAreSet() {
+
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(0.5, true))),
                 SYSTEM_ID,
@@ -149,6 +153,7 @@ final class StyledCellBuilderTest {
 
         @Test
         void buildStyledCellForSystemLeavesTheHolderPaletteAndOpacityUntouchedForTheNoneAdjustment() {
+
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
                 SYSTEM_ID,
@@ -249,6 +254,50 @@ final class StyledCellBuilderTest {
             assertThat(requireLoneCell(styled).outlinePaint().colour())
                 .isEqualTo(DESATURATED_PRIMARY);
             assertThat(requireLoneCell(styled).outlinePaint().alpha())
+                .isEqualTo(0.5f);
+        }
+
+        @Test
+        void buildStyledCellForSystemSparesASettledCellTheSpotlitBlocLivesInTheFiltersRecede() {
+            // The pick's own colony in a system this layer's holding could not attribute to it - an
+            // unclaimed pirate haven under a pirate spotlight. Under the same receding pass that
+            // sinks the case above, this cell keeps the neutral colour and full opacity an
+            // unfiltered map paints it in: presence spares it the recede and changes nothing else,
+            // so it never takes the bloc's own shades and never asserts a claim it does not have.
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                buildFilteringFactionlessDrawablesWith(
+                    buildFilledOutlineStyle(),
+                    new ElementStyleAdjustment(0.5, true),
+                    Set.of(UNHELD_INHABITED_SYSTEM_ID)),
+                UNHELD_INHABITED_SYSTEM_ID,
+                buildOwnedCell());
+
+            assertThat(requireLoneCell(styled).fillPaint().colour())
+                .isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(requireLoneCell(styled).fillPaint().alpha())
+                .isEqualTo(1.0f);
+            assertThat(requireLoneCell(styled).outlinePaint().colour())
+                .isEqualTo(FACTIONLESS_NEUTRAL);
+            assertThat(requireLoneCell(styled).outlinePaint().alpha())
+                .isEqualTo(1.0f);
+        }
+
+        @Test
+        void buildStyledCellForSystemStillRecedesASettledCellTheSpotlitBlocIsAbsentFrom() {
+            // The other half of the case above, under the identical pass: a settled system the pick
+            // does not live in stays part of the receded background, so the exception turns on the
+            // presence set rather than on the cell being settled at all.
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                buildFilteringFactionlessDrawablesWith(
+                    buildFilledOutlineStyle(),
+                    new ElementStyleAdjustment(0.5, true),
+                    Set.of(UNHELD_INHABITED_SYSTEM_ID)),
+                DECIVILISED_SYSTEM_ID,
+                buildOwnedCell());
+
+            assertThat(requireLoneCell(styled).fillPaint().colour())
+                .isEqualTo(DESATURATED_PRIMARY);
+            assertThat(requireLoneCell(styled).fillPaint().alpha())
                 .isEqualTo(0.5f);
         }
 
@@ -371,6 +420,7 @@ final class StyledCellBuilderTest {
 
         @Test
         void buildStyledCellForSystemRoundsALoneCellsOutlineWhenTheSectorWideGateIsOn() {
+
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildRoundingFactionlessDrawablesWith(buildFilledOutlineStyle()),
                 DECIVILISED_SYSTEM_ID,
@@ -404,12 +454,14 @@ final class StyledCellBuilderTest {
 
         @Test
         void buildStyledCellForSystemDropsAFactionlessCellThatDrawsNothing() {
+
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildFactionlessDrawablesWith(buildNoColourStyle(), buildDrawnOutlineStyle()),
                 DECIVILISED_SYSTEM_ID,
                 buildOwnedCell());
 
-            assertThat(styled).isNull();
+            assertThat(styled)
+                .isNull();
         }
 
         // A view stub that paints in the full faction style (never independent) and
@@ -424,6 +476,7 @@ final class StyledCellBuilderTest {
         private static PoliticalMapTerritories buildFactionlessDrawablesWith(
                 CategoryStyle decivilisedStyle,
                 CategoryStyle uninhabitedStyle) {
+
             return buildFactionlessDrawablesWith(
                 buildFactionlessTheme(
                     decivilisedStyle,
@@ -439,13 +492,25 @@ final class StyledCellBuilderTest {
         private static PoliticalMapTerritories buildFilteringFactionlessDrawablesWith(
                 CategoryStyle factionlessStyle,
                 ElementStyleAdjustment recede) {
+
+            return buildFilteringFactionlessDrawablesWith(factionlessStyle, recede, Set.of());
+        }
+
+        // The same filtered pass with the spotlit bloc recorded as living in the given systems, so
+        // a case can put a cell inside and outside the pick's presence under one identical recede.
+        private static PoliticalMapTerritories buildFilteringFactionlessDrawablesWith(
+                CategoryStyle factionlessStyle,
+                ElementStyleAdjustment recede,
+                Set<String> spotlitPresenceSystemIds) {
+
             return buildFactionlessDrawablesWith(
                 buildFactionlessTheme(
                     factionlessStyle,
                     factionlessStyle,
                     ThemeFixtures.createInertGlobalStyle()),
                 "selected-bloc",
-                recede);
+                recede,
+                spotlitPresenceSystemIds);
         }
 
         // The unfiltered factionless backdrop with the sector-wide corner rounding switched on,
@@ -477,7 +542,7 @@ final class StyledCellBuilderTest {
                 CategoryStyle uninhabitedStyle,
                 GlobalStyle globalStyle) {
 
-            Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
+            var categories = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
 
             categories.put(PoliticalMapCategory.FACTION, STYLE);
             categories.put(PoliticalMapCategory.INDEPENDENT, STYLE);
@@ -497,6 +562,17 @@ final class StyledCellBuilderTest {
                 String selectedBlocId,
                 ElementStyleAdjustment recede) {
 
+            return buildFactionlessDrawablesWith(theme, selectedBlocId, recede, Set.of());
+        }
+
+        // The same backdrop with the spotlit bloc recorded as living in the given systems, for the
+        // cases about a pick's presence sparing a settled cell the recede.
+        private static PoliticalMapTerritories buildFactionlessDrawablesWith(
+                RenderStyle theme,
+                String selectedBlocId,
+                ElementStyleAdjustment recede,
+                Set<String> spotlitPresenceSystemIds) {
+
             return new PoliticalMapTerritories(
                 Map.of(),
                 Set.of(DECIVILISED_SYSTEM_ID, UNHELD_INHABITED_SYSTEM_ID),
@@ -511,7 +587,8 @@ final class StyledCellBuilderTest {
                 new FilterSnapshot(
                     selectedBlocId,
                     recede,
-                    Set.of()));
+                    Set.of(),
+                    spotlitPresenceSystemIds));
         }
 
         // A category whose outer outline is drawn (a real palette slot, resolved to the neutral
@@ -594,7 +671,11 @@ final class StyledCellBuilderTest {
                     Color.GRAY,
                     new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
                 new ViewGrouping(viewMock, HolderGrouping.identity()),
-                new FilterSnapshot(isFiltering ? "selected-bloc" : null, recede, Set.of()));
+                new FilterSnapshot(
+                    isFiltering ? "selected-bloc" : null,
+                    recede,
+                    Set.of(),
+                    Set.of()));
         }
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never

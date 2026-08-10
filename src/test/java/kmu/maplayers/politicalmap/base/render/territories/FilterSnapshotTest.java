@@ -21,7 +21,8 @@ final class FilterSnapshotTest {
 
         @Test
         void unfilteredSpotlightsNothing() {
-            assertThat(FilterSnapshot.unfiltered().selectedBlocId()).isNull();
+            assertThat(FilterSnapshot.unfiltered().selectedBlocId())
+                .isNull();
         }
 
         @Test
@@ -30,8 +31,10 @@ final class FilterSnapshotTest {
             // filter at all; an empty contested set means no cell hatches.
             var snapshot = FilterSnapshot.unfiltered();
 
-            assertThat(snapshot.recedeAdjustment()).isEqualTo(ElementStyleAdjustment.NONE);
-            assertThat(snapshot.contestedSystemIds()).isEmpty();
+            assertThat(snapshot.recedeAdjustment())
+                .isEqualTo(ElementStyleAdjustment.NONE);
+            assertThat(snapshot.contestedSystemIds())
+                .isEmpty();
         }
     }
 
@@ -40,14 +43,21 @@ final class FilterSnapshotTest {
 
         @Test
         void isFilteringIsFalseForTheUnfilteredDefault() {
-            assertThat(FilterSnapshot.unfiltered().isFiltering()).isFalse();
+            assertThat(FilterSnapshot.unfiltered().isFiltering())
+                .isFalse();
         }
 
         @Test
         void isFilteringIsTrueWhenABlocIsSelected() {
-            var snapshot = new FilterSnapshot("hegemony", ElementStyleAdjustment.NONE, Set.of());
 
-            assertThat(snapshot.isFiltering()).isTrue();
+            var snapshot = new FilterSnapshot(
+                "hegemony",
+                ElementStyleAdjustment.NONE,
+                Set.of(),
+                Set.of());
+
+            assertThat(snapshot.isFiltering())
+                .isTrue();
         }
     }
 }

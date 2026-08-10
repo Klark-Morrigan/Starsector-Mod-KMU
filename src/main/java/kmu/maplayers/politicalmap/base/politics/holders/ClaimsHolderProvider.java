@@ -23,11 +23,17 @@ import java.util.Set;
  * answer to {@code isSpotlitBloc}, which is what spares the pick the recede that then mutes and
  * desaturates every other claimant.
  *
- * <p>A pick with no claims anywhere recedes the whole sector and holds nothing at full strength.
- * That is the answer rather than a degenerate case: the picker offers every bloc that claims
- * <em>or</em> holds something, so a colony-holding faction that claims nowhere is pickable, and
- * "this faction claims nothing" is what the empty map then says. Nothing here has to detect it -
- * the rekey simply finds no system to move, and the recede covers the rest.
+ * <p>A pick with no claims anywhere therefore rekeys nothing, and this provider reports no
+ * territory for it at all. That is the honest answer to "what does this faction claim" - the
+ * picker offers every bloc that claims <em>or</em> holds something, so a colony-holding faction
+ * that claims nowhere is pickable, and an empty claim map is what it has to say. Nothing here has
+ * to detect the case; the rekey simply finds no system to move.
+ *
+ * <p>What such a pick is <em>not</em> left with is a wholly sunken sector. The systems it lives in
+ * without claiming reach the render pass holderless, and the factionless cell builder spares those
+ * the recede on the strength of the bloc's presence, so its colonies stay legible in the neutral
+ * paint they carry off filter. That happens downstream of this provider and without a holder,
+ * which is what keeps presence from reading here as a claim.
  *
  * <p>The resolution carries no fill exceptions either way. A system has exactly one claimant, so
  * there is no dominated-but-present state to hatch and nothing to leave empty - which lets the fill

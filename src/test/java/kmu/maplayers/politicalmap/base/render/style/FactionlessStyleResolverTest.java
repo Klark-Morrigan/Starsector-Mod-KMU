@@ -67,12 +67,30 @@ final class FactionlessStyleResolverTest {
 
         private static final ElementStyleAdjustment PASS_RECEDE = new ElementStyleAdjustment(0.5, true);
 
+        // Whether the spotlighted bloc holds a colony in the cell's system. Named at each call so a
+        // case reads as the situation it is about rather than as a bare true or false.
+        private static final boolean SPOTLIT_BLOC_PRESENT = true;
+        private static final boolean SPOTLIT_BLOC_ABSENT = false;
+
         @Test
         void resolveRecedeOfGivesADecivilisedCellThePassRecede() {
             assertThat(FactionlessStyleResolver.resolveRecedeOf(
                     PoliticalMapCategory.DECIVILISED,
-                    PASS_RECEDE))
+                    PASS_RECEDE,
+                    SPOTLIT_BLOC_ABSENT))
                 .isEqualTo(PASS_RECEDE);
+        }
+
+        @Test
+        void resolveRecedeOfSparesASettledCellTheSpotlitBlocLivesIn() {
+            // The pick's own colony in a system this layer's holding could not attribute to it - an
+            // unclaimed pirate haven under a pirate spotlight. Sinking it would hide the very
+            // presence the spotlight was picked to find, so it keeps full strength.
+            assertThat(FactionlessStyleResolver.resolveRecedeOf(
+                    PoliticalMapCategory.DECIVILISED,
+                    PASS_RECEDE,
+                    SPOTLIT_BLOC_PRESENT))
+                .isEqualTo(ElementStyleAdjustment.NONE);
         }
 
         @Test
@@ -81,7 +99,8 @@ final class FactionlessStyleResolverTest {
             // drawn over it.
             assertThat(FactionlessStyleResolver.resolveRecedeOf(
                     PoliticalMapCategory.UNINHABITED,
-                    PASS_RECEDE))
+                    PASS_RECEDE,
+                    SPOTLIT_BLOC_ABSENT))
                 .isEqualTo(ElementStyleAdjustment.NONE);
         }
 
@@ -91,7 +110,8 @@ final class FactionlessStyleResolverTest {
             // path that has to be gated on whether a filter is active.
             assertThat(FactionlessStyleResolver.resolveRecedeOf(
                     PoliticalMapCategory.DECIVILISED,
-                    ElementStyleAdjustment.NONE))
+                    ElementStyleAdjustment.NONE,
+                    SPOTLIT_BLOC_ABSENT))
                 .isEqualTo(ElementStyleAdjustment.NONE);
         }
     }

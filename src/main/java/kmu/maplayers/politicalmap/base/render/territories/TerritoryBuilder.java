@@ -18,10 +18,15 @@ import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 
 import org.apache.log4j.Logger;
+
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Runs one full political-map rebuild: resolves who holds each system, reads the theme,
@@ -112,6 +117,24 @@ public final class TerritoryBuilder {
                 + inhabitedSystemIds.size()
                 + " took=" + Timings.formatMillis(System.nanoTime() - inhabitedStart));
 
+            // Where the spotlit bloc is living outside anything this build attributed to it, so
+            // the factionless cells over its own colonies are spared the recede. Asked only of the
+            // inhabited systems the holding left out - on the faction and alliance views that is
+            // the dead worlds alone, which no bloc lives in, so the read comes back empty for the
+            // cost of the set arithmetic.
+            var presenceStart = System.nanoTime();
+            var spotlitPresenceSystemIds = profiler.measure(
+                "politicalMap.findSpotlitPresence",
+                () -> FilteredPolitics.findPresentSystemIds(
+                    sector,
+                    grouping,
+                    selectedBlocId,
+                    selectUnheldSystemIds(inhabitedSystemIds, ownerBySystemId)));
+
+            LOG.debug("Political map spotlit presence scan; systems="
+                + spotlitPresenceSystemIds.size()
+                + " took=" + Timings.formatMillis(System.nanoTime() - presenceStart));
+
             // The whole theme - the global tier plus one style per category - read once here
             // through the single reader seam, plus the shared neutral colour and the desaturation
             // palette the profile resolves to. Held on the territories so the incremental refresh
@@ -144,7 +167,11 @@ public final class TerritoryBuilder {
                 unfilledSystemIds,
                 new MapStyling(renderStyle, neutralColour, desaturationPalette),
                 new ViewGrouping(view, grouping),
-                new FilterSnapshot(selectedBlocId, recedeAdjustment, contestedSystemIds));
+                new FilterSnapshot(
+                    selectedBlocId,
+                    recedeAdjustment,
+                    contestedSystemIds,
+                    spotlitPresenceSystemIds));
 
             // Shape the raw cells into merged clusters once, holding-aware. The agnostic
             // geometry clusters by holder, so hand it each system's faction id as the
@@ -200,6 +227,23 @@ public final class TerritoryBuilder {
 
             return territories;
         });
+    }
+
+    // The inhabited systems this build resolved no holder for - every cell that will reach the
+    // factionless classifier with something standing in it. The only systems a spotlit bloc's
+    // presence can change anything for, since one it does hold already draws in its territory.
+    private static Set<String> selectUnheldSystemIds(
+            Set<String> inhabitedSystemIds,
+            Map<String, DominantHolder> ownerBySystemId) {
+
+        var unheldSystemIds = new LinkedHashSet<String>();
+
+        for (var systemId : inhabitedSystemIds) {
+            if (!ownerBySystemId.containsKey(systemId)) {
+                unheldSystemIds.add(systemId);
+            }
+        }
+        return unheldSystemIds;
     }
 
     // How many hatch strokes this pass baked, as a count of GL_LINES segments rather than of the

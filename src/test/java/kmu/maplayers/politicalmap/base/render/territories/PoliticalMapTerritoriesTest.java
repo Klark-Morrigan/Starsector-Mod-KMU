@@ -60,7 +60,7 @@ final class PoliticalMapTerritoriesTest {
 
             // A stand-in view so this model test names no concrete view: the territories only carry
             // the view for the incremental re-shape to read back, so any PoliticalMapView serves.
-            PoliticalMapView viewMock = mock(PoliticalMapView.class);
+            var viewMock = mock(PoliticalMapView.class);
             var territories = PoliticalMapTerritories.createEmpty(viewMock);
 
             // Both draw lists empty, so the render is a no-op and isEmpty short-circuits
@@ -103,6 +103,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void isEmptyIsTrueWhenBothDrawListsAreEmpty() {
+
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
             assertThat(territories.isEmpty())
@@ -111,6 +112,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void isEmptyIsFalseWhenAStyledCellIsPresent() {
+
             var territories = buildDrawablesWith(Map.of("system", buildAnyStyledCell()), Map.of());
 
             assertThat(territories.isEmpty())
@@ -119,6 +121,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void isEmptyIsFalseWhenAClusterGroupIsPresent() {
+
             var territories = buildDrawablesWith(Map.of(), Map.of("faction", buildAnyStyledClusterGroup()));
 
             assertThat(territories.isEmpty())
@@ -176,6 +179,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void listCandidateBorderLoopsOfGathersEveryLoopOfEveryBodyOuterRingsAndEnclavesAlike() {
+
             var homeOuter = new float[] {0, 0};
             var homeEnclave = new float[] {1, 1};
             var exclaveOuter = new float[] {2, 2};
@@ -193,6 +197,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void listCandidateBorderLoopsOfReturnsNothingForABlocThatIsNotOnTheMap() {
+
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
             assertThat(territories.listCandidateBorderLoopsOf("hegemony"))
@@ -201,6 +206,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void listCandidateBorderLoopsOfKeepsTheSameListWhileTheBlocsBodiesStand() {
+
             var territories = buildDrawablesWith(Map.of(), Map.of(
                 "hegemony",
                 PoliticalMapTerritoryFixtures.createTerritoryWithLoops(
@@ -216,6 +222,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void listCandidateBorderLoopsOfRecomputesWhenARefreshReplacesTheBlocsBodies() {
+
             var rebuiltLoop = new float[] {9, 9};
             var territories = buildDrawablesWith(Map.of(), Map.of(
                 "hegemony",
@@ -242,12 +249,12 @@ final class PoliticalMapTerritoriesTest {
         @Test
         void gettersReturnEachConstructorInputInItsMatchingSlot() {
 
-            Map<String, DominantHolder> holders = new LinkedHashMap<>();
-            Set<String> inhabited = new LinkedHashSet<>(Set.of("inhabited-system"));
+            var holders = new LinkedHashMap<String, DominantHolder>();
+            var inhabited = new LinkedHashSet<>(Set.of("inhabited-system"));
 
             // A distinct unfilled set so a swapped slot is caught by identity, held apart from the
             // inhabited set it sits beside.
-            Set<String> unfilled = new LinkedHashSet<>(Set.of("unfilled-system"));
+            var unfilled = new LinkedHashSet<>(Set.of("unfilled-system"));
             var neutral = Color.CYAN;
             var desaturationPalette = new FactionPalette(Color.MAGENTA, Color.ORANGE);
 
@@ -259,7 +266,7 @@ final class PoliticalMapTerritoriesTest {
             var decivilisedStyle = buildStyleMarked(3);
             var uninhabitedStyle = buildStyleMarked(4);
 
-            Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
+            var categories = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
 
             categories.put(PoliticalMapCategory.FACTION, factionStyle);
             categories.put(PoliticalMapCategory.INDEPENDENT, independentStyle);
@@ -287,7 +294,11 @@ final class PoliticalMapTerritoriesTest {
             var selectedBlocId = "selected-bloc";
 
             // A distinct contested set so a swapped filter-snapshot field is caught by identity.
-            Set<String> contested = new LinkedHashSet<>(Set.of("contested-system"));
+            var contested = new LinkedHashSet<>(Set.of("contested-system"));
+
+            // Likewise distinct, and held apart from the contested set it sits beside: the two are
+            // both spotlit-presence sets, so only differing contents catch a swap between them.
+            var spotlitPresence = new LinkedHashSet<>(Set.of("present-unheld-system"));
 
             var territories = new PoliticalMapTerritories(
                 holders,
@@ -295,7 +306,11 @@ final class PoliticalMapTerritoriesTest {
                 unfilled,
                 new MapStyling(renderStyle, neutral, desaturationPalette),
                 new ViewGrouping(viewMock, grouping),
-                new FilterSnapshot(selectedBlocId, recedeAdjustment, contested));
+                new FilterSnapshot(
+                    selectedBlocId,
+                    recedeAdjustment,
+                    contested,
+                    spotlitPresence));
 
             // The two draw lists are created internally, not passed, so the build can fill them;
             // they start empty and stay mutable for the incremental refresh to edit in place.
@@ -340,6 +355,8 @@ final class PoliticalMapTerritoriesTest {
                 .isSameAs(recedeAdjustment);
             assertThat(territories.getContestedSystemIds())
                 .isSameAs(contested);
+            assertThat(territories.getSpotlitPresenceSystemIds())
+                .isSameAs(spotlitPresence);
         }
     }
 
@@ -393,23 +410,29 @@ final class PoliticalMapTerritoriesTest {
             // A cell that draws nothing can be hovered no more than it can be seen, so the
             // shape must go with the draw record rather than linger as a phantom hit cluster.
             var territories = buildDrawablesWith(Map.of(), Map.of());
+
             territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
             territories.removeStyledCell("system");
 
-            assertThat(territories.getStyledCellByCellId()).isEmpty();
-            assertThat(territories.getFillPolygonByCellId()).isEmpty();
+            assertThat(territories.getStyledCellByCellId())
+                .isEmpty();
+            assertThat(territories.getFillPolygonByCellId())
+                .isEmpty();
         }
 
         @Test
         void removeStyledCellLeavesEveryOtherCellStanding() {
 
             var territories = buildDrawablesWith(Map.of(), Map.of());
+
             territories.putStyledCell("dropped", buildAnyStyledCell(), buildSquarePolygon());
             territories.putStyledCell("kept", buildAnyStyledCell(), buildTrianglePolygon());
             territories.removeStyledCell("dropped");
 
-            assertThat(territories.getStyledCellByCellId()).containsOnlyKeys("kept");
-            assertThat(territories.getFillPolygonByCellId()).containsOnlyKeys("kept");
+            assertThat(territories.getStyledCellByCellId())
+                .containsOnlyKeys("kept");
+            assertThat(territories.getFillPolygonByCellId())
+                .containsOnlyKeys("kept");
         }
     }
 
@@ -418,6 +441,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void reindexClustersResolvesASystemToItsWholeContiguousTerritory() {
+
             var territories = buildOwnedBy(Map.of("A", "F", "B", "F"));
 
             reindex(territories, Map.of(
@@ -430,6 +454,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void reindexClustersExcludesADifferentlyOwnedNeighbour() {
+            
             var territories = buildOwnedBy(Map.of("A", "F", "B", "RIVAL"));
 
             reindex(territories, Map.of(
@@ -501,6 +526,7 @@ final class PoliticalMapTerritoriesTest {
     private static PoliticalMapTerritories buildOwnedBy(Map<String, String> factionIdBySystemId) {
 
         var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
+
         for (var entry : factionIdBySystemId.entrySet()) {
             ownerBySystemId.put(entry.getKey(), readOwnerOf(entry.getValue()));
         }
@@ -575,6 +601,7 @@ final class PoliticalMapTerritoriesTest {
     // A CategoryStyle whose opacities and widths carry one marker value, so four otherwise
     // interchangeable style bundles are distinct instances.
     private static CategoryStyle buildStyleMarked(double marker) {
+        
         var element = new ElementStyle(FactionPaletteSlot.PRIMARY, marker);
         return new CategoryStyle(element, element, marker, element, marker);
     }

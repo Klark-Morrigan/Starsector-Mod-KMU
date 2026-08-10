@@ -382,6 +382,13 @@ public final class PoliticalMapTerritories implements
         return filter.contestedSystemIds();
     }
 
+    // The settled systems the spotlit bloc lives in that this build resolved no holder for, so the
+    // factionless cell builder spares them the recede that sinks the rest of the sector. Empty off
+    // filter, and empty on any view whose holding accounts for every inhabited system.
+    public Set<String> getSpotlitPresenceSystemIds() {
+        return filter.spotlitPresenceSystemIds();
+    }
+
     // True when there is nothing to paint, so the renderer can skip the GL state push
     // entirely.
     @Override

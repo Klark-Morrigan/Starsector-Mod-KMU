@@ -59,6 +59,17 @@ An **uninhabited** cell is the exception. It is the empty backdrop the whole map
 rather than something the spotlight competes with, and its faint outline is what gives the sector
 its shape, so it stays at full strength under every recede.
 
+A settled cell **the spotlit bloc lives in** is the second exception. The recede clears away what
+the pick is not, and a system the pick has a colony in is not that - sinking it would hide the
+pick's own presence for the sole reason that this layer's holding rule could not attribute it to
+them. On the claims view that is routine: pirates, the Path, and independents may not claim, so
+their own colonies always land in a holderless cell.
+
+Such a cell keeps the neutral factionless paint it carries off filter. Full strength is the whole
+of what presence buys it - it never takes the bloc's colours, because nobody holds the system on
+this layer and painting it in the bloc's shades would assert exactly the claim the view reports it
+does not have.
+
 Only the *filter* recede reaches a settled factionless cell - it is the one whose backdrop is "the
 rest of the sector". The alliances view's non-allied recede describes factions, which such a
 cell is not, so it leaves it alone. Off filter the pass's recede is the identity, so an
@@ -75,6 +86,13 @@ the system seeds a cell at all - and `PoliticalMapTerritories` retains it, so th
 re-shape classifies against exactly what the full build used. Deriving emptiness from the holder map
 instead would make every view whose holding rule admits only some factions report its unheld
 systems as empty space.
+
+The presence exception rides beside it as the **spotlit-presence set** on `FilterSnapshot`, read
+through `FilteredPolitics.findPresentSystemIds` - the same presence rule `resolveFilteredHolder`
+keeps a spotlit bloc visible by, so "the pick lives here" means one thing across the map. It is
+asked only of the inhabited systems the holding left out, since a system somebody holds already
+draws in that bloc's territory; on the faction and alliance views that candidate set is the dead
+worlds alone, which no bloc lives in, so the read costs the set arithmetic and returns empty.
 
 ## Borders against empty space
 

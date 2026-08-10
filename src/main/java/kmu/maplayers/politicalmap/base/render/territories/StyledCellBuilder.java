@@ -134,9 +134,18 @@ public final class StyledCellBuilder {
         // whichever slot an element names, it paints neutral - unless the recede desaturates the
         // cell, in which case it recolours off the pass's desaturation palette exactly as a
         // receded bloc does.
+        // The spotlit bloc's own presence spares the cell the recede, so a pick's colonies are not
+        // sunk merely because this layer's holding could not attribute them to it. The cell keeps
+        // its neutral factionless paint either way - full strength is the whole of what presence
+        // buys it here. A cell drawn as no system names nowhere anyone could be living, so the
+        // null id skips the set rather than probing one that may be immutable and null-hostile.
+        var isSpotlitBlocPresent = systemId != null
+            && territories.getSpotlitPresenceSystemIds().contains(systemId);
+
         var adjustment = FactionlessStyleResolver.resolveRecedeOf(
             category,
-            territories.getRecedeAdjustment());
+            territories.getRecedeAdjustment(),
+            isSpotlitBlocPresent);
 
         var palette = MapPalettes.resolveEffectivePalette(
             adjustment,

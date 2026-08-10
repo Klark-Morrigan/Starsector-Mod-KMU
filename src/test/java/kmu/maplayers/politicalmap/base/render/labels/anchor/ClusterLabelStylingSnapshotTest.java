@@ -101,6 +101,7 @@ final class ClusterLabelStylingSnapshotTest {
         return new FilterSnapshot(
             SPOTLIT_BLOC_ID,
             ElementStyleAdjustment.NONE,
-            Set.of("corvus"));
+            Set.of("corvus"),
+            Set.of());
     }
 }

@@ -53,6 +53,7 @@ import static org.mockito.Mockito.when;
  * touch is plain to read.
  */
 final class FactionTerritoryBuilderTest {
+
     private static final String HEGEMONY = "hegemony";
     private static final String TRITACHYON = "tritachyon";
 
@@ -78,8 +79,10 @@ final class FactionTerritoryBuilderTest {
     private static final Color OWNER_SECONDARY = Color.BLUE;
     private static final DominantHolder HEGEMONY_OWNER =
         new DominantHolder(HEGEMONY, OWNER_PRIMARY, OWNER_SECONDARY);
+
     private static final DominantHolder TRITACHYON_OWNER =
         new DominantHolder(TRITACHYON, OWNER_PRIMARY, OWNER_SECONDARY);
+
     private static final double FILL_OPACITY = 0.5;
     private static final double BORDER_OPACITY = 0.25;
     private static final double BORDER_WIDTH = 3.0;
@@ -121,6 +124,7 @@ final class FactionTerritoryBuilderTest {
 
     @BeforeEach
     void openTheBorderTraceSeam() {
+
         settingsMock = mockStatic(KmuMapLayerSettings.class);
         settingsMock
             .when(KmuMapLayerSettings::getMapBorderWeldTolerance)
@@ -140,6 +144,7 @@ final class FactionTerritoryBuilderTest {
 
         @Test
         void buildFactionTerritoryTracesTwoTouchingSystemsAsOneFrontier() {
+
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 buildTerritoriesStyledBy(buildDrawnStyle()),
                 listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
@@ -162,6 +167,7 @@ final class FactionTerritoryBuilderTest {
 
         @Test
         void buildFactionTerritoryTracesDisjointHoldingsAsAClusterApiece() {
+
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 buildTerritoriesStyledBy(buildDrawnStyle()),
                 listCellsFor(ISLAND_SYSTEM, EXCLAVE_SYSTEM),
@@ -183,6 +189,7 @@ final class FactionTerritoryBuilderTest {
 
         @Test
         void buildFactionTerritoryTracesAnEnclosedRivalAsAnEnclaveOfTheOneBody() {
+
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 buildTerritoriesStyledBy(buildDrawnStyle(), listGridHolders()),
                 listGridCells(),
@@ -206,6 +213,7 @@ final class FactionTerritoryBuilderTest {
 
         @Test
         void buildFactionTerritoryPaintsEachSlotFromItsOwnPaletteChoiceAndOpacity() {
+
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 buildTerritoriesStyledBy(buildDrawnStyle()),
                 listCellsFor(ISLAND_SYSTEM),
@@ -227,6 +235,7 @@ final class FactionTerritoryBuilderTest {
 
         @Test
         void buildFactionTerritoryBakesNoBorderRunsForANoColourBorder() {
+
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 buildTerritoriesStyledBy(buildFillOnlyStyle()),
                 listCellsFor(ISLAND_SYSTEM),
@@ -248,6 +257,7 @@ final class FactionTerritoryBuilderTest {
 
         @Test
         void buildFactionTerritoryBakesNothingWhenNeitherFillNorBorderDrawsAColour() {
+
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 buildTerritoriesStyledBy(buildNoColourStyle()),
                 listCellsFor(ISLAND_SYSTEM),
@@ -256,16 +266,22 @@ final class FactionTerritoryBuilderTest {
 
             // Short-circuited before the trace: a bloc that paints nothing must not pay for the
             // ring walk that only its paints would have used.
-            assertThat(clusterGroup).isNull();
+            assertThat(clusterGroup)
+                .isNull();
         }
 
         @Test
         void buildFactionTerritoryBakesNothingForMembersThatYieldNoBorderableGeometry() {
+
             var geometryCacheMock = mock(CellGeometryCache.class);
-            when(geometryCacheMock.getCellEdgesByCellId()).thenReturn(Map.of());
-            when(geometryCacheMock.getSystemIdByCellId()).thenReturn(Map.of(
-                HELD_SYSTEM,
-                HELD_SYSTEM));
+
+            when(geometryCacheMock.getCellEdgesByCellId())
+                .thenReturn(Map.of());
+
+            when(geometryCacheMock.getSystemIdByCellId())
+                .thenReturn(Map.of(
+                    HELD_SYSTEM,
+                    HELD_SYSTEM));
 
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 buildTerritoriesStyledBy(buildDrawnStyle()),
@@ -275,7 +291,8 @@ final class FactionTerritoryBuilderTest {
 
             // A member whose cell carries no edges traces no ring, and a bloc with no frontier
             // has nothing to clip its fill against, so the whole record is dropped.
-            assertThat(clusterGroup).isNull();
+            assertThat(clusterGroup)
+                .isNull();
         }
     }
 
@@ -284,6 +301,7 @@ final class FactionTerritoryBuilderTest {
 
         @Test
         void buildAllFactionTerritoriesKeysEachBlocsTerritoryByItsGroupingKey() {
+
             var territories = buildTerritoriesStyledBy(buildDrawnStyle(), Map.of(
                 HELD_SYSTEM,
                 HEGEMONY_OWNER,
@@ -307,6 +325,7 @@ final class FactionTerritoryBuilderTest {
 
         @Test
         void buildAllFactionTerritoriesSkipsABlocThatBakesNothing() {
+
             var territories = buildTerritoriesStyledBy(buildDrawnStyle(), Map.of(
                 HELD_SYSTEM,
                 HEGEMONY_OWNER,
@@ -355,16 +374,19 @@ final class FactionTerritoryBuilderTest {
     // partition a bloc's border is traced from.
     // The 3x3 block as a geometry cache, every cell drawing as its own system.
     private static CellGeometryCache listGridCells() {
+
         var geometryCacheMock = mock(CellGeometryCache.class);
         var edgesByCellId = new LinkedHashMap<String, List<CellEdge>>();
         var systemIdByCellId = new LinkedHashMap<String, String>();
 
         for (var column = 0; column < GRID_SPAN; column++) {
             for (var row = 0; row < GRID_SPAN; row++) {
+
                 edgesByCellId.put(readGridCellId(column, row), listGridCellEdges(column, row));
                 systemIdByCellId.put(readGridCellId(column, row), readGridCellId(column, row));
             }
         }
+
         when(geometryCacheMock.getCellEdgesByCellId())
             .thenReturn(edgesByCellId);
         when(geometryCacheMock.getSystemIdByCellId())
@@ -376,9 +398,12 @@ final class FactionTerritoryBuilderTest {
     // The ring to the Hegemony and the middle to its rival - the holding that makes the middle an
     // enclave rather than a gap in the trace.
     private static Map<String, DominantHolder> listGridHolders() {
+
         var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
+
         for (var column = 0; column < GRID_SPAN; column++) {
             for (var row = 0; row < GRID_SPAN; row++) {
+
                 ownerBySystemId.put(
                     readGridCellId(column, row),
                     isGridCentre(column, row) ? TRITACHYON_OWNER : HEGEMONY_OWNER);
@@ -389,9 +414,11 @@ final class FactionTerritoryBuilderTest {
 
     // The eight cells the Hegemony draws - every one but the enclosed middle.
     private static List<String> listGridRingCellIds() {
+
         var cellIds = new ArrayList<String>();
         for (var column = 0; column < GRID_SPAN; column++) {
             for (var row = 0; row < GRID_SPAN; row++) {
+
                 if (!isGridCentre(column, row)) {
                     cellIds.add(readGridCellId(column, row));
                 }
@@ -403,6 +430,7 @@ final class FactionTerritoryBuilderTest {
     // One grid cell's four edges, counter-clockwise from its bottom-left corner, each naming the
     // neighbour across it - or the reach bound, past the block's rim.
     private static List<CellEdge> listGridCellEdges(int column, int row) {
+
         var minX = column * GRID_CELL_SIDE;
         var minY = row * GRID_CELL_SIDE;
         var maxX = minX + GRID_CELL_SIDE;
@@ -469,24 +497,27 @@ final class FactionTerritoryBuilderTest {
     private static PoliticalMapTerritories buildTerritoriesStyledBy(
             CategoryStyle style,
             Map<String, DominantHolder> ownerBySystemId) {
+
         return new PoliticalMapTerritories(
-            ownerBySystemId, Set.of(), Set.of(),
+            ownerBySystemId,
+            Set.of(),
+            Set.of(),
             new MapStyling(
                 PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(style),
                 Color.GRAY,
                 new FactionPalette(Color.GREEN, Color.YELLOW)),
             new ViewGrouping(buildViewMockAdjustingNothing(), HolderGrouping.identity()),
-            new FilterSnapshot(null, ElementStyleAdjustment.NONE, Set.of()));
+            new FilterSnapshot(null, ElementStyleAdjustment.NONE, Set.of(), Set.of()));
     }
 
     // A view stub that styles every bloc as its own faction and recedes none of them, so the
     // paints below come from the category style and the holder's palette alone.
     private static PoliticalMapView buildViewMockAdjustingNothing() {
+
         var viewMock = mock(PoliticalMapView.class);
 
         when(viewMock.shouldUseIndependentStyle(any(), any(), any()))
             .thenReturn(false);
-
         when(viewMock.resolveBlocStyleAdjustment(any(), any()))
             .thenReturn(ElementStyleAdjustment.NONE);
 

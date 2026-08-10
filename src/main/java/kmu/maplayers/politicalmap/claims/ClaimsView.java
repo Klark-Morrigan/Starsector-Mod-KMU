@@ -143,9 +143,10 @@ public final class ClaimsView implements PoliticalMapView {
      * of zero - before the pick is made. A bloc with neither never reached the fold, so the list is
      * everyone who paints or holds, not every faction in the sector.
      *
-     * <p>A claimless bloc stays pickable. Spotlighting one recedes the whole sector in favour of
-     * nothing, which is the honest answer to "show me what this faction claims" when the answer is
-     * nowhere, and re-picking the lit row clears it as any other pick does.
+     * <p>A claimless bloc stays pickable. Spotlighting one paints no territory, which is the honest
+     * answer to "show me what this faction claims" when the answer is nowhere - but the systems it
+     * lives in are spared the recede, so the pick still shows where the faction is while showing
+     * that it claims none of it. Re-picking the lit row clears it as any other pick does.
      *
      * @param sector                           the sector whose systems and economy the claim stats are
      *                                         read from; null yields an empty picker

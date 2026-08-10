@@ -137,6 +137,87 @@ public final class FilteredPolitics {
     }
 
     /**
+     * Which of {@code candidateSystemIds} the spotlighted bloc is present in, under the player's
+     * live settings - the presence read for systems this pass resolved <em>no</em> holder for.
+     *
+     * <p>The counterpart to {@link #resolveFilteredHolder} for cells the holder map never
+     * reaches. That resolve keeps the bloc visible wherever it is present by rekeying the
+     * system, which only works on a system somebody holds; a view whose holding rule admits
+     * only some factions leaves settled systems with no holder at all, and the spotlit bloc can
+     * be living in one of them. On the claims view it routinely is - vanilla lets only a
+     * territorial faction claim, so a bloc's own unclaimed colonies land here.
+     *
+     * <p>Answered over a caller-supplied candidate set rather than the whole sector, because the
+     * only systems it can change anything for are the handful the holder map left out. Walking
+     * every system would re-read the economy the holding resolve just walked, for an answer
+     * discarded at all but a few of them.
+     *
+     * @param sector            the sector whose economy is read; null yields an empty set
+     * @param grouping          the active view's grouping, so presence is judged for the same
+     *                          bloc the spotlight names
+     * @param selectedBlocId    the spotlighted bloc's id; null yields an empty set (no filter)
+     * @param candidateSystemIds the systems to test - those this pass resolved no holder for
+     * @return the candidates the spotlighted bloc owns a counted colony in
+     */
+    public static Set<String> findPresentSystemIds(
+            SectorAPI sector,
+            HolderGrouping grouping,
+            String selectedBlocId,
+            Set<String> candidateSystemIds) {
+
+        if (sector == null || sector.getEconomy() == null
+                || selectedBlocId == null || candidateSystemIds.isEmpty()) {
+
+            return Set.of();
+        }
+        return findPresentSystemIds(
+            sector,
+            DominancePass.readFromLunaSettings(grouping),
+            selectedBlocId,
+            candidateSystemIds);
+    }
+
+    /**
+     * Which of {@code candidateSystemIds} the spotlighted bloc is present in under an explicit
+     * dominance pass, for a caller that has already sampled the player's settings.
+     *
+     * <p>Presence is {@link #classifySelectedBlocPresence}'s, so a bloc counts as living in a
+     * system here exactly where the filter's own resolve would have kept it visible. Only
+     * whether it is present is asked: a holderless system has no contest for it to win or lose,
+     * so the dominant/contested split those cells are classified by means nothing here.
+     *
+     * @param sector            the sector whose economy is read; null yields an empty set
+     * @param pass              the rule, dev reveal, and grouping this pass resolves under
+     * @param selectedBlocId    the spotlighted bloc's id; null yields an empty set
+     * @param candidateSystemIds the systems to test - those this pass resolved no holder for
+     * @return the candidates the spotlighted bloc owns a counted colony in
+     */
+    public static Set<String> findPresentSystemIds(
+            SectorAPI sector,
+            DominancePass pass,
+            String selectedBlocId,
+            Set<String> candidateSystemIds) {
+
+        var presentSystemIds = new LinkedHashSet<String>();
+
+        if (sector == null || sector.getEconomy() == null || selectedBlocId == null) {
+            return presentSystemIds;
+        }
+        for (var system : sector.getStarSystems()) {
+
+            // Membership is tested before the economy read, so a system outside the candidate
+            // set costs a set probe rather than a walk of its markets.
+            if (!candidateSystemIds.contains(system.getId())) {
+                continue;
+            }
+            if (pass.readBlocFootprints(sector, system).containsKey(selectedBlocId)) {
+                presentSystemIds.add(system.getId());
+            }
+        }
+        return presentSystemIds;
+    }
+
+    /**
      * Whether a group key is the spotlighted bloc's synthetic key - carried by every system the
      * bloc is present in, which the render layer draws at full strength while every other key
      * recedes. The single question the filter branch asks to decide recede, so the synthetic

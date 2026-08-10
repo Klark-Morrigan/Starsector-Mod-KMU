@@ -64,25 +64,40 @@ public final class FactionlessStyleResolver {
     /**
      * How far a factionless cell recedes this pass.
      *
-     * <p>A decivilised cell is part of the "rest of the sector" a spotlight recedes: an inhabited
+     * <p>A settled cell is part of the "rest of the sector" a spotlight recedes: an inhabited
      * system nobody here holds is a political feature drawn in a fill of its own, so leaving it at
      * full strength lets it out-read the bloc the spotlight is meant to isolate. An uninhabited
      * cell is the empty backdrop
      * the whole map is drawn over rather than anything the spotlight competes with, and its faint
      * outline is what gives the sector its shape, so it never recedes.
      *
-     * @param category   the category the cell draws in
-     * @param passRecede the recede every non-spotlighted bloc takes this pass, which is
-     *                   {@link ElementStyleAdjustment#NONE} off filter - so an unfiltered map draws
-     *                   its dead worlds untouched
+     * <p>A settled cell the spotlighted bloc <em>lives in</em> is the exception to that. Sinking it
+     * would hide the pick's own colonies for the sole reason that this layer's holding rule cannot
+     * account for them - on the claims view, that a non-territorial faction may not claim. The
+     * recede clears away what the pick is not, and a system the pick is living in is not that.
+     *
+     * <p>Such a cell stays at full strength <em>as it already draws</em> - neutral, in the settled
+     * bundle, identical to how an unfiltered map paints it - rather than taking the spotlight's
+     * colours. Nobody holds the system on this layer, so painting it in the bloc's own shades
+     * would assert exactly the claim the view is drawn to report it does not have.
+     *
+     * @param category             the category the cell draws in
+     * @param passRecede           the recede every non-spotlighted bloc takes this pass, which is
+     *                             {@link ElementStyleAdjustment#NONE} off filter - so an unfiltered
+     *                             map draws its settled cells untouched
+     * @param isSpotlitBlocPresent whether the spotlighted bloc owns a counted colony in this cell's
+     *                             system. False for every cell off filter, so the exception cannot
+     *                             fire on an unfiltered map
      * @return the adjustment the cell draws under
      */
     public static ElementStyleAdjustment resolveRecedeOf(
             PoliticalMapCategory category,
-            ElementStyleAdjustment passRecede) {
+            ElementStyleAdjustment passRecede,
+            boolean isSpotlitBlocPresent) {
 
-        return category == PoliticalMapCategory.DECIVILISED
-            ? passRecede
-            : ElementStyleAdjustment.NONE;
+        if (category != PoliticalMapCategory.DECIVILISED || isSpotlitBlocPresent) {
+            return ElementStyleAdjustment.NONE;
+        }
+        return passRecede;
     }
 }

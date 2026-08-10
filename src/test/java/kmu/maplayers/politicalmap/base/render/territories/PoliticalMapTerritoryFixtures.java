@@ -75,7 +75,8 @@ public final class PoliticalMapTerritoryFixtures {
             new FilterSnapshot(
                 null, // No selected bloc ID.
                 ElementStyleAdjustment.NONE, // No recede adjustment.
-                new LinkedHashSet<>())); // No contested system IDs.
+                new LinkedHashSet<>(), // No contested system IDs.
+                new LinkedHashSet<>())); // No spotlit presence system IDs.
     }
 
     /**
@@ -91,7 +92,7 @@ public final class PoliticalMapTerritoryFixtures {
      * @return a live theme, keyed by the four political categories
      */
     public static RenderStyle createRenderStyleForEveryCategory(CategoryStyle style) {
-        Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
+        var categories = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
         for (var category : PoliticalMapCategory.values()) {
             categories.put(category, style);
         }
