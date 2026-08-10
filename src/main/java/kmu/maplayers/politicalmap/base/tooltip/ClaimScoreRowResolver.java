@@ -9,6 +9,7 @@ import kmlib.text.KmlibStrings;
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
+import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -92,7 +93,7 @@ public final class ClaimScoreRowResolver {
 
     // A market and its terms are named rather than crested: the faction line above already carries the
     // crest, and repeating it down every line below would read as a second holder each time.
-    private static final String NO_MARK = null;
+    private static final CellTooltipMark NO_MARK = null;
 
     // The sibling count of a faction holding this system with one market alone - the reading at which
     // the term never arose rather than one at which it counted for nothing.

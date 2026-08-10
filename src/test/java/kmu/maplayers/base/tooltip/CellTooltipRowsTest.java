@@ -53,10 +53,14 @@ import static org.assertj.core.api.Assertions.within;
 final class CellTooltipRowsTest {
 
     private static final String CREST = "graphics/ion_storm_icon.png";
+    private static final CellTooltipMark CREST_MARK =
+        CellTooltipMark.resolveMarkAsAuthored(CREST);
 
     // A mark of the other kind: a glyph standing in for the name beside it rather than a picture of
     // anything, which is the case that reads in the line's own colour.
     private static final String COLONY_ICON = "graphics/warroom/icon_planet.png";
+    private static final CellTooltipMark COLONY_MARK =
+        CellTooltipMark.resolveMarkInLineColour(COLONY_ICON);
 
     // Where a line was found: one of the block's own, one of the things that line breaks down into, and
     // one level deeper again - which is the shape a breakdown three levels down takes. Plus the line
@@ -130,7 +134,7 @@ final class CellTooltipRowsTest {
             // The mark rides inside the label, so it lands where the line's own indent put it rather
             // than in a gutter shared with whatever the box lists at another level.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine.createLine(CREST, "Ion Storm", "42"),
+                CellTooltipEntryLine.createLine(CREST_MARK, "Ion Storm", "42"),
                 LISTED_LEVEL);
 
             assertThat(readLabelRun(row, MARK_RUN))
@@ -153,9 +157,7 @@ final class CellTooltipRowsTest {
             // and the numbers around it, so a glyph that is only a shorthand for the name takes the
             // name's own colour and the pair reads as one thing.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(COLONY_ICON, "Jangala", "4,000")
-                    .readsMarkInLineColour(),
+                CellTooltipEntryLine.createLine(COLONY_MARK, "Jangala", "4,000"),
                 LISTED_LEVEL);
 
             assertThat(readLabelRun(row, MARK_RUN))
@@ -168,9 +170,7 @@ final class CellTooltipRowsTest {
             // line found beneath another follows that line down to its plainer shade instead of
             // staying at the brightness the level above speaks in.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(COLONY_ICON, "Jangala", "4,000")
-                    .readsMarkInLineColour(),
+                CellTooltipEntryLine.createLine(COLONY_MARK, "Jangala", "4,000"),
                 MEMBER_LEVEL);
 
             assertThat(readLabelRun(row, MARK_RUN))
@@ -182,7 +182,7 @@ final class CellTooltipRowsTest {
             // A crest is a picture of a thing rather than a shorthand for it, and its colours are in
             // its own pixels - multiplied by the line's shade it would come out a tinted smudge.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200"),
+                CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200"),
                 LISTED_LEVEL);
 
             assertThat(readLabelRun(row, MARK_RUN))
@@ -210,7 +210,7 @@ final class CellTooltipRowsTest {
             // begin their labels at the same place whether either carries a mark, so a listing mixing
             // the two does not read as two staggered columns.
             var markedRow = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200"),
+                CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200"),
                 LISTED_LEVEL);
             var marklessRow = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(null, "Independent", "900"),
@@ -245,7 +245,7 @@ final class CellTooltipRowsTest {
             // run.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine
-                    .createLine(CREST, "Ion Storm", CellTooltipRows.NO_SCORE)
+                    .createLine(CREST_MARK, "Ion Storm", CellTooltipRows.NO_SCORE)
                     .qualifiedWith("worsening"),
                 LISTED_LEVEL);
 
@@ -273,7 +273,7 @@ final class CellTooltipRowsTest {
         void buildListedRowIndentsWhatWasFoundUnderALineInThePlainColour() {
 
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine.createLine(CREST, "Ion Storm", "17"),
+                CellTooltipEntryLine.createLine(CREST_MARK, "Ion Storm", "17"),
                 MEMBER_LEVEL);
 
             assertThat(readLabelTextRun(row, MARKED_LABEL_RUN).colour())
@@ -305,7 +305,7 @@ final class CellTooltipRowsTest {
             // behind it; drawn in one shade the two read as a single number with a stray separator.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine
-                    .createLine(CREST, "Ion Storm", "42")
+                    .createLine(CREST_MARK, "Ion Storm", "42")
                     .derivesValueFrom("0.25 /"),
                 LISTED_LEVEL);
 
@@ -362,7 +362,7 @@ final class CellTooltipRowsTest {
             // every tier qualifies through one rule rather than each spelling it out.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine
-                    .createLine(CREST, "Ion Storm", CellTooltipRows.NO_SCORE)
+                    .createLine(CREST_MARK, "Ion Storm", CellTooltipRows.NO_SCORE)
                     .qualifiedWith("worsening"),
                 MEMBER_LEVEL);
 
@@ -413,7 +413,7 @@ final class CellTooltipRowsTest {
             // on the same line unmarked, in that order, and the mark still opens the line.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine
-                    .createLine(CREST, "Chicomoztoc", "19")
+                    .createLine(CREST_MARK, "Chicomoztoc", "19")
                     .indexedAt("[2]", CellTooltipIndexOutcome.UNCONTESTED)
                     .qualifiedWith("strongest"),
                 MEMBER_LEVEL);
@@ -507,7 +507,7 @@ final class CellTooltipRowsTest {
         void buildListedRowSpeaksInTheBoxsOwnVoiceForOneOfTheBlocksOwnLines() {
 
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200"),
+                CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200"),
                 LISTED_LEVEL);
 
             assertThat(row.subordinationLevel())
@@ -520,7 +520,7 @@ final class CellTooltipRowsTest {
             // naming it is inset beneath it while still saying who holds the system, so it is stepped
             // in without being demoted.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine.createLine(CREST, "The Hegemony", "900"),
+                CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "900"),
                 PEER_LEVEL);
 
             assertThat(row.indent())

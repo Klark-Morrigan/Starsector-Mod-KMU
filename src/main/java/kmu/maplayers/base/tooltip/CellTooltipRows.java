@@ -251,21 +251,21 @@ public final class CellTooltipRows {
             return TooltipRow.createRow(labelSpan);
         }
         return TooltipRow
-            .createRow(resolveMarkSpan(line, lineColour))
+            .createRow(resolveMarkSpan(line.mark(), lineColour))
             .continuesWith(labelSpan);
     }
 
-    // The run a line's mark is drawn as: tinted to the line's own colour where the mark stands in for
-    // the name, and untinted - drawn as its asset authored it - where it does not.
+    // The run a mark is drawn as: tinted to the line's own colour where the mark stands in for the
+    // name, and untinted - drawn as its asset authored it - where it does not.
     //
-    // Decided from the line rather than from the sprite, because nothing about a texture says which of
-    // the two it is: the same crest artwork could be either, and only whatever composed the line knows
-    // whether the mark is the subject or a label for it.
-    private static ImageSpan resolveMarkSpan(CellTooltipEntryLine line, Color lineColour) {
-        if (!line.isMarkInLineColour()) {
-            return new ImageSpan(line.iconSpritePath());
+    // Read off the mark rather than the sprite, because nothing about a texture says which of the two
+    // it is: the same crest artwork could be either, and only whatever composed the line knows whether
+    // the mark is the subject or a label for it.
+    private static ImageSpan resolveMarkSpan(CellTooltipMark mark, Color lineColour) {
+        if (!mark.isInLineColour()) {
+            return new ImageSpan(mark.spritePath());
         }
-        return new ImageSpan(line.iconSpritePath(), lineColour);
+        return new ImageSpan(mark.spritePath(), lineColour);
     }
 
     // Fills a line's value column: its number in the line's own colour, opened where the line states

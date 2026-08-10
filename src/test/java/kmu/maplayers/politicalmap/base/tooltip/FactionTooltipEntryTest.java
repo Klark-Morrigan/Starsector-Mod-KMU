@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 
 import org.junit.jupiter.api.Nested;
@@ -22,6 +23,8 @@ final class FactionTooltipEntryTest {
 
     private static final String HEGEMONY = "hegemony";
     private static final String HEGEMONY_CREST = "graphics/hegemony_crest.png";
+    private static final CellTooltipMark HEGEMONY_MARK =
+        CellTooltipMark.resolveMarkAsAuthored(HEGEMONY_CREST);
 
     @Nested
     class BuildFactionLine {
@@ -36,7 +39,7 @@ final class FactionTooltipEntryTest {
 
             assertThat(line)
                 .isEqualTo(CellTooltipEntryLine.createLine(
-                    HEGEMONY_CREST,
+                    HEGEMONY_MARK,
                     "The Hegemony",
                     "1,200"));
         }
@@ -52,7 +55,7 @@ final class FactionTooltipEntryTest {
 
             assertThat(line.labelText())
                 .isEqualTo("ghost_faction");
-            assertThat(line.iconSpritePath())
+            assertThat(line.mark())
                 .isNull();
         }
     }
@@ -71,7 +74,7 @@ final class FactionTooltipEntryTest {
 
             assertThat(entry.line())
                 .isEqualTo(CellTooltipEntryLine.createLine(
-                    HEGEMONY_CREST,
+                    HEGEMONY_MARK,
                     "The Hegemony",
                     "1,200"));
             assertThat(entry.children())

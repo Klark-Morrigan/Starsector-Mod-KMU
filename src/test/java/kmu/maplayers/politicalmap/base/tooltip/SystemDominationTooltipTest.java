@@ -12,6 +12,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
@@ -62,11 +63,15 @@ import static org.mockito.Mockito.when;
 final class SystemDominationTooltipTest {
 
     private static final String SYSTEM_ID = "askonia";
-
     private static final String CORE_FACTION = "hegemony";
 
     private static final String BLOC_CREST = "graphics/rebel_pact_crest.png";
+    private static final CellTooltipMark BLOC_MARK =
+        CellTooltipMark.resolveMarkAsAuthored(BLOC_CREST);
+
     private static final String MEMBER_CREST = "graphics/hegemony_crest.png";
+    private static final CellTooltipMark MEMBER_MARK =
+        CellTooltipMark.resolveMarkAsAuthored(MEMBER_CREST);
 
     // The lines a box with no status and no decree lays out, in draw order: the heading naming who
     // holds the system, that group's own header, then its members beneath.
@@ -98,6 +103,7 @@ final class SystemDominationTooltipTest {
 
     @BeforeEach
     void installColoursAndTheRankingSeams() {
+        
         CellTooltipPaletteFake.installPalette();
         StandingsTooltipSeamsFake.installSeams(ANY_PASS);
 
@@ -229,7 +235,7 @@ final class SystemDominationTooltipTest {
     // faction breaks down no further, so each is entered as an entry carrying nothing.
     private static CellTooltipEntry createGroupEntry(CellTooltipEntryLine... memberLines) {
         return CellTooltipEntry
-            .createEntry(CellTooltipEntryLine.createLine(BLOC_CREST, "Rebel Pact", BLOC_SCORE))
+            .createEntry(CellTooltipEntryLine.createLine(BLOC_MARK, "Rebel Pact", BLOC_SCORE))
             .grouping(Arrays
                 .stream(memberLines)
                 .map(CellTooltipEntry::createEntry)
@@ -239,11 +245,11 @@ final class SystemDominationTooltipTest {
     // A group that breaks down no further - what a lone faction in the faction view resolves to.
     private static CellTooltipEntry createLoneGroupEntry() {
         return CellTooltipEntry.createEntry(
-            CellTooltipEntryLine.createLine(BLOC_CREST, "Rebel Pact", BLOC_SCORE));
+            CellTooltipEntryLine.createLine(BLOC_MARK, "Rebel Pact", BLOC_SCORE));
     }
 
     // One member faction beneath a bloc, told apart from its siblings by its score alone.
     private static CellTooltipEntryLine createMemberLine(String scoreText) {
-        return CellTooltipEntryLine.createLine(MEMBER_CREST, "The Hegemony", scoreText);
+        return CellTooltipEntryLine.createLine(MEMBER_MARK, "The Hegemony", scoreText);
     }
 }

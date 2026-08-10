@@ -14,6 +14,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -60,7 +61,12 @@ final class SystemStandingsTooltipTest {
     private static final String SYSTEM_ID = "askonia";
 
     private static final String BLOC_CREST = "graphics/rebel_pact_crest.png";
+    private static final CellTooltipMark BLOC_MARK =
+        CellTooltipMark.resolveMarkAsAuthored(BLOC_CREST);
+        
     private static final String RIVAL_CREST = "graphics/persean_league_crest.png";
+    private static final CellTooltipMark RIVAL_MARK =
+        CellTooltipMark.resolveMarkAsAuthored(RIVAL_CREST);
 
     // The lines a box with no status and no decree lays out, in draw order.
     private static final int DOMINATED_HEADING_ROW = 0;
@@ -331,14 +337,14 @@ final class SystemStandingsTooltipTest {
     // The leading group as the resolver hands it over: a bloc carrying its crest and summed score.
     private static CellTooltipEntry createLeadingGroupEntry() {
         return CellTooltipEntry.createEntry(
-            CellTooltipEntryLine.createLine(BLOC_CREST, "Rebel Pact", BLOC_SCORE));
+            CellTooltipEntryLine.createLine(BLOC_MARK, "Rebel Pact", BLOC_SCORE));
     }
 
     // A second, lower-ranked group, named and scored apart from the leader so a case about which block
     // a group lands in cannot pass by reading the leader's line twice.
     private static CellTooltipEntry createRivalGroupEntry() {
         return CellTooltipEntry.createEntry(
-            CellTooltipEntryLine.createLine(RIVAL_CREST, "Persean League", RIVAL_SCORE));
+            CellTooltipEntryLine.createLine(RIVAL_MARK, "Persean League", RIVAL_SCORE));
     }
 
     private static List<String> readLabelTexts(List<TooltipRow> rows) {

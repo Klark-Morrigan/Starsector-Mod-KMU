@@ -45,6 +45,8 @@ import static org.assertj.core.api.Assertions.within;
 final class CellTooltipSectionsTest {
 
     private static final String CREST = "graphics/hegemony_crest.png";
+    private static final CellTooltipMark CREST_MARK =
+        CellTooltipMark.resolveMarkAsAuthored(CREST);
 
     // Where the heading sits inside the block it opens, and where the first entry it names follows.
     private static final int HEADING_ROW = 0;
@@ -158,7 +160,7 @@ final class CellTooltipSectionsTest {
                 sections,
                 "Claim:",
                 List.of(CellTooltipEntry.createEntry(
-                    CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200"))));
+                    CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200"))));
 
             var entry = (TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW);
 
@@ -188,7 +190,7 @@ final class CellTooltipSectionsTest {
                 List.of(CellTooltipEntry
                     .createEntry(CellTooltipEntryLine.createLine(null, "Rebel Pact", "1,200"))
                     .nesting(List.of(CellTooltipEntry.createEntry(
-                        CellTooltipEntryLine.createLine(CREST, "The Hegemony", "900"))))));
+                        CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "900"))))));
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Dominated by:", "Rebel Pact", "The Hegemony");
@@ -381,7 +383,7 @@ final class CellTooltipSectionsTest {
                 "Dominated by:",
                 List.of(createEntry("Rebel Pact")
                     .nesting(List.of(CellTooltipEntry.createEntry(
-                        CellTooltipEntryLine.createLine(CREST, "The Hegemony", "900"))))));
+                        CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "900"))))));
 
             assertThat(readLabelPlacements(sections))
                 .containsOnly(TooltipLabelPlacement.AT_CONTENT_EDGE);
@@ -400,7 +402,7 @@ final class CellTooltipSectionsTest {
                 "Contested by:",
                 List.of(
                     CellTooltipEntry.createEntry(
-                        CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200")),
+                        CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200")),
                     createEntry("Independent")));
 
             var markedEntry = (TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW);

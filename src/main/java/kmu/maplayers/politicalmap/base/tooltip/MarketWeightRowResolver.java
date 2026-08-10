@@ -5,6 +5,7 @@ import kmlib.text.KmlibNumbers;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
@@ -77,7 +78,7 @@ public final class MarketWeightRowResolver {
     // The same absence answers for a colony whose entity the game marks with no glyph. One name for
     // it rather than two, because the line cannot tell the cases apart and neither should a reader
     // here: both are "this line opens on its words".
-    private static final String NO_MARK = null;
+    private static final CellTooltipMark NO_MARK = null;
 
     // What a colony the pass never weighed folded in at. Nought rather than a blank column, because
     // the colony is on the list and the reader is being told what it counted for.
@@ -175,12 +176,12 @@ public final class MarketWeightRowResolver {
             Optional<EntityMapIcon> marketIcon,
             String valueText) {
 
-        return CellTooltipEntryLine
-            .createLine(
-                marketIcon.map(EntityMapIcon::spritePath).orElse(NO_MARK),
-                marketName,
-                valueText)
-            .readsMarkInLineColour();
+        return CellTooltipEntryLine.createLine(
+            marketIcon
+                .map(icon -> CellTooltipMark.resolveMarkInLineColour(icon.spritePath()))
+                .orElse(NO_MARK),
+            marketName,
+            valueText);
     }
 
     // The factors of one colony, in the order the weight read applied them - the stability that

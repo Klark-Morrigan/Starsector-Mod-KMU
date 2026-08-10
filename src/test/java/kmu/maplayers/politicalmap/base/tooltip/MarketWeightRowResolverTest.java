@@ -136,7 +136,7 @@ final class MarketWeightRowResolverTest {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(rows.get(0).line().iconSpritePath())
+            assertThat(rows.get(0).line().mark().spritePath())
                 .isEqualTo("graphics/warroom/icon_planet.png");
         }
 
@@ -150,7 +150,7 @@ final class MarketWeightRowResolverTest {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(rows.get(0).line().isMarkInLineColour())
+            assertThat(rows.get(0).line().mark().isInLineColour())
                 .isTrue();
         }
 
@@ -452,9 +452,9 @@ final class MarketWeightRowResolverTest {
                 List.of(new UnweighedColony("Galatia Academy", COLONY_ICON)),
                 buildRules());
 
-            assertThat(rows.get(0).line().iconSpritePath())
+            assertThat(rows.get(0).line().mark().spritePath())
                 .isEqualTo("graphics/warroom/icon_planet.png");
-            assertThat(rows.get(0).line().isMarkInLineColour())
+            assertThat(rows.get(0).line().mark().isInLineColour())
                 .isTrue();
         }
 

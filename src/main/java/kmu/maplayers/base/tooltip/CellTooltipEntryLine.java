@@ -16,12 +16,9 @@ import java.util.Objects;
  * <p>Nothing here is faction-shaped. The mark is a texture path a caller may simply not have, so a list
  * of things that carry none - industries, conditions, hazards - is this same shape with a null in it.
  *
- * @param iconSpritePath   the leading mark's texture path, or null for a line carrying none
- * @param isMarkInLineColour whether the mark is drawn in the line's own colour rather than in the
- *                         colours its asset authored. A mark drawn for its own sake - a crest - keeps
- *                         its pixels; a mark that is only a shorthand for the name beside it reads as
- *                         part of that name, and an asset coloured for another surface would otherwise
- *                         shout across a box that never asked it to
+ * @param mark             the mark the line opens on and how it is coloured, or null for a line
+ *                         carrying none. One value rather than a path beside a colouring, so a line
+ *                         showing no mark has nowhere to state how one would have been drawn
  * @param labelText        what the line is called
  * @param indexPlace       where the line falls in the ordering it belongs to and what that place
  *                         decided, run on after its name, or null where the line has no place worth
@@ -40,8 +37,7 @@ import java.util.Objects;
  *                         loudly as its neighbours
  */
 public record CellTooltipEntryLine(
-    String iconSpritePath,
-    boolean isMarkInLineColour,
+    CellTooltipMark mark,
     String labelText,
     CellTooltipIndexPlace indexPlace,
     String qualifierText,
@@ -59,11 +55,6 @@ public record CellTooltipEntryLine(
     // carrying a number it earned. Both are the plain case and what every factory below builds.
     private static final boolean IS_LISTED_IN_ITS_OWN_RIGHT = false;
     private static final boolean IS_VALUE_EARNED = false;
-
-    // How a mark reads until a line says otherwise: in the colours its own asset authored. The plain
-    // case because a crest is the mark most lines carry, and a crest is a picture of a thing rather
-    // than a shorthand for the words beside it.
-    private static final boolean IS_MARK_AS_AUTHORED = false;
 
     // What a line states nothing beside its name and its number carries in the qualifier slot. Named
     // rather than passed as a bare null, so the factory below reads as "this line calls nothing out"
@@ -88,26 +79,27 @@ public record CellTooltipEntryLine(
     }
 
     /**
-     * Builds the plainest listed thing there is: a mark drawn as its asset authored it, a name, and a
-     * number, calling nothing out. The qualifier is layered on with {@link #qualifiedWith} where a line
-     * has one, and {@link #readsMarkInLineColour} where a mark is a shorthand for the name rather than
-     * a picture in its own right, so a caller states what its line <em>has</em> rather than passing a
-     * placeholder for the part it does not use.
+     * Builds the plainest listed thing there is: a mark, a name, and a number, calling nothing out.
+     * The qualifier is layered on with {@link #qualifiedWith} where a line has one, so a caller states
+     * what its line <em>has</em> rather than passing a placeholder for the part it does not use.
      *
-     * @param iconSpritePath the leading mark's texture path, or null for a line carrying none
-     * @param labelText      what the line is called
-     * @param valueText      what the block counts this line in, or {@link CellTooltipRows#NO_SCORE} for
-     *                       a line carrying no number
+     * <p>How the mark is coloured is settled by the mark itself ({@link CellTooltipMark}) rather than
+     * layered on afterwards, so a line carrying none cannot state a colouring for it.
+     *
+     * @param mark      the mark the line opens on and how it is coloured, or null for a line carrying
+     *                  none
+     * @param labelText what the line is called
+     * @param valueText what the block counts this line in, or {@link CellTooltipRows#NO_SCORE} for a
+     *                  line carrying no number
      * @return the bare line
      */
     public static CellTooltipEntryLine createLine(
-            String iconSpritePath,
+            CellTooltipMark mark,
             String labelText,
             String valueText) {
 
         return new CellTooltipEntryLine(
-            iconSpritePath,
-            IS_MARK_AS_AUTHORED,
+            mark,
             labelText,
             NO_PLACE,
             NO_QUALIFIER,
@@ -125,38 +117,7 @@ public record CellTooltipEntryLine(
      * @return true where the line carries a mark to lead with
      */
     public boolean hasMark() {
-        return iconSpritePath != null;
-    }
-
-    /**
-     * Returns a copy of this line whose mark is drawn in the line's own colour rather than in the
-     * colours its asset authored - for a mark that is a shorthand for the name beside it rather than a
-     * picture of something in its own right.
-     *
-     * <p>Which of the two a mark is cannot be read off the asset, so the line says it. A glyph authored
-     * for another surface was coloured to read there, and dropped into a box unchanged it competes with
-     * the words it prefixes and with every finding around it - the reader's eye goes to the brightest
-     * thing on the line, which is then the part carrying the least information. Drawn in the line's own
-     * colour it identifies without insisting, which is the whole of what such a mark is for.
-     *
-     * <p>The line's colour rather than a colour passed in, because what a line speaks in is the block's
-     * to decide ({@link CellTooltipRows}) and differs by the tier the line lands at. A caller naming a
-     * colour here would be authoring a look the box had already settled, and would have to be corrected
-     * every time the box restyled a tier.
-     *
-     * @return an otherwise-identical line whose mark reads in the line's own colour
-     */
-    public CellTooltipEntryLine readsMarkInLineColour() {
-        return new CellTooltipEntryLine(
-            iconSpritePath,
-            true,
-            labelText,
-            indexPlace,
-            qualifierText,
-            valueText,
-            valueWorkingText,
-            isAside,
-            isValueUncounted);
+        return mark != null;
     }
 
     /**
@@ -169,16 +130,9 @@ public record CellTooltipEntryLine(
      * @return an otherwise-identical line ending on that status
      */
     public CellTooltipEntryLine qualifiedWith(String qualifierText) {
-        return new CellTooltipEntryLine(
-            iconSpritePath,
-            isMarkInLineColour,
-            labelText,
-            indexPlace,
-            qualifierText,
-            valueText,
-            valueWorkingText,
-            isAside,
-            isValueUncounted);
+        var parts = new LineParts(this);
+        parts.qualifierText = qualifierText;
+        return parts.buildLine();
     }
 
     /**
@@ -201,16 +155,9 @@ public record CellTooltipEntryLine(
             String indexText,
             CellTooltipIndexOutcome indexOutcome) {
 
-        return new CellTooltipEntryLine(
-            iconSpritePath,
-            isMarkInLineColour,
-            labelText,
-            new CellTooltipIndexPlace(indexText, indexOutcome),
-            qualifierText,
-            valueText,
-            valueWorkingText,
-            isAside,
-            isValueUncounted);
+        var parts = new LineParts(this);
+        parts.indexPlace = new CellTooltipIndexPlace(indexText, indexOutcome);
+        return parts.buildLine();
     }
 
     /**
@@ -226,16 +173,9 @@ public record CellTooltipEntryLine(
      * @return an otherwise-identical line read as a note about the list rather than a member of it
      */
     public CellTooltipEntryLine readsAsAside() {
-        return new CellTooltipEntryLine(
-            iconSpritePath,
-            isMarkInLineColour,
-            labelText,
-            indexPlace,
-            qualifierText,
-            valueText,
-            valueWorkingText,
-            true,
-            isValueUncounted);
+        var parts = new LineParts(this);
+        parts.isAside = true;
+        return parts.buildLine();
     }
 
     /**
@@ -252,16 +192,9 @@ public record CellTooltipEntryLine(
      * @return an otherwise-identical line whose number reads as one nothing earned
      */
     public CellTooltipEntryLine statesUncountedValue() {
-        return new CellTooltipEntryLine(
-            iconSpritePath,
-            isMarkInLineColour,
-            labelText,
-            indexPlace,
-            qualifierText,
-            valueText,
-            valueWorkingText,
-            isAside,
-            true);
+        var parts = new LineParts(this);
+        parts.isValueUncounted = true;
+        return parts.buildLine();
     }
 
     /**
@@ -279,15 +212,55 @@ public record CellTooltipEntryLine(
      * @return an otherwise-identical line showing that working
      */
     public CellTooltipEntryLine derivesValueFrom(String valueWorkingText) {
-        return new CellTooltipEntryLine(
-            iconSpritePath,
-            isMarkInLineColour,
-            labelText,
-            indexPlace,
-            qualifierText,
-            valueText,
-            valueWorkingText,
-            isAside,
-            isValueUncounted);
+        var parts = new LineParts(this);
+        parts.valueWorkingText = valueWorkingText;
+        return parts.buildLine();
+    }
+
+    /**
+     * One line's parts, held apart so a refinement above can restate the single part it is about.
+     *
+     * <p>The components are enumerated here and in the record header, and nowhere else. Spelled out
+     * once per refinement instead, a part added to a line has to be threaded through every one of
+     * them, and the refinement that gets missed does not fail to compile - it silently drops the new
+     * part from any line it is applied to, which surfaces as a mark or a qualifier that vanishes when
+     * some unrelated status is layered on afterwards.
+     *
+     * <p>Mutable and private, which a value this package hands out could not be: it lives for the
+     * three statements of one refinement and is never reachable from a built line.
+     */
+    private static final class LineParts {
+
+        private CellTooltipMark mark;
+        private String labelText;
+        private CellTooltipIndexPlace indexPlace;
+        private String qualifierText;
+        private String valueText;
+        private String valueWorkingText;
+        private boolean isAside;
+        private boolean isValueUncounted;
+
+        private LineParts(CellTooltipEntryLine line) {
+            mark = line.mark();
+            labelText = line.labelText();
+            indexPlace = line.indexPlace();
+            qualifierText = line.qualifierText();
+            valueText = line.valueText();
+            valueWorkingText = line.valueWorkingText();
+            isAside = line.isAside();
+            isValueUncounted = line.isValueUncounted();
+        }
+
+        private CellTooltipEntryLine buildLine() {
+            return new CellTooltipEntryLine(
+                mark,
+                labelText,
+                indexPlace,
+                qualifierText,
+                valueText,
+                valueWorkingText,
+                isAside,
+                isValueUncounted);
+        }
     }
 }

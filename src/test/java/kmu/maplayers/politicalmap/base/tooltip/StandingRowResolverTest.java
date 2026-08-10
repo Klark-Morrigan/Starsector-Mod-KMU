@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -65,7 +66,7 @@ final class StandingRowResolverTest {
             assertThat(entries)
                 .containsExactly(CellTooltipEntry.createEntry(
                     CellTooltipEntryLine.createLine(
-                        "graphics/hegemony_crest.png",
+                        CellTooltipMark.resolveMarkAsAuthored("graphics/hegemony_crest.png"),
                         "The Hegemony",
                         "7")));
         }
@@ -138,16 +139,16 @@ final class StandingRowResolverTest {
             assertThat(entries)
                 .containsExactly(CellTooltipEntry
                     .createEntry(CellTooltipEntryLine.createLine(
-                        "graphics/heg.png",
+                        CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
                         "Allied Powers",
                         "11"))
                     .grouping(List.of(
                         CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
-                            "graphics/heg.png",
+                            CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
                             "The Hegemony",
                             "8")),
                         CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
-                            "graphics/aa.png",
+                            CellTooltipMark.resolveMarkAsAuthored("graphics/aa.png"),
                             "Astral Armada",
                             "3")))));
         }
@@ -179,7 +180,7 @@ final class StandingRowResolverTest {
                         CellTooltipEntry.createEntry(
                             CellTooltipEntryLine.createLine(null, "The Hegemony", "8")),
                         CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
-                            "graphics/aa.png",
+                            CellTooltipMark.resolveMarkAsAuthored("graphics/aa.png"),
                             "Astral Armada",
                             "3")))));
         }
@@ -265,11 +266,11 @@ final class StandingRowResolverTest {
             assertThat(entries)
                 .containsExactly(CellTooltipEntry
                     .createEntry(CellTooltipEntryLine.createLine(
-                        "graphics/heg.png",
+                        CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
                         "Allied Powers",
                         "8"))
                     .grouping(List.of(CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
-                        "graphics/heg.png",
+                        CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
                         "The Hegemony",
                         "8")))));
         }
@@ -370,7 +371,7 @@ final class StandingRowResolverTest {
             assertThat(entries)
                 .containsExactly(CellTooltipEntry
                     .createEntry(CellTooltipEntryLine.createLine(
-                        "graphics/heg.png",
+                        CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
                         "The Hegemony",
                         "7"))
                     .nesting(List.of(CellTooltipEntry.createEntry(

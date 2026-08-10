@@ -7,6 +7,7 @@ import kmlib.text.KmlibNumbers;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -103,7 +104,7 @@ public final class StandingRowResolver {
 
             return CellTooltipEntry
                 .createEntry(CellTooltipEntryLine.createLine(
-                    groupMemberEntry.line().iconSpritePath(),
+                    groupMemberEntry.line().mark(),
                     groupMemberEntry.line().labelText(),
                     aggregateScoreText))
                 .nesting(groupMemberEntry.children());
@@ -111,9 +112,9 @@ public final class StandingRowResolver {
         // An alliance carries the alliance's own name and its lead (colour) member's crest - the same
         // name and crest the alliances view paints the bloc's cluster by - over the factions in it.
         var allianceLine = CellTooltipEntryLine.createLine(
-            FactionPresentation
+            CellTooltipMark.resolveMarkAsAuthored(FactionPresentation
                 .resolvePresentation(sector, grouping.resolveColourFactionId(blocId))
-                .crestSpritePath(),
+                .crestSpritePath()),
             grouping.resolveAllianceName(blocId),
             aggregateScoreText);
 

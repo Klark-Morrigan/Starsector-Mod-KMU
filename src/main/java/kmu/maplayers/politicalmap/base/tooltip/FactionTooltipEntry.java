@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 
 /**
@@ -40,7 +41,7 @@ public final class FactionTooltipEntry {
         var presentation = FactionPresentation.resolvePresentation(sector, factionId);
 
         return CellTooltipEntryLine.createLine(
-            presentation.crestSpritePath(),
+            CellTooltipMark.resolveMarkAsAuthored(presentation.crestSpritePath()),
             presentation.fullName(),
             valueText);
     }
