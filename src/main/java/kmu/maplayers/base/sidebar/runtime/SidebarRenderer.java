@@ -7,12 +7,14 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 import kmlib.math.geometry.Rectangle;
 import kmlib.profiling.Timings;
 import kmlib.starsector.ui.input.HoverFade;
+import kmlib.starsector.ui.render.gl.GlyphAtlasFilter;
 import kmlib.starsector.ui.render.gl.panel.NotchState;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.render.gl.tabs.TabPanelRenderer;
 import kmlib.starsector.ui.widgets.BoxBorder;
 
 import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import org.apache.log4j.Logger;
 
@@ -44,6 +46,7 @@ import org.apache.log4j.Logger;
  * widget to compose from.
  */
 public final class SidebarRenderer implements CampaignUIRenderingListener {
+
     private static final Logger LOG = Global.getLogger(SidebarRenderer.class);
 
     // The collapse fraction a fully docked body reports; the eased curve lands exactly on it at the end,
@@ -86,8 +89,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
 
         // The only pass composited after the entire core screen (and its tooltips), so it is the sole layer
         // the opaque core-UI screen cannot occlude - the panel has to draw here.
-        boolean isOverlayShowing = host.isOverlayShowing();
-        if (!isOverlayShowing) {
+        if (!host.isOverlayShowing()) {
 
             // Drop the frame clock so the next re-open advances from nothing rather than by the whole gap
             // the screen was closed, which would otherwise snap a half-folded panel straight to its end.
@@ -166,6 +168,12 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         var border = new BoxBorder(
             placement.border().width(),
             host.resolveBorderEdges(placement));
+            
+        // Pushed per frame rather than read once, so the dial answers while the panel is on screen - the
+        // whole point of a knob whose right value is a look rather than a number.
+        GlyphAtlasFilter.setPixelFaceSharpness(
+            (float) KmuPoliticalMapSettings.getSidebarPixelFontSharpness());
+
         TabPanelRenderer.render(
             placement,
             // The host's own look, asked for here rather than composed: this pass paints whichever

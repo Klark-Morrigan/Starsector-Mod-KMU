@@ -199,12 +199,13 @@ filtered-to id points at stays with the layer that offers the choices, and a sto
 column key only means something to the model that owns it, so this package carries the storage
 without learning what any one layer's list holds.
 
-The picker itself is not here at all - `ListPickerControl`, `SelectableListItem`, `ListPickerStore`,
-`RevisionMemo`, and the sort and column model behind them (`ListSortMode`, `ListSortModes`,
-`ListSort`, `ListPicker`, `SortDirection`, `ListColumns`, and the two selector controls) are KMLib's
-(`kmlib.starsector.ui.widgets.lists`), since a sortable, column-laid, spotlight-picking list knows
-nothing about a map. The split is that **KMLib owns the model, the composition, and the resolution
-rule; KMU owns where the answer is kept.**
+The picker itself is not here at all - `ListPickerControl`, `SelectableListItem` (an id, a label, a
+crest, and whether the row reads back), `ListPickerStore`, `RevisionMemo`, and the sort and column
+model behind them (`ListSortMode`, `ListSortModes`, `ListSort`, `ListPicker`, `SortDirection`,
+`ListColumns`, and the two selector controls) are KMLib's (`kmlib.starsector.ui.widgets.lists`),
+since a sortable, column-laid, spotlight-picking list knows nothing about a map. The split is that
+**KMLib owns the model, the composition, and the resolution rule; KMU owns where the answer is
+kept** - a row states *that* it reads back, KMLib decides how far back that reads.
 
 The keys are why the split falls where it does. They are the frozen `$kmu_map_*` spellings below -
 save state this mod cannot move and a shared library has no business holding.
@@ -389,14 +390,23 @@ fade between two looks had never had to carry alpha; `TabLook.computeBlendedLook
 four channels through `Colours.blendTowards`, which is a no-op on the strip only for as long as
 `VanillaTabFills` keeps returning opaque shades.
 
-What a pointer does is the chrome's own rule, stated on the palette as a `TabHover`. A strip's tabs
-converge: both the resting and the shown tab land on one named shade, which no fraction applied to each
-tab's own fill could produce, and which is what lets a row marking selection by fill alone still light
-whatever the pointer is on. A button row's do not: the engine adds plain white light to whatever a button
-already wears, so the shown button and an unshown one light by the same amount from different places and
-stay apart - an unpainted interior keeps its own alpha through it, so an unshown button answers the
-pointer with its label alone. Either way a tab travels onto its lit state rather than switching to it,
-paced by `HoverFade.DEFAULT_DURATIONS`.
+What a pointer does is the chrome's own rule, stated on the palette as a `TabHover`, and the two rules
+reach the screen differently. A strip's tabs **converge**: both the resting and the shown tab land on one
+named shade, which no fraction applied to each tab's own fill could produce, and which is what lets a row
+marking selection by fill alone still light whatever the pointer is on. A button row's do not: the engine
+**adds light** - its own base accent - over the finished button, so the shown button and an unshown one
+light by the same amount from different places and stay as far apart as their settled shades left them.
+
+Added over the top rather than mixed into the fill, because a button's interior is not always painted. A
+shade blended into a surface arrives diluted by however much of that surface is actually there, so the
+same amount would read at full strength on the shown button and at a fraction of it on an unshown one -
+where the engine's own two move by the same step. Drawn additively, both do, and so does the label the
+pass crosses. It stops at the interior: the two hairlines are the part of a button that never moves, and
+light spilling onto them would shift the very edge the constant frame exists to hold still.
+
+Which is why the palette answers on two channels and each rule uses one - a shade rule adds no light, a
+light rule leaves the look alone - so a tab is never brightened twice. Either way it travels onto its lit
+state rather than switching to it, paced by `HoverFade.DEFAULT_DURATIONS`.
 
 A press rides the `clicked` wash up over whatever look the tab has settled on and **holds there until
 the button comes up**, the way a vanilla tab does: a press is an act the player is still making, so
