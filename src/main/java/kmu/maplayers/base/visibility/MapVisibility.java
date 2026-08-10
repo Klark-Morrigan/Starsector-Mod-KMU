@@ -8,6 +8,9 @@ import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Decides which star systems appear on a map layer, and fingerprints that
  * set so the overlay knows when to rebuild.
@@ -121,6 +124,38 @@ public final class MapVisibility {
                 system,
                 overrides.shouldIncludeUndiscoveredMarkets())
             || DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
+    }
+
+    /**
+     * The sector-wide roll-up of {@link #isInhabited}: every system something stands in,
+     * live colony or known ruin alike.
+     *
+     * <p>Scanned once per pass because the answer is wanted per cell, and a cell asking the
+     * economy for itself would put a market walk inside the per-cell styling loop.
+     *
+     * <p>Read separately from holding because it is a different question. A layer resolves
+     * holding under a rule of its own, and a rule that admits only some factions leaves an
+     * inhabited system with nobody holding it - which is not the same state as empty space,
+     * however alike the two look to a holder lookup that came back null.
+     *
+     * @param sector    the sector to scan; null yields an empty set
+     * @param overrides the pass's reveal overrides, resolved once by the caller
+     * @return the ids of every inhabited system
+     */
+    public static Set<String> findInhabitedSystemIds(
+            SectorAPI sector,
+            MapVisibilityOverrides overrides) {
+
+        var systemIds = new HashSet<String>();
+        if (sector == null) {
+            return systemIds;
+        }
+        for (var system : sector.getStarSystems()) {
+            if (isInhabited(sector, system, overrides)) {
+                systemIds.add(system.getId());
+            }
+        }
+        return systemIds;
     }
 
     /**
