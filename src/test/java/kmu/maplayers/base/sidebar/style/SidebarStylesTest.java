@@ -195,15 +195,15 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildStripTabStyleLettersTheRowInTheMapsOwnOrbitronAtTheLayoutsTabSize() {
-            // The face the vanilla tabs a strip sits beneath are set in, scaled to the tab size rather
-            // than drawn at its atlas's own - orbitron is a smooth face and reads clean either way. The
-            // claim is that the strip kept it: the face travels per chrome, so the row that took the
-            // pixel face below could have taken this one with it.
+        void buildStripTabStyleLettersTheRowInTheMapsOwnCondensedOrbitronAtItsNativeSize() {
+            // The face the vanilla tabs a strip sits beneath are actually set in, at the size its atlas
+            // draws at. Pinned because the strip was lettered in the title orbitron on the belief that
+            // vanilla used it here, and the size alone cannot catch that: both faces land at 15, and only
+            // the atlas tells them apart.
             var face = SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT).face();
 
             assertThat(face.font())
-                .isEqualTo(StarsectorFont.VANILLA_ORBITRON_20AA);
+                .isEqualTo(StarsectorFont.VANILLA_ORBITRON_12_CONDENSED);
             assertThat(face.size())
                 .isEqualTo(15d);
         }

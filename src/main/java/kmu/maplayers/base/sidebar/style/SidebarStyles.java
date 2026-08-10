@@ -4,7 +4,6 @@ import kmlib.starsector.ui.colour.AccentColours;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
-import kmlib.starsector.ui.layout.TabsControlLayout;
 import kmlib.starsector.ui.render.gl.style.BoxColours;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.sound.UiSoundScheme;
@@ -56,12 +55,15 @@ public final class SidebarStyles {
     // face is separate below, since the tabs are both measured and drawn in theirs.
     private static final StarsectorFont BODY_FONT = StarsectorFont.VANILLA_INSIGNIA_15;
 
-    // The strip reads in the sector map's own orbitron face - the AA orbitron atlas vanilla uses for its
-    // map tabs, scaled to the tab size. It travels inside the tab style, which both the layout's measurer
-    // and the paint pass read, so a snapped tab width matches the text drawn into it.
+    // The strip reads in the condensed orbitron vanilla letters its own Sector/System map tabs in, at the
+    // size that atlas draws at. A condensed face is narrower per glyph than the title orbitron at the same
+    // height, and vanilla's tab box was sized against that width - so the face is what lets a label sit in
+    // a box built to vanilla's measure rather than one grown to fit the text. It travels inside the tab
+    // style, which both the layout's measurer and the paint pass read, so the width a tab is measured at
+    // is the width its text draws at.
     private static final TextFace STRIP_FACE = new TextFace(
-        StarsectorFont.VANILLA_ORBITRON_20AA,
-        TabsControlLayout.TAB_FONT_SIZE);
+        StarsectorFont.VANILLA_ORBITRON_12_CONDENSED,
+        StarsectorFont.VANILLA_ORBITRON_12_CONDENSED.getNativeSize());
 
     // The buttons read in the pixel face vanilla letters its own intel-screen map toggles in, at the size
     // that atlas was drawn at: a bitmap face is crisp at one size only, and a row copying those buttons
