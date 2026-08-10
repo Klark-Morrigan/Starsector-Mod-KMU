@@ -234,6 +234,23 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
+        void findInhabitedSystemIdsHonoursTheUndiscoveredColonyReveal() {
+            // The roll-up hands its overrides down rather than judging inhabitation itself, and a
+            // dropped argument would look identical at every other case here - all of which pass
+            // the no-reveal value. Only a system that flips on the reveal catches it.
+            var system = buildUnreachableSystem("undiscovered");
+            var sector = buildSectorWith(system, buildUndiscoveredColony());
+
+            assertThat(MapVisibility.findInhabitedSystemIds(sector, MapVisibilityOverrides.NONE))
+                .isEmpty();
+
+            assertThat(MapVisibility.findInhabitedSystemIds(
+                    sector,
+                    INCLUDING_UNDISCOVERED_MARKETS))
+                .containsExactly("undiscovered");
+        }
+
+        @Test
         void findInhabitedSystemIdsIsEmptyForANullSector() {
             assertThat(MapVisibility.findInhabitedSystemIds(null, MapVisibilityOverrides.NONE))
                 .isEmpty();

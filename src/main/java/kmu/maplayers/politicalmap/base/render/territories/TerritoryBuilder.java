@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.opengl.GlVertexRuns;
+import kmlib.profiling.Profiler;
 import kmlib.profiling.Timings;
 import kmlib.starsector.factions.StarsectorFactionColours;
 
@@ -27,6 +28,7 @@ import org.apache.log4j.Logger;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Runs one full political-map rebuild: resolves who holds each system, reads the theme,
@@ -108,32 +110,26 @@ public final class TerritoryBuilder {
             // Under the same reveal the holding resolved under, so a colony the dev toggle
             // admits to one is admitted to the other and the two cannot disagree about whether
             // a system holds anything.
-            var inhabitedStart = System.nanoTime();
-            var inhabitedSystemIds = profiler.measure(
+            var inhabitedSystemIds = measureSystemScan(
+                profiler,
                 "politicalMap.findInhabited",
+                "inhabitation scan",
                 () -> PoliticalMapInhabitation.readInhabitedSystemIds(sector));
-
-            LOG.debug("Political map inhabitation scan; systems="
-                + inhabitedSystemIds.size()
-                + " took=" + Timings.formatMillis(System.nanoTime() - inhabitedStart));
 
             // Where the spotlit bloc is living outside anything this build attributed to it, so
             // the factionless cells over its own colonies are spared the recede. Asked only of the
             // inhabited systems the holding left out - on the faction and alliance views that is
             // the dead worlds alone, which no bloc lives in, so the read comes back empty for the
             // cost of the set arithmetic.
-            var presenceStart = System.nanoTime();
-            var spotlitPresenceSystemIds = profiler.measure(
+            var spotlitPresenceSystemIds = measureSystemScan(
+                profiler,
                 "politicalMap.findSpotlitPresence",
+                "spotlit presence scan",
                 () -> FilteredPolitics.findPresentSystemIds(
                     sector,
                     grouping,
                     selectedBlocId,
                     selectUnheldSystemIds(inhabitedSystemIds, ownerBySystemId)));
-
-            LOG.debug("Political map spotlit presence scan; systems="
-                + spotlitPresenceSystemIds.size()
-                + " took=" + Timings.formatMillis(System.nanoTime() - presenceStart));
 
             // The whole theme - the global tier plus one style per category - read once here
             // through the single reader seam, plus the shared neutral colour and the desaturation
@@ -227,6 +223,27 @@ public final class TerritoryBuilder {
 
             return territories;
         });
+    }
+
+    // One profiled sector scan yielding a set of system ids, timed and logged on its own. The two
+    // such scans state their cost identically rather than each spelling out the clock, the profiler
+    // key, and the log line - three chances for one of them to report itself differently from the
+    // other. The holding resolve above keeps its own line, having four counts to report rather
+    // than one.
+    private static Set<String> measureSystemScan(
+            Profiler profiler,
+            String profileKey,
+            String scanLabel,
+            Supplier<Set<String>> scan) {
+
+        var start = System.nanoTime();
+        var systemIds = profiler.measure(profileKey, scan);
+
+        LOG.debug("Political map " + scanLabel + "; systems="
+            + systemIds.size()
+            + " took=" + Timings.formatMillis(System.nanoTime() - start));
+
+        return systemIds;
     }
 
     // The inhabited systems this build resolved no holder for - every cell that will reach the

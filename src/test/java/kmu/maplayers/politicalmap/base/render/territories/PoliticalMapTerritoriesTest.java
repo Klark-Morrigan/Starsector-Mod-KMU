@@ -95,6 +95,8 @@ final class PoliticalMapTerritoriesTest {
                 .isEqualTo(ElementStyleAdjustment.NONE);
             assertThat(territories.getContestedSystemIds())
                 .isEmpty();
+            assertThat(territories.getSpotlitPresenceSystemIds())
+                .isEmpty();
         }
     }
 

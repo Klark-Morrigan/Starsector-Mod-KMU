@@ -42,6 +42,12 @@ import java.util.stream.Stream;
  * the map, in a faction's colours, has to appear in the account of who holds the system. Nothing calls
  * out which of the two it is, the nought being the whole of what the contest has to say about either.
  *
+ * <p>Every market line leads with the glyph the sector map marks that market's entity with, scored or
+ * not, so a reader can tie a name in the list back to something they are looking at rather than to
+ * something they have to remember. It is drawn in the market name's own colour rather than the map's,
+ * so it identifies the line without competing with the numbers the box exists to state. The term lines
+ * beneath a market carry no mark at all: a size or a garrison bonus has nothing on the map to point at.
+ *
  * <p>Exactly one market in the whole box is called out as the claim holder: the one that actually took
  * the system. Every faction is represented by its strongest, but only one of those won anything, and a
  * marker on each would read as several holders of a system that can only have one. It goes unsaid
@@ -91,8 +97,13 @@ public final class ClaimScoreRowResolver {
             .reversed()
             .thenComparingInt(MarketClaimBreakdown::listingPosition);
 
-    // A market and its terms are named rather than crested: the faction line above already carries the
-    // crest, and repeating it down every line below would read as a second holder each time.
+    // A term line is named rather than marked: a size or a garrison bonus is a term of arithmetic with
+    // nothing on the map to point at, so a glyph there would stand in for a number. The market line
+    // above them leads with the map's own icon, which is a thing the player can go and find.
+    //
+    // The same absence answers for a market whose entity the game marks with no glyph. One name for it
+    // rather than two, because the line cannot tell the cases apart and neither should a reader here:
+    // both are "this line opens on its words".
     private static final CellTooltipMark NO_MARK = null;
 
     // The sibling count of a faction holding this system with one market alone - the reading at which
@@ -229,9 +240,16 @@ public final class ClaimScoreRowResolver {
             .nesting(resolveTermEntries(market));
     }
 
-    // The shape every market's own line takes: named, uncrested, and carrying what it brought to the
-    // contest - for an open market the whole score, presence included, since that is the number the
-    // contest weighed it at.
+    // The shape every market's own line takes: led by the glyph the map marks its entity with, named,
+    // and carrying what it brought to the contest - for an open market the whole score, presence
+    // included, since that is the number the contest weighed it at.
+    //
+    // The icon is what ties a name in this list back to something the player is looking at; a name
+    // alone does that only for a reader who already remembers it. It is read off the breakdown the
+    // market arrived in rather than looked up here, so the glyph shown belongs to the very market
+    // whose number sits beside it, and it draws in the market name's own colour rather than the
+    // shade the map paints it - an asset coloured to carry across black arrives brighter than every
+    // number the account is about.
     //
     // The name runs on into where the economy lists the market, because that number is the whole of
     // the answer to the one question the scores cannot settle: two markets on the same score are
@@ -254,7 +272,10 @@ public final class ClaimScoreRowResolver {
 
         var line = CellTooltipEntryLine
             .createLine(
-                NO_MARK,
+                market
+                    .marketIcon()
+                    .map(icon -> CellTooltipMark.resolveMarkInLineColour(icon.spritePath()))
+                    .orElse(NO_MARK),
                 market.marketName(),
                 KmlibNumbers.formatGroupedInteger(resolveContestScore(market)))
             .indexedAt(

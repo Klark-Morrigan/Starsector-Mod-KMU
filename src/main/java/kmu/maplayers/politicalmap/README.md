@@ -75,7 +75,10 @@ Notes on each:
   interleaves them.
   A claimant's systems already share one border and one colour with no filter on, so what
   spotlighting adds here is the contrast: the picked claimant keeps its full strength while every
-  other claimant fades into the muted background. Nothing hatches: a system has exactly one
+  other claimant fades into the muted background. Systems the pick *lives in without claiming* keep
+  their strength too - in the neutral, unclaimed paint they carry off filter, never the pick's
+  colours - so a faction that claims nothing still shows where it is while showing that it claims
+  none of it. Nothing hatches: a system has exactly one
   claimant, so no claim can be contested the way a held system can. Hovering a system explains its
   claim: who holds it, who
   contests it, who is present but can never claim it, and whether the hold was won on market
@@ -215,6 +218,13 @@ by being put there. Exactly one market in the whole box is called out, as the `c
 one that actually took the system. Every faction is represented by its strongest, but only one of
 those won anything, and a marker on each would read as several holders of a system that can only
 have one; over a decree it goes unsaid entirely, since nothing any market scored settled the matter.
+Every market line leads with the glyph the sector map marks that market's entity with, scored or not,
+on the same terms the domination box's colony lines take one: read off the breakdown the market
+arrived in (`MarketClaimBreakdown.marketIcon`, resolved by `VanillaClaimBreakdownReader` through
+KMLib's `EntityMapIcons`) rather than looked up again where the line is drawn, so no second market
+lookup can answer for a different colony, and drawn in the market name's own colour rather than the
+map's. The term lines beneath a market carry no mark - a size or a garrison bonus has nothing on the
+map to point at.
 Every market also states where the economy lists it, as a quiet `[n]` run after its name
 (`MarketClaimBreakdown.listingPosition`, numbered across the system's owned markets rather than
 within one faction's): the contest is settled on a strictly greater score, so a tie - between two of

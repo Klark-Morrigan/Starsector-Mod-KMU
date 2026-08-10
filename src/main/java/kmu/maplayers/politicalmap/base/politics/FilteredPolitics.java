@@ -165,9 +165,10 @@ public final class FilteredPolitics {
             String selectedBlocId,
             Set<String> candidateSystemIds) {
 
-        if (sector == null || sector.getEconomy() == null
-                || selectedBlocId == null || candidateSystemIds.isEmpty()) {
-
+        // Nothing to answer for, so the settings read behind the pass is skipped rather than paid
+        // to reach an overload that would return empty anyway. Only the two conditions this can
+        // decide cheaply are tested here; the null-sector contract is stated once, below.
+        if (selectedBlocId == null || candidateSystemIds.isEmpty()) {
             return Set.of();
         }
         return findPresentSystemIds(

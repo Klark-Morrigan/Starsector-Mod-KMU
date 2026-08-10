@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.starsector.entities.EntityMapIcon;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +50,10 @@ final class ClaimTieOutcomesTest {
     private static final int FIRST_LISTED = 1;
     private static final int SECOND_LISTED = 2;
     private static final int THIRD_LISTED = 3;
+
+    // No market here is marked with a map glyph. What identifies a market is nothing a tie is judged
+    // on, and this suite reads no line at all - only the outcome a place carries.
+    private static final Optional<EntityMapIcon> NO_MAP_ICON = Optional.empty();
 
     private static final boolean IS_TERRITORIAL = true;
     private static final boolean IS_HIDDEN = true;
@@ -287,6 +293,7 @@ final class ClaimTieOutcomesTest {
 
         return new MarketClaimBreakdown(
             "Market " + listingPosition,
+            NO_MAP_ICON,
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             new ContestAdmission(isHiddenMarket, isOffEconomyMarket),
