@@ -4,9 +4,12 @@ import kmlib.settings.LabeledChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.support.ParameterDeclarations;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -207,7 +210,7 @@ final class LunaSettingsCsvIntegrationTest {
     class RadioOptionLabels {
 
         @ParameterizedTest(name = "{0}")
-        @MethodSource("kmu.settings.LunaSettingsCsvIntegrationTest#provideChoiceBackedRadioFields")
+        @ArgumentsSource(ChoiceBackedRadioFieldsProvider.class)
         void radioOptionLabelsAllResolveToTheirChoiceEnum(String fieldId, LabeledChoice[] choices) {
 
             var expectedLabels = Arrays.stream(choices).map(LabeledChoice::getLabel).toList();
@@ -221,7 +224,7 @@ final class LunaSettingsCsvIntegrationTest {
         // Takes the id alone: the row's default is held against the row's own options, so the enum
         // the other check needs would only be an argument nothing reads.
         @ParameterizedTest(name = "{0}")
-        @MethodSource("kmu.settings.LunaSettingsCsvIntegrationTest#provideChoiceBackedRadioFieldIds")
+        @ArgumentsSource(ChoiceBackedRadioFieldIdsProvider.class)
         void radioOptionLabelsIncludeTheRowsOwnDefault(String fieldId) {
 
             assertThat(readOptions(fieldId))
@@ -233,7 +236,7 @@ final class LunaSettingsCsvIntegrationTest {
     class RadioFallbackDefaults {
 
         @ParameterizedTest(name = "{0}")
-        @MethodSource("kmu.settings.LunaSettingsCsvIntegrationTest#provideChoiceBackedRadioDefaults")
+        @ArgumentsSource(ChoiceBackedRadioDefaultsProvider.class)
         void radioFallbackDefaultsNameTheirRowsOwnDefault(
                 String fieldId,
                 String defaultConstant,
@@ -271,7 +274,7 @@ final class LunaSettingsCsvIntegrationTest {
     class HoverTierDefaults {
 
         @ParameterizedTest(name = "{0}")
-        @MethodSource("kmu.settings.LunaSettingsCsvIntegrationTest#provideHoverTierFieldIds")
+        @ArgumentsSource(HoverTierFieldIdsProvider.class)
         void hoverTierRowsAllShipSwitchedOn(String fieldId) {
 
             assertThat(readColumn(fieldId, DEFAULT_VALUE_COLUMN, BOOLEAN_FIELD_TYPE))
@@ -387,29 +390,13 @@ final class LunaSettingsCsvIntegrationTest {
         }
     }
 
-    private static Stream<Arguments> provideChoiceBackedRadioFields() {
+    // The same table's field ids alone, read off the record rather than back out of the arguments
+    // the cases are handed, so the id stays a String the compiler knows about.
+    private static List<String> listChoiceBackedRadioFieldIds() {
         return CHOICE_BACKED_RADIOS
             .stream()
-            .map(radio -> Arguments.of(radio.fieldId(), radio.choices()));
-    }
-
-    // The same table's field ids paired with the constant naming each row's Java fallback, for the
-    // walk that holds the two defaults together.
-    private static Stream<Arguments> provideChoiceBackedRadioDefaults() {
-        return CHOICE_BACKED_RADIOS
-            .stream()
-            .map(radio -> Arguments.of(radio.fieldId(), radio.defaultConstant(), radio.choices()));
-    }
-
-    // The rows hovering is switched at, one case each, so a row shipped off is named by the failure
-    // rather than hidden inside one assertion over five ids.
-    private static Stream<String> provideHoverTierFieldIds() {
-        return HOVER_TIER_FIELD_IDS.stream();
-    }
-
-    // The same table's field ids alone, for the checks that hold a row against itself.
-    private static Stream<String> provideChoiceBackedRadioFieldIds() {
-        return provideChoiceBackedRadioFields().map(field -> (String) field.get()[0]);
+            .map(ChoiceBackedRadio::fieldId)
+            .toList();
     }
 
     // Every Radio field the shipped file declares, in file order.
@@ -425,7 +412,9 @@ final class LunaSettingsCsvIntegrationTest {
     // those declared to have no enum behind them.
     private static List<String> listClassifiedRadioFieldIds() {
         return Stream
-            .concat(provideChoiceBackedRadioFieldIds(), NON_CHOICE_BACKED_RADIO_FIELDS.stream())
+            .concat(
+                listChoiceBackedRadioFieldIds().stream(),
+                NON_CHOICE_BACKED_RADIO_FIELDS.stream())
             .toList();
     }
 
@@ -674,6 +663,70 @@ final class LunaSettingsCsvIntegrationTest {
         }
         cells.add(cell.toString().trim());
         return cells;
+    }
+
+    /**
+     * The choice-backed rows paired with the enum whose labels their options have to be.
+     *
+     * <p>The four providers below are classes rather than factory methods so the cases name them by
+     * class literal: a factory method is reached by a fully-qualified string that no rename ever
+     * follows, which leaves the suite compiling and failing at run time instead.
+     */
+    static final class ChoiceBackedRadioFieldsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(
+                ParameterDeclarations parameters,
+                ExtensionContext context) {
+
+            return CHOICE_BACKED_RADIOS
+                .stream()
+                .map(radio -> Arguments.of(radio.fieldId(), radio.choices()));
+        }
+    }
+
+    /** The same table's field ids alone, for the checks that hold a row against itself. */
+    static final class ChoiceBackedRadioFieldIdsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(
+                ParameterDeclarations parameters,
+                ExtensionContext context) {
+
+            return listChoiceBackedRadioFieldIds().stream().map(Arguments::of);
+        }
+    }
+
+    /**
+     * The same table's field ids paired with the constant naming each row's Java fallback, for the
+     * walk that holds the two defaults together.
+     */
+    static final class ChoiceBackedRadioDefaultsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(
+                ParameterDeclarations parameters,
+                ExtensionContext context) {
+
+            return CHOICE_BACKED_RADIOS
+                .stream()
+                .map(radio -> Arguments.of(radio.fieldId(), radio.defaultConstant(), radio.choices()));
+        }
+    }
+
+    /**
+     * The rows hovering is switched at, one case each, so a row shipped off is named by the failure
+     * rather than hidden inside one assertion over five ids.
+     */
+    static final class HoverTierFieldIdsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(
+                ParameterDeclarations parameters,
+                ExtensionContext context) {
+
+            return HOVER_TIER_FIELD_IDS.stream().map(Arguments::of);
+        }
     }
 
     /**
