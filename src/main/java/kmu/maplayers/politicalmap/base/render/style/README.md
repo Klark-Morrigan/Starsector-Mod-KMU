@@ -40,11 +40,20 @@ stay a closed set the compiler checks.
 
 Two of the four are owned and carry a full fill/border/seam style. The other two have no owner and
 so no faction palette to choose a shade from: both paint in the shared neutral colour and expose no
-colour field at all, leaving each element's opacity as its only on/off. A decivilised cell draws a
-fill and an outline (a dead colony was settled, so it reads as occupied rather than as a bare
+colour field at all, leaving each element's opacity as its only on/off. A `DECIVILISED` cell draws a
+fill and an outline (something was settled there, so it reads as occupied rather than as a bare
 ring); an uninhabited cell draws an outline alone, since filling it would wash every corner of the
 sector nothing else holds. Neither has an inner seam: factionless cells never fuse into clusters,
 so there are no province divisions to stroke.
+
+`DECIVILISED` is named for the case that first needed it, and now covers every settled cell no
+holder was resolved for. The split the two factionless bundles actually draw is **presence against
+absence** - is anything here, or is this the backdrop - not dead against alive. A view resolving
+holding under a narrow rule leaves settled systems holderless: on the claims view, vanilla lets
+only a territorial faction claim, so a system settled solely by independents, pirates, or the Path
+reaches the classifier with no claimant. Those cells are settled, so they take this bundle. The
+alternative - reading emptiness off the holder map - hides a populated system behind the
+uninhabited-systems checkbox, which is the map erasing what is there.
 
 The fixed border channel is deliberately *not* here and not tunable at all: it decides where fills
 meet rather than how they look, so it lives on the shaping that applies it, as
@@ -93,7 +102,8 @@ the space it labels:
   the adjustment a bloc draws under) into a `BlocStyleDecision`.
 - `FactionlessStyleResolver` - the counterpart for a cell with no owner, which has no bloc to carry
   a decision: which factionless category it draws in, and whether the pass's recede reaches it
-  (a decivilised cell yes, an uninhabited one no).
+  (a settled cell yes, an uninhabited one no). Classifies off the pass's inhabited-system set
+  (`MapVisibility.findInhabitedSystemIds`), never off the holder map that sent the cell here.
 - `BlocStyling` - maps that decision onto the pass's actual theme, giving the concrete bundle
   plus adjustment a bloc draws under. It owns the one field that crosses between bundles: a
   desaturated bloc's fill is held at the *faction* opacity, so a desaturated surface reads as

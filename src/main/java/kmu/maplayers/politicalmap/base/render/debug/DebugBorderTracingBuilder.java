@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.render.debug;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.opengl.PolygonTessellator;
-import kmlib.starsector.markets.DecivilisedMarkets;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
@@ -13,6 +12,7 @@ import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageCollector;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
+import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
@@ -41,7 +41,7 @@ import java.util.Set;
  * layers therefore mirror the pipeline the normal render would have produced.
  *
  * <p>Owned faction and independent clusters run the full base -> despiked -> rounded
- * pipeline. Drawn factionless cells (decivilised, or uninhabited when the player turns
+ * pipeline. Drawn factionless cells (inhabited but unheld, or uninhabited when the player turns
  * them on) contribute only base and rounded: a lone convex inset cell has no needle
  * protrusions, so it skips sanding. Factionless cells respect the same visibility the
  * normal render applies - one draws only when its category's outline colour is not "No
@@ -68,7 +68,9 @@ public final class DebugBorderTracingBuilder {
             geometryCache.getSystemIdByCellId(),
             ownerBySystemId);
 
-        var decivilisedSystemIds = DecivilisedMarkets.findRevealedDecivilisedSystemIds(sector);
+        // The same inhabitation read the production build classifies its factionless cells by,
+        // through the same seam, so the overlay shows the cells the map would show.
+        var inhabitedSystemIds = PoliticalMapInhabitation.readInhabitedSystemIds(sector);
 
         // The same trace and the same smoothing profile the production build reads, so a stage
         // captured here is the geometry the normal render would have drawn rather than one this
@@ -117,7 +119,7 @@ public final class DebugBorderTracingBuilder {
         addFactionlessOutlines(
             geometryCache,
             cellGrouping,
-            decivilisedSystemIds,
+            inhabitedSystemIds,
             borderSmoothing.cornerRounding(),
             stageCollector);
 
@@ -133,7 +135,7 @@ public final class DebugBorderTracingBuilder {
     private static void addFactionlessOutlines(
             CellGeometryCache geometryCache,
             CellGrouping cellGrouping,
-            Set<String> decivilisedSystemIds,
+            Set<String> inhabitedSystemIds,
             CornerRoundingStyle cornerRounding,
             ClusterBorderStageCollector stageCollector) {
 
@@ -146,11 +148,11 @@ public final class DebugBorderTracingBuilder {
             if (cellGrouping.resolveOwnerOf(entry.getKey()) != null) {
                 continue;
             }
-            // A factionless cell resolves its decivilised/uninhabited style through the system
-            // it draws as; a cell with no system of its own is uninhabited.
+            // A factionless cell resolves its settled/uninhabited style through the system it
+            // draws as; a cell with no system of its own is uninhabited.
             var drawnSystemId = cellGrouping.resolveDrawnSystemIdOf(entry.getKey());
             var style = renderStyle.categoryStyle(FactionlessStyleResolver.resolveCategoryOf(
-                decivilisedSystemIds,
+                inhabitedSystemIds,
                 drawnSystemId));
 
             if (!style.outer().isDrawn()) {

@@ -126,6 +126,15 @@ territorial market in the system. The map shows exactly what the mechanic resolv
 nothing. A marketless system (unpopulated or decivilised) only resolves through the flag, which is
 rare in practice. So claims mostly attach to inhabited systems.
 
+**Inhabited does not imply claimed.** Only a *territorial* faction may claim, and in vanilla the
+flag lives inside `punitiveExpeditionData`, which independents, pirates, the Path, and the
+Remnant carry no version of. A system settled by those alone - a large share of the core, since
+independent worlds are not rare - resolves no claimant at all and leaves this package's holding
+empty for it. That is the mechanic answering correctly, not a gap to paper over here. What must
+not follow from it is the *render* reading the missing holder as an empty system: the factionless
+classification is made against the pass's inhabited-system set instead, see
+[`render.style`](../../render/style/README.md).
+
 ## What is not here
 
 - The *render split* that turns the three states into triangles, hatch, and skipped fills is

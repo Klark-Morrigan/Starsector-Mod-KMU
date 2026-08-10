@@ -6,7 +6,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.profiling.Timings;
 import kmlib.starsector.factions.StarsectorFactionColours;
-import kmlib.starsector.markets.DecivilisedMarkets;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
@@ -15,6 +14,7 @@ import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.render.clusters.HatchBuildDiagnostics;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -94,14 +94,23 @@ public final class TerritoryBuilder {
                 + " unfilled=" + unfilledSystemIds.size()
                 + " took=" + Timings.formatMillis(System.nanoTime() - politicsStart));
 
-            var decivilisedStart = System.nanoTime();
-            var decivilisedSystemIds = profiler.measure(
-                "politicalMap.findDecivilised",
-                () -> DecivilisedMarkets.findRevealedDecivilisedSystemIds(sector));
+            // What stands in each system, read once for the whole pass. Independent of the
+            // holding resolved above and deliberately so: the holding answers who this view
+            // gives a system to, and a view whose rule admits only some factions - claims, where
+            // vanilla lets only a territorial faction claim - leaves inhabited systems with no
+            // holder. Only this read can tell those apart from empty space.
+            //
+            // Under the same reveal the holding resolved under, so a colony the dev toggle
+            // admits to one is admitted to the other and the two cannot disagree about whether
+            // a system holds anything.
+            var inhabitedStart = System.nanoTime();
+            var inhabitedSystemIds = profiler.measure(
+                "politicalMap.findInhabited",
+                () -> PoliticalMapInhabitation.readInhabitedSystemIds(sector));
 
-            LOG.debug("Political map decivilised scan; systems="
-                + decivilisedSystemIds.size()
-                + " took=" + Timings.formatMillis(System.nanoTime() - decivilisedStart));
+            LOG.debug("Political map inhabitation scan; systems="
+                + inhabitedSystemIds.size()
+                + " took=" + Timings.formatMillis(System.nanoTime() - inhabitedStart));
 
             // The whole theme - the global tier plus one style per category - read once here
             // through the single reader seam, plus the shared neutral colour and the desaturation
@@ -131,7 +140,7 @@ public final class TerritoryBuilder {
 
             var territories = new PoliticalMapTerritories(
                 ownerBySystemId,
-                decivilisedSystemIds,
+                inhabitedSystemIds,
                 unfilledSystemIds,
                 new MapStyling(renderStyle, neutralColour, desaturationPalette),
                 new ViewGrouping(view, grouping),

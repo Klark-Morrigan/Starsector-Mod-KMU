@@ -42,15 +42,15 @@ import java.util.Set;
  * the neutral colour, and the desaturation palette - how each category draws and what a
  * desaturated bloc recolours to), {@link ViewGrouping} (the view and its once-sampled
  * grouping - how holding is grouped and which blocs recede to the independent style),
- * and {@link FilterSnapshot} (the spotlight state). The holder-by-system, decivilised-system,
- * and unfilled-system sets ride alongside as who holds each system and how its fill is drawn.
- * An incremental re-shape reads them all back so it classifies a cell exactly as the full
- * build did.
+ * and {@link FilterSnapshot} (the spotlight state). The holder-by-system, inhabited-system,
+ * and unfilled-system sets ride alongside as who holds each system, what stands in it, and how
+ * its fill is drawn. An incremental re-shape reads them all back so it classifies a cell
+ * exactly as the full build did.
  *
  * <p>A plain class rather than a record because three of its fields are mutable state,
  * not values: the styled-cell, styled-cluster-group, and holder-by-system maps are mutated
  * in place by the incremental refresh, which replaces just the cells and factions an
- * holder change touched. The styling, decivilised and unfilled sets, view grouping, and
+ * holder change touched. The styling, inhabited and unfilled sets, view grouping, and
  * filter snapshot are set once at build and only read after, so an incremental pass re-shapes
  * against the exact inputs the full build baked in.
  *
@@ -85,7 +85,12 @@ public final class PoliticalMapTerritories implements
     // Retained derivation inputs. The holder map is mutated in place as systems flip; the
     // rest are set once at build and only read after.
     private final Map<String, DominantHolder> ownerBySystemId;
-    private final Set<String> decivilisedSystemIds;
+
+    // Every system something stands in, scanned once per pass. Read against the holder map
+    // rather than derived from it: a cell with no holder is empty space only when this set
+    // agrees, which is what keeps a system this layer's holding cannot account for - an
+    // unclaimed pirate haven on the claims layer - from drawing as backdrop.
+    private final Set<String> inhabitedSystemIds;
 
     // The owned systems drawn with no fill: held by their bloc for border and label but painting
     // nothing inside its one frontier, so a held/claimed boundary reads as a seam where the fill
@@ -113,13 +118,13 @@ public final class PoliticalMapTerritories implements
 
     public PoliticalMapTerritories(
             Map<String, DominantHolder> ownerBySystemId,
-            Set<String> decivilisedSystemIds,
+            Set<String> inhabitedSystemIds,
             Set<String> unfilledSystemIds,
             MapStyling styling,
             ViewGrouping viewGrouping,
             FilterSnapshot filter) {
         this.ownerBySystemId = ownerBySystemId;
-        this.decivilisedSystemIds = decivilisedSystemIds;
+        this.inhabitedSystemIds = inhabitedSystemIds;
         this.unfilledSystemIds = unfilledSystemIds;
         this.styling = styling;
         this.viewGrouping = viewGrouping;
@@ -269,8 +274,11 @@ public final class PoliticalMapTerritories implements
         return ownerBySystemId;
     }
 
-    public Set<String> getDecivilisedSystemIds() {
-        return decivilisedSystemIds;
+    // Every system this pass found something standing in, whoever holds it and whether or not
+    // this layer's holding accounts for them; what the factionless classifier reads to tell a
+    // settled cell from the empty backdrop.
+    public Set<String> getInhabitedSystemIds() {
+        return inhabitedSystemIds;
     }
 
     // The owned systems the per-faction fill split leaves empty, drawn inside their bloc's one

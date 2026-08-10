@@ -75,7 +75,7 @@ final class PoliticalMapTerritoriesTest {
                 .isEmpty();
             assertThat(territories.getHolderBySystemId())
                 .isEmpty();
-            assertThat(territories.getDecivilisedSystemIds())
+            assertThat(territories.getInhabitedSystemIds())
                 .isEmpty();
             assertThat(territories.getUnfilledSystemIds())
                 .isEmpty();
@@ -243,10 +243,10 @@ final class PoliticalMapTerritoriesTest {
         void gettersReturnEachConstructorInputInItsMatchingSlot() {
 
             Map<String, DominantHolder> holders = new LinkedHashMap<>();
-            Set<String> decivilised = new LinkedHashSet<>();
+            Set<String> inhabited = new LinkedHashSet<>(Set.of("inhabited-system"));
 
             // A distinct unfilled set so a swapped slot is caught by identity, held apart from the
-            // decivilised set it sits beside.
+            // inhabited set it sits beside.
             Set<String> unfilled = new LinkedHashSet<>(Set.of("unfilled-system"));
             var neutral = Color.CYAN;
             var desaturationPalette = new FactionPalette(Color.MAGENTA, Color.ORANGE);
@@ -291,7 +291,7 @@ final class PoliticalMapTerritoriesTest {
 
             var territories = new PoliticalMapTerritories(
                 holders,
-                decivilised,
+                inhabited,
                 unfilled,
                 new MapStyling(renderStyle, neutral, desaturationPalette),
                 new ViewGrouping(viewMock, grouping),
@@ -306,8 +306,8 @@ final class PoliticalMapTerritoriesTest {
 
             assertThat(territories.getHolderBySystemId())
                 .isSameAs(holders);
-            assertThat(territories.getDecivilisedSystemIds())
-                .isSameAs(decivilised);
+            assertThat(territories.getInhabitedSystemIds())
+                .isSameAs(inhabited);
             assertThat(territories.getUnfilledSystemIds())
                 .isSameAs(unfilled);
             assertThat(territories.getNeutralColour())

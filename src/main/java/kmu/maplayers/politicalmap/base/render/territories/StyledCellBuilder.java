@@ -29,10 +29,10 @@ import java.util.List;
  * constituent cells rather than one smooth blob - the spotlighted bloc included, where the
  * solid-to-hatched transition is such a border like any other.
  *
- * <p>A <em>factionless</em> cell (decivilised, or uninhabited) does not fuse, so it has no
- * cluster to inherit from and keeps its own fill and outline. It names no faction palette
+ * <p>A <em>factionless</em> cell (inhabited but unheld, or uninhabited) does not fuse, so it has
+ * no cluster to inherit from and keeps its own fill and outline. It names no faction palette
  * either, so both its palette slots hold the shared neutral colour - until the pass recedes it,
- * which a decivilised cell takes as readily as a bloc does.
+ * which a settled factionless cell takes as readily as a bloc does.
  *
  * <p>Shared by the full rebuild and the incremental re-shape, so both classify and style a
  * cell identically.
@@ -54,7 +54,7 @@ public final class StyledCellBuilder {
      * @param territories this pass's retained holding, theme, and filter state
      * @param systemId    the system the cell draws as, or null for a cell with no star of its
      *                    own, which draws as plain uninhabited - it has no holder to
-     *                    colour it and no market to have died
+     *                    colour it and nothing standing in it
      * @param shaped      the cell's inset shape
      * @return the cell's draw record, or null when it puts no ink on the map
      */
@@ -107,7 +107,7 @@ public final class StyledCellBuilder {
 
     // A lone cell: its own fill and outline, and no seam - a factionless cell fuses with nothing,
     // so it has no sibling to divide from. Its outline's corners are rounded with the same corner
-    // settings and gate the cluster borders use, so a lone dead system reads as smoothly as a
+    // settings and gate the cluster borders use, so a lone unheld system reads as smoothly as a
     // cluster when rounding is on and stays a sharp Voronoi cell when it is off; the fill is
     // triangulated from that same rounded ring, so it cannot spill past the line its own outline
     // strokes. Drops the cell when neither element puts ink down - a cell is kept for its fill as
@@ -118,9 +118,12 @@ public final class StyledCellBuilder {
             ShapedCell shaped) {
 
         // One classification drives both the bundle and the recede, so a cell cannot take the
-        // decivilised style yet miss the recede that style is meant to draw under.
+        // decivilised style yet miss the recede that style is meant to draw under. Classified
+        // off what stands in the system rather than off the holder lookup that sent the cell
+        // here: an inhabited system this layer's holding does not account for is not the empty
+        // backdrop, whatever the absent holder alone would suggest.
         var category = FactionlessStyleResolver.resolveCategoryOf(
-            territories.getDecivilisedSystemIds(),
+            territories.getInhabitedSystemIds(),
             systemId);
 
         var style = territories.getCategoryStyle(category);

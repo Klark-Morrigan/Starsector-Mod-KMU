@@ -2,8 +2,6 @@ package kmu.maplayers.politicalmap.base.render.debug;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.markets.DecivilisedMarkets;
-
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
@@ -16,6 +14,7 @@ import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
+import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
@@ -126,7 +125,7 @@ final class DebugBorderTracingBuilderTest {
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private MockedStatic<KmuMapLayerSettings> settingsMock;
     private MockedStatic<SectorPolitics> politicsMock;
-    private MockedStatic<DecivilisedMarkets> decivilisedMarketsMock;
+    private MockedStatic<PoliticalMapInhabitation> inhabitationMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
 
     @BeforeEach
@@ -141,19 +140,19 @@ final class DebugBorderTracingBuilderTest {
             .thenReturn(MITER_SPIKE_LIMIT);
 
         politicsMock = mockStatic(SectorPolitics.class);
-        decivilisedMarketsMock = mockStatic(DecivilisedMarkets.class);
+        inhabitationMock = mockStatic(PoliticalMapInhabitation.class);
         styleReaderMock = mockStatic(RenderStyleReader.class);
 
         // An empty sector by default, so a case names only the cells it is about.
         stubHolders(Map.of());
-        stubDecivilisedSystems();
+        stubInhabitedSystems();
         stubTheme(buildNoSmoothing(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
     }
 
     @AfterEach
     void closeTheSectorAndSettingsSeams() {
         styleReaderMock.close();
-        decivilisedMarketsMock.close();
+        inhabitationMock.close();
         politicsMock.close();
         settingsMock.close();
     }
@@ -213,7 +212,7 @@ final class DebugBorderTracingBuilderTest {
 
         @Test
         void buildDebugDrawablesOutlinesOnlyTheFactionlessCategoryWhoseOutlineIsSwitchedOn() {
-            stubDecivilisedSystems(DEAD_SYSTEM);
+            stubInhabitedSystems(DEAD_SYSTEM);
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
@@ -227,7 +226,7 @@ final class DebugBorderTracingBuilderTest {
 
         @Test
         void buildDebugDrawablesOutlinesNoFactionlessCellWhenNeitherCategoryDraws() {
-            stubDecivilisedSystems(DEAD_SYSTEM);
+            stubInhabitedSystems(DEAD_SYSTEM);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock);
@@ -268,7 +267,7 @@ final class DebugBorderTracingBuilderTest {
 
         @Test
         void buildDebugDrawablesOutlinesNoFactionlessCellThatTheBorderChannelSwallows() {
-            stubDecivilisedSystems(TINY_SYSTEM);
+            stubInhabitedSystems(TINY_SYSTEM);
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
@@ -281,7 +280,7 @@ final class DebugBorderTracingBuilderTest {
 
         @Test
         void buildDebugDrawablesGivesAFactionlessOutlineNoDespikedStageEvenWithSandingOn() {
-            stubDecivilisedSystems(DEAD_SYSTEM);
+            stubInhabitedSystems(DEAD_SYSTEM);
             stubTheme(buildBothGatesOn(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
@@ -391,9 +390,13 @@ final class DebugBorderTracingBuilderTest {
             .thenReturn(ownerBySystemId);
     }
 
-    private void stubDecivilisedSystems(String... systemIds) {
-        decivilisedMarketsMock
-            .when(() -> DecivilisedMarkets.findRevealedDecivilisedSystemIds(sectorMock))
+    // The systems the overlay is to treat as settled. Stubbed at the political layer's
+    // inhabitation seam rather than at the market scan behind it, since that seam is where the
+    // player's dev reveal is bound - and binding it reaches LunaLib, which the test JVM cannot
+    // load.
+    private void stubInhabitedSystems(String... systemIds) {
+        inhabitationMock
+            .when(() -> PoliticalMapInhabitation.readInhabitedSystemIds(sectorMock))
             .thenReturn(Set.of(systemIds));
     }
 

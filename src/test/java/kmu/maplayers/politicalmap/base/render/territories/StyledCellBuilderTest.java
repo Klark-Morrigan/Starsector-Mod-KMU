@@ -67,9 +67,12 @@ final class StyledCellBuilderTest {
 
         private static final String SYSTEM_ID = "hegemony-system";
 
-        // The one system in the factionless fixture's decivilised set, so a test can address
-        // either factionless category by which id it builds the cell as.
+        // Two of the systems in the factionless fixture's inhabited set - one settled by a dead
+        // colony, one by a live colony no holder was resolved for - so a test can address either
+        // factionless category by which id it builds the cell as, and can tell the two reasons a
+        // cell counts as settled apart.
         private static final String DECIVILISED_SYSTEM_ID = "some-decivilised-system";
+        private static final String UNHELD_INHABITED_SYSTEM_ID = "some-pirate-haven";
         private static final Color OWNER_PRIMARY = Color.RED;
         private static final Color OWNER_SECONDARY = Color.BLUE;
         private static final Color DESATURATED_PRIMARY = Color.GREEN;
@@ -286,6 +289,40 @@ final class StyledCellBuilderTest {
         }
 
         @Test
+        void buildStyledCellForSystemDrawsAnInhabitedCellWithNoHolderAsSettledRatherThanBackdrop() {
+            // The claims layer's case: vanilla lets only a territorial faction claim, so a system
+            // settled by pirates alone resolves no claimant and arrives here holderless - exactly
+            // as an empty system does. It must still take the settled bundle, since the
+            // uninhabited bundle is what the uninhabited-systems checkbox switches off, and a
+            // populated system erased by that checkbox is the map lying about what is there.
+            //
+            // The two bundles are told apart by the fill: only the settled one carries one here.
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
+                UNHELD_INHABITED_SYSTEM_ID,
+                buildOwnedCell());
+
+            assertThat(requireLoneCell(styled).fillTriangles())
+                .isNotEmpty();
+            assertThat(requireLoneCell(styled).fillPaint().colour())
+                .isEqualTo(FACTIONLESS_NEUTRAL);
+        }
+
+        @Test
+        void buildStyledCellForSystemDrawsAnUninhabitedCellWithNoFill() {
+            // The other half of the case above: a system nothing stands in takes the outline-only
+            // bundle, so the assertion there is about the classification rather than about every
+            // factionless cell happening to carry a fill.
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
+                "never-settled-system",
+                buildOwnedCell());
+
+            assertThat(requireLoneCell(styled).fillTriangles())
+                .isEmpty();
+        }
+
+        @Test
         void buildStyledCellForSystemKeepsADecivilisedCellAtFullStrengthWithNoRecedeInThePass() {
             // Off filter the pass's recede is the identity, so a dead colony draws in the neutral
             // colour at its style opacity - an unfiltered map is unchanged by the recede path.
@@ -452,8 +489,8 @@ final class StyledCellBuilderTest {
 
         // The shared factionless backdrop: the theme plus the pass's spotlight state, since a
         // factionless cell's recede is the filter's. Carries an immutable holder map AND an
-        // immutable decivilised set, both null-hostile: a clean result for a null system proves
-        // that path reads neither - it resolves no holder and is not taken for decivilised
+        // immutable inhabited set, both null-hostile: a clean result for a null system proves
+        // that path reads neither - it resolves no holder and is not taken for settled
         // without ever probing a map with the null key.
         private static PoliticalMapTerritories buildFactionlessDrawablesWith(
                 RenderStyle theme,
@@ -462,7 +499,7 @@ final class StyledCellBuilderTest {
 
             return new PoliticalMapTerritories(
                 Map.of(),
-                Set.of(DECIVILISED_SYSTEM_ID),
+                Set.of(DECIVILISED_SYSTEM_ID, UNHELD_INHABITED_SYSTEM_ID),
                 Set.of(),
                 new MapStyling(
                     theme,

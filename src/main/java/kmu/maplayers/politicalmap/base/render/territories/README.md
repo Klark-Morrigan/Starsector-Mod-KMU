@@ -30,9 +30,9 @@ identical to a full rebuild.
 - `StyledCellBuilder` bakes one cell, choosing which form of `StyledCell` it takes. An **owned**
   cell becomes a `FusedCell` and contributes only its interior seams, because its fill and national
   border belong to the cluster it fuses into - the form has no slot for either. A **factionless**
-  cell (decivilised, or uninhabited) does not fuse, so it becomes a `LoneCell` carrying its own fill
-  and outline, and resolves both palette slots to the shared neutral colour. Of the two, only
-  a decivilised cell takes the pass's recede - see [what recedes](#what-recedes) below.
+  cell (settled but unheld, or uninhabited) does not fuse, so it becomes a `LoneCell` carrying its
+  own fill and outline, and resolves both palette slots to the shared neutral colour. Of the two,
+  only a settled cell takes the pass's recede - see [what recedes](#what-recedes) below.
 - `FactionTerritoryBuilder` bakes one bloc into a `StyledClusterGroup`: every body it holds, each
   with its national border traced across the systems in it, and each body's fill - which it hands
   to the framework's `SplitFillBuilder`, see
@@ -50,7 +50,7 @@ part of a bloc resolves from one read.
 ## What recedes
 
 The Mute and Desaturate toggles sink the background behind a spotlighted bloc. Every non-spotlit
-**bloc** recedes through `resolveBlocStyling`, and so does a **decivilised** cell: a dead colony
+**bloc** recedes through `resolveBlocStyling`, and so does a **settled** factionless cell: it
 carries a fill of its own, so leaving it at full strength lets it out-read the bloc the spotlight
 is meant to isolate. Muting dims it; desaturating recolours it off the same desaturation palette a
 receded bloc uses, rather than the neutral colour it paints in normally.
@@ -59,24 +59,31 @@ An **uninhabited** cell is the exception. It is the empty backdrop the whole map
 rather than something the spotlight competes with, and its faint outline is what gives the sector
 its shape, so it stays at full strength under every recede.
 
-Only the *filter* recede reaches a decivilised cell - it is the one whose backdrop is "the
-rest of the sector". The alliances view's non-allied recede describes factions, which decivilised
+Only the *filter* recede reaches a settled factionless cell - it is the one whose backdrop is "the
+rest of the sector". The alliances view's non-allied recede describes factions, which such a
 cell is not, so it leaves it alone. Off filter the pass's recede is the identity, so an
-unfiltered map draws its dead worlds untouched.
+unfiltered map draws its unheld systems untouched.
 
 The rule itself is not here: `StyledCellBuilder` asks
 [`FactionlessStyleResolver`](../style/README.md), which also decides which of the two factionless
-categories a cell falls in. One classification drives both, so a cell cannot take the decivilised
+categories a cell falls in. One classification drives both, so a cell cannot take the settled
 style yet miss the recede that style draws under.
+
+That classification reads the pass's **inhabited-system set**, not the holder map. `TerritoryBuilder`
+scans it once per rebuild through `MapVisibility.findInhabitedSystemIds` - the same rule that decided
+the system seeds a cell at all - and `PoliticalMapTerritories` retains it, so the incremental
+re-shape classifies against exactly what the full build used. Deriving emptiness from the holder map
+instead would make every view whose holding rule admits only some factions report its unheld
+systems as empty space.
 
 ## Borders against empty space
 
 Every border edge is shaped the same way, whatever sits across it. Against another
 organised entity (a rival faction or an alliance) and against *empty* space alike -
-an uncontrolled star with no owner, whether never-settled or decivilised - the edge
+an uncontrolled star with no owner, whether never-settled or settled-but-unheld - the edge
 keeps the mutual midline plus its inward border channel. So a faction cuts off
 halfway to a dead star exactly as it does halfway to a rival, and the dead star's
-own cell draws its inset outline - and, for a decivilised system, its neutral fill -
+own cell draws its inset outline - and, for a settled system, its neutral fill -
 in the neutral style on the far side of that channel.
 
 Those factionless fills are per cell rather than per cluster: a factionless cell never fuses into
