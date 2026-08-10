@@ -71,6 +71,11 @@ final class ExpandedSystemDominationTooltipTest {
     private static final DominancePass ANY_PASS =
         new DominancePass(ANY_RULES, false, VIEW_GROUPING);
 
+    // The same pass with the dev reveal on, so a case can tell a read that carries the pass's own
+    // reveal from one that hardcodes the ordinary answer - which every other case would agree with.
+    private static final DominancePass REVEALED_PASS =
+        new DominancePass(ANY_RULES, true, VIEW_GROUPING);
+
     // Two factions of one bloc, so a case can tell "the faction's own colonies" from "the bloc's".
     private static final FactionStanding LEAD_MEMBER = new FactionStanding("hegemony", 6000);
     private static final FactionStanding OTHER_MEMBER = new FactionStanding("tritachyon", 3000);
@@ -224,6 +229,49 @@ final class ExpandedSystemDominationTooltipTest {
                     sectorMock,
                     systemMock,
                     ANY_RULES,
+                    false),
+                Mockito.times(1));
+        }
+
+        @Test
+        void createFactionAccountResolverReadsTheUnlistedColoniesUnderTheRankingsOwnReveal() {
+            // The reveal decides what the box may name, and a colony the pass could not weigh is no
+            // exception. Read at a reveal of its own it would withhold an unfound station while
+            // naming the weighed colonies beside it - or name one the player has not found.
+            stubBreakdowns(Map.of());
+            stubUnweighedColonies(Map.of());
+
+            tooltip.createFactionAccountResolver(sectorMock, systemMock, REVEALED_PASS);
+
+            footprintsMock.verify(
+                () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
+                    sectorMock,
+                    systemMock,
+                    true));
+        }
+
+        @Test
+        void createFactionAccountResolverWalksTheUnlistedColoniesOnceForTheWholeBox() {
+            // The second walk is a second economy read and costs what the first does, so it is paid
+            // for once per paint rather than once per faction listed - the same rule the weighed
+            // read is held to.
+            stubBreakdowns(Map.of());
+            stubUnweighedColonies(Map.of(
+                "hegemony",
+                List.of(new UnweighedColony("Galatia Academy"))));
+
+            var accountResolver =
+                tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
+
+            accountResolver.resolveAccountEntries(LEAD_MEMBER);
+            accountResolver.resolveAccountEntries(OTHER_MEMBER);
+
+            // Counted on the real arguments rather than on matchers, since registering the stub is
+            // itself an invocation and an any()-matched count would take it for a second read.
+            footprintsMock.verify(
+                () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
+                    sectorMock,
+                    systemMock,
                     false),
                 Mockito.times(1));
         }
