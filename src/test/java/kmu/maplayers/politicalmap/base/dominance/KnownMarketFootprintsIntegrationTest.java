@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
 import com.fs.starfarer.api.campaign.CampaignFleetAPI;
+import com.fs.starfarer.api.campaign.CustomEntitySpecAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
@@ -13,6 +14,8 @@ import com.fs.starfarer.api.impl.campaign.ids.Stats;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 import com.fs.starfarer.api.util.DynamicStatsAPI;
 
+import kmlib.starsector.entities.EntityMapIcon;
+
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -22,6 +25,8 @@ import kmu.settings.HiddenMarketScalingChoice;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.awt.Color;
+import java.util.Optional;
 import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints.DOMINANCE_WEIGHT_SCALE;
@@ -77,6 +82,11 @@ class KnownMarketFootprintsIntegrationTest {
     // The name every stubbed station answers to, so a breakdown asserting that it named the
     // right entity has something to name.
     private static final String STATION_NAME = "Fort Ludd";
+
+    // What the plain stubbed market's primary entity is marked with on the map: nothing, its token
+    // carrying no icon spec at all. Named so the colonies the icon cases are not about read as
+    // deliberately unmarked rather than as an oversight.
+    private static final Optional<EntityMapIcon> NO_ICON = Optional.empty();
 
     // A fluent builder over DominanceRules and its three weight factors, defaulting every
     // knob to its CSV default so each test states only the axis it pins. The defaults are:
@@ -1142,6 +1152,37 @@ class KnownMarketFootprintsIntegrationTest {
                 .isEqualTo(1.0);
         }
 
+        @Test
+        void readBreakdownByFactionCarriesTheGlyphTheMapMarksTheColonyWith() {
+            // The box leads a colony's line with the map's own glyph, and reads it off the breakdown
+            // rather than looking the market up a second time - so the icon drawn can only belong to
+            // the colony whose weight is stated beside it. The colour travels with the path because
+            // vanilla draws a whole family from one sprite and tells the types apart by nothing else.
+            var sector = buildSectorWith(
+                "galatia",
+                withMapIcon(
+                    withName(buildVisibleMarket(buildFaction("independent"), 4), "Ancyra"),
+                    "graphics/icons/station0.png",
+                    new Color(200, 200, 255)));
+
+            assertThat(readOnlyBreakdown(sector, buildRules().build()).marketIcon())
+                .contains(new EntityMapIcon(
+                    "graphics/icons/station0.png",
+                    new Color(200, 200, 255)));
+        }
+
+        @Test
+        void readBreakdownByFactionCarriesNoGlyphForAColonyTheMapMarksWithNone() {
+            // An entity with no icon spec at all reaches the box as an absence rather than as a path
+            // to a sprite that does not exist, which is what lets the line open on its name.
+            var sector = buildSectorWith(
+                "hegemony-system",
+                withName(buildVisibleMarket(buildFaction("hegemony"), 4), "Jangala"));
+
+            assertThat(readOnlyBreakdown(sector, buildRules().build()).marketIcon())
+                .isEmpty();
+        }
+
         // The rule the fortress assertions read under: the suite's defaults with both the
         // station and the patrol factor switched on, so all three factors run at once.
         private DominanceRules buildFortifiedColonyRules() {
@@ -1200,7 +1241,32 @@ class KnownMarketFootprintsIntegrationTest {
             assertThat(colonies)
                 .containsOnlyKeys("independent");
             assertThat(colonies.get("independent"))
-                .containsExactly(new UnweighedColony("Galatia Academy"));
+                .containsExactly(new UnweighedColony("Galatia Academy", NO_ICON));
+        }
+
+        @Test
+        void readUnweighedColoniesByFactionCarriesTheGlyphTheMapMarksTheColonyWith() {
+            // No score above accounts for such a colony, so the map's glyph is the only trace of it
+            // the player has beside the name - which makes it the line least able to spare the mark.
+            var academy = withMapIcon(
+                withName(buildVisibleMarket(buildFaction("independent"), 3), "Galatia Academy"),
+                "graphics/icons/station0.png",
+                new Color(200, 200, 255));
+                
+            var sector = buildSectorWith("galatia");
+
+            placeMarketsOnSystemEntities(buildOnlySystem(sector), academy);
+
+            assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
+                    sector,
+                    buildOnlySystem(sector),
+                    false)
+                .get("independent"))
+                .containsExactly(new UnweighedColony(
+                    "Galatia Academy",
+                    Optional.of(new EntityMapIcon(
+                        "graphics/icons/station0.png",
+                        new Color(200, 200, 255)))));
         }
 
         @Test
@@ -1223,8 +1289,8 @@ class KnownMarketFootprintsIntegrationTest {
                     false)
                 .get("independent"))
                 .containsExactly(
-                    new UnweighedColony("Tibicena"),
-                    new UnweighedColony("Galatia Academy"));
+                    new UnweighedColony("Tibicena", NO_ICON),
+                    new UnweighedColony("Galatia Academy", NO_ICON));
         }
 
         @Test
@@ -1293,7 +1359,7 @@ class KnownMarketFootprintsIntegrationTest {
                     buildOnlySystem(sector),
                     false)
                 .get("independent"))
-                .containsExactly(new UnweighedColony("Galatia Academy"));
+                .containsExactly(new UnweighedColony("Galatia Academy", NO_ICON));
         }
 
         @Test
@@ -1382,6 +1448,27 @@ class KnownMarketFootprintsIntegrationTest {
 
         when(market.getName())
             .thenReturn(name);
+
+        return market;
+    }
+
+    // Stubs the glyph the sector map marks a market's own entity with - a custom-entity spec's
+    // authored path and colour, which is where vanilla keeps a station's icon. The plain stubbed
+    // market's entity carries no spec at all, so a colony is unmarked unless a case says otherwise.
+    private static MarketAPI withMapIcon(MarketAPI market, String iconName, Color iconColour) {
+
+        // Read the entity and build its spec before opening the entity's own stubbing, so the two do
+        // not nest into an unfinished-stubbing error.
+        var entityMock = market.getPrimaryEntity();
+        var entitySpecMock = mock(CustomEntitySpecAPI.class);
+
+        when(entitySpecMock.getIconName())
+            .thenReturn(iconName);
+        when(entitySpecMock.getIconColor())
+            .thenReturn(iconColour);
+
+        when(entityMock.getCustomEntitySpec())
+            .thenReturn(entitySpecMock);
 
         return market;
     }

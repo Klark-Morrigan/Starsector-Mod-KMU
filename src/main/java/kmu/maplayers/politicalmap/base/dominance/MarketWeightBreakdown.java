@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
+import kmlib.starsector.entities.EntityMapIcon;
+
 import java.util.Optional;
 
 /**
@@ -21,6 +23,10 @@ import java.util.Optional;
  * hand-made inputs.
  *
  * @param marketName      the colony's display name
+ * @param marketIcon      the glyph the sector map marks the colony's own entity with, or empty where
+ *                        it carries none. Recorded on the walk that counted the colony rather than
+ *                        looked up again by whatever draws the name, so the icon shown can only ever
+ *                        be the icon of the colony whose weight is stated beside it
  * @param isHiddenMarket  whether the colony is hidden - a concealed base rather than one held
  *                        in the open, which changes how two of the factors rate it
  * @param marketStability the colony's stability on its own 0..10 band. Carried whole rather
@@ -33,6 +39,7 @@ import java.util.Optional;
  */
 public record MarketWeightBreakdown(
     String marketName,
+    Optional<EntityMapIcon> marketIcon,
     boolean isHiddenMarket,
     double marketStability,
     BaseSizeFactor baseSize,

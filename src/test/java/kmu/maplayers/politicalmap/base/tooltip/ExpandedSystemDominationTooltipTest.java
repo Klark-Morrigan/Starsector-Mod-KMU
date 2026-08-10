@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.entities.EntityMapIcon;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
@@ -59,6 +60,10 @@ import static org.mockito.Mockito.when;
 final class ExpandedSystemDominationTooltipTest {
 
     private static final String SYSTEM_ID = "askonia";
+
+    // A colony whose entity the game marks with no glyph. Every case here is about which faction a
+    // colony is listed under rather than about what its line leads with.
+    private static final Optional<EntityMapIcon> NO_ICON = Optional.empty();
 
     // Stability is left unweighed throughout, so a colony breaks down into the one factor each case is
     // about rather than into a stability line every assertion would have to step over.
@@ -166,7 +171,7 @@ final class ExpandedSystemDominationTooltipTest {
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Culann", 3.0))));
             stubUnweighedColonies(Map.of(
                 "hegemony",
-                List.of(new UnweighedColony("Galatia Academy"))));
+                List.of(new UnweighedColony("Galatia Academy", NO_ICON))));
 
             var accountResolver =
                 tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
@@ -182,7 +187,7 @@ final class ExpandedSystemDominationTooltipTest {
             stubBreakdowns(Map.of());
             stubUnweighedColonies(Map.of(
                 "tritachyon",
-                List.of(new UnweighedColony("Galatia Academy"))));
+                List.of(new UnweighedColony("Galatia Academy", NO_ICON))));
 
             var accountResolver =
                 tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
@@ -258,7 +263,7 @@ final class ExpandedSystemDominationTooltipTest {
             stubBreakdowns(Map.of());
             stubUnweighedColonies(Map.of(
                 "hegemony",
-                List.of(new UnweighedColony("Galatia Academy"))));
+                List.of(new UnweighedColony("Galatia Academy", NO_ICON))));
 
             var accountResolver =
                 tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
@@ -327,6 +332,7 @@ final class ExpandedSystemDominationTooltipTest {
     private static MarketWeightBreakdown buildBreakdown(String marketName, double contribution) {
         return new MarketWeightBreakdown(
             marketName,
+            NO_ICON,
             false,
             FULL_STABILITY,
             new BaseSizeFactor(4, 4.0, contribution, 0.0),

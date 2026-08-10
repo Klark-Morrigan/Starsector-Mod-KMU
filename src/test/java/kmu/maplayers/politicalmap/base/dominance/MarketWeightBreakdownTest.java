@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
+import kmlib.starsector.entities.EntityMapIcon;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class MarketWeightBreakdownTest {
 
+    // A colony whose entity the game marks with no glyph, which is every colony here: what a box leads
+    // a name with says nothing about what the parts beneath it add up to.
+    private static final Optional<EntityMapIcon> NO_ICON = Optional.empty();
+
     @Nested
     class ComputeTotalContribution {
 
@@ -26,6 +32,7 @@ class MarketWeightBreakdownTest {
 
             var breakdown = new MarketWeightBreakdown(
                 "Chicomoztoc",
+                NO_ICON,
                 false,
                 5.0,
                 new BaseSizeFactor(4, 4.0, 2.0, 0.5),
@@ -80,6 +87,7 @@ class MarketWeightBreakdownTest {
             var third = 1.0 / 3.0 / DOMINANCE_WEIGHT_SCALE;
             var breakdown = new MarketWeightBreakdown(
                 "Chicomoztoc",
+                NO_ICON,
                 false,
                 10.0,
                 new BaseSizeFactor(4, 4.0, third, 0.0),
@@ -109,6 +117,7 @@ class MarketWeightBreakdownTest {
     private static MarketWeightBreakdown buildBaseSizeOnlyBreakdown(double contribution) {
         return new MarketWeightBreakdown(
             "Jangala",
+            NO_ICON,
             false,
             10.0,
             new BaseSizeFactor(4, 4.0, contribution, 0.0),

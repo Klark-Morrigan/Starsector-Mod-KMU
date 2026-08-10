@@ -3,18 +3,30 @@ package kmu.maplayers.base.tooltip;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.awt.Color;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Pins what a listed thing is composed of and what it leaves unstated: a plain line calls nothing out
- * and shows its number alone, a qualifier and a working are each layered onto one without disturbing
- * what it already carried, and a line with no name or no value is refused where the caller that composed
- * it is still on the stack rather than surfacing inside a draw with nothing to say which line was meant.
+ * Pins what a listed thing is composed of and what it leaves unstated: a plain line calls nothing out,
+ * shows its number alone and draws its mark as authored, a qualifier, a tint and a working are each
+ * layered onto one without disturbing what it already carried, and a line with no name or no value is
+ * refused where the caller that composed it is still on the stack rather than surfacing inside a draw
+ * with nothing to say which line was meant.
  */
 final class CellTooltipEntryLineTest {
 
     private static final String CREST = "graphics/hegemony_crest.png";
+
+    // The glyph the map marks a colony with, which unlike a crest is one sprite shared across a whole
+    // family and told apart by the colour authored beside it - the pair the tint exists for.
+    private static final String COLONY_ICON = "graphics/warroom/icon_planet.png";
+    private static final Color COLONY_ICON_COLOUR = new Color(120, 200, 90);
+
+    // What a mark drawn as its asset authored it states where a tint would go, which is what every
+    // line built through the factory carries until one is stated on it.
+    private static final Color NO_TINT = null;
 
     // What a line with no place in any ordering carries there - the plain case, and what every line
     // built through the factory has until one is stated on it.
@@ -37,6 +49,7 @@ final class CellTooltipEntryLineTest {
                 .isEqualTo(
                     new CellTooltipEntryLine(
                         CREST,
+                        NO_TINT,
                         "The Hegemony",
                         NO_PLACE,
                         null,
@@ -93,6 +106,54 @@ final class CellTooltipEntryLineTest {
     }
 
     @Nested
+    class TintedWith {
+
+        @Test
+        void tintedWithStatesTheColourTheMarkDrawsInLeavingTheRestOfTheLineAsItWas() {
+
+            var line = CellTooltipEntryLine
+                .createLine(COLONY_ICON, "Jangala", "4,000")
+                .tintedWith(COLONY_ICON_COLOUR);
+
+            assertThat(line)
+                .isEqualTo(
+                    new CellTooltipEntryLine(
+                        COLONY_ICON,
+                        COLONY_ICON_COLOUR,
+                        "Jangala",
+                        NO_PLACE,
+                        null,
+                        "4,000",
+                        null,
+                        IS_LISTED_IN_ITS_OWN_RIGHT,
+                        IS_VALUE_EARNED));
+        }
+
+        @Test
+        void tintedWithLeavesTheLineItWasBuiltFromDrawnAsAuthored() {
+            // A refinement returns a new value, so a caller colouring one mark of a resolved list
+            // cannot reach into the line another caller is still holding.
+            var plainLine = CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200");
+            plainLine.tintedWith(COLONY_ICON_COLOUR);
+
+            assertThat(plainLine.iconTintColour())
+                .isNull();
+        }
+
+        @Test
+        void tintedWithTakesAnAbsentColourAsDrawnAsAuthored() {
+            // A spec that authored no colour hands the absence straight over, so a caller mapping an
+            // icon that states one and one that does not writes the one line rather than branching.
+            var line = CellTooltipEntryLine
+                .createLine(COLONY_ICON, "Jangala", "4,000")
+                .tintedWith(null);
+
+            assertThat(line.iconTintColour())
+                .isNull();
+        }
+    }
+
+    @Nested
     class QualifiedWith {
 
         @Test
@@ -106,6 +167,7 @@ final class CellTooltipEntryLineTest {
                 .isEqualTo(
                     new CellTooltipEntryLine(
                         CREST,
+                        NO_TINT,
                         "The Hegemony",
                         NO_PLACE,
                         "(core)",
@@ -141,6 +203,7 @@ final class CellTooltipEntryLineTest {
                 .isEqualTo(
                     new CellTooltipEntryLine(
                         CREST,
+                        NO_TINT,
                         "The Hegemony",
                         new CellTooltipIndexPlace("[2]", CellTooltipIndexOutcome.WON),
                         null,
@@ -265,6 +328,7 @@ final class CellTooltipEntryLineTest {
                 .isEqualTo(
                     new CellTooltipEntryLine(
                         null,
+                        NO_TINT,
                         "Small: 2",
                         NO_PLACE,
                         null,

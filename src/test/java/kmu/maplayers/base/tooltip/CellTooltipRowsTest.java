@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.awt.Color;
 import java.util.List;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
@@ -46,11 +47,17 @@ import static org.assertj.core.api.Assertions.within;
  *
  * <p>A mark is pinned as a run of the label on every shape, listed lines and banner alike, since that is
  * the one rule the box has for images: a marked line and a markless one at the same level have to start
- * their words at the same inset, or a breakdown reads as two staggered columns.
+ * their words at the same inset, or a breakdown reads as two staggered columns. The tint the run draws
+ * in is pinned beside it, a glyph shared across a family of things being told apart by nothing else.
  */
 final class CellTooltipRowsTest {
 
     private static final String CREST = "graphics/ion_storm_icon.png";
+
+    // A mark of the other kind: one sprite shared across a family of things and told apart only by the
+    // colour authored beside it, which is what the tint travels for.
+    private static final String COLONY_ICON = "graphics/warroom/icon_planet.png";
+    private static final Color COLONY_ICON_COLOUR = new Color(120, 200, 90);
 
     // Where a line was found: one of the block's own, one of the things that line breaks down into, and
     // one level deeper again - which is the shape a breakdown three levels down takes. Plus the line
@@ -139,6 +146,33 @@ final class CellTooltipRowsTest {
                 .isEqualTo(RowSlot.EMPTY);
             assertThat(row.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan("42", HIGHLIGHT)));
+        }
+
+        @Test
+        void buildListedRowDrawsAMarkInTheTintItsLineStates() {
+            // Vanilla draws a whole family of things from one sprite and tells the types apart by a
+            // colour authored beside it, so a mark drawn untinted says nothing the name did not. The
+            // colour is the asset's rather than the box's, which is why the line carries it here.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(COLONY_ICON, "Jangala", "4,000")
+                    .tintedWith(COLONY_ICON_COLOUR),
+                LISTED_LEVEL);
+
+            assertThat(readLabelRun(row, MARK_RUN))
+                .isEqualTo(new ImageSpan(COLONY_ICON, COLONY_ICON_COLOUR));
+        }
+
+        @Test
+        void buildListedRowDrawsAnUntintedMarkAsItsAssetAuthoredIt() {
+            // A crest carries its colours in its own pixels, so a line stating no tint must reach the
+            // draw stating none rather than being multiplied by a shade nobody chose.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine.createLine(CREST, "The Hegemony", "1,200"),
+                LISTED_LEVEL);
+
+            assertThat(readLabelRun(row, MARK_RUN))
+                .isEqualTo(new ImageSpan(CREST));
         }
 
         @Test

@@ -272,7 +272,11 @@ about what the overlay means.
   on every shape, never in a leading column, so every line opens at the box's content edge and the
   indent alone says how deep a line sits: a column is one gutter shared down a flat stack, and a
   listing four levels deep would draw a mark several levels in inside the gutter the shallowest marked
-  line widened, well left of the name it belongs to. Its table shapes are the block's alone, so a body
+  line widened, well left of the name it belongs to. A mark carries the colour it draws in beside its
+  path (`tintedWith`), because the game authors whole families of things as one shared glyph told apart
+  by colour alone - untinted, every colony in the sector is the same white circle. The colour is the
+  asset's rather than the box's, so it travels from the read that found the sprite all the way to the
+  draw. Its table shapes are the block's alone, so a body
   cannot author a look of its own. So two layers' boxes differ only in what they say.
 - **`base/refresh`** - what says a cached overlay has gone stale, and the throttled poll that
   finds the changes the engine announces to nobody. `MapLayerSectorWatcher` owns the loop

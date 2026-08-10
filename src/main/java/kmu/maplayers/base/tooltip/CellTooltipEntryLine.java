@@ -1,5 +1,6 @@
 package kmu.maplayers.base.tooltip;
 
+import java.awt.Color;
 import java.util.Objects;
 
 /**
@@ -17,6 +18,11 @@ import java.util.Objects;
  * of things that carry none - industries, conditions, hazards - is this same shape with a null in it.
  *
  * @param iconSpritePath   the leading mark's texture path, or null for a line carrying none
+ * @param iconTintColour   the colour the mark's texture is multiplied by, or null for a mark drawn as
+ *                         its asset authored it. Carried beside the path because some marks are one
+ *                         shared glyph told apart only by a colour authored beside it, and drawn
+ *                         untinted every member of the family comes out the same shape in the same
+ *                         shade
  * @param labelText        what the line is called
  * @param indexPlace       where the line falls in the ordering it belongs to and what that place
  *                         decided, run on after its name, or null where the line has no place worth
@@ -36,6 +42,7 @@ import java.util.Objects;
  */
 public record CellTooltipEntryLine(
     String iconSpritePath,
+    Color iconTintColour,
     String labelText,
     CellTooltipIndexPlace indexPlace,
     String qualifierText,
@@ -53,6 +60,11 @@ public record CellTooltipEntryLine(
     // carrying a number it earned. Both are the plain case and what every factory below builds.
     private static final boolean IS_LISTED_IN_ITS_OWN_RIGHT = false;
     private static final boolean IS_VALUE_EARNED = false;
+
+    // What a mark drawn as its asset authored it carries where a tint would go - and what a line with
+    // no mark at all carries there, having nothing to tint. Named rather than passed as a bare null,
+    // so the factory below reads as "this mark states no colour of its own".
+    private static final Color NO_TINT = null;
 
     // What a line states nothing beside its name and its number carries in the qualifier slot. Named
     // rather than passed as a bare null, so the factory below reads as "this line calls nothing out"
@@ -77,9 +89,10 @@ public record CellTooltipEntryLine(
     }
 
     /**
-     * Builds the plainest listed thing there is: a mark, a name, and a number, calling nothing out.
-     * The qualifier is layered on with {@link #qualifiedWith} where a line has one, so a caller states
-     * what its line <em>has</em> rather than passing a placeholder for the part it does not use.
+     * Builds the plainest listed thing there is: a mark drawn as its asset authored it, a name, and a
+     * number, calling nothing out. The qualifier is layered on with {@link #qualifiedWith} where a line
+     * has one, and the tint with {@link #tintedWith} where a mark states one, so a caller states what
+     * its line <em>has</em> rather than passing a placeholder for the part it does not use.
      *
      * @param iconSpritePath the leading mark's texture path, or null for a line carrying none
      * @param labelText      what the line is called
@@ -94,6 +107,7 @@ public record CellTooltipEntryLine(
 
         return new CellTooltipEntryLine(
             iconSpritePath,
+            NO_TINT,
             labelText,
             NO_PLACE,
             NO_QUALIFIER,
@@ -115,6 +129,32 @@ public record CellTooltipEntryLine(
     }
 
     /**
+     * Returns a copy of this line whose mark is drawn multiplied by {@code iconTintColour} rather than
+     * as its asset authored it.
+     *
+     * <p>Layered on rather than passed to the factory because a tint is not something most marks have:
+     * a crest carries its colours in its own pixels, while a glyph shared across a whole family of
+     * things is told apart by a colour authored beside it and says nothing at all untinted. The colour
+     * is the asset's rather than the box's, so it reaches here from wherever the asset was read.
+     *
+     * @param iconTintColour the colour the mark's texture is multiplied by, or null to draw it as
+     *                       authored
+     * @return an otherwise-identical line whose mark draws in that colour
+     */
+    public CellTooltipEntryLine tintedWith(Color iconTintColour) {
+        return new CellTooltipEntryLine(
+            iconSpritePath,
+            iconTintColour,
+            labelText,
+            indexPlace,
+            qualifierText,
+            valueText,
+            valueWorkingText,
+            isAside,
+            isValueUncounted);
+    }
+
+    /**
      * Returns a copy of this line calling {@code qualifierText} out at its end - a status stated on the
      * line it is about rather than on a line of its own, such as why this line outranks a higher-scoring
      * one beneath it.
@@ -126,6 +166,7 @@ public record CellTooltipEntryLine(
     public CellTooltipEntryLine qualifiedWith(String qualifierText) {
         return new CellTooltipEntryLine(
             iconSpritePath,
+            iconTintColour,
             labelText,
             indexPlace,
             qualifierText,
@@ -157,6 +198,7 @@ public record CellTooltipEntryLine(
 
         return new CellTooltipEntryLine(
             iconSpritePath,
+            iconTintColour,
             labelText,
             new CellTooltipIndexPlace(indexText, indexOutcome),
             qualifierText,
@@ -181,6 +223,7 @@ public record CellTooltipEntryLine(
     public CellTooltipEntryLine readsAsAside() {
         return new CellTooltipEntryLine(
             iconSpritePath,
+            iconTintColour,
             labelText,
             indexPlace,
             qualifierText,
@@ -206,6 +249,7 @@ public record CellTooltipEntryLine(
     public CellTooltipEntryLine statesUncountedValue() {
         return new CellTooltipEntryLine(
             iconSpritePath,
+            iconTintColour,
             labelText,
             indexPlace,
             qualifierText,
@@ -232,6 +276,7 @@ public record CellTooltipEntryLine(
     public CellTooltipEntryLine derivesValueFrom(String valueWorkingText) {
         return new CellTooltipEntryLine(
             iconSpritePath,
+            iconTintColour,
             labelText,
             indexPlace,
             qualifierText,

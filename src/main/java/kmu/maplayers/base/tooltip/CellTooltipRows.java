@@ -232,6 +232,11 @@ public final class CellTooltipRows {
     //
     // A line carrying no mark opens on its words rather than on an image run with nothing to load, the
     // same absence rule the banner shape holds to.
+    //
+    // The mark draws in the tint its own line states, which for most marks is none at all. A glyph the
+    // game shares across a whole family - every colony of every type drawn from the one sprite - says
+    // nothing untinted, so the colour authored beside the path travels with it to the draw rather than
+    // being picked here.
     private static TooltipRow.TableRow openLabel(CellTooltipEntryLine line, Color labelColour) {
         var labelSpan = new TextSpan(line.labelText(), resolveLabelColour(line, labelColour));
 
@@ -239,7 +244,7 @@ public final class CellTooltipRows {
             return TooltipRow.createRow(labelSpan);
         }
         return TooltipRow
-            .createRow(new ImageSpan(line.iconSpritePath()))
+            .createRow(new ImageSpan(line.iconSpritePath(), line.iconTintColour()))
             .continuesWith(labelSpan);
     }
 

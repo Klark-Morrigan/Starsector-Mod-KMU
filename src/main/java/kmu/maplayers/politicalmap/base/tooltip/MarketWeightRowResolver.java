@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.starsector.entities.EntityMapIcon;
 import kmlib.text.KmlibNumbers;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
@@ -12,9 +13,11 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.settings.HiddenMarketScalingChoice;
 import kmu.util.KmuStrings;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Resolves the arithmetic behind a faction's dominance score into the entries a block lists it as:
@@ -29,6 +32,11 @@ import java.util.List;
  * <p>Depth is the subject matter's here rather than the entry model's, which is the point of the
  * model nesting at all: the walk that lays these out reads the tier off how deep it went, so this
  * resolver states only what breaks down into what.
+ *
+ * <p>Every colony line leads with the glyph the sector map marks that colony's entity with, weighed or
+ * not, so a reader can tie a name in the list back to something they are looking at rather than to
+ * something they have to remember. The lines beneath a colony carry no mark: a stability or a size is a
+ * term of arithmetic with nothing on the map to point at.
  *
  * <p>A colony the pass never weighed is listed all the same, at the foot of the list and at nought.
  * The player can see the station on the map in a faction's colours, so an account of the system that
@@ -61,9 +69,16 @@ public final class MarketWeightRowResolver {
     private static final Comparator<UnweighedColony> UNWEIGHED_ORDER =
         Comparator.comparing(UnweighedColony::marketName);
 
-    // A colony and its factors are named rather than crested: the faction line above already carries
-    // the crest, and repeating it down every line below would read as a second holder each time.
+    // A factor line is named rather than marked: a stability or a size is a term of arithmetic with
+    // nothing on the map to point at, so a glyph there would stand in for a number. The colony line
+    // above them leads with the map's own icon, which is a thing the player can go and find.
     private static final String NO_CREST = null;
+
+    // What a colony whose entity the game marks with no glyph leads with, and the tint an unmarked
+    // line carries. Named rather than passed as two bare nulls, so the colony line below reads as
+    // "this colony has no icon" instead of as an unexplained pair of absences.
+    private static final String NO_ICON = null;
+    private static final Color NO_TINT = null;
 
     // What a colony the pass never weighed folded in at. Nought rather than a blank column, because
     // the colony is on the list and the reader is being told what it counted for.
@@ -119,9 +134,9 @@ public final class MarketWeightRowResolver {
             DominanceRules rules) {
 
         return CellTooltipEntry
-            .createEntry(CellTooltipEntryLine.createLine(
-                NO_CREST,
+            .createEntry(createColonyLine(
                 breakdown.marketName(),
+                breakdown.marketIcon(),
                 KmlibNumbers.formatGroupedInteger(breakdown.computeTotalWeight())))
             .nesting(resolveFactorEntries(breakdown, rules));
     }
@@ -135,12 +150,34 @@ public final class MarketWeightRowResolver {
     // shade: in the list's own colour it would pass for a weight competed with and lost on, which is
     // the one thing it is not.
     private static CellTooltipEntry resolveUnweighedEntry(UnweighedColony colony) {
-        return CellTooltipEntry.createEntry(CellTooltipEntryLine
-            .createLine(
-                NO_CREST,
+        return CellTooltipEntry.createEntry(createColonyLine(
                 colony.marketName(),
+                colony.marketIcon(),
                 KmlibNumbers.formatGroupedInteger(NO_WEIGHT))
             .statesUncountedValue());
+    }
+
+    // One colony's own line: its name led by the glyph the map marks its entity with, and whatever
+    // the account counted it for.
+    //
+    // The icon is what ties a name in this list back to something the player is looking at. A name
+    // alone does that only for a reader who already remembers it, while the glyph is the one thing
+    // the box and the map can share at a glance - and it travels with the tint it was authored
+    // beside, vanilla drawing a whole family of colonies from one sprite told apart by colour alone.
+    //
+    // Read off the breakdown the colony arrived in rather than looked up here, so the icon shown is
+    // the icon of the very colony whose number sits beside it.
+    private static CellTooltipEntryLine createColonyLine(
+            String marketName,
+            Optional<EntityMapIcon> marketIcon,
+            String valueText) {
+
+        return CellTooltipEntryLine
+            .createLine(
+                marketIcon.map(EntityMapIcon::spritePath).orElse(NO_ICON),
+                marketName,
+                valueText)
+            .tintedWith(marketIcon.map(EntityMapIcon::iconColour).orElse(NO_TINT));
     }
 
     // The factors of one colony, in the order the weight read applied them - the stability that

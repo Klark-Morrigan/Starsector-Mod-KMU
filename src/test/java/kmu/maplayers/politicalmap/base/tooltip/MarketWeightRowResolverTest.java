@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.starsector.entities.EntityMapIcon;
+
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.awt.Color;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,6 +43,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the account's own statement rather than as a weight it lost on, and it sits below every colony that
  * was weighed - including one weighed at nought, which is the pair the ordering has to keep apart.
  *
+ * <p>Where a mark may appear is pinned here too, since it is a statement about which line is about a
+ * thing on the map: a colony's own line leads with the glyph the map marks it by, weighed or not, and
+ * nothing beneath it carries one.
+ *
  * <p>How a line's numbers read is stood apart from and pinned by {@link MarketFactorTextTest}; the
  * values asserted below are read only where the case is about which line carries which.
  */
@@ -52,6 +59,14 @@ final class MarketWeightRowResolverTest {
     // A faction every one of whose colonies here the economy lists, which is the ordinary system
     // and so every case bar the ones about the colonies it does not.
     private static final List<UnweighedColony> NO_UNWEIGHED_COLONIES = List.of();
+
+    // The glyph the sector map marks a colony's entity with, and a colony whose entity carries none.
+    // Vanilla draws a family of colonies from one sprite and tells the types apart by the colour, so
+    // the pair travels together and a case reading one reads both.
+    private static final Optional<EntityMapIcon> COLONY_ICON = Optional.of(
+        new EntityMapIcon("graphics/warroom/icon_planet.png", new Color(120, 200, 90)));
+        
+    private static final Optional<EntityMapIcon> NO_ICON = Optional.empty();
 
     @BeforeEach
     void installStrings() {
@@ -112,6 +127,53 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
+        void resolveMarketRowsLeadsAColonyWithTheGlyphTheMapMarksItBy() {
+            // The reader has a list of names and a map, and the glyph is the one thing the two share
+            // at a glance. Its colour comes with it because vanilla draws a whole family of colonies
+            // from one sprite and tells the types apart by nothing else.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildMarkedBreakdown(COLONY_ICON)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules());
+
+            assertThat(rows.get(0).line().iconSpritePath())
+                .isEqualTo("graphics/warroom/icon_planet.png");
+            assertThat(rows.get(0).line().iconTintColour())
+                .isEqualTo(new Color(120, 200, 90));
+        }
+
+        @Test
+        void resolveMarketRowsOpensAColonyOnItsNameWhereTheMapMarksItWithNoGlyph() {
+            // An entity carrying no authored icon hands the absence straight over, so the line is
+            // built from its words rather than from an image run with nothing to load.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildMarkedBreakdown(NO_ICON)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules());
+
+            assertThat(rows.get(0).line().hasMark())
+                .isFalse();
+        }
+
+        @Test
+        void resolveMarketRowsMarksNoLineBeneathAColony() {
+            // A stability, a size or a patrol tier is a term of arithmetic with nothing on the map to
+            // point at, so a glyph there would be standing in for a number.
+            var factors = MarketWeightRowResolver
+                .resolveMarketRows(
+                    List.of(buildMarkedBreakdown(COLONY_ICON)),
+                    NO_UNWEIGHED_COLONIES,
+                    buildRules())
+                .get(0)
+                .children();
+
+            assertThat(factors)
+                .allSatisfy(factor -> assertThat(factor.line().hasMark()).isFalse());
+            assertThat(factors.get(2).children())
+                .allSatisfy(tier -> assertThat(tier.line().hasMark()).isFalse());
+        }
+
+        @Test
         void resolveMarketRowsOpensAColonyOnTheStabilityBehindItsCuts() {
             // Stability heads the factors because it is the cause of every cut beneath it; read after
             // them it would explain deductions the reader has already passed.
@@ -148,6 +210,7 @@ final class MarketWeightRowResolverTest {
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(new MarketWeightBreakdown(
                     "Selkie Station",
+                    NO_ICON,
                     true,
                     FULL_STABILITY,
                     PLAIN_SIZE,
@@ -302,7 +365,7 @@ final class MarketWeightRowResolverTest {
             // brought to the score - it is present, and it moved nothing.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(),
-                List.of(new UnweighedColony("Galatia Academy")),
+                List.of(new UnweighedColony("Galatia Academy", NO_ICON)),
                 buildRules());
 
             assertThat(rows.get(0).line().labelText())
@@ -318,7 +381,7 @@ final class MarketWeightRowResolverTest {
             // that the box would then owe an answer to.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(),
-                List.of(new UnweighedColony("Galatia Academy")),
+                List.of(new UnweighedColony("Galatia Academy", NO_ICON)),
                 buildRules());
 
             assertThat(rows.get(0).line().qualifierText())
@@ -331,7 +394,7 @@ final class MarketWeightRowResolverTest {
             // scored; in the list's own colour it would pass for a weight competed with and lost on.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(),
-                List.of(new UnweighedColony("Galatia Academy")),
+                List.of(new UnweighedColony("Galatia Academy", NO_ICON)),
                 buildRules());
 
             assertThat(rows.get(0).line().isValueUncounted())
@@ -344,7 +407,7 @@ final class MarketWeightRowResolverTest {
             // factor lines at nought would invite adding up to a total nobody computed.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(),
-                List.of(new UnweighedColony("Galatia Academy")),
+                List.of(new UnweighedColony("Galatia Academy", NO_ICON)),
                 buildRules());
 
             assertThat(rows.get(0).children())
@@ -358,11 +421,27 @@ final class MarketWeightRowResolverTest {
             // number only one of them earned would put the unweighed above it.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildBreakdown("Culann", new BaseSizeFactor(0, 0.0, 0.0, 1.0))),
-                List.of(new UnweighedColony("Galatia Academy")),
+                List.of(new UnweighedColony("Galatia Academy", NO_ICON)),
                 buildRules());
 
             assertThat(readLabelTexts(rows))
                 .containsExactly("Culann", "Galatia Academy");
+        }
+
+        @Test
+        void resolveMarketRowsLeadsAColonyTheEconomyDoesNotListWithItsGlyphToo() {
+            // The map's glyph is the only trace of such a colony beside its name - no score above
+            // accounts for it - so the line the reader has most trouble placing is the last one that
+            // should be left without it.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(),
+                List.of(new UnweighedColony("Galatia Academy", COLONY_ICON)),
+                buildRules());
+
+            assertThat(rows.get(0).line().iconSpritePath())
+                .isEqualTo("graphics/warroom/icon_planet.png");
+            assertThat(rows.get(0).line().iconTintColour())
+                .isEqualTo(new Color(120, 200, 90));
         }
 
         @Test
@@ -372,8 +451,8 @@ final class MarketWeightRowResolverTest {
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(),
                 List.of(
-                    new UnweighedColony("Tibicena"),
-                    new UnweighedColony("Galatia Academy")),
+                    new UnweighedColony("Tibicena", NO_ICON),
+                    new UnweighedColony("Galatia Academy", NO_ICON)),
                 buildRules());
 
             assertThat(readLabelTexts(rows))
@@ -406,11 +485,30 @@ final class MarketWeightRowResolverTest {
     private static MarketWeightBreakdown buildBreakdown(String marketName, BaseSizeFactor baseSize) {
         return new MarketWeightBreakdown(
             marketName,
+            NO_ICON,
             false,
             FULL_STABILITY,
             baseSize,
             Optional.empty(),
             Optional.empty());
+    }
+
+    // A colony the map marks with the given glyph, fielding one small patrol so its account runs two
+    // levels deep - a factor line and a tier line beneath it. Both levels are what the cases about
+    // where a mark may appear have to read, the rule being that only the colony's own line takes one.
+    private static MarketWeightBreakdown buildMarkedBreakdown(Optional<EntityMapIcon> marketIcon) {
+        return new MarketWeightBreakdown(
+            "Jangala",
+            marketIcon,
+            false,
+            FULL_STABILITY,
+            PLAIN_SIZE,
+            Optional.empty(),
+            Optional.of(new PatrolFactor(
+                new PatrolTierFactor(1, 0.25, 0.25),
+                new PatrolTierFactor(0, 0.5, 0.0),
+                new PatrolTierFactor(0, 1.0, 0.0),
+                0.0)));
     }
 
     // A hidden colony under Fixed scaling: the one case where the size that entered the weight and the
@@ -420,6 +518,7 @@ final class MarketWeightRowResolverTest {
         return MarketWeightRowResolver.resolveMarketRows(
             List.of(new MarketWeightBreakdown(
                 "Selkie Station",
+                NO_ICON,
                 true,
                 FULL_STABILITY,
                 new BaseSizeFactor(7, 2.5, 2.5, 0.0),
@@ -437,6 +536,7 @@ final class MarketWeightRowResolverTest {
     private static MarketWeightBreakdown buildStationedBreakdown(String stationName) {
         return new MarketWeightBreakdown(
             "Jangala",
+            NO_ICON,
             false,
             FULL_STABILITY,
             PLAIN_SIZE,
@@ -449,6 +549,7 @@ final class MarketWeightRowResolverTest {
     private static MarketWeightBreakdown buildPatrollingBreakdown(int small, int medium, int large) {
         return new MarketWeightBreakdown(
             "Jangala",
+            NO_ICON,
             false,
             FULL_STABILITY,
             PLAIN_SIZE,

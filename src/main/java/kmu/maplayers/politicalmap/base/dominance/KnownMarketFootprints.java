@@ -5,6 +5,8 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.entities.EntityMapIcon;
+import kmlib.starsector.entities.EntityMapIcons;
 import kmlib.starsector.markets.MarketPatrols;
 import kmlib.starsector.markets.Markets;
 import kmlib.starsector.markets.PatrolCounts;
@@ -277,7 +279,9 @@ public final class KnownMarketFootprints {
         for (var market : readUnweighedColonies(sector, system, shouldIncludeUndiscoveredMarkets)) {
             coloniesByFactionId
                 .computeIfAbsent(market.getFaction().getId(), factionId -> new ArrayList<>())
-                .add(new UnweighedColony(market.getName()));
+                .add(new UnweighedColony(
+                    market.getName(),
+                    EntityMapIcons.resolveMapIcon(market.getPrimaryEntity())));
         }
         return coloniesByFactionId;
     }
@@ -379,14 +383,16 @@ public final class KnownMarketFootprints {
             new StabilityScaling(rules, Markets.getStabilityFraction(market)));
     }
 
-    // Everything the weight rules read off one market, gathered before any of them applies:
-    // its identity and size, plus the station and patrol tiers their factors admitted.
+    // Everything one market contributes to its own breakdown, gathered before any rule applies:
+    // how it is identified - its name and the glyph the map marks it with - its size, and the
+    // station and patrol tiers the two optional factors admitted.
     // Gathered once because the market's worth is worked out twice - at full worth, then
-    // under its own stability - and the connected-entity scan and the dynamic-stat lookup
-    // behind the two optional factors must not be paid for twice.
+    // under its own stability - and the connected-entity scan, the dynamic-stat lookup and the
+    // icon-spec read behind it must not be paid for twice.
     private static WeighedMarket readWeighedMarket(MarketAPI market, DominanceRules rules) {
         return new WeighedMarket(
             market.getName(),
+            EntityMapIcons.resolveMapIcon(market.getPrimaryEntity()),
             market.isHidden(),
             market.getSize(),
             market.getStabilityValue(),
@@ -404,6 +410,7 @@ public final class KnownMarketFootprints {
 
         return new MarketWeightBreakdown(
             market.name(),
+            market.icon(),
             market.isHidden(),
             market.stability(),
             buildBaseSizeFactor(market, rules.baseSize(), stabilityScaling),
@@ -560,15 +567,18 @@ public final class KnownMarketFootprints {
     }
 
     /**
-     * One market as the weight rules see it: its identity and size, plus the subjects of the
-     * two optional factors - the station and the patrol tiers - each absent when its factor
-     * did not run for this market.
+     * One market as the breakdown of its weight sees it: how it is identified, its size, plus the
+     * subjects of the two optional factors - the station and the patrol tiers - each absent when
+     * its factor did not run for this market.
      *
      * <p>Read from the economy once and weighed as often as needed, so the connected-entity
-     * scan and the dynamic-stat lookup behind the two optional factors are paid for once
-     * however many times the market's worth is worked out.
+     * scan, the dynamic-stat lookup and the icon-spec read are paid for once however many times
+     * the market's worth is worked out.
      *
      * @param name      the colony's display name
+     * @param icon      the glyph the sector map marks the colony's own entity with, or empty where
+     *                  it carries none. Read here with the rest of the market, so the icon the
+     *                  breakdown carries is the one belonging to the market that was weighed
      * @param isHidden  whether the colony is concealed rather than held in the open
      * @param size      the colony's own size, as the economy reports it
      * @param stability the colony's stability on its own 0..10 band - the reading behind
@@ -579,6 +589,7 @@ public final class KnownMarketFootprints {
      */
     private record WeighedMarket(
         String name,
+        Optional<EntityMapIcon> icon,
         boolean isHidden,
         int size,
         double stability,
