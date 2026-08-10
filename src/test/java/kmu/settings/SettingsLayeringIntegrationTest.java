@@ -1,8 +1,12 @@
 package kmu.settings;
 
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.support.ParameterDeclarations;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -36,7 +40,7 @@ final class SettingsLayeringIntegrationTest {
     class MapLayerFrameworkSources {
 
         @ParameterizedTest(name = "{0}")
-        @MethodSource("kmu.settings.SettingsLayeringIntegrationTest#provideFeatureSettingsClasses")
+        @ArgumentsSource(FeatureSettingsClassesProvider.class)
         void mapLayerFrameworkSourcesNameNoFeatureSettingsClass(String featureSettingsClass) {
             assertThat(findFrameworkSourcesNaming(featureSettingsClass))
                 .as(
@@ -49,11 +53,31 @@ final class SettingsLayeringIntegrationTest {
         }
     }
 
-    // The settings classes that belong to one feature apiece. KmuLunaSettings is absent on purpose:
-    // the framework reads the settings revision off it, which is mod-wide wiring rather than a
-    // feature's knob.
-    private static Stream<String> provideFeatureSettingsClasses() {
-        return Stream.of("KmuPoliticalMapSettings", "KmuMarketConditionSettings");
+    /**
+     * The settings classes that belong to one feature apiece. {@link KmuLunaSettings} is absent on
+     * purpose: the framework reads the settings revision off it, which is mod-wide wiring rather
+     * than a feature's knob.
+     *
+     * <p>Named through the classes themselves rather than as text, so a rename that misses this list
+     * breaks it at compile time. A literal would still read as a class name after the rename and
+     * match no source at all, leaving the walk green while guarding nothing - which is the drift
+     * this file exists to catch.
+     *
+     * <p>A class rather than a factory method for the same reason: a method is reached by a
+     * fully-qualified string that no rename follows either.
+     */
+    static final class FeatureSettingsClassesProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(
+                ParameterDeclarations parameters,
+                ExtensionContext context) {
+
+            return Stream
+                .of(KmuPoliticalMapSettings.class, KmuMarketConditionSettings.class)
+                .map(Class::getSimpleName)
+                .map(Arguments::of);
+        }
     }
 
     private static List<Path> findFrameworkSourcesNaming(String settingsClass) {
