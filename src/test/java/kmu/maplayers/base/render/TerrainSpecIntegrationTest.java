@@ -44,7 +44,7 @@ final class TerrainSpecIntegrationTest {
     class PluginRows {
 
         @ParameterizedTest(name = "{0}")
-        @MethodSource("kmu.maplayers.base.render.TerrainSpecIntegrationTest#providePluginClassNames")
+        @MethodSource("kmu.maplayers.base.render.TerrainSpecIntegrationTest#readPluginClassNames")
         void everyPluginRowNamesALoadableCampaignTerrainPlugin(String pluginClassName) {
             // The engine instantiates whatever the row names and casts it to this interface, so a
             // row naming a real class of the wrong type fails just as hard as one naming nothing.
@@ -88,10 +88,6 @@ final class TerrainSpecIntegrationTest {
                     "kmu_sector_map_layer_starscape_terrain",
                     "kmu_sector_map_layer_above_starscape_nebulae_terrain");
         }
-    }
-
-    private static List<String> providePluginClassNames() {
-        return readPluginClassNames();
     }
 
     private static List<String> readRowIds() {

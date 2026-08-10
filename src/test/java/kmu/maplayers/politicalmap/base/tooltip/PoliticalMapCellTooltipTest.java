@@ -15,9 +15,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.support.ParameterDeclarations;
 
 import java.util.List;
 import java.util.function.Function;
@@ -94,8 +97,7 @@ final class PoliticalMapCellTooltipTest {
     class BuildTitleRows {
 
         @ParameterizedTest(name = "{0}")
-        @MethodSource("kmu.maplayers.politicalmap.base.tooltip.PoliticalMapCellTooltipTest"
-            + "#provideEveryPoliticalMapBox")
+        @ArgumentsSource(EveryPoliticalMapBoxProvider.class)
         void buildTitleRowsHeadsTheBoxWithTheFactionHoldingTheSystemByDecree(
                 String viewName,
                 Function<ClaimBreakdownReader, PoliticalMapCellTooltip> buildBox) {
@@ -119,8 +121,7 @@ final class PoliticalMapCellTooltipTest {
         }
 
         @ParameterizedTest(name = "{0}")
-        @MethodSource("kmu.maplayers.politicalmap.base.tooltip.PoliticalMapCellTooltipTest"
-            + "#provideEveryPoliticalMapBox")
+        @ArgumentsSource(EveryPoliticalMapBoxProvider.class)
         void buildTitleRowsHeadsTheBoxWithTheSystemNameAloneForASystemUnderNoDecree(
                 String viewName,
                 Function<ClaimBreakdownReader, PoliticalMapCellTooltip> buildBox) {
@@ -133,8 +134,7 @@ final class PoliticalMapCellTooltipTest {
         }
 
         @ParameterizedTest(name = "{0}")
-        @MethodSource("kmu.maplayers.politicalmap.base.tooltip.PoliticalMapCellTooltipTest"
-            + "#provideEveryPoliticalMapBox")
+        @ArgumentsSource(EveryPoliticalMapBoxProvider.class)
         void buildTitleRowsAsksOnlyForTheDecreeRatherThanScoringEveryMarket(
                 String viewName,
                 Function<ClaimBreakdownReader, PoliticalMapCellTooltip> buildBox) {
@@ -155,17 +155,30 @@ final class PoliticalMapCellTooltipTest {
         }
     }
 
-    // Every box this layer draws, named for the views that inject it. Taken as a factory rather than as
-    // the shared instance because a case has to drive the box on a reader of its own, while each
-    // instance is bound to the live vanilla one.
-    private static Stream<Arguments> provideEveryPoliticalMapBox() {
-        return Stream.of(
-            describeBox("the faction and alliance views' box", SystemDominationTooltip::new),
-            describeBox(
-                "the faction and alliance views' expanded counterpart",
-                ExpandedSystemDominationTooltip::new),
-            describeBox("the claims view's box", SystemClaimTooltip::new),
-            describeBox("the claims view's expanded counterpart", ExpandedSystemClaimTooltip::new));
+    /**
+     * Every box this layer draws, named for the views that inject it. Taken as a factory rather than
+     * as the shared instance because a case has to drive the box on a reader of its own, while each
+     * instance is bound to the live vanilla one.
+     *
+     * <p>A class rather than a factory method so the cases above name it by class literal: a method
+     * is reached by a fully-qualified string that no rename ever follows, which leaves the suite
+     * compiling and failing at run time instead.
+     */
+    static final class EveryPoliticalMapBoxProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(
+                ParameterDeclarations parameters,
+                ExtensionContext context) {
+
+            return Stream.of(
+                describeBox("the faction and alliance views' box", SystemDominationTooltip::new),
+                describeBox(
+                    "the faction and alliance views' expanded counterpart",
+                    ExpandedSystemDominationTooltip::new),
+                describeBox("the claims view's box", SystemClaimTooltip::new),
+                describeBox("the claims view's expanded counterpart", ExpandedSystemClaimTooltip::new));
+        }
     }
 
     // Names one box for the cases above. A method rather than an inline pair so the factory infers its
