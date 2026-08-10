@@ -73,12 +73,11 @@ public final class MarketWeightRowResolver {
     // A factor line is named rather than marked: a stability or a size is a term of arithmetic with
     // nothing on the map to point at, so a glyph there would stand in for a number. The colony line
     // above them leads with the map's own icon, which is a thing the player can go and find.
-    private static final String NO_CREST = null;
-
-    // What a colony whose entity the game marks with no glyph leads with. Named rather than passed as
-    // a bare null, so the colony line below reads as "this colony has no icon" instead of as an
-    // unexplained absence.
-    private static final String NO_ICON = null;
+    //
+    // The same absence answers for a colony whose entity the game marks with no glyph. One name for
+    // it rather than two, because the line cannot tell the cases apart and neither should a reader
+    // here: both are "this line opens on its words".
+    private static final String NO_MARK = null;
 
     // What a colony the pass never weighed folded in at. Nought rather than a blank column, because
     // the colony is on the list and the reader is being told what it counted for.
@@ -178,7 +177,7 @@ public final class MarketWeightRowResolver {
 
         return CellTooltipEntryLine
             .createLine(
-                marketIcon.map(EntityMapIcon::spritePath).orElse(NO_ICON),
+                marketIcon.map(EntityMapIcon::spritePath).orElse(NO_MARK),
                 marketName,
                 valueText)
             .readsMarkInLineColour();
@@ -253,7 +252,7 @@ public final class MarketWeightRowResolver {
     private static CellTooltipEntry resolvePatrolEntry(PatrolFactor patrols) {
         return CellTooltipEntry
             .createEntry(CellTooltipEntryLine.createLine(
-                NO_CREST,
+                NO_MARK,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS),
                 MarketFactorText.formatPatrols(patrols)))
             .nesting(resolveTierEntries(patrols));
@@ -307,6 +306,6 @@ public final class MarketWeightRowResolver {
     // by the lines that go on to state something more - a hidden colony's size, a tier's rate - so
     // that stating more is one refinement rather than a second spelling of the line itself.
     private static CellTooltipEntryLine createFactorLine(String labelText, String valueText) {
-        return CellTooltipEntryLine.createLine(NO_CREST, labelText, valueText);
+        return CellTooltipEntryLine.createLine(NO_MARK, labelText, valueText);
     }
 }

@@ -62,8 +62,8 @@ final class MarketWeightRowResolverTest {
     private static final List<UnweighedColony> NO_UNWEIGHED_COLONIES = List.of();
 
     // The glyph the sector map marks a colony's entity with, and a colony whose entity carries none.
-    // The authored colour is deliberately loud: the box declines it, so a case reading the resolved
-    // line has to find no trace of it there.
+    // The authored colour is carried because the read hands one over, not because anything below
+    // reads it: a resolved line has nowhere to put an asset colour, which is the correction itself.
     private static final Optional<EntityMapIcon> COLONY_ICON = Optional.of(
         new EntityMapIcon("graphics/warroom/icon_planet.png", new Color(120, 200, 90)));
 
