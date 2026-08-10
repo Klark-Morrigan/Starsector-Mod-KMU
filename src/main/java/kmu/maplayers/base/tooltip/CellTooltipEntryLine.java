@@ -1,6 +1,5 @@
 package kmu.maplayers.base.tooltip;
 
-import java.awt.Color;
 import java.util.Objects;
 
 /**
@@ -18,11 +17,11 @@ import java.util.Objects;
  * of things that carry none - industries, conditions, hazards - is this same shape with a null in it.
  *
  * @param iconSpritePath   the leading mark's texture path, or null for a line carrying none
- * @param iconTintColour   the colour the mark's texture is multiplied by, or null for a mark drawn as
- *                         its asset authored it. Carried beside the path because some marks are one
- *                         shared glyph told apart only by a colour authored beside it, and drawn
- *                         untinted every member of the family comes out the same shape in the same
- *                         shade
+ * @param isMarkInLineColour whether the mark is drawn in the line's own colour rather than in the
+ *                         colours its asset authored. A mark drawn for its own sake - a crest - keeps
+ *                         its pixels; a mark that is only a shorthand for the name beside it reads as
+ *                         part of that name, and an asset coloured for another surface would otherwise
+ *                         shout across a box that never asked it to
  * @param labelText        what the line is called
  * @param indexPlace       where the line falls in the ordering it belongs to and what that place
  *                         decided, run on after its name, or null where the line has no place worth
@@ -42,7 +41,7 @@ import java.util.Objects;
  */
 public record CellTooltipEntryLine(
     String iconSpritePath,
-    Color iconTintColour,
+    boolean isMarkInLineColour,
     String labelText,
     CellTooltipIndexPlace indexPlace,
     String qualifierText,
@@ -61,10 +60,10 @@ public record CellTooltipEntryLine(
     private static final boolean IS_LISTED_IN_ITS_OWN_RIGHT = false;
     private static final boolean IS_VALUE_EARNED = false;
 
-    // What a mark drawn as its asset authored it carries where a tint would go - and what a line with
-    // no mark at all carries there, having nothing to tint. Named rather than passed as a bare null,
-    // so the factory below reads as "this mark states no colour of its own".
-    private static final Color NO_TINT = null;
+    // How a mark reads until a line says otherwise: in the colours its own asset authored. The plain
+    // case because a crest is the mark most lines carry, and a crest is a picture of a thing rather
+    // than a shorthand for the words beside it.
+    private static final boolean IS_MARK_AS_AUTHORED = false;
 
     // What a line states nothing beside its name and its number carries in the qualifier slot. Named
     // rather than passed as a bare null, so the factory below reads as "this line calls nothing out"
@@ -91,8 +90,9 @@ public record CellTooltipEntryLine(
     /**
      * Builds the plainest listed thing there is: a mark drawn as its asset authored it, a name, and a
      * number, calling nothing out. The qualifier is layered on with {@link #qualifiedWith} where a line
-     * has one, and the tint with {@link #tintedWith} where a mark states one, so a caller states what
-     * its line <em>has</em> rather than passing a placeholder for the part it does not use.
+     * has one, and {@link #readsMarkInLineColour} where a mark is a shorthand for the name rather than
+     * a picture in its own right, so a caller states what its line <em>has</em> rather than passing a
+     * placeholder for the part it does not use.
      *
      * @param iconSpritePath the leading mark's texture path, or null for a line carrying none
      * @param labelText      what the line is called
@@ -107,7 +107,7 @@ public record CellTooltipEntryLine(
 
         return new CellTooltipEntryLine(
             iconSpritePath,
-            NO_TINT,
+            IS_MARK_AS_AUTHORED,
             labelText,
             NO_PLACE,
             NO_QUALIFIER,
@@ -129,22 +129,27 @@ public record CellTooltipEntryLine(
     }
 
     /**
-     * Returns a copy of this line whose mark is drawn multiplied by {@code iconTintColour} rather than
-     * as its asset authored it.
+     * Returns a copy of this line whose mark is drawn in the line's own colour rather than in the
+     * colours its asset authored - for a mark that is a shorthand for the name beside it rather than a
+     * picture of something in its own right.
      *
-     * <p>Layered on rather than passed to the factory because a tint is not something most marks have:
-     * a crest carries its colours in its own pixels, while a glyph shared across a whole family of
-     * things is told apart by a colour authored beside it and says nothing at all untinted. The colour
-     * is the asset's rather than the box's, so it reaches here from wherever the asset was read.
+     * <p>Which of the two a mark is cannot be read off the asset, so the line says it. A glyph authored
+     * for another surface was coloured to read there, and dropped into a box unchanged it competes with
+     * the words it prefixes and with every finding around it - the reader's eye goes to the brightest
+     * thing on the line, which is then the part carrying the least information. Drawn in the line's own
+     * colour it identifies without insisting, which is the whole of what such a mark is for.
      *
-     * @param iconTintColour the colour the mark's texture is multiplied by, or null to draw it as
-     *                       authored
-     * @return an otherwise-identical line whose mark draws in that colour
+     * <p>The line's colour rather than a colour passed in, because what a line speaks in is the block's
+     * to decide ({@link CellTooltipRows}) and differs by the tier the line lands at. A caller naming a
+     * colour here would be authoring a look the box had already settled, and would have to be corrected
+     * every time the box restyled a tier.
+     *
+     * @return an otherwise-identical line whose mark reads in the line's own colour
      */
-    public CellTooltipEntryLine tintedWith(Color iconTintColour) {
+    public CellTooltipEntryLine readsMarkInLineColour() {
         return new CellTooltipEntryLine(
             iconSpritePath,
-            iconTintColour,
+            true,
             labelText,
             indexPlace,
             qualifierText,
@@ -166,7 +171,7 @@ public record CellTooltipEntryLine(
     public CellTooltipEntryLine qualifiedWith(String qualifierText) {
         return new CellTooltipEntryLine(
             iconSpritePath,
-            iconTintColour,
+            isMarkInLineColour,
             labelText,
             indexPlace,
             qualifierText,
@@ -198,7 +203,7 @@ public record CellTooltipEntryLine(
 
         return new CellTooltipEntryLine(
             iconSpritePath,
-            iconTintColour,
+            isMarkInLineColour,
             labelText,
             new CellTooltipIndexPlace(indexText, indexOutcome),
             qualifierText,
@@ -223,7 +228,7 @@ public record CellTooltipEntryLine(
     public CellTooltipEntryLine readsAsAside() {
         return new CellTooltipEntryLine(
             iconSpritePath,
-            iconTintColour,
+            isMarkInLineColour,
             labelText,
             indexPlace,
             qualifierText,
@@ -249,7 +254,7 @@ public record CellTooltipEntryLine(
     public CellTooltipEntryLine statesUncountedValue() {
         return new CellTooltipEntryLine(
             iconSpritePath,
-            iconTintColour,
+            isMarkInLineColour,
             labelText,
             indexPlace,
             qualifierText,
@@ -276,7 +281,7 @@ public record CellTooltipEntryLine(
     public CellTooltipEntryLine derivesValueFrom(String valueWorkingText) {
         return new CellTooltipEntryLine(
             iconSpritePath,
-            iconTintColour,
+            isMarkInLineColour,
             labelText,
             indexPlace,
             qualifierText,

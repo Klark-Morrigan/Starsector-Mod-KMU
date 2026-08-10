@@ -45,7 +45,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Where a mark may appear is pinned here too, since it is a statement about which line is about a
  * thing on the map: a colony's own line leads with the glyph the map marks it by, weighed or not, and
- * nothing beneath it carries one.
+ * nothing beneath it carries one. That the glyph reads in the colony name's own colour rather than the
+ * map's is pinned beside it - the box declining an authored shade is a decision, not an omission.
  *
  * <p>How a line's numbers read is stood apart from and pinned by {@link MarketFactorTextTest}; the
  * values asserted below are read only where the case is about which line carries which.
@@ -61,11 +62,11 @@ final class MarketWeightRowResolverTest {
     private static final List<UnweighedColony> NO_UNWEIGHED_COLONIES = List.of();
 
     // The glyph the sector map marks a colony's entity with, and a colony whose entity carries none.
-    // Vanilla draws a family of colonies from one sprite and tells the types apart by the colour, so
-    // the pair travels together and a case reading one reads both.
+    // The authored colour is deliberately loud: the box declines it, so a case reading the resolved
+    // line has to find no trace of it there.
     private static final Optional<EntityMapIcon> COLONY_ICON = Optional.of(
         new EntityMapIcon("graphics/warroom/icon_planet.png", new Color(120, 200, 90)));
-        
+
     private static final Optional<EntityMapIcon> NO_ICON = Optional.empty();
 
     @BeforeEach
@@ -129,8 +130,7 @@ final class MarketWeightRowResolverTest {
         @Test
         void resolveMarketRowsLeadsAColonyWithTheGlyphTheMapMarksItBy() {
             // The reader has a list of names and a map, and the glyph is the one thing the two share
-            // at a glance. Its colour comes with it because vanilla draws a whole family of colonies
-            // from one sprite and tells the types apart by nothing else.
+            // at a glance.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildMarkedBreakdown(COLONY_ICON)),
                 NO_UNWEIGHED_COLONIES,
@@ -138,8 +138,20 @@ final class MarketWeightRowResolverTest {
 
             assertThat(rows.get(0).line().iconSpritePath())
                 .isEqualTo("graphics/warroom/icon_planet.png");
-            assertThat(rows.get(0).line().iconTintColour())
-                .isEqualTo(new Color(120, 200, 90));
+        }
+
+        @Test
+        void resolveMarketRowsDrawsAColonysGlyphInTheColonyNamesOwnColour() {
+            // The map's shades are authored to tell one world from another against black, and carried
+            // into the box unchanged they arrive brighter than the numbers the account is about - a
+            // column of coloured glyphs reads as the finding when what it is is a bullet point.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildMarkedBreakdown(COLONY_ICON)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules());
+
+            assertThat(rows.get(0).line().isMarkInLineColour())
+                .isTrue();
         }
 
         @Test
@@ -432,7 +444,9 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsLeadsAColonyTheEconomyDoesNotListWithItsGlyphToo() {
             // The map's glyph is the only trace of such a colony beside its name - no score above
             // accounts for it - so the line the reader has most trouble placing is the last one that
-            // should be left without it.
+            // should be left without it. It reads in the line's colour like every other colony's, a
+            // glyph at the foot of the list in the map's own shade being the loudest thing in a box
+            // about the colony that counted for nothing.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(),
                 List.of(new UnweighedColony("Galatia Academy", COLONY_ICON)),
@@ -440,8 +454,8 @@ final class MarketWeightRowResolverTest {
 
             assertThat(rows.get(0).line().iconSpritePath())
                 .isEqualTo("graphics/warroom/icon_planet.png");
-            assertThat(rows.get(0).line().iconTintColour())
-                .isEqualTo(new Color(120, 200, 90));
+            assertThat(rows.get(0).line().isMarkInLineColour())
+                .isTrue();
         }
 
         @Test

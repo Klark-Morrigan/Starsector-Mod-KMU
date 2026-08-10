@@ -13,7 +13,6 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.settings.HiddenMarketScalingChoice;
 import kmu.util.KmuStrings;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -35,8 +34,10 @@ import java.util.Optional;
  *
  * <p>Every colony line leads with the glyph the sector map marks that colony's entity with, weighed or
  * not, so a reader can tie a name in the list back to something they are looking at rather than to
- * something they have to remember. The lines beneath a colony carry no mark: a stability or a size is a
- * term of arithmetic with nothing on the map to point at.
+ * something they have to remember. It is drawn in the colony name's own colour rather than the map's,
+ * so it identifies the line without competing with the numbers the box exists to state. The lines
+ * beneath a colony carry no mark at all: a stability or a size is a term of arithmetic with nothing on
+ * the map to point at.
  *
  * <p>A colony the pass never weighed is listed all the same, at the foot of the list and at nought.
  * The player can see the station on the map in a faction's colours, so an account of the system that
@@ -74,11 +75,10 @@ public final class MarketWeightRowResolver {
     // above them leads with the map's own icon, which is a thing the player can go and find.
     private static final String NO_CREST = null;
 
-    // What a colony whose entity the game marks with no glyph leads with, and the tint an unmarked
-    // line carries. Named rather than passed as two bare nulls, so the colony line below reads as
-    // "this colony has no icon" instead of as an unexplained pair of absences.
+    // What a colony whose entity the game marks with no glyph leads with. Named rather than passed as
+    // a bare null, so the colony line below reads as "this colony has no icon" instead of as an
+    // unexplained absence.
     private static final String NO_ICON = null;
-    private static final Color NO_TINT = null;
 
     // What a colony the pass never weighed folded in at. Nought rather than a blank column, because
     // the colony is on the list and the reader is being told what it counted for.
@@ -162,11 +162,15 @@ public final class MarketWeightRowResolver {
     //
     // The icon is what ties a name in this list back to something the player is looking at. A name
     // alone does that only for a reader who already remembers it, while the glyph is the one thing
-    // the box and the map can share at a glance - and it travels with the tint it was authored
-    // beside, vanilla drawing a whole family of colonies from one sprite told apart by colour alone.
+    // the box and the map can share at a glance.
     //
-    // Read off the breakdown the colony arrived in rather than looked up here, so the icon shown is
-    // the icon of the very colony whose number sits beside it.
+    // It is drawn in the colony name's own colour rather than in the shade the map paints it. Those
+    // shades are authored to tell one world from another across a black sector map, and carried into
+    // a text box unchanged they arrive brighter than every number the account is actually about - a
+    // row of coloured glyphs down the list reads as the finding, when what it is is a bullet point.
+    //
+    // Read off the breakdown the colony arrived in rather than looked up here, so the glyph shown is
+    // the glyph of the very colony whose number sits beside it.
     private static CellTooltipEntryLine createColonyLine(
             String marketName,
             Optional<EntityMapIcon> marketIcon,
@@ -177,7 +181,7 @@ public final class MarketWeightRowResolver {
                 marketIcon.map(EntityMapIcon::spritePath).orElse(NO_ICON),
                 marketName,
                 valueText)
-            .tintedWith(marketIcon.map(EntityMapIcon::iconColour).orElse(NO_TINT));
+            .readsMarkInLineColour();
     }
 
     // The factors of one colony, in the order the weight read applied them - the stability that

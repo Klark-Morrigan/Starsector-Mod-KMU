@@ -29,6 +29,11 @@ import java.util.List;
  * to. Set as a run it lands where the indent already put the line - which is what a banner has always
  * done, so the box has one rule for images rather than two.
  *
+ * <p>What colour a mark draws in follows from what it is for, which its line states. A mark standing in
+ * for the name beside it takes that name's own colour, so the pair reads as one thing and the eye is
+ * not pulled to the run carrying the least of the meaning; a mark that is a picture in its own right -
+ * a crest - keeps the colours its asset authored.
+ *
  * <p>Held apart from {@link SystemCellTooltip} because the two answer different questions - that class
  * decides how the box is framed, these decide how one line inside it reads - and because a body is
  * rarely built in one place: a resolver that contributes a single line reaches the same vocabulary as
@@ -233,19 +238,34 @@ public final class CellTooltipRows {
     // A line carrying no mark opens on its words rather than on an image run with nothing to load, the
     // same absence rule the banner shape holds to.
     //
-    // The mark draws in the tint its own line states, which for most marks is none at all. A glyph the
-    // game shares across a whole family - every colony of every type drawn from the one sprite - says
-    // nothing untinted, so the colour authored beside the path travels with it to the draw rather than
-    // being picked here.
+    // A mark that is a shorthand for the name beside it is drawn in that name's own colour, so the two
+    // read as one thing. Left in the colours its asset authored it would be the loudest run on a line
+    // whose meaning is in the words - an icon coloured to carry across the sector map arrives here far
+    // brighter than the plain text of the account it is sitting in. A crest says otherwise and keeps
+    // its own pixels, being a picture of a thing rather than a shorthand for it.
     private static TooltipRow.TableRow openLabel(CellTooltipEntryLine line, Color labelColour) {
-        var labelSpan = new TextSpan(line.labelText(), resolveLabelColour(line, labelColour));
+        var lineColour = resolveLabelColour(line, labelColour);
+        var labelSpan = new TextSpan(line.labelText(), lineColour);
 
         if (!line.hasMark()) {
             return TooltipRow.createRow(labelSpan);
         }
         return TooltipRow
-            .createRow(new ImageSpan(line.iconSpritePath(), line.iconTintColour()))
+            .createRow(resolveMarkSpan(line, lineColour))
             .continuesWith(labelSpan);
+    }
+
+    // The run a line's mark is drawn as: tinted to the line's own colour where the mark stands in for
+    // the name, and untinted - drawn as its asset authored it - where it does not.
+    //
+    // Decided from the line rather than from the sprite, because nothing about a texture says which of
+    // the two it is: the same crest artwork could be either, and only whatever composed the line knows
+    // whether the mark is the subject or a label for it.
+    private static ImageSpan resolveMarkSpan(CellTooltipEntryLine line, Color lineColour) {
+        if (!line.isMarkInLineColour()) {
+            return new ImageSpan(line.iconSpritePath());
+        }
+        return new ImageSpan(line.iconSpritePath(), lineColour);
     }
 
     // Fills a line's value column: its number in the line's own colour, opened where the line states

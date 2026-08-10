@@ -185,8 +185,11 @@ who already remembers it. The icon is recorded on the walk that counted the colo
 (`MarketWeightBreakdown.marketIcon`, read through KMLib's `EntityMapIcons`) rather than looked up
 again where the line is drawn, the same rule every other part of the account is read under: the box
 reads what the pass recorded, so there is no second market lookup free to answer for a different one.
-The lines beneath a colony stay unmarked - a stability or a size is a term of arithmetic with nothing
-on the map to point at.
+It draws in the colony name's own colour and not the shade the map paints it: those shades are
+authored to tell one world from another against black, and carried into a text box unchanged they
+arrive brighter than the numbers the account is about, so a column of them reads as the finding when
+what it is is a bullet point. The lines beneath a colony stay unmarked altogether - a stability or a
+size is a term of arithmetic with nothing on the map to point at.
 That box lists one kind of colony no score above it accounts for: one the economy does not list,
 which the weight read has nothing to weigh. It comes from a second walk over the same colony filter
 (`KnownMarketFootprints.readUnweighedColoniesByFaction`), carried as its own `UnweighedColony` rather
