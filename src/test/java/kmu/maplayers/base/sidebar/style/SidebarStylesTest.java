@@ -4,6 +4,7 @@ import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.sound.StarsectorUiSound;
 import kmlib.starsector.ui.sound.UiSoundScheme;
+import kmlib.starsector.ui.widgets.tabs.style.TabBox;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 
 import kmu.settings.SidebarColourSchemeChoice;
@@ -209,6 +210,15 @@ final class SidebarStylesTest {
         }
 
         @Test
+        void buildStripTabStyleStandsItsTabsInTheSectorMapsOwnBox() {
+            // The engine's own map tabs (com.fs.starfarer.coreui.A.G): a 130 x 18 box parted from its
+            // neighbour by a pixel. Literal values rather than a reference to the constants that produced
+            // them, so a box re-dimensioned in passing fails here instead of agreeing with itself.
+            assertThat(SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT).tabBox())
+                .isEqualTo(new TabBox(130f, 18f, 1f));
+        }
+
+        @Test
         void buildStripTabStyleLeavesItsSmoothFaceUnringed() {
             // The halo travels with the face, so the row that kept orbitron keeps the bare text that goes
             // with it: a smooth face has weight enough at size and reads muddier for a ring around it.
@@ -224,6 +234,15 @@ final class SidebarStylesTest {
         void buildRaisedButtonTabStyleStandsTheBandAtTheHeightItsHostAsksFor() {
             assertThat(SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).headerBandHeight())
                 .isEqualTo(HEADER_BAND_HEIGHT);
+        }
+
+        @Test
+        void buildRaisedButtonTabStyleLeavesItsTabsSnappedToTheirLabels() {
+            // The paired claim to the strip's fixed box: this chrome lays its buttons inside the tabs the
+            // layout measured and takes its own channel from within them, so a fixed box reaching it would
+            // resize a row that already had its geometry settled.
+            assertThat(SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).tabBox())
+                .isEqualTo(TabBox.SNAPPED);
         }
 
         @Test

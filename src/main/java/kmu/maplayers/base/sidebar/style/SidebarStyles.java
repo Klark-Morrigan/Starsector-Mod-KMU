@@ -10,6 +10,7 @@ import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.widgets.tabs.style.HotkeyStyle;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabPalette;
+import kmlib.starsector.ui.widgets.tabs.style.TabBox;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmlib.starsector.ui.widgets.tabs.style.TextHalo;
 
@@ -54,6 +55,15 @@ public final class SidebarStyles {
     // The body face: the insignia body font, the narrower face the body-control labels read in. The tab
     // face is separate below, since the tabs are both measured and drawn in theirs.
     private static final StarsectorFont BODY_FONT = StarsectorFont.VANILLA_INSIGNIA_15;
+
+    // The strip's tab box, taken from the sector map's own Sector/System row (com.fs.starfarer.coreui.A.G):
+    // each tab a 130 x 18 box, the pair parted by a single pixel, standing in a band that reserves one
+    // more pixel than the tab is tall for the line the row sits on. A fixed box rather than a snapped one
+    // is the point of the numbers: the row that vanilla draws spans the same width whatever its tabs say,
+    // which is what lets this row read as another of that set rather than as one sized by its own labels.
+    private static final float STRIP_TAB_WIDTH = 130f;
+    private static final float STRIP_TAB_HEIGHT = 18f;
+    private static final float STRIP_TAB_GAP = 1f;
 
     // The strip reads in the condensed orbitron vanilla letters its own Sector/System map tabs in, at the
     // size that atlas draws at. A condensed face is narrower per glyph than the title orbitron at the same
@@ -218,16 +228,28 @@ public final class SidebarStyles {
         };
     }
 
+    // The box a chrome stands its tabs in, following the chrome for the same reason its palette and face
+    // do. A strip copies the sector map's Sector/System row, whose tabs are a fixed box the label centres
+    // in rather than one grown to fit it; a raised row copies the intel screen's buttons, which are laid
+    // to the row the layout measured and take their channel from inside their own tab.
+    private static TabBox resolveTabBox(TabChrome chrome) {
+        return switch (chrome) {
+            case STRIP -> new TabBox(STRIP_TAB_WIDTH, STRIP_TAB_HEIGHT, STRIP_TAB_GAP);
+            case RAISED_BUTTON -> TabBox.SNAPPED;
+        };
+    }
+
     // A tab style over the shared paint: the chrome's own palette - its per-state fills and its
-    // interaction lifts - resolved live so it tracks a restyled install, plus the face, the ring around
-    // it, and the hotkey convention that chrome carries. All four follow from the chrome rather than
-    // travelling beside it, since each is a convention of the vanilla control the row imitates and not a
-    // free choice; the band height alone is the host's, being the one dimension the two screens genuinely
-    // set apart.
+    // interaction lifts - resolved live so it tracks a restyled install, plus the box it stands its tabs
+    // in, the face, the ring around it, and the hotkey convention that chrome carries. All of them follow
+    // from the chrome rather than travelling beside it, since each is a convention of the vanilla control
+    // the row imitates and not a free choice; the band height alone is the host's, being the one
+    // dimension the two screens genuinely set apart.
     private static TabStyle composeTabStyle(TabChrome chrome, float headerBandHeight) {
         return new TabStyle(
             chrome,
             headerBandHeight,
+            resolveTabBox(chrome),
             composeTabPalette(chrome, resolveAccentColours()),
             resolveHotkeyStyle(chrome),
             resolveTabFace(chrome),

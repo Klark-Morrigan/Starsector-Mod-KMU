@@ -316,11 +316,18 @@ two shades read as one dropped on the other. Its controls stay on the scheme's b
 which is the whole point of the frame being its own knob. The two framings therefore differ by which
 step of one scheme they take, never by which palette.
 
-That one `TabStyle` carries a strip end to end - band height, `TabPalette`, `HotkeyStyle`, and the
-face - so the value the layout snapped tabs against is the value the renderer paints them
-from and a snapped tab width cannot part from the text drawn into it. That holds for the size as well
-as the atlas: `TabsControlLayout.layoutHeaderControl` snaps at the size its style names, keeping
-`TAB_FONT_SIZE` as the baseline for a body tabs row, which carries no style. The palette holds both flavours
+That one `TabStyle` carries a strip end to end - band height, `TabBox`, `TabPalette`, `HotkeyStyle`, and
+the face - so the value the layout sized tabs against is the value the renderer paints them
+from and a tab's width cannot part from the text drawn into it. That holds for the size as well
+as the atlas: `TabsControlLayout.layoutHeaderControl` measures at the size its style names, keeping
+`TAB_FONT_SIZE` as the baseline for a body tabs row, which carries no style.
+
+The `TabBox` is what decides whether a label is measured at all. The strip stands its tabs in the sector
+map's own box - 130 x 18, neighbours parted by a pixel, inside a band that reserves one more than the tab
+is tall for the line the row sits on - so the row spans the same width whatever its tabs say and a renamed
+tab moves nothing. The raised-button row stays `TabBox.SNAPPED`, its buttons being laid inside the tabs the
+layout measured and taking their own channel from within them. A parted row rules no seams: a divider marks
+where two tabs meet, and parted tabs never do. The palette holds both flavours
 of tab paint: an absolute `TabLook` per `TabLookState` (unselected, selected, hovered) and a relative
 `TabWash` per `TabWashState` (clicked), the pulse lifting whichever look the tab has settled on.
 
