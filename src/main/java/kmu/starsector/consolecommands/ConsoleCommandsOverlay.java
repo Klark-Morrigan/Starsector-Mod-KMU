@@ -105,7 +105,9 @@ public final class ConsoleCommandsOverlay implements ConsoleOverlay {
 
             } catch (Throwable cannotReadModState) {
 
-                reportUnreadable(
+                // Assigned here as well as inside the report, so this method's own answer is
+                // never left unset by a hop that stopped throwing on its way out.
+                isConsoleReadable = reportUnreadable(
                     "Could not read whether Console Commands is installed.",
                     cannotReadModState);
             }

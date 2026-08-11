@@ -51,6 +51,22 @@ final class ConsoleCommandsOverlayTest {
         }
 
         @Test
+        void reportsClosedThroughTheLiveReadWhenTheModIsAbsent() {
+
+            // The live read rather than a stood-in one: an install without Console Commands has
+            // to answer without ever resolving the class that names the mod's overlay panel,
+            // which would otherwise be a missing-class error on a per-frame path. Nothing else
+            // here exercises that constructor, so nothing else would notice it eagerly built.
+            try (var globalMock = mockStatic(Global.class)) {
+
+                stubGlobalWithModEnabled(globalMock, false);
+
+                assertThat(new ConsoleCommandsOverlay().isOpen())
+                    .isFalse();
+            }
+        }
+
+        @Test
         void reportsOpenWhileTheConsoleOverlayIsUp() {
 
             var presenceFake = new ConsoleOverlayPresenceFake(true);
