@@ -3,7 +3,7 @@ package kmu.maplayers.base.tooltip;
 import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
 import com.fs.starfarer.api.combat.ViewportAPI;
 
-import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
+import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 
 import java.util.function.BooleanSupplier;
 
@@ -44,19 +44,19 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
     // The live read this dispatcher steps aside for. Supplied rather than built here: it is the one
     // collaborator whose answer changes what this draws, so a caller that can hand over a stub is
     // what makes the step-aside checkable at all.
-    private final VanillaMapTooltip vanillaMapTooltip;
+    private final VanillaMapTooltipProbe vanillaMapTooltipProbe;
 
     /**
-     * @param vanillaMapTooltip the probe answering whether the map is drawing its own tooltip,
+     * @param vanillaMapTooltipProbe the probe answering whether the map is drawing its own tooltip,
      *                          which this box stands aside for
      * @param isAnyMapShowing   whether a map is on screen at all - either host, either look -
      *                          host-blind because this listener is called for the whole campaign UI
      *                          and is never told which screen is up
      */
     public MapLayerCellTooltip(
-            VanillaMapTooltip vanillaMapTooltip,
+            VanillaMapTooltipProbe vanillaMapTooltipProbe,
             BooleanSupplier isAnyMapShowing) {
-        this.vanillaMapTooltip = vanillaMapTooltip;
+        this.vanillaMapTooltipProbe = vanillaMapTooltipProbe;
         this.isAnyMapShowing = isAnyMapShowing;
     }
 
@@ -83,7 +83,7 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         // Step aside when the vanilla map screen is drawing its own tooltip (the player is over a
         // star icon), so only one box shows there. Read live from the map's UI tree; a read that
         // fails on some game build draws ours anyway rather than hiding it.
-        if (vanillaMapTooltip.isShowing()) {
+        if (vanillaMapTooltipProbe.isTooltipShowing()) {
             return;
         }
         // What the cursor is over and the box the active layer injected for it, resolved through the

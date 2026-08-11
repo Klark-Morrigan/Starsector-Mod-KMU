@@ -142,7 +142,7 @@ placement, steps the panel's input motions against it, and hands off to KMLib's 
 
 Drawing last wins against the core UI's tooltips too, which the panel does not want: a tooltip the
 cursor raises where the panel overlaps it is drawn underneath and reads as cut off at the panel edge.
-So the same pass finishes by repainting it on top - `VanillaMapTooltip` locates the tooltip the core
+So the same pass finishes by repainting it on top - `VanillaMapTooltipProbe` locates the tooltip the core
 UI is showing, and KMLib's `CoreUiComponentRenderer` draws it again clipped to
 `TabPanelPlacement.computeOuterBound`. The clip is the panel's footprint rather than the tooltip's,
 so only the hidden part is drawn twice and the tooltip reads at one opacity across the panel edge. A

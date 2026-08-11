@@ -8,7 +8,7 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
-import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
+import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
@@ -296,7 +296,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
             // Its own probe per renderer rather than one shared: the probe warns once per instance when
             // its read breaks, so a shared one would let the first screen to fail silence the news on
             // the other.
-            listenerManager.addListener(new SidebarRenderer(host, new VanillaMapTooltip()), true);
+            listenerManager.addListener(new SidebarRenderer(host, new VanillaMapTooltipProbe()), true);
             listenerManager.addListener(new SidebarInput(host), true);
         }
     }
@@ -316,7 +316,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
             sector,
             MapLayerCellTooltip.class,
             () -> new MapLayerCellTooltip(
-                new VanillaMapTooltip(),
+                new VanillaMapTooltipProbe(),
                 buildMapPresenceRead()));
     }
 

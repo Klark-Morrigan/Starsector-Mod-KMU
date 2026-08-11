@@ -8,7 +8,7 @@ import kmlib.math.geometry.Rectangle;
 import kmlib.profiling.Timings;
 import kmlib.starsector.ui.coreui.CoreUiComponentRenderer;
 import kmlib.starsector.ui.input.HoverFade;
-import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
+import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 import kmlib.starsector.ui.render.gl.panel.NotchState;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.render.gl.tabs.TabPanelRenderer;
@@ -63,7 +63,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     // Locates the tooltip the core UI is showing right now, so this pass can lift it back over the panel
     // it would otherwise be buried under. Supplied rather than built here so a test can stand a stub in
     // its place, and one per renderer because the probe's broken-read warning is per instance.
-    private final VanillaMapTooltip vanillaMapTooltip;
+    private final VanillaMapTooltipProbe vanillaMapTooltipProbe;
 
     // Whether the repaint below has already reported itself broken this session. Per instance for the
     // probe's reason, and once because this runs every frame the panel is up.
@@ -82,9 +82,9 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     // advances by nothing rather than by the whole gap since the screen was last open.
     private long previousFrameNanos;
 
-    public SidebarRenderer(SidebarHost host, VanillaMapTooltip vanillaMapTooltip) {
+    public SidebarRenderer(SidebarHost host, VanillaMapTooltipProbe vanillaMapTooltipProbe) {
         this.host = host;
-        this.vanillaMapTooltip = vanillaMapTooltip;
+        this.vanillaMapTooltipProbe = vanillaMapTooltipProbe;
     }
 
     @Override
@@ -257,7 +257,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
 
         // Null covers both "no tooltip up" and "the probe's read broke", the probe's own fail-open
         // contract; either way there is nothing to lift.
-        var tooltip = vanillaMapTooltip.findShownTooltip();
+        var tooltip = vanillaMapTooltipProbe.findShownTooltip();
         if (tooltip == null) {
             return;
         }
