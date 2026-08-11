@@ -8,6 +8,7 @@ import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipRenderer;
 import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipStyle;
+import kmlib.starsector.ui.render.gl.tooltip.TooltipLeaderLineStyle;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.text.TextStyle;
 import kmlib.starsector.ui.widgets.tooltip.TooltipLineGaps;
@@ -278,7 +279,18 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
             OPACITY,
             BORDER_WIDTH,
             StarsectorUiColour.BLACK.resolve(),
-            StarsectorUiColour.VANILLA_PLAYER_BASE.resolve());
+            StarsectorUiColour.VANILLA_PLAYER_BASE.resolve(),
+            buildLeaderLineStyle());
+    }
+
+    // How heavily the line from a label across to its value draws. Read live off the player's own two
+    // knobs rather than taken at KMLib's shipped weights: how heavy a solid run looks beside a line of
+    // glyphs turns on the face, the size, and the atlas behind it, so where it sits against the text is
+    // a judgement made on screen at whatever scale the player runs the game at.
+    private static TooltipLeaderLineStyle buildLeaderLineStyle() {
+        return new TooltipLeaderLineStyle(
+            KmuMapLayerSettings.getMapTooltipLeaderThickness(),
+            KmuMapLayerSettings.getMapTooltipLeaderOpacity());
     }
 
     // How far apart the box's lines stand, by the depth of the line above the gap: the box's own spacing

@@ -111,6 +111,16 @@ public final class KmuMapLayerSettings {
     private static final String TOOLTIP_TIER_3_LINE_GAP_FIELD =
         "kmu_map_visuals_tooltips_density_tier3LineGap";
 
+    // The line a hover box runs from a label across to its value (Map - Visuals tab). Its weight is the
+    // one thing about the box that cannot be settled in code: how heavy a solid run looks beside a line
+    // of glyphs turns on the face, the size it draws at, and how that atlas was rasterised, so where it
+    // sits against the text is a judgement made on screen. Appearance rather than tuning, so it sits with
+    // the density knobs above.
+    private static final String TOOLTIP_LEADER_THICKNESS_FIELD =
+        "kmu_map_visuals_tooltips_leader_thickness";
+    private static final String TOOLTIP_LEADER_OPACITY_FIELD =
+        "kmu_map_visuals_tooltips_leader_opacity";
+
     // Border tracing (Map - Dev tab): the raw ring chaining and miter inset that turn a cluster's
     // cell edges into one outline. Always applied - it is upstream of the smoothing passes a
     // layer may gate - so it has no switch of its own.
@@ -265,6 +275,12 @@ public final class KmuMapLayerSettings {
     private static final float DEFAULT_TOOLTIP_TIER_2_LINE_GAP = 3f;
     private static final float DEFAULT_TOOLTIP_TIER_3_LINE_GAP = 1f;
 
+    // The connecting line's shipped weights: a whole pixel of thickness, let down to roughly two thirds
+    // of the box's own opacity so it reads level with the greyed-out text either side of it rather than
+    // above it. Mirror the CSV defaultValue column like every fallback here.
+    private static final float DEFAULT_TOOLTIP_LEADER_THICKNESS = 1f;
+    private static final float DEFAULT_TOOLTIP_LEADER_OPACITY = 0.65f;
+
     // Border-tracing knobs (ungated).
     private static final double DEFAULT_BORDER_WELD_TOLERANCE = 100.0;
     private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
@@ -372,6 +388,27 @@ public final class KmuMapLayerSettings {
         return KmuLunaSettings.readFloat(
             TOOLTIP_TIER_3_LINE_GAP_FIELD,
             DEFAULT_TOOLTIP_TIER_3_LINE_GAP);
+    }
+
+    /**
+     * @return how thick the line a hover box runs from a label across to its value draws, in UI
+     *         units; 1 by default, and 0 to draw no such lines at all
+     */
+    public static float getMapTooltipLeaderThickness() {
+        return KmuLunaSettings.readFloat(
+            TOOLTIP_LEADER_THICKNESS_FIELD,
+            DEFAULT_TOOLTIP_LEADER_THICKNESS);
+    }
+
+    /**
+     * @return how strongly that line draws, as a fraction of the box's own opacity; 0.65 by
+     *         default, which sets it level with the greyed-out text either side of it rather than
+     *         above it, and 0 to draw no such lines at all
+     */
+    public static float getMapTooltipLeaderOpacity() {
+        return KmuLunaSettings.readFloat(
+            TOOLTIP_LEADER_OPACITY_FIELD,
+            DEFAULT_TOOLTIP_LEADER_OPACITY);
     }
 
     /**
