@@ -16,6 +16,8 @@ import kmu.maplayers.base.sidebar.runtime.SidebarHosts;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
+import kmu.starsector.consolecommands.ConsoleCommandsOverlay;
+import kmu.starsector.consolecommands.ConsoleOverlay;
 
 import org.apache.log4j.Logger;
 
@@ -49,8 +51,12 @@ import java.util.Optional;
  */
 public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
-    /** The one shared instance; the political-map layer hands it to the map surface as its renderer. */
-    public static final PoliticalMapLayerRenderer INSTANCE = new PoliticalMapLayerRenderer();
+    /**
+     * The one shared instance; the political-map layer hands it to the map surface as its renderer.
+     * This is where the live console read is chosen, the renderer itself naming only the role.
+     */
+    public static final PoliticalMapLayerRenderer INSTANCE =
+        new PoliticalMapLayerRenderer(new ConsoleCommandsOverlay());
 
     private static final Logger LOG = Global.getLogger(PoliticalMapLayerRenderer.class);
 
@@ -61,6 +67,11 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // load rather than replaced; see discardStateFromPreviousSave.
     private final PoliticalMapCache cache = new PoliticalMapCache();
     private final PoliticalMapOverlayRenderer overlayRenderer = new PoliticalMapOverlayRenderer();
+
+    // Whether a console has taken the screen this frame. Handed in rather than read from the console
+    // mod here, so the renderer depends on the question and not on an optional mod, and a test can put
+    // a console up without one running.
+    private final ConsoleOverlay consoleOverlay;
 
     // The last widget-trace line logged, so a resting cursor reports once rather than every frame.
     // Held here rather than in the trace because the trace only describes; deciding how often this
@@ -76,7 +87,8 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // running game - and because a player who leaves the hover off never needs one at all.
     private MapHoverPublisher hoverPublisher;
 
-    private PoliticalMapLayerRenderer() {
+    PoliticalMapLayerRenderer(ConsoleOverlay consoleOverlay) {
+        this.consoleOverlay = consoleOverlay;
     }
 
     /**
@@ -144,6 +156,29 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         return view.resolveHoverTooltip();
     }
 
+    /**
+     * @return whether something is drawn over the map where the cursor rests, so the cell beneath it
+     *         is not what the player is pointing at. The three covers are asked as one answer, in
+     *         ascending cost, rather than as three park sites the hover read has to remember
+     */
+    // Package-private rather than private so the console cover is answerable without a live map:
+    // the first read short-circuits the two below it, which each need a running game.
+    boolean isMapCoveredAtCursor() {
+        // A text-entry console covers the whole screen, so nothing the cursor rests on is the map.
+        // Asked first, being a settled flag over a static holder while each read below resolves a
+        // live box to test the cursor against.
+        //
+        // Separate from the sidebar read even though the sidebar stands down for a console too
+        // (BaseSidebarHost.isOverlayShowing): with the panel hidden its cover answers false, which
+        // would leave the map lighting cells and floating boxes under the console.
+        //
+        // The sidebar comes next, being arithmetic over a box KMU already holds, and the vanilla
+        // chrome last, costing a read into the live widget tree.
+        return consoleOverlay.isOpen()
+            || isCursorOverSidebar()
+            || isCursorOverVanillaMapChrome();
+    }
+
     // Runs the cursor read only while some hover feedback still wants the answer - either the halo
     // and wash or the hover box. The whole read - the map-matrix read (bridged, and a per-frame
     // render-thread hop under Fast Rendering), the unproject, and the cell hit test - hangs off this
@@ -159,18 +194,10 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             MapHoverState.getInstance().clearHover();
             return;
         }
-        // The sidebar is drawn over the map, so a cursor on it is not hovering the territory
-        // beneath. Park the hover so the panel neither lights a cell under it nor floats a tooltip
-        // over it.
-        if (isCursorOverSidebar()) {
-            MapHoverState.getInstance().clearHover();
-            return;
-        }
-        // The map's own chrome is drawn over it for the same reason, and the hover is equally blind
-        // to it: it resolves a cell from map geometry, which has no notion of the tab strip and
-        // control bar composited on top. Tested second because it costs a read into the live widget
-        // tree, while the sidebar test above is arithmetic over a box KMU already holds.
-        if (isCursorOverVanillaMapChrome()) {
+        // Something drawn over the map takes the cursor with it, and the hover is blind to all of
+        // it: it resolves a cell from map geometry, which has no notion of what is composited on
+        // top. Park so nothing under a cover is lit or described.
+        if (isMapCoveredAtCursor()) {
             MapHoverState.getInstance().clearHover();
             return;
         }

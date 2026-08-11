@@ -6,6 +6,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.KmuPoliticalMapSettings;
+import kmu.starsector.consolecommands.ConsoleOverlayFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,8 +26,9 @@ import static org.mockito.Mockito.when;
 /**
  * Pins what this renderer decides for itself before any drawing happens: that a deselected view
  * costs a frame nothing whichever of its passes is running, that the hover box it answers the
- * framework with is the active view's and only while this layer's own tooltip switch is on, and that
- * a game load leaves nothing of the previous sector behind. What the discard actually empties is
+ * framework with is the active view's and only while this layer's own tooltip switch is on, that an
+ * open console counts as a cover over the map, and that a game load leaves nothing of the previous
+ * sector behind. What the discard actually empties is
  * {@link PoliticalMapCacheTest}'s; the cache refresh, the cursor read and the GL emission run only
  * in-engine and are covered by their own collaborators.
  */
@@ -159,6 +161,25 @@ final class PoliticalMapLayerRendererTest {
                 assertThat(PoliticalMapLayerRenderer.INSTANCE.resolveHoverTooltip())
                     .isEmpty();
             }
+        }
+    }
+
+    @Nested
+    class IsMapCoveredAtCursor {
+
+        @Test
+        void isMapCoveredAtCursorAnswersCoveredWhileAConsoleIsOpen() {
+            // A console covers the whole screen, so the cell under the cursor is not what the player
+            // is pointing at - without this the map went on lighting cells and floating hover boxes
+            // behind an open console, the sidebar having already stood down and stopped covering it.
+            //
+            // The console is the only one of the three covers a test can reach: it is asked first
+            // and short-circuits the sidebar and the vanilla chrome, both of which read a live map.
+            var consoleOverlayFake = new ConsoleOverlayFake();
+            consoleOverlayFake.openConsole();
+
+            assertThat(new PoliticalMapLayerRenderer(consoleOverlayFake).isMapCoveredAtCursor())
+                .isTrue();
         }
     }
 
