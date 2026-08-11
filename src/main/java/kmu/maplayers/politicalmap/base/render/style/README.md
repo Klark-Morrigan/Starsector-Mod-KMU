@@ -126,7 +126,7 @@ of knobs and the rule for unioning two of them - is the framework's, in
 palette swap in `MapPalettes`) and the rule for which factionless cells it reaches
 (`FactionlessStyleResolver`).
 
-A spotlight separates figure from ground with **two** palettes, both resolved once per pass by
+A spotlight separates its subject from its backdrop with **two** palettes, both resolved once per pass by
 `MapPalettes` and both moving value alone: `resolveDesaturationPalette` sinks a receded bloc's
 Independent grey toward black by `desaturationDarkening`, and `resolvePresencePalette` lifts a
 spared factionless cell's neutral toward white by `presenceLightening`. Either alone leaves the two

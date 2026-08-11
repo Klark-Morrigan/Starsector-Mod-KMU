@@ -80,10 +80,17 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getUnfilledSystemIds())
                 .isEmpty();
 
+            // The placeholder's own shades are MapStyling's to pin; read back here only to prove
+            // the fallback threads them through rather than leaving a slot null for the render
+            // path to trip over.
             assertThat(territories.getNeutralColour())
-                .isEqualTo(Color.GRAY);
+                .isNotNull();
+            assertThat(territories.getNeutralPalette())
+                .isNotNull();
             assertThat(territories.getDesaturationPalette())
-                .isEqualTo(new FactionPalette(Color.GRAY, Color.GRAY));
+                .isNotNull();
+            assertThat(territories.getPresencePalette())
+                .isNotNull();
 
             // The empty fallback is never a filtered build, so it selects no bloc and recedes
             // nothing.
@@ -151,9 +158,9 @@ final class PoliticalMapTerritoriesTest {
                 new LinkedHashSet<>(),
                 new MapStyling(
                     renderStyle,
-                    Color.GRAY,
-                    new FactionPalette(Color.GRAY, Color.GRAY),
-                    new FactionPalette(Color.GRAY, Color.GRAY)),
+                    PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
+                    PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
+                    PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE),
                 new ViewGrouping(mock(PoliticalMapView.class), HolderGrouping.identity()),
                 FilterSnapshot.unfiltered());
 
@@ -258,11 +265,14 @@ final class PoliticalMapTerritoriesTest {
             // A distinct unfilled set so a swapped slot is caught by identity, held apart from the
             // inhabited set it sits beside.
             var unfilled = new LinkedHashSet<>(Set.of("unfilled-system"));
-            var neutral = Color.CYAN;
+            // The neutral in both slots, as a factionless cell's pair always is, so the colour read
+            // off it can only be the shade put in.
+            var neutralColour = Color.CYAN;
+            var neutralPalette = new FactionPalette(neutralColour, neutralColour);
             var desaturationPalette = new FactionPalette(Color.MAGENTA, Color.ORANGE);
 
-            // Distinct from the desaturation pair it sits beside: the two are the same type in
-            // adjacent slots, so only differing shades catch a swap between them.
+            // All three palettes hold distinct shades: they are the same type in adjacent slots, so
+            // only differing contents catch a swap between them.
             var presencePalette = new FactionPalette(Color.PINK, Color.WHITE);
 
             // Four distinct category instances plus a distinct global tier, all wrapped in one
@@ -312,7 +322,11 @@ final class PoliticalMapTerritoriesTest {
                 holders,
                 inhabited,
                 unfilled,
-                new MapStyling(renderStyle, neutral, desaturationPalette, presencePalette),
+                new MapStyling(
+                    renderStyle,
+                    neutralPalette,
+                    desaturationPalette,
+                    presencePalette),
                 new ViewGrouping(viewMock, grouping),
                 new FilterSnapshot(
                     selectedBlocId,
@@ -333,8 +347,10 @@ final class PoliticalMapTerritoriesTest {
                 .isSameAs(inhabited);
             assertThat(territories.getUnfilledSystemIds())
                 .isSameAs(unfilled);
+            assertThat(territories.getNeutralPalette())
+                .isSameAs(neutralPalette);
             assertThat(territories.getNeutralColour())
-                .isSameAs(neutral);
+                .isSameAs(neutralColour);
             assertThat(territories.getDesaturationPalette())
                 .isSameAs(desaturationPalette);
             assertThat(territories.getPresencePalette())

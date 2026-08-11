@@ -70,8 +70,8 @@ colours - nobody holds the system on this layer, and its shades would assert exa
 view reports it does not have. The lift is what makes sparing the recede visible at all: the
 neutral a factionless cell paints in and the Independent grey the background sinks from are the
 same grey, so a merely-unreceded cell sits at the value the background started at and reads as part
-of it. `desaturationDarkening` sinks the ground, `presenceLightening` raises the figure, and the
-pair is what separates them - by value only, so a grey stays the same grey.
+of it. `desaturationDarkening` sinks the backdrop, `presenceLightening` raises the spared cell,
+and the pair is what separates them - by value only, so a grey stays the same grey.
 
 Only the *filter* recede reaches a settled factionless cell - it is the one whose backdrop is "the
 rest of the sector". The alliances view's non-allied recede describes factions, which such a

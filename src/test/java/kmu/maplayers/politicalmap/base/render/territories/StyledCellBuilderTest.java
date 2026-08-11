@@ -585,7 +585,7 @@ final class StyledCellBuilderTest {
                 Set.of(),
                 new MapStyling(
                     theme,
-                    FACTIONLESS_NEUTRAL,
+                    new FactionPalette(FACTIONLESS_NEUTRAL, FACTIONLESS_NEUTRAL),
                     new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
                     new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                 new ViewGrouping(
@@ -675,7 +675,7 @@ final class StyledCellBuilderTest {
                 Map.of(SYSTEM_ID, OWNER), Set.of(), Set.of(),
                 new MapStyling(
                     PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(STYLE),
-                    Color.GRAY,
+                    PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
                     new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
                     new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                 new ViewGrouping(viewMock, HolderGrouping.identity()),

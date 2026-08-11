@@ -12,9 +12,9 @@ package kmu.maplayers.base.theme;
  * styles, so an incremental re-shape smooths and hatches against the exact settings the full
  * build baked in.
  *
- * <p>The two strengths are the pair a spotlight separates its figure from its ground with, which
- * is why they sit together. One alone cannot do it: both the receded clusters and the spared
- * cells are greys, so a background that only sinks and a figure that never rises stay near enough
+ * <p>The two strengths are the pair a spotlight separates its subject from its backdrop with,
+ * which is why they sit together. One alone cannot do it: both the receded clusters and the spared
+ * cells are greys, so a backdrop that only sinks and a subject that never rises stay near enough
  * in value to read as one surface.
  *
  * @param desaturationDarkening the fraction of brightness removed from the desaturated palette

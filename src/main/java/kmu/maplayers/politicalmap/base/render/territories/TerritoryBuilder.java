@@ -171,7 +171,7 @@ public final class TerritoryBuilder {
                 unfilledSystemIds,
                 new MapStyling(
                     renderStyle,
-                    neutralColour,
+                    MapPalettes.resolveNeutralPalette(neutralColour),
                     desaturationPalette,
                     presencePalette),
                 new ViewGrouping(view, grouping),

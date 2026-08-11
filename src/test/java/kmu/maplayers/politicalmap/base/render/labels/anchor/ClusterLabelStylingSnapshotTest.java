@@ -9,6 +9,7 @@ import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
 import kmu.maplayers.politicalmap.base.render.territories.MapStyling;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
+import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
 import kmu.maplayers.politicalmap.base.render.territories.ViewGrouping;
 
 import org.junit.jupiter.api.Nested;
@@ -86,7 +87,11 @@ final class ClusterLabelStylingSnapshotTest {
             holderBySystemId,
             new LinkedHashSet<>(),
             new LinkedHashSet<>(),
-            new MapStyling(null, Color.GRAY, desaturationPalette, desaturationPalette),
+            new MapStyling(
+                null,
+                PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
+                desaturationPalette,
+                PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE),
             viewGrouping,
             filterSnapshot);
     }

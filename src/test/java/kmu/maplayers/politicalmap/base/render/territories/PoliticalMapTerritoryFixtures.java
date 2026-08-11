@@ -44,6 +44,15 @@ public final class PoliticalMapTerritoryFixtures {
     /** The shared neutral shade an unowned cell resolves to, wherever a test asserts against it. */
     public static final Color NEUTRAL_COLOUR = Color.GRAY;
 
+    /**
+     * That shade as the pair a factionless cell paints in - the neutral in both slots, since such a
+     * cell names no faction to take two shades from. Shared so a case that only needs an inert
+     * palette says so by naming this rather than by spelling out a grey pair whose two equal slots
+     * read as a choice somebody made.
+     */
+    public static final FactionPalette NEUTRAL_PALETTE =
+        new FactionPalette(NEUTRAL_COLOUR, NEUTRAL_COLOUR);
+
     // Fixtures only; never instantiated.
     private PoliticalMapTerritoryFixtures() {
     }
@@ -67,9 +76,9 @@ public final class PoliticalMapTerritoryFixtures {
             new LinkedHashSet<>(),
             new MapStyling(
                 null, // No render style.
-                NEUTRAL_COLOUR, // Neutral color.
-                new FactionPalette(NEUTRAL_COLOUR, NEUTRAL_COLOUR), // Desaturation palette.
-                new FactionPalette(NEUTRAL_COLOUR, NEUTRAL_COLOUR)), // Presence palette.
+                NEUTRAL_PALETTE, // Neutral palette.
+                NEUTRAL_PALETTE, // Desaturation palette.
+                NEUTRAL_PALETTE), // Presence palette.
             new ViewGrouping(
                 mock(PoliticalMapView.class),
                 HolderGrouping.identity()),

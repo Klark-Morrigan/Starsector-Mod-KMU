@@ -41,7 +41,11 @@ A `RenderStyle` is the whole theme, in two tiers:
   cluster-border `BorderSmoothingStyle` (a `SpikeSandingStyle` and a `CornerRoundingStyle`, each
   carrying its own pass's gate and the shape that pass works to), the `HoverHighlightStyle`
   (itself a `HoverGlowStyle` for the frontier halo and a `HoverWashStyle` for the hovered cell),
-  and the desaturation profile.
+  and the two spotlight strengths - how far a receded cluster sinks toward black, and how far a
+  cell the spotlight spares lifts toward white. Those two are a pair rather than one knob and a
+  counterpart: a layer separating its subject from its backdrop in one hue needs both ends to
+  move, since sinking the backdrop alone leaves anything it started level with reading as part
+  of it.
 - `Map<MapStyleCategory, CategoryStyle>` - one bundle per category. Keying on a type rather than
   holding one hardcoded field per category is what lets the theme carry the bundles as one map the
   builders index, and lets the set of categories be the painting layer's rather than the

@@ -285,7 +285,13 @@ public final class PoliticalMapTerritories implements
     }
 
     public Color getNeutralColour() {
-        return styling.neutralColour();
+        return styling.readNeutralColour();
+    }
+
+    // The shades a factionless cell paints in when nothing this pass does recolours it - the plain
+    // neutral in both slots, resolved once for the build rather than rebuilt per cell.
+    public FactionPalette getNeutralPalette() {
+        return styling.neutralPalette();
     }
 
     public FactionPalette getDesaturationPalette() {

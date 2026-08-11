@@ -153,7 +153,7 @@ public final class StyledCellBuilder {
         // palettes are the pass's own, so the lift and the sink are one decision apart.
         var ownPalette = isSpotlitBlocPresent
             ? territories.getPresencePalette()
-            : MapPalettes.resolveNeutralPalette(territories.getNeutralColour());
+            : territories.getNeutralPalette();
 
         var palette = MapPalettes.resolveEffectivePalette(
             adjustment,
