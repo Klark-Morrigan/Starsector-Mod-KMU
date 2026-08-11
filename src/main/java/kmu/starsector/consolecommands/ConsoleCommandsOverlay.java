@@ -26,8 +26,11 @@ import org.apache.log4j.Logger;
  * Off, because the console cannot be read any more and a retry would throw again on the next
  * frame, so it is as good as not installed. Named, because that is what turns a Console Commands
  * release moving the accessor into a line in the log rather than a report about the console being
- * unusable. Once, because this is asked from render and input passes, and the hop that broke first
- * is the one that stopped the read - a second line would say nothing the first did not.
+ * unusable. Once per reader, because this is asked from render and input passes and the hop that
+ * broke first is the one that stopped the read, so a further line from the same reader would say
+ * nothing the first did not. Per reader rather than per session because a reader is constructed
+ * where it is bound rather than shared, so a break names itself once for each caller that holds
+ * one - a line or two, against the sixty a second an ungated warning would write.
  */
 public final class ConsoleCommandsOverlay implements ConsoleOverlay {
 

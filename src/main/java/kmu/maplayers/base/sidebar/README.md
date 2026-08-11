@@ -31,7 +31,7 @@ differences.
 | Anchor | screen top-left, by the padding settings | the visor rect's top-left, flush left, below the top-padding setting |
 | Height cap | bottom padding setting | the visor's bottom edge |
 | Framed edges | `BoxEdge.ALL` | `TOP`, `RIGHT`, and `BOTTOM` until the box reaches the visor bottom |
-| Tab band | `HEADER_BAND_HEIGHT` 19 | `HEADER_BAND_HEIGHT` 17 |
+| Tab band | `HEADER_BAND_HEIGHT` 19 | `HEADER_BAND_HEIGHT` 18 |
 | Tab chrome | `STRIP`, key underlined | `RAISED_BUTTON`, key bare |
 | Frame colour | its scheme's base accent | its scheme's dark step, what the intel chrome is framed in |
 | Fold default | expanded | docked |
