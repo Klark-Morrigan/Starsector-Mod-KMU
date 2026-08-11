@@ -156,11 +156,16 @@ the ranked standings behind a faction or alliance fill - and `SystemClaimTooltip
 contest behind a claims fill, its claimant over the rivals who could have taken the system and the
 factions present that never could - plus what both are written from: `FactionTooltipEntry` (a faction
 as something a block lists) and `FactionTooltipBanner` (a faction as a verdict over the whole system),
-`StandingRowResolver` (the ranked groups as entries), and the territory and status lines. All of
+`StandingRowResolver` (the ranked groups as entries), and the core-territory heading
+(`CoreTerritoryHeading`) and status lines. All of
 them sit on `PoliticalMapCellTooltip`, which binds the claim read for the whole layer and heads
-every one of its boxes with the decree holding the system: any box may have to say a system is held
+its boxes with the decree holding the system: any box may have to say a system is held
 by decree, and a decree resolved - or drawn - one way on one view and another way on the next would
-answer one hover two ways a keystroke apart.
+answer one hover two ways a keystroke apart. A box whose own body already states the decree says so
+(`isStatingCoreClaimInBody`) and goes without the heading, so the one fact is met once rather than
+twice in a single hover. Both reasons a box goes unheaded - no decree at all, and a decree the body
+states itself - are settled inside `CoreTerritoryHeading` and answer alike, so no call site can drop
+the heading by claiming there is no decree.
 The domination box has a second, fuller version - `ExpandedSystemDominationTooltip`, the counterpart
 it offers the framework's detail mode - which lists every faction holding the system over the
 colonies its score was summed from and each colony over the factors behind its weight, down to a
@@ -219,7 +224,8 @@ opens every faction the contest names into the markets it holds the system with 
 into the terms its claim score is built from. Both claim boxes sit on `SystemClaimContestTooltip`,
 which settles the one read behind them, the claimant, the decree marker, and the three blocks, and
 leaves open only what hangs beneath a faction (`resolveAccountEntries`, hanging nothing by
-default). `ClaimScoreRowResolver` decides those lines: the faction's markets in the order the
+default). It is also where the layer's heading is declined for both of them: the claim line names
+the decreed holder and marks the hold, so these are the two boxes that state the decree themselves. `ClaimScoreRowResolver` decides those lines: the faction's markets in the order the
 mechanic itself would settle them - strongest first, a tie falling to the earlier place in the
 economy's listing - so the one representing the faction comes out on top by that order rather than
 by being put there. Exactly one market in the whole box is called out, as the `claim holder`: the

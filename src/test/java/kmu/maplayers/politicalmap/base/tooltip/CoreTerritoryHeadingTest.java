@@ -40,7 +40,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class CoreTerritoryHeadingTest {
 
+    private static final String CORE_FACTION = "hegemony";
     private static final String CREST = "graphics/hegemony_crest.png";
+
+    // A faction id no sector resolves, which is what the fallback cases are read through.
+    private static final String UNKNOWN_FACTION = "ghost_faction";
 
     // Whether the box's body names the decree itself, spelled out so a case reads as the state it puts
     // the box in rather than as a bare boolean at the call.
@@ -72,20 +76,14 @@ final class CoreTerritoryHeadingTest {
 
         @Test
         void resolveHeadingRowsIsEmptyWithoutACoreFaction() {
-            assertThat(CoreTerritoryHeading.resolveHeadingRows(
-                    buildSectorKnowingHegemony(),
-                    null,
-                    BODY_IS_SILENT_ON_THE_DECREE))
+            assertThat(resolveHeadingUnder(null, BODY_IS_SILENT_ON_THE_DECREE))
                 .isEmpty();
         }
 
         @Test
         void resolveHeadingRowsIsEmptyForABlankCoreFaction() {
             // A memory flag written empty is no decree, so it must not draw a nameless core line.
-            assertThat(CoreTerritoryHeading.resolveHeadingRows(
-                    buildSectorKnowingHegemony(),
-                    " ",
-                    BODY_IS_SILENT_ON_THE_DECREE))
+            assertThat(resolveHeadingUnder(" ", BODY_IS_SILENT_ON_THE_DECREE))
                 .isEmpty();
         }
 
@@ -93,10 +91,7 @@ final class CoreTerritoryHeadingTest {
         void resolveHeadingRowsIsEmptyWhenTheBodyAlreadyStatesTheDecree() {
             // The decree is real here - what makes the heading wrong is the box about to say it again a
             // few lines down, which reads as two findings rather than one fact.
-            assertThat(CoreTerritoryHeading.resolveHeadingRows(
-                    buildSectorKnowingHegemony(),
-                    "hegemony",
-                    BODY_STATES_THE_DECREE))
+            assertThat(resolveHeadingUnder(CORE_FACTION, BODY_STATES_THE_DECREE))
                 .isEmpty();
         }
 
@@ -165,17 +160,27 @@ final class CoreTerritoryHeadingTest {
     // The heading for a system decreed to a faction the sector knows, which is what the cases reading
     // its runs are all built on.
     private static List<TooltipRow> resolveHegemonyHeading() {
+        return resolveHeadingUnder(CORE_FACTION, BODY_IS_SILENT_ON_THE_DECREE);
+    }
+
+    // The heading over a sector that knows the decreed faction, which every case but the unresolvable
+    // one runs against. Both varying facts are taken as parameters so a case states the state it is
+    // about and nothing else.
+    private static List<TooltipRow> resolveHeadingUnder(
+            String coreFactionId,
+            boolean isDecreeStatedInBody) {
+
         return CoreTerritoryHeading.resolveHeadingRows(
             buildSectorKnowingHegemony(),
-            "hegemony",
-            BODY_IS_SILENT_ON_THE_DECREE);
+            coreFactionId,
+            isDecreeStatedInBody);
     }
 
     // The heading for a decree naming a faction the sector cannot resolve at all.
     private static List<TooltipRow> resolveGhostFactionHeading() {
         return CoreTerritoryHeading.resolveHeadingRows(
             buildEmptySector(),
-            "ghost_faction",
+            UNKNOWN_FACTION,
             BODY_IS_SILENT_ON_THE_DECREE);
     }
 
@@ -183,7 +188,7 @@ final class CoreTerritoryHeadingTest {
 
         var sectorMock = buildEmptySector();
 
-        stubFaction(sectorMock, "hegemony", "The Hegemony", CREST);
+        stubFaction(sectorMock, CORE_FACTION, "The Hegemony", CREST);
 
         return sectorMock;
     }
