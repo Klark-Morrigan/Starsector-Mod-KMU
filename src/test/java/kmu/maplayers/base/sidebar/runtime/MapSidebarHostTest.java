@@ -16,6 +16,7 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;
+import kmu.starsector.consolecommands.ConsoleOverlayFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +36,8 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the on-map overlay's gate, its frame edges, and the fold it opens at. The gate is the sector map
  * showing at all, in either of its looks, so the Starscape filter cannot hide a panel whose overlay is
- * painting. Its frozen fold key and its opening
+ * painting - and the console seam this host was handed, so a console up over the map takes the panel with
+ * it. Its frozen fold key and its opening
  * default are pinned as literals: the key because renaming it silently returns every existing save to the
  * default, and the default because opening out is what makes the sidebar the visible way in to the
  * political map on a save that has never folded it. Its look is pinned at the two places the two screens
@@ -75,7 +77,7 @@ final class MapSidebarHostTest {
                     .when(CampaignMapView::isSectorMapShowing)
                     .thenReturn(true);
 
-                assertThat(MapSidebarHost.INSTANCE.isOverlayShowing())
+                assertThat(createHostWithNoConsole().isOverlayShowing())
                     .isTrue();
 
                 mapViewMock.verify(
@@ -92,9 +94,36 @@ final class MapSidebarHostTest {
                     .when(CampaignMapView::isSectorMapShowing)
                     .thenReturn(false);
 
-                assertThat(MapSidebarHost.INSTANCE.isOverlayShowing())
+                assertThat(createHostWithNoConsole().isOverlayShowing())
                     .isFalse();
             }
+        }
+
+        @Test
+        void isOverlayShowingIsFalseWhileAConsoleIsUpOverTheSectorMap() {
+            // The console the host was handed has to be the one its gate reads: a host that dropped the
+            // seam and answered on the map alone would leave the panel drawn over the console overlay,
+            // eating the keystrokes the console was opened to receive, with every case above still green.
+            var consoleOverlayFake = new ConsoleOverlayFake();
+
+            consoleOverlayFake.openConsole();
+
+            try (var mapViewMock = mockStatic(CampaignMapView.class)) {
+
+                mapViewMock
+                    .when(CampaignMapView::isSectorMapShowing)
+                    .thenReturn(true);
+
+                assertThat(new MapSidebarHost(consoleOverlayFake).isOverlayShowing())
+                    .isFalse();
+            }
+        }
+
+        // The host with no console up, which is the state every case but the console's own asks about.
+        // A host of its own rather than the live singleton, so the gate is read against a console this
+        // test states rather than against Console Commands, which no test JVM has running.
+        private static MapSidebarHost createHostWithNoConsole() {
+            return new MapSidebarHost(new ConsoleOverlayFake());
         }
     }
 

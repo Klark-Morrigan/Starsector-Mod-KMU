@@ -19,14 +19,15 @@ Part of [map layers](../../README.md); see the
 
 ## Hosts: what differs per screen
 
-`SidebarHost` is the per-screen role: the gate, the anchor, the look, the framed edges, the panel
-controller, the fold selection, the layer selection, and the view-state text. `BaseSidebarHost` holds
-the plumbing common to both (controller, fold selection, layer selection, the per-load reseed, and
-the shortcut jump), leaving each concrete host only the genuine differences.
+`SidebarHost` is the per-screen role: the screen gate, the anchor, the look, the framed edges, the
+panel controller, the fold selection, the layer selection, and the view-state text. `BaseSidebarHost`
+holds the plumbing common to both (controller, fold selection, layer selection, the per-load reseed,
+the shortcut jump, and the composed live gate), leaving each concrete host only the genuine
+differences.
 
 | | `MapSidebarHost` | `IntelSidebarHost` |
 | --- | --- | --- |
-| Gate | `CampaignMapView.isSectorMapShowing()` | non-null `getMapVisorRect()` |
+| Screen gate | `CampaignMapView.isSectorMapShowing()` | non-null `getMapVisorRect()` |
 | Anchor | screen top-left, by the padding settings | the visor rect's top-left, flush left, below the top-padding setting |
 | Height cap | bottom padding setting | the visor's bottom edge |
 | Framed edges | `BoxEdge.ALL` | `TOP`, `RIGHT`, and `BOTTOM` until the box reaches the visor bottom |
@@ -54,7 +55,26 @@ binds to the same key. On the intel screen that matters: item action buttons bin
 and the tag filter uses `Q` and `Ctrl+S`. The defaults (`N`, `P`) avoid all of them, and the
 LunaLib Keycode fields are the way out of any clash a mod's intel item introduces.
 
-Both gates ask the same question and nothing beyond it - is there a live canvas under the panel. The
+Only the *screen* half of that gate is per-host. `BaseSidebarHost.isOverlayShowing()` is final and
+composed - `!consoleOverlay.isOpen() && isHostScreenShowing()` - because the one answer gates the
+draw, the input routing and the hit-test alike, and ANDing the console read at each of the three
+would be three chances to forget it. The console is asked first, so a screen read that walks live
+widgets is skipped while the panel is standing down anyway.
+
+A text-entry console stands the sidebar down entirely rather than being ordered above it: the panel
+draws after the whole core UI (see below), so nothing a console overlay draws can reach over it, and
+the pre-core input listener would swallow the very keystrokes the console was opened to receive.
+Hiding is also the better look, a console dimming and blurring its own backdrop. Because the whole
+gate goes false, the renderer's early return zeroes the frame clock and drops the input motions and
+the input listener cancels a dangling drag, so a console opened mid-drag leaves nothing stale behind.
+
+What answers "is a console up" is `kmu.starsector.consolecommands.ConsoleOverlay`, injected into each
+host so the sidebar depends on the question rather than on an optional mod (each `INSTANCE` names the
+live `ConsoleCommandsOverlay`; a test states the answer). That read fails open - mod absent, class
+gone, accessor moved, read throwing - to "no console open", leaving the sidebar exactly as it behaves
+without the seam, and warns once per session naming the hop that broke.
+
+Both screen gates ask the same question and nothing beyond it - is there a live canvas under the panel. The
 visor rect is absent when the intel tab is not showing, when a sibling sub-tab (Planets, Factions)
 holds the column, or when a large-description item has blanked the preview, so it is both gate and
 anchor. Which look that canvas wears is not asked on either screen: the layers paint through

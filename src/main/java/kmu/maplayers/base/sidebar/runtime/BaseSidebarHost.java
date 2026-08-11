@@ -13,6 +13,7 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 import kmu.settings.KmuMapLayerSettings;
+import kmu.starsector.consolecommands.ConsoleOverlay;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,10 @@ import java.util.List;
  * screen's where it was. Which keycodes those are is the player's to change through the layer settings,
  * which is also the way out of a clash with a screen's own bindings.
  *
+ * <p>Whether the sidebar is live at all is settled here too, since only half of that answer differs between
+ * screens: a host says whether its own screen is up, and standing down for a console that has taken the
+ * keyboard is the same rule wherever the panel draws.
+ *
  * <p>The controller is replaced on each load rather than mutated, because the two folds a panel can open at
  * are exactly the two constructors the widget already offers, so no reach into the collapse animation is
  * needed to seed it. Replacing also clears the previous save's scroll offset and fold together, which
@@ -48,13 +53,23 @@ public abstract class BaseSidebarHost implements SidebarHost {
     // untouched.
     private final ActiveLayerSelection layerSelection;
 
+    // Whether a console has taken the keyboard this frame. Handed in rather than read from the console mod
+    // here, so a host depends on the question and not on an optional mod, and a test can put a console up
+    // without one running.
+    private final ConsoleOverlay consoleOverlay;
+
     // The panel's scroll and collapse state. Seeded from the fold selection at construction so the panel is
     // safe to draw before any save is loaded, then replaced per load by restoreFoldFromSave.
     private TabPanelController controller;
 
-    protected BaseSidebarHost(SidebarFoldSelection foldSelection, ActiveLayerSelection layerSelection) {
+    protected BaseSidebarHost(
+            SidebarFoldSelection foldSelection,
+            ActiveLayerSelection layerSelection,
+            ConsoleOverlay consoleOverlay) {
+
         this.foldSelection = foldSelection;
         this.layerSelection = layerSelection;
+        this.consoleOverlay = consoleOverlay;
         this.controller = createControllerAtFold(foldSelection.isRailDocked());
     }
 
@@ -98,6 +113,31 @@ public abstract class BaseSidebarHost implements SidebarHost {
     }
 
     /**
+     * Whether the sidebar is live on this host's screen this frame: its screen is showing and no console
+     * overlay has the keyboard.
+     *
+     * <p>Composed here rather than left to each host because this one answer gates the draw, the input
+     * routing and the hit-test alike - three readings that would each have to remember the console for
+     * themselves, and a further screen a further chance to forget it. What differs per screen is only
+     * {@link #isHostScreenShowing()}.
+     *
+     * <p>A console stands the whole panel down, which is what frees the layer shortcut keys to type rather
+     * than switch tabs, and takes the panel off a console overlay it would otherwise cover: the sidebar
+     * composites after the entire core UI, so nothing drawn by a panel inside it can reach over the
+     * sidebar. Hiding is also the better look of the two, a console dimming its own backdrop.
+     *
+     * @return whether the sidebar draws and routes on this host's screen this frame
+     */
+    @Override
+    public final boolean isOverlayShowing() {
+        // Cheapest first rather than likeliest first: a console read is a settled flag over a static
+        // holder, while a screen read walks live widgets, so this order can only ever skip the dearer of
+        // the two. The likelier order would be the reverse - the panel's screens are off far more often
+        // than a console is up - but it would save a field read to spend a tree walk.
+        return !consoleOverlay.isOpen() && isHostScreenShowing();
+    }
+
+    /**
      * Opens the panel at the fold the loaded save was left at, replacing the controller with one seeded at
      * that end so the panel is already there on the first frame rather than sliding into place. Replacing
      * also clears the previous save's scroll offset in the same move.
@@ -115,6 +155,13 @@ public abstract class BaseSidebarHost implements SidebarHost {
     protected final ActiveLayerSelection getLayerSelection() {
         return layerSelection;
     }
+
+    /**
+     * @return whether this host's own screen is up and carrying the panel this frame. The screen half of
+     *         the gate and nothing more - what else on the machine may have claimed the keyboard is settled
+     *         in {@link #isOverlayShowing()}, so a host answers only for the screen it binds to
+     */
+    protected abstract boolean isHostScreenShowing();
 
     // A controller opened at the given fold, answering by the sidebar's own sound scheme. The docked seed
     // and the expanded default are the widget's own two constructors, so the fold a host opens at is chosen

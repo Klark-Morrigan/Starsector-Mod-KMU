@@ -12,6 +12,8 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.PersistedSidebarFold;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
+import kmu.starsector.consolecommands.ConsoleCommandsOverlay;
+import kmu.starsector.consolecommands.ConsoleOverlay;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -35,8 +37,9 @@ import java.util.Set;
  * animation's in-flight progress does not, since a half-slid rail is not a choice worth restoring.
  * Because it sits flush against the visor's edges, it omits the
  * border edges it shares with the visor - the left always, and the bottom when the box reaches the visor's
- * bottom - so its frame reads as part of the visor rather than a second box drawn over it. The "is the
- * sidebar live" gate is "is there a live canvas under it":
+ * bottom - so its frame reads as part of the visor rather than a second box drawn over it. Its half of the
+ * "is the sidebar live" gate - the screen half, the console half being every host's alike - is "is there a
+ * live canvas under it":
  * {@link IntelScreenView#getMapVisorRect()} returns the visor rectangle while it is lit and
  * {@code null} when the intel tab is not showing, one of the sub-tabs that share it (Planets, Factions) is up
  * instead, or a large-description item has blanked the preview, so a non-null rectangle is both the gate and
@@ -53,9 +56,12 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     
     /**
      * The one intel-screen host; the render and input listeners registered for the intel screen reference it.
-     * This is where the live intel-screen binding is chosen, the host itself naming only the role.
+     * This is where the live intel-screen and console bindings are chosen, the host itself naming only the
+     * roles.
      */
-    public static final IntelSidebarHost INSTANCE = new IntelSidebarHost(new VanillaIntelScreenView());
+    public static final IntelSidebarHost INSTANCE = new IntelSidebarHost(
+        new VanillaIntelScreenView(),
+        new ConsoleCommandsOverlay());
 
     // How tall this screen's tab band stands: this sidebar overlays the visor under the vanilla map
     // toggles and reads tighter than the on-map one, so it crowds the preview less. Eighteen against the
@@ -83,23 +89,16 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     // which binding backs it; INSTANCE is where the live one is named.
     private final IntelScreenView intelScreen;
 
-    IntelSidebarHost(IntelScreenView intelScreen) {
+    IntelSidebarHost(IntelScreenView intelScreen, ConsoleOverlay consoleOverlay) {
         // Opens folded to the rail on a save that has never moved it, so the panel never covers the visor
         // uninvited - the player expands it by the collapse handle when they want the controls. The intel
         // screen's own pick goes with it: a switch on the map screen leaves it where it was, and reopening
         // the intel screen returns to this pick rather than inheriting the map's.
         super(
             new PersistedSidebarFold(INTEL_SIDEBAR_DOCKED_KEY, true),
-            MapLayerRegistry.getIntelSelection());
+            MapLayerRegistry.getIntelSelection(),
+            consoleOverlay);
         this.intelScreen = intelScreen;
-    }
-
-    @Override
-    public boolean isOverlayShowing() {
-        // One reading, asking whether there is a live canvas under the panel: the rectangle covers the
-        // intel tab not showing and a blanked preview alike. Which look that canvas wears is not asked,
-        // since the layer overlay these controls drive paints in both.
-        return intelScreen.getMapVisorRect() != null;
     }
 
     @Override
@@ -149,6 +148,14 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         return intelScreen.isMapStarscapeModeOn()
             ? "intel tab; visor lit; Starscape on"
             : "intel tab; visor lit; Starscape off";
+    }
+
+    @Override
+    protected boolean isHostScreenShowing() {
+        // One reading, asking whether there is a live canvas under the panel: the rectangle covers the
+        // intel tab not showing and a blanked preview alike. Which look that canvas wears is not asked,
+        // since the layer overlay these controls drive paints in both.
+        return intelScreen.getMapVisorRect() != null;
     }
 
     // Which frame edges the box reserves inset space for, decided before layout so a dropped edge collapses

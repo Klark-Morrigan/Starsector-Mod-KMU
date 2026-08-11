@@ -13,6 +13,8 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.settings.KmuMapLayerSettings;
+import kmu.starsector.consolecommands.ConsoleOverlay;
+import kmu.starsector.consolecommands.ConsoleOverlayFake;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -39,6 +41,9 @@ import static org.mockito.Mockito.when;
  * default, so a clash with a screen's own bindings is settled by rebinding; it writes only the host's own
  * pick, so a press on one screen leaves the other screen's tab where it was; and it consumes only a press
  * it acted on, so every other key reaches the screen underneath.
+ *
+ * <p>Pins the shared "is the sidebar live" gate with it: a console taking the keyboard stands every host
+ * down, which is what frees the shortcut keys above to type rather than switch tabs.
  */
 final class BaseSidebarHostTest {
 
@@ -233,16 +238,83 @@ final class BaseSidebarHostTest {
         }
     }
 
+    @Nested
+    class IsOverlayShowing {
+
+        @Test
+        void isOverlayShowingIsFalseWhileAConsoleIsUpOverTheHostsOwnScreen() {
+            // The whole point of the gate: the panel draws after the entire core UI, so a console overlay
+            // it did not stand down for would be drawn under it while its shortcut keys ate the keystrokes
+            // the console was opened to receive.
+            var consoleOverlayFake = new ConsoleOverlayFake();
+            var host = createHostOnAShowingScreen(consoleOverlayFake);
+
+            consoleOverlayFake.openConsole();
+
+            assertThat(host.isOverlayShowing())
+                .isFalse();
+        }
+
+        @Test
+        void isOverlayShowingIsTrueOnAShowingScreenWithNoConsoleUp() {
+            // The console read is the only thing added to the screen read, so a closed console has to leave
+            // the panel exactly where it was - a gate stuck shut would take the sidebar off every screen.
+            var host = createHostOnAShowingScreen(new ConsoleOverlayFake());
+
+            assertThat(host.isOverlayShowing())
+                .isTrue();
+        }
+
+        @Test
+        void isOverlayShowingIsFalseOffTheHostsScreenWithNoConsoleUp() {
+
+            var host = createHost(mock(ActiveLayerSelection.class));
+
+            assertThat(host.isOverlayShowing())
+                .isFalse();
+        }
+
+        @Test
+        void isOverlayShowingLeavesTheScreenUnreadWhileAConsoleIsUp() {
+            // A screen read walks live widgets, so the cheaper answer is asked first and the walk skipped
+            // while the panel is standing down anyway.
+            var consoleOverlayFake = new ConsoleOverlayFake();
+            var host = createHostOnAShowingScreen(consoleOverlayFake);
+
+            consoleOverlayFake.openConsole();
+            host.isOverlayShowing();
+
+            assertThat(host.screenReadCount)
+                .isZero();
+        }
+    }
+
     // A host carrying nothing but the plumbing under test: the shared key handling is the base's, so the
     // per-screen answers are stubbed out rather than bound to either live screen.
     private static SidebarHostFake createHost(ActiveLayerSelection layerSelection) {
+        return createHost(layerSelection, new ConsoleOverlayFake(), false);
+    }
+
+    // A host whose own screen is up, so what the gate then answers is down to the console alone.
+    private static SidebarHostFake createHostOnAShowingScreen(ConsoleOverlay consoleOverlay) {
+        return createHost(mock(ActiveLayerSelection.class), consoleOverlay, true);
+    }
+
+    private static SidebarHostFake createHost(
+            ActiveLayerSelection layerSelection,
+            ConsoleOverlay consoleOverlay,
+            boolean isHostScreenShowing) {
 
         var foldSelectionMock = mock(SidebarFoldSelection.class);
 
         when(foldSelectionMock.isRailDocked())
             .thenReturn(false);
 
-        return new SidebarHostFake(foldSelectionMock, layerSelection);
+        return new SidebarHostFake(
+            foldSelectionMock,
+            layerSelection,
+            consoleOverlay,
+            isHostScreenShowing);
     }
 
     // Each layer bound to its own default, the state before the player rebinds anything.
@@ -303,17 +375,25 @@ final class BaseSidebarHostTest {
     }
 
     // The base host with its per-screen questions answered as "nothing to draw": only the shared key
-    // handling is under test here, and each concrete host pins its own gate, anchor, edges, and look. A
-    // host resolving no placement is never asked to paint, so it has no look to give.
+    // handling and the shared half of the gate are under test here, and each concrete host pins its own
+    // screen read, anchor, edges, and look. A host resolving no placement is never asked to paint, so it
+    // has no look to give.
     private static final class SidebarHostFake extends BaseSidebarHost {
 
-        private SidebarHostFake(SidebarFoldSelection foldSelection, ActiveLayerSelection layerSelection) {
-            super(foldSelection, layerSelection);
-        }
+        private final boolean isHostScreenShowing;
 
-        @Override
-        public boolean isOverlayShowing() {
-            return false;
+        // How often the screen half of the gate was asked, so "the console short-circuits it" can be
+        // pinned as never reached rather than merely as an answer that came out false anyway.
+        private int screenReadCount;
+
+        private SidebarHostFake(
+                SidebarFoldSelection foldSelection,
+                ActiveLayerSelection layerSelection,
+                ConsoleOverlay consoleOverlay,
+                boolean isHostScreenShowing) {
+
+            super(foldSelection, layerSelection, consoleOverlay);
+            this.isHostScreenShowing = isHostScreenShowing;
         }
 
         @Override
@@ -334,6 +414,12 @@ final class BaseSidebarHostTest {
         @Override
         public String describeViewState() {
             return "fake host";
+        }
+
+        @Override
+        protected boolean isHostScreenShowing() {
+            screenReadCount++;
+            return isHostScreenShowing;
         }
     }
 }

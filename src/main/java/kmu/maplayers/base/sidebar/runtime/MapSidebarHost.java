@@ -10,6 +10,8 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.PersistedSidebarFold;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
+import kmu.starsector.consolecommands.ConsoleCommandsOverlay;
+import kmu.starsector.consolecommands.ConsoleOverlay;
 
 import java.util.Set;
 
@@ -23,6 +25,9 @@ import java.util.Set;
  * vanilla Sector/System tabs one tab-height above it, and a frame in the panel's own accent, this one
  * floating free with no neighbouring chrome to match.
  *
+ * <p>The sector map showing is this host's half of the gate; standing down for a console that has taken
+ * the keyboard is every host's alike and belongs to {@link BaseSidebarHost}.
+ *
  * <p>The Starscape filter is not part of the gate. The layers paint through several terrain surfaces,
  * of which two draw in Starscape mode, so there is an overlay under these controls whichever look the
  * map wears and the filter says nothing about whether the sidebar has anything to drive.
@@ -33,8 +38,11 @@ import java.util.Set;
  */
 public final class MapSidebarHost extends BaseSidebarHost {
     
-    /** The one on-map host; the render and input listeners registered for the sector map reference it. */
-    public static final MapSidebarHost INSTANCE = new MapSidebarHost();
+    /**
+     * The one on-map host; the render and input listeners registered for the sector map reference it. This
+     * is where the live console read is chosen, the host itself naming only the role.
+     */
+    public static final MapSidebarHost INSTANCE = new MapSidebarHost(new ConsoleCommandsOverlay());
 
     // How tall this screen's tab band stands: the on-map sidebar floats free beside the vanilla
     // Sector/System tabs and matches their weight. Content-space - the panel strokes its own top border
@@ -46,18 +54,14 @@ public final class MapSidebarHost extends BaseSidebarHost {
     // returns every existing save to the opening default.
     private static final String MAP_SIDEBAR_DOCKED_KEY = "$kmu_political_map_sidebar_docked";
 
-    private MapSidebarHost() {
+    MapSidebarHost(ConsoleOverlay consoleOverlay) {
         // Opens out on a save that has never folded it: this panel is the player's primary way in to the
         // map layers and has the screen width to sit open, so out is the useful first sight of it. The
         // map screen's own pick goes with it, so its tab is unmoved by a switch on the intel screen.
-        super(new PersistedSidebarFold(MAP_SIDEBAR_DOCKED_KEY, false), MapLayerRegistry.getMapSelection());
-    }
-
-    @Override
-    public boolean isOverlayShowing() {
-        // Per-host rather than a host-blind "a map is showing somewhere": this panel anchors to the
-        // sector map's own screen, so it needs that screen up and not merely a map on some other one.
-        return CampaignMapView.isSectorMapShowing();
+        super(
+            new PersistedSidebarFold(MAP_SIDEBAR_DOCKED_KEY, false),
+            MapLayerRegistry.getMapSelection(),
+            consoleOverlay);
     }
 
     @Override
@@ -88,6 +92,13 @@ public final class MapSidebarHost extends BaseSidebarHost {
     @Override
     public String describeViewState() {
         return CampaignMapView.describeViewState();
+    }
+
+    @Override
+    protected boolean isHostScreenShowing() {
+        // Per-host rather than a host-blind "a map is showing somewhere": this panel anchors to the
+        // sector map's own screen, so it needs that screen up and not merely a map on some other one.
+        return CampaignMapView.isSectorMapShowing();
     }
 
     // The seamless strip, matching the vanilla Sector/System tabs this row hangs beneath.
