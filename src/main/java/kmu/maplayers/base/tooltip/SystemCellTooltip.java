@@ -266,7 +266,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // system holds, so what reads comfortably on a two-colony system and what fits on screen for a
     // twelve-colony one are not the same setting, and which of the two matters is the player's call.
     private static CursorTooltipStyle buildStyle() {
-        return new CursorTooltipStyle(
+        return CursorTooltipStyle.createStyle(
             TooltipStyle
                 .createStyle(
                     TextStyle.createStyle(HEADER_FONT),
@@ -279,14 +279,14 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
             OPACITY,
             BORDER_WIDTH,
             StarsectorUiColour.BLACK.resolve(),
-            StarsectorUiColour.VANILLA_PLAYER_BASE.resolve(),
-            buildLeaderLineStyle());
+            StarsectorUiColour.VANILLA_PLAYER_BASE.resolve())
+            .ruledBy(buildLeaderLineStyle());
     }
 
-    // How heavily the line from a label across to its value draws. Read live off the player's own two
-    // knobs rather than taken at KMLib's shipped weights: how heavy a solid run looks beside a line of
-    // glyphs turns on the face, the size, and the atlas behind it, so where it sits against the text is
-    // a judgement made on screen at whatever scale the player runs the game at.
+    // How heavily the line from a label across to its value draws. Layered over KMLib's own weights
+    // rather than left at them, because how heavy a solid run looks beside a line of glyphs turns on the
+    // face, the size, and the atlas behind it - so where it sits against the text is a judgement made on
+    // screen, at whatever scale the player runs the game at, and therefore the player's to make.
     private static TooltipLeaderLineStyle buildLeaderLineStyle() {
         return new TooltipLeaderLineStyle(
             KmuMapLayerSettings.getMapTooltipLeaderThickness(),
