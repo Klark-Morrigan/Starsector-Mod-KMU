@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.entities.EntityMapIcon;
+import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
@@ -82,11 +82,6 @@ final class ExpandedSystemClaimTooltipTest {
     // box withholds of a market they have not found, and which listing ties it marks, are the
     // resolver's and pinned there; the cases below are about which faction gets an account at all.
     private static final boolean IS_KNOWN_TO_PLAYER = true;
-
-    // No colony posed here is marked with a map glyph. Whether a market line leads with one is the
-    // resolver's and pinned there, and a mark on every line would run through the reading-order
-    // assertions these cases are actually about.
-    private static final Optional<EntityMapIcon> NO_MAP_ICON = Optional.empty();
 
     private static final boolean IS_TERRITORIAL = true;
 
@@ -320,9 +315,11 @@ final class ExpandedSystemClaimTooltipTest {
     // than by the arithmetic inside one. Every one of them heads the listing, since no case here is
     // about a tie or where the economy put anything.
     private static MarketClaimBreakdown buildMarket(String marketName, int marketSize) {
+        // Marked with no glyph: whether a market line leads with one is the resolver's and pinned
+        // there, and a mark on every line would run through the reading-order assertions these cases
+        // are actually about.
         return new MarketClaimBreakdown(
-            marketName,
-            NO_MAP_ICON,
+            EntityNameplate.createUnmarkedNameplate(marketName),
             FIRST_LISTED,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.WEIGHED,

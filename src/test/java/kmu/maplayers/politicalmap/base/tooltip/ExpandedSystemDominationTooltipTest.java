@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.entities.EntityMapIcon;
+import kmlib.starsector.entities.EntityNameplate;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
@@ -12,7 +12,6 @@ import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
-import kmu.maplayers.politicalmap.base.dominance.UnweighedColony;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -61,9 +60,10 @@ final class ExpandedSystemDominationTooltipTest {
 
     private static final String SYSTEM_ID = "askonia";
 
-    // A colony whose entity the game marks with no glyph. Every case here is about which faction a
-    // colony is listed under rather than about what its line leads with.
-    private static final Optional<EntityMapIcon> NO_ICON = Optional.empty();
+    // The one colony the economy does not list, marked with no glyph: every case here is about which
+    // faction a colony is listed under rather than about what its line leads with.
+    private static final EntityNameplate UNLISTED_COLONY =
+        EntityNameplate.createUnmarkedNameplate("Galatia Academy");
 
     // Stability is left unweighed throughout, so a colony breaks down into the one factor each case is
     // about rather than into a stability line every assertion would have to step over.
@@ -171,7 +171,7 @@ final class ExpandedSystemDominationTooltipTest {
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Culann", 3.0))));
             stubUnweighedColonies(Map.of(
                 "hegemony",
-                List.of(new UnweighedColony("Galatia Academy", NO_ICON))));
+                List.of(UNLISTED_COLONY)));
 
             var accountResolver =
                 tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
@@ -187,7 +187,7 @@ final class ExpandedSystemDominationTooltipTest {
             stubBreakdowns(Map.of());
             stubUnweighedColonies(Map.of(
                 "tritachyon",
-                List.of(new UnweighedColony("Galatia Academy", NO_ICON))));
+                List.of(UNLISTED_COLONY)));
 
             var accountResolver =
                 tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
@@ -263,7 +263,7 @@ final class ExpandedSystemDominationTooltipTest {
             stubBreakdowns(Map.of());
             stubUnweighedColonies(Map.of(
                 "hegemony",
-                List.of(new UnweighedColony("Galatia Academy", NO_ICON))));
+                List.of(UNLISTED_COLONY)));
 
             var accountResolver =
                 tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
@@ -318,7 +318,7 @@ final class ExpandedSystemDominationTooltipTest {
     // Stands in the second read, the colonies present that the economy does not list. Stubbed apart
     // from the weighed ones because that is how the box reads them: two walks, so nothing an unlisted
     // colony says can reach the pass.
-    private void stubUnweighedColonies(Map<String, List<UnweighedColony>> coloniesByFactionId) {
+    private void stubUnweighedColonies(Map<String, List<EntityNameplate>> coloniesByFactionId) {
         footprintsMock
             .when(() -> KnownMarketFootprints.readUnweighedColoniesByFaction(
                 any(),
@@ -331,8 +331,7 @@ final class ExpandedSystemDominationTooltipTest {
     // one number it is ranked against its siblings by.
     private static MarketWeightBreakdown buildBreakdown(String marketName, double contribution) {
         return new MarketWeightBreakdown(
-            marketName,
-            NO_ICON,
+            EntityNameplate.createUnmarkedNameplate(marketName),
             false,
             FULL_STABILITY,
             new BaseSizeFactor(4, 4.0, contribution, 0.0),

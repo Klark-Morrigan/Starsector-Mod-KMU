@@ -5,8 +5,8 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.starsector.entities.EntityMapIcon;
-import kmlib.starsector.entities.EntityMapIcons;
+import kmlib.starsector.entities.EntityNameplate;
+import kmlib.starsector.entities.EntityNameplates;
 import kmlib.starsector.markets.MarketPatrols;
 import kmlib.starsector.markets.Markets;
 import kmlib.starsector.markets.PatrolCounts;
@@ -52,8 +52,8 @@ import java.util.Optional;
  * <p>Beside those two sits a third read that weighs nothing:
  * {@link #readUnweighedColoniesByFaction}, the colonies present in the system that the
  * economy does not list. They reach a caller describing the system and no caller
- * computing it, which is why they are a separate walk answering a separate type - the
- * pass sees exactly the markets it sees today.
+ * computing it, which is why they are a separate walk answering nothing but a nameplate -
+ * the pass sees exactly the markets it sees today.
  */
 public final class KnownMarketFootprints {
 
@@ -260,6 +260,13 @@ public final class KnownMarketFootprints {
      * that must not see these colonies cannot be handed them by accident. What the two walks share
      * is the one thing that must not drift between them: which markets count as colonies here.
      *
+     * <p>Each colony comes back as its nameplate alone rather than as a zeroed
+     * {@link MarketWeightBreakdown}, and that is the guarantee the separation turns on: zero weight
+     * is not absence on this side - a weightless colony still marks presence and paints its system
+     * unopposed - so a value that could be summed into a footprint would leave the pass one
+     * forgotten branch away from painting a system for a faction the mechanic never counted. A name
+     * and a glyph cannot be summed into anything.
+     *
      * @param sector                           the sector whose economy is read; assumed non-null
      *                                         with a non-null economy, which the callers guard
      *                                         before delegating
@@ -267,21 +274,20 @@ public final class KnownMarketFootprints {
      * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
      *                                         still counts (the "show all factions" dev reveal);
      *                                         false applies the normal known-to-player filter
-     * @return each faction's unlisted colonies in the system, keyed by faction id and in the
-     *         system's own entity order; empty when every colony present is one the economy lists
+     * @return each faction's unlisted colonies in the system, identified and nothing more, keyed by
+     *         faction id and in the system's own entity order; empty when every colony present is
+     *         one the economy lists
      */
-    public static Map<String, List<UnweighedColony>> readUnweighedColoniesByFaction(
+    public static Map<String, List<EntityNameplate>> readUnweighedColoniesByFaction(
             SectorAPI sector,
             StarSystemAPI system,
             boolean shouldIncludeUndiscoveredMarkets) {
 
-        var coloniesByFactionId = new LinkedHashMap<String, List<UnweighedColony>>();
+        var coloniesByFactionId = new LinkedHashMap<String, List<EntityNameplate>>();
         for (var market : readUnweighedColonies(sector, system, shouldIncludeUndiscoveredMarkets)) {
             coloniesByFactionId
                 .computeIfAbsent(market.getFaction().getId(), factionId -> new ArrayList<>())
-                .add(new UnweighedColony(
-                    market.getName(),
-                    EntityMapIcons.resolveMapIcon(market.getPrimaryEntity())));
+                .add(Markets.readNameplate(market));
         }
         return coloniesByFactionId;
     }
@@ -384,31 +390,22 @@ public final class KnownMarketFootprints {
     }
 
     // Everything one market contributes to its own breakdown, gathered before any rule applies:
-    // how it is identified - its name and the glyph the map marks it with - its size, and the
-    // station and patrol tiers the two optional factors admitted.
+    // how it and its station are identified, its size, and the patrol tiers the patrol factor
+    // admitted.
     // Gathered once because the market's worth is worked out twice - at full worth, then
     // under its own stability - and the connected-entity scan, the dynamic-stat lookup and the
-    // two icon-spec reads behind it must not be paid for twice.
+    // two icon-spec reads behind it must not be paid for twice. The station's nameplate in
+    // particular is read here, where the scan has just answered the token, rather than where the
+    // factor is built: that is the half that runs twice.
     private static WeighedMarket readWeighedMarket(MarketAPI market, DominanceRules rules) {
         return new WeighedMarket(
-            market.getName(),
-            EntityMapIcons.resolveMapIcon(market.getPrimaryEntity()),
+            Markets.readNameplate(market),
             market.isHidden(),
             market.getSize(),
             market.getStabilityValue(),
             findWeighedStation(market, rules.station())
-                .map(KnownMarketFootprints::readWeighedStation),
+                .map(EntityNameplates::readNameplate),
             readWeighedPatrolCounts(market, rules.patrols()));
-    }
-
-    // The station that earned the bonus, as the breakdown has to state it: its name and the glyph
-    // the map marks it with. Read here, where the scan has just answered the token, rather than
-    // where the factor is built - that runs twice for a market whose stability costs it something,
-    // and the icon-spec read behind the glyph is worth exactly as much the second time as the first.
-    private static WeighedStation readWeighedStation(SectorEntityToken station) {
-        return new WeighedStation(
-            station.getName(),
-            EntityMapIcons.resolveMapIcon(station));
     }
 
     // One market's weight stated factor by factor under a given stability scaling. The same
@@ -420,8 +417,7 @@ public final class KnownMarketFootprints {
             StabilityScaling stabilityScaling) {
 
         return new MarketWeightBreakdown(
-            market.name(),
-            market.icon(),
+            market.nameplate(),
             market.isHidden(),
             market.stability(),
             buildBaseSizeFactor(market, rules.baseSize(), stabilityScaling),
@@ -457,14 +453,13 @@ public final class KnownMarketFootprints {
     // the rate removes - so both of the factor's cuts read the same way round.
     private static StationFactor buildStationFactor(
             WeighedMarket market,
-            WeighedStation station,
+            EntityNameplate station,
             StationWeighting rules,
             StabilityScaling stabilityScaling) {
 
         var hiddenMarketRate = market.isHidden() ? rules.hiddenMarketRate() : FULL_STATION_RATE;
         return new StationFactor(
-            station.name(),
-            station.icon(),
+            station,
             rules.weight(),
             1.0 - hiddenMarketRate,
             stabilityScaling.computePenaltyFraction(rules.lowStabilityPenalty()),
@@ -587,41 +582,26 @@ public final class KnownMarketFootprints {
      * scan, the dynamic-stat lookup and the two icon-spec reads are paid for once however many
      * times the market's worth is worked out.
      *
-     * @param name      the colony's display name
-     * @param icon      the glyph the sector map marks the colony's own entity with, or empty where
-     *                  it carries none. Read here with the rest of the market, so the icon the
-     *                  breakdown carries is the one belonging to the market that was weighed
+     * @param nameplate how the colony is identified - its name and the glyph the sector map marks
+     *                  it with. Read here with the rest of the market, so what the breakdown
+     *                  carries belongs to the market that was weighed
      * @param isHidden  whether the colony is concealed rather than held in the open
      * @param size      the colony's own size, as the economy reports it
      * @param stability the colony's stability on its own 0..10 band - the reading behind
      *                  every one of the penalties below, carried as the economy states it
      *                  rather than as the fraction the scaling divides it down to
-     * @param station   the market's orbital station, when the station factor admitted one
+     * @param station   how the market's orbital station is identified, when the station factor
+     *                  admitted one. Carried as the nameplate rather than as the token it was read
+     *                  from, because the token is a live entity whose specs cost a lookup apiece
+     *                  and the factor is built once per weighing while the station is found once
      * @param patrols   the market's patrol-tier counts, when the patrol factor admitted them
      */
     private record WeighedMarket(
-        String name,
-        Optional<EntityMapIcon> icon,
+        EntityNameplate nameplate,
         boolean isHidden,
         int size,
         double stability,
-        Optional<WeighedStation> station,
+        Optional<EntityNameplate> station,
         Optional<PatrolCounts> patrols) {
-    }
-
-    /**
-     * One market's orbital station as its factor has to state it: how the station is identified,
-     * and nothing of what it earned.
-     *
-     * <p>Held as the pair rather than as the token it was read from, because the token is a live
-     * entity whose specs cost a lookup apiece, and the factor is built once per weighing of the
-     * market while the station is found once for the market entire.
-     *
-     * @param name the station's display name
-     * @param icon the glyph the sector map marks the station with, or empty where it carries none
-     */
-    private record WeighedStation(
-        String name,
-        Optional<EntityMapIcon> icon) {
     }
 }

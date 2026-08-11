@@ -266,8 +266,8 @@ public final class ClaimScoreRowResolver {
 
         var line = CellTooltipEntryLine
             .createLine(
-                CellTooltipMark.resolveMarkForMapIcon(market.marketIcon()),
-                market.marketName(),
+                CellTooltipMark.resolveMarkForMapIcon(market.marketNameplate().mapIcon()),
+                market.marketNameplate().displayName(),
                 KmlibNumbers.formatGroupedInteger(resolveContestScore(market)))
             .indexedAt(
                 KmuStrings.format(

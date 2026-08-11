@@ -1,8 +1,6 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
-import kmlib.starsector.entities.EntityMapIcon;
-
-import java.util.Optional;
+import kmlib.starsector.entities.EntityNameplate;
 
 /**
  * The attached-station part of one market's dominance weight: the station that earned it,
@@ -17,12 +15,11 @@ import java.util.Optional;
  * the map marks that station by: a system's stations are told apart on the map by their icon
  * as much as by their name.
  *
- * @param stationName                 the display name of the market's own orbital station
- * @param stationIcon                 the glyph the sector map marks that station with, or empty
- *                                    where it carries none. Recorded where the station entity was
- *                                    found rather than looked up again by whatever draws the name,
- *                                    so the glyph shown can only belong to the very station whose
- *                                    bonus is stated beside it
+ * @param stationNameplate             how the market's own orbital station is identified to a
+ *                                    reader - its name and the glyph the sector map marks it with.
+ *                                    Recorded where the station entity was found rather than looked
+ *                                    up again by whatever draws the name, so the pair shown can only
+ *                                    belong to the very station whose bonus is stated beside it
  * @param weight                      the size points a station is worth before either cut
  * @param hiddenMarketPenaltyFraction the share of that weight a hidden market forfeits,
  *                                    0..1; zero for a market held in the open
@@ -32,8 +29,7 @@ import java.util.Optional;
  *                                    points, after both cuts
  */
 public record StationFactor(
-    String stationName,
-    Optional<EntityMapIcon> stationIcon,
+    EntityNameplate stationNameplate,
     double weight,
     double hiddenMarketPenaltyFraction,
     double stabilityPenaltyFraction,

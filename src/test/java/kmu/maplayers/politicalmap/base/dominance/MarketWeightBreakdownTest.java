@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
-import kmlib.starsector.entities.EntityMapIcon;
+import kmlib.starsector.entities.EntityNameplate;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,9 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class MarketWeightBreakdownTest {
 
-    // An entity the game marks with no glyph, which is every colony and every station here: what a box
-    // leads a name with says nothing about what the parts beneath it add up to.
-    private static final Optional<EntityMapIcon> NO_ICON = Optional.empty();
+    // The colony and the station the parts below belong to, each named and marked with no glyph: what
+    // a box leads a name with says nothing about what the parts beneath it add up to.
+    private static final EntityNameplate COLONY = EntityNameplate.createUnmarkedNameplate("Chicomoztoc");
+    private static final EntityNameplate STATION = EntityNameplate.createUnmarkedNameplate("Fort Ludd");
 
     @Nested
     class ComputeTotalContribution {
@@ -31,12 +32,11 @@ class MarketWeightBreakdownTest {
         void sumsEveryFactorThatRan() {
 
             var breakdown = new MarketWeightBreakdown(
-                "Chicomoztoc",
-                NO_ICON,
+                COLONY,
                 false,
                 5.0,
                 new BaseSizeFactor(4, 4.0, 2.0, 0.5),
-                Optional.of(new StationFactor("Fort Ludd", NO_ICON, 1.0, 0.0, 0.25, 0.75)),
+                Optional.of(new StationFactor(STATION, 1.0, 0.0, 0.25, 0.75)),
                 Optional.of(new PatrolFactor(
                     new PatrolTierFactor(2, 0.25, 0.375),
                     new PatrolTierFactor(1, 0.5, 0.375),
@@ -86,12 +86,11 @@ class MarketWeightBreakdownTest {
             // parts preserves.
             var third = 1.0 / 3.0 / DOMINANCE_WEIGHT_SCALE;
             var breakdown = new MarketWeightBreakdown(
-                "Chicomoztoc",
-                NO_ICON,
+                COLONY,
                 false,
                 10.0,
                 new BaseSizeFactor(4, 4.0, third, 0.0),
-                Optional.of(new StationFactor("Fort Ludd", NO_ICON, 1.0, 0.0, 0.0, third)),
+                Optional.of(new StationFactor(STATION, 1.0, 0.0, 0.0, third)),
                 Optional.of(new PatrolFactor(
                     new PatrolTierFactor(1, third, third),
                     new PatrolTierFactor(0, 0.5, 0.0),
@@ -116,8 +115,7 @@ class MarketWeightBreakdownTest {
     // for the sums that turn on the base-size factor alone.
     private static MarketWeightBreakdown buildBaseSizeOnlyBreakdown(double contribution) {
         return new MarketWeightBreakdown(
-            "Jangala",
-            NO_ICON,
+            COLONY,
             false,
             10.0,
             new BaseSizeFactor(4, 4.0, contribution, 0.0),

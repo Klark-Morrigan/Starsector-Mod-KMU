@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.entities.EntityMapIcon;
+import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
@@ -84,14 +85,16 @@ final class ClaimScoreRowResolverTest {
     private static final boolean IS_KNOWN_TO_PLAYER = true;
     private static final boolean IS_UNFOUND_BY_PLAYER = false;
 
-    // The glyph the sector map marks a market's entity with, and a market whose entity carries none.
-    // The authored colour is carried because the read hands one over, not because anything below
-    // reads it: a resolved line has nowhere to put an asset colour, which is the point of the mark
-    // stating that it follows its name instead.
-    private static final Optional<EntityMapIcon> MARKET_ICON = Optional.of(
-        new EntityMapIcon("graphics/warroom/icon_planet.png", new Color(120, 200, 90)));
+    // A market the sector map marks with a glyph, and one it marks with none - the two readings a
+    // market line's opening run turns on. The authored colour is carried because the read hands one
+    // over, not because anything below reads it: a resolved line has nowhere to put an asset colour,
+    // which is the point of the mark stating that it follows its name instead.
+    private static final EntityNameplate MARKED_MARKET = new EntityNameplate(
+        STRONGEST_MARKET,
+        Optional.of(new EntityMapIcon("graphics/warroom/icon_planet.png", new Color(120, 200, 90))));
 
-    private static final Optional<EntityMapIcon> NO_MAP_ICON = Optional.empty();
+    private static final EntityNameplate UNMARKED_MARKET =
+        EntityNameplate.createUnmarkedNameplate(STRONGEST_MARKET);
 
     // How the mechanic met a market. A concealed one it skips before scoring, so it competes in
     // neither comparison the listing settles and no tie it appears in is marked; one the economy
@@ -143,7 +146,7 @@ final class ClaimScoreRowResolverTest {
             // The reader has a list of names and a map, and the glyph is the one thing the two share
             // at a glance.
             var rows = resolveContestedRows(buildStanding(
-                buildMarkedMarket(MARKET_ICON),
+                buildMarkedMarket(MARKED_MARKET),
                 List.of()));
 
             assertThat(rows.get(0).line().mark().spritePath())
@@ -158,8 +161,11 @@ final class ClaimScoreRowResolverTest {
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
                 List.of(new MarketClaimBreakdown(
-                    "Tigra City",
-                    MARKET_ICON,
+                    new EntityNameplate(
+                        "Tigra City",
+                        Optional.of(new EntityMapIcon(
+                            "graphics/warroom/icon_planet.png",
+                            new Color(120, 200, 90)))),
                     SECOND_LISTED,
                     IS_KNOWN_TO_PLAYER,
                     CONCEALED,
@@ -179,7 +185,7 @@ final class ClaimScoreRowResolverTest {
             // into the box unchanged they arrive brighter than the numbers the account is about - a
             // column of coloured glyphs reads as the finding when what it is is a bullet point.
             var rows = resolveContestedRows(buildStanding(
-                buildMarkedMarket(MARKET_ICON),
+                buildMarkedMarket(MARKED_MARKET),
                 List.of()));
 
             assertThat(rows.get(0).line().mark().isInLineColour())
@@ -191,7 +197,7 @@ final class ClaimScoreRowResolverTest {
             // An entity carrying no authored icon hands the absence straight over, so the line is
             // built from its words rather than from an image run with nothing to load.
             var rows = resolveContestedRows(buildStanding(
-                buildMarkedMarket(NO_MAP_ICON),
+                buildMarkedMarket(UNMARKED_MARKET),
                 List.of()));
 
             assertThat(rows.get(0).line().hasMark())
@@ -203,7 +209,7 @@ final class ClaimScoreRowResolverTest {
             // A size or a garrison bonus is a term of arithmetic with nothing on the map to point at,
             // so a glyph there would be standing in for a number.
             var rows = resolveContestedRows(buildStanding(
-                buildMarkedMarket(MARKET_ICON),
+                buildMarkedMarket(MARKED_MARKET),
                 List.of()));
 
             assertThat(rows.get(0).children())
@@ -691,8 +697,7 @@ final class ClaimScoreRowResolverTest {
             // print alike.
             var garrisoned = resolveContestedRows(buildStanding(
                 new MarketClaimBreakdown(
-                    STRONGEST_MARKET,
-                    NO_MAP_ICON,
+                    UNMARKED_MARKET,
                     FIRST_LISTED,
                     IS_KNOWN_TO_PLAYER,
                     ContestAdmission.WEIGHED,
@@ -801,8 +806,7 @@ final class ClaimScoreRowResolverTest {
             boolean isKnownToPlayer) {
 
         return new MarketClaimBreakdown(
-            STRONGEST_MARKET,
-            NO_MAP_ICON,
+            UNMARKED_MARKET,
             FIRST_LISTED,
             isKnownToPlayer,
             admitAsFound(isKnownToPlayer),
@@ -814,10 +818,9 @@ final class ClaimScoreRowResolverTest {
     // The market a standing rests on, stated as one the sector map marks with the given glyph or with
     // none - the two readings the line's opening run turns on. A garrison, so the cases about which
     // lines carry a mark have a term line beneath the market to read.
-    private static MarketClaimBreakdown buildMarkedMarket(Optional<EntityMapIcon> marketIcon) {
+    private static MarketClaimBreakdown buildMarkedMarket(EntityNameplate market) {
         return new MarketClaimBreakdown(
-            STRONGEST_MARKET,
-            marketIcon,
+            market,
             FIRST_LISTED,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.WEIGHED,
@@ -835,8 +838,7 @@ final class ClaimScoreRowResolverTest {
             int listingPosition) {
 
         return new MarketClaimBreakdown(
-            marketName,
-            NO_MAP_ICON,
+            EntityNameplate.createUnmarkedNameplate(marketName),
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             CONCEALED,
@@ -854,8 +856,7 @@ final class ClaimScoreRowResolverTest {
             int listingPosition) {
 
         return new MarketClaimBreakdown(
-            marketName,
-            NO_MAP_ICON,
+            EntityNameplate.createUnmarkedNameplate(marketName),
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             OFF_ECONOMY,
@@ -868,8 +869,7 @@ final class ClaimScoreRowResolverTest {
     // one term of it: its own size, two others beside it, and a garrison on it.
     private static MarketClaimBreakdown buildFullyScoredMarket() {
         return new MarketClaimBreakdown(
-            STRONGEST_MARKET,
-            NO_MAP_ICON,
+            UNMARKED_MARKET,
             FIRST_LISTED,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.WEIGHED,
@@ -903,8 +903,7 @@ final class ClaimScoreRowResolverTest {
             boolean isKnownToPlayer) {
 
         return new MarketClaimBreakdown(
-            marketName,
-            NO_MAP_ICON,
+            EntityNameplate.createUnmarkedNameplate(marketName),
             listingPosition,
             isKnownToPlayer,
             admitAsFound(isKnownToPlayer),

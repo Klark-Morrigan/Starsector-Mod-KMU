@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.entities.EntityMapIcon;
+import kmlib.starsector.entities.EntityNameplate;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
@@ -9,7 +10,6 @@ import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
 import kmu.maplayers.politicalmap.base.dominance.StationFactor;
-import kmu.maplayers.politicalmap.base.dominance.UnweighedColony;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -61,20 +61,17 @@ final class MarketWeightRowResolverTest {
 
     // A faction every one of whose colonies here the economy lists, which is the ordinary system
     // and so every case bar the ones about the colonies it does not.
-    private static final List<UnweighedColony> NO_UNWEIGHED_COLONIES = List.of();
+    private static final List<EntityNameplate> NO_UNWEIGHED_COLONIES = List.of();
 
-    // The glyph the sector map marks a colony's entity with, and a colony whose entity carries none.
-    // The authored colour is carried because the read hands one over, not because anything below
-    // reads it: a resolved line has nowhere to put an asset colour, which is the correction itself.
-    private static final Optional<EntityMapIcon> COLONY_ICON = Optional.of(
-        new EntityMapIcon("graphics/warroom/icon_planet.png", new Color(120, 200, 90)));
+    // The station a stationed colony's factor names. Marked with a glyph of its own, held apart from
+    // the colony's so a case reading a marked station line cannot pass on the colony's icon having
+    // leaked a level down.
+    private static final EntityNameplate MARKED_STATION = new EntityNameplate(
+        "Fort Ludd",
+        Optional.of(new EntityMapIcon("graphics/icons/station0.png", new Color(200, 200, 255))));
 
-    private static final Optional<EntityMapIcon> NO_ICON = Optional.empty();
-
-    // The glyph the sector map marks a station with. Held apart from the colony's so a case reading a
-    // marked station line cannot pass on the colony's own icon having leaked a level down.
-    private static final Optional<EntityMapIcon> STATION_ICON = Optional.of(
-        new EntityMapIcon("graphics/icons/station0.png", new Color(200, 200, 255)));
+    private static final EntityNameplate UNMARKED_STATION =
+        EntityNameplate.createUnmarkedNameplate("Fort Ludd");
 
     @BeforeEach
     void installStrings() {
@@ -139,7 +136,7 @@ final class MarketWeightRowResolverTest {
             // The reader has a list of names and a map, and the glyph is the one thing the two share
             // at a glance.
             var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildMarkedBreakdown(COLONY_ICON)),
+                List.of(buildMarkedBreakdown(buildMarkedColony("Jangala"))),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
@@ -153,7 +150,7 @@ final class MarketWeightRowResolverTest {
             // into the box unchanged they arrive brighter than the numbers the account is about - a
             // column of coloured glyphs reads as the finding when what it is is a bullet point.
             var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildMarkedBreakdown(COLONY_ICON)),
+                List.of(buildMarkedBreakdown(buildMarkedColony("Jangala"))),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
@@ -166,7 +163,7 @@ final class MarketWeightRowResolverTest {
             // An entity carrying no authored icon hands the absence straight over, so the line is
             // built from its words rather than from an image run with nothing to load.
             var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildMarkedBreakdown(NO_ICON)),
+                List.of(buildMarkedBreakdown(EntityNameplate.createUnmarkedNameplate("Jangala"))),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
@@ -180,7 +177,7 @@ final class MarketWeightRowResolverTest {
             // point at, so a glyph there would be standing in for a number.
             var factors = MarketWeightRowResolver
                 .resolveMarketRows(
-                    List.of(buildMarkedBreakdown(COLONY_ICON)),
+                    List.of(buildMarkedBreakdown(buildMarkedColony("Jangala"))),
                     NO_UNWEIGHED_COLONIES,
                     buildRules())
                 .get(0)
@@ -228,8 +225,7 @@ final class MarketWeightRowResolverTest {
             // do, so it is said on the line it changes rather than on one of its own.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(new MarketWeightBreakdown(
-                    "Selkie Station",
-                    NO_ICON,
+                    EntityNameplate.createUnmarkedNameplate("Selkie Station"),
                     true,
                     FULL_STABILITY,
                     PLAIN_SIZE,
@@ -280,7 +276,7 @@ final class MarketWeightRowResolverTest {
             // The station's own name is what ties the number to something the player can find on the
             // map, which a line reading "Station" would not.
             var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildStationedBreakdown("Fort Ludd", NO_ICON)),
+                List.of(buildStationedBreakdown(UNMARKED_STATION)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
@@ -294,7 +290,7 @@ final class MarketWeightRowResolverTest {
             // there by their glyph as much as by their name - so the mark settles more here than it
             // does on the colony line above.
             var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildStationedBreakdown("Fort Ludd", STATION_ICON)),
+                List.of(buildStationedBreakdown(MARKED_STATION)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
@@ -307,7 +303,7 @@ final class MarketWeightRowResolverTest {
             // A station's authored shade is as loud in a text box as a colony's, and the line means
             // no more by it: the glyph is the identifier, and the finding is the number opposite.
             var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildStationedBreakdown("Fort Ludd", STATION_ICON)),
+                List.of(buildStationedBreakdown(MARKED_STATION)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
@@ -320,7 +316,7 @@ final class MarketWeightRowResolverTest {
             // A station carrying no authored icon hands the absence straight over, so the line is
             // built from the station's name rather than from an image run with nothing to load.
             var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildStationedBreakdown("Fort Ludd", NO_ICON)),
+                List.of(buildStationedBreakdown(UNMARKED_STATION)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
@@ -334,7 +330,7 @@ final class MarketWeightRowResolverTest {
             // other line beneath the colony states a term of the arithmetic behind its weight.
             var factors = MarketWeightRowResolver
                 .resolveMarketRows(
-                    List.of(buildFortifiedBreakdown(STATION_ICON)),
+                    List.of(buildFortifiedBreakdown(MARKED_STATION)),
                     NO_UNWEIGHED_COLONIES,
                     buildRules())
                 .get(0)
@@ -446,7 +442,7 @@ final class MarketWeightRowResolverTest {
             // brought to the score - it is present, and it moved nothing.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(),
-                List.of(new UnweighedColony("Galatia Academy", NO_ICON)),
+                List.of(EntityNameplate.createUnmarkedNameplate("Galatia Academy")),
                 buildRules());
 
             assertThat(rows.get(0).line().labelText())
@@ -462,7 +458,7 @@ final class MarketWeightRowResolverTest {
             // that the box would then owe an answer to.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(),
-                List.of(new UnweighedColony("Galatia Academy", NO_ICON)),
+                List.of(EntityNameplate.createUnmarkedNameplate("Galatia Academy")),
                 buildRules());
 
             assertThat(rows.get(0).line().qualifierText())
@@ -475,7 +471,7 @@ final class MarketWeightRowResolverTest {
             // scored; in the list's own colour it would pass for a weight competed with and lost on.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(),
-                List.of(new UnweighedColony("Galatia Academy", NO_ICON)),
+                List.of(EntityNameplate.createUnmarkedNameplate("Galatia Academy")),
                 buildRules());
 
             assertThat(rows.get(0).line().isValueUncounted())
@@ -488,7 +484,7 @@ final class MarketWeightRowResolverTest {
             // factor lines at nought would invite adding up to a total nobody computed.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(),
-                List.of(new UnweighedColony("Galatia Academy", NO_ICON)),
+                List.of(EntityNameplate.createUnmarkedNameplate("Galatia Academy")),
                 buildRules());
 
             assertThat(rows.get(0).children())
@@ -502,7 +498,7 @@ final class MarketWeightRowResolverTest {
             // number only one of them earned would put the unweighed above it.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildBreakdown("Culann", new BaseSizeFactor(0, 0.0, 0.0, 1.0))),
-                List.of(new UnweighedColony("Galatia Academy", NO_ICON)),
+                List.of(EntityNameplate.createUnmarkedNameplate("Galatia Academy")),
                 buildRules());
 
             assertThat(readLabelTexts(rows))
@@ -518,7 +514,7 @@ final class MarketWeightRowResolverTest {
             // about the colony that counted for nothing.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(),
-                List.of(new UnweighedColony("Galatia Academy", COLONY_ICON)),
+                List.of(buildMarkedColony("Galatia Academy")),
                 buildRules());
 
             assertThat(rows.get(0).line().mark().spritePath())
@@ -534,8 +530,8 @@ final class MarketWeightRowResolverTest {
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(),
                 List.of(
-                    new UnweighedColony("Tibicena", NO_ICON),
-                    new UnweighedColony("Galatia Academy", NO_ICON)),
+                    EntityNameplate.createUnmarkedNameplate("Tibicena"),
+                    EntityNameplate.createUnmarkedNameplate("Galatia Academy")),
                 buildRules());
 
             assertThat(readLabelTexts(rows))
@@ -570,11 +566,21 @@ final class MarketWeightRowResolverTest {
         return rows.get(0).children().get(2).line();
     }
 
+    // A colony under the name a case needs, marked with the glyph vanilla gives a world. The authored
+    // colour is carried because the read hands one over, not because anything below reads it: a
+    // resolved line has nowhere to put an asset colour, which is the correction itself.
+    private static EntityNameplate buildMarkedColony(String marketName) {
+        return new EntityNameplate(
+            marketName,
+            Optional.of(new EntityMapIcon(
+                "graphics/warroom/icon_planet.png",
+                new Color(120, 200, 90))));
+    }
+
     // A plain colony's parts - no station, no patrols - at full stability.
     private static MarketWeightBreakdown buildBreakdown(String marketName, BaseSizeFactor baseSize) {
         return new MarketWeightBreakdown(
-            marketName,
-            NO_ICON,
+            EntityNameplate.createUnmarkedNameplate(marketName),
             false,
             FULL_STABILITY,
             baseSize,
@@ -582,13 +588,12 @@ final class MarketWeightRowResolverTest {
             Optional.empty());
     }
 
-    // A colony the map marks with the given glyph, fielding one small patrol so its account runs two
-    // levels deep - a factor line and a tier line beneath it. Both levels are what the cases about
-    // where a mark may appear have to read, the rule being that only the colony's own line takes one.
-    private static MarketWeightBreakdown buildMarkedBreakdown(Optional<EntityMapIcon> marketIcon) {
+    // The given colony, fielding one small patrol so its account runs two levels deep - a factor line
+    // and a tier line beneath it. Both levels are what the cases about where a mark may appear have to
+    // read, the rule being that no term of arithmetic takes one.
+    private static MarketWeightBreakdown buildMarkedBreakdown(EntityNameplate colony) {
         return new MarketWeightBreakdown(
-            "Jangala",
-            marketIcon,
+            colony,
             false,
             FULL_STABILITY,
             PLAIN_SIZE,
@@ -606,8 +611,7 @@ final class MarketWeightRowResolverTest {
     private static List<CellTooltipEntry> resolveFixedRatedHiddenMarketRows() {
         return MarketWeightRowResolver.resolveMarketRows(
             List.of(new MarketWeightBreakdown(
-                "Selkie Station",
-                NO_ICON,
+                EntityNameplate.createUnmarkedNameplate("Selkie Station"),
                 true,
                 FULL_STABILITY,
                 new BaseSizeFactor(7, 2.5, 2.5, 0.0),
@@ -624,31 +628,26 @@ final class MarketWeightRowResolverTest {
     // A colony whose station factor ran, named and marked for the cases asserting what the station
     // line leads with. The colony's own glyph is left absent so a mark read beneath it can only be
     // the station's.
-    private static MarketWeightBreakdown buildStationedBreakdown(
-            String stationName,
-            Optional<EntityMapIcon> stationIcon) {
-
+    private static MarketWeightBreakdown buildStationedBreakdown(EntityNameplate station) {
         return new MarketWeightBreakdown(
-            "Jangala",
-            NO_ICON,
+            EntityNameplate.createUnmarkedNameplate("Jangala"),
             false,
             FULL_STABILITY,
             PLAIN_SIZE,
-            Optional.of(new StationFactor(stationName, stationIcon, 3.0, 0.0, 0.0, 3.0)),
+            Optional.of(new StationFactor(station, 3.0, 0.0, 0.0, 3.0)),
             Optional.empty());
     }
 
     // A stationed colony fielding a patrol as well, so the case about which factor lines take a mark
     // has every shape of them at once: the station's, the two terms above it, and a patrol line with
     // a tier of its own a level deeper.
-    private static MarketWeightBreakdown buildFortifiedBreakdown(Optional<EntityMapIcon> stationIcon) {
+    private static MarketWeightBreakdown buildFortifiedBreakdown(EntityNameplate station) {
         return new MarketWeightBreakdown(
-            "Jangala",
-            NO_ICON,
+            EntityNameplate.createUnmarkedNameplate("Jangala"),
             false,
             FULL_STABILITY,
             PLAIN_SIZE,
-            Optional.of(new StationFactor("Fort Ludd", stationIcon, 3.0, 0.0, 0.0, 3.0)),
+            Optional.of(new StationFactor(station, 3.0, 0.0, 0.0, 3.0)),
             Optional.of(new PatrolFactor(
                 new PatrolTierFactor(1, 0.25, 0.25),
                 new PatrolTierFactor(0, 0.5, 0.0),
@@ -660,8 +659,7 @@ final class MarketWeightRowResolverTest {
     // own defaults, so a case reads the counts it set rather than arithmetic of its own.
     private static MarketWeightBreakdown buildPatrollingBreakdown(int small, int medium, int large) {
         return new MarketWeightBreakdown(
-            "Jangala",
-            NO_ICON,
+            EntityNameplate.createUnmarkedNameplate("Jangala"),
             false,
             FULL_STABILITY,
             PLAIN_SIZE,

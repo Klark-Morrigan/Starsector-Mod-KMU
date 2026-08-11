@@ -15,6 +15,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Tags;
 import com.fs.starfarer.api.util.DynamicStatsAPI;
 
 import kmlib.starsector.entities.EntityMapIcon;
+import kmlib.starsector.entities.EntityNameplate;
 
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -87,6 +88,11 @@ class KnownMarketFootprintsIntegrationTest {
     // carrying no icon spec at all. Named so the colonies the icon cases are not about read as
     // deliberately unmarked rather than as an oversight.
     private static final Optional<EntityMapIcon> NO_ICON = Optional.empty();
+
+    // The unlisted colony every off-economy case poses, identified as the read answers it - vanilla's
+    // own deliberately unregistered market, whose stubbed entity carries no icon spec.
+    private static final EntityNameplate UNLISTED_ACADEMY =
+        EntityNameplate.createUnmarkedNameplate("Galatia Academy");
 
     // A fluent builder over DominanceRules and its three weight factors, defaulting every
     // knob to its CSV default so each test states only the axis it pins. The defaults are:
@@ -855,7 +861,7 @@ class KnownMarketFootprintsIntegrationTest {
             var sector = buildFortifiedColonySector();
             var breakdown = readOnlyBreakdown(sector, buildFortifiedColonyRules());
 
-            assertThat(breakdown.marketName())
+            assertThat(breakdown.marketNameplate().displayName())
                 .isEqualTo("Chicomoztoc");
             assertThat(breakdown.isHiddenMarket())
                 .isFalse();
@@ -887,7 +893,7 @@ class KnownMarketFootprintsIntegrationTest {
 
             assertThat(station)
                 .isPresent();
-            assertThat(station.get().stationName())
+            assertThat(station.get().stationNameplate().displayName())
                 .isEqualTo(STATION_NAME);
             assertThat(station.get().weight())
                 .isEqualTo(1.0);
@@ -1041,10 +1047,10 @@ class KnownMarketFootprintsIntegrationTest {
             assertThat(breakdowns)
                 .containsOnlyKeys("hegemony", "tritachyon");
             assertThat(breakdowns.get("hegemony"))
-                .extracting(MarketWeightBreakdown::marketName)
+                .extracting(breakdown -> breakdown.marketNameplate().displayName())
                 .containsExactly("Jangala", "Culann");
             assertThat(breakdowns.get("tritachyon"))
-                .extracting(MarketWeightBreakdown::marketName)
+                .extracting(breakdown -> breakdown.marketNameplate().displayName())
                 .containsExactly("Eventide");
         }
 
@@ -1165,7 +1171,7 @@ class KnownMarketFootprintsIntegrationTest {
                     "graphics/icons/station0.png",
                     new Color(200, 200, 255)));
 
-            assertThat(readOnlyBreakdown(sector, buildRules().build()).marketIcon())
+            assertThat(readOnlyBreakdown(sector, buildRules().build()).marketNameplate().mapIcon())
                 .contains(new EntityMapIcon(
                     "graphics/icons/station0.png",
                     new Color(200, 200, 255)));
@@ -1179,7 +1185,7 @@ class KnownMarketFootprintsIntegrationTest {
                 "hegemony-system",
                 withName(buildVisibleMarket(buildFaction("hegemony"), 4), "Jangala"));
 
-            assertThat(readOnlyBreakdown(sector, buildRules().build()).marketIcon())
+            assertThat(readOnlyBreakdown(sector, buildRules().build()).marketNameplate().mapIcon())
                 .isEmpty();
         }
 
@@ -1203,11 +1209,11 @@ class KnownMarketFootprintsIntegrationTest {
 
             assertThat(breakdown.station())
                 .isPresent();
-            assertThat(breakdown.station().get().stationIcon())
+            assertThat(breakdown.station().get().stationNameplate().mapIcon())
                 .contains(new EntityMapIcon(
                     "graphics/icons/station0.png",
                     new Color(200, 200, 255)));
-            assertThat(breakdown.marketIcon())
+            assertThat(breakdown.marketNameplate().mapIcon())
                 .contains(new EntityMapIcon(
                     "graphics/warroom/icon_planet.png",
                     new Color(120, 200, 90)));
@@ -1225,7 +1231,7 @@ class KnownMarketFootprintsIntegrationTest {
 
             assertThat(breakdown.station())
                 .isPresent();
-            assertThat(breakdown.station().get().stationIcon())
+            assertThat(breakdown.station().get().stationNameplate().mapIcon())
                 .isEmpty();
         }
 
@@ -1287,7 +1293,7 @@ class KnownMarketFootprintsIntegrationTest {
             assertThat(colonies)
                 .containsOnlyKeys("independent");
             assertThat(colonies.get("independent"))
-                .containsExactly(new UnweighedColony("Galatia Academy", NO_ICON));
+                .containsExactly(UNLISTED_ACADEMY);
         }
 
         @Test
@@ -1308,7 +1314,7 @@ class KnownMarketFootprintsIntegrationTest {
                     buildOnlySystem(sector),
                     false)
                 .get("independent"))
-                .containsExactly(new UnweighedColony(
+                .containsExactly(new EntityNameplate(
                     "Galatia Academy",
                     Optional.of(new EntityMapIcon(
                         "graphics/icons/station0.png",
@@ -1335,8 +1341,8 @@ class KnownMarketFootprintsIntegrationTest {
                     false)
                 .get("independent"))
                 .containsExactly(
-                    new UnweighedColony("Tibicena", NO_ICON),
-                    new UnweighedColony("Galatia Academy", NO_ICON));
+                    EntityNameplate.createUnmarkedNameplate("Tibicena"),
+                    UNLISTED_ACADEMY);
         }
 
         @Test
@@ -1405,7 +1411,7 @@ class KnownMarketFootprintsIntegrationTest {
                     buildOnlySystem(sector),
                     false)
                 .get("independent"))
-                .containsExactly(new UnweighedColony("Galatia Academy", NO_ICON));
+                .containsExactly(UNLISTED_ACADEMY);
         }
 
         @Test

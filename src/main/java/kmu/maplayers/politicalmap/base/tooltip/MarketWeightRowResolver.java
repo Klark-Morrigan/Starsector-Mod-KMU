@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmlib.starsector.entities.EntityMapIcon;
+import kmlib.starsector.entities.EntityNameplate;
 import kmlib.text.KmlibNumbers;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
@@ -9,7 +9,6 @@ import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
-import kmu.maplayers.politicalmap.base.dominance.UnweighedColony;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.settings.HiddenMarketScalingChoice;
 import kmu.util.KmuStrings;
@@ -17,7 +16,6 @@ import kmu.util.KmuStrings;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Resolves the arithmetic behind a faction's dominance score into the entries a block lists it as:
@@ -67,13 +65,13 @@ public final class MarketWeightRowResolver {
         Comparator
             .comparingInt(MarketWeightBreakdown::computeTotalWeight)
             .reversed()
-            .thenComparing(MarketWeightBreakdown::marketName);
+            .thenComparing(breakdown -> breakdown.marketNameplate().displayName());
 
     // A colony the pass never weighed is ranked by name alone, having no weight to be ranked by -
     // which is the rule the weighed colonies fall back on at a tie, so one order runs down the
     // whole list rather than two.
-    private static final Comparator<UnweighedColony> UNWEIGHED_ORDER =
-        Comparator.comparing(UnweighedColony::marketName);
+    private static final Comparator<EntityNameplate> UNWEIGHED_ORDER =
+        Comparator.comparing(EntityNameplate::displayName);
 
     // A term of arithmetic is named rather than marked: a stability, a size or a patrol tier has
     // nothing on the map to point at, so a glyph there would stand in for a number. The two lines that
@@ -98,7 +96,8 @@ public final class MarketWeightRowResolver {
      *
      * @param breakdowns        the faction's counted colonies in the hovered system, in any order
      * @param unweighedColonies the faction's colonies in the system that the economy does not list,
-     *                          which no weight was worked out for
+     *                          identified and nothing more, no weight having been worked out for
+     *                          them
      * @param rules             the weighting rules the pass resolved under, which decide whether
      *                          stability is a cause worth stating
      * @return one entry per colony, the weighed ones ranked ahead of the unweighed; empty when the
@@ -106,7 +105,7 @@ public final class MarketWeightRowResolver {
      */
     public static List<CellTooltipEntry> resolveMarketRows(
             List<MarketWeightBreakdown> breakdowns,
-            List<UnweighedColony> unweighedColonies,
+            List<EntityNameplate> unweighedColonies,
             DominanceRules rules) {
 
         var entries = new ArrayList<CellTooltipEntry>();
@@ -135,8 +134,7 @@ public final class MarketWeightRowResolver {
 
         return CellTooltipEntry
             .createEntry(createMapEntityLine(
-                breakdown.marketName(),
-                breakdown.marketIcon(),
+                breakdown.marketNameplate(),
                 KmlibNumbers.formatGroupedInteger(breakdown.computeTotalWeight())))
             .nesting(resolveFactorEntries(breakdown, rules));
     }
@@ -149,10 +147,9 @@ public final class MarketWeightRowResolver {
     // statement about the colony rather than anything the colony scored, so it reads in the quiet
     // shade: in the list's own colour it would pass for a weight competed with and lost on, which is
     // the one thing it is not.
-    private static CellTooltipEntry resolveUnweighedEntry(UnweighedColony colony) {
+    private static CellTooltipEntry resolveUnweighedEntry(EntityNameplate colony) {
         return CellTooltipEntry.createEntry(createMapEntityLine(
-                colony.marketName(),
-                colony.marketIcon(),
+                colony,
                 KmlibNumbers.formatGroupedInteger(NO_WEIGHT))
             .statesUncountedValue());
     }
@@ -167,16 +164,16 @@ public final class MarketWeightRowResolver {
     // Shared by the two levels that take a mark rather than spelled out at each, so the box arrives
     // at one rule for a line about a thing on the map instead of one rule per level.
     //
-    // Read off the breakdown the subject arrived in rather than looked up here, so the glyph shown is
-    // the glyph of the very colony or station whose number sits beside it.
+    // Takes the subject's nameplate whole rather than its two halves, so the name drawn and the glyph
+    // beside it can only have come from the one entity - and read off the breakdown that entity
+    // arrived in rather than looked up here, so that entity is the one the number belongs to.
     private static CellTooltipEntryLine createMapEntityLine(
-            String entityName,
-            Optional<EntityMapIcon> entityIcon,
+            EntityNameplate entity,
             String valueText) {
 
         return CellTooltipEntryLine.createLine(
-            CellTooltipMark.resolveMarkForMapIcon(entityIcon),
-            entityName,
+            CellTooltipMark.resolveMarkForMapIcon(entity.mapIcon()),
+            entity.displayName(),
             valueText);
     }
 
@@ -205,8 +202,7 @@ public final class MarketWeightRowResolver {
         // subject the map draws.
         breakdown.station().ifPresent(station -> entries.add(CellTooltipEntry.createEntry(
             createMapEntityLine(
-                station.stationName(),
-                station.stationIcon(),
+                station.stationNameplate(),
                 MarketFactorText.formatStation(station)))));
 
         breakdown.patrols().ifPresent(patrols -> entries.add(resolvePatrolEntry(patrols)));

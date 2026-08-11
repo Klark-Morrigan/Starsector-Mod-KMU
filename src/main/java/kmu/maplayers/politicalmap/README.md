@@ -184,27 +184,30 @@ in, no cut that took nothing, and a patrol tier's rate stated apart from the tot
 box draws the arithmetic quieter than the finding).
 Every colony line leads with the glyph the sector map marks that colony's entity with, which is the
 one thing the box and the map can share at a glance - a name alone places a colony only for a reader
-who already remembers it. The icon is recorded on the walk that counted the colony
-(`MarketWeightBreakdown.marketIcon`, read through KMLib's `EntityMapIcons`) rather than looked up
-again where the line is drawn, the same rule every other part of the account is read under: the box
-reads what the pass recorded, so there is no second market lookup free to answer for a different one.
+who already remembers it. Name and glyph travel as one `EntityNameplate` (KMLib's
+`kmlib.starsector.entities`), read on the walk that counted the colony
+(`MarketWeightBreakdown.marketNameplate`, through `Markets.readNameplate`) rather than looked up again
+where the line is drawn, the same rule every other part of the account is read under: the box reads
+what the pass recorded, so there is no second market lookup free to answer for a different one - and
+no way for one colony's name to be drawn beside another's glyph, the pair never being apart.
 It draws in the colony name's own colour and not the shade the map paints it: those shades are
 authored to tell one world from another against black, and carried into a text box unchanged they
 arrive brighter than the numbers the account is about, so a column of them reads as the finding when
 what it is is a bullet point. The station line beneath a colony takes one on the same terms
-(`StationFactor.stationIcon`, read where the connected-entity scan answered the token rather than
-beside the name, so the glyph can only be the station whose bonus is stated by it): it is the one
+(`StationFactor.stationNameplate`, read through `EntityNameplates.readNameplate` where the
+connected-entity scan answered the token rather than beside the name, so the glyph can only be the
+station whose bonus is stated by it): it is the one
 term of the account named for a thing on the map rather than for a piece of arithmetic, and the mark
 settles more there than a level up, a system's stations being told apart on the map by their glyph as
 much as by their name. Every other line beneath a colony stays unmarked - a stability or a size has
 nothing on the map to point at.
 That box lists one kind of colony no score above it accounts for: one the economy does not list,
 which the weight read has nothing to weigh. It comes from a second walk over the same colony filter
-(`KnownMarketFootprints.readUnweighedColoniesByFaction`), carried as its own `UnweighedColony` rather
+(`KnownMarketFootprints.readUnweighedColoniesByFaction`), carried as an `EntityNameplate` alone rather
 than as a zeroed `MarketWeightBreakdown` - zero weight is not absence on this side, a weightless
 colony still marking presence and painting its system unopposed, so a value that could be summed into
 a footprint would leave the pass one forgotten branch away from painting a system for a faction the
-mechanic never counted. It is named at the foot of the faction's list, led by the map's glyph like any
+mechanic never counted, and a name with a glyph cannot be summed into anything. It is named at the foot of the faction's list, led by the map's glyph like any
 other colony - it being the only trace of such a colony the player has beside the name - at nought in
 the quiet shade, and breaks down into no factors - the same sentence the claims box speaks for a
 market its own mechanic never weighed, and for the same reason: the colony is there and it moved
@@ -225,8 +228,8 @@ those won anything, and a marker on each would read as several holders of a syst
 have one; over a decree it goes unsaid entirely, since nothing any market scored settled the matter.
 Every market line leads with the glyph the sector map marks that market's entity with, scored or not,
 on the same terms the domination box's colony lines take one: read off the breakdown the market
-arrived in (`MarketClaimBreakdown.marketIcon`, resolved by `VanillaClaimBreakdownReader` through
-KMLib's `EntityMapIcons`) rather than looked up again where the line is drawn, so no second market
+arrived in (`MarketClaimBreakdown.marketNameplate`, resolved by `VanillaClaimBreakdownReader` through
+`Markets.readNameplate`) rather than looked up again where the line is drawn, so no second market
 lookup can answer for a different colony, and drawn in the market name's own colour rather than the
 map's. The term lines beneath a market carry no mark - a size or a garrison bonus has nothing on the
 map to point at.
