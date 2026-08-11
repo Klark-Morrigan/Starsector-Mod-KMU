@@ -180,6 +180,21 @@ about what the overlay means.
   effects and the box separately, and a pair of the layer's own - and this answers for the two that
   reach every layer, which a layer ANDs its own into. So one layer's box can go dark while another's
   stays up, and one row still silences them all.
+- **`base/hover/cover`** - whether anything is drawn over the map where the cursor rests, which a
+  layer asks before resolving a hover at all. A hover reads a cell out of map geometry, which knows
+  nothing of what is composited on top, so without this it lights cells and floats boxes under
+  whatever is covering them. `MapCover` is the role - one thing that can be over the cursor - and
+  `MapCoverReader` holds the set and stops at the first that answers. The three are
+  `ConsoleMapCover` (a text-entry console, which takes the whole screen and so reads no geometry at
+  all), `SidebarMapCover` (any host's panel, through `SidebarHosts`), and `VanillaChromeMapCover`
+  (the map's own tab strip and control bar, stated as "outside the map surface" since the chrome
+  widgets are a fact about one game build). They are held in ascending cost - a settled flag, then
+  arithmetic over a box this mod laid out, then a walk of the live widget tree - so the order is the
+  composition's and each cover states only its own reading. Every one fails open: what cannot be
+  established is not covering, since a read taken to refine the hover must not be able to switch it
+  off. One set for every layer, not one per layer, because nothing about a cover is a layer's own -
+  a layer holding its own could be given a cover its neighbour was not, which is how a console came
+  to hide the sidebar while the map went on lighting cells behind it.
 - **`base/tooltip`** - the box floating beside the cursor, in a later UI pass than the map's own.
   `MapLayerCellTooltip` owns the gates every hover box shares (the settings tiers above any layer, a
   map on screen, stepping aside for the vanilla star

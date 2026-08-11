@@ -28,11 +28,14 @@ import org.apache.log4j.Logger;
  * Off, because the console cannot be read any more and a retry would throw again on the next
  * frame, so it is as good as not installed. Named, because that is what turns a Console Commands
  * release moving the accessor into a line in the log rather than a report about the console being
- * unusable. Once per reader, because this is asked from render and input passes and the hop that
- * broke first is the one that stopped the read, so a further line from the same reader would say
- * nothing the first did not. Per reader rather than per session because a reader is constructed
- * where it is bound rather than shared, so a break names itself once for each caller that holds
- * one - a line or two, against the sixty a second an ungated warning would write.
+ * unusable. Once, because the hop that broke first is the one that stopped the read, so a further
+ * line would say nothing the first did not - one line against the sixty a second an ungated
+ * warning would write.
+ *
+ * <p>That "once" is a fact about the session rather than about a caller because {@link #INSTANCE}
+ * is what every caller reads: the question has one answer per frame however many passes ask it,
+ * and the settled enablement, the built presence and the spent warning are worth holding once
+ * rather than per binding.
  */
 public final class ConsoleCommandsOverlay implements ConsoleOverlay {
 
@@ -44,6 +47,15 @@ public final class ConsoleCommandsOverlay implements ConsoleOverlay {
     // so one line names both the cause and the consequence.
     private static final String FAIL_OPEN_CONSEQUENCE =
         " Anything that steps aside for an open console will no longer do so this session.";
+
+    /**
+     * The one live console read, shared by everything that stands down for a console. Callers name
+     * this where they compose; what they hold is the {@link ConsoleOverlay} role.
+     */
+    // Declared below the logger and not with the other headline members: constructing it runs this
+    // class's instance initialisers, and the warning among them takes LOG, which static init has
+    // not reached until its own declaration.
+    public static final ConsoleCommandsOverlay INSTANCE = new ConsoleCommandsOverlay();
 
     // Null until the first ask, then the settled answer: whether the console can be read at all.
     // The mod set cannot change within a run, so a successful read is held rather than repeated
@@ -59,9 +71,11 @@ public final class ConsoleCommandsOverlay implements ConsoleOverlay {
     private final SessionWarning warning = new SessionWarning(LOG);
 
     /**
-     * Reads the console state Console Commands itself publishes.
+     * Reads the console state Console Commands itself publishes. Package-private because a second
+     * live reader would keep a second settled enablement and spend a second warning on the same
+     * break; production reads {@link #INSTANCE}.
      */
-    public ConsoleCommandsOverlay() {
+    ConsoleCommandsOverlay() {
     }
 
     /**

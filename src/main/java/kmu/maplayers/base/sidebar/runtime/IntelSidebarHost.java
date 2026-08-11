@@ -61,7 +61,7 @@ public final class IntelSidebarHost extends BaseSidebarHost {
      */
     public static final IntelSidebarHost INSTANCE = new IntelSidebarHost(
         new VanillaIntelScreenView(),
-        new ConsoleCommandsOverlay());
+        ConsoleCommandsOverlay.INSTANCE);
 
     // How tall this screen's tab band stands: this sidebar overlays the visor under the vanilla map
     // toggles and reads tighter than the on-map one, so it crowds the preview less. Eighteen against the

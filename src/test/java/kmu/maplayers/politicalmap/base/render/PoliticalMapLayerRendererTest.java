@@ -1,12 +1,15 @@
 package kmu.maplayers.politicalmap.base.render;
 
+import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverState;
+import kmu.maplayers.base.hover.cover.MapCover;
+import kmu.maplayers.base.hover.cover.MapCoverReader;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.KmuPoliticalMapSettings;
-import kmu.starsector.consolecommands.ConsoleOverlayFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,6 +17,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.MockedStatic;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,9 +30,9 @@ import static org.mockito.Mockito.when;
 /**
  * Pins what this renderer decides for itself before any drawing happens: that a deselected view
  * costs a frame nothing whichever of its passes is running, that the hover box it answers the
- * framework with is the active view's and only while this layer's own tooltip switch is on, that an
- * open console counts as a cover over the map, and that a game load leaves nothing of the previous
- * sector behind. What the discard actually empties is
+ * framework with is the active view's and only while this layer's own tooltip switch is on, that a
+ * covered cursor parks the hover rather than leaving it standing, and that a game load leaves
+ * nothing of the previous sector behind. What the discard actually empties is
  * {@link PoliticalMapCacheTest}'s; the cache refresh, the cursor read and the GL emission run only
  * in-engine and are covered by their own collaborators.
  */
@@ -36,6 +40,16 @@ final class PoliticalMapLayerRendererTest {
 
     private static final float FACTOR = 1f;
     private static final float ALPHA_MULT = 1f;
+
+    // The two cover answers, stated as covers rather than as a stubbed reader, so a test arranges
+    // what is over the cursor without naming a console, a sidebar or the map's chrome - which of
+    // those is on screen is the reader's business and not this renderer's.
+    private static final MapCover COVERING_THE_MAP = () -> true;
+    private static final MapCover NOT_COVERING_THE_MAP = () -> false;
+
+    // A hover left standing from an earlier frame, so a parked read is told apart from one that
+    // never had anything to drop.
+    private static final MapHover HOVERED_CELL = new MapHover("system_id", List.of("system_id"));
 
     @Nested
     class PrepareFrame {
@@ -165,21 +179,52 @@ final class PoliticalMapLayerRendererTest {
     }
 
     @Nested
-    class IsMapCoveredAtCursor {
+    class PublishHoverIfAnyFeedbackNeedsIt {
 
         @Test
-        void isMapCoveredAtCursorAnswersCoveredWhileAConsoleIsOpen() {
-            // A console covers the whole screen, so the cell under the cursor is not what the player
-            // is pointing at - without this the map went on lighting cells and floating hover boxes
-            // behind an open console, the sidebar having already stood down and stopped covering it.
+        void publishHoverIfAnyFeedbackNeedsItParksTheHoverWhileTheMapIsCovered() {
+            // The renderer's half of the arrangement: a covered cursor is not hovering the cells
+            // beneath it, so the hover is parked rather than left standing. Without it the map went
+            // on lighting cells and floating boxes behind an open console.
             //
-            // The console is the only one of the three covers a test can reach: it is asked first
-            // and short-circuits the sidebar and the vanilla chrome, both of which read a live map.
-            var consoleOverlayFake = new ConsoleOverlayFake();
-            consoleOverlayFake.openConsole();
+            // Reached with the covers stubbed because the reads a running game answers - the
+            // sidebar's laid-out box, the vanilla chrome's widget tree - are the reader's own, and
+            // what this pins is that the renderer obeys whichever answer it gets.
+            MapHoverState.getInstance().publishHover(HOVERED_CELL);
 
-            assertThat(new PoliticalMapLayerRenderer(consoleOverlayFake).isMapCoveredAtCursor())
-                .isTrue();
+            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
+
+                new PoliticalMapLayerRenderer(new MapCoverReader(List.of(COVERING_THE_MAP)))
+                    .publishHoverIfAnyFeedbackNeedsIt(FACTOR);
+
+                assertThat(MapHoverState.getInstance().getHover())
+                    .isEqualTo(MapHover.NONE);
+            }
+        }
+
+        @Test
+        void publishHoverIfAnyFeedbackNeedsItParksTheHoverWhileEveryHoverSwitchIsOff() {
+            // The other park, pinned beside it so the covered one cannot be read as the only way a
+            // stale cell is dropped: with both kinds of feedback switched off there is nothing that
+            // wants the answer, and the cursor read is skipped along with the covers.
+            MapHoverState.getInstance().publishHover(HOVERED_CELL);
+
+            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                frameworkSettingsMock
+                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                    .thenReturn(false);
+
+                new PoliticalMapLayerRenderer(new MapCoverReader(List.of(NOT_COVERING_THE_MAP)))
+                    .publishHoverIfAnyFeedbackNeedsIt(FACTOR);
+
+                assertThat(MapHoverState.getInstance().getHover())
+                    .isEqualTo(MapHover.NONE);
+            }
         }
     }
 
@@ -214,5 +259,25 @@ final class PoliticalMapLayerRendererTest {
         layerSettingsMock
             .when(KmuPoliticalMapSettings::getPoliticalMapHoverTooltipEnabled)
             .thenReturn(isPoliticalTooltipEnabled);
+    }
+
+    // Every tier the effects are switched at, left on, so the cursor read is wanted and the covers
+    // are reached. The effects rather than the box because either kind on is enough to want the
+    // read, and the effects tier is the one the union asks first.
+    private static void stubHoverSwitchesOn(
+            MockedStatic<KmuMapLayerSettings> frameworkSettingsMock,
+            MockedStatic<KmuPoliticalMapSettings> layerSettingsMock) {
+
+        frameworkSettingsMock
+            .when(KmuMapLayerSettings::getMapHoveringEnabled)
+            .thenReturn(true);
+
+        frameworkSettingsMock
+            .when(KmuMapLayerSettings::getMapHoverEffectsEnabled)
+            .thenReturn(true);
+
+        layerSettingsMock
+            .when(KmuPoliticalMapSettings::getPoliticalMapHoverEffectsEnabled)
+            .thenReturn(true);
     }
 }

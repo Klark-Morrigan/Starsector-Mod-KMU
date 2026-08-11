@@ -2,22 +2,18 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
-import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.map.probes.MapIconOrderTrace;
-import kmlib.starsector.ui.map.probes.MapSurfaceBounds;
 import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
 
 import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
+import kmu.maplayers.base.hover.cover.MapCoverReader;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.render.MapOverlayBand;
-import kmu.maplayers.base.sidebar.runtime.SidebarHosts;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
-import kmu.starsector.consolecommands.ConsoleCommandsOverlay;
-import kmu.starsector.consolecommands.ConsoleOverlay;
 
 import org.apache.log4j.Logger;
 
@@ -53,10 +49,10 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
     /**
      * The one shared instance; the political-map layer hands it to the map surface as its renderer.
-     * This is where the live console read is chosen, the renderer itself naming only the role.
+     * This is where the live covers are chosen, the renderer itself naming only the reader.
      */
     public static final PoliticalMapLayerRenderer INSTANCE =
-        new PoliticalMapLayerRenderer(new ConsoleCommandsOverlay());
+        new PoliticalMapLayerRenderer(MapCoverReader.createForLiveScreen());
 
     private static final Logger LOG = Global.getLogger(PoliticalMapLayerRenderer.class);
 
@@ -68,10 +64,10 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     private final PoliticalMapCache cache = new PoliticalMapCache();
     private final PoliticalMapOverlayRenderer overlayRenderer = new PoliticalMapOverlayRenderer();
 
-    // Whether a console has taken the screen this frame. Handed in rather than read from the console
-    // mod here, so the renderer depends on the question and not on an optional mod, and a test can put
-    // a console up without one running.
-    private final ConsoleOverlay consoleOverlay;
+    // Whether anything is drawn over the map where the cursor rests. Handed in rather than composed
+    // here, so this layer neither names the things that can cover a map nor holds a set another
+    // layer could be given differently.
+    private final MapCoverReader mapCoverReader;
 
     // The last widget-trace line logged, so a resting cursor reports once rather than every frame.
     // Held here rather than in the trace because the trace only describes; deciding how often this
@@ -87,8 +83,8 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // running game - and because a player who leaves the hover off never needs one at all.
     private MapHoverPublisher hoverPublisher;
 
-    PoliticalMapLayerRenderer(ConsoleOverlay consoleOverlay) {
-        this.consoleOverlay = consoleOverlay;
+    PoliticalMapLayerRenderer(MapCoverReader mapCoverReader) {
+        this.mapCoverReader = mapCoverReader;
     }
 
     /**
@@ -156,29 +152,6 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         return view.resolveHoverTooltip();
     }
 
-    /**
-     * @return whether something is drawn over the map where the cursor rests, so the cell beneath it
-     *         is not what the player is pointing at. The three covers are asked as one answer, in
-     *         ascending cost, rather than as three park sites the hover read has to remember
-     */
-    // Package-private rather than private so the console cover is answerable without a live map:
-    // the first read short-circuits the two below it, which each need a running game.
-    boolean isMapCoveredAtCursor() {
-        // A text-entry console covers the whole screen, so nothing the cursor rests on is the map.
-        // Asked first, being a settled flag over a static holder while each read below resolves a
-        // live box to test the cursor against.
-        //
-        // Separate from the sidebar read even though the sidebar stands down for a console too
-        // (BaseSidebarHost.isOverlayShowing): with the panel hidden its cover answers false, which
-        // would leave the map lighting cells and floating boxes under the console.
-        //
-        // The sidebar comes next, being arithmetic over a box KMU already holds, and the vanilla
-        // chrome last, costing a read into the live widget tree.
-        return consoleOverlay.isOpen()
-            || isCursorOverSidebar()
-            || isCursorOverVanillaMapChrome();
-    }
-
     // Runs the cursor read only while some hover feedback still wants the answer - either the halo
     // and wash or the hover box. The whole read - the map-matrix read (bridged, and a per-frame
     // render-thread hop under Fast Rendering), the unproject, and the cell hit test - hangs off this
@@ -187,7 +160,10 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // kinds rather than the effects alone because the box needs the same hovered cell the halo does.
     // With both off the hover is parked so nothing downstream keeps a stale cell lit, and the
     // publisher (and the renderer binding it holds) is never created.
-    private void publishHoverIfAnyFeedbackNeedsIt(float factor) {
+    //
+    // Package-private rather than private so the parking is answerable without a live map: a
+    // covered cursor returns before the publisher, which needs the running game's GL matrices.
+    void publishHoverIfAnyFeedbackNeedsIt(float factor) {
         traceVanillaWidgetsUnderCursor();
 
         if (!PoliticalMapHoverGates.isCursorReadNeeded()) {
@@ -197,7 +173,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         // Something drawn over the map takes the cursor with it, and the hover is blind to all of
         // it: it resolves a cell from map geometry, which has no notion of what is composited on
         // top. Park so nothing under a cover is lit or described.
-        if (isMapCoveredAtCursor()) {
+        if (mapCoverReader.isMapCoveredAtCursor()) {
             MapHoverState.getInstance().clearHover();
             return;
         }
@@ -213,10 +189,10 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     }
 
     // Diagnostic only, and silent unless KMU's log verbosity is DEBUG: names the vanilla widgets the
-    // cursor is inside. The hover published below comes from the map's own geometry and knows
-    // nothing of the chrome laid over it, so a cursor on the map's tab strip still resolves the cell
-    // underneath and lights it. Fixing that needs to know which of the tab's widgets is the map and
-    // which are chrome, which is a fact about the live tree rather than something derivable.
+    // cursor is inside. The hover comes from the map's own geometry and knows nothing of the chrome
+    // laid over it, which is what the covers answer for - and this is the line that says which
+    // widgets a build actually puts under the cursor, so a cover that stops fitting a game build is
+    // diagnosed from the tree rather than guessed at.
     //
     // Logged here rather than in the library that reads it: the line is about this layer's problem
     // and belongs under this mod's own verbosity, which a logger named after a library class would
@@ -254,31 +230,4 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         }
     }
 
-    // Whether the cursor sits over the map's own chrome - the tab strip above it, the control bar
-    // below or across it - rather than over the map. The chrome is several small widgets whose
-    // identities are a fact about one game build, while the map surface is one widget, so the rule
-    // is stated about the surface: on the map means inside it and clear of everything drawn with it.
-    //
-    // Screen-blind, like the sidebar test above and for the same reason: the layer draws on the
-    // sector map and on the intel screen's map visor through one terrain pass, so the map the cursor
-    // is over is whichever the library reports on screen.
-    //
-    // Fails open. An unreadable widget tree, a screen showing no map at all, or a build this rule no
-    // longer fits reads as "the cursor is on the map" - which merely restores the un-suppressed
-    // behaviour rather than silencing every hover the layer has. A read taken to refine a feature
-    // must not be able to switch it off. The absence is not silent: the surface read warns once when
-    // it cannot answer for a map tab it did reach.
-    private static boolean isCursorOverVanillaMapChrome() {
-        var surfaceArea = MapSurfaceBounds.resolveSurfaceArea();
-        return surfaceArea != null
-            && !surfaceArea.containsPoint(UiCursor.getUiX(), UiCursor.getUiY());
-    }
-
-    // Whether the cursor sits over a map-layer sidebar, on whichever screen this frame is being drawn
-    // for. Host-blind because this renderer has no way to be anything else: it is reached through a
-    // hook that names no screen, and the layer draws on the sector map and on the intel screen's map
-    // visor through the same terrain pass, so the bar the cursor is over is not always the on-map one.
-    private static boolean isCursorOverSidebar() {
-        return SidebarHosts.isPointOverAnySidebar(UiCursor.getUiX(), UiCursor.getUiY());
-    }
 }

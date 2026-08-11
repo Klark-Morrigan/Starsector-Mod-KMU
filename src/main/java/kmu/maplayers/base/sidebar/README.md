@@ -70,9 +70,17 @@ the input listener cancels a dangling drag, so a console opened mid-drag leaves 
 
 What answers "is a console up" is `kmu.starsector.consolecommands.ConsoleOverlay`, injected into each
 host so the sidebar depends on the question rather than on an optional mod (each `INSTANCE` names the
-live `ConsoleCommandsOverlay`; a test states the answer). That read fails open - mod absent, class
-gone, accessor moved, read throwing - to "no console open", leaving the sidebar exactly as it behaves
-without the seam, and warns once per session naming the hop that broke.
+one live `ConsoleCommandsOverlay.INSTANCE`; a test states the answer). That read fails open - mod
+absent, class gone, accessor moved, read throwing - to "no console open", leaving the sidebar exactly
+as it behaves without the seam, and warns once per session naming the hop that broke. One shared
+reader rather than one per caller, so the settled enablement, the resolved presence and the spent
+warning are held once however many passes ask.
+
+Hiding the panel is only half of what a console owes the map, and the other half is not this
+package's: with the sidebar down, its cover over the map goes down with it, so the map's own hover
+would read straight through to the cells under the console. The console is therefore a cover in its
+own right - see [map layers](../../README.md) on `base/hover/cover`, which the sidebar's cover sits
+beside.
 
 Both screen gates ask the same question and nothing beyond it - is there a live canvas under the panel. The
 visor rect is absent when the intel tab is not showing, when a sibling sub-tab (Planets, Factions)
@@ -368,7 +376,9 @@ map's own box - 130 x 18, neighbours parted by a pixel, inside a band that reser
 is tall for the line the row sits on - so the row spans the same width whatever its tabs say and a renamed
 tab moves nothing. The raised-button row stays `TabBox.SNAPPED`, its buttons being laid inside the tabs the
 layout measured and taking their own channel from within them. A parted row rules no seams: a divider marks
-where two tabs meet, and parted tabs never do. The palette holds both flavours
+where two tabs meet, and parted tabs never do. What it paints there instead is its own backing - vanilla's
+row shows a dark panel through that pixel, and a strip floating over the map would show the map through it.
+The palette holds that backing plus both flavours
 of tab paint: an absolute `TabLook` per `TabLookState` (unselected, selected, hovered) and a relative
 `TabWash` per `TabWashState` (clicked), the pulse lifting whichever look the tab has settled on.
 
