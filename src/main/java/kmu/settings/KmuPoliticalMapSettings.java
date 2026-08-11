@@ -354,11 +354,12 @@ public final class KmuPoliticalMapSettings {
     // Mirrors the CSV row's defaultValue.
     private static final double DEFAULT_DESATURATION_DARKENING = 0.3;
 
-    // 20% toward white by default: enough for a spared cell's neutral to lift clear of the sunk
-    // greys around it, while staying a wash rather than a highlight - the cell is something the
-    // spotlight declined to hide, not something it is pointing at. Mirrors the CSV row's
+    // All the way to white by default: the neutral and the Independent grey the background sinks
+    // from are the same shade, so a partial lift leaves a spared cell reading against the value the
+    // receded fills started at. Taking it to the end of the range is what makes the cell
+    // unmistakable at a glance, which is the whole of what sparing it is for. Mirrors the CSV row's
     // defaultValue.
-    private static final double DEFAULT_PRESENCE_LIGHTENING = 0.2;
+    private static final double DEFAULT_PRESENCE_LIGHTENING = 1.0;
 
     // Both of this layer's hover switches on by default, like the two tiers above them: a tiered
     // gate that shipped with any level off would read to a player as a feature that is broken
@@ -743,9 +744,9 @@ public final class KmuPoliticalMapSettings {
 
     /**
      * @return how far a factionless cell the spotlight spares is washed toward white, as the
-     *         fraction of the way there: 0 leaves it at the plain neutral, 0.2 lifts it a fifth of
-     *         the way (the default), 1 goes to white. Only the value moves - the wash is applied to
-     *         RGB alone - so a grey stays the same grey and the cell cannot drift into reading as a
+     *         fraction of the way there: 0 leaves it at the plain neutral, 0.5 lifts it halfway,
+     *         1 goes to white (the default). Only the value moves - the wash is applied to RGB
+     *         alone - so a grey stays the same grey and the cell cannot drift into reading as a
      *         faction colour
      */
     public static double getPoliticalMapPresenceLightening() {
