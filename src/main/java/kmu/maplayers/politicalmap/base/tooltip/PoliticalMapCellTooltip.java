@@ -9,7 +9,6 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.SystemCellTooltip;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,11 +22,12 @@ import java.util.List;
  * on one tab and another way on the next would answer one hover two ways, a keystroke apart, with
  * nothing on screen to say which was right.
  *
- * <p>A decree is also drawn here, as the banner heading every one of the layer's boxes, rather than by
- * whichever body happens to mention it. It is a fact about the system rather than about the mechanic a
- * view paints by, so it reads the same under all of them - and stating it once is what stops a view
- * added later heading its box with the name alone while the tab beside it names the faction holding the
- * system.
+ * <p>A decree is also drawn here, as the banner heading the layer's boxes, rather than by whichever body
+ * happens to mention it. It is a fact about the system rather than about the mechanic a view paints by,
+ * so it reads the same under all of them - and stating it once is what stops a view added later heading
+ * its box with the name alone while the tab beside it names the faction holding the system. A box whose
+ * body makes the same statement says so and goes without the banner, so the one decree is met once
+ * either way.
  */
 public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
 
@@ -60,12 +60,27 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
         // The decree is read on its own rather than out of the full claim breakdown: a box may only
         // need to know whether one holds the system, and scoring every market in it to answer that
         // would charge the whole claim computation to every faction and alliance hover.
-        var rows = new ArrayList<TooltipRow>();
+        return CoreTerritoryHeading.resolveHeadingRows(
+            sector,
+            claimBreakdownReader.readCoreFactionId(system),
+            isStatingCoreClaimInBody());
+    }
 
-        CoreTerritoryRow
-            .resolveCoreTerritoryRow(sector, claimBreakdownReader.readCoreFactionId(system))
-            .ifPresent(rows::add);
-
-        return rows;
+    /**
+     * Whether this box's own body names the faction holding the system by decree. A box that does goes
+     * without the heading, since one hover stating the same decree twice reads as two separate facts
+     * about the system rather than as one said over.
+     *
+     * <p>Answered by the box rather than worked out from what it drew, because it follows from what the
+     * body is for rather than from what a given system happened to yield: a body that states the claim
+     * states it whenever there is one, and a system under no decree makes the question moot either way.
+     *
+     * <p>Not stating it is the ordinary case and the default, so a box whose subject is something other
+     * than the claim overrides nothing.
+     *
+     * @return true where the body already states the decree, so the heading would repeat it
+     */
+    protected boolean isStatingCoreClaimInBody() {
+        return false;
     }
 }

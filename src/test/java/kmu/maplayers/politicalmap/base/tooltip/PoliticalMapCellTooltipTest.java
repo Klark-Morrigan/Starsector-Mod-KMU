@@ -39,12 +39,13 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins what naming the claim in a single place buys the layer: every one of its boxes runs on that one
- * read, and every one of them heads with the decree holding the hovered system. Both are asserted over
- * the boxes as a set rather than on either of them, since the point is not that two boxes agree today
- * but that agreeing is not each box's decision to make.
+ * read, and each heads with the decree holding the hovered system unless its own body states that
+ * decree. Both are asserted over the boxes as a set rather than on either of them, since the point is
+ * not that two boxes agree today but that agreeing is not each box's decision to make.
  *
- * <p>The line itself has its own suite ({@link CoreTerritoryRowTest}) and the contest below it belongs
- * to each box, so what is left here is where the heading comes from and what it costs to ask for.
+ * <p>The line itself has its own suite ({@link CoreTerritoryHeadingTest}) and the contest below it
+ * belongs to each box, so what is left here is where the heading comes from, which boxes take it, and
+ * what it costs to ask for.
  */
 final class PoliticalMapCellTooltipTest {
 
@@ -97,15 +98,14 @@ final class PoliticalMapCellTooltipTest {
     class BuildTitleRows {
 
         @ParameterizedTest(name = "{0}")
-        @ArgumentsSource(EveryPoliticalMapBoxProvider.class)
+        @ArgumentsSource(StandingsBoxProvider.class)
         void buildTitleRowsHeadsTheBoxWithTheFactionHoldingTheSystemByDecree(
                 String viewName,
                 Function<ClaimBreakdownReader, PoliticalMapCellTooltip> buildBox) {
 
             // A decree settles the system outright, so it is read off the system name rather than
-            // found among the findings below - and it heads every box alike, so a player crossing
-            // between the tabs meets one fact one way instead of a heading on one tab and a note on a
-            // line on the next.
+            // found among the findings below. These are the boxes whose subject is a standing rather
+            // than the claim, so the decree would go unsaid entirely if the heading did not say it.
             stubCoreFaction(CORE_FACTION);
 
             var titleRows = buildBox.apply(claimBreakdownReaderFake)
@@ -118,6 +118,22 @@ final class PoliticalMapCellTooltipTest {
                 .isInstanceOf(TooltipRow.CentredRow.class);
             assertThat(readLabelRun(titleRows.get(BANNER_ROW), BANNER_FACTION_NAME_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", TEXT));
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @ArgumentsSource(ClaimBoxProvider.class)
+        void buildTitleRowsHeadsTheBoxWithTheSystemNameAloneWhereTheBodyStatesTheDecree(
+                String viewName,
+                Function<ClaimBreakdownReader, PoliticalMapCellTooltip> buildBox) {
+
+            // The claim boxes name the claimant and mark the decreed hold on that very line, so a
+            // banner above would put the same fact twice in one hover - which reads as two findings
+            // about the system rather than as one stated once.
+            stubCoreFaction(CORE_FACTION);
+
+            assertThat(buildBox.apply(claimBreakdownReaderFake).buildTitleRows(sectorMock, systemMock))
+                .as("%s leaves the decree to its body", viewName)
+                .isEmpty();
         }
 
         @ParameterizedTest(name = "{0}")
@@ -171,11 +187,43 @@ final class PoliticalMapCellTooltipTest {
                 ParameterDeclarations parameters,
                 ExtensionContext context) {
 
+            return Stream.concat(
+                new StandingsBoxProvider().provideArguments(parameters, context),
+                new ClaimBoxProvider().provideArguments(parameters, context));
+        }
+    }
+
+    /**
+     * The boxes whose subject is a faction's standing rather than the claim, so nothing in their bodies
+     * names a decree and the heading is the only place it can be said.
+     */
+    static final class StandingsBoxProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(
+                ParameterDeclarations parameters,
+                ExtensionContext context) {
+
             return Stream.of(
                 describeBox("the faction and alliance views' box", SystemDominationTooltip::new),
                 describeBox(
                     "the faction and alliance views' expanded counterpart",
-                    ExpandedSystemDominationTooltip::new),
+                    ExpandedSystemDominationTooltip::new));
+        }
+    }
+
+    /**
+     * The boxes built on the claim contest, whose claim block states the decree itself - so what they
+     * are pinned on is heading with the system name alone.
+     */
+    static final class ClaimBoxProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(
+                ParameterDeclarations parameters,
+                ExtensionContext context) {
+
+            return Stream.of(
                 describeBox("the claims view's box", SystemClaimTooltip::new),
                 describeBox("the claims view's expanded counterpart", ExpandedSystemClaimTooltip::new));
         }

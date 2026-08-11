@@ -101,6 +101,14 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     }
 
     @Override
+    protected final boolean isStatingCoreClaimInBody() {
+        // The claim block names the claimant and marks a decreed hold on that very line, and the
+        // breakdown sets the claimant to the decreed faction wherever a decree exists - so a decree
+        // this box could head with is a decree its body is about to state anyway.
+        return true;
+    }
+
+    @Override
     protected final Optional<String> resolveExpandedDetailName(
             SectorAPI sector,
             StarSystemAPI system) {
