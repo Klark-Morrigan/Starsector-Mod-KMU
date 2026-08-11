@@ -93,7 +93,7 @@ public final class KmuLunaSettings {
 
     // The typed reads, each binding this mod's LunaLib settings id once. Every accessor in the
     // three settings classes names only its own field and default, so the mod id appears here
-    // rather than at each of them, and the LunaLib coupling narrows to these four lines. Package
+    // rather than at each of them, and the LunaLib coupling narrows to these few lines. Package
     // private rather than public: they are the shared machinery of one package, not a surface the
     // mod reads settings through.
     static boolean readBoolean(String fieldId, boolean fallback) {
@@ -102,6 +102,14 @@ public final class KmuLunaSettings {
 
     static double readDouble(String fieldId, double fallback) {
         return LunaSettingsReader.getDouble(MOD_ID, fieldId, fallback);
+    }
+
+    // The same Double field read for a caller that hands its value to a float API - a UI geometry, a
+    // colour component, an animation pace. LunaLib stores every non-integer field as a double, so the
+    // narrowing is real and happens somewhere either way; done here it happens once, rather than each
+    // accessor carrying a cast that reads like a decision it made.
+    static float readFloat(String fieldId, float fallback) {
+        return (float) LunaSettingsReader.getDouble(MOD_ID, fieldId, fallback);
     }
 
     static int readInt(String fieldId, int fallback) {

@@ -195,8 +195,13 @@ final class LunaSettingsCsvIntegrationTest {
     // getters are written to, since a getter written some other way fails the walk rather than
     // dropping out of it.
     private static final String NUMERIC_FIELD_CONSTANT_PATTERN = "(\\w+)\\s*=\\s*\"%s\"";
+
+    // Every typed read a numeric row can be fetched through. Named one by one rather than as a
+    // wildcard so that a read this walk has no answer for - a choice or a boolean read against a
+    // numeric row - fails as an unfollowed link instead of being matched and held against the wrong
+    // kind of default.
     private static final String NUMERIC_FALLBACK_READ_PATTERN =
-        "read(?:Double|Int)\\(\\s*%s\\s*,\\s*(\\w+)\\s*\\)";
+        "read(?:Double|Float|Int)\\(\\s*%s\\s*,\\s*(\\w+)\\s*\\)";
 
     private static final String NUMERIC_DEFAULT_PATTERN = "\\b%s\\s*=\\s*(-?[\\d.]+[fFdD]?)\\s*;";
 

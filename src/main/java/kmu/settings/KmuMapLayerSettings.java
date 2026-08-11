@@ -337,7 +337,7 @@ public final class KmuMapLayerSettings {
      *         kind's size and leaves the indent to say how deep a line sits
      */
     public static float getMapTooltipNestingLevelShrink() {
-        return (float) KmuLunaSettings.readDouble(
+        return KmuLunaSettings.readFloat(
             TOOLTIP_NESTING_LEVEL_SHRINK_FIELD,
             DEFAULT_TOOLTIP_NESTING_LEVEL_SHRINK);
     }
@@ -347,7 +347,7 @@ public final class KmuMapLayerSettings {
      *         wherever neither depth below applies; 4 by default
      */
     public static float getMapTooltipLineGap() {
-        return (float) KmuLunaSettings.readDouble(
+        return KmuLunaSettings.readFloat(
             TOOLTIP_LINE_GAP_FIELD,
             DEFAULT_TOOLTIP_LINE_GAP);
     }
@@ -358,7 +358,7 @@ public final class KmuMapLayerSettings {
      *         a run long enough to be worth tightening on its own; 3 by default
      */
     public static float getMapTooltipTier2LineGap() {
-        return (float) KmuLunaSettings.readDouble(
+        return KmuLunaSettings.readFloat(
             TOOLTIP_TIER_2_LINE_GAP_FIELD,
             DEFAULT_TOOLTIP_TIER_2_LINE_GAP);
     }
@@ -369,7 +369,7 @@ public final class KmuMapLayerSettings {
      *         hardest; 1 by default
      */
     public static float getMapTooltipTier3LineGap() {
-        return (float) KmuLunaSettings.readDouble(
+        return KmuLunaSettings.readFloat(
             TOOLTIP_TIER_3_LINE_GAP_FIELD,
             DEFAULT_TOOLTIP_TIER_3_LINE_GAP);
     }
@@ -648,7 +648,7 @@ public final class KmuMapLayerSettings {
      *         per-frame advance so the player sets the animation pace
      */
     public static float getMapSidebarCollapseSeconds() {
-        return (float) KmuLunaSettings.readDouble(
+        return KmuLunaSettings.readFloat(
             SIDEBAR_COLLAPSE_SECONDS_FIELD,
             DEFAULT_SIDEBAR_COLLAPSE_SECONDS);
     }
