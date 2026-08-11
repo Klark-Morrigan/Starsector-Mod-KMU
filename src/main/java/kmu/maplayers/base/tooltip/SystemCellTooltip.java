@@ -10,11 +10,13 @@ import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipRenderer;
 import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipStyle;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.text.TextStyle;
+import kmlib.starsector.ui.widgets.tooltip.TooltipLineGaps;
 import kmlib.starsector.ui.widgets.tooltip.TooltipLineStyle;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.starsector.ui.widgets.tooltip.TooltipStyle;
 
+import kmu.settings.KmuMapLayerSettings;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -65,17 +67,14 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     private static final float BORDER_WIDTH = 1f;
     private static final float OPACITY = 0.9f;
 
-    // How much smaller each step under the box's own voice draws than the step above it. A breakdown
-    // several levels deep is hard to read at one size however far it is indented, so the size gives the
-    // eye a second cue agreeing with the first. Two units tells neighbouring levels apart while keeping
-    // every level a box actually reaches comfortably legible - off the body's 15 that is a holder at 15,
-    // what it holds at 13, a term of that at 11, and a tier of that at 9, all clear of the widget's own
-    // floor, which only a stack deeper than any box lists would reach.
-    //
-    // Stated on the shape every layer's box shares rather than on the one box that first listed something
-    // deep enough to want it: how far a line stands under the box is a fact any box can carry, so two
-    // layers demoting a line by different amounts would be a difference the reader cannot account for.
-    private static final float LEVEL_SHRINK = 2f;
+    // The two depths the tier gap sliders are bound to. A box states the terms one listed thing's
+    // number was summed from two steps under its own voice, and breaks one of those terms down a step
+    // below that - so those are the runs of like lines long enough to be worth tightening, whatever a
+    // given layer lists there. Named here rather than in the layer that fills them because the box is
+    // shared: two layers binding the sliders to different depths would leave the same knob doing
+    // different things depending on which box is open.
+    private static final int TIER_2_LEVEL = 2;
+    private static final int TIER_3_LEVEL = 3;
 
     @Override
     public final void renderFor(SectorAPI sector, StarSystemAPI system) {
@@ -260,7 +259,11 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // its atlas is rasterised at 12, which beside 15pt content reads as fine print rather than as a
     // quieter line of the same box - it takes the body's size instead, and what sets it apart is its
     // narrowness and its colours, neither of which costs it a size of its own. And any line standing
-    // under that voice, by LEVEL_SHRINK per step, which is the whole point of asking for the step.
+    // under that voice, by the player's own step per level, which is the whole point of asking for it.
+    //
+    // How dense the box is set is read live rather than fixed here: a box lists as much as the hovered
+    // system holds, so what reads comfortably on a two-colony system and what fits on screen for a
+    // twelve-colony one are not the same setting, and which of the two matters is the player's call.
     private static CursorTooltipStyle buildStyle() {
         return new CursorTooltipStyle(
             TooltipStyle
@@ -270,10 +273,22 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
                 .footnotedIn(TextStyle
                     .createStyle(FOOTNOTE_FONT)
                     .sizedAt(BODY_FONT.getNativeSize()))
-                .shrunkPerLevel(LEVEL_SHRINK),
+                .shrunkPerLevel(KmuMapLayerSettings.getMapTooltipNestingLevelShrink())
+                .stackedAt(buildLineGaps()),
             OPACITY,
             BORDER_WIDTH,
             StarsectorUiColour.BLACK.resolve(),
             StarsectorUiColour.VANILLA_PLAYER_BASE.resolve());
+    }
+
+    // How far apart the box's lines stand, by the depth of the line above the gap: the box's own spacing
+    // everywhere, and the two depths a listing runs long at tightened on their own. Each gap belongs to
+    // the tier just drawn, so a slider closes up a run of like lines and leaves the line that opens it
+    // standing where the shallower line above it put it.
+    private static TooltipLineGaps buildLineGaps() {
+        return TooltipLineGaps
+            .createGaps(KmuMapLayerSettings.getMapTooltipLineGap())
+            .gappedAtLevel(TIER_2_LEVEL, KmuMapLayerSettings.getMapTooltipTier2LineGap())
+            .gappedAtLevel(TIER_3_LEVEL, KmuMapLayerSettings.getMapTooltipTier3LineGap());
     }
 }

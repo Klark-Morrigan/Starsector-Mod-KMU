@@ -18,7 +18,8 @@ package kmu.settings;
  * stored key stays put.
  *
  * <p>The knobs lay out across three tabs. {@code Map - Visuals} carries the overlay
- * sidebar, the map labels and the two upper hover tiers - what every layer shares.
+ * sidebar, the map labels, the two upper hover tiers and how tightly a hover box is set -
+ * what every layer shares.
  * {@code Map - Keybinds} carries the layer shortcuts, which are controls rather than
  * appearance. {@code Map - Dev} carries the tuning surfaces a player does not browse:
  * the national border's tracing tolerances, the label-anchor search's modifiers, and the
@@ -91,6 +92,24 @@ public final class KmuMapLayerSettings {
         "kmu_politicalMapHoverEnabled";
     private static final String HOVER_TOOLTIP_ENABLED_FIELD =
         "kmu_politicalMapHoverTooltipEnabled";
+
+    // Hover tooltip density (Map - Visuals tab): how tightly a hover box is set, across every map
+    // layer. The shrink is how much smaller each step of indent draws than the step above it; the
+    // three gaps are the room left under a line before the next one - the box's baseline, and the
+    // two depths a listing runs long at, which are tightened on their own. Stated by depth rather
+    // than by what a layer lists there, since the box is shared: on the political map they land on
+    // a colony's terms and on the tiers one term breaks into, and another layer's box of the same
+    // shape is set by the same knobs. Player-facing appearance rather than tuning, so they sit with
+    // the hover switches above rather than among the Map - Dev diagnostics: a player who finds the
+    // box too tall reaches for these next.
+    private static final String TOOLTIP_NESTING_LEVEL_SHRINK_FIELD =
+        "kmu_map_visuals_tooltips_density_nestingLevelShrink";
+    private static final String TOOLTIP_LINE_GAP_FIELD =
+        "kmu_map_visuals_tooltips_density_lineGap";
+    private static final String TOOLTIP_TIER_2_LINE_GAP_FIELD =
+        "kmu_map_visuals_tooltips_density_tier2LineGap";
+    private static final String TOOLTIP_TIER_3_LINE_GAP_FIELD =
+        "kmu_map_visuals_tooltips_density_tier3LineGap";
 
     // Border tracing (Map - Dev tab): the raw ring chaining and miter inset that turn a cluster's
     // cell edges into one outline. Always applied - it is upstream of the smoothing passes a
@@ -232,6 +251,20 @@ public final class KmuMapLayerSettings {
     private static final boolean DEFAULT_HOVER_EFFECTS_ENABLED = true;
     private static final boolean DEFAULT_HOVER_TOOLTIP_ENABLED = true;
 
+    // No shrink by default: every line of a hover box draws at the body's own size, which is the
+    // size its atlas is crisp at, and how deep a line sits is said by its indent alone. A box is
+    // read at a glance while the cursor rests on a system, so the default trades height for the
+    // most legible reading of it and the slider buys the height back.
+    //
+    // The gaps then tighten only the depths a listing runs long at: lines two steps in stand
+    // closer to each other than the things they belong to do, and lines three steps in closer
+    // still, so each run reads as one thing without the box's own spacing changing. Mirror the CSV
+    // defaultValue column like every fallback here.
+    private static final float DEFAULT_TOOLTIP_NESTING_LEVEL_SHRINK = 0f;
+    private static final float DEFAULT_TOOLTIP_LINE_GAP = 4f;
+    private static final float DEFAULT_TOOLTIP_TIER_2_LINE_GAP = 3f;
+    private static final float DEFAULT_TOOLTIP_TIER_3_LINE_GAP = 1f;
+
     // Border-tracing knobs (ungated).
     private static final double DEFAULT_BORDER_WELD_TOLERANCE = 100.0;
     private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
@@ -296,6 +329,49 @@ public final class KmuMapLayerSettings {
         return KmuLunaSettings.readBoolean(
             HOVER_TOOLTIP_ENABLED_FIELD,
             DEFAULT_HOVER_TOOLTIP_ENABLED);
+    }
+
+    /**
+     * @return how much smaller each step of indent inside a hover tooltip draws than the step
+     *         above it, in UI units; 0 by default, which draws every line of the box at its own
+     *         kind's size and leaves the indent to say how deep a line sits
+     */
+    public static float getMapTooltipNestingLevelShrink() {
+        return (float) KmuLunaSettings.readDouble(
+            TOOLTIP_NESTING_LEVEL_SHRINK_FIELD,
+            DEFAULT_TOOLTIP_NESTING_LEVEL_SHRINK);
+    }
+
+    /**
+     * @return the room left under a line of a hover tooltip before the next one, in UI units,
+     *         wherever neither depth below applies; 4 by default
+     */
+    public static float getMapTooltipLineGap() {
+        return (float) KmuLunaSettings.readDouble(
+            TOOLTIP_LINE_GAP_FIELD,
+            DEFAULT_TOOLTIP_LINE_GAP);
+    }
+
+    /**
+     * @return the room left under a line two steps in from a hover box's own heading, in UI units
+     *         - where a box states the terms one listed thing's number was summed from, so it is
+     *         a run long enough to be worth tightening on its own; 3 by default
+     */
+    public static float getMapTooltipTier2LineGap() {
+        return (float) KmuLunaSettings.readDouble(
+            TOOLTIP_TIER_2_LINE_GAP_FIELD,
+            DEFAULT_TOOLTIP_TIER_2_LINE_GAP);
+    }
+
+    /**
+     * @return the room left under a line three steps in, in UI units - where one of those terms
+     *         breaks down further, the deepest run a hover box lists and so the one tightened
+     *         hardest; 1 by default
+     */
+    public static float getMapTooltipTier3LineGap() {
+        return (float) KmuLunaSettings.readDouble(
+            TOOLTIP_TIER_3_LINE_GAP_FIELD,
+            DEFAULT_TOOLTIP_TIER_3_LINE_GAP);
     }
 
     /**

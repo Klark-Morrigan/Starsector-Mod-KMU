@@ -15,11 +15,14 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.starsector.ui.widgets.tooltip.TooltipStyle;
 
+import kmu.settings.KmuMapLayerSettings;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.awt.Color;
@@ -32,6 +35,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailModeInput.TOGGLE_KEY_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -44,6 +48,11 @@ import static org.mockito.Mockito.when;
  *
  * <p>How far apart the blocks then stand is the widget's, pinned there: what is fixed here is only that
  * the heading is one block and the layer's content is its own, which is what that spacing follows from.
+ *
+ * <p>Also that the density knobs land where they are named: the step each level draws smaller by, the
+ * box's own line gap, and the two depths a listing runs long at. Each is one number handed to the
+ * widget, so a knob wired to the wrong one is invisible on screen until a box happens to list something
+ * deep enough to show it.
  */
 final class SystemCellTooltipTest {
 
@@ -64,10 +73,15 @@ final class SystemCellTooltipTest {
     // matching the body would fail here rather than agree with itself.
     private static final double FOOTNOTE_FONT_SIZE = 15d;
 
-    // How much smaller each step under the box's own voice draws than the step above it, restated rather
-    // than read off the class under test: how far the levels are set apart is the decision, and an
-    // expectation taking it from the value the box handed over would hold whatever step it asked for.
-    private static final float LEVEL_SHRINK = 2f;
+    // The density the player is standing in for here: how much smaller each step under the box's own
+    // voice draws, and the three gaps the box stacks its lines at. Stated as this suite's own numbers
+    // rather than as the shipped defaults, since what is under test is that each knob reaches the part
+    // of the box it names - which a case reading the real default could not tell from a wire crossed
+    // between two knobs that happen to ship the same value.
+    private static final float NESTING_LEVEL_SHRINK = 2f;
+    private static final float LINE_GAP = 6f;
+    private static final float TIER_2_LINE_GAP = 3f;
+    private static final float TIER_3_LINE_GAP = 1f;
 
     // How far under the box's own voice a line stands - a holder speaking in that voice, what it holds,
     // a term of that, and a tier of that, which is as deep as the boxes go.
@@ -113,14 +127,39 @@ final class SystemCellTooltipTest {
     // A box whose heading is the system name alone, which is the ordinary case.
     private static final int BARE_TITLE_ROW_COUNT = 1;
 
+    // The density knobs the box reads each paint. Held over every case rather than opened per case,
+    // because the box resolves them whenever it draws at all - including in the cases that assert it
+    // draws nothing, which would otherwise read the live settings from outside the game.
+    private MockedStatic<KmuMapLayerSettings> settingsMock;
+
     @BeforeEach
     void installColours() {
         CellTooltipPaletteFake.installPalette();
     }
 
+    @BeforeEach
+    void installDensitySettings() {
+
+        settingsMock = mockStatic(KmuMapLayerSettings.class);
+
+        settingsMock.when(KmuMapLayerSettings::getMapTooltipNestingLevelShrink)
+            .thenReturn(NESTING_LEVEL_SHRINK);
+        settingsMock.when(KmuMapLayerSettings::getMapTooltipLineGap)
+            .thenReturn(LINE_GAP);
+        settingsMock.when(KmuMapLayerSettings::getMapTooltipTier2LineGap)
+            .thenReturn(TIER_2_LINE_GAP);
+        settingsMock.when(KmuMapLayerSettings::getMapTooltipTier3LineGap)
+            .thenReturn(TIER_3_LINE_GAP);
+    }
+
     @AfterEach
     void clearColours() {
         CellTooltipPaletteFake.clearPalette();
+    }
+
+    @AfterEach
+    void clearDensitySettings() {
+        settingsMock.close();
     }
 
     @Nested
@@ -198,16 +237,48 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForAsksForAStepPerLevelUnderTheBoxsOwnVoice() {
-            // A breakdown several levels deep is hard to read at one size however far it is indented, so
-            // the box asks the widget for a second cue agreeing with the indent. Asked for on the shape
-            // every layer shares, so no test of one layer's box has to pin it again.
+        void renderForAsksForTheStepPerLevelThePlayerSet() {
+            // Whether a breakdown several levels deep gives the eye a second cue agreeing with the
+            // indent is the player's call, so the box carries the step across rather than fixing one:
+            // a deep listing is easier to read at one size and easier to fit at four. Asked for on the
+            // shape every layer shares, so no test of one layer's box has to pin it again.
             var typography = captureDrawnBox(buildTooltipSayingSomething())
                 .style()
                 .typography();
 
             assertThat(typography.levelShrink())
-                .isEqualTo(LEVEL_SHRINK);
+                .isEqualTo(NESTING_LEVEL_SHRINK);
+        }
+
+        @Test
+        void renderForStacksItsLinesAtTheGapThePlayerSet() {
+            // The box's own spacing, spent under every line no run of its own claims - so the reader
+            // who wants a tighter box gets one without any part of it being singled out.
+            var typography = captureDrawnBox(buildTooltipSayingSomething())
+                .style()
+                .typography();
+
+            assertThat(typography.resolveLineGapAfter(IN_THE_BOXS_VOICE))
+                .isEqualTo(LINE_GAP);
+            assertThat(typography.resolveLineGapAfter(ONE_STEP_UNDER))
+                .isEqualTo(LINE_GAP);
+        }
+
+        @Test
+        void renderForTightensTheTwoDepthsAListingRunsLongAt() {
+            // What actually makes a hover box tall: the terms one listed thing's number was summed
+            // from, and the tier one of those terms breaks into. Each depth is bound to its own knob
+            // and resolved off the line above the gap, so tightening a run closes it up without moving
+            // the line it hangs from - which is why the two can be pushed much harder than the box's
+            // own spacing above.
+            var typography = captureDrawnBox(buildTooltipSayingSomething())
+                .style()
+                .typography();
+
+            assertThat(typography.resolveLineGapAfter(TWO_STEPS_UNDER))
+                .isEqualTo(TIER_2_LINE_GAP);
+            assertThat(typography.resolveLineGapAfter(THREE_STEPS_UNDER))
+                .isEqualTo(TIER_3_LINE_GAP);
         }
 
         @Test
