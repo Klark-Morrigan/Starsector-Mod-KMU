@@ -516,6 +516,14 @@ twice - answers a hover by its accent wash alone while the panel-accent choice b
 with it; that choice resolves through whichever scheme is set, which is why the two rows sit together
 on the settings screen.
 
+Each chrome also carries how hard its labels read. Both rows are lettered in atlases that carry no
+antialiasing of their own, which the font loader hands over interpolated, so each is drawn between the
+two samplings and where between is a look rather than a number. It is one knob per row, not one for the
+panel: each is read against the vanilla chrome it stands beside - the intel row against that screen's
+raised buttons, the map row against the Sector/System tabs a tab-height above it - so a single value
+would always be wrong for one of them. The amount rides on the `TabStyle` like the face and the ring do,
+rather than being pushed into the draw pass, which is what keeps the two rows from sharing one.
+
 The border width, opacity, collapse seconds, and both anchors' paddings are LunaLib fields read
 through `kmu.settings.KmuMapLayerSettings`, as are the colour scheme and the chevron colour - those
 two in their own "Overlay sidebar - colours" section below the box's dimensions.

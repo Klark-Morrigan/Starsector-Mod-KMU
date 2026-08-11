@@ -71,12 +71,11 @@ public final class KmuMapLayerSettings {
     // interpolated - so each is drawn between the two samplings, and where between is a look rather than a
     // number. One knob per row, because each is read against the vanilla chrome it stands beside: the
     // intel row against that screen's raised buttons, the map row against the Sector/System tabs a
-    // tab-height above it. The intel key keeps the name it shipped under, so an install that has already
-    // dialled that row keeps its value.
+    // tab-height above it, and the two settled at opposite ends of the range.
     private static final String INTEL_SIDEBAR_PIXEL_FONT_SHARPNESS_FIELD =
-        "kmu_sidebarPixelFontSharpness";
+        "kmu_dev_map_ui_fontSharpness_tabHeaders_sidebar_intelScreen";
     private static final String MAP_SIDEBAR_PIXEL_FONT_SHARPNESS_FIELD =
-        "kmu_mapSidebarPixelFontSharpness";
+        "kmu_dev_map_ui_fontSharpness_tabHeaders_sidebar_mMap";
 
     // Hover tiers, the top two (Map - Visuals tab): whether the map answers the cursor at all,
     // and then whether each kind of answer does - both across every map layer. The master gates
@@ -189,11 +188,13 @@ public final class KmuMapLayerSettings {
     // Mirrors the CSV row's defaultValue.
     private static final int DEFAULT_INTEL_SIDEBAR_PADDING_TOP = 21;
 
-    // Mostly hard for the intel row: what matches the vanilla buttons there is the tone rather than the
-    // edge. Lower for the map row, which is read against the vanilla tabs directly above it and at 0.8
-    // comes out brighter than they do.
+    // Settled in game, and at opposite ends: what matches vanilla's buttons on the intel screen is nearly
+    // all of the hard edge, where the map row read against the Sector/System tabs directly above it wants
+    // none of it - anything above nothing came out brighter than those tabs. That the same trade lands so
+    // far apart is the argument for the two knobs: it is the chrome each row abuts that decides, not the
+    // face, and both rows are lettered in hard-edged atlases either way.
     private static final double DEFAULT_INTEL_SIDEBAR_PIXEL_FONT_SHARPNESS = 0.8;
-    private static final double DEFAULT_MAP_SIDEBAR_PIXEL_FONT_SHARPNESS = 0.6;
+    private static final double DEFAULT_MAP_SIDEBAR_PIXEL_FONT_SHARPNESS = 0.0;
 
     // A one-pixel outer border by default; 0 hides it. Mirrors the CSV row's defaultValue.
     private static final int DEFAULT_SIDEBAR_BORDER_WIDTH = 1;

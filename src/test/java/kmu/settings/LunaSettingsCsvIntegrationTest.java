@@ -183,6 +183,23 @@ final class LunaSettingsCsvIntegrationTest {
     // another type still resolves.
     private static final String CHOICE_DEFAULT_PATTERN = "\\b%s\\s*=\\s*\\w+\\.([A-Z][A-Z0-9_]*)\\s*;";
 
+    // The numeric field types, whose default column holds a number the Java fallback beside the
+    // getter has to agree with. Radio and Boolean rows are held against their own defaults above,
+    // each in the terms that type is spelt in.
+    private static final Set<String> NUMERIC_FIELD_TYPES = Set.of("Double", "Int");
+
+    // The three links a numeric row's two defaults are followed along, each anchored on the name
+    // the previous one yielded: the field id to the constant declaring it, that constant to the
+    // fallback passed beside it at the read, and that fallback to the number it is declared as.
+    // Following the shipped text rather than tabulating the pairs is what holds the convention the
+    // getters are written to, since a getter written some other way fails the walk rather than
+    // dropping out of it.
+    private static final String NUMERIC_FIELD_CONSTANT_PATTERN = "(\\w+)\\s*=\\s*\"%s\"";
+    private static final String NUMERIC_FALLBACK_READ_PATTERN =
+        "read(?:Double|Int)\\(\\s*%s\\s*,\\s*(\\w+)\\s*\\)";
+
+    private static final String NUMERIC_DEFAULT_PATTERN = "\\b%s\\s*=\\s*(-?[\\d.]+[fFdD]?)\\s*;";
+
     // Section captions carry an id so LunaLib can place them, but store nothing, so no source reads
     // one. Every other row holds a value.
     private static final String HEADER_FIELD_TYPE = "Header";
@@ -288,12 +305,35 @@ final class LunaSettingsCsvIntegrationTest {
     }
 
     @Nested
+    class NumericFallbackDefaults {
+
+        @ParameterizedTest(name = "{0}")
+        @ArgumentsSource(NumericFieldDefaultsProvider.class)
+        void numericFallbackDefaultsMatchTheirRowsOwnDefault(String fieldId, String fieldType) {
+
+            var defaultConstant = findNumericFallbackConstant(fieldId);
+
+            assertThat(readDeclaredNumber(defaultConstant))
+                .as(
+                    "%s in the settings sources against the default of %s in %s: the row's default"
+                        + " is the number a fresh player is given and the constant is what answers"
+                        + " while LunaLib has none, so two values paint one map before the settings"
+                        + " load and another after, with nothing on screen to say why",
+                    defaultConstant,
+                    fieldId,
+                    SETTINGS_CSV)
+                .isEqualTo(Double.parseDouble(readColumn(fieldId, DEFAULT_VALUE_COLUMN, fieldType)));
+        }
+    }
+
+    @Nested
     class ValueFieldIds {
 
         @Test
         void everyValueFieldIdIsNamedBySomeSource() {
 
             var namedFieldIds = readFieldIdLiteralsInMainSources();
+            
             assertThat(readValueFieldIds())
                 .as(
                     "field ids declared in %s that no source under %s names, so either the row or"
@@ -566,6 +606,71 @@ final class LunaSettingsCsvIntegrationTest {
                     + ", which is no option of the enum this row's table names"));
     }
 
+    // The constant a numeric row's getter passes as its fallback, found by following the two links
+    // the sources spell out: the field id to the constant holding it, then that constant to the
+    // read it is passed to. Walked rather than tabulated so the pairing is the shipped one; a
+    // getter written some other way is named by the failure rather than quietly skipped, which is
+    // what keeps the convention itself held.
+    private static String findNumericFallbackConstant(String fieldId) {
+
+        var fieldConstant = findSoleMatch(
+            NUMERIC_FIELD_CONSTANT_PATTERN.formatted(Pattern.quote(fieldId)),
+            "the constant holding field id " + fieldId);
+
+        return findSoleMatch(
+            NUMERIC_FALLBACK_READ_PATTERN.formatted(Pattern.quote(fieldConstant)),
+            "the fallback passed beside " + fieldConstant);
+    }
+
+    // The number a fallback constant is declared as. Read out of the source text rather than off the
+    // class, since these constants are private - the same reason the choice fallbacks above are read
+    // this way. A float literal's trailing suffix is not part of the number and is dropped.
+    private static double readDeclaredNumber(String defaultConstant) {
+
+        var declared = findSoleMatch(
+            NUMERIC_DEFAULT_PATTERN.formatted(Pattern.quote(defaultConstant)),
+            "a declaration of " + defaultConstant);
+
+        return Double.parseDouble(declared.replaceAll("[fFdD]$", ""));
+    }
+
+    // The one capture the pattern finds across every shipped source. Exactly one is expected: none
+    // means the sources no longer spell the thing this walk follows, and two would leave it holding
+    // whichever file happened to be read first.
+    private static String findSoleMatch(String pattern, String soughtDescription) {
+
+        var matches = Pattern
+            .compile(pattern)
+            .matcher(readMainSourceText())
+            .results()
+            .map(match -> match.group(1))
+            .distinct()
+            .toList();
+
+        assertThat(matches)
+            .as("%s in %s", soughtDescription, MAIN_SOURCE_ROOT)
+            .hasSize(1);
+
+        return matches.get(0);
+    }
+
+    // Every shipped source as one text, so a walk that follows a link across classes - a field id
+    // declared in one and read in another - sees both ends of it.
+    private static String readMainSourceText() {
+        try (var sources = Files.walk(MAIN_SOURCE_ROOT)) {
+            return sources
+                .filter(source -> source.toString().endsWith(JAVA_SOURCE_SUFFIX))
+                .map(LunaSettingsCsvIntegrationTest::readSource)
+                .collect(Collectors.joining("\n"));
+        } catch (IOException failure) {
+            // Surfaced for the reason the CSV read is: an unreadable source tree means the walk is
+            // looking in the wrong place, not that every fallback agrees.
+            throw new UncheckedIOException(
+                "Could not walk " + MAIN_SOURCE_ROOT.toAbsolutePath(),
+                failure);
+        }
+    }
+
     // The enum constant a fallback is declared as. Exactly one declaration is expected: none means
     // the table names a constant the sources no longer hold, and two would leave the walk holding
     // whichever the file listed first.
@@ -711,6 +816,29 @@ final class LunaSettingsCsvIntegrationTest {
             return CHOICE_BACKED_RADIOS
                 .stream()
                 .map(radio -> Arguments.of(radio.fieldId(), radio.defaultConstant(), radio.choices()));
+        }
+    }
+
+    /**
+     * Every numeric row the file declares, paired with its own field type.
+     *
+     * <p>Read off the file rather than listed in a table, unlike the Radio rows above. A Radio has
+     * to name the enum its options belong to, which nothing in the CSV records, so those rows can
+     * only be paired by hand; a numeric row needs no such pairing, and a hand table of seventy-odd
+     * of them would be a second list of the file that a new row could be left out of - which is the
+     * one failure this check exists to catch.
+     */
+    static final class NumericFieldDefaultsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(
+                ParameterDeclarations parameters,
+                ExtensionContext context) {
+
+            return readFieldRows()
+                .stream()
+                .filter(row -> NUMERIC_FIELD_TYPES.contains(row.get(FIELD_TYPE_COLUMN)))
+                .map(row -> Arguments.of(row.get(FIELD_ID_COLUMN), row.get(FIELD_TYPE_COLUMN)));
         }
     }
 
