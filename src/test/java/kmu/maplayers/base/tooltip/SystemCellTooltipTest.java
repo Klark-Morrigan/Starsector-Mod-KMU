@@ -83,6 +83,13 @@ final class SystemCellTooltipTest {
     private static final float TIER_2_LINE_GAP = 3f;
     private static final float TIER_3_LINE_GAP = 1f;
 
+    // The line the box runs from a label across to its value, at the weights this suite stands in for the
+    // player with. Stated as its own numbers for the same reason the gaps above are, and both unlike the
+    // shipped pair, so a box carrying them says the two knobs reached it rather than that the widget's
+    // own default happened to match.
+    private static final float LEADER_THICKNESS = 2f;
+    private static final float LEADER_OPACITY = 0.4f;
+
     // How far under the box's own voice a line stands - a holder speaking in that voice, what it holds,
     // a term of that, and a tier of that, which is as deep as the boxes go.
     private static final int IN_THE_BOXS_VOICE = 0;
@@ -111,6 +118,10 @@ final class SystemCellTooltipTest {
     // rather than from a look settled once. Tighter than the gap installed above so the two readings
     // cannot be told apart by luck.
     private static final float TIGHTENED_LINE_GAP = 2f;
+
+    // The same second reading for the leader knobs, faded well under the opacity installed above for the
+    // same reason.
+    private static final float FADED_LEADER_OPACITY = 0.1f;
 
     // The blocks the box lays out, in draw order: the heading it is titled with, then the layer's own,
     // then the hint at the foot where the box offers one.
@@ -160,6 +171,10 @@ final class SystemCellTooltipTest {
             .thenReturn(TIER_2_LINE_GAP);
         settingsMock.when(KmuMapLayerSettings::getMapTooltipTier3LineGap)
             .thenReturn(TIER_3_LINE_GAP);
+        settingsMock.when(KmuMapLayerSettings::getMapTooltipLeaderThickness)
+            .thenReturn(LEADER_THICKNESS);
+        settingsMock.when(KmuMapLayerSettings::getMapTooltipLeaderOpacity)
+            .thenReturn(LEADER_OPACITY);
     }
 
     @AfterEach
@@ -302,6 +317,40 @@ final class SystemCellTooltipTest {
 
             assertThat(typography.resolveLineGapAfter(DEEPER_THAN_EITHER_TIER))
                 .isEqualTo(TIER_3_LINE_GAP);
+        }
+
+        @Test
+        void renderForRulesItsLeadersAtTheWeightsThePlayerSet() {
+            // The line from a label across to its value is the one part of the box whose weight cannot be
+            // settled in code - how heavy a solid run looks beside glyphs turns on the face, the size,
+            // and the atlas - so the box carries the player's own pair across rather than staying at the
+            // widget's shipped one.
+            var leaderLineStyle = captureDrawnBox(buildTooltipSayingSomething())
+                .style()
+                .leaderLineStyle();
+
+            assertThat(leaderLineStyle.thickness())
+                .isEqualTo(LEADER_THICKNESS);
+            assertThat(leaderLineStyle.alphaMult())
+                .isEqualTo(LEADER_OPACITY);
+        }
+
+        @Test
+        void renderForReadsTheLeaderWeightsAfreshOnEveryPaint() {
+            // These two knobs are the ones a player actually tunes by eye, moving a slider with the map
+            // open and watching the box - so a look settled once at class load would leave the box
+            // ignoring every move until the game was restarted, which is the one thing that would make
+            // them untunable.
+            var tooltipFake = buildTooltipSayingSomething();
+
+            assertThat(captureDrawnBox(tooltipFake).style().leaderLineStyle().alphaMult())
+                .isEqualTo(LEADER_OPACITY);
+
+            settingsMock.when(KmuMapLayerSettings::getMapTooltipLeaderOpacity)
+                .thenReturn(FADED_LEADER_OPACITY);
+
+            assertThat(captureDrawnBox(tooltipFake).style().leaderLineStyle().alphaMult())
+                .isEqualTo(FADED_LEADER_OPACITY);
         }
 
         @Test
