@@ -303,12 +303,6 @@ public final class KmuPoliticalMapSettings {
     private static final String DEBUG_BORDER_TRACING_FIELD =
         "kmu_politicalMapDebugBorderTracing";
 
-    // Diagnostics (Map - Dev tab): how hard the sidebar's pixel-font labels read, against the vanilla
-    // chrome they sit beside. A look rather than a number, so it stays a knob rather than being settled
-    // once in code.
-    private static final String PIXEL_FONT_SHARPNESS_FIELD =
-        "kmu_sidebarPixelFontSharpness";
-
     // Fallbacks used only when a setting is read before LunaLib has loaded it;
     // the live values come from LunaLib. These mirror the defaultValue column in
     // data/config/LunaSettings.csv and must be kept in step with it.
@@ -490,7 +484,6 @@ public final class KmuPoliticalMapSettings {
     private static final boolean DEFAULT_FORCE_ALL_SYSTEMS_ON_MAP = false;
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
     private static final boolean DEFAULT_DEBUG_BORDER_TRACING = false;
-    private static final double DEFAULT_PIXEL_FONT_SHARPNESS = 0.8;
 
     private KmuPoliticalMapSettings() {
     }
@@ -1178,14 +1171,4 @@ public final class KmuPoliticalMapSettings {
             DEFAULT_DEBUG_BORDER_TRACING);
     }
 
-    /**
-     * @return how much of the sidebar's pixel-font hard edge survives, 0 leaving the labels interpolated
-     *         as the font loader hands them over and 1 drawing them unfiltered; a dial for settling the
-     *         amount against the vanilla chrome the row sits beside
-     */
-    public static double getSidebarPixelFontSharpness() {
-        return KmuLunaSettings.readDouble(
-            PIXEL_FONT_SHARPNESS_FIELD,
-            DEFAULT_PIXEL_FONT_SHARPNESS);
-    }
 }
