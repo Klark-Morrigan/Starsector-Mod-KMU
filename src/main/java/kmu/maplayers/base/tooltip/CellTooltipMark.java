@@ -1,6 +1,9 @@
 package kmu.maplayers.base.tooltip;
 
+import kmlib.starsector.entities.EntityMapIcon;
+
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * The mark a cell-tooltip line opens on: the texture it draws and whether that texture speaks in the
@@ -62,6 +65,29 @@ public record CellTooltipMark(
      */
     public static CellTooltipMark resolveMarkInLineColour(String spritePath) {
         return resolveMark(spritePath, IS_IN_LINE_COLOUR);
+    }
+
+    /**
+     * Resolves the mark a line leads with from the map glyph an entity carries - a shorthand for the
+     * name beside it, so it takes the line's own colour rather than the shade the map paints it in.
+     * Those shades are authored to tell one world from another against black, and are the loudest
+     * thing on a line whose meaning is in its words.
+     *
+     * <p>Held here rather than at each surface listing entities, so a box naming a colony and one
+     * naming a station cannot end up reading the same glyph two ways.
+     *
+     * @param mapIcon the glyph the sector map marks the subject's entity with, or empty where it
+     *                carries none
+     * @return the mark, or null where there is no image to lead with
+     */
+    public static CellTooltipMark resolveMarkForMapIcon(Optional<EntityMapIcon> mapIcon) {
+
+        // An entity the map marks with nothing becomes the path the game never supplied, which the
+        // resolution below already answers as no mark - one absence rather than a second spelling of
+        // it, so a caller lists a marked and an unmarked subject through the one expression.
+        return resolveMarkInLineColour(mapIcon
+            .map(EntityMapIcon::spritePath)
+            .orElse(null));
     }
 
     // A path the game never supplied answers no mark rather than a mark with nothing to load, which

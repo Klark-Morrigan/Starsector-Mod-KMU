@@ -388,7 +388,7 @@ public final class KnownMarketFootprints {
     // station and patrol tiers the two optional factors admitted.
     // Gathered once because the market's worth is worked out twice - at full worth, then
     // under its own stability - and the connected-entity scan, the dynamic-stat lookup and the
-    // icon-spec read behind it must not be paid for twice.
+    // two icon-spec reads behind it must not be paid for twice.
     private static WeighedMarket readWeighedMarket(MarketAPI market, DominanceRules rules) {
         return new WeighedMarket(
             market.getName(),
@@ -396,8 +396,19 @@ public final class KnownMarketFootprints {
             market.isHidden(),
             market.getSize(),
             market.getStabilityValue(),
-            findWeighedStation(market, rules.station()),
+            findWeighedStation(market, rules.station())
+                .map(KnownMarketFootprints::readWeighedStation),
             readWeighedPatrolCounts(market, rules.patrols()));
+    }
+
+    // The station that earned the bonus, as the breakdown has to state it: its name and the glyph
+    // the map marks it with. Read here, where the scan has just answered the token, rather than
+    // where the factor is built - that runs twice for a market whose stability costs it something,
+    // and the icon-spec read behind the glyph is worth exactly as much the second time as the first.
+    private static WeighedStation readWeighedStation(SectorEntityToken station) {
+        return new WeighedStation(
+            station.getName(),
+            EntityMapIcons.resolveMapIcon(station));
     }
 
     // One market's weight stated factor by factor under a given stability scaling. The same
@@ -438,7 +449,7 @@ public final class KnownMarketFootprints {
             stabilityScaling.computePenaltyFraction(rules.lowStabilityPenalty()));
     }
 
-    // The station factor as the breakdown states it, naming the station that earned it: the
+    // The station factor as the breakdown states it, identifying the station that earned it: the
     // player-set station weight in size points for an openly held stationed colony, or a
     // configured fraction of that weight for a hidden market, so a hidden fortress reads
     // above a bare outpost without matching an open stationed colony. The rate that survives
@@ -446,13 +457,14 @@ public final class KnownMarketFootprints {
     // the rate removes - so both of the factor's cuts read the same way round.
     private static StationFactor buildStationFactor(
             WeighedMarket market,
-            SectorEntityToken station,
+            WeighedStation station,
             StationWeighting rules,
             StabilityScaling stabilityScaling) {
 
         var hiddenMarketRate = market.isHidden() ? rules.hiddenMarketRate() : FULL_STATION_RATE;
         return new StationFactor(
-            station.getName(),
+            station.name(),
+            station.icon(),
             rules.weight(),
             1.0 - hiddenMarketRate,
             stabilityScaling.computePenaltyFraction(rules.lowStabilityPenalty()),
@@ -572,8 +584,8 @@ public final class KnownMarketFootprints {
      * its factor did not run for this market.
      *
      * <p>Read from the economy once and weighed as often as needed, so the connected-entity
-     * scan, the dynamic-stat lookup and the icon-spec read are paid for once however many times
-     * the market's worth is worked out.
+     * scan, the dynamic-stat lookup and the two icon-spec reads are paid for once however many
+     * times the market's worth is worked out.
      *
      * @param name      the colony's display name
      * @param icon      the glyph the sector map marks the colony's own entity with, or empty where
@@ -593,7 +605,23 @@ public final class KnownMarketFootprints {
         boolean isHidden,
         int size,
         double stability,
-        Optional<SectorEntityToken> station,
+        Optional<WeighedStation> station,
         Optional<PatrolCounts> patrols) {
+    }
+
+    /**
+     * One market's orbital station as its factor has to state it: how the station is identified,
+     * and nothing of what it earned.
+     *
+     * <p>Held as the pair rather than as the token it was read from, because the token is a live
+     * entity whose specs cost a lookup apiece, and the factor is built once per weighing of the
+     * market while the station is found once for the market entire.
+     *
+     * @param name the station's display name
+     * @param icon the glyph the sector map marks the station with, or empty where it carries none
+     */
+    private record WeighedStation(
+        String name,
+        Optional<EntityMapIcon> icon) {
     }
 }

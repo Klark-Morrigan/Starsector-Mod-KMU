@@ -191,8 +191,13 @@ reads what the pass recorded, so there is no second market lookup free to answer
 It draws in the colony name's own colour and not the shade the map paints it: those shades are
 authored to tell one world from another against black, and carried into a text box unchanged they
 arrive brighter than the numbers the account is about, so a column of them reads as the finding when
-what it is is a bullet point. The lines beneath a colony stay unmarked altogether - a stability or a
-size is a term of arithmetic with nothing on the map to point at.
+what it is is a bullet point. The station line beneath a colony takes one on the same terms
+(`StationFactor.stationIcon`, read where the connected-entity scan answered the token rather than
+beside the name, so the glyph can only be the station whose bonus is stated by it): it is the one
+term of the account named for a thing on the map rather than for a piece of arithmetic, and the mark
+settles more there than a level up, a system's stations being told apart on the map by their glyph as
+much as by their name. Every other line beneath a colony stays unmarked - a stability or a size has
+nothing on the map to point at.
 That box lists one kind of colony no score above it accounts for: one the economy does not list,
 which the weight read has nothing to weigh. It comes from a second walk over the same colony filter
 (`KnownMarketFootprints.readUnweighedColoniesByFaction`), carried as its own `UnweighedColony` rather

@@ -45,8 +45,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Where a mark may appear is pinned here too, since it is a statement about which line is about a
  * thing on the map: a colony's own line leads with the glyph the map marks it by, weighed or not, and
- * nothing beneath it carries one. That the glyph reads in the colony name's own colour rather than the
- * map's is pinned beside it - the box declining an authored shade is a decision, not an omission.
+ * beneath it the station's line alone does, that being the one term of the account named for an entity
+ * the map draws rather than for a piece of arithmetic. That either glyph reads in its own line's colour
+ * rather than the map's is pinned beside them - the box declining an authored shade is a decision, not
+ * an omission.
  *
  * <p>How a line's numbers read is stood apart from and pinned by {@link MarketFactorTextTest}; the
  * values asserted below are read only where the case is about which line carries which.
@@ -68,6 +70,11 @@ final class MarketWeightRowResolverTest {
         new EntityMapIcon("graphics/warroom/icon_planet.png", new Color(120, 200, 90)));
 
     private static final Optional<EntityMapIcon> NO_ICON = Optional.empty();
+
+    // The glyph the sector map marks a station with. Held apart from the colony's so a case reading a
+    // marked station line cannot pass on the colony's own icon having leaked a level down.
+    private static final Optional<EntityMapIcon> STATION_ICON = Optional.of(
+        new EntityMapIcon("graphics/icons/station0.png", new Color(200, 200, 255)));
 
     @BeforeEach
     void installStrings() {
@@ -168,7 +175,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsMarksNoLineBeneathAColony() {
+        void resolveMarketRowsMarksNoTermOfArithmeticBeneathAColony() {
             // A stability, a size or a patrol tier is a term of arithmetic with nothing on the map to
             // point at, so a glyph there would be standing in for a number.
             var factors = MarketWeightRowResolver
@@ -273,12 +280,74 @@ final class MarketWeightRowResolverTest {
             // The station's own name is what ties the number to something the player can find on the
             // map, which a line reading "Station" would not.
             var rows = MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildStationedBreakdown("Fort Ludd")),
+                List.of(buildStationedBreakdown("Fort Ludd", NO_ICON)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             assertThat(readLabelTexts(rows.get(0).children()))
                 .containsExactly("Stability", "Size", "Fort Ludd");
+        }
+
+        @Test
+        void resolveMarketRowsLeadsTheStationLineWithTheStationsOwnGlyph() {
+            // The station line names an entity the map draws, and a system's stations are told apart
+            // there by their glyph as much as by their name - so the mark settles more here than it
+            // does on the colony line above.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildStationedBreakdown("Fort Ludd", STATION_ICON)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules());
+
+            assertThat(readStationLine(rows).mark().spritePath())
+                .isEqualTo("graphics/icons/station0.png");
+        }
+
+        @Test
+        void resolveMarketRowsDrawsTheStationsGlyphInTheStationNamesOwnColour() {
+            // A station's authored shade is as loud in a text box as a colony's, and the line means
+            // no more by it: the glyph is the identifier, and the finding is the number opposite.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildStationedBreakdown("Fort Ludd", STATION_ICON)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules());
+
+            assertThat(readStationLine(rows).mark().isInLineColour())
+                .isTrue();
+        }
+
+        @Test
+        void resolveMarketRowsOpensTheStationLineOnItsNameWhereTheMapMarksItWithNoGlyph() {
+            // A station carrying no authored icon hands the absence straight over, so the line is
+            // built from the station's name rather than from an image run with nothing to load.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildStationedBreakdown("Fort Ludd", NO_ICON)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules());
+
+            assertThat(readStationLine(rows).hasMark())
+                .isFalse();
+        }
+
+        @Test
+        void resolveMarketRowsMarksTheStationLineAloneBeneathAColony() {
+            // The station is the only subject of the breakdown the player can go and find; every
+            // other line beneath the colony states a term of the arithmetic behind its weight.
+            var factors = MarketWeightRowResolver
+                .resolveMarketRows(
+                    List.of(buildFortifiedBreakdown(STATION_ICON)),
+                    NO_UNWEIGHED_COLONIES,
+                    buildRules())
+                .get(0)
+                .children();
+
+            assertThat(readLabelTexts(factors))
+                .containsExactly("Stability", "Size", "Fort Ludd", "Patrols");
+            assertThat(factors.get(2).line().hasMark())
+                .isTrue();
+            assertThat(List.of(factors.get(0), factors.get(1), factors.get(3)))
+                .allSatisfy(factor -> assertThat(factor.line().hasMark()).isFalse());
+            assertThat(factors.get(3).children())
+                .allSatisfy(tier -> assertThat(tier.line().hasMark()).isFalse());
         }
 
         @Test
@@ -495,6 +564,12 @@ final class MarketWeightRowResolverTest {
         return rows.get(0).children().get(1).line();
     }
 
+    // The station line of the sole colony's parts, which follows the stability and size lines every
+    // counted colony carries.
+    private static CellTooltipEntryLine readStationLine(List<CellTooltipEntry> rows) {
+        return rows.get(0).children().get(2).line();
+    }
+
     // A plain colony's parts - no station, no patrols - at full stability.
     private static MarketWeightBreakdown buildBreakdown(String marketName, BaseSizeFactor baseSize) {
         return new MarketWeightBreakdown(
@@ -546,16 +621,39 @@ final class MarketWeightRowResolverTest {
                 buildPatrolWeighting()));
     }
 
-    // A colony whose station factor ran, named for the case asserting the line names it.
-    private static MarketWeightBreakdown buildStationedBreakdown(String stationName) {
+    // A colony whose station factor ran, named and marked for the cases asserting what the station
+    // line leads with. The colony's own glyph is left absent so a mark read beneath it can only be
+    // the station's.
+    private static MarketWeightBreakdown buildStationedBreakdown(
+            String stationName,
+            Optional<EntityMapIcon> stationIcon) {
+
         return new MarketWeightBreakdown(
             "Jangala",
             NO_ICON,
             false,
             FULL_STABILITY,
             PLAIN_SIZE,
-            Optional.of(new StationFactor(stationName, 3.0, 0.0, 0.0, 3.0)),
+            Optional.of(new StationFactor(stationName, stationIcon, 3.0, 0.0, 0.0, 3.0)),
             Optional.empty());
+    }
+
+    // A stationed colony fielding a patrol as well, so the case about which factor lines take a mark
+    // has every shape of them at once: the station's, the two terms above it, and a patrol line with
+    // a tier of its own a level deeper.
+    private static MarketWeightBreakdown buildFortifiedBreakdown(Optional<EntityMapIcon> stationIcon) {
+        return new MarketWeightBreakdown(
+            "Jangala",
+            NO_ICON,
+            false,
+            FULL_STABILITY,
+            PLAIN_SIZE,
+            Optional.of(new StationFactor("Fort Ludd", stationIcon, 3.0, 0.0, 0.0, 3.0)),
+            Optional.of(new PatrolFactor(
+                new PatrolTierFactor(1, 0.25, 0.25),
+                new PatrolTierFactor(0, 0.5, 0.0),
+                new PatrolTierFactor(0, 1.0, 0.0),
+                0.0)));
     }
 
     // A colony whose patrol factor ran, fielding the given tiers. The tier weights are the settings'

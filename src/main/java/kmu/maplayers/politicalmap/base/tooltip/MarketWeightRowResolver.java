@@ -36,9 +36,13 @@ import java.util.Optional;
  * <p>Every colony line leads with the glyph the sector map marks that colony's entity with, weighed or
  * not, so a reader can tie a name in the list back to something they are looking at rather than to
  * something they have to remember. It is drawn in the colony name's own colour rather than the map's,
- * so it identifies the line without competing with the numbers the box exists to state. The lines
- * beneath a colony carry no mark at all: a stability or a size is a term of arithmetic with nothing on
- * the map to point at.
+ * so it identifies the line without competing with the numbers the box exists to state.
+ *
+ * <p>The station line takes one on the same terms, being the one line beneath a colony named for a
+ * thing on the map rather than for a term of arithmetic - and the mark settles more there than it does
+ * a level up, a system's stations being told apart on the map by their glyph as much as by their name.
+ * Every other line beneath a colony carries no mark at all: a stability or a size has nothing on the
+ * map to point at, so a glyph there would stand in for a number.
  *
  * <p>A colony the pass never weighed is listed all the same, at the foot of the list and at nought.
  * The player can see the station on the map in a faction's colours, so an account of the system that
@@ -71,13 +75,9 @@ public final class MarketWeightRowResolver {
     private static final Comparator<UnweighedColony> UNWEIGHED_ORDER =
         Comparator.comparing(UnweighedColony::marketName);
 
-    // A factor line is named rather than marked: a stability or a size is a term of arithmetic with
-    // nothing on the map to point at, so a glyph there would stand in for a number. The colony line
-    // above them leads with the map's own icon, which is a thing the player can go and find.
-    //
-    // The same absence answers for a colony whose entity the game marks with no glyph. One name for
-    // it rather than two, because the line cannot tell the cases apart and neither should a reader
-    // here: both are "this line opens on its words".
+    // A term of arithmetic is named rather than marked: a stability, a size or a patrol tier has
+    // nothing on the map to point at, so a glyph there would stand in for a number. The two lines that
+    // do lead with one - a colony's and its station's - name things the player can go and find.
     private static final CellTooltipMark NO_MARK = null;
 
     // What a colony the pass never weighed folded in at. Nought rather than a blank column, because
@@ -134,7 +134,7 @@ public final class MarketWeightRowResolver {
             DominanceRules rules) {
 
         return CellTooltipEntry
-            .createEntry(createColonyLine(
+            .createEntry(createMapEntityLine(
                 breakdown.marketName(),
                 breakdown.marketIcon(),
                 KmlibNumbers.formatGroupedInteger(breakdown.computeTotalWeight())))
@@ -150,37 +150,33 @@ public final class MarketWeightRowResolver {
     // shade: in the list's own colour it would pass for a weight competed with and lost on, which is
     // the one thing it is not.
     private static CellTooltipEntry resolveUnweighedEntry(UnweighedColony colony) {
-        return CellTooltipEntry.createEntry(createColonyLine(
+        return CellTooltipEntry.createEntry(createMapEntityLine(
                 colony.marketName(),
                 colony.marketIcon(),
                 KmlibNumbers.formatGroupedInteger(NO_WEIGHT))
             .statesUncountedValue());
     }
 
-    // One colony's own line: its name led by the glyph the map marks its entity with, and whatever
-    // the account counted it for.
+    // A line naming something the sector map draws - a colony or the station defending it - led by
+    // the glyph the map marks it with, and carrying whatever the account counted it for.
     //
     // The icon is what ties a name in this list back to something the player is looking at. A name
     // alone does that only for a reader who already remembers it, while the glyph is the one thing
-    // the box and the map can share at a glance.
+    // the box and the map can share at a glance. How it is coloured is the mark's own rule.
     //
-    // It is drawn in the colony name's own colour rather than in the shade the map paints it. Those
-    // shades are authored to tell one world from another across a black sector map, and carried into
-    // a text box unchanged they arrive brighter than every number the account is actually about - a
-    // row of coloured glyphs down the list reads as the finding, when what it is is a bullet point.
+    // Shared by the two levels that take a mark rather than spelled out at each, so the box arrives
+    // at one rule for a line about a thing on the map instead of one rule per level.
     //
-    // Read off the breakdown the colony arrived in rather than looked up here, so the glyph shown is
-    // the glyph of the very colony whose number sits beside it.
-    private static CellTooltipEntryLine createColonyLine(
-            String marketName,
-            Optional<EntityMapIcon> marketIcon,
+    // Read off the breakdown the subject arrived in rather than looked up here, so the glyph shown is
+    // the glyph of the very colony or station whose number sits beside it.
+    private static CellTooltipEntryLine createMapEntityLine(
+            String entityName,
+            Optional<EntityMapIcon> entityIcon,
             String valueText) {
 
         return CellTooltipEntryLine.createLine(
-            marketIcon
-                .map(icon -> CellTooltipMark.resolveMarkInLineColour(icon.spritePath()))
-                .orElse(NO_MARK),
-            marketName,
+            CellTooltipMark.resolveMarkForMapIcon(entityIcon),
+            entityName,
             valueText);
     }
 
@@ -204,10 +200,14 @@ public final class MarketWeightRowResolver {
         entries.add(resolveBaseSizeEntry(breakdown, rules));
 
         // The station line names the station rather than the factor, so the number ties to
-        // something the player can find on the map.
-        breakdown.station().ifPresent(station -> entries.add(createFactorEntry(
-            station.stationName(),
-            MarketFactorText.formatStation(station))));
+        // something the player can find on the map - and leads with that station's own glyph for the
+        // same reason the colony line above it does, this being the only line in the breakdown whose
+        // subject the map draws.
+        breakdown.station().ifPresent(station -> entries.add(CellTooltipEntry.createEntry(
+            createMapEntityLine(
+                station.stationName(),
+                station.stationIcon(),
+                MarketFactorText.formatStation(station)))));
 
         breakdown.patrols().ifPresent(patrols -> entries.add(resolvePatrolEntry(patrols)));
         return entries;

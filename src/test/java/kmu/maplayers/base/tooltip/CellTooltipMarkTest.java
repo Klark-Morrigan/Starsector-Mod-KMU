@@ -1,7 +1,12 @@
 package kmu.maplayers.base.tooltip;
 
+import kmlib.starsector.entities.EntityMapIcon;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.awt.Color;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -12,9 +17,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * apart: a picture in its own right keeps its pixels, while a shorthand for the name beside it follows
  * that name's colour.
  *
- * <p>The absence is the other half. Both factories answer no mark for a path the game never supplied,
- * so a caller resolving one it may not have never branches first, and a mark that does exist always has
- * something to load.
+ * <p>The absence is the other half. Every factory answers no mark for a subject the game marked with
+ * nothing, so a caller resolving one it may not have never branches first, and a mark that does exist
+ * always has something to load.
  */
 final class CellTooltipMarkTest {
 
@@ -72,6 +77,44 @@ final class CellTooltipMarkTest {
             // the colouring is stated here rather than read off the sprite.
             assertThat(CellTooltipMark.resolveMarkInLineColour(COLONY_ICON))
                 .isNotEqualTo(CellTooltipMark.resolveMarkAsAuthored(COLONY_ICON));
+        }
+    }
+
+    @Nested
+    class ResolveMarkForMapIcon {
+
+        @Test
+        void resolveMarkForMapIconFollowsTheNameBesideIt() {
+            // A map glyph stands in for the name it prefixes rather than picturing anything, so it
+            // reads in the line's colour - vanilla's own shade is authored to carry against black and
+            // arrives brighter than the numbers a box is about.
+            var mark = CellTooltipMark.resolveMarkForMapIcon(
+                Optional.of(new EntityMapIcon(COLONY_ICON, new Color(120, 200, 90))));
+
+            assertThat(mark)
+                .isEqualTo(new CellTooltipMark(COLONY_ICON, true));
+        }
+
+        @Test
+        void resolveMarkForMapIconSpendsNoneOfTheAuthoredColour() {
+            // The asset's colour is KMLib's answer about the asset and a surface drawing the map still
+            // wants it; a mark carries no colour of its own, so nothing of it can reach the line.
+            var authored = CellTooltipMark.resolveMarkForMapIcon(
+                Optional.of(new EntityMapIcon(COLONY_ICON, new Color(120, 200, 90))));
+
+            var uncoloured = CellTooltipMark.resolveMarkForMapIcon(
+                Optional.of(new EntityMapIcon(COLONY_ICON, null)));
+
+            assertThat(authored)
+                .isEqualTo(uncoloured);
+        }
+
+        @Test
+        void resolveMarkForMapIconAnswersNoMarkForAnEntityTheMapMarksWithNothing() {
+            // The same absence a path the game never supplied answers, so a caller lists a marked and
+            // an unmarked subject through one expression rather than branching first.
+            assertThat(CellTooltipMark.resolveMarkForMapIcon(Optional.empty()))
+                .isNull();
         }
     }
 

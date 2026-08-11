@@ -151,6 +151,29 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
+        void resolveMarketRowsLeadsAMarketTheMechanicPassedOverWithItsGlyphToo() {
+            // The nought is the whole of what the contest says about such a market, and identifying it
+            // is not the contest speaking - a colony the player can see on the map has to be findable
+            // from the list whether or not anything weighed it.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(ONE_SIBLING_MARKET),
+                List.of(new MarketClaimBreakdown(
+                    "Tigra City",
+                    MARKET_ICON,
+                    SECOND_LISTED,
+                    IS_KNOWN_TO_PLAYER,
+                    CONCEALED,
+                    9,
+                    ONE_SIBLING_MARKET,
+                    OptionalInt.empty()))));
+
+            assertThat(rows.get(1).line().valueText())
+                .isEqualTo("0");
+            assertThat(rows.get(1).line().mark().spritePath())
+                .isEqualTo("graphics/warroom/icon_planet.png");
+        }
+
+        @Test
         void resolveMarketRowsDrawsAMarketsGlyphInTheMarketNamesOwnColour() {
             // The map's shades are authored to tell one world from another against black, and carried
             // into the box unchanged they arrive brighter than the numbers the account is about - a

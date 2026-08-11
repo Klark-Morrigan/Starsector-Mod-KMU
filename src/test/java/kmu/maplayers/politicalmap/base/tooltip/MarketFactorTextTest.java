@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.starsector.entities.EntityMapIcon;
+
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
@@ -10,6 +12,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,6 +30,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * there; what is asserted here is only how those values read.
  */
 final class MarketFactorTextTest {
+
+    // What a station is marked with on the map has no part in how its numbers read, which is the
+    // whole of what this suite is about - so every station part below is built without one.
+    private static final Optional<EntityMapIcon> NO_ICON = Optional.empty();
 
     @BeforeEach
     void installStrings() {
@@ -109,7 +117,7 @@ final class MarketFactorTextTest {
             // The hidden-market rate is applied to the station weight and low stability to what
             // survived it, so stating them the other way round would describe different arithmetic.
             assertThat(MarketFactorText.formatStation(
-                    new StationFactor("Fort Ludd", 3.0, 0.25, 0.1, 2.025)))
+                    new StationFactor("Fort Ludd", NO_ICON, 3.0, 0.25, 0.1, 2.025)))
                 .isEqualTo("3 :: 2,025 (-25%) (-10%)");
         }
 
@@ -118,7 +126,7 @@ final class MarketFactorTextTest {
             // A colony held in the open forfeits nothing to the hidden rate, and a deduction of zero
             // printed anyway would read as a cut on every openly held stationed colony in the box.
             assertThat(MarketFactorText.formatStation(
-                    new StationFactor("Fort Ludd", 3.0, 0.0, 0.1, 2.7)))
+                    new StationFactor("Fort Ludd", NO_ICON, 3.0, 0.0, 0.1, 2.7)))
                 .isEqualTo("3 :: 2,700 (-10%)");
         }
     }

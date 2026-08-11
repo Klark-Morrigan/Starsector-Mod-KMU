@@ -273,12 +273,18 @@ about what the overlay means.
   indent alone says how deep a line sits: a column is one gutter shared down a flat stack, and a
   listing four levels deep would draw a mark several levels in inside the gutter the shallowest marked
   line widened, well left of the name it belongs to. What colour a mark draws in follows from what the
-  mark is for, which its line states (`readsMarkInLineColour`): a glyph standing in for the name beside
-  it takes that name's own tier colour, so the two read as one thing, while a crest is a picture in its
-  own right and keeps the colours of its own pixels. The line names no colour itself - which shade a
-  tier speaks in is the block's to settle, and an asset authored to carry across the sector map is the
-  loudest run on a line whose meaning is in the words. Its table shapes are the block's alone, so a body
-  cannot author a look of its own. So two layers' boxes differ only in what they say.
+  mark is for, which the mark itself states (`CellTooltipMark.isInLineColour`, set by whichever of its
+  factories composed it): a glyph standing in for the name beside it takes that name's own tier colour
+  (`resolveMarkInLineColour`, or `resolveMarkForMapIcon` where the glyph is the one the sector map
+  marks an entity by), so the two read as one thing, while a crest is a picture in its own right and
+  keeps the colours of its own pixels (`resolveMarkAsAuthored`). Which of the two a mark is cannot be
+  read off the sprite - the same artwork could be either - so whatever composes the line says it where
+  the path is named, and the mark names no colour itself: which shade a tier speaks in is the block's
+  to settle, and an asset authored to carry across the sector map is the loudest run on a line whose
+  meaning is in the words. Absence is a null mark rather than a mark with nothing to load, and every
+  factory answers it, so a caller resolving a mark it may not have never branches first. Its table
+  shapes are the block's alone, so a body cannot author a look of its own. So two layers' boxes differ
+  only in what they say.
 - **`base/refresh`** - what says a cached overlay has gone stale, and the throttled poll that
   finds the changes the engine announces to nobody. `MapLayerSectorWatcher` owns the loop
   alone and asks a `MapLayerStalenessSource` what moved since it last asked, so which changes

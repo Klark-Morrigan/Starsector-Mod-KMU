@@ -65,7 +65,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>Both halves of that read are covered here, over one economy: the weights the map
  * paints by, and the {@link MarketWeightBreakdown} they are summed over - each factor's
- * rating, cut and contribution, the station it names, the patrol tiers behind it,
+ * rating, cut and contribution, the station it names and marks, the patrol tiers behind it,
  * and the absences that say a factor never ran. The two are asserted against the same
  * figures where they meet, since a total that disagreed with its own parts is the failure
  * the one-arithmetic read exists to make impossible. The arithmetic the economy cannot
@@ -1183,6 +1183,52 @@ class KnownMarketFootprintsIntegrationTest {
                 .isEmpty();
         }
 
+        @Test
+        void readBreakdownByFactionCarriesTheGlyphTheMapMarksTheStationWith() {
+            // The station line leads with its own glyph, read where the scan answered the token
+            // rather than looked up again beside the name, so the icon drawn can only belong to the
+            // very station whose bonus is stated by it. The colony is marked too and marked
+            // differently, since reading the colony's icon into the station part is the one way this
+            // can go wrong and still look right.
+            var sector = buildSectorWith(
+                "fortified-system",
+                withMapIcon(
+                    withName(
+                        buildStationedMarketWithMarkedStation(buildFaction("hegemony"), 4),
+                        "Jangala"),
+                    "graphics/warroom/icon_planet.png",
+                    new Color(120, 200, 90)));
+
+            var breakdown = readOnlyBreakdown(sector, buildRules().withStationWeighting().build());
+
+            assertThat(breakdown.station())
+                .isPresent();
+            assertThat(breakdown.station().get().stationIcon())
+                .contains(new EntityMapIcon(
+                    "graphics/icons/station0.png",
+                    new Color(200, 200, 255)));
+            assertThat(breakdown.marketIcon())
+                .contains(new EntityMapIcon(
+                    "graphics/warroom/icon_planet.png",
+                    new Color(120, 200, 90)));
+        }
+
+        @Test
+        void readBreakdownByFactionCarriesNoGlyphForAStationTheMapMarksWithNone() {
+            // A station with no icon spec at all reaches the box as an absence rather than as a path
+            // to a sprite that does not exist, which is what lets its line open on its name.
+            var sector = buildSectorWith(
+                "stationed-system",
+                withName(buildStationedMarket(buildFaction("hegemony"), 4), "Jangala"));
+
+            var breakdown = readOnlyBreakdown(sector, buildRules().withStationWeighting().build());
+
+            assertThat(breakdown.station())
+                .isPresent();
+            assertThat(breakdown.station().get().stationIcon())
+                .isEmpty();
+        }
+
         // The rule the fortress assertions read under: the suite's defaults with both the
         // station and the patrol factor switched on, so all three factors run at once.
         private DominanceRules buildFortifiedColonyRules() {
@@ -1452,14 +1498,27 @@ class KnownMarketFootprintsIntegrationTest {
         return market;
     }
 
-    // Stubs the glyph the sector map marks a market's own entity with - a custom-entity spec's
-    // authored path and colour, which is where vanilla keeps a station's icon. The plain stubbed
-    // market's entity carries no spec at all, so a colony is unmarked unless a case says otherwise.
+    // Stubs the glyph the sector map marks a market's own entity with. The plain stubbed market's
+    // entity carries no spec at all, so a colony is unmarked unless a case says otherwise.
     private static MarketAPI withMapIcon(MarketAPI market, String iconName, Color iconColour) {
 
-        // Read the entity and build its spec before opening the entity's own stubbing, so the two do
-        // not nest into an unfinished-stubbing error.
+        // Read the entity before opening its own stubbing, so the two do not nest into an
+        // unfinished-stubbing error.
         var entityMock = market.getPrimaryEntity();
+
+        withEntityMapIcon(entityMock, iconName, iconColour);
+
+        return market;
+    }
+
+    // Stubs the glyph the sector map marks any entity with - a custom-entity spec's authored path and
+    // colour, which is where vanilla keeps a station's icon. Shared by the colony and station shapes,
+    // so the two are marked one way and a case reading one against the other is comparing like values.
+    private static SectorEntityToken withEntityMapIcon(
+            SectorEntityToken entity,
+            String iconName,
+            Color iconColour) {
+
         var entitySpecMock = mock(CustomEntitySpecAPI.class);
 
         when(entitySpecMock.getIconName())
@@ -1467,10 +1526,10 @@ class KnownMarketFootprintsIntegrationTest {
         when(entitySpecMock.getIconColor())
             .thenReturn(iconColour);
 
-        when(entityMock.getCustomEntitySpec())
+        when(entity.getCustomEntitySpec())
             .thenReturn(entitySpecMock);
 
-        return market;
+        return entity;
     }
 
     // A hidden market at the given stability, for pinning that its token rating scales
@@ -1486,6 +1545,17 @@ class KnownMarketFootprintsIntegrationTest {
     // connected entity, the holding link vanilla itself reads.
     private static MarketAPI buildStationedMarket(FactionAPI faction, int size) {
         return withConnectedEntities(buildVisibleMarket(faction, size), buildStationEntity());
+    }
+
+    // A visible owned market whose attached station the map marks with a glyph of its own, for
+    // pinning that the station part carries the station's icon and not the colony's.
+    private static MarketAPI buildStationedMarketWithMarkedStation(FactionAPI faction, int size) {
+        return withConnectedEntities(
+            buildVisibleMarket(faction, size),
+            withEntityMapIcon(
+                buildStationEntity(),
+                "graphics/icons/station0.png",
+                new Color(200, 200, 255)));
     }
 
     // A stationed market at the given stability, for pinning the station factor's own

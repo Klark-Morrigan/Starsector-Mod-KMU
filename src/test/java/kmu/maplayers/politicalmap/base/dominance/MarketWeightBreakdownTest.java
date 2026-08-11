@@ -20,8 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class MarketWeightBreakdownTest {
 
-    // A colony whose entity the game marks with no glyph, which is every colony here: what a box leads
-    // a name with says nothing about what the parts beneath it add up to.
+    // An entity the game marks with no glyph, which is every colony and every station here: what a box
+    // leads a name with says nothing about what the parts beneath it add up to.
     private static final Optional<EntityMapIcon> NO_ICON = Optional.empty();
 
     @Nested
@@ -36,7 +36,7 @@ class MarketWeightBreakdownTest {
                 false,
                 5.0,
                 new BaseSizeFactor(4, 4.0, 2.0, 0.5),
-                Optional.of(new StationFactor("Fort Ludd", 1.0, 0.0, 0.25, 0.75)),
+                Optional.of(new StationFactor("Fort Ludd", NO_ICON, 1.0, 0.0, 0.25, 0.75)),
                 Optional.of(new PatrolFactor(
                     new PatrolTierFactor(2, 0.25, 0.375),
                     new PatrolTierFactor(1, 0.5, 0.375),
@@ -91,7 +91,7 @@ class MarketWeightBreakdownTest {
                 false,
                 10.0,
                 new BaseSizeFactor(4, 4.0, third, 0.0),
-                Optional.of(new StationFactor("Fort Ludd", 1.0, 0.0, 0.0, third)),
+                Optional.of(new StationFactor("Fort Ludd", NO_ICON, 1.0, 0.0, 0.0, third)),
                 Optional.of(new PatrolFactor(
                     new PatrolTierFactor(1, third, third),
                     new PatrolTierFactor(0, 0.5, 0.0),

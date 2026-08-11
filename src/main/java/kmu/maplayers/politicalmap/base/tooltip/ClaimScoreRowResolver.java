@@ -100,10 +100,6 @@ public final class ClaimScoreRowResolver {
     // A term line is named rather than marked: a size or a garrison bonus is a term of arithmetic with
     // nothing on the map to point at, so a glyph there would stand in for a number. The market line
     // above them leads with the map's own icon, which is a thing the player can go and find.
-    //
-    // The same absence answers for a market whose entity the game marks with no glyph. One name for it
-    // rather than two, because the line cannot tell the cases apart and neither should a reader here:
-    // both are "this line opens on its words".
     private static final CellTooltipMark NO_MARK = null;
 
     // The sibling count of a faction holding this system with one market alone - the reading at which
@@ -247,9 +243,7 @@ public final class ClaimScoreRowResolver {
     // The icon is what ties a name in this list back to something the player is looking at; a name
     // alone does that only for a reader who already remembers it. It is read off the breakdown the
     // market arrived in rather than looked up here, so the glyph shown belongs to the very market
-    // whose number sits beside it, and it draws in the market name's own colour rather than the
-    // shade the map paints it - an asset coloured to carry across black arrives brighter than every
-    // number the account is about.
+    // whose number sits beside it. How it is coloured is the mark's own rule.
     //
     // The name runs on into where the economy lists the market, because that number is the whole of
     // the answer to the one question the scores cannot settle: two markets on the same score are
@@ -272,10 +266,7 @@ public final class ClaimScoreRowResolver {
 
         var line = CellTooltipEntryLine
             .createLine(
-                market
-                    .marketIcon()
-                    .map(icon -> CellTooltipMark.resolveMarkInLineColour(icon.spritePath()))
-                    .orElse(NO_MARK),
+                CellTooltipMark.resolveMarkForMapIcon(market.marketIcon()),
                 market.marketName(),
                 KmlibNumbers.formatGroupedInteger(resolveContestScore(market)))
             .indexedAt(
