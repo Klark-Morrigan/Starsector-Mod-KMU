@@ -47,6 +47,30 @@ final class SidebarPlacements {
         // nothing else, so its box would claim no screen however large the rect is.
         return placeSidebar(
             null,
+            UNREAD_BOX,
+            bodyBox,
+            List.of(new Control(null, bodyBox, List.of())),
+            notch);
+    }
+
+    /**
+     * A panel laid out as a screen actually draws it: a tab row standing on the body box, with the
+     * collapse handle on the box's right edge - the shape a pass reading the whole panel's
+     * footprint needs, where the builder above leaves the row sized to nothing.
+     *
+     * @param drawnHeaderBand the part of the tab row on screen
+     * @param bodyBox         the box the panel's body occupies
+     * @param notch           the collapse handle's rect
+     * @return the placement
+     */
+    static TabPanelPlacement placeSidebarUnderDrawnRow(
+            Rectangle drawnHeaderBand,
+            Rectangle bodyBox,
+            Rectangle notch) {
+
+        return placeSidebar(
+            null,
+            drawnHeaderBand,
             bodyBox,
             List.of(new Control(null, bodyBox, List.of())),
             notch);
@@ -64,27 +88,29 @@ final class SidebarPlacements {
         return placeSidebar(
             new Control(null, UNREAD_BOX, List.of()),
             UNREAD_BOX,
+            UNREAD_BOX,
             List.of(),
             null);
     }
 
     // The one assembly every shape above is a named case of, so the parts no case reads cannot
-    // drift between them. The drawn tab row is the unread box for the same reason the box itself is
-    // where a case does not read it: these shapes describe a body and a handle, so a row sized to
-    // nothing keeps the panel's own footprint out of an assertion that never arranged for it.
+    // drift between them. A case that does not read the drawn tab row passes the unread box for it,
+    // for the same reason it passes one for the body's box: a rect sized to nothing keeps that piece
+    // of the panel's footprint out of an assertion that never arranged for it.
     //
     // The body's controls are a part of the shape rather than a constant, because the placement reads
     // them to decide whether it has a body at all - and a shape meaning "panel with a body" and one
     // meaning "tab row alone" differ in exactly that, not in the size of the box they carry.
     private static TabPanelPlacement placeSidebar(
             Control tabsHeader,
+            Rectangle drawnHeaderBand,
             Rectangle bodyBox,
             List<Control> bodyControls,
             Rectangle notch) {
 
         return new TabPanelPlacement(
             tabsHeader,
-            UNREAD_BOX,
+            drawnHeaderBand,
             new PanelPlacement(bodyBox, bodyBox, bodyControls, bodyBox, 0f, 0f),
             new BoxBorder(BORDER_WIDTH),
             notch);

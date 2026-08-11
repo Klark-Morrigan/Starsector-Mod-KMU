@@ -2,6 +2,8 @@ package kmu.starsector.consolecommands;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.logging.SessionWarning;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -53,7 +55,8 @@ public final class ConsoleCommandsOverlay implements ConsoleOverlay {
     // mod must never reach that name.
     private ConsoleOverlayPresence presence;
 
-    private boolean hasWarnedThisSession;
+    // Says which hop broke, once per reader, for the reasons given in the class notes.
+    private final SessionWarning warning = new SessionWarning(LOG);
 
     /**
      * Reads the console state Console Commands itself publishes.
@@ -133,11 +136,7 @@ public final class ConsoleCommandsOverlay implements ConsoleOverlay {
     private boolean reportUnreadable(String cause, Throwable failure) {
 
         isConsoleReadable = false;
-
-        if (!hasWarnedThisSession) {
-            hasWarnedThisSession = true;
-            LOG.warn(cause + FAIL_OPEN_CONSEQUENCE, failure);
-        }
+        warning.warnOnce(cause + FAIL_OPEN_CONSEQUENCE, failure);
         return false;
     }
 }

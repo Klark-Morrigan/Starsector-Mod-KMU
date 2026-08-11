@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 
+import kmlib.starsector.ui.coreui.ReflectiveCoreUiComponentRepainter;
 import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
@@ -295,8 +296,14 @@ public class KMU_ModPlugin extends BaseModPlugin {
         for (var host : SidebarHosts.getRegisteredHosts()) {
             // Its own probe per renderer rather than one shared: the probe warns once per instance when
             // its read breaks, so a shared one would let the first screen to fail silence the news on
-            // the other.
-            listenerManager.addListener(new SidebarRenderer(host, new VanillaMapTooltipProbe()), true);
+            // the other. The repaint binding is the shared singleton beside it - a stateless forwarder
+            // over the GL surface, with no per-screen state to keep apart.
+            listenerManager.addListener(
+                new SidebarRenderer(
+                    host,
+                    new VanillaMapTooltipProbe(),
+                    ReflectiveCoreUiComponentRepainter.INSTANCE),
+                true);
             listenerManager.addListener(new SidebarInput(host), true);
         }
     }

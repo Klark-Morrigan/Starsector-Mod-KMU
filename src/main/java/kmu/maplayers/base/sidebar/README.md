@@ -143,11 +143,17 @@ placement, steps the panel's input motions against it, and hands off to KMLib's 
 Drawing last wins against the core UI's tooltips too, which the panel does not want: a tooltip the
 cursor raises where the panel overlaps it is drawn underneath and reads as cut off at the panel edge.
 So the same pass finishes by repainting it on top - `VanillaMapTooltipProbe` locates the tooltip the core
-UI is showing, and KMLib's `CoreUiComponentRenderer` draws it again clipped to
+UI is showing, and KMLib's `CoreUiComponentRepainter` draws it again clipped to
 `TabPanelPlacement.computeOuterBound`. The clip is the panel's footprint rather than the tooltip's,
 so only the hidden part is drawn twice and the tooltip reads at one opacity across the panel edge. A
 repaint that cannot be made (the read broke, or the draw threw) leaves the tooltip where vanilla drew
 it and warns once a session, so the failure costs the occlusion it was there to fix and nothing more.
+
+Both are ports rather than direct calls, and that is what makes the pass testable at all: the live
+binding reaches a core-UI draw entry point by name and writes to GL, which no test can stand under,
+while whether a repaint happens, which region it is clipped to, and how a failed draw is survived are
+decisions worth pinning. `ReflectiveCoreUiComponentRepainter.INSTANCE` is the binding the plugin wires
+in; `CoreUiComponentRepainterFake` is what the tests drive.
 
 The animations run either side of the layout, which is why the frame's elapsed time is read once and
 spent on both sides: the fold has to advance *before* the placement, since it sizes it, and the input
