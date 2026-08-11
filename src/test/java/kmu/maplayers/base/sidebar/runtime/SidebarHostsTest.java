@@ -80,9 +80,9 @@ final class SidebarHostsTest {
         }
 
         @Test
-        void isPointOverAnySidebarOfAnswersNoForABodylessPanelWithNoNotch() {
-            // A panel with no body has nothing to collapse and so exposes no handle; the null is
-            // the placement's own contract, and reading it as a rect would throw on a live screen.
+        void isPointOverAnySidebarOfAnswersNoForAPanelWithNoNotch() {
+            // A panel with nothing to collapse exposes no handle; the null is the placement's own
+            // contract, and reading it as a rect would throw on a live screen.
             showSidebar(hostMock, placeSidebar(null));
 
             assertThat(askOneHost(INSIDE_NOTCH_X, INSIDE_NOTCH_Y))

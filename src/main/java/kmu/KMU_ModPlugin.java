@@ -293,7 +293,10 @@ public class KMU_ModPlugin extends BaseModPlugin {
         listenerManager.removeListenerOfClass(SidebarInput.class);
 
         for (var host : SidebarHosts.getRegisteredHosts()) {
-            listenerManager.addListener(new SidebarRenderer(host), true);
+            // Its own probe per renderer rather than one shared: the probe warns once per instance when
+            // its read breaks, so a shared one would let the first screen to fail silence the news on
+            // the other.
+            listenerManager.addListener(new SidebarRenderer(host, new VanillaMapTooltip()), true);
             listenerManager.addListener(new SidebarInput(host), true);
         }
     }

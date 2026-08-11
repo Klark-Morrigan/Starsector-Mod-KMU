@@ -42,7 +42,14 @@ final class SidebarPlacements {
      * @return the placement
      */
     static TabPanelPlacement placeSidebarOverBody(Rectangle bodyBox, Rectangle notch) {
-        return placeSidebar(null, bodyBox, notch);
+        // One control laid across the body, because a placement's footprint is drawn from whether it
+        // has a body at all: a box with no controls in it describes a panel that is its tab row and
+        // nothing else, so its box would claim no screen however large the rect is.
+        return placeSidebar(
+            null,
+            bodyBox,
+            List.of(new Control(null, bodyBox, List.of())),
+            notch);
     }
 
     /**
@@ -57,6 +64,7 @@ final class SidebarPlacements {
         return placeSidebar(
             new Control(null, UNREAD_BOX, List.of()),
             UNREAD_BOX,
+            List.of(),
             null);
     }
 
@@ -64,15 +72,20 @@ final class SidebarPlacements {
     // drift between them. The drawn tab row is the unread box for the same reason the box itself is
     // where a case does not read it: these shapes describe a body and a handle, so a row sized to
     // nothing keeps the panel's own footprint out of an assertion that never arranged for it.
+    //
+    // The body's controls are a part of the shape rather than a constant, because the placement reads
+    // them to decide whether it has a body at all - and a shape meaning "panel with a body" and one
+    // meaning "tab row alone" differ in exactly that, not in the size of the box they carry.
     private static TabPanelPlacement placeSidebar(
             Control tabsHeader,
             Rectangle bodyBox,
+            List<Control> bodyControls,
             Rectangle notch) {
 
         return new TabPanelPlacement(
             tabsHeader,
             UNREAD_BOX,
-            new PanelPlacement(bodyBox, bodyBox, List.of(), bodyBox, 0f, 0f),
+            new PanelPlacement(bodyBox, bodyBox, bodyControls, bodyBox, 0f, 0f),
             new BoxBorder(BORDER_WIDTH),
             notch);
     }

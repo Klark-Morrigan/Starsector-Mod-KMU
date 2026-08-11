@@ -140,6 +140,15 @@ painted in UI coordinates and its input claimed ahead of the screen.
 screen itself. It gates on the host, advances the collapse, offers the settled fold, resolves the
 placement, steps the panel's input motions against it, and hands off to KMLib's `TabPanelRenderer`.
 
+Drawing last wins against the core UI's tooltips too, which the panel does not want: a tooltip the
+cursor raises where the panel overlaps it is drawn underneath and reads as cut off at the panel edge.
+So the same pass finishes by repainting it on top - `VanillaMapTooltip` locates the tooltip the core
+UI is showing, and KMLib's `CoreUiComponentRenderer` draws it again clipped to
+`TabPanelPlacement.computeOuterBound`. The clip is the panel's footprint rather than the tooltip's,
+so only the hidden part is drawn twice and the tooltip reads at one opacity across the panel edge. A
+repaint that cannot be made (the read broke, or the draw threw) leaves the tooltip where vanilla drew
+it and warns once a session, so the failure costs the occlusion it was there to fix and nothing more.
+
 The animations run either side of the layout, which is why the frame's elapsed time is read once and
 spent on both sides: the fold has to advance *before* the placement, since it sizes it, and the input
 motions - the hover fades, the tabs' press lifts, and their hotkey blinks - *after* it, since what

@@ -6,11 +6,14 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.profiling.Timings;
+import kmlib.starsector.ui.coreui.CoreUiComponentRenderer;
 import kmlib.starsector.ui.input.HoverFade;
+import kmlib.starsector.ui.map.probes.VanillaMapTooltip;
 import kmlib.starsector.ui.render.gl.panel.NotchState;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.render.gl.tabs.TabPanelRenderer;
 import kmlib.starsector.ui.widgets.BoxBorder;
+import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import kmu.settings.KmuMapLayerSettings;
 
@@ -34,7 +37,10 @@ import org.apache.log4j.Logger;
  * <p>The panel is drawn in UI coordinates through {@link CampaignUIRenderingListener} - specifically the
  * above-tooltips pass, the only one composited after the opaque core-UI screen, so nothing it draws
  * occludes the panel. It draws the placement the input listener also hit-tests, so what is drawn and what
- * is clickable line up.
+ * is clickable line up. Winning against the whole core UI is more than the panel needs, though: a vanilla
+ * tooltip the cursor raises where the panel overlaps it would be drawn under the panel and read as cut in
+ * half. So the same pass puts that tooltip back on top afterwards, which is the one thing here that
+ * reaches outside the panel's own paint.
  *
  * <p>Drawing it rather than composing it from vanilla widgets is not forced by the screens. Both map
  * widgets are containers that adopt a mod-owned panel, render it over the map surface, and route input to
@@ -54,6 +60,15 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     // The screen this renderer draws the sidebar on: its gate, placement, controller, and view-state text.
     private final SidebarHost host;
 
+    // Locates the tooltip the core UI is showing right now, so this pass can lift it back over the panel
+    // it would otherwise be buried under. Supplied rather than built here so a test can stand a stub in
+    // its place, and one per renderer because the probe's broken-read warning is per instance.
+    private final VanillaMapTooltip vanillaMapTooltip;
+
+    // Whether the repaint below has already reported itself broken this session. Per instance for the
+    // probe's reason, and once because this runs every frame the panel is up.
+    private boolean hasWarnedOnTooltipRepaint;
+
     // View-state trace. The panel has no error state - when a signal blocks it, it is simply absent - so
     // the log is the only place "why hidden" or "drawn where" is answerable. Deduped on the whole line: a
     // steady state is one line, every change a fresh one. Null to start, so the first pass logs and thereby
@@ -67,8 +82,9 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     // advances by nothing rather than by the whole gap since the screen was last open.
     private long previousFrameNanos;
 
-    public SidebarRenderer(SidebarHost host) {
+    public SidebarRenderer(SidebarHost host, VanillaMapTooltip vanillaMapTooltip) {
         this.host = host;
+        this.vanillaMapTooltip = vanillaMapTooltip;
     }
 
     @Override
@@ -177,6 +193,10 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             host.getController().getTabInteractionSources(),
             notchState,
             opacity);
+
+        // After the panel's own paint, and only after it: the repaint's whole purpose is to land above
+        // the pixels the call above just wrote.
+        repaintVanillaTooltipOverPanel(placement);
     }
 
     // Offers the host's fold selection the end its panel has settled at, and nothing at all while the panel
@@ -225,6 +245,51 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         }
         lastLoggedLine = line;
         LOG.debug("Map layer sidebar " + line);
+    }
+
+    // Puts whichever tooltip the core UI is showing back on top of the panel, clipped to the panel's own
+    // outer bound. This pass is composited after the core UI's tooltips, so a tooltip raised where the
+    // panel overlaps it is drawn underneath and reads as cut off at the panel edge; drawing it a second
+    // time here lands it above. Clipped to the panel rather than to the tooltip is what keeps the two
+    // draws from stacking: only the part actually hidden is repainted, so the tooltip reads at one
+    // opacity across the panel edge instead of brightening where it crosses.
+    private void repaintVanillaTooltipOverPanel(TabPanelPlacement placement) {
+
+        // Null covers both "no tooltip up" and "the probe's read broke", the probe's own fail-open
+        // contract; either way there is nothing to lift.
+        var tooltip = vanillaMapTooltip.findShownTooltip();
+        if (tooltip == null) {
+            return;
+        }
+        try {
+            // The outer bound rather than the piecewise footprint, since a clip is one rect: it may
+            // cover screen the panel does not paint on, which costs nothing here because the repaint
+            // only writes where the tooltip itself is.
+            CoreUiComponentRenderer.renderClippedTo(tooltip, placement.computeOuterBound());
+
+        } catch (Throwable repaintFailed) {
+            // Reaching a core-UI draw entry point by name can fail on any game build, and the repaint is
+            // a refinement: swallowing it leaves the tooltip where vanilla drew it, under the panel,
+            // which is the nuisance this fixes rather than a new defect. Letting it out would instead
+            // take the whole panel away on every frame.
+            warnOnTooltipRepaintFailure(repaintFailed);
+        }
+    }
+
+    // Says once a session that the repaint above is broken, so a game build that moves the draw entry
+    // point is diagnosed from the log rather than from a report about tooltips being clipped. Once,
+    // because a per-frame warning would be written sixty times a second and the second says nothing new.
+    private void warnOnTooltipRepaintFailure(Throwable failure) {
+        
+        if (hasWarnedOnTooltipRepaint) {
+            return;
+        }
+        hasWarnedOnTooltipRepaint = true;
+        LOG.warn(
+            "Could not repaint the vanilla tooltip over the map layer sidebar; tooltips will stay "
+                + "hidden behind the panel where the two overlap. This is safe but means a tooltip "
+                + "under the panel reads as cut off.",
+            failure);
     }
 
     private static String formatRect(Rectangle rect) {
