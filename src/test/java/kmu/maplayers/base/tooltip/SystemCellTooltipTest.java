@@ -102,6 +102,16 @@ final class SystemCellTooltipTest {
     private static final int DEEPER_THAN_THE_FLOOR = 6;
     private static final double SMALLEST_LEVEL_SIZE = 7d;
 
+    // A line deeper than either knob names. No box lists this deep today, which is exactly why it is
+    // asserted: the depth a listing reaches follows its subject matter, so the first box to go a step
+    // further must not respace itself.
+    private static final int DEEPER_THAN_EITHER_TIER = 5;
+
+    // A second reading of one knob, for the case that a box is set from the live settings each paint
+    // rather than from a look settled once. Tighter than the gap installed above so the two readings
+    // cannot be told apart by luck.
+    private static final float TIGHTENED_LINE_GAP = 2f;
+
     // The blocks the box lays out, in draw order: the heading it is titled with, then the layer's own,
     // then the hint at the foot where the box offers one.
     private static final int TITLE_SECTION = 0;
@@ -279,6 +289,38 @@ final class SystemCellTooltipTest {
                 .isEqualTo(TIER_2_LINE_GAP);
             assertThat(typography.resolveLineGapAfter(THREE_STEPS_UNDER))
                 .isEqualTo(TIER_3_LINE_GAP);
+        }
+
+        @Test
+        void renderForKeepsALineDeeperThanEitherTierWithTheRunItBelongsTo() {
+            // Nothing bounds how deep a listing goes, and the knobs stop at the third step - so a line
+            // below them reads with the run it is part of rather than springing back to the box's own
+            // spacing, which would leave the innermost lines of a box the airiest thing in it.
+            var typography = captureDrawnBox(buildTooltipSayingSomething())
+                .style()
+                .typography();
+
+            assertThat(typography.resolveLineGapAfter(DEEPER_THAN_EITHER_TIER))
+                .isEqualTo(TIER_3_LINE_GAP);
+        }
+
+        @Test
+        void renderForReadsTheDensityAfreshOnEveryPaint() {
+            // A slider moved with the box open takes effect on the next frame, which is the whole point
+            // of settling the look per paint: a style built once at class load would leave the settings
+            // screen and the map disagreeing until the game was restarted.
+            var tooltipFake = buildTooltipSayingSomething();
+
+            assertThat(captureDrawnBox(tooltipFake).style().typography().resolveLineGapAfter(
+                    IN_THE_BOXS_VOICE))
+                .isEqualTo(LINE_GAP);
+
+            settingsMock.when(KmuMapLayerSettings::getMapTooltipLineGap)
+                .thenReturn(TIGHTENED_LINE_GAP);
+
+            assertThat(captureDrawnBox(tooltipFake).style().typography().resolveLineGapAfter(
+                    IN_THE_BOXS_VOICE))
+                .isEqualTo(TIGHTENED_LINE_GAP);
         }
 
         @Test
