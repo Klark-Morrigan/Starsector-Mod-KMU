@@ -66,6 +66,18 @@ public final class KmuMapLayerSettings {
     private static final String INTEL_SIDEBAR_PADDING_TOP_FIELD =
         "kmu_politicalMapIntelSidebarPaddingTop";
 
+    // Diagnostics (Map - Dev tab): how hard each sidebar row's hard-edged labels read. Both rows are
+    // lettered in atlases carrying no antialiasing of their own, which the font loader hands over
+    // interpolated - so each is drawn between the two samplings, and where between is a look rather than a
+    // number. One knob per row, because each is read against the vanilla chrome it stands beside: the
+    // intel row against that screen's raised buttons, the map row against the Sector/System tabs a
+    // tab-height above it. The intel key keeps the name it shipped under, so an install that has already
+    // dialled that row keeps its value.
+    private static final String INTEL_SIDEBAR_PIXEL_FONT_SHARPNESS_FIELD =
+        "kmu_sidebarPixelFontSharpness";
+    private static final String MAP_SIDEBAR_PIXEL_FONT_SHARPNESS_FIELD =
+        "kmu_mapSidebarPixelFontSharpness";
+
     // Hover tiers, the top two (Map - Visuals tab): whether the map answers the cursor at all,
     // and then whether each kind of answer does - both across every map layer. The master gates
     // both kinds, so with it off no layer reads the cursor and nothing hover-driven is drawn or
@@ -176,6 +188,12 @@ public final class KmuMapLayerSettings {
     // to know, so the offset that lands our row one channel below theirs is a read, not a sum.
     // Mirrors the CSV row's defaultValue.
     private static final int DEFAULT_INTEL_SIDEBAR_PADDING_TOP = 21;
+
+    // Mostly hard for the intel row: what matches the vanilla buttons there is the tone rather than the
+    // edge. Lower for the map row, which is read against the vanilla tabs directly above it and at 0.8
+    // comes out brighter than they do.
+    private static final double DEFAULT_INTEL_SIDEBAR_PIXEL_FONT_SHARPNESS = 0.8;
+    private static final double DEFAULT_MAP_SIDEBAR_PIXEL_FONT_SHARPNESS = 0.6;
 
     // A one-pixel outer border by default; 0 hides it. Mirrors the CSV row's defaultValue.
     private static final int DEFAULT_SIDEBAR_BORDER_WIDTH = 1;
@@ -599,5 +617,27 @@ public final class KmuMapLayerSettings {
      */
     public static int getMapLayerShortcut(String settingKey, int defaultKeycode) {
         return KmuLunaSettings.readInt(settingKey, defaultKeycode);
+    }
+
+    /**
+     * @return how much of the intel sidebar's hard-edged label strokes survives, 0 leaving them
+     *         interpolated as the font loader hands them over and 1 drawing them unfiltered; a dial for
+     *         settling the amount against the vanilla raised buttons that row stands beside
+     */
+    public static double getIntelSidebarPixelFontSharpness() {
+        return KmuLunaSettings.readDouble(
+            INTEL_SIDEBAR_PIXEL_FONT_SHARPNESS_FIELD,
+            DEFAULT_INTEL_SIDEBAR_PIXEL_FONT_SHARPNESS);
+    }
+
+    /**
+     * @return the same dial for the sector-map sidebar's tab labels, lettered in a different hard-edged
+     *         atlas and read against the vanilla Sector/System tabs directly above them - so the two rows
+     *         answer separately and dialling one never moves the other
+     */
+    public static double getMapSidebarPixelFontSharpness() {
+        return KmuLunaSettings.readDouble(
+            MAP_SIDEBAR_PIXEL_FONT_SHARPNESS_FIELD,
+            DEFAULT_MAP_SIDEBAR_PIXEL_FONT_SHARPNESS);
     }
 }

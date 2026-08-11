@@ -219,9 +219,11 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildStripTabStyleLeavesItsSmoothFaceUnringed() {
-            // The halo travels with the face, so the row that kept orbitron keeps the bare text that goes
-            // with it: a smooth face has weight enough at size and reads muddier for a ring around it.
+        void buildStripTabStyleLeavesItsLabelsUnringed() {
+            // The ring answers to what the text stands over, not to what it is lettered in: this row's
+            // tabs are opaque surfaces of their own, so its labels already have a fill of known shade
+            // behind them and a ring would only muddy them. Both chromes letter in hard-edged atlases,
+            // so a claim resting on the face would hold for the button row too and prove nothing.
             assertThat(SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT).textHalo().isHaloDrawn())
                 .isFalse();
         }

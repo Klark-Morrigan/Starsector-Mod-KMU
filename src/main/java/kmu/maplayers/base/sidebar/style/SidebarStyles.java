@@ -8,9 +8,9 @@ import kmlib.starsector.ui.render.gl.style.BoxColours;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.widgets.tabs.style.HotkeyStyle;
+import kmlib.starsector.ui.widgets.tabs.style.TabBox;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabPalette;
-import kmlib.starsector.ui.widgets.tabs.style.TabBox;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmlib.starsector.ui.widgets.tabs.style.TextHalo;
 
@@ -217,10 +217,11 @@ public final class SidebarStyles {
         };
     }
 
-    // Whether a row's labels stand inside a dark ring of themselves, which follows the face and so follows
-    // the chrome with it: the buttons are lettered in a hard-edged pixel face over whatever the visor is
-    // showing, so their strokes want an edge to sit against, where the smooth face the strip is set in has
-    // weight enough at size and reads muddier for a ring around it.
+    // Whether a row's labels stand inside a dark ring of themselves, which follows what the text is drawn
+    // over rather than what it is drawn in: the buttons stand over whatever the visor is showing, so their
+    // strokes want an edge to sit against, where the strip's tabs are opaque surfaces of their own and its
+    // labels already have a fill of known shade behind them. Both rows are lettered in hard-edged atlases,
+    // so the face is not what parts them here.
     private static TextHalo resolveTextHalo(TabChrome chrome) {
         return switch (chrome) {
             case STRIP -> TextHalo.NONE;
@@ -253,7 +254,19 @@ public final class SidebarStyles {
             composeTabPalette(chrome, resolveAccentColours()),
             resolveHotkeyStyle(chrome),
             resolveTabFace(chrome),
-            resolveTextHalo(chrome));
+            resolveTextHalo(chrome),
+            resolvePixelFaceSharpness(chrome));
+    }
+
+    // How hard a row's labels read. Both chromes are lettered in atlases that carry no antialiasing of
+    // their own, so both answer this - and they answer it differently, because each is read against the
+    // vanilla chrome it stands beside rather than against some one right amount for the mod. Read live so
+    // the dial answers while the panel is on screen.
+    private static float resolvePixelFaceSharpness(TabChrome chrome) {
+        return switch (chrome) {
+            case STRIP -> (float) KmuMapLayerSettings.getMapSidebarPixelFontSharpness();
+            case RAISED_BUTTON -> (float) KmuMapLayerSettings.getIntelSidebarPixelFontSharpness();
+        };
     }
 
     // The sidebar's look built fresh from the live colours, framed by the given convention: a black body

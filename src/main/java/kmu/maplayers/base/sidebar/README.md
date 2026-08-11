@@ -85,6 +85,12 @@ inset space for, `decideBorderEdges()` is what gets stroked. The left is dropped
 it would gap the box off the visor); the bottom keeps its reserved inset but drops its stroke once
 flush, within `BOTTOM_FLUSH_TOLERANCE`, so a shared border does not double the visor's own frame.
 
+The reserved left edge also decides where the tab row starts, since the row is laid at the body's
+content edge rather than at the box's outer one - so the map row, framed on all four sides, stands
+one border in, and the intel row, its left dropped, stands at the anchor. Both follow the one inset
+rather than each being placed, which is why aligning the map row against the vanilla tabs above it
+moved no intel pixel.
+
 ## Placement: one resolve, two consumers
 
 `LiveSidebarPlacement` builds the placement from the live screen, the settings, and the calling

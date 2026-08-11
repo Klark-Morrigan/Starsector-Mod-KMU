@@ -7,14 +7,12 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 import kmlib.math.geometry.Rectangle;
 import kmlib.profiling.Timings;
 import kmlib.starsector.ui.input.HoverFade;
-import kmlib.starsector.ui.render.gl.GlyphAtlasFilter;
 import kmlib.starsector.ui.render.gl.panel.NotchState;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.render.gl.tabs.TabPanelRenderer;
 import kmlib.starsector.ui.widgets.BoxBorder;
 
 import kmu.settings.KmuMapLayerSettings;
-import kmu.settings.KmuPoliticalMapSettings;
 
 import org.apache.log4j.Logger;
 
@@ -169,11 +167,6 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             placement.border().width(),
             host.resolveBorderEdges(placement));
             
-        // Pushed per frame rather than read once, so the dial answers while the panel is on screen - the
-        // whole point of a knob whose right value is a look rather than a number.
-        GlyphAtlasFilter.setPixelFaceSharpness(
-            (float) KmuPoliticalMapSettings.getSidebarPixelFontSharpness());
-
         TabPanelRenderer.render(
             placement,
             // The host's own look, asked for here rather than composed: this pass paints whichever
