@@ -80,6 +80,8 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS = "political_map_tooltip_factor_patrols";
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_HIDDEN = "political_map_tooltip_factor_hidden";
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_FIXED = "political_map_tooltip_factor_fixed";
+    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_STATION_MILITARY =
+        "political_map_tooltip_factor_station_military";
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_RATED = "political_map_tooltip_factor_rated";
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_COUNTED = "political_map_tooltip_factor_counted";
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_JOINED = "political_map_tooltip_factor_joined";

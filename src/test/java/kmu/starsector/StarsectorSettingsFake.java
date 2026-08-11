@@ -99,6 +99,7 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS, "Patrols");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_HIDDEN, "hidden");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_FIXED, "%s (fixed)");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_STATION_MILITARY, "%s (Military)");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_RATED, "%s ::");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_COUNTED, "%s /");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED, "%s %s");

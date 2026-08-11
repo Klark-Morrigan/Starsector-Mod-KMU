@@ -50,6 +50,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * rather than the map's is pinned beside them - the box declining an authored shade is a decision, not
  * an omission.
  *
+ * <p>What the station line calls its station is pinned on the same footing, both conditions being
+ * asserted apart: a clarifier is owed only where the colony is itself a station and the two share a
+ * name, and a case for each condition failing alone is what keeps it from spreading to a planet
+ * colony's namesake station or to a station named differently from the colony it defends.
+ *
  * <p>How a line's numbers read is stood apart from and pinned by {@link MarketFactorTextTest}; the
  * values asserted below are read only where the case is about which line carries which.
  */
@@ -72,6 +77,15 @@ final class MarketWeightRowResolverTest {
 
     private static final EntityNameplate UNMARKED_STATION =
         EntityNameplate.createUnmarkedNameplate("Fort Ludd");
+
+    // Whether a colony is concealed, which only the size line reads.
+    private static final boolean VISIBLE_COLONY = false;
+
+    // Where a colony sits, which decides whether a station sharing its name is the same place under
+    // two economy entries or two places that happen to be alike. Named so the pair of booleans a
+    // colony's parts open with can be read rather than counted off against the record's own order.
+    private static final boolean PLANET_COLONY = false;
+    private static final boolean STATION_COLONY = true;
 
     @BeforeEach
     void installStrings() {
@@ -227,6 +241,7 @@ final class MarketWeightRowResolverTest {
                 List.of(new MarketWeightBreakdown(
                     EntityNameplate.createUnmarkedNameplate("Selkie Station"),
                     true,
+                    PLANET_COLONY,
                     FULL_STABILITY,
                     PLAIN_SIZE,
                     Optional.empty(),
@@ -322,6 +337,67 @@ final class MarketWeightRowResolverTest {
 
             assertThat(readStationLine(rows).hasMark())
                 .isFalse();
+        }
+
+        @Test
+        void resolveMarketRowsTellsAStationColonysOwnStationApartFromIt() {
+            // A colony on a station is one place to the player and two entries to the economy, named
+            // alike, so the account states the same words at two levels for two different things.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildNamesakeStationBreakdown(
+                    "Selkie Station",
+                    "Selkie Station",
+                    STATION_COLONY)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules());
+
+            assertThat(readStationLine(rows).labelText())
+                .isEqualTo("Selkie Station (Military)");
+        }
+
+        @Test
+        void resolveMarketRowsNamesAPlanetColonysNamesakeStationPlainly() {
+            // A planet and a station that happen to share a name are two places the player can see
+            // apart on the map, so a clarifier would answer a question they never had.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildNamesakeStationBreakdown("Jangala", "Jangala", PLANET_COLONY)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules());
+
+            assertThat(readStationLine(rows).labelText())
+                .isEqualTo("Jangala");
+        }
+
+        @Test
+        void resolveMarketRowsNamesAStationColonysDifferentlyNamedStationPlainly() {
+            // The station's own name already tells the two apart, and a clarifier on top of it would
+            // be qualifying a line nothing was ambiguous about.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildNamesakeStationBreakdown(
+                    "Selkie Station",
+                    "Fort Ludd",
+                    STATION_COLONY)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules());
+
+            assertThat(readStationLine(rows).labelText())
+                .isEqualTo("Fort Ludd");
+        }
+
+        @Test
+        void resolveMarketRowsStatesTheStationClarifierInTheLinesOwnColour() {
+            // The parentheses already say the run is an aside; drawn in the qualifier's shade it
+            // would read as loudly as the findings the box marks that way.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildNamesakeStationBreakdown(
+                    "Selkie Station",
+                    "Selkie Station",
+                    STATION_COLONY)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules());
+
+            assertThat(readStationLine(rows).qualifierText())
+                .isNull();
         }
 
         @Test
@@ -581,7 +657,8 @@ final class MarketWeightRowResolverTest {
     private static MarketWeightBreakdown buildBreakdown(String marketName, BaseSizeFactor baseSize) {
         return new MarketWeightBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
-            false,
+            VISIBLE_COLONY,
+            PLANET_COLONY,
             FULL_STABILITY,
             baseSize,
             Optional.empty(),
@@ -594,7 +671,8 @@ final class MarketWeightRowResolverTest {
     private static MarketWeightBreakdown buildMarkedBreakdown(EntityNameplate colony) {
         return new MarketWeightBreakdown(
             colony,
-            false,
+            VISIBLE_COLONY,
+            PLANET_COLONY,
             FULL_STABILITY,
             PLAIN_SIZE,
             Optional.empty(),
@@ -613,6 +691,7 @@ final class MarketWeightRowResolverTest {
             List.of(new MarketWeightBreakdown(
                 EntityNameplate.createUnmarkedNameplate("Selkie Station"),
                 true,
+                PLANET_COLONY,
                 FULL_STABILITY,
                 new BaseSizeFactor(7, 2.5, 2.5, 0.0),
                 Optional.empty(),
@@ -631,10 +710,34 @@ final class MarketWeightRowResolverTest {
     private static MarketWeightBreakdown buildStationedBreakdown(EntityNameplate station) {
         return new MarketWeightBreakdown(
             EntityNameplate.createUnmarkedNameplate("Jangala"),
-            false,
+            VISIBLE_COLONY,
+            PLANET_COLONY,
             FULL_STABILITY,
             PLAIN_SIZE,
             Optional.of(new StationFactor(station, 3.0, 0.0, 0.0, 3.0)),
+            Optional.empty());
+    }
+
+    // A stationed colony under names and a placing a case chooses, which is what the three cases about
+    // how the station line names its station turn on: the colony's name, its station's, and whether the
+    // colony is itself a station. Neither nameplate is marked, the naming being what is read.
+    private static MarketWeightBreakdown buildNamesakeStationBreakdown(
+            String colonyName,
+            String stationName,
+            boolean isStationMarket) {
+
+        return new MarketWeightBreakdown(
+            EntityNameplate.createUnmarkedNameplate(colonyName),
+            VISIBLE_COLONY,
+            isStationMarket,
+            FULL_STABILITY,
+            PLAIN_SIZE,
+            Optional.of(new StationFactor(
+                EntityNameplate.createUnmarkedNameplate(stationName),
+                3.0,
+                0.0,
+                0.0,
+                3.0)),
             Optional.empty());
     }
 
@@ -644,7 +747,8 @@ final class MarketWeightRowResolverTest {
     private static MarketWeightBreakdown buildFortifiedBreakdown(EntityNameplate station) {
         return new MarketWeightBreakdown(
             EntityNameplate.createUnmarkedNameplate("Jangala"),
-            false,
+            VISIBLE_COLONY,
+            PLANET_COLONY,
             FULL_STABILITY,
             PLAIN_SIZE,
             Optional.of(new StationFactor(station, 3.0, 0.0, 0.0, 3.0)),
@@ -660,7 +764,8 @@ final class MarketWeightRowResolverTest {
     private static MarketWeightBreakdown buildPatrollingBreakdown(int small, int medium, int large) {
         return new MarketWeightBreakdown(
             EntityNameplate.createUnmarkedNameplate("Jangala"),
-            false,
+            VISIBLE_COLONY,
+            PLANET_COLONY,
             FULL_STABILITY,
             PLAIN_SIZE,
             Optional.empty(),

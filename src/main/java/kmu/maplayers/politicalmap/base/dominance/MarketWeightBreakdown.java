@@ -14,6 +14,10 @@ import java.util.Optional;
  * weight read works out and would otherwise discard - the raw-against-weighted split, each
  * factor's own penalty, the per-tier patrol counts, the station's name - survives here.
  *
+ * <p>Whether the colony is itself a station rides along for the same reason: the walk that
+ * counted it has the answer to hand for the dominance tie-break, and a reader deciding how to
+ * name a station would otherwise have to go back to the economy for it.
+ *
  * <p>An absent factor is a factor that did not run: the market has no station, no patrol HQ
  * garrisons it, or the player has that factor switched off. Modelling that as an empty
  * {@link Optional} rather than a zeroed factor keeps "contributed nothing" and "was never
@@ -28,6 +32,10 @@ import java.util.Optional;
  *                        can only ever belong to the colony whose weight is stated beside it
  * @param isHiddenMarket  whether the colony is hidden - a concealed base rather than one held
  *                        in the open, which changes how two of the factors rate it
+ * @param isStationMarket whether the colony sits on an orbital station rather than on a planet.
+ *                        The dominance rule prefers planets at an exact tie, and a box naming
+ *                        the station that defends a station colony needs it too: only there can
+ *                        the colony and its defending station be the same name
  * @param marketStability the colony's stability on its own 0..10 band. Carried whole rather
  *                        than left implicit in the penalties, because it is the one reading
  *                        all three of them are derived from: without it a reader is shown
@@ -39,6 +47,7 @@ import java.util.Optional;
 public record MarketWeightBreakdown(
     EntityNameplate marketNameplate,
     boolean isHiddenMarket,
+    boolean isStationMarket,
     double marketStability,
     BaseSizeFactor baseSize,
     Optional<StationFactor> station,

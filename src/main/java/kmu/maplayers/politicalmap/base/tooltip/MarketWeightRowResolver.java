@@ -9,6 +9,7 @@ import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
+import kmu.maplayers.politicalmap.base.dominance.StationFactor;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.settings.HiddenMarketScalingChoice;
 import kmu.util.KmuStrings;
@@ -41,6 +42,11 @@ import java.util.List;
  * a level up, a system's stations being told apart on the map by their glyph as much as by their name.
  * Every other line beneath a colony carries no mark at all: a stability or a size has nothing on the
  * map to point at, so a glyph there would stand in for a number.
+ *
+ * <p>Where that station shares its colony's name - which only a colony on a station can - the line
+ * says which of the two it is about. The economy holds a station colony as two entities vanilla
+ * names alike, so the account would otherwise print one name at two levels and leave the reader to
+ * work out that the second is not the first repeated.
  *
  * <p>A colony the pass never weighed is listed all the same, at the foot of the list and at nought.
  * The player can see the station on the map in a faction's colours, so an account of the system that
@@ -135,6 +141,7 @@ public final class MarketWeightRowResolver {
         return CellTooltipEntry
             .createEntry(createMapEntityLine(
                 breakdown.marketNameplate(),
+                breakdown.marketNameplate().displayName(),
                 KmlibNumbers.formatGroupedInteger(breakdown.computeTotalWeight())))
             .nesting(resolveFactorEntries(breakdown, rules));
     }
@@ -150,6 +157,7 @@ public final class MarketWeightRowResolver {
     private static CellTooltipEntry resolveUnweighedEntry(EntityNameplate colony) {
         return CellTooltipEntry.createEntry(createMapEntityLine(
                 colony,
+                colony.displayName(),
                 KmlibNumbers.formatGroupedInteger(NO_WEIGHT))
             .statesUncountedValue());
     }
@@ -164,16 +172,21 @@ public final class MarketWeightRowResolver {
     // Shared by the two levels that take a mark rather than spelled out at each, so the box arrives
     // at one rule for a line about a thing on the map instead of one rule per level.
     //
-    // Takes the subject's nameplate whole rather than its two halves, so the name drawn and the glyph
-    // beside it can only have come from the one entity - and read off the breakdown that entity
-    // arrived in rather than looked up here, so that entity is the one the number belongs to.
+    // Takes the subject's nameplate whole rather than its two halves, so the glyph can only have come
+    // from the entity the line is about - and read off the breakdown that entity arrived in rather
+    // than looked up here, so that entity is the one the number belongs to.
+    //
+    // The stated name is passed beside it because one of the three lines says more than the entity's
+    // bare name, and it is derived from this very nameplate at each call site, so the pair still
+    // cannot come from two different entities.
     private static CellTooltipEntryLine createMapEntityLine(
             EntityNameplate entity,
+            String statedName,
             String valueText) {
 
         return CellTooltipEntryLine.createLine(
             CellTooltipMark.resolveMarkForMapIcon(entity.mapIcon()),
-            entity.displayName(),
+            statedName,
             valueText);
     }
 
@@ -203,10 +216,32 @@ public final class MarketWeightRowResolver {
         breakdown.station().ifPresent(station -> entries.add(CellTooltipEntry.createEntry(
             createMapEntityLine(
                 station.stationNameplate(),
+                resolveStationName(breakdown, station),
                 MarketFactorText.formatStation(station)))));
 
         breakdown.patrols().ifPresent(patrols -> entries.add(resolvePatrolEntry(patrols)));
         return entries;
+    }
+
+    // How the station line names its station: its own name, or that name told apart from the colony
+    // line above it where the two would otherwise read as one name printed twice.
+    //
+    // Both conditions have to hold. A colony on a station is one entity to the player and two to the
+    // economy - the colony and the military station defending it - and vanilla names them alike, so
+    // the account states the same words at two levels for two different things. A planet colony that
+    // happens to share its station's name is a different case: the two are visibly separate places on
+    // the map, so a clarifier there would be answering a question the reader never had.
+    private static String resolveStationName(
+            MarketWeightBreakdown breakdown,
+            StationFactor station) {
+
+        var stationName = station.stationNameplate().displayName();
+
+        if (breakdown.isStationMarket()
+                && stationName.equals(breakdown.marketNameplate().displayName())) {
+            return MarketFactorText.formatMilitaryStationName(stationName);
+        }
+        return stationName;
     }
 
     // The base-size factor's line. A hidden colony calls that out on the line itself rather than on

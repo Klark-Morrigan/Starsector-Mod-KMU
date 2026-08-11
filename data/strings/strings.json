@@ -69,6 +69,7 @@
     "political_map_tooltip_factor_patrols": "Patrols",
     "political_map_tooltip_factor_hidden": "hidden",
     "political_map_tooltip_factor_fixed": "%s (fixed)",
+    "political_map_tooltip_factor_station_military": "%s (Military)",
     "political_map_tooltip_factor_rated": "%s ::",
     "political_map_tooltip_factor_counted": "%s /",
     "political_map_tooltip_factor_joined": "%s %s",

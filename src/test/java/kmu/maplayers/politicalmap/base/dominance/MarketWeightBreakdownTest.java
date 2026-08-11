@@ -25,6 +25,12 @@ class MarketWeightBreakdownTest {
     private static final EntityNameplate COLONY = EntityNameplate.createUnmarkedNameplate("Chicomoztoc");
     private static final EntityNameplate STATION = EntityNameplate.createUnmarkedNameplate("Fort Ludd");
 
+    // Where the colony sits and whether it is concealed, neither of which any sum below turns on.
+    // Named so the pair of booleans the parts open with can be read rather than counted off against
+    // the record's own order.
+    private static final boolean VISIBLE_COLONY = false;
+    private static final boolean PLANET_COLONY = false;
+
     @Nested
     class ComputeTotalContribution {
 
@@ -33,7 +39,8 @@ class MarketWeightBreakdownTest {
 
             var breakdown = new MarketWeightBreakdown(
                 COLONY,
-                false,
+                VISIBLE_COLONY,
+                PLANET_COLONY,
                 5.0,
                 new BaseSizeFactor(4, 4.0, 2.0, 0.5),
                 Optional.of(new StationFactor(STATION, 1.0, 0.0, 0.25, 0.75)),
@@ -87,7 +94,8 @@ class MarketWeightBreakdownTest {
             var third = 1.0 / 3.0 / DOMINANCE_WEIGHT_SCALE;
             var breakdown = new MarketWeightBreakdown(
                 COLONY,
-                false,
+                VISIBLE_COLONY,
+                PLANET_COLONY,
                 10.0,
                 new BaseSizeFactor(4, 4.0, third, 0.0),
                 Optional.of(new StationFactor(STATION, 1.0, 0.0, 0.0, third)),
@@ -116,7 +124,8 @@ class MarketWeightBreakdownTest {
     private static MarketWeightBreakdown buildBaseSizeOnlyBreakdown(double contribution) {
         return new MarketWeightBreakdown(
             COLONY,
-            false,
+            VISIBLE_COLONY,
+            PLANET_COLONY,
             10.0,
             new BaseSizeFactor(4, 4.0, contribution, 0.0),
             Optional.empty(),

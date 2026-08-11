@@ -206,6 +206,17 @@ term of the account named for a thing on the map rather than for a piece of arit
 settles more there than a level up, a system's stations being told apart on the map by their glyph as
 much as by their name. Every other line beneath a colony stays unmarked - a stability or a size has
 nothing on the map to point at.
+Where that station shares the colony's name the line says which of the two it is about
+(`MarketFactorText.formatMilitaryStationName`). A colony on a station is one place to the player and
+two entries to the economy - the colony and the military station defending it - which vanilla names
+alike, so the account states the same words at two levels for two different things. Both conditions
+have to hold: the colony must itself be a station (`MarketWeightBreakdown.isStationMarket`, read on
+the same walk that counted it, and the same reading the dominance tie-break prefers planets by) and
+the two names must match. A planet colony that happens to share its station's name is two places the
+player can see apart on the map, so a clarifier there would answer a question they never had. It
+reads in the line's own colour rather than the qualifier's gold: the parentheses already say the run
+is an aside, and the gold is reserved for findings - the `hidden` flag, the claims box's `(core)` -
+which a disambiguation is not.
 That box lists one kind of colony no score above it accounts for: one the economy does not list,
 which the weight read has nothing to weigh. It comes from a second walk over the same colony filter
 (`KnownMarketFootprints.readUnweighedColoniesByFaction`), carried as an `EntityNameplate` alone rather

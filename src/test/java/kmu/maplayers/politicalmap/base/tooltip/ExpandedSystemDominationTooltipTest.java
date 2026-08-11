@@ -60,6 +60,12 @@ final class ExpandedSystemDominationTooltipTest {
 
     private static final String SYSTEM_ID = "askonia";
 
+    // Where a colony sits and whether it is concealed, neither of which any case here turns on.
+    // Named so the pair of booleans a colony's parts open with can be read rather than counted off
+    // against the record's own order.
+    private static final boolean VISIBLE_COLONY = false;
+    private static final boolean PLANET_COLONY = false;
+
     // The one colony the economy does not list, marked with no glyph: every case here is about which
     // faction a colony is listed under rather than about what its line leads with.
     private static final EntityNameplate UNLISTED_COLONY =
@@ -332,7 +338,8 @@ final class ExpandedSystemDominationTooltipTest {
     private static MarketWeightBreakdown buildBreakdown(String marketName, double contribution) {
         return new MarketWeightBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
-            false,
+            VISIBLE_COLONY,
+            PLANET_COLONY,
             FULL_STABILITY,
             new BaseSizeFactor(4, 4.0, contribution, 0.0),
             Optional.empty(),

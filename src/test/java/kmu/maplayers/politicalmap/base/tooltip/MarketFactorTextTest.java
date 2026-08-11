@@ -131,6 +131,18 @@ final class MarketFactorTextTest {
     }
 
     @Nested
+    class FormatMilitaryStationName {
+
+        @Test
+        void formatMilitaryStationNameKeepsTheStationsOwnNameAndSaysWhichOfTheTwoItIs() {
+            // The name is what ties the line to the map, so the clarifier is added to it rather than
+            // replacing it - and it is parenthesised, being an aside rather than a further finding.
+            assertThat(MarketFactorText.formatMilitaryStationName("Selkie Station"))
+                .isEqualTo("Selkie Station (Military)");
+        }
+    }
+
+    @Nested
     class FormatPatrols {
 
         @Test

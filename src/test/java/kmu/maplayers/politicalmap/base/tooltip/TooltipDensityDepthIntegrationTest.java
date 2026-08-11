@@ -61,6 +61,12 @@ final class TooltipDensityDepthIntegrationTest {
     private static final int FACTOR_TIER = 2;
     private static final int FACTOR_DETAIL_TIER = 3;
 
+    // Where the colony sits and whether it is concealed, neither of which changes how deep the box
+    // goes. Named so the pair of booleans its parts open with can be read rather than counted off
+    // against the record's own order.
+    private static final boolean VISIBLE_COLONY = false;
+    private static final boolean PLANET_COLONY = false;
+
     // The depths above the tiers, so the assertions below read as one descent rather than as two
     // numbers picked out of the middle of a box.
     private static final int FACTION_TIER = 0;
@@ -179,7 +185,8 @@ final class TooltipDensityDepthIntegrationTest {
     private static MarketWeightBreakdown buildPatrolledColony() {
         return new MarketWeightBreakdown(
             EntityNameplate.createUnmarkedNameplate("Jangala"),
-            false,
+            VISIBLE_COLONY,
+            PLANET_COLONY,
             FULL_STABILITY,
             new BaseSizeFactor(4, 4.0, 4.0, 0.0),
             Optional.empty(),

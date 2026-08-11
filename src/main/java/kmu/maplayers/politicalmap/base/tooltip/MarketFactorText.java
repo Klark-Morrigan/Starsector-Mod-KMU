@@ -115,6 +115,23 @@ public final class MarketFactorText {
     }
 
     /**
+     * Words the name of a station that shares its colony's name, telling the two apart.
+     *
+     * <p>A colony on a station and the station defending it are separate entities under one name,
+     * so the account states that name twice - once for the colony and once, a level down, for the
+     * station bonus - and a reader is left to work out that the second is not a repetition of the
+     * first. The clarifier says which of the two the line is about.
+     *
+     * @param stationName the station's own display name
+     * @return that name with the clarifier the station line states it under
+     */
+    public static String formatMilitaryStationName(String stationName) {
+        return KmuStrings.format(
+            KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_STATION_MILITARY,
+            stationName);
+    }
+
+    /**
      * Words the patrol factor as a whole: what the fielded patrols came to, and what low stability
      * took off it.
      *

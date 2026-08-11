@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.dominance;
 import com.fs.starfarer.api.campaign.CampaignFleetAPI;
 import com.fs.starfarer.api.campaign.CustomEntitySpecAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
+import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
@@ -868,6 +869,26 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
+        void readBreakdownByFactionRecordsThatAColonySitsOnAStation() {
+            // A colony with no planet under it is one, and the box naming its defending station needs
+            // to know: only there can the colony and that station arrive under the same name.
+            var sector = buildFortifiedColonySector();
+
+            assertThat(readOnlyBreakdown(sector, buildFortifiedColonyRules()).isStationMarket())
+                .isTrue();
+        }
+
+        @Test
+        void readBreakdownByFactionRecordsThatAColonySitsOnAPlanet() {
+            // The economy answers a planet entity for a planet colony, which is also what the
+            // dominance tie-break reads - so the two cannot part company over what a colony sits on.
+            var sector = buildPlanetColonySector();
+
+            assertThat(readOnlyBreakdown(sector, buildFortifiedColonyRules()).isStationMarket())
+                .isFalse();
+        }
+
+        @Test
         void readBreakdownByFactionCarriesTheBaseSizePartOfAMarket() {
             // The base-size part states the rating that entered the weight, what it was
             // worth after the stability cut, and how much of it that cut took.
@@ -1256,6 +1277,22 @@ class KnownMarketFootprintsIntegrationTest {
                     "Chicomoztoc"));
         }
 
+        // The same fortress sitting on a planet instead of on a station, which is the one thing the
+        // pair of cases about where a colony sits differs over.
+        private SectorAPI buildPlanetColonySector() {
+            return buildSectorWith(
+                "planet-system",
+                withPlanet(withName(
+                    buildFortifiedColonyAtStability(
+                        buildFaction("hegemony"),
+                        4,
+                        2,
+                        1,
+                        0,
+                        HALF_STABILITY),
+                    "Chicomoztoc")));
+        }
+
         // The sole market's breakdown, for the assertions that read one colony's parts.
         private MarketWeightBreakdown readOnlyBreakdown(SectorAPI sector, DominanceRules rules) {
             return KnownMarketFootprints.readBreakdownByFaction(
@@ -1500,6 +1537,16 @@ class KnownMarketFootprintsIntegrationTest {
 
         when(market.getName())
             .thenReturn(name);
+
+        return market;
+    }
+
+    // Stubs the planet a colony sits on. The plain stubbed market answers none, which is what the
+    // economy answers for a colony on a station - so a case names the planet rather than its absence.
+    private static MarketAPI withPlanet(MarketAPI market) {
+
+        when(market.getPlanetEntity())
+            .thenReturn(mock(PlanetAPI.class));
 
         return market;
     }

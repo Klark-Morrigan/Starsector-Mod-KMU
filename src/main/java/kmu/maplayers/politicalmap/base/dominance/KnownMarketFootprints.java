@@ -189,19 +189,19 @@ public final class KnownMarketFootprints {
         var contributionByFactionId = new LinkedHashMap<String, FactionMarketContribution>();
         for (var market : readCountedColonies(sector, system, shouldIncludeUndiscoveredMarkets)) {
             var factionId = market.getFaction().getId();
-
-            // getPlanetEntity() is non-null for a market on a planet and null
-            // for one on a station; the rule prefers planets at an exact tie.
-            var isPlanetMarket = market.getPlanetEntity() != null;
+            var breakdown = readBreakdown(market, rules);
             var contribution = contributionByFactionId.getOrDefault(
                 factionId,
                 FactionMarketContribution.EMPTY);
 
+            // Whether the colony is on a planet is read off the breakdown rather than from the
+            // market again: the tie-break here and the box that names a station colony's station
+            // must not be able to disagree about what kind of place a colony is.
             contributionByFactionId.put(
                 factionId,
                 contribution.addMarket(
-                    readBreakdown(market, rules).computeTotalWeight(),
-                    isPlanetMarket,
+                    breakdown.computeTotalWeight(),
+                    !breakdown.isStationMarket(),
                     market.getSize()));
         }
         return contributionByFactionId;
@@ -401,6 +401,10 @@ public final class KnownMarketFootprints {
         return new WeighedMarket(
             Markets.readNameplate(market),
             market.isHidden(),
+
+            // getPlanetEntity() is non-null for a market on a planet and null for one on a
+            // station, which is the only reading either consumer of the flag has.
+            market.getPlanetEntity() == null,
             market.getSize(),
             market.getStabilityValue(),
             findWeighedStation(market, rules.station())
@@ -419,6 +423,7 @@ public final class KnownMarketFootprints {
         return new MarketWeightBreakdown(
             market.nameplate(),
             market.isHidden(),
+            market.isStation(),
             market.stability(),
             buildBaseSizeFactor(market, rules.baseSize(), stabilityScaling),
             market.station().map(station ->
@@ -586,6 +591,7 @@ public final class KnownMarketFootprints {
      *                  it with. Read here with the rest of the market, so what the breakdown
      *                  carries belongs to the market that was weighed
      * @param isHidden  whether the colony is concealed rather than held in the open
+     * @param isStation whether the colony sits on an orbital station rather than on a planet
      * @param size      the colony's own size, as the economy reports it
      * @param stability the colony's stability on its own 0..10 band - the reading behind
      *                  every one of the penalties below, carried as the economy states it
@@ -599,6 +605,7 @@ public final class KnownMarketFootprints {
     private record WeighedMarket(
         EntityNameplate nameplate,
         boolean isHidden,
+        boolean isStation,
         int size,
         double stability,
         Optional<EntityNameplate> station,
