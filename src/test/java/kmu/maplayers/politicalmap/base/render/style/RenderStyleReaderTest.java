@@ -277,6 +277,7 @@ final class RenderStyleReaderTest {
         private static final int CORNER_SEGMENTS = 4;
         private static final double CHAMFER_ANGLE = 0.6;
         private static final double DESATURATION_DARKENING = 0.4;
+        private static final double PRESENCE_LIGHTENING = 0.6;
 
         // One distinctive hover knob, enough to prove the tier carries the hover style it
         // gathers; ReadHoverHighlightStyle pins the rest of that bundle's threading.
@@ -322,6 +323,9 @@ final class RenderStyleReaderTest {
                 settingsMock
                     .when(KmuPoliticalMapSettings::getPoliticalMapDesaturationDarkening)
                     .thenReturn(DESATURATION_DARKENING);
+                settingsMock
+                    .when(KmuPoliticalMapSettings::getPoliticalMapPresenceLightening)
+                    .thenReturn(PRESENCE_LIGHTENING);
 
                 var global = RenderStyleReader.readGlobalStyle();
 
@@ -354,6 +358,11 @@ final class RenderStyleReaderTest {
 
                 assertThat(global.desaturationDarkening())
                     .isEqualTo(DESATURATION_DARKENING);
+
+                // Distinct from the darkening beside it: the two are adjacent doubles on the
+                // record, so equal stand-ins would let a transposed pair read as correct.
+                assertThat(global.presenceLightening())
+                    .isEqualTo(PRESENCE_LIGHTENING);
                 assertThat(global.hoverHighlight().glow().opacity())
                     .isEqualTo(HOVER_GLOW_OPACITY);
             }

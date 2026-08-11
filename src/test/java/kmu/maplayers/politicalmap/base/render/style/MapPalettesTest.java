@@ -89,8 +89,10 @@ final class MapPalettesTest {
             // same colour and whichever slot an element names paints neutral.
             var neutral = MapPalettes.resolveNeutralPalette(Color.GRAY);
 
-            assertThat(neutral.primaryColour()).isEqualTo(Color.GRAY);
-            assertThat(neutral.secondaryColour()).isEqualTo(Color.GRAY);
+            assertThat(neutral.primaryColour())
+                .isEqualTo(Color.GRAY);
+            assertThat(neutral.secondaryColour())
+                .isEqualTo(Color.GRAY);
         }
     }
 
@@ -105,11 +107,13 @@ final class MapPalettesTest {
 
         @Test
         void pickHolderPaletteColourReturnsTheHoldersShadeForTheChoice() {
+
             assertThat(MapPalettes.pickHolderPaletteColour(
                     FactionPaletteSlot.PRIMARY,
                     OWNER,
                     NEUTRAL))
                 .isEqualTo(PRIMARY);
+
             assertThat(MapPalettes.pickHolderPaletteColour(
                     FactionPaletteSlot.SECONDARY,
                     OWNER,
@@ -126,6 +130,7 @@ final class MapPalettesTest {
                     null,
                     NEUTRAL))
                 .isEqualTo(NEUTRAL);
+
             assertThat(MapPalettes.pickHolderPaletteColour(
                     FactionPaletteSlot.SECONDARY,
                     null,
@@ -140,6 +145,7 @@ final class MapPalettesTest {
                     OWNER,
                     NEUTRAL))
                 .isNull();
+
             assertThat(MapPalettes.pickHolderPaletteColour(
                     null,
                     null,
@@ -155,6 +161,7 @@ final class MapPalettesTest {
         // to them is unmistakable.
         private static final FactionPalette DESATURATION =
             new FactionPalette(Color.GREEN, Color.YELLOW);
+
         private static final DominantHolder OWNER =
             new DominantHolder("hegemony", PRIMARY, SECONDARY);
 
@@ -164,13 +171,16 @@ final class MapPalettesTest {
 
         @Test
         void resolveEffectivePaletteKeepsTheHoldersOwnShadesWhenTheAdjustmentDoesNotDesaturate() {
+
             var palette = MapPalettes.resolveEffectivePalette(
                 new ElementStyleAdjustment(0.5, false),
                 OWNER,
                 DESATURATION);
 
-            assertThat(palette.primaryColour()).isEqualTo(PRIMARY);
-            assertThat(palette.secondaryColour()).isEqualTo(SECONDARY);
+            assertThat(palette.primaryColour())
+                .isEqualTo(PRIMARY);
+            assertThat(palette.secondaryColour())
+                .isEqualTo(SECONDARY);
         }
 
         @Test
@@ -182,7 +192,8 @@ final class MapPalettesTest {
                 OWNER,
                 DESATURATION);
 
-            assertThat(palette).isEqualTo(DESATURATION);
+            assertThat(palette)
+                .isEqualTo(DESATURATION);
         }
 
         @Test
@@ -194,17 +205,20 @@ final class MapPalettesTest {
                 NEUTRAL_PAIR,
                 DESATURATION);
 
-            assertThat(palette).isEqualTo(DESATURATION);
+            assertThat(palette)
+                .isEqualTo(DESATURATION);
         }
 
         @Test
         void resolveEffectivePaletteKeepsUnownedNeutralShadesForTheNoneAdjustment() {
+
             var palette = MapPalettes.resolveEffectivePalette(
                 ElementStyleAdjustment.NONE,
                 NEUTRAL_PAIR,
                 DESATURATION);
 
-            assertThat(palette).isEqualTo(NEUTRAL_PAIR);
+            assertThat(palette)
+                .isEqualTo(NEUTRAL_PAIR);
         }
     }
 
@@ -218,6 +232,7 @@ final class MapPalettesTest {
 
         @Test
         void resolveDesaturationPaletteDarkensTheIndependentFactionsOwnShades() {
+
             var independentMock = mock(FactionAPI.class);
 
             when(independentMock.getBrightUIColor())
@@ -242,6 +257,7 @@ final class MapPalettesTest {
 
         @Test
         void resolveDesaturationPaletteLeavesTheIndependentShadesUntouchedAtZeroStrength() {
+
             var independentMock = mock(FactionAPI.class);
             
             when(independentMock.getBrightUIColor())
@@ -259,6 +275,47 @@ final class MapPalettesTest {
 
             assertThat(palette)
                 .isEqualTo(new FactionPalette(Color.GREEN, Color.YELLOW));
+        }
+    }
+
+    @Nested
+    class ResolvePresencePalette {
+
+        // A mid grey standing in for the shared neutral, chosen because every channel holds the
+        // same value: a wash that shifted hue rather than value would break that equality, which
+        // is the whole property the lift is meant to keep.
+        private static final Color NEUTRAL_GREY = new Color(128, 128, 128);
+
+        @Test
+        void resolvePresencePaletteLiftsTheNeutralTowardWhiteInBothSlots() {
+            // 128 + (255 - 128) * 0.2 = 153.4, rounded to 153 on every channel: still a grey, a
+            // fifth of the way to white. Both slots hold it, as the plain neutral palette does,
+            // so whichever slot an element names it paints the lifted shade.
+            var palette = MapPalettes.resolvePresencePalette(NEUTRAL_GREY, 0.2);
+
+            assertThat(palette)
+                .isEqualTo(new FactionPalette(
+                    new Color(153, 153, 153),
+                    new Color(153, 153, 153)));
+        }
+
+        @Test
+        void resolvePresencePaletteLeavesTheNeutralUntouchedAtZeroStrength() {
+            // A strength of 0 is the plain neutral palette, so switching the lift off returns a
+            // spared cell to painting exactly as an unspared one does.
+            var palette = MapPalettes.resolvePresencePalette(NEUTRAL_GREY, 0.0);
+
+            assertThat(palette)
+                .isEqualTo(new FactionPalette(NEUTRAL_GREY, NEUTRAL_GREY));
+        }
+
+        @Test
+        void resolvePresencePaletteReachesWhiteAtFullStrength() {
+            
+            var palette = MapPalettes.resolvePresencePalette(NEUTRAL_GREY, 1.0);
+
+            assertThat(palette)
+                .isEqualTo(new FactionPalette(Color.WHITE, Color.WHITE));
         }
     }
 }

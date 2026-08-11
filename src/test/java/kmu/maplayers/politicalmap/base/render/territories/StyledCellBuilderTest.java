@@ -79,6 +79,12 @@ final class StyledCellBuilderTest {
         private static final Color DESATURATED_PRIMARY = Color.GREEN;
         private static final Color DESATURATED_SECONDARY = Color.YELLOW;
 
+        // The lifted neutral a spared cell paints in. A colour of its own rather than a real wash
+        // of FACTIONLESS_NEUTRAL, so an observed shade names which palette the cell read rather
+        // than how far toward white the fixture happened to move it - the wash itself is
+        // MapPalettes' to pin.
+        private static final Color PRESENCE_LIFTED = Color.ORANGE;
+
         // The neutral shade a factionless cell resolves both its palette slots to, distinct from
         // every holder/desaturation colour so an observed outline names the factionless path.
         private static final Color FACTIONLESS_NEUTRAL = Color.PINK;
@@ -261,9 +267,9 @@ final class StyledCellBuilderTest {
         void buildStyledCellForSystemSparesASettledCellTheSpotlitBlocLivesInTheFiltersRecede() {
             // The pick's own colony in a system this layer's holding could not attribute to it - an
             // unclaimed pirate haven under a pirate spotlight. Under the same receding pass that
-            // sinks the case above, this cell keeps the neutral colour and full opacity an
-            // unfiltered map paints it in: presence spares it the recede and changes nothing else,
-            // so it never takes the bloc's own shades and never asserts a claim it does not have.
+            // sinks the case above, this cell keeps full opacity and paints the lifted neutral:
+            // presence spares it the recede and lifts it clear of the greys that sank, without
+            // ever handing it the bloc's own shades and the claim those would assert.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildFilteringFactionlessDrawablesWith(
                     buildFilledOutlineStyle(),
@@ -273,11 +279,11 @@ final class StyledCellBuilderTest {
                 buildOwnedCell());
 
             assertThat(requireLoneCell(styled).fillPaint().colour())
-                .isEqualTo(FACTIONLESS_NEUTRAL);
+                .isEqualTo(PRESENCE_LIFTED);
             assertThat(requireLoneCell(styled).fillPaint().alpha())
                 .isEqualTo(1.0f);
             assertThat(requireLoneCell(styled).outlinePaint().colour())
-                .isEqualTo(FACTIONLESS_NEUTRAL);
+                .isEqualTo(PRESENCE_LIFTED);
             assertThat(requireLoneCell(styled).outlinePaint().alpha())
                 .isEqualTo(1.0f);
         }
@@ -580,7 +586,8 @@ final class StyledCellBuilderTest {
                 new MapStyling(
                     theme,
                     FACTIONLESS_NEUTRAL,
-                    new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
+                    new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                    new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                 new ViewGrouping(
                     buildViewMockAdjusting(ElementStyleAdjustment.NONE),
                     HolderGrouping.identity()),
@@ -669,7 +676,8 @@ final class StyledCellBuilderTest {
                 new MapStyling(
                     PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(STYLE),
                     Color.GRAY,
-                    new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY)),
+                    new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                    new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                 new ViewGrouping(viewMock, HolderGrouping.identity()),
                 new FilterSnapshot(
                     isFiltering ? "selected-bloc" : null,

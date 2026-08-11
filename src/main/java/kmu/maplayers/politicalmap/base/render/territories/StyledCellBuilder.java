@@ -147,9 +147,17 @@ public final class StyledCellBuilder {
             territories.getRecedeAdjustment(),
             isSpotlitBlocPresent);
 
+        // A spared cell paints the lifted neutral rather than the plain one: the recede it was
+        // spared only stopped it sinking, and the grey it would have kept is the value the
+        // background around it sank from - close enough to read as the same surface. The two
+        // palettes are the pass's own, so the lift and the sink are one decision apart.
+        var ownPalette = isSpotlitBlocPresent
+            ? territories.getPresencePalette()
+            : MapPalettes.resolveNeutralPalette(territories.getNeutralColour());
+
         var palette = MapPalettes.resolveEffectivePalette(
             adjustment,
-            MapPalettes.resolveNeutralPalette(territories.getNeutralColour()),
+            ownPalette,
             territories.getDesaturationPalette());
 
         // Only the rounding half of the profile: a lone cell has no spikes to sand, so the

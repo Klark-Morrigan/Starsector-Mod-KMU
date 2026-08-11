@@ -68,7 +68,8 @@ public final class PoliticalMapTerritoryFixtures {
             new MapStyling(
                 null, // No render style.
                 NEUTRAL_COLOUR, // Neutral color.
-                new FactionPalette(NEUTRAL_COLOUR, NEUTRAL_COLOUR)), // Desaturation palette.
+                new FactionPalette(NEUTRAL_COLOUR, NEUTRAL_COLOUR), // Desaturation palette.
+                new FactionPalette(NEUTRAL_COLOUR, NEUTRAL_COLOUR)), // Presence palette.
             new ViewGrouping(
                 mock(PoliticalMapView.class),
                 HolderGrouping.identity()),

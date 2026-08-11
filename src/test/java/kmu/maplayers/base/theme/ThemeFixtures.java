@@ -22,9 +22,11 @@ public final class ThemeFixtures {
         new HoverGlowStyle(0, 0, 0, 0, 0),
         new HoverWashStyle(0, 0, 0));
 
-    // The one value the inert tier does not zero. A desaturating build reads it to darken the
-    // shared grey, so zeroing it would leave the desaturation path exercised against a no-op.
+    // The two values the inert tier does not zero. A desaturating build reads the darkening to
+    // sink the shared grey and the lightening to lift a spared cell's, so zeroing either would
+    // leave that path exercised against a no-op.
     private static final double DESATURATION_DARKENING = 0.3;
+    private static final double PRESENCE_LIGHTENING = 0.2;
 
     // The join tolerance a fixture hatches under. Zero merges only crossings that coincide
     // exactly, which is the reading with no epsilon in it: a suite about which cells hatch gets
@@ -38,7 +40,7 @@ public final class ThemeFixtures {
 
     /**
      * A global tier that changes nothing it is read for: no hatch, no border smoothing, no hover
-     * feedback, and the shipped desaturation darkening.
+     * feedback, and the shipped spotlight strengths.
      *
      * @return a live global tier, for a suite whose subject is the per-category tier or the
      *         drawables built off it
@@ -63,7 +65,8 @@ public final class ThemeFixtures {
                 new SpikeSandingStyle(false, 0, 0),
                 cornerRounding),
             NO_HOVER_HIGHLIGHT,
-            DESATURATION_DARKENING);
+            DESATURATION_DARKENING,
+            PRESENCE_LIGHTENING);
     }
 
     /**

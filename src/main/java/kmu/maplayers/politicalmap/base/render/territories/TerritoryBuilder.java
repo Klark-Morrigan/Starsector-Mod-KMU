@@ -150,6 +150,14 @@ public final class TerritoryBuilder {
                 sector,
                 renderStyle.global().desaturationDarkening());
 
+            // The other end of that separation: the neutral a spared factionless cell paints in,
+            // lifted toward white so it clears the greys the recede just sank. Resolved here
+            // beside its counterpart, both once per pass, so the two ends cannot be read from
+            // different snapshots of the same two knobs.
+            var presencePalette = MapPalettes.resolvePresencePalette(
+                neutralColour,
+                renderStyle.global().presenceLightening());
+
             // The styling every non-spotlighted bloc recedes to, resolved once from the filter recede
             // toggles - the "rest of the sector" set, shared across both views under a filter; the
             // identity adjustment off filter, so a normal pass touches no bloc.
@@ -161,7 +169,11 @@ public final class TerritoryBuilder {
                 ownerBySystemId,
                 inhabitedSystemIds,
                 unfilledSystemIds,
-                new MapStyling(renderStyle, neutralColour, desaturationPalette),
+                new MapStyling(
+                    renderStyle,
+                    neutralColour,
+                    desaturationPalette,
+                    presencePalette),
                 new ViewGrouping(view, grouping),
                 new FilterSnapshot(
                     selectedBlocId,

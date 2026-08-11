@@ -377,7 +377,8 @@ final class DebugBorderTracingBuilderTest {
                 ThemeFixtures.createHatchStyle(0, 0, 0),
                 smoothing,
                 ThemeFixtures.NO_HOVER_HIGHLIGHT,
-                0.3),
+                0.3,
+                0.2),
             categories);
 
         styleReaderMock.when(RenderStyleReader::readBorderSmoothingStyle).thenReturn(smoothing);

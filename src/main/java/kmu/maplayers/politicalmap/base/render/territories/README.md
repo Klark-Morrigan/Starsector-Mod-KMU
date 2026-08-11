@@ -65,10 +65,13 @@ pick's own presence for the sole reason that this layer's holding rule could not
 them. On the claims view that is routine: pirates, the Path, and independents may not claim, so
 their own colonies always land in a holderless cell.
 
-Such a cell keeps the neutral factionless paint it carries off filter. Full strength is the whole
-of what presence buys it - it never takes the bloc's colours, because nobody holds the system on
-this layer and painting it in the bloc's shades would assert exactly the claim the view reports it
-does not have.
+Such a cell paints the neutral **lifted toward white** by `presenceLightening`, not the bloc's
+colours - nobody holds the system on this layer, and its shades would assert exactly the claim the
+view reports it does not have. The lift is what makes sparing the recede visible at all: the
+neutral a factionless cell paints in and the Independent grey the background sinks from are the
+same grey, so a merely-unreceded cell sits at the value the background started at and reads as part
+of it. `desaturationDarkening` sinks the ground, `presenceLightening` raises the figure, and the
+pair is what separates them - by value only, so a grey stays the same grey.
 
 Only the *filter* recede reaches a settled factionless cell - it is the one whose backdrop is "the
 rest of the sector". The alliances view's non-allied recede describes factions, which such a

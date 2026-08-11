@@ -86,7 +86,7 @@ final class ClusterLabelStylingSnapshotTest {
             holderBySystemId,
             new LinkedHashSet<>(),
             new LinkedHashSet<>(),
-            new MapStyling(null, Color.GRAY, desaturationPalette),
+            new MapStyling(null, Color.GRAY, desaturationPalette, desaturationPalette),
             viewGrouping,
             filterSnapshot);
     }

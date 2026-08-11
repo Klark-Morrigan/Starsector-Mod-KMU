@@ -505,7 +505,8 @@ final class FactionTerritoryBuilderTest {
             new MapStyling(
                 PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(style),
                 Color.GRAY,
-                new FactionPalette(Color.GREEN, Color.YELLOW)),
+                new FactionPalette(Color.GREEN, Color.YELLOW),
+                new FactionPalette(Color.GRAY, Color.GRAY)),
             new ViewGrouping(buildViewMockAdjustingNothing(), HolderGrouping.identity()),
             new FilterSnapshot(null, ElementStyleAdjustment.NONE, Set.of(), Set.of()));
     }

@@ -137,17 +137,14 @@ public final class PoliticalMapTerritories implements
     // which needs the theme - can run, so the null theme here is never read (the render
     // path skips an empty overlay before it would read the global tier). It carries
     // the active view (the one being drawn when the build failed) rather than naming a
-    // concrete view, keeping this model view-agnostic; the identity grouping and the
-    // gray-paired desaturation palette are inert defaults, never read for the same reason.
+    // concrete view, keeping this model view-agnostic; the identity grouping is an inert default,
+    // never read for the same reason. The scheme's own stand-ins are named by MapStyling.
     public static PoliticalMapTerritories createEmpty(PoliticalMapView view) {
         return new PoliticalMapTerritories(
             new LinkedHashMap<>(),
             new LinkedHashSet<>(),
             new LinkedHashSet<>(),
-            new MapStyling(
-                null,
-                Color.GRAY,
-                new FactionPalette(Color.GRAY, Color.GRAY)),
+            MapStyling.createEmpty(),
             new ViewGrouping(
                 view,
                 HolderGrouping.identity()),
@@ -293,6 +290,13 @@ public final class PoliticalMapTerritories implements
 
     public FactionPalette getDesaturationPalette() {
         return styling.desaturationPalette();
+    }
+
+    // The shades a factionless cell the spotlight spares paints in - the neutral lifted toward
+    // white - so it reads clear of the receded greys instead of sitting at the value they sank
+    // from.
+    public FactionPalette getPresencePalette() {
+        return styling.presencePalette();
     }
 
     public RenderStyle getRenderStyle() {

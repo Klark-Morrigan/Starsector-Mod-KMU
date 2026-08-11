@@ -40,7 +40,8 @@ stay a closed set the compiler checks.
 
 Two of the four are owned and carry a full fill/border/seam style. The other two have no owner and
 so no faction palette to choose a shade from: both paint in the shared neutral colour and expose no
-colour field at all, leaving each element's opacity as its only on/off. A `DECIVILISED` cell draws a
+colour field at all, leaving each element's opacity as its only on/off - the sole shift that colour
+ever takes is the value lift a spotlight-spared cell gets, described below. A `DECIVILISED` cell draws a
 fill and an outline (something was settled there, so it reads as occupied rather than as a bare
 ring); an uninhabited cell draws an outline alone, since filling it would wash every corner of the
 sector nothing else holds. Neither has an inner seam: factionless cells never fuse into clusters,
@@ -123,7 +124,18 @@ of the resolved style, per bloc or per ownerless cell. The adjustment itself - t
 of knobs and the rule for unioning two of them - is the framework's, in
 [`base.theme`](../../../../base/theme/README.md); this layer owns the desaturation *mechanism* (the
 palette swap in `MapPalettes`) and the rule for which factionless cells it reaches
-(`FactionlessStyleResolver`); the *policy* of which bloc recedes and by how much lives one package
+(`FactionlessStyleResolver`).
+
+A spotlight separates figure from ground with **two** palettes, both resolved once per pass by
+`MapPalettes` and both moving value alone: `resolveDesaturationPalette` sinks a receded bloc's
+Independent grey toward black by `desaturationDarkening`, and `resolvePresencePalette` lifts a
+spared factionless cell's neutral toward white by `presenceLightening`. Either alone leaves the two
+too close to tell apart, because the neutral and the Independent grey start out the same grey - so
+a cell that is merely not receded sits exactly where the background began. The lift is a wash
+toward white on RGB, never a recolour: a spared cell has no holder to borrow a hue from, and one
+would state an ownership the layer sparing it is reporting it does not have.
+
+The *policy* of which bloc recedes and by how much lives one package
 up in `politicalmap.base` (`RecedePreferences` and the views). *Baking* the resolved style into the draw
 packets is [`render.territories`](../territories/README.md) - its `StyledCellBuilder` and
 `FactionTerritoryBuilder`. What makes the "once per map rebuild" above actually happen - which

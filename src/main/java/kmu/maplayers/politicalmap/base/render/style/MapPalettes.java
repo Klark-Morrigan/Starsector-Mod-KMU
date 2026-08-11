@@ -145,4 +145,33 @@ public final class MapPalettes {
             Colours.darken(independent.primaryColour(), keepFactor),
             Colours.darken(independent.secondaryColour(), keepFactor));
     }
+
+    /**
+     * Resolves the palette a factionless cell the spotlight spares paints in: the shared neutral
+     * colour washed toward white by {@code lighteningStrength}, in both slots as the plain neutral
+     * palette holds it.
+     *
+     * <p>The counterpart to {@link #resolveDesaturationPalette}, and the reason both exist. That
+     * one sinks the receded background below genuine independent space; this one lifts a spared
+     * cell above it. Sparing the recede alone does not separate the two, because the neutral a
+     * factionless cell paints in and the Independent grey the background sinks from are the same
+     * grey to begin with - so the spared cell would sit at the value the background started at,
+     * which is exactly where the eye stops telling them apart.
+     *
+     * <p>Washed toward white rather than recoloured, on RGB alone. The cell has no holder to
+     * borrow a hue from, and giving it one would state an ownership the layer sparing it is
+     * reporting it does not have; a neutral grey moved toward white is the same grey, brighter.
+     *
+     * @param neutralColour      the shared colour every factionless cell paints in
+     * @param lighteningStrength the fraction of the way to white; 0 yields the plain neutral
+     *                           palette, 1 yields white
+     * @return the two shades a spared cell paints in
+     */
+    public static FactionPalette resolvePresencePalette(
+            Color neutralColour,
+            double lighteningStrength) {
+
+        return resolveNeutralPalette(
+            Colours.blendRgbTowards(neutralColour, Color.WHITE, (float) lighteningStrength));
+    }
 }

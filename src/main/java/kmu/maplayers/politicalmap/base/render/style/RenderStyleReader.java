@@ -60,8 +60,9 @@ public final class RenderStyleReader {
     }
 
     // Folds the sector-wide knobs into the global tier: the contested-fill hatch, the
-    // national-border smoothing, the hover highlight, and how far a receded bloc's
-    // Independent-based grey darkens. The hatch angle is authored in degrees and converted to
+    // national-border smoothing, the hover highlight, and the two strengths a spotlight separates
+    // figure from ground by - how far a receded bloc's Independent-based grey darkens, and how far
+    // a spared cell's neutral lifts. The hatch angle is authored in degrees and converted to
     // radians at the reader so the hatch math downstream stays in radians. The player's hatch
     // width and smoothing are properties of the stroke rather than of the pattern, so both are
     // read into the stroke the renderer dispatches on rather than sitting loose beside the layout.
@@ -76,7 +77,8 @@ public final class RenderStyleReader {
                     KmuPoliticalMapSettings.getPoliticalMapHatchWidth())),
             readBorderSmoothingStyle(),
             readHoverHighlightStyle(),
-            KmuPoliticalMapSettings.getPoliticalMapDesaturationDarkening());
+            KmuPoliticalMapSettings.getPoliticalMapDesaturationDarkening(),
+            KmuPoliticalMapSettings.getPoliticalMapPresenceLightening());
     }
 
     /**

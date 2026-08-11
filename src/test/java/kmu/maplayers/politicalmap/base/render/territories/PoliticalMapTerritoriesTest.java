@@ -152,6 +152,7 @@ final class PoliticalMapTerritoriesTest {
                 new MapStyling(
                     renderStyle,
                     Color.GRAY,
+                    new FactionPalette(Color.GRAY, Color.GRAY),
                     new FactionPalette(Color.GRAY, Color.GRAY)),
                 new ViewGrouping(mock(PoliticalMapView.class), HolderGrouping.identity()),
                 FilterSnapshot.unfiltered());
@@ -260,6 +261,10 @@ final class PoliticalMapTerritoriesTest {
             var neutral = Color.CYAN;
             var desaturationPalette = new FactionPalette(Color.MAGENTA, Color.ORANGE);
 
+            // Distinct from the desaturation pair it sits beside: the two are the same type in
+            // adjacent slots, so only differing shades catch a swap between them.
+            var presencePalette = new FactionPalette(Color.PINK, Color.WHITE);
+
             // Four distinct category instances plus a distinct global tier, all wrapped in one
             // theme, so a swapped style slot is caught by identity, not just by the shared
             // CategoryStyle type the compiler would accept either way.
@@ -282,7 +287,8 @@ final class PoliticalMapTerritoriesTest {
                     new SpikeSandingStyle(true, 5, 5),
                     new CornerRoundingStyle(true, 5, 5, 5)),
                 ThemeFixtures.NO_HOVER_HIGHLIGHT,
-                0.3);
+                0.3,
+                0.2);
 
             var renderStyle = new RenderStyle(globalStyle, categories);
             var viewMock = mock(PoliticalMapView.class);
@@ -306,7 +312,7 @@ final class PoliticalMapTerritoriesTest {
                 holders,
                 inhabited,
                 unfilled,
-                new MapStyling(renderStyle, neutral, desaturationPalette),
+                new MapStyling(renderStyle, neutral, desaturationPalette, presencePalette),
                 new ViewGrouping(viewMock, grouping),
                 new FilterSnapshot(
                     selectedBlocId,
@@ -331,6 +337,8 @@ final class PoliticalMapTerritoriesTest {
                 .isSameAs(neutral);
             assertThat(territories.getDesaturationPalette())
                 .isSameAs(desaturationPalette);
+            assertThat(territories.getPresencePalette())
+                .isSameAs(presencePalette);
             assertThat(territories.getRenderStyle())
                 .isSameAs(renderStyle);
             assertThat(territories.getGlobalStyle())
