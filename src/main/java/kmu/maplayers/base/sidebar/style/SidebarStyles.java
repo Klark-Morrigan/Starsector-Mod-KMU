@@ -5,6 +5,7 @@ import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.render.gl.style.BoxColours;
+import kmlib.starsector.ui.render.gl.style.ControlHoverWash;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.widgets.tabs.style.HotkeyStyle;
@@ -270,7 +271,8 @@ public final class SidebarStyles {
     }
 
     // The sidebar's look built fresh from the live colours, framed by the given convention: a black body
-    // backdrop, the colour scheme's accent steps for the controls, the insignia body face, the given tab
+    // backdrop, the colour scheme's accent steps for the controls, the wash the pointer lifts one of those
+    // controls by, the insignia body face, the given tab
     // style, the collapse handle's chevron shades for the colour the player picked, and the vanilla
     // button sounds its controls answer by. Everything but the framing is shared by every screen the
     // sidebar draws on, so a screen choosing its frame chooses nothing else by accident.
@@ -295,6 +297,10 @@ public final class SidebarStyles {
                 StarsectorUiColour.BLACK.resolve(),
                 resolveFrameColour(framing, accentColours)),
             accentColours,
+            // The lift the pointer adds to a body control, taken from the same resolved set the controls
+            // are ruled in: a hover is more of what the control already wears, so it cannot be a shade the
+            // panel names nowhere else.
+            ControlHoverWash.createAccentHoverWash(accentColours),
             BODY_FONT,
             tabStyle,
             SidebarPalettes.resolveNotchColours(

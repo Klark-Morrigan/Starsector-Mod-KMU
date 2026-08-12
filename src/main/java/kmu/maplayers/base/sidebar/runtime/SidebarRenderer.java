@@ -202,6 +202,9 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             host.resolveWidgetStyle(),
             border,
             host.getController().getTabInteractionSources(),
+            // The body's own half of the same channel, off the same controller and the same placement, so
+            // the row and the controls below it light off one reading of where the pointer is.
+            host.getController().getBodyHoverSource(),
             notchState,
             opacity);
 

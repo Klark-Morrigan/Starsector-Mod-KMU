@@ -166,7 +166,7 @@ in; `CoreUiComponentRepainterFake` is what the tests drive.
 The animations run either side of the layout, which is why the frame's elapsed time is read once and
 spent on both sides: the fold has to advance *before* the placement, since it sizes it, and the input
 motions - the hover fades, the tabs' press lifts, and their hotkey blinks - *after* it, since what
-the pointer is on (a tab, or the collapse handle) is resolved against the very placement being drawn
+the pointer is on (a tab, a body control's cell, or the collapse handle) is resolved against the very placement being drawn
 rather than latched from the last pointer event. A latched hover goes stale whenever the panel moves
 under a still cursor, which the handle feels most: the panel folds out from under a still pointer and
 the notch stays lit for a handle no longer beneath it. The triggered motions need no placement at all
@@ -315,9 +315,16 @@ it clears without raising it.
 
 A host's `resolveWidgetStyle()` answers with the look each frame, built through
 `style/SidebarStyles` from live values: a black body fill faded by the opacity setting, the frame
-colour, the dark, base, and bright accents of the player's colour scheme, the insignia body face, and
+colour, the dark, base, and bright accents of the player's colour scheme, the wash the pointer lifts
+a body control by, the insignia body face, and
 the host's own tab style. Nothing of it is held between frames - every shade reads the running game's
 colours and the player's live settings - and nothing of it is persisted.
+
+The hover wash is that same base accent at a lesser strength than the selected wash carries, so a
+control under the pointer reads as lit without reading as picked, and a lit one under the pointer
+lifts past both. It is a shade only: how fast a cell travels onto it is the panel's one input pace,
+shared with the tabs and the handle, because a panel answering the pointer at two speeds reads as
+two panels.
 
 Which palette those accents come from is the player's `SidebarColourSchemeChoice`, and it is one
 choice for all three of the panel's colour reads - the frame, the control accents, and the tab row's
