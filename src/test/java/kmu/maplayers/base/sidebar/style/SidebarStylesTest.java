@@ -25,7 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * look is built fresh every frame from the running game's colours, so what is worth pinning is not a
  * shade but a wiring - that the box takes the black backdrop, that a frame takes the step of the chosen
  * scheme its framing names while the controls stay on that scheme's base whichever framing is chosen,
- * that the row's chrome rule follows that same scheme, that each tab chrome carries the palette, the
+ * that the wash a pointer lifts one of those controls by comes off that same base, that the row's chrome
+ * rule follows that same scheme, that each tab chrome carries the palette, the
  * face, the ring around it, and the hotkey convention belonging to it, and that the panel's sound scheme
  * is the engine's own.
  *
@@ -102,6 +103,27 @@ final class SidebarStylesTest {
         }
 
         @Test
+        void buildAccentFramedStyleWashesAHoveredControlInTheSchemesOwnBase() {
+            // The lift the pointer adds is more of what the control already wears, so it comes off the
+            // same resolved set: a wash resolved apart from the accents is a shade the panel names
+            // nowhere else, and it would show only under a pointer nothing in this file otherwise puts
+            // anywhere.
+            assertThat(buildAccentFramedStyle().controlHoverWash().colour())
+                .isEqualTo(StarsectorUiColoursMock.BUTTON_TEXT);
+        }
+
+        @Test
+        void buildAccentFramedStyleMovesItsHoverWashWithTheSchemeToo() {
+            // The hover wash is a third reader of the one scheme choice, beside the frame and the
+            // controls. Left on a shade resolved once, it would go on washing in the old palette after a
+            // scheme change - a panel lit in one colour and ruled in another, visible only on hover.
+            sidebarSettingsMock.selectColourScheme(SidebarColourSchemeChoice.PLAYER_FACTION);
+
+            assertThat(buildAccentFramedStyle().controlHoverWash().colour())
+                .isEqualTo(StarsectorUiColoursMock.PLAYER_BASE);
+        }
+
+        @Test
         void buildAccentFramedStyleAnswersEveryControlMomentWithTheEnginesOwnSounds() {
             // Spelt out rather than compared against the constant the factory reads, so this pins both
             // that the sidebar wears the vanilla scheme and that the look is composed with it.
@@ -135,6 +157,14 @@ final class SidebarStylesTest {
                 .isEqualTo(StarsectorUiColoursMock.BUTTON_TEXT);
             assertThat(accentColours.bright())
                 .isEqualTo(StarsectorUiColoursMock.LIGHT_HIGHLIGHT);
+        }
+
+        @Test
+        void buildChromeFramedStyleStillWashesAHoveredControlInTheSchemesOwnBase() {
+            // The wash follows the controls rather than the frame, for the reason the accents do: what a
+            // panel abuts decides how it is framed and nothing about how its own controls answer a pointer.
+            assertThat(buildChromeFramedStyle().controlHoverWash().colour())
+                .isEqualTo(StarsectorUiColoursMock.BUTTON_TEXT);
         }
 
         @Test

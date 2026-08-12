@@ -359,7 +359,8 @@ final class BaseSidebarHostTest {
     private static float hoverFractionAt(SidebarHostFake host, int tabIndex) {
         return host
             .getController()
-            .getTabInteractionSources()
+            .getInteractionSources()
+            .headerTabs()
             .hoverSource()
             .resolveHoverFractionAt(tabIndex);
     }
