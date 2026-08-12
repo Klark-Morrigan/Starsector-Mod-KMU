@@ -1,5 +1,6 @@
 package kmu.maplayers.base.render.clusters;
 
+import kmlib.math.geometry.CornerRounding;
 import kmlib.math.geometry.PolygonSmoothing;
 
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
@@ -109,9 +110,10 @@ public final class BorderSmoothing {
 
         return PolygonSmoothing.roundCorners(
             loop,
-            style.cornerRadius(),
-            style.cornerSegments(),
-            style.chamferAngleRadians());
+            new CornerRounding(
+                style.cornerRadius(),
+                style.cornerSegments(),
+                style.chamferAngleRadians()));
     }
 
     // Applies one pass to every loop, collecting the results. Both passes are per-loop and
