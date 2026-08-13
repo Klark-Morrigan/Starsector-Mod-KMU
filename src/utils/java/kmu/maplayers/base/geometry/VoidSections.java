@@ -78,11 +78,6 @@ final class VoidSections {
     // stop a grazing site being read as a blocking one by a rounding.
     private static final double COVER_TOLERANCE = 1e-6;
 
-    // The least a cut may leave on either side of it, as a share of one section's worth of
-    // area. Sections are not going to come out equal - the cuts land where the cells allow -
-    // but half a section is the point below which a piece has stopped being a section at all.
-    private static final double MIN_SECTION_SHARE = 0.5;
-
     // How far an end of a cut may sit from the nearest vertex of a piece's outline and still
     // be taken as lying on it, as a multiple of how far apart that outline's own vertices
     // are. Scaled to the outline rather than fixed, because how finely the arcs were sampled
@@ -127,6 +122,31 @@ final class VoidSections {
     }
 
     /**
+     * The two numbers that decide how a pocket divides.
+     *
+     * <p>One record rather than two parameters because neither means anything without the
+     * other: a cut width is only wide or narrow against the section it would separate, and a
+     * section length only produces sensible sections if what may be cut is bounded against
+     * it. Passed apart, the pair can be handed a length from one setting and a width from
+     * another and still compile.
+     *
+     * @param sectionLength    how long a section should be - a cell's width, so a section is
+     *                         about the size of the thing it will end up beside
+     * @param minSectionShare  the least a cut may leave on either side of it, as a share of
+     *                         one section's worth of area. How evenly the pocket comes out
+     *                         divided, in one number: at one, only a cut leaving a full
+     *                         section either side is allowed and almost nothing qualifies;
+     *                         near zero, any cut is, and the narrowest crossings win - which
+     *                         are the tips, so the pocket is shaved rather than divided.
+     *                         Between those, the higher it is set the more the cuts are
+     *                         pushed away from the extremities and towards the middle
+     */
+    record SectionRules(
+        double sectionLength,
+        double minSectionShare) {
+    }
+
+    /**
      * How far a set of points reaches across, as the distance between the two furthest apart.
      *
      * @param points the points to measure across, few enough that every pair is compared
@@ -155,13 +175,13 @@ final class VoidSections {
      *                      reach a corridor's width is measured against
      * @param sites         every site, because a cell that does not ring the pocket can
      *                      still lie across a candidate cut
-     * @param span          how far the pocket reaches across, which decides how many sections
-     *                      it is owed. Taken from the caller rather than measured here
-     *                      because it is the pocket's own extent, reported as such and tested
-     *                      against elsewhere, and two places measuring it apart would let a
-     *                      pocket be called too long while being cut into one section
-     * @param sectionLength how long a section should be - a cell's width, so a section is
-     *                      about the size of the thing it will end up beside
+     * @param span  how far the pocket reaches across, which decides how many sections it is
+     *              owed. Taken from the caller rather than measured here because it is the
+     *              pocket's own extent, reported as such and tested against elsewhere, and
+     *              two places measuring it apart would let a pocket be called too long while
+     *              being cut into one section
+     * @param rules how long a section should be, and how much of one a cut has to leave on
+     *              either side of it to be worth taking
      * @return how it came out divided, holding no cuts and the whole pocket as its one
      *         section when it is already section-sized or nothing in it can be cut across
      */
@@ -169,9 +189,9 @@ final class VoidSections {
             VoidHole hole,
             List<double[]> sites,
             double span,
-            double sectionLength) {
+            SectionRules rules) {
 
-        var wantedSections = (int) Math.ceil(span / sectionLength);
+        var wantedSections = (int) Math.ceil(span / rules.sectionLength());
 
         if (wantedSections <= UNDIVIDED) {
             return new VoidDivision(List.of(), List.of(hole.boundary()));
@@ -193,7 +213,7 @@ final class VoidSections {
             candidates,
             hole.boundary(),
             wantedSections - 1,
-            pocketArea / wantedSections * MIN_SECTION_SHARE);
+            pocketArea / wantedSections * rules.minSectionShare());
     }
 
     // Every pair of cells around the pocket that has clear void between them, as the segment

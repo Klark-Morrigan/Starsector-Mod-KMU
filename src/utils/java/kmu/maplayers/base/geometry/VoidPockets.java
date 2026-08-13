@@ -133,16 +133,16 @@ final class VoidPockets {
      *                     area rather than between owners
      * @param parameters   the same knobs the cells are built under, so the void takes the
      *                     reach that decides where it begins and the channel the cells leave
-     * @param sectionLength how long a piece of a pocket should be before it is cut into
-     *                     more than one, in world units; a cell's width is the size that
-     *                     makes a section comparable to what lies around it
+     * @param sectionRules how long a piece of a pocket should be before it is cut into more
+     *                     than one, and how narrow a crossing has to be to count as a place
+     *                     to cut it
      * @return the pockets, each with a closed outline
      */
     static List<VoidPocket> findVoidPockets(
             List<double[]> sites,
             List<String> ownerBySite,
             SectorGeometryParameters parameters,
-            double sectionLength) {
+            VoidSections.SectionRules sectionRules) {
 
         // Taken from the cells' own bound rather than set apart from it. The two count the
         // same thing in different units - a bound is so many sides round a whole circle, an
@@ -182,7 +182,7 @@ final class VoidPockets {
                 hole.ringing(),
                 span,
                 absorbingOwner,
-                VoidSections.divideVoidPocket(hole, sites, span, sectionLength)));
+                VoidSections.divideVoidPocket(hole, sites, span, sectionRules)));
         }
         return pockets;
     }

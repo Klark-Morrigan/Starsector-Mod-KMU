@@ -29,6 +29,19 @@ final class VoidRegionsDump {
     private static final double SECTION_LENGTH =
         2 * SectorGeometryParameters.DEFAULT_CELL_RADIUS;
 
+    // What the viewer opens on, so the table below describes the division a reader would see
+    // if they opened it. The sweep at the end of the report is what that choice rests on.
+    private static final double MIN_SECTION_SHARE = 0.4;
+
+    private static final VoidSections.SectionRules SECTION_RULES =
+        new VoidSections.SectionRules(SECTION_LENGTH, MIN_SECTION_SHARE);
+
+    // Shares to sweep the division across, so the knob has a starting range instead of being
+    // a bare slider. Spread over the whole span rather than clustered near the default,
+    // because both ends of it are wrong in a different way and seeing where each one sets in
+    // is the point.
+    private static final double[] SWEPT_SHARES = {0, 0.2, 0.4, 0.6, 0.8, 1.0};
+
     // Area percentiles worth naming when deciding where the "leave it alone" threshold sits.
     private static final double MEDIAN_FRACTION = 0.5;
     private static final double[] REPORTED_PERCENTILES = {MEDIAN_FRACTION, 0.9, 1.0};
@@ -54,7 +67,7 @@ final class VoidRegionsDump {
                     sites,
                     fixture.getOwnerBySite(),
                     SectorGeometryParameters.createDefaults(),
-                            SECTION_LENGTH),
+                    SECTION_RULES),
                 fixture);
 
             System.out.println();
@@ -193,7 +206,7 @@ final class VoidRegionsDump {
                 0,
                 shipped.weldTolerance(),
                 shipped.miterSpikeLimit()),
-            SECTION_LENGTH).size();
+            SECTION_RULES).size();
     }
 
     // The first split the design asks for: a cell buried among its neighbours has every edge
@@ -215,7 +228,8 @@ final class VoidRegionsDump {
     private static void reportEachPocket(List<VoidPockets.VoidPocket> pockets) {
 
         System.out.println(
-            "  pocket        at          span  cells  cuts   shaping     sections");
+            "  pocket        at          span  cells  cuts   shaping     "
+                + "sections            cut widths");
 
         for (var index = 0; index < pockets.size(); index++) {
 
@@ -224,7 +238,7 @@ final class VoidRegionsDump {
 
             System.out.printf(
                 Locale.ROOT,
-                "  %-6d %7.0f,%-7.0f %6.0f %4d %5d   %-10s  %s%n",
+                "  %-6d %7.0f,%-7.0f %6.0f %4d %5d   %-10s  %-18s  %s%n",
                 index,
                 centre[0],
                 centre[1],
@@ -232,7 +246,8 @@ final class VoidRegionsDump {
                 pocket.adjacentCells().size(),
                 pocket.division().cuts().size(),
                 describeShaping(pocket),
-                describeSections(pocket));
+                describeSections(pocket),
+                describeCutWidths(pocket));
         }
     }
 
@@ -265,6 +280,23 @@ final class VoidRegionsDump {
             spans.append(String.format(Locale.ROOT, "%.0f", span));
         }
         return spans.toString();
+    }
+
+    // How wide the corridor is at each cut. The number that says whether a cut is a pinch
+    // or a jump: a cut across a genuine neck is a small fraction of a section, and one that
+    // reads as leaping across open void is a large one.
+    private static String describeCutWidths(VoidPockets.VoidPocket pocket) {
+
+        var widths = new StringBuilder();
+
+        for (var cut : pocket.division().cuts()) {
+
+            if (widths.length() > 0) {
+                widths.append(" ");
+            }
+            widths.append(String.format(Locale.ROOT, "%.0f", cut.width()));
+        }
+        return widths.toString();
     }
 
     private static String describeShaping(VoidPockets.VoidPocket pocket) {
@@ -379,6 +411,7 @@ final class VoidRegionsDump {
 
         reportRingingOwners(pockets, fixture);
         reportEachPocket(pockets);
+        reportShareSweep(fixture);
 
         var shares = new ArrayList<Double>(pockets.size());
         var sections = new ArrayList<Double>(pockets.size());
@@ -438,13 +471,60 @@ final class VoidRegionsDump {
 
         System.out.printf(
             Locale.ROOT,
-            "%d pockets want dividing into sections of %.0f: %d cuts taken, %d still hold a "
-                + "section over length, longest %.0f%n",
+            "%d pockets want dividing into sections of %.0f, no cut leaving under %.0f%% of "
+                + "one: %d cuts taken, %d still hold a section over length, longest %.0f%n",
             toDivide,
             SECTION_LENGTH,
+            MIN_SECTION_SHARE * PERCENT_SCALE,
             cuts,
             overLength,
             longestSection);
+    }
+
+    // How the division answers to the one knob that decides it. Three numbers say the whole
+    // story: how many cuts were taken, how wide the worst of them was, and how long the worst
+    // section left over was. A low share takes many narrow cuts and still leaves one huge
+    // piece, because it is shaving the tips; a high share takes few wide ones, because
+    // nothing but a chord across the open middle can leave that much on both sides. Where
+    // those two failures stop overlapping is where the knob wants to sit.
+    private static void reportShareSweep(SectorFixture fixture) {
+
+        System.out.println("  share   cuts   widest cut   longest section");
+
+        for (var share : SWEPT_SHARES) {
+
+            var pockets = VoidPockets.findVoidPockets(
+                fixture.getSites(),
+                fixture.getOwnerBySite(),
+                SectorGeometryParameters.createDefaults(),
+                new VoidSections.SectionRules(SECTION_LENGTH, share));
+
+            var cuts = 0;
+            var widestCut = 0.0;
+            var longestSection = 0.0;
+
+            for (var pocket : pockets) {
+
+                if (pocket.span() <= SECTION_LENGTH) {
+                    continue;
+                }
+
+                cuts += pocket.division().cuts().size();
+                longestSection = Math.max(longestSection, measureLongestSection(pocket));
+
+                for (var cut : pocket.division().cuts()) {
+                    widestCut = Math.max(widestCut, cut.width());
+                }
+            }
+
+            System.out.printf(
+                Locale.ROOT,
+                "  %4.0f%%  %5d   %10.0f   %15.0f%n",
+                share * PERCENT_SCALE,
+                cuts,
+                widestCut,
+                longestSection);
+        }
     }
 
     private static double findPercentile(List<Double> sorted, double fraction) {

@@ -206,6 +206,21 @@ final class SectorGeometryViewer {
     private static final double VOID_SPAN_DEFAULT = 2;
     private static final double VOID_SPAN_STEP_SCALE = 100.0;
 
+    // How much of a section a cut has to leave on either side of it, as a percentage. The
+    // knob that decides how evenly a pocket comes out divided, and the one worth sweeping:
+    // the two ends of its range are two different wrong answers - slivers shaved off the
+    // tips at the bottom, chords thrown across open void at the top - and where the good
+    // answers sit between them is a question about a shape rather than about a number.
+    private static final double MIN_SECTION_MINIMUM = 0;
+    private static final double MIN_SECTION_MAXIMUM = 100;
+    
+    // Settled by eye against the sweep at the end of the void regions dump. Above it the
+    // only crossings leaving that much on both sides are chords over the open middle, which
+    // read as thrown across a pocket rather than dividing it; below it the tips come back
+    // into range, win on being narrowest, and leave one long piece uncut behind them.
+    private static final double MIN_SECTION_DEFAULT = 40;
+    private static final double MIN_SECTION_SCALE = 100.0;
+
     // How far brightness may wander either side of the chosen colour when jitter is on, as a
     // percentage of the full range. The default is wide enough to tell two neighbours apart
     // and narrow enough that they still read as one palette; the slider exists because which
@@ -236,6 +251,7 @@ final class SectorGeometryViewer {
 
     private int voidCellOpacity = OWNER_FILL_ALPHA;
     private double voidSpanMultiple = VOID_SPAN_DEFAULT;
+    private double minSectionShare = MIN_SECTION_DEFAULT / MIN_SECTION_SCALE;
 
     private Color wideVoidColour = WIDE_VOID_DEFAULT;
     private Color wideVoidEdge = WIDE_VOID_DEFAULT;
@@ -553,6 +569,16 @@ final class SectorGeometryViewer {
             this::refreshVoidPockets,
             () -> { }));
 
+        controls.add(ViewerControls.buildSlider(
+            "Min section share",
+            "Least a cut leaves, as % of a section",
+            MIN_SECTION_MINIMUM,
+            MIN_SECTION_MAXIMUM,
+            MIN_SECTION_DEFAULT,
+            share -> minSectionShare = share / MIN_SECTION_SCALE,
+            this::refreshVoidPockets,
+            () -> { }));
+
         controls.add(buildSaveSvgButton());
         controls.add(canvas.statusLabel);
 
@@ -658,9 +684,14 @@ final class SectorGeometryViewer {
             fixture.getSites(),
             fixture.getOwnerBySite(),
             parameters,
-            measureSectionLength());
+            buildSectionRules());
 
         canvas.repaint();
+    }
+
+    private VoidSections.SectionRules buildSectionRules() {
+
+        return new VoidSections.SectionRules(measureSectionLength(), minSectionShare);
     }
 
     // The same length twice over: the span past which a pocket is too long to be one thing is
