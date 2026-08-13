@@ -95,11 +95,13 @@ final class ClaimCellRibbonsTest {
     // so territoriality decides nothing about a band.
     private static final boolean IS_TERRITORIAL = true;
 
-    // Where a market falls in the system's economy listing. No case here poses a tie, so the
-    // positions only have to be distinct.
+    // Where a market falls in the system's economy listing. No case here poses a tie - the rule
+    // reads no score and settles nothing on the order - so the positions only have to be distinct,
+    // as the economy's own numbering makes them.
     private static final int FIRST_LISTED = 1;
     private static final int SECOND_LISTED = 2;
     private static final int THIRD_LISTED = 3;
+    private static final int FOURTH_LISTED = 4;
 
     // The size every posed colony carries, and the sibling term posed on it. Both are held
     // constant because a claim band counts holdings and reads nothing off a score: a case varying
@@ -111,9 +113,14 @@ final class ClaimCellRibbonsTest {
     class PlanClaimCellRibbon {
 
         @Test
-        void drawsNoRibbonWhereTheClaimantIsTheOnlyFactionPresent() {
+        void drawsNoRibbonWhereTheClaimantIsTheOnlyFactionStanding() {
             // The lone-claimant row of the gate table: the fill already says whose system it is,
             // and a band of the painter alone would only repeat it.
+            //
+            // This is also the shape a system takes where another faction is present through
+            // unweighed markets alone - a concealed base, say. The contest gives such a faction no
+            // standing at all, so it never reaches the input and the cell stays bare; there is no
+            // second walk of the system for a band to find it on.
             var contest = buildContest(
                 NO_DECREE,
                 HEGEMONY,
@@ -157,8 +164,9 @@ final class ClaimCellRibbonsTest {
             var contest = buildContest(
                 DIKTAT,
                 DIKTAT,
-                List.of(buildStandingWithSiblings(
+                List.of(buildStandingOn(
                     TRITACHYON,
+                    FIRST_LISTED,
                     buildMarket(SECOND_LISTED, ContestAdmission.WEIGHED, IS_KNOWN_TO_PLAYER))));
 
             assertThat(planFor(DIKTAT, contest).segments())
@@ -177,8 +185,9 @@ final class ClaimCellRibbonsTest {
                 HEGEMONY,
                 List.of(
                     buildStandingOn(HEGEMONY, FIRST_LISTED),
-                    buildStandingWithSiblings(
+                    buildStandingOn(
                         TRITACHYON,
+                        SECOND_LISTED,
                         buildMarket(THIRD_LISTED, CONCEALED, IS_KNOWN_TO_PLAYER))));
 
             assertThat(planFor(HEGEMONY, contest).segments())
@@ -198,8 +207,9 @@ final class ClaimCellRibbonsTest {
                 HEGEMONY,
                 List.of(
                     buildStandingOn(HEGEMONY, FIRST_LISTED),
-                    buildStandingWithSiblings(
+                    buildStandingOn(
                         TRITACHYON,
+                        SECOND_LISTED,
                         buildMarket(THIRD_LISTED, OFF_ECONOMY, IS_KNOWN_TO_PLAYER))));
 
             assertThat(planFor(HEGEMONY, contest).segments())
@@ -217,8 +227,9 @@ final class ClaimCellRibbonsTest {
                 HEGEMONY,
                 List.of(
                     buildStandingOn(HEGEMONY, FIRST_LISTED),
-                    buildStandingWithSiblings(
+                    buildStandingOn(
                         TRITACHYON,
+                        SECOND_LISTED,
                         buildMarket(THIRD_LISTED, CONCEALED, IS_UNFOUND_BY_PLAYER))));
 
             assertThat(planFor(HEGEMONY, contest).segments())
@@ -228,16 +239,26 @@ final class ClaimCellRibbonsTest {
         }
 
         @Test
-        void drawsNoRibbonWhereTheOnlyOtherFactionTookNoStandingAtAll() {
-            // A faction present through unweighed markets alone - a concealed base, say - is given
-            // no standing by the contest, so it reaches the band through nothing: the cell stays
-            // bare rather than being counted from some second walk of the system.
+        void drawsNoRibbonWhereTheOnlyOtherFactionIsAnAllyOfThePainter() {
+            // Two allies hold the system between them and nobody else is in it. They fold into the
+            // one bloc the cell was painted for before the gate is asked anything, so the cell is
+            // as bare as a lone claimant's - where a gate asked ahead of the fold would read an
+            // ally as a rival and band every system an alliance shares.
             var contest = buildContest(
                 NO_DECREE,
                 HEGEMONY,
-                List.of(buildStandingOn(HEGEMONY, FIRST_LISTED)));
+                List.of(
+                    buildStandingOn(HEGEMONY, FIRST_LISTED),
+                    buildStandingOn(PERSEAN, SECOND_LISTED)));
 
-            assertThat(planFor(HEGEMONY, contest))
+            var plan = ClaimCellRibbons.planClaimCellRibbon(
+                HEGEMONY_ALLIANCE,
+                contest,
+                buildAllianceOf(HEGEMONY, PERSEAN),
+                PALETTES,
+                STANDARD_LENGTHS);
+
+            assertThat(plan)
                 .isEqualTo(RibbonPlan.NONE);
         }
 
@@ -250,11 +271,12 @@ final class ClaimCellRibbonsTest {
                 NO_DECREE,
                 HEGEMONY,
                 List.of(
-                    buildStandingWithSiblings(
+                    buildStandingOn(
                         HEGEMONY,
+                        FIRST_LISTED,
                         buildMarket(SECOND_LISTED, ContestAdmission.WEIGHED, IS_KNOWN_TO_PLAYER)),
                     buildStandingOn(TRITACHYON, THIRD_LISTED),
-                    buildStandingOn(PERSEAN, FIRST_LISTED)));
+                    buildStandingOn(PERSEAN, FOURTH_LISTED)));
 
             var plan = ClaimCellRibbons.planClaimCellRibbon(
                 HEGEMONY_ALLIANCE,
@@ -345,26 +367,19 @@ final class ClaimCellRibbonsTest {
         return new SystemClaimBreakdown(decreeFactionId, claimantFactionId, standings);
     }
 
-    // A faction standing on one colony and holding nothing else in the system.
-    private static FactionClaimScore buildStandingOn(String factionId, int listingPosition) {
-        return new FactionClaimScore(
-            factionId,
-            IS_TERRITORIAL,
-            buildMarket(listingPosition, ContestAdmission.WEIGHED, IS_KNOWN_TO_PLAYER),
-            List.of());
-    }
-
-    // A faction standing on an openly-held colony with the given others beside it - the standing
-    // being the one thing a case never varies, since only a market the mechanic weighed can take
-    // one and such a market is one the player knows of.
-    private static FactionClaimScore buildStandingWithSiblings(
+    // A faction standing at the given place in the listing, holding the given other colonies
+    // beside the one it stands on. The standing market is the one thing no case varies: only a
+    // market the mechanic weighed can take a standing, and such a market is held in the open and
+    // so is one the player knows of - which is why the counting rule reads no flag of it.
+    private static FactionClaimScore buildStandingOn(
             String factionId,
+            int listingPosition,
             MarketClaimBreakdown... otherMarkets) {
 
         return new FactionClaimScore(
             factionId,
             IS_TERRITORIAL,
-            buildMarket(FIRST_LISTED, ContestAdmission.WEIGHED, IS_KNOWN_TO_PLAYER),
+            buildMarket(listingPosition, ContestAdmission.WEIGHED, IS_KNOWN_TO_PLAYER),
             List.of(otherMarkets));
     }
 

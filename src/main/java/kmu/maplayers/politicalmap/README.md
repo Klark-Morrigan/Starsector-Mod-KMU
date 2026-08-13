@@ -308,8 +308,9 @@ blocs' runs butted so the colour change is the only boundary, and no band at all
 but the one it was painted for is present in - `RibbonPlan` over a ranked list of `BlocPresence`,
 emitted as `RibbonSegment`s at the two proportions `RibbonSegmentLengths` pairs. Where the counts
 behind those runs come from is each mechanic's own business, which is what keeps one band meaning one
-thing on every view: a held cell counts the very sample the dominance pass scored, while a claimed
-cell's counts are read out of the claim contest by `ClaimCellRibbons` - each faction's standing market
+thing on every view: a held cell's count is `MarketFootprint.marketCount`, folded over the very
+colonies the dominance pass scored, while a claimed cell's is read out of the claim contest by
+`ClaimCellRibbons` - each faction's standing market
 plus the siblings that both told on its score and are colonies the player knows about, folded to blocs
 under the same `HolderGrouping` the fills use and coloured through `BlocPaletteReader`, so the one
 live read sits outside the rule),
