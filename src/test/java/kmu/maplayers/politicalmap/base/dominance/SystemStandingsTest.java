@@ -3,10 +3,11 @@ package kmu.maplayers.politicalmap.base.dominance;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.politicalmap.base.dominance.MarketFootprintFixtures.buildWeightedFootprint;
+import static kmu.maplayers.politicalmap.base.dominance.MarketFootprintFixtures.listOrderedFootprints;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -18,10 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * so the ordering is shown to come from the rule, not the map's walk order.
  */
 class SystemStandingsTest {
-
-    // How many markets each hand-built footprint stands for. Fixed, because the ranking reads
-    // weights alone: a count that varied between fixtures would read as though it mattered.
-    private static final int SINGLE_MARKET = 1;
 
     @Nested
     class RankByDominationScore {
@@ -184,31 +181,4 @@ class SystemStandingsTest {
             Map.of("alliance-1", "Allied Powers"));
     }
 
-    // A footprint stating only the three weights the ranking reads, standing for one held market,
-    // so each fixture reads as the scores the two tiers rank on and nothing else.
-    private static MarketFootprint buildWeightedFootprint(
-            int totalWeight,
-            int largestMarketWeight,
-            int planetWeight) {
-
-        return new MarketFootprint(
-            SINGLE_MARKET,
-            totalWeight,
-            largestMarketWeight,
-            planetWeight);
-    }
-
-    // Builds the footprint map preserving insertion order, so a test can list the higher-scoring or
-    // higher-id entry first and still expect the rule to rank it correctly.
-    private static Map<String, MarketFootprint> listOrderedFootprints(Object... idsAndFootprints) {
-
-        var footprints = new LinkedHashMap<String, MarketFootprint>();
-
-        for (var i = 0; i < idsAndFootprints.length; i += 2) {
-            
-            footprints.put((String) idsAndFootprints[i],
-                    (MarketFootprint) idsAndFootprints[i + 1]);
-        }
-        return footprints;
-    }
 }

@@ -4,9 +4,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static kmu.maplayers.politicalmap.base.dominance.MarketFootprintFixtures.buildWeightedFootprint;
+import static kmu.maplayers.politicalmap.base.dominance.MarketFootprintFixtures.listOrderedFootprints;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -18,10 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * from map iteration order.
  */
 class SystemDominanceTest {
-
-    // How many markets each hand-built footprint stands for. Fixed, because the rule compares
-    // weights alone: a count that varied between fixtures would read as though it mattered.
-    private static final int SINGLE_MARKET = 1;
 
     @Nested
     class ResolveDominantFactionId {
@@ -136,32 +133,4 @@ class SystemDominanceTest {
         }
     }
 
-    // A footprint stating only the three weights the rule compares, standing for one held
-    // market, so each fixture reads as the levels the tie-break walks and nothing else.
-    private static MarketFootprint buildWeightedFootprint(
-            int totalWeight,
-            int largestMarketWeight,
-            int planetWeight) {
-
-        return new MarketFootprint(
-            SINGLE_MARKET,
-            totalWeight,
-            largestMarketWeight,
-            planetWeight);
-    }
-
-    // Builds the input map preserving insertion order, so a test can list the
-    // higher-id faction first and still expect the rule to pick the right one.
-    private static Map<String, MarketFootprint> listOrderedFootprints(Object... idsAndFootprints) {
-
-        var footprints = new LinkedHashMap<String, MarketFootprint>();
-
-        for (var i = 0; i < idsAndFootprints.length; i += 2) {
-
-            footprints.put(
-                (String) idsAndFootprints[i],
-                (MarketFootprint) idsAndFootprints[i + 1]);
-        }
-        return footprints;
-    }
 }
