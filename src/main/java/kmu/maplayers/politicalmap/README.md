@@ -302,6 +302,17 @@ whole score the contest weighed it at, presence included, so its listed terms ar
 its siblings' do not. The resolver shares the entry model and the block
 vocabulary with the domination pair but not their number grammar - a claim score is a small whole
 number of points with no grid behind it, so no rating-to-weight change is stated),
+`ribbon` (what a cell's presence band is made of, planned as pure data ahead of any geometry: a run
+per market every bloc present in the cell holds, runs of one bloc parted by its dark shade and two
+blocs' runs butted so the colour change is the only boundary, and no band at all on a cell no bloc
+but the one it was painted for is present in - `RibbonPlan` over a ranked list of `BlocPresence`,
+emitted as `RibbonSegment`s at the two proportions `RibbonSegmentLengths` pairs. Where the counts
+behind those runs come from is each mechanic's own business, which is what keeps one band meaning one
+thing on every view: a held cell counts the very sample the dominance pass scored, while a claimed
+cell's counts are read out of the claim contest by `ClaimCellRibbons` - each faction's standing market
+plus the siblings that both told on its score and are colonies the player knows about, folded to blocs
+under the same `HolderGrouping` the fills use and coloured through `BlocPaletteReader`, so the one
+live read sits outside the rule),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 reached through [the sidebar](../base/sidebar/README.md) one level up (the picker is KMLib's, bound
