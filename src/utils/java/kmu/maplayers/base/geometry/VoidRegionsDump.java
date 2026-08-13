@@ -446,39 +446,18 @@ final class VoidRegionsDump {
     // the one failure this construction can have.
     private static void reportSectioning(List<VoidPockets.VoidPocket> pockets) {
 
-        var toDivide = 0;
-        var cuts = 0;
-        var overLength = 0;
-        var longestSection = 0.0;
-
-        for (var pocket : pockets) {
-
-            if (pocket.span() <= SECTION_LENGTH) {
-                continue;
-            }
-
-            toDivide++;
-            cuts += pocket.division().cuts().size();
-
-            var longestHere = measureLongestSection(pocket);
-
-            if (longestHere > SECTION_LENGTH) {
-                overLength++;
-            }
-
-            longestSection = Math.max(longestSection, longestHere);
-        }
+        var summary = summariseDivision(pockets);
 
         System.out.printf(
             Locale.ROOT,
             "%d pockets want dividing into sections of %.0f, no cut leaving under %.0f%% of "
                 + "one: %d cuts taken, %d still hold a section over length, longest %.0f%n",
-            toDivide,
+            summary.toDivide(),
             SECTION_LENGTH,
             MIN_SECTION_SHARE * PERCENT_SCALE,
-            cuts,
-            overLength,
-            longestSection);
+            summary.cuts(),
+            summary.overLength(),
+            summary.longestSection());
     }
 
     // How the division answers to the one knob that decides it. Three numbers say the whole
@@ -493,38 +472,55 @@ final class VoidRegionsDump {
 
         for (var share : SWEPT_SHARES) {
 
-            var pockets = VoidPockets.findVoidPockets(
+            var summary = summariseDivision(VoidPockets.findVoidPockets(
                 fixture.getSites(),
                 fixture.getOwnerBySite(),
                 SectorGeometryParameters.createDefaults(),
-                new VoidSections.SectionRules(SECTION_LENGTH, share));
-
-            var cuts = 0;
-            var widestCut = 0.0;
-            var longestSection = 0.0;
-
-            for (var pocket : pockets) {
-
-                if (pocket.span() <= SECTION_LENGTH) {
-                    continue;
-                }
-
-                cuts += pocket.division().cuts().size();
-                longestSection = Math.max(longestSection, measureLongestSection(pocket));
-
-                for (var cut : pocket.division().cuts()) {
-                    widestCut = Math.max(widestCut, cut.width());
-                }
-            }
+                new VoidSections.SectionRules(SECTION_LENGTH, share)));
 
             System.out.printf(
                 Locale.ROOT,
                 "  %4.0f%%  %5d   %10.0f   %15.0f%n",
                 share * PERCENT_SCALE,
-                cuts,
-                widestCut,
-                longestSection);
+                summary.cuts(),
+                summary.widestCut(),
+                summary.longestSection());
         }
+    }
+
+    // One walk over the pockets that want dividing, for both the line above and every row of
+    // the sweep. Shared rather than written twice because the sweep's row at the share the
+    // rest of the report runs at IS that line, and two walks could report it two ways.
+    private static DivisionSummary summariseDivision(List<VoidPockets.VoidPocket> pockets) {
+
+        var toDivide = 0;
+        var cuts = 0;
+        var overLength = 0;
+        var widestCut = 0.0;
+        var longestSection = 0.0;
+
+        for (var pocket : pockets) {
+
+            if (pocket.span() <= SECTION_LENGTH) {
+                continue;
+            }
+
+            toDivide++;
+            cuts += pocket.division().cuts().size();
+
+            for (var cut : pocket.division().cuts()) {
+                widestCut = Math.max(widestCut, cut.width());
+            }
+
+            var longestHere = measureLongestSection(pocket);
+
+            if (longestHere > SECTION_LENGTH) {
+                overLength++;
+            }
+
+            longestSection = Math.max(longestSection, longestHere);
+        }
+        return new DivisionSummary(toDivide, cuts, overLength, widestCut, longestSection);
     }
 
     private static double findPercentile(List<Double> sorted, double fraction) {
@@ -534,5 +530,23 @@ final class VoidRegionsDump {
             Math.floor(fraction * (sorted.size() - 1)));
             
         return sorted.get(index);
+    }
+
+    /**
+     * What one run of the division came to, across every pocket long enough to want it.
+     *
+     * @param toDivide       how many pockets spanned more than a section
+     * @param cuts           how many cuts were taken across all of them
+     * @param overLength     how many still hold a section longer than one
+     * @param widestCut      the widest corridor any cut crossed - the number that says
+     *                       whether cuts landed at pinches or were thrown across open void
+     * @param longestSection the longest way across any section left
+     */
+    private record DivisionSummary(
+        int toDivide,
+        int cuts,
+        int overLength,
+        double widestCut,
+        double longestSection) {
     }
 }
