@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -79,7 +80,7 @@ final class RibbonPlanTest {
                 STANDARD_LENGTHS);
 
             assertThat(plan.segments())
-            .containsExactly(
+                .containsExactly(
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3),
                     new RibbonSegment(TRITACHYON_DARK, 1),
@@ -209,9 +210,9 @@ final class RibbonPlanTest {
         }
 
         @Test
-        void addsUpABandOfElevenWidthsBesideOneOfSeven() {
-            // Hegemony's three markets and two partings against Tri-Tachyon's two and one:
-            // the budget the drawn width is settled against on a crowded cell.
+        void addsUpEveryRunOfAPlannedRibbon() {
+            // The two halves over one cell: five markets and three partings planned, summed
+            // into the budget the drawn width is settled against on a crowded cell.
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(3), buildTriTachyonPresence(2)),
@@ -228,26 +229,53 @@ final class RibbonPlanTest {
         }
     }
 
+    @Nested
+    class Segments {
+
+        @Test
+        void staysAsPlannedWhenTheListItWasBuiltFromIsAddedToAfterwards() {
+            // A plan is cached and read back over many frames, so it has to be a value rather
+            // than a window onto whatever list built it - a caller reusing its builder must not
+            // be able to lengthen a ribbon already planned.
+            var source = new ArrayList<RibbonSegment>();
+
+            source.add(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+
+            var plan = new RibbonPlan(source);
+            
+            source.add(new RibbonSegment(TRITACHYON_BRIGHT, 3));
+
+            assertThat(plan.segments())
+                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+        }
+    }
+
     // The three blocs the cases are stated over, each with its own pair of shades so a run can
-    // be told from its neighbour's and a bright segment from the parting inside it.
+    // be told from its neighbour's and a bright segment from the parting inside it. Each names
+    // only what makes it that bloc, leaving how many markets it holds the one thing a case says.
     private static BlocPresence buildHegemonyPresence(int marketCount) {
-        return new BlocPresence(
-            "hegemony",
-            new FactionPalette(HEGEMONY_BRIGHT, HEGEMONY_DARK),
-            marketCount);
+        return buildPresence("hegemony", HEGEMONY_BRIGHT, HEGEMONY_DARK, marketCount);
     }
 
     private static BlocPresence buildTriTachyonPresence(int marketCount) {
-        return new BlocPresence(
-            "tritachyon",
-            new FactionPalette(TRITACHYON_BRIGHT, TRITACHYON_DARK),
-            marketCount);
+        return buildPresence("tritachyon", TRITACHYON_BRIGHT, TRITACHYON_DARK, marketCount);
     }
 
     private static BlocPresence buildDiktatPresence(int marketCount) {
+        return buildPresence("sindria", DIKTAT_BRIGHT, DIKTAT_DARK, marketCount);
+    }
+
+    // The one shape every bloc above is built in, so a presence gaining a component is one edit
+    // rather than three, and no bloc can drift into being stated differently from its neighbours.
+    private static BlocPresence buildPresence(
+            String blocId,
+            Color brightShade,
+            Color darkShade,
+            int marketCount) {
+
         return new BlocPresence(
-            "sindria",
-            new FactionPalette(DIKTAT_BRIGHT, DIKTAT_DARK),
+            blocId,
+            new FactionPalette(brightShade, darkShade),
             marketCount);
     }
 }
