@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.VoronoiCellBuilder;
 
 import java.util.ArrayList;
@@ -125,7 +126,7 @@ final class VoidRegionsDump {
             var edges = geometry.cellEdgesByCellId().get(entry.getKey());
             var fill = entry.getValue().fillPolygon();
 
-            if (edges == null || fill.size() < 3) {
+            if (edges == null || fill.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                 continue;
             }
 

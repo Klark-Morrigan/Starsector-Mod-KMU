@@ -1,7 +1,6 @@
 package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.Limits;
-import kmlib.math.geometry.PolygonOffsets;
 
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
@@ -15,7 +14,6 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -140,6 +138,10 @@ final class SectorGeometryViewer {
     private static final float RING_STROKE = 90f;
 
     private static final int HUE_RANGE = 360;
+
+    // The odd 32-bit approximation of the golden ratio, the standard multiplier for spreading
+    // a hash's low bits across the whole word. Only its bit pattern matters, not its value.
+    private static final int HASH_MIX_MULTIPLIER = 0x9E3779B9;
 
     private static final float OWNER_SATURATION = 0.8f;
     private static final float OWNER_BRIGHTNESS = 0.55f;
@@ -744,7 +746,7 @@ final class SectorGeometryViewer {
 
         // Hashes cluster in their low bits, so the spread is taken from a well-mixed value
         // rather than from the seed itself - otherwise consecutive ids come out identical.
-        var mixed = Math.floorMod(Integer.reverse(seed * 0x9E3779B9), HUE_RANGE) / (float) HUE_RANGE;
+        var mixed = Math.floorMod(Integer.reverse(seed * HASH_MIX_MULTIPLIER), HUE_RANGE) / (float) HUE_RANGE;
         var brightness = Math.max(0f, Math.min(
             1f,
             hsb[2] + (mixed - 0.5f) * (float) (strength / JITTER_SCALE)));
