@@ -104,13 +104,17 @@ final class VoidPockets {
      *                       than one owner does, or any unowned cell - non-null means the
      *                       pocket is part of that owner's area rather than void between
      *                       owners
+     * @param division       where it is cut across into roughly cell-sized sections, so a
+     *                       pocket spanning several cells is not decided as a single piece,
+     *                       and how long those sections came out
      */
     record VoidPocket(
         List<List<double[]>> outlines,
         double[] centre,
         List<Integer> adjacentCells,
         double span,
-        String absorbingOwner) {
+        String absorbingOwner,
+        VoidSections.VoidDivision division) {
     }
 
     private VoidPockets() {
@@ -127,10 +131,9 @@ final class VoidPockets {
      *                     reach that decides where it begins and the channel the cells leave
      * @param arcSegments  how finely a half-turn of arc is sampled; a shorter arc takes
      *                     proportionally fewer points
-     * @param shouldUnownedBlockAbsorption whether an unowned cell around a pocket stops it
-     *                     closing into the owner holding the rest. True matches how a cell
-     *                     treats unowned space - as a border, keeping the channel - and is
-     *                     what the shipped shaping does
+     * @param sectionLength how long a piece of a pocket should be before it is cut into
+     *                     more than one, in world units; a cell's width is the size that
+     *                     makes a section comparable to what lies around it
      * @return the pockets, each with a closed outline
      */
     static List<VoidPocket> findVoidPockets(
@@ -138,7 +141,7 @@ final class VoidPockets {
             List<String> ownerBySite,
             SectorGeometryParameters parameters,
             int arcSegments,
-            boolean shouldUnownedBlockAbsorption) {
+            double sectionLength) {
 
         var trueHoles = findHolesAtReach(
             sites,
@@ -159,10 +162,15 @@ final class VoidPockets {
 
         for (var hole : trueHoles) {
 
-            var absorbingOwner = resolveAbsorbingOwner(
-                hole.ringing(),
-                ownerBySite,
-                shouldUnownedBlockAbsorption);
+            var absorbingOwner = resolveAbsorbingOwner(hole.ringing(), ownerBySite);
+
+            // Across the corners alone. Every disc bounding a pocket has its centre OUTSIDE
+            // it, so each arc bulges into the pocket rather than away from it, and the
+            // pocket's extreme points can only be the corners where two arcs join. That makes
+            // this the true widest span rather than an artefact of how finely the arcs were
+            // sampled - and it runs over the arc count, which is a handful, instead of over
+            // the sample count.
+            var span = VoidSections.measureWidestSpan(hole.corners());
 
             pockets.add(new VoidPocket(
                 absorbingOwner == null
@@ -170,8 +178,15 @@ final class VoidPockets {
                     : findHoleAround(atFills, hole),
                 Points.computeMean(hole.boundary()),
                 hole.ringing(),
-                measureWidestSpan(hole.corners()),
-                absorbingOwner));
+                span,
+                absorbingOwner,
+                VoidSections.divideVoidPocket(
+                    hole.boundary(),
+                    hole.ringing(),
+                    sites,
+                    parameters.cellRadius(),
+                    span,
+                    sectionLength)));
         }
         return pockets;
     }
@@ -331,7 +346,12 @@ final class VoidPockets {
             if (other == circle) {
                 continue;
             }
-            var separation = measureDistance(centre, sites.get(other));
+            // Plain arithmetic rather than kmlib's Points.computeDistance: that is overloaded
+            // on an LWJGL vector type the tooling has no classpath for, so the call will not
+            // resolve here.
+            var separation = Math.hypot(
+                sites.get(other)[0] - centre[0],
+                sites.get(other)[1] - centre[1]);
             if (separation >= 2 * cellRadius || separation == 0) {
                 continue;
             }
@@ -449,13 +469,13 @@ final class VoidPockets {
         return new Hole(boundary, corners, List.copyOf(ringing));
     }
 
-    // The owner that rings a pocket on every side, if one does. What an unowned cell does
-    // to that is the caller's call: counting it against absorption is what a cell does with
-    // unowned space, and setting it aside asks instead whether any RIVAL is present.
+    // The owner that rings a pocket on every side, if one does. An unowned cell counts
+    // against it, exactly as a cell's own shaping counts unowned space: a cell facing an
+    // unowned neighbour keeps its border channel rather than fusing, and a pocket is shaped
+    // by the same rule or the two disagree about the same piece of map.
     private static String resolveAbsorbingOwner(
             List<Integer> ringing,
-            List<String> ownerBySite,
-            boolean shouldUnownedBlockAbsorption) {
+            List<String> ownerBySite) {
 
         String only = null;
 
@@ -463,10 +483,7 @@ final class VoidPockets {
 
             var owner = ownerBySite.get(site);
             if (owner == null) {
-                if (shouldUnownedBlockAbsorption) {
-                    return null;
-                }
-                continue;
+                return null;
             }
             if (only != null && !only.equals(owner)) {
                 return null;
@@ -474,27 +491,6 @@ final class VoidPockets {
             only = owner;
         }
         return only;
-    }
-
-    // How far a pocket reaches across, measured only between the points where its arcs meet.
-    // Those are the only candidates: every disc bounding a pocket has its centre OUTSIDE it,
-    // so each arc bulges into the pocket rather than away from it, and the pocket's extreme
-    // points can only be the corners where two arcs join. That makes this the pocket's true
-    // widest span and not an artefact of how finely the arcs were sampled - and it runs over
-    // the arc count rather than the sample count, which is a handful either way.
-    private static double measureWidestSpan(List<double[]> corners) {
-
-        var widest = 0.0;
-
-        for (var first = 0; first < corners.size(); first++) {
-            for (var second = first + 1; second < corners.size(); second++) {
-
-                widest = Math.max(
-                    widest,
-                    measureDistance(corners.get(first), corners.get(second)));
-            }
-        }
-        return widest;
     }
 
     // Sampled in proportion to how much of the circle the arc covers, so a long arc is not
@@ -532,13 +528,6 @@ final class VoidPockets {
     private static double normaliseAngle(double angle) {
         var turned = angle % FULL_TURN;
         return turned < 0 ? turned + FULL_TURN : turned;
-    }
-
-    // Kept local rather than taken from kmlib's Points: its computeDistance is overloaded
-    // on an LWJGL vector type the tooling has no classpath for, so the call will not
-    // resolve here however plain the arithmetic is.
-    private static double measureDistance(double[] from, double[] to) {
-        return Math.hypot(to[0] - from[0], to[1] - from[1]);
     }
 
     /**

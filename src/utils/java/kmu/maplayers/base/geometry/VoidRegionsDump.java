@@ -24,9 +24,11 @@ final class VoidRegionsDump {
     private static final int CELL_BOUND_SEGMENTS = 24;
     private static final int POCKET_ARC_SEGMENTS = 12;
 
-    // As the shipped shaping treats it: unowned space is a border, so a pocket touching one
-    // keeps its channel rather than closing into the owner holding the rest.
-    private static final boolean UNOWNED_BLOCKS_ABSORPTION = true;
+    // One cell across, which is the size a section of void is cut to: a piece of void the
+    // size of a system's own cell is comparable to what surrounds it, and a longer one is
+    // a corridor rather than a place.
+    private static final double SECTION_LENGTH =
+        2 * SectorGeometryParameters.DEFAULT_CELL_RADIUS;
 
     // Area percentiles worth naming when deciding where the "leave it alone" threshold sits.
     private static final double MEDIAN_FRACTION = 0.5;
@@ -54,7 +56,7 @@ final class VoidRegionsDump {
                     fixture.getOwnerBySite(),
                     SectorGeometryParameters.createDefaults(),
                     POCKET_ARC_SEGMENTS,
-                    UNOWNED_BLOCKS_ABSORPTION),
+                    SECTION_LENGTH),
                 fixture);
 
             System.out.println();
@@ -194,7 +196,7 @@ final class VoidRegionsDump {
                 shipped.weldTolerance(),
                 shipped.miterSpikeLimit()),
             POCKET_ARC_SEGMENTS,
-            UNOWNED_BLOCKS_ABSORPTION).size();
+            SECTION_LENGTH).size();
     }
 
     // The first split the design asks for: a cell buried among its neighbours has every edge
@@ -210,78 +212,62 @@ final class VoidRegionsDump {
         return false;
     }
 
-    // What the same sector does when an unowned neighbour is allowed not to block
-    // absorption - the case the shipped rule never reaches here.
-    private static void reportRelaxedAbsorption(SectorFixture fixture) {
+    // Every pocket, one line each. A summary count says how many pockets came out one way
+    // or another; it cannot say WHICH, and every question worth asking of this map so far has
+    // turned out to be about a particular pocket.
+    private static void reportEachPocket(List<VoidPockets.VoidPocket> pockets) {
 
-        var relaxed = VoidPockets.findVoidPockets(
-            fixture.getSites(),
-            fixture.getOwnerBySite(),
-            SectorGeometryParameters.createDefaults(),
-            POCKET_ARC_SEGMENTS,
-            !UNOWNED_BLOCKS_ABSORPTION);
+        System.out.println(
+            "  pocket        at          span  cells  cuts   shaping     sections");
 
-        var absorbed = 0;
-        var absorbedFellBack = 0;
+        for (var index = 0; index < pockets.size(); index++) {
 
-        for (var pocket : relaxed) {
-
-            if (pocket.absorbingOwner() == null) {
-                continue;
-            }
-
-            absorbed++;
-
-            if (pocket.outlines().isEmpty()) {
-                absorbedFellBack++;
-            }
-        }
-
-        System.out.printf(
-            Locale.ROOT,
-            "with unowned set aside: %d absorb, of which %d could not reach the "
-                + "surrounding fills and kept their true outline%n",
-            absorbed,
-            absorbedFellBack);
-
-        reportFallbackReason(relaxed, fixture);
-        reportEachPocket(relaxed, fixture);
-    }
-
-    // Every pocket, side by side under both absorption rules. A summary count cannot say
-    // whether ticking the box changes what is DRAWN, only what is classified, and those are
-    // different questions when a classification lands on a pocket that had already fallen
-    // back to its true outline for another reason.
-    private static void reportEachPocket(
-            List<VoidPockets.VoidPocket> relaxed,
-            SectorFixture fixture) {
-
-        var strict = VoidPockets.findVoidPockets(
-            fixture.getSites(),
-            fixture.getOwnerBySite(),
-            SectorGeometryParameters.createDefaults(),
-            POCKET_ARC_SEGMENTS,
-            UNOWNED_BLOCKS_ABSORPTION);
-
-        System.out.println("  pocket        at          span  cells   strict      relaxed");
-
-        for (var index = 0; index < strict.size(); index++) {
-
-            var one = strict.get(index);
-            var other = relaxed.get(index);
-            var centre = one.centre();
+            var pocket = pockets.get(index);
+            var centre = pocket.centre();
 
             System.out.printf(
                 Locale.ROOT,
-                "  %-6d %7.0f,%-7.0f %6.0f %4d   %-10s  %-10s%n",
+                "  %-6d %7.0f,%-7.0f %6.0f %4d %5d   %-10s  %s%n",
                 index,
                 centre[0],
                 centre[1],
-                one.span(),
-                one.adjacentCells().size(),
-                describeShaping(one),
-                describeShaping(other));
+                pocket.span(),
+                pocket.adjacentCells().size(),
+                pocket.division().cuts().size(),
+                describeShaping(pocket),
+                describeSections(pocket));
         }
+    }
+
+    // The longest way across any one of a pocket's sections. Sections come back largest by
+    // area, which is what they are chosen by, and largest by area is not always longest.
+    private static double measureLongestSection(VoidPockets.VoidPocket pocket) {
+
+        var longest = 0.0;
+
+        for (var section : pocket.division().sections()) {
+            longest = Math.max(longest, VoidSections.measureWidestSpan(section));
+        }
+        return longest;
+    }
+
+    // Every section's span, largest section first. The shape of the list is the answer: a run of
+    // similar numbers is an even division, and one large number followed by small ones is a
+    // pocket that had slivers taken off it rather than being divided.
+    private static String describeSections(VoidPockets.VoidPocket pocket) {
+
+        var spans = new StringBuilder();
+
+        for (var section : pocket.division().sections()) {
+
+            var span = VoidSections.measureWidestSpan(section);
+
+            if (spans.length() > 0) {
+                spans.append(" ");
+            }
+            spans.append(String.format(Locale.ROOT, "%.0f", span));
+        }
+        return spans.toString();
     }
 
     private static String describeShaping(VoidPockets.VoidPocket pocket) {
@@ -291,51 +277,6 @@ final class VoidRegionsDump {
             : "x" + pocket.outlines().size();
 
         return (pocket.absorbingOwner() != null ? "owned/" : "void/") + drawn;
-    }
-
-    // Whether a pocket that could not reach the surrounding fills failed because two of
-    // the cells ringing it no longer meet at the fills' own reach. If they do not, the void
-    // there runs out into the channels rather than staying a closed pocket, and no outline
-    // for the pocket alone can close the gap.
-    private static void reportFallbackReason(
-            List<VoidPockets.VoidPocket> pockets,
-            SectorFixture fixture) {
-
-        var sites = fixture.getSites();
-        var fillReach = 2
-            * (SectorGeometryParameters.DEFAULT_CELL_RADIUS - CellShaper.BORDER_INSET_DISTANCE);
-
-        var parted = 0;
-        var counted = 0;
-
-        for (var pocket : pockets) {
-
-            if (pocket.absorbingOwner() == null || !pocket.outlines().isEmpty()) {
-                continue;
-            }
-
-            counted++;
-
-            var ringing = pocket.adjacentCells();
-
-            for (var index = 0; index < ringing.size(); index++) {
-
-                var here = sites.get(ringing.get(index));
-                var next = sites.get(ringing.get((index + 1) % ringing.size()));
-
-                if (Math.hypot(next[0] - here[0], next[1] - here[1]) > fillReach) {
-                    parted++;
-                    break;
-                }
-            }
-        }
-        System.out.printf(
-            Locale.ROOT,
-            "of those %d, %d have two neighbouring cells whose fills do not meet "
-                    + "(further apart than %.0f)%n",
-            counted,
-            parted,
-            fillReach);
     }
 
     // Why a pocket did or did not close into one owner. Zero absorbed says nothing on
@@ -413,6 +354,8 @@ final class VoidRegionsDump {
             cellWidth,
             pockets.size() - wide);
 
+        reportSectioning(pockets);
+
         var absorbed = 0;
         var closedOver = 0;
         var pinched = 0;
@@ -438,7 +381,7 @@ final class VoidRegionsDump {
             pinched);
 
         reportRingingOwners(pockets, fixture);
-        reportRelaxedAbsorption(fixture);
+        reportEachPocket(pockets);
 
         var shares = new ArrayList<Double>(pockets.size());
         var sections = new ArrayList<Double>(pockets.size());
@@ -465,6 +408,46 @@ final class VoidRegionsDump {
             findPercentile(sections, REPORTED_PERCENTILES[0]),
             findPercentile(sections, REPORTED_PERCENTILES[1]),
             findPercentile(sections, REPORTED_PERCENTILES[2]));
+    }
+
+    // Whether the division actually divides. A pocket is cut until nothing in it is longer
+    // than a section, so the count of cuts says nothing on its own - what matters is what is
+    // left. A section still over length is a piece the cells offered nowhere to cut, which is
+    // the one failure this construction can have.
+    private static void reportSectioning(List<VoidPockets.VoidPocket> pockets) {
+
+        var toDivide = 0;
+        var cuts = 0;
+        var overLength = 0;
+        var longestSection = 0.0;
+
+        for (var pocket : pockets) {
+
+            if (pocket.span() <= SECTION_LENGTH) {
+                continue;
+            }
+
+            toDivide++;
+            cuts += pocket.division().cuts().size();
+
+            var longestHere = measureLongestSection(pocket);
+
+            if (longestHere > SECTION_LENGTH) {
+                overLength++;
+            }
+
+            longestSection = Math.max(longestSection, longestHere);
+        }
+
+        System.out.printf(
+            Locale.ROOT,
+            "%d pockets want dividing into sections of %.0f: %d cuts taken, %d still hold a "
+                + "section over length, longest %.0f%n",
+            toDivide,
+            SECTION_LENGTH,
+            cuts,
+            overLength,
+            longestSection);
     }
 
     private static double findPercentile(List<Double> sorted, double fraction) {

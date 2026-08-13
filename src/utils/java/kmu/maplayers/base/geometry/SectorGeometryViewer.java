@@ -178,6 +178,16 @@ final class SectorGeometryViewer {
     private static final Color WIDE_VOID_DEFAULT = new Color(0x30, 0xa0, 0xb0);
     private static final Color CHANNEL_DEFAULT = new Color(0x22, 0x22, 0x26);
 
+    // Where a long pocket is cut into sections. Deliberately unlike anything else on the map:
+    // the cut is a proposal about where a division could go, not a thing that has been
+    // divided, and reading it as an existing border is the one mistake that would make the
+    // shape look right when it is not.
+    private static final Color SECTION_CUT_DEFAULT = new Color(0xff, 0xd0, 0x40);
+
+    // Wider than a cell edge, because a cut is read against a fill rather than against the
+    // black, and it has to stay findable at the zoom where a whole pocket fits on screen.
+    private static final float SECTION_CUT_STROKE = 120f;
+
     // The line down the middle of a channel: the true border two neighbouring cells share,
     // which each of them insets away from by the same distance. Its own colour because it is
     // its own thing - not the edge of anything drawn, but the line those edges were measured
@@ -231,10 +241,10 @@ final class SectorGeometryViewer {
 
     private int voidCellOpacity = OWNER_FILL_ALPHA;
     private double voidSpanMultiple = VOID_SPAN_DEFAULT;
-    private boolean shouldUnownedBlockAbsorption = true;
 
     private Color wideVoidColour = WIDE_VOID_DEFAULT;
     private Color wideVoidEdge = WIDE_VOID_DEFAULT;
+    private Color sectionCutColour = SECTION_CUT_DEFAULT;
     private Color siteColour = SITE_COLOUR;
     private Color centrelineColour = CENTRELINE_DEFAULT;
     private Color channelColour = CHANNEL_DEFAULT;
@@ -486,13 +496,6 @@ final class SectorGeometryViewer {
             colour -> voidCellEdge = colour,
             canvas::repaint));
 
-        controls.add(ViewerControls.buildToggle(
-            "Unowned blocks absorption",
-            "Unowned blocks void absorption",
-            true,
-            on -> shouldUnownedBlockAbsorption = on,
-            this::refreshVoidPockets));
-
         controls.add(ViewerControls.buildColourPair(
             "Wide void",
             "Void wider than that",
@@ -532,6 +535,13 @@ final class SectorGeometryViewer {
             "Void cell opacity",
             opacity -> voidCellOpacity = (int) opacity));
 
+        controls.add(ViewerControls.buildColour(
+            "Void section cuts",
+            "Void section cuts",
+            SECTION_CUT_DEFAULT,
+            colour -> sectionCutColour = colour,
+            canvas::repaint));
+
         // Stepped in hundredths, so the threshold can be moved by a fraction of a cell
         // radius rather than jumping a whole one at a time.
         //
@@ -545,7 +555,7 @@ final class SectorGeometryViewer {
             VOID_SPAN_MAXIMUM * VOID_SPAN_STEP_SCALE,
             VOID_SPAN_DEFAULT * VOID_SPAN_STEP_SCALE,
             multiple -> voidSpanMultiple = multiple / VOID_SPAN_STEP_SCALE,
-            canvas::repaint,
+            this::refreshVoidPockets,
             () -> { }));
 
         controls.add(buildSaveSvgButton());
@@ -654,9 +664,17 @@ final class SectorGeometryViewer {
             fixture.getOwnerBySite(),
             parameters,
             POCKET_ARC_SEGMENTS,
-            shouldUnownedBlockAbsorption);
+            measureSectionLength());
 
         canvas.repaint();
+    }
+
+    // The same length twice over: the span past which a pocket is too long to be one thing is
+    // also the length the pieces it is cut into should be, so the slider that decides one
+    // decides the other and a pocket can never be called too long while being cut into
+    // sections of some other size.
+    private double measureSectionLength() {
+        return voidSpanMultiple * parameters.cellRadius();
     }
 
     private void rebuildGeometry() {
@@ -927,9 +945,9 @@ final class SectorGeometryViewer {
                     unboundedCellEdge);
             }
 
-            // Split on the threshold at paint time rather than at rebuild, so moving the
-            // slider recolours without recomputing any geometry.
-            var wideEnough = voidSpanMultiple * parameters.cellRadius();
+            // The same length the pocket was divided into sections of, so a pocket cannot be
+            // coloured as too long to be one thing while holding one section, or the reverse.
+            var wideEnough = measureSectionLength();
 
             for (var pocket : voidPockets) {
 
@@ -1028,6 +1046,7 @@ final class SectorGeometryViewer {
 
             paintFillContours(g2);
             paintCentrelines(g2);
+            paintSectionCuts(g2);
 
             g2.setColor(siteColour);
 
@@ -1052,6 +1071,55 @@ final class SectorGeometryViewer {
         // it came from, and that edge is tagged with what lies across it.
         // A diamond rather than a disc, so a pocket that could not be drawn is not mistaken
         // for one of the round site dots at a glance.
+        // Where each long pocket would be divided. Drawn last of the shapes and over the top
+        // of the fills, because the question a cut is there to answer is whether it lands
+        // where the corridor is actually pinched - which can only be judged against the
+        // pocket it crosses, not against a gap in it.
+        //
+        // Pulled back at both ends to the outline that is actually on screen. A cut is found
+        // at the reach that defines the void, and the pocket is drawn at the reach that leaves
+        // the channel, so an untrimmed cut overhangs into the channel at each end and reads as
+        // crossing the cells rather than the void. The pull-back is exactly the channel width
+        // and no offsetting is needed to find it: the cut already runs along the line joining
+        // the two sites, which is the line the moved reach is measured along.
+        private void paintSectionCuts(Graphics2D g2) {
+
+            g2.setStroke(new BasicStroke(SECTION_CUT_STROKE));
+            g2.setColor(applyAlpha(sectionCutColour, OPAQUE_ALPHA));
+
+            for (var pocket : voidPockets) {
+
+                // Away from the cells when a pocket is pushed out to meet one owner's fills,
+                // towards them when it is pulled in to leave a border.
+                var trim = pocket.absorbingOwner() == null
+                    ? parameters.borderInset()
+                    : -parameters.borderInset();
+
+                for (var cut : pocket.division().cuts()) {
+
+                    g2.draw(buildTrimmedCut(cut, trim));
+                }
+            }
+        }
+
+        private static Line2D buildTrimmedCut(VoidSections.VoidCut cut, double trim) {
+
+            var runX = cut.to()[0] - cut.from()[0];
+            var runY = cut.to()[1] - cut.from()[1];
+            var length = Math.hypot(runX, runY);
+
+            // A corridor narrower than two channels has no drawn outline for the cut to reach,
+            // so trimming it would turn it inside out. Left at its true extent instead, where
+            // it is at worst a short mark across a gap too tight to have been drawn anyway.
+            var pullBack = length > 2 * trim ? trim / length : 0;
+
+            return new Line2D.Double(
+                cut.from()[0] + runX * pullBack,
+                cut.from()[1] + runY * pullBack,
+                cut.to()[0] - runX * pullBack,
+                cut.to()[1] - runY * pullBack);
+        }
+
         private void paintVoidMark(Graphics2D g2, double[] centre, Color colour) {
 
             var mark = new Path2D.Double();
