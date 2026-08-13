@@ -52,6 +52,13 @@ public final class SidebarSettingsMock implements AutoCloseable {
      */
     public static final PointerArrivalVolumes ARRIVAL_VOLUMES = new PointerArrivalVolumes(0.8f, 0.6f, 0.3f);
 
+    /**
+     * How loudly the panel's list sounds as the wheel moves it. A fourth number, distinct from every level
+     * in the balance above, deliberately: the wheel is not one of the kinds the pointer reaches, so a
+     * composition that answered it from one of those would agree with itself and pass.
+     */
+    public static final float LIST_SCROLL_VOLUME = 0.4f;
+
     // Every level at the bottom of its slider - what a player asking for a panel that is quiet under the
     // pointer sets, and the one balance that is stated as a role the look does not name.
     private static final PointerArrivalVolumes SILENT_ARRIVAL_VOLUMES =
@@ -80,6 +87,7 @@ public final class SidebarSettingsMock implements AutoCloseable {
 
         installed.selectColourScheme(COLOUR_SCHEME);
         installed.setArrivalVolumes(ARRIVAL_VOLUMES);
+        installed.setListScrollVolume(LIST_SCROLL_VOLUME);
 
         return installed;
     }
@@ -124,6 +132,20 @@ public final class SidebarSettingsMock implements AutoCloseable {
         settingsMock
             .when(KmuMapLayerSettings::getMapSidebarListedItemArrivalVolume)
             .thenReturn(arrivalVolumes.listedItemVolume());
+    }
+
+    /**
+     * Sets how loudly the panel's list sounds as the wheel moves it, for a case about a player who has
+     * pulled that one slider somewhere of its own. Apart from the arrival balance because the wheel is not
+     * one of the kinds the pointer reaches - it answers a movement rather than a thing got to.
+     *
+     * @param listScrollVolume how loudly the wheel is to sound, zero for a list that scrolls silently
+     */
+    public void setListScrollVolume(float listScrollVolume) {
+
+        settingsMock
+            .when(KmuMapLayerSettings::getMapSidebarListScrollVolume)
+            .thenReturn(listScrollVolume);
     }
 
     @Override

@@ -342,14 +342,20 @@ entirely; it is also the one scheme with no engine dark to take, since the fixed
 is the button teal, so it steps its own grey down instead.
 
 The look also says how the panel *sounds*, and `SidebarStyles.buildSidebarSoundScheme` composes that:
-the engine's own roles - a vanilla button's press and its mouseover - at the levels the player set on
-the `Map - Sound` settings tab. The roles are vanilla's because the panel is drawn among vanilla
-chrome; the levels are not, because what the engine mixed its mouseover for is a screen carrying a
-handful of hit targets and this panel packs a column of them. One level per kind of thing the pointer
-can reach - the panel's own furniture, a control with one answer to give, one of many alike - pitched
-so a sweep crossing a listed column does not chatter. A balance pulled to nothing everywhere composes
-a scheme naming no arrival role at all, silence being something a look states rather than a cue played
-at zero.
+the engine's own roles - a vanilla button's press and its mouseover, and the id vanilla scrolls its
+own readouts with - at the levels the player set on the `Map - Sound` settings tab. The roles are
+vanilla's because the panel is drawn among vanilla chrome; the levels are not, because what the engine
+mixed its mouseover for is a screen carrying a handful of hit targets and this panel packs a column of
+them. One level per kind of thing the pointer can reach - the panel's own furniture, a control with
+one answer to give, one of many alike - pitched so a sweep crossing a listed column does not chatter.
+A balance pulled to nothing everywhere composes a scheme naming no arrival role at all, silence being
+something a look states rather than a cue played at zero.
+
+The wheel moving the list carries a level of its own beside that balance rather than inside it, and
+is silenced the same way by its own slider alone. It is not one of the kinds above because nobody
+reached anything - the content moved instead - and it answers the movement whole: one turn of the
+wheel, one sound, however many rows went past the cursor. The press is the one moment with no slider
+behind it, keeping the engine's own level, being a single act the player asked for.
 
 It is the one part of the look the panel's controller is handed directly rather than reading off the
 widget style each frame - the moments it answers are pointer events, not paint passes. The controller

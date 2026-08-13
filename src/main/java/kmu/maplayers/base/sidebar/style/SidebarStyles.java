@@ -163,8 +163,9 @@ public final class SidebarStyles {
     }
 
     /**
-     * How the sidebar answers a press and the pointer arriving: the engine's own roles, the panel being
-     * drawn to sit among vanilla chrome, at the levels the player set them to.
+     * How the sidebar answers a press, the pointer arriving, and its list moving under the wheel: the
+     * engine's own roles, the panel being drawn to sit among vanilla chrome, at the levels the player set
+     * them to.
      *
      * <p>The roles are vanilla's and the balance is not, which is the whole of what this composes. What
      * the engine mixed its mouseover for is a screen carrying a handful of hit targets, and this panel
@@ -195,7 +196,25 @@ public final class SidebarStyles {
             // never arises.
             UiSoundCue.createAtFullVolume(StarsectorUiSound.BUTTON_PRESSED),
             resolveArrivalSound(arrivalVolumes),
-            arrivalVolumes);
+            arrivalVolumes,
+            resolveListScrollCue());
+    }
+
+    // What the wheel makes as it moves the sidebar's list, or nothing at all once the player has pulled its
+    // slider to the bottom. Silence stated by naming no cue rather than by playing one at zero, the same
+    // rule the arrivals answer to - a sound played at nothing is still a sound played, and reads as wiring
+    // that half worked rather than as a list deliberately quiet.
+    //
+    // A level of its own and not part of the arrival balance: the wheel is one act the player asked for,
+    // sounding once however far the list travels, where the arrival levels are set against how many things
+    // one sweep of the pointer crosses.
+    private static UiSoundCue resolveListScrollCue() {
+
+        var listScrollVolume = KmuMapLayerSettings.getMapSidebarListScrollVolume();
+
+        return listScrollVolume <= SILENT_VOLUME
+            ? null
+            : new UiSoundCue(StarsectorUiSound.LIST_SCROLLED, listScrollVolume);
     }
 
     // Whether the pointer sounds at all, which is the balance's own answer: a player who has pulled every

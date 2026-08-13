@@ -141,7 +141,10 @@ final class SidebarStylesTest {
                 .isEqualTo(new UiSoundScheme(
                     UiSoundCue.createAtFullVolume(StarsectorUiSound.BUTTON_PRESSED),
                     StarsectorUiSound.BUTTON_MOUSEOVER,
-                    SidebarSettingsMock.ARRIVAL_VOLUMES));
+                    SidebarSettingsMock.ARRIVAL_VOLUMES,
+                    new UiSoundCue(
+                        StarsectorUiSound.LIST_SCROLLED,
+                        SidebarSettingsMock.LIST_SCROLL_VOLUME)));
         }
     }
 
@@ -174,6 +177,29 @@ final class SidebarStylesTest {
             // arrival levels are set to.
             assertThat(SidebarStyles.buildSidebarSoundScheme().pressCue())
                 .isEqualTo(new UiSoundCue(StarsectorUiSound.BUTTON_PRESSED, 1f));
+        }
+
+        @Test
+        void buildSidebarSoundSchemeScrollsItsListAtItsOwnSettingsLevel() {
+            // The wheel's level is its own slider and not part of the arrival balance: the player turned
+            // the wheel once however far the list travelled, where the arrival levels answer to how many
+            // things one sweep of the pointer crosses. Its number differs from all three of those, so a
+            // composition reaching into the balance for it records a level nobody set for the wheel.
+            assertThat(SidebarStyles.buildSidebarSoundScheme().listScrollCue())
+                .isEqualTo(new UiSoundCue(
+                    StarsectorUiSound.LIST_SCROLLED,
+                    SidebarSettingsMock.LIST_SCROLL_VOLUME));
+        }
+
+        @Test
+        void buildSidebarSoundSchemeNamesNoScrollCueAtAllWhenItsLevelIsSilenced() {
+            // Silence stated by naming no cue rather than by playing one at nothing, the rule the arrivals
+            // beside it answer to - and read off the slider alone, this moment having one level of its own
+            // rather than a balance to weigh.
+            sidebarSettingsMock.setListScrollVolume(0f);
+
+            assertThat(SidebarStyles.buildSidebarSoundScheme().listScrollCue())
+                .isNull();
         }
 
         @Test
