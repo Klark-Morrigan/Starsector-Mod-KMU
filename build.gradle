@@ -274,3 +274,13 @@ tasks.register('writeSectorSvg', JavaExec) {
     classpath = sourceSets.utils.runtimeClasspath
     mainClass = 'kmu.maplayers.base.geometry.SectorSvgDump'
 }
+
+// Walks the void between cells directly, with no raster in the way. Replaces the earlier
+// grid prototype, whose every artefact turned out to be a property of the grid rather than
+// of the map.
+tasks.register('writeVoidRegions', JavaExec) {
+    group = 'help'
+    description = 'Traces the void between cells exactly and reports how it divides.'
+    classpath = sourceSets.utils.runtimeClasspath
+    mainClass = 'kmu.maplayers.base.geometry.VoidRegionsDump'
+}
