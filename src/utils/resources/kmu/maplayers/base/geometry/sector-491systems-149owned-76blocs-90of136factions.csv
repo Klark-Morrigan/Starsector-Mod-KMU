@@ -1,0 +1,515 @@
+# Source sector: 136 factions defined, 90 hold
+# at least one market, 76 dominate at least one system and so colour the map.
+# The first two say how heavily modded the save was and how much of that content
+# reached the economy; only the third is in the rows below. They are in the file
+# name too, so one fixture is told from another without opening it.
+#
+# Real sector geometry: every star system's hyperspace site, the bloc holding it,
+# and that bloc's dominance weight in it. Regenerate with
+# scripts/extract-sector-fixture-from-save.py; the save parser is deliberately not part of
+# the build, so this file is the fixture's only source and no test opens a save.
+#
+# The score is the winning faction's summed market size - the dominant term of the
+# real DominanceRules weight, not the whole of it. It is here so a test has a
+# realistic SPREAD of blocs and strengths to run over, not so a test can assert
+# what dominance resolves to; assert that against SystemDominance, never here.
+#
+# An empty groupKey is an unowned system - uninhabited or decivilised-only - which
+# is the frontier case, and 342 of these 491 are one.
+#
+# The id is the system's name, which the sector does NOT keep unique - a repeat
+# carries a #N suffix. The real map keys cells by a unique system id; names are
+# used here only so a failure reads as "Askonia" rather than as an opaque handle.
+#
+# id,x,y,groupKey,score
+86 Rn,12500.0,-16250.0,,0
+99 Es,25000.0,-10000.0,diableavionics,6
+Aaru,-45653.0,38047.0,,0
+Abyssal Depths,-89840.0,-59500.0,,0
+Acheron,-45000.0,15000.0,,0
+Acheron's Domain,8000.0,-19500.0,,0
+Agrippa,-47811.0,8864.0,,0
+Al Gebbar,-9200.0,-7900.0,luddic_path,4
+Alatyr,-13640.0,8415.0,eusan_nation,28
+Alaugon,-27697.0,11959.0,tll,10
+Alexandretta,-8920.0,-12100.0,luddic_church,6
+Alicia,56250.0,58750.0,,0
+Alpha Arcassa,-89058.0,-18212.0,,0
+Alpha Arkoman,51919.0,49070.0,roider,3
+Alpha Centauri,125870.5,71704.9,,0
+Alpha Dasyuroides,74396.0,18048.0,,0
+Alpha Dusicyon,36140.0,27052.0,,0
+Alpha Echinops,79678.0,-22080.0,,0
+Alpha Erethizon,91826.0,-27983.0,,0
+Alpha Euphractus,89433.0,21010.0,,0
+Alpha Galaver,-38513.0,-28948.0,,0
+Alpha Gargeneiron,92094.0,36621.0,,0
+Alpha Giraud,8086.1,-48245.4,,0
+Alpha Glith,29530.0,62985.0,,0
+Alpha Grendusa,-74733.0,10068.0,,0
+Alpha Heimos,-79673.0,-11100.0,,0
+Alpha Hydrochaerus,-64828.0,59865.0,,0
+Alpha Jeresh,66826.0,4915.0,,0
+Alpha Karakum,30601.0,-54068.0,,0
+Alpha Lagidium,-60998.0,-5537.0,,0
+Alpha Lagostomus,85392.0,-40978.0,,0
+Alpha Maand,-56863.0,57797.0,,0
+Alpha Mandrillus,-78132.0,-39317.0,,0
+Alpha Meros,57951.0,51221.0,,0
+Alpha Michon,76157.0,56208.0,,0
+Alpha Morphegoros,-52793.0,27986.0,,0
+Alpha New Paria,-89311.0,15193.0,,0
+Alpha Procyon,18753.0,48325.0,,0
+Alpha Rangifer,63785.0,-26311.0,,0
+Alpha Saimiri,36286.0,-50053.0,,0
+Alpha Setifer,91775.0,-9831.0,,0
+Alpha Shethe Mah,49371.0,32003.0,,0
+Alpha Spair,-45651.0,32728.0,,0
+Alpha Sylvilagus,-58414.0,41047.0,,0
+Alpha Viverra,-40302.0,48921.0,,0
+Alpha Windward,-83179.0,26004.0,,0
+Alphard,-29697.0,13959.0,tll,24
+Altiva,97071.0,-37216.0,,0
+Alyro,-14500.0,-1400.0,apocrita_association,4
+Amon,34753.0,47405.0,,0
+Amritsar,63403.0,26435.0,,0
+Anar,-9000.0,3400.0,shadow_industry,19
+Anargaia,-11399.9,3226.1,,0
+Anathema,-72293.1,-24500.0,cinis_of_crusaders,6
+Angelos,16500.0,-17000.0,angelos,9
+Antares,50887.0,-596.0,,0
+Antinica,-53377.0,58325.0,,0
+Anzu,83158.0,34494.0,,0
+Aoi,-32355.0,-43190.0,uaf,15
+Apotheosis,1625.0,-31875.0,,0
+Aquarii,-63924.0,11126.0,,0
+Arcadia,-2500.0,-11900.0,kesteven,6
+Archangel,-36426.4,1909.0,enigma,5
+Archimedes,12000.0,7000.0,fringe_defence_syndicate,7
+Aresh,75146.0,-8488.0,,0
+Armin,1900.0,9500.0,osiris,5
+Askonia,-4400.0,-4500.0,sindrian_diktat,12
+Asura,-45698.0,59165.0,,0
+Atalie Pax,0.0,19000.0,ocua,16
+Athena,1214.0,54853.0,,0
+Atka,-28625.0,-5000.0,roider,5
+Attu,10625.0,-12625.0,hegemony,4
+Augustus Max,-4000.0,-27500.0,augustine,23
+Avery,22000.0,-25000.0,vri,6
+Azathoth,51338.0,-44631.0,,0
+Azea,30452.0,22381.0,,0
+Aztlan,5900.0,-7300.0,hegemony,13
+Bacara,41946.0,-15890.0,,0
+Bao Yan Luo,-92624.0,49075.0,,0
+Baraq,40080.0,38859.0,,0
+Beilis Secundus,-7653.6,31379.0,pirates,5
+Beilis Tertius,-3758.1,36873.4,,0
+Beilis's Rose,-3857.0,34972.3,,0
+Bel,-50168.0,59216.0,,0
+Benates,70249.0,-1915.0,,0
+Bereer,1300.0,19500.0,osiris,12
+Beta Alopex,71113.0,52336.0,,0
+Beta Anyang,52120.0,-28352.0,,0
+Beta Arcassa,-91754.0,-15961.0,,0
+Beta Centauri,133370.5,75454.9,,0
+Beta Dasyuroides,77603.0,16951.0,,0
+Beta Dusicyon,40944.0,27103.0,,0
+Beta Epomophorus,53112.0,-403.0,,0
+Beta Erethizon,86231.0,-26551.0,,0
+Beta Euphractus,84435.0,19824.0,,0
+Beta Galaver,-36117.0,-30451.0,,0
+Beta Giraud,3242.3,-36653.6,,0
+Beta Glith,25735.0,63986.0,,0
+Beta Heimos,-82007.0,-6282.0,,0
+Beta Hydrochaerus,-66340.0,54484.0,,0
+Beta Karakum,19092.0,-59533.0,,0
+Beta Lagostomus,82607.0,-36021.0,,0
+Beta Madron,63830.0,-12421.0,,0
+Beta Mance,-88483.0,55230.0,,0
+Beta Marathon,-29607.0,35205.0,,0
+Beta Meropi,-60943.0,-29939.0,,0
+Beta Meros,58048.0,47778.0,,0
+Beta Michon,85575.0,60149.0,,0
+Beta Miopithecus,44010.0,2234.0,,0
+Beta Mogera,64519.0,21182.0,,0
+Beta Muntiacus,25547.0,12618.0,kesteven,3
+Beta Nasua,-26032.0,41552.0,,0
+Beta Novy Tayvay,20119.0,30928.0,,0
+Beta Prisma,33606.0,-35252.0,,0
+Beta Rangifer,66407.0,-23000.0,,0
+Beta Saguinus,-46057.0,-21241.0,,0
+Beta Seaborg,-66797.0,-49520.0,,0
+Beta Sylvilagus,-52771.0,42314.0,,0
+Beta Troano,90722.0,5614.0,,0
+Beta Windward,-84588.0,20995.0,,0
+Beta Zennor,50472.0,-55359.0,,0
+Brador,84853.0,-16511.0,,0
+Brahma,-68423.0,50319.0,,0
+Breh'Inni,7500.0,725.0,junk_pirates,8
+Cadejo,-87392.0,37308.0,,0
+Caeli,-36625.0,-44030.0,uaf,8
+Calcari,-17200.0,-2200.0,apocrita_association,11
+Canaan,-15500.0,-8600.0,luddic_church,7
+Canis,9500.0,-600.0,pirates,7
+Capella,2000.0,-20625.0,,0
+Carina,-8500.0,-17000.0,navarchy_of_tania,18
+Cemiess,-55765.0,31099.0,,0
+Chax,15543.0,56103.0,,0
+Cheng Den,23466.8,30876.5,,0
+Cilix,58623.0,28828.0,,0
+Circumfix,-85000.0,33750.0,,0
+Cluster Prime,-36000.0,16000.0,xhanempire,23
+Colonia,-26049.0,-34192.0,,0
+Conflagration,83478.0,4269.0,,0
+Corona Australis,-15200.0,-2700.0,,0
+Corsica,200.0,4600.0,tritachyon,5
+Corvus,400.0,-9400.0,hegemony,6
+DWR43,7747.5,-43528.8,,0
+Dagon,64373.0,-8578.0,,0
+Damar's Star,-20312.7,-34820.1,,0
+Danu,4000.0,4900.0,ix_trinity,17
+Dao Jungu,-59228.0,45952.0,,0
+Dea Motrona,-61202.0,-47647.0,,0
+Deep Space,-105537.9,-68977.3,,0
+Deep Space#2,-74538.3,-69005.6,,0
+Delicacy,10000.0,0.0,independent,14
+Delta Anyang,51624.0,-23795.0,,0
+Delta Arcus,42609.0,54599.0,,0
+Delta Arkoman,44519.0,39691.0,,0
+Delta Atacama,-93974.0,36233.0,,0
+Delta Boselaphus,1530.0,49171.0,,0
+Delta Elnor,93092.0,-38301.0,,0
+Delta Euphractus,92765.0,22127.0,,0
+Delta Frontier,-97884.0,27766.0,,0
+Delta Gargeneiron,86768.0,38043.0,,0
+Delta Giraud,10574.2,-41938.7,,0
+Delta Glith,33434.0,59321.0,,0
+Delta Hydrochaerus,-68340.0,57945.0,,0
+Delta Jeresh,66975.0,604.0,,0
+Delta Karakum,29242.0,-60708.0,,0
+Delta Lagidium,-66353.0,-5268.0,,0
+Delta Lupi III,8500.0,20000.0,diableavionics,4
+Delta Mandrillus,-76373.0,-37154.0,,0
+Delta Mendel,72596.0,-37315.0,,0
+Delta Meropi,-56250.0,-28802.0,,0
+Delta Michon,82335.0,53260.0,,0
+Delta Mok Morred,20636.0,59433.0,,0
+Delta Morphegoros,-58925.0,27142.0,,0
+Delta Muntiacus,28318.0,15966.0,,0
+Delta Nasua,-13967.0,37881.0,,0
+Delta New Biscay,-44817.0,11106.0,,0
+Delta Novy Tayvay,25737.0,31505.0,,0
+Delta Prisma,23195.0,-36754.0,ix_battlegroup,3
+Delta Procyon,22109.0,41321.0,,0
+Delta Rangifer,63028.0,-22030.0,,0
+Delta Rotanna,44978.0,-12596.0,,0
+Delta Saguinus,-53942.0,-19226.0,,0
+Delta Seaborg,-64120.0,-47041.0,,0
+Delta Shethe Mah,50825.0,29715.0,,0
+Delta Site,-72500.0,-50000.0,,0
+Delta Spair,-42346.0,35752.0,,0
+Delta Sylvilagus,-56401.0,43868.0,,0
+Delta Tarsius,-66687.0,15636.0,,0
+Demeter,65768.0,16032.0,,0
+Desolation I,-12116.2,-68181.2,,0
+Desolation II,67600.0,-67327.9,,0
+Desolation III,-104550.1,23044.1,,0
+Desolation IV,-105457.5,-48835.1,,0
+Desolation V,-85956.8,-68046.8,,0
+Dieman,20000.0,-2500.0,brighton,14
+Dierites,-50519.0,-18387.0,,0
+Dogstar,-5000.0,-7500.0,JYD,19
+Dory,93542.5,55207.5,,0
+Drotin,12000.0,-49000.0,eupruskan_oath,14
+Dumur,79830.0,-2337.0,,0
+Duzahk,-2300.0,-7950.0,luddic_path,3
+Eisheth,41995.0,-3635.0,,0
+Ekonir,18393.0,-36040.0,,0
+Ekuru,79169.0,-26919.0,,0
+Element,40000.0,15000.0,independent,16
+Elgava,-25950.0,-30807.0,,0
+Elysia,2687.5,39925.0,,0
+Empyrean,-2400.0,-19000.0,vic,21
+Endovlicus,58430.0,42171.0,,0
+Enigma,10000.0,4000.0,valkyrian,17
+Enki,77897.0,29868.0,,0
+Eos Exodus,-12700.0,-11400.0,luddic_church,12
+Eotienses,56375.0,-25016.0,,0
+Epsilon Arkoman,47330.0,52140.0,,0
+Epsilon Boselaphus,-4921.0,54641.0,,0
+Epsilon Elnor,96253.0,-39703.0,,0
+Epsilon Euphractus,93623.0,18735.0,,0
+Epsilon Frontier,-91299.0,28073.0,,0
+Epsilon Gargeneiron,89506.0,33615.0,,0
+Epsilon Giraud,10495.5,-39566.9,,0
+Epsilon Glith,32167.0,55154.0,,0
+Epsilon Hydrochaerus,-71171.0,47134.0,,0
+Epsilon Karakum,23532.0,-60443.0,,0
+Epsilon Mance,-85066.0,49951.0,,0
+Epsilon Miopithecus,42596.0,6635.0,,0
+Epsilon Mogera,58231.0,19841.0,,0
+Epsilon Nasua,-22836.0,40060.0,,0
+Epsilon Oryctolagus,60661.0,-36721.0,,0
+Epsilon Zabala,-27828.0,56057.0,,0
+Eranin,10734.0,54671.0,,0
+Eremia,68363.8,-47108.1,cinis_of_crusaders,6
+Eridani,-25000.0,-22500.0,,0
+Escondido,11348.8,-38967.4,,0
+Espoz,17000.0,-15000.0,independent,5
+Essex,35625.0,42500.0,,0
+Eta Arkoman,46422.0,43152.0,,0
+Eternal Vigil,-104618.0,-34975.2,,0
+Euclid,3000.0,7000.0,fringe_defence_syndicate,5
+Euryale,-51182.0,8520.0,,0
+Eurybia,90090.0,9125.0,knights_of_selkie,3
+Ex Vis,-18500.0,5800.0,interstellarimperium,6
+Exeter,32500.0,35000.0,,0
+Exo Rialo,68169.0,-11693.0,,0
+Fafnir,-750.0,-5250.0,,0
+Farfallas,-88280.0,22206.0,,0
+Flamma,-12000.0,53500.0,,0
+Galatia,2850.0,-11550.0,independent,10
+Gallus,-30000.0,-27500.0,fang,4
+Gamlin,-16200.0,-13000.0,independent,5
+Gamma Arcassa,-89141.0,-14216.0,,0
+Gamma Arkoman,41883.0,45665.0,,0
+Gamma Atacama,-96122.0,40224.0,,0
+Gamma Boselaphus,4921.0,57323.0,,0
+Gamma Dusicyon,35055.0,31947.0,,0
+Gamma Echinops,76321.0,-23659.0,,0
+Gamma Euphractus,91880.0,16451.0,rat_exotech,4
+Gamma Frontier,-94358.0,21376.0,,0
+Gamma Gargeneiron,85826.0,41065.0,,0
+Gamma Giraud,9067.4,-38064.1,,0
+Gamma Glith,32804.0,49423.0,,0
+Gamma Heimos,-77992.0,-5899.0,,0
+Gamma Karakum,31920.0,-58912.0,,0
+Gamma Lagidium,-64986.0,-2705.0,,0
+Gamma Lagostomus,84871.0,-38167.0,,0
+Gamma Leibniz,-25420.0,-57538.0,,0
+Gamma Maand,-50212.0,54193.0,,0
+Gamma Mance,-89757.0,52840.0,,0
+Gamma Mandrillus,-80122.0,-34373.0,,0
+Gamma Meitner,82181.0,-14495.0,,0
+Gamma Mendel,71209.0,-34213.0,,0
+Gamma Ming Dadi,34580.0,42799.0,,0
+Gamma Miopithecus,35989.0,3980.0,,0
+Gamma Muntiacus,29581.0,19959.0,,0
+Gamma New Paria,-89101.0,7708.0,,0
+Gamma Novy Tayvay,17228.0,36145.0,,0
+Gamma Oryctolagus,57381.0,-35917.0,,0
+Gamma Procyon,17890.0,38674.0,,0
+Gamma Rangifer,68971.0,-18688.0,,0
+Gamma Saguinus,-51989.0,-15758.0,,0
+Gamma Saimiri,39713.0,-48540.0,,0
+Gamma Viverra,-35968.0,46078.0,,0
+Gamma Windward,-84820.0,23534.0,,0
+Gamma Zennor,49813.0,-59418.0,,0
+Gehenna,1800.0,-21700.0,kadur_remnant,5
+Genbu,-39882.0,-26548.0,,0
+Gigas,-6500.0,-1550.0,shadow_industry,5
+Gneiss,18000.0,-18600.0,blackrock_driveyards,10
+Godunov,-15500.0,6000.0,ORA,7
+Golgatha,4840.0,-27647.0,Farsight_Drive,13
+Grin,15500.0,68000.0,,0
+Groom,-21000.0,4000.0,pirates,5
+Gull Motley,-34392.0,31794.0,,0
+Hadreel,-43071.0,28952.0,,0
+Haelim,2000.0,12200.0,ocua,13
+Hathor,30771.0,29321.0,,0
+Hazard,-25000.0,-25000.0,HMI,9
+Hejaz,-20625.0,-2250.0,,0
+Helheim,-62500.0,0.0,,0
+Henan,56312.0,-45082.0,,0
+Heng,4350.0,-20240.0,aEP_FSF,11
+Horza,-14574.0,33447.0,,0
+Hubris,-12875.0,-53125.0,,0
+Hybrasil,-200.0,400.0,tritachyon,11
+Hypatia,7000.0,8000.0,fringe_defence_syndicate,3
+Indra,57795.0,-40496.0,,0
+Insulinde,1700.0,8000.0,independent,10
+Intrusion,580.0,-17370.0,HSI,15
+Isirah,-14900.0,-4400.0,persean,7
+Ittir,-2700.0,-22000.0,luddic_church,6
+Izanagi,29235.0,-39404.0,,0
+Joy,-14000.0,11000.0,pirates,9
+Kadysh,-82628.0,47332.0,,0
+Kamikaze,-26875.0,-31250.0,HMI,3
+Karic,-3258.1,31576.8,independent,11
+Karini,65750.0,-1359.0,,0
+Karkara,-67001.0,537.0,,0
+Khamn,-5758.1,33675.7,magellan_protectorate,16
+Kiska,-31000.0,-17375.0,roider,4
+Kiten,15719.0,50127.0,,0
+Kivah,40341.0,1399.0,,0
+Kiztac,-95000.0,46875.0,HIVER,24
+Kokokomi,78502.0,5337.0,,0
+Koltsevaya,-15500.0,16500.0,kyeltziv,15
+Komotae,68886.0,54663.0,,0
+Kostroma,-12800.0,-7350.0,pirates,6
+Kroni,-61776.0,-43479.0,,0
+Kumana,49174.0,26536.0,,0
+Kumari Kandam,-11800.0,-4600.0,luddic_path,5
+LV-253,14287.5,-33545.0,,0
+Laksak,-53405.0,35857.0,,0
+Lamdor,3650.0,-22480.0,independent,4
+Lencali,-30707.0,56789.0,,0
+Lethia,41000.0,-27000.0,independent,7
+Light of Maya,-18000.0,-26000.0,,0
+Limbo,-100200.0,-62900.0,,0
+Lost Requiem,5373.8,-51887.5,,0
+Macultus,-60444.0,3363.0,,0
+Magec,-7200.0,-10700.0,pirates,11
+Malachite,-20000.0,8500.0,ORA,9
+Mammon,-26046.0,-54482.0,,0
+Manchester,32500.0,40000.0,,0
+Marajoara,60645.0,32925.0,,0
+Martinique,-19150.0,-15700.0,dassault_mikoyan,5
+Mayasura,-6000.0,-200.0,tritachyon,8
+Mazu,-74936.0,7225.0,,0
+Meldrith,89037.0,-10805.0,,0
+Meliae,63751.0,-4513.2,,0
+Mercy,-35000.0,-28750.0,luddic_church,5
+Merga Wraith,55000.0,-35000.0,,0
+Mia's Star,-32600.0,2500.0,sotf_dustkeepers,3
+Micholia,65569.0,31822.0,,0
+Mirage,4000.0,-18000.0,hegemony,7
+Mnemosyne,40716.0,-13602.0,,0
+Moloch,19600.0,43561.0,,0
+Muspelheim,-30000.0,875.0,dpl_phase_lab,21
+Mustafar III,-38373.8,-11843.8,,0
+Naimur,-58534.0,-32277.0,,0
+Naraka,11000.0,-7500.0,hegemony,11
+Nastrond,-77266.0,4931.0,,0
+Natura,28093.0,-35461.0,,0
+Neali,-51148.0,-38771.0,,0
+Nemvis,12000.0,5500.0,xlu,17
+Neos Bohol,74102.0,27754.0,,0
+Nevermore,-50160.0,-46081.0,,0
+Nikolaev,-7000.0,-19000.0,dassault_mikoyan,11
+Nix,-109800.0,-69100.0,,0
+Nornari,-91688.0,40881.0,,0
+Nuakea,-52660.0,-50228.0,,0
+Obsidian,-33750.0,-33750.0,tritachyon,4
+Octavia VIII,-9500.0,13500.0,star_federation,12
+Ohai,77004.0,-13450.0,,0
+Okeus,59476.0,37676.0,,0
+Old Milix,-2942.0,57828.0,,0
+Optimal,-19838.6,38813.7,adversary,24
+Opuntia,-38750.0,-25000.0,HMI,5
+Orerve,-21111.0,51580.0,,0
+Osmium,15000.0,-2000.0,MVS,11
+Ossa,74000.0,-66000.0,cetevska,4
+Ounalashka,-25000.0,-18125.0,independent,3
+Outer Terminus,36250.0,-6250.0,diableavionics,12
+Palingenesis,-5750.0,-50000.0,red_stripe_vower,6
+Paltan,-24300.0,-7100.0,unitedpamed,10
+Pandemonium,-21802.0,59032.0,,0
+Pantheon,18000.0,-1500.0,EridaniCombine,20
+Parasoja,-48248.0,14479.0,,0
+Pascal,-20000.0,17600.0,independent,5
+Pelenu Laukas,-12500.0,-14500.0,tritachyon,5
+Penelope's Star,-9500.0,-14500.0,luddic_path,3
+Pengersick,6250.0,9375.0,CFT,13
+Perkana,75366.0,-36255.0,,0
+Perseus NM 2231+9CB,-26957.9,-56906.2,,0
+Phosmon,10625.0,5250.0,xlu,11
+Phylum,-35000.0,-12500.0,fang,17
+Pleroma,-19875.0,-60000.0,,0
+Pollux,50596.0,36463.0,,0
+Poros,86000.0,-52000.0,cetudan,10
+Postverta,47695.0,55943.0,,0
+Prester John,-12500.0,-33750.0,draco,11
+Pythagoras,10000.0,12000.0,pirates,4
+Qliphoth,-20625.0,-54375.0,sephira_conclave,4
+Rama,11500.0,-16000.0,blackrock_driveyards,5
+RegnumDei,350.0,-20500.0,red_stripe,19
+Resting Place,-10121.3,-68593.0,,0
+Revachol,76232.0,31245.0,,0
+Rhiannon,-35697.0,48459.0,,0
+Rionnagmor,-6875.0,-23750.0,orks,16
+Rizdet,-96875.0,48125.0,HIVER,22
+Royce,23000.0,-17000.0,vri,21
+Rubicon,-28000.0,-4500.0,tahlan_legioinfernalis,17
+Sabik,-23108.0,54605.0,,0
+Sagitarius Star System,10000.0,20000.0,concordat,22
+Saleronos,76521.0,1861.0,,0
+Samarra,4800.0,-14250.0,hegemony,16
+Saurisan,-59206.0,33372.0,cinis_of_crusaders,3
+Scarborough,-20500.0,-5500.0,LLI,15
+Segais,27306.6,18571.7,luddic_path,3
+Sentinel,-93297.0,24493.0,,0
+Serpens,-5800.0,-16000.0,,0
+Seychelle,-55056.0,-36197.0,,0
+Shenve,-31669.0,32853.0,,0
+Sikians,-30094.0,-57249.0,,0
+Sitnalta,-8236.9,-3723.1,,0
+Skyline,20000.0,5000.0,independent,16
+Sol,-45689.9,-32866.8,,0
+Sol#2,93750.0,52500.0,,0
+Soteria,63000.0,-58500.0,cetora,5
+Sothis,90399.0,-37141.0,,0
+Spindle,27500.0,-17500.0,,0
+Styx,24140.2,-13656.3,,0
+Svanticani,18029.0,52464.0,,0
+Svaron,-53839.0,-44461.0,,0
+Synuefe,33246.0,39594.0,,0
+Tabitha,57500.0,62500.0,,0
+Taivassija,-11000.0,-19400.0,Goat_Aviation_Bureau,4
+Taliesin,47628.0,-56886.0,,0
+Tauerni,-67555.0,5437.0,,0
+Tered Kathon,38654.0,31791.0,,0
+The Luna Sea,68125.0,-52625.0,,0
+Thracia,-7200.0,6600.0,interstellarimperium,11
+Thrial,-62653.0,7682.0,,0
+Thule,-10600.0,-1200.0,persean,7
+Tia,6300.0,-1600.0,,0
+Tir Peria,43433.0,58810.0,,0
+Tyle,-19100.0,-2700.0,persean,11
+Uelyst,22000.0,-20000.0,vri,14
+Undines,89093.0,-41397.0,,0
+Unknown Location,4000.0,2500.0,,0
+Unknown Location#2,9000.0,40000.0,,0
+Unknown Location (Hiroc),-3300.0,-20937.5,,0
+Unknown Site,-51533.4,-8591.5,,0
+Upaniklis,62372.0,12564.0,,0
+Ursulo,-6800.0,7700.0,syndicate_asp,10
+Uvas,-85000.0,51250.0,,0
+Valhalla,400.0,-3300.0,hegemony,10
+Valis,-10000.0,9000.0,ORA,15
+Van Rijn,17785.0,63283.0,,0
+Vanadium,12700.0,-800.0,independent,5
+Vela,-6275.0,-13800.0,apex_design,20
+Velux,-19639.0,35098.0,,0
+Vivata,53491.0,-20647.0,,0
+Voidbreak,-106250.0,-625.0,,0
+Vortex,-7651.0,18321.0,,0
+Westernesse,-13900.0,1600.0,persean,10
+Wotan,68633.0,-38786.0,,0
+Wregoe,25092.0,26854.0,,0
+XJ-471A,75200.0,41400.0,,0
+Xanthe Che,-85941.0,11076.0,,0
+Yabadysh,-89278.0,11215.0,,0
+Yajna,-3600.0,-200.0,shadow_industry,9
+Yaqum,47283.0,-9109.0,,0
+Yma,3300.0,-500.0,Eridani,8
+Ynadar Prime,26000.0,-6500.0,ynadar,16
+York,28750.0,36250.0,,0
+YunTing,32000.0,-12000.0,independent,14
+Yutrakhill,0.0,7000.0,northseaindustries,46
+Zagan,-3900.0,3200.0,persean,12
+Zahrat Diyu,-83626.0,-33682.0,,0
+Zarmazd,4250.0,-23000.0,independent,5
+Zende,39087.0,57396.0,,0
+Zesketet,-93750.0,43750.0,HIVER,36
+Zeta Arkoman,47746.0,47585.0,,0
+Zeta Giraud,2350.4,-42450.0,,0
+Zeta Hydrochaerus,-70279.0,53043.0,,0
+Zeta Mok Morred,24768.0,56938.0,,0
+Zeta Oryctolagus,53380.0,-39670.0,red_stripe_vower,3
+Zeta Prisma,24337.0,-41747.0,,0
+Zhulong,89899.0,-24444.0,,0
+Zohar,-13937.5,-55312.5,,0
+Zorya,11300.0,4600.0,ix_battlegroup,25
+Zosia,80322.0,58526.0,,0
+gs_arena_system,-14000.0,5000.0,gladiator,7
