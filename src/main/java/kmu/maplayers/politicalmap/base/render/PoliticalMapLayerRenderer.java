@@ -5,7 +5,9 @@ import com.fs.starfarer.api.Global;
 import kmlib.starsector.ui.map.probes.MapIconOrderTrace;
 import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
+import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
 
+import kmu.maplayers.base.hover.MapHoverCues;
 import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
@@ -178,7 +180,14 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             return;
         }
         if (hoverPublisher == null) {
-            hoverPublisher = new MapHoverPublisher(ModelviewMatrixReaders.selectForActiveRenderer());
+            // The tick the cursor makes on reaching a cell is composed here, with the binding: what a
+            // moment sounds like belongs to whatever owns the look, and the publisher under it names
+            // only the moment. The cue is asked for per arrival rather than fixed now, so a level
+            // changed on the settings screen reaches a publisher built long before it.
+            hoverPublisher = new MapHoverPublisher(
+                ModelviewMatrixReaders.selectForActiveRenderer(),
+                new VanillaUiSoundPlayer(),
+                MapHoverCues::composeCellArrivalCue);
         }
         // The cursor read sits between the refresh and the draw: after, so it tests against the
         // shapes this frame actually paints, and before, so the highlight layers already have the

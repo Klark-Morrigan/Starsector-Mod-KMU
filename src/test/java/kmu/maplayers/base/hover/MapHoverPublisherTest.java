@@ -2,6 +2,9 @@ package kmu.maplayers.base.hover;
 
 import kmlib.starsector.ui.map.transform.MapCursor;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReader;
+import kmlib.starsector.ui.sound.StarsectorUiSound;
+import kmlib.starsector.ui.sound.UiSoundCue;
+import kmlib.testfixtures.starsector.ui.sound.UiSoundPlayerFake;
 
 import kmu.maplayers.base.geometry.SystemClusterIndex;
 
@@ -34,6 +37,12 @@ import static org.mockito.Mockito.when;
  * this publisher - and what these cases exercise - is the step from a world point to a published
  * hover. The targets are a bare {@link MapHoverTargets} for the same reason: a test reaching for a
  * particular layer's build would re-couple exactly what keeps this usable by a second one.
+ *
+ * <p>Beside the hover sits the moment: which frames are the cursor <em>reaching</em> a cell rather
+ * than resting on one. That half is asserted through a recording player, a sound being the one thing
+ * this pass does that leaves no trace in the state a case could otherwise read back - and the cases
+ * are about the rule that a frame is a moment, never about the sample or the level, both of which
+ * arrive already composed from the host's own look.
  */
 final class MapHoverPublisherTest {
 
@@ -53,19 +62,52 @@ final class MapHoverPublisherTest {
         new double[] {300d, 250d},
         new double[] {100d, 250d});
 
+    // The neighbour's own painted cell, abutting the first along the x=300 edge. Drawn as a second
+    // cell rather than as another point in the first, so the case about crossing from one cell to
+    // the next is a change of cell and not of position.
+    private static final List<double[]> NEIGHBOUR_CELL_POLYGON = List.of(
+        new double[] {300d, 50d},
+        new double[] {500d, 50d},
+        new double[] {500d, 250d},
+        new double[] {300d, 250d});
+
     private static final Vector2f POINT_ON_CELL = new Vector2f(200f, 150f);
+    private static final Vector2f POINT_ON_NEIGHBOUR_CELL = new Vector2f(400f, 150f);
 
     // Outside the cell: empty space beyond the map, or the channel between two cells, where the
     // map draws nobody's cell.
     private static final Vector2f POINT_OFF_CELL = new Vector2f(0f, 0f);
 
+    // What the host's look says a cell arriving under the cursor sounds like. Handed in whole, this
+    // publisher naming neither the sample nor the level - and at a volume none of the shipped
+    // defaults hold, so a publisher composing a cue of its own could not record this one.
+    private static final UiSoundCue CELL_ARRIVAL_CUE =
+        new UiSoundCue(StarsectorUiSound.TEXT_TYPED, 0.35f);
+
+    // The same tick after the player moved its slider, for the case about when the level is read.
+    private static final UiSoundCue RETUNED_CELL_ARRIVAL_CUE =
+        new UiSoundCue(StarsectorUiSound.TEXT_TYPED, 0.7f);
+
     // The frame's targets with one drawn cell, clustered with a neighbour so a published hover
     // proves it carries the whole cluster and not just the cell it resolved.
     private static MapHoverTargets buildTargetsWithOneCell() {
+        return buildTargetsWithCells(Map.of(HOVERED_SYSTEM_ID, CELL_POLYGON));
+    }
+
+    // Both cells of the cluster drawn, for the cases about the cursor crossing between them.
+    private static MapHoverTargets buildTargetsWithTwoCells() {
+        return buildTargetsWithCells(Map.of(
+            HOVERED_SYSTEM_ID, CELL_POLYGON,
+            NEIGHBOUR_SYSTEM_ID, NEIGHBOUR_CELL_POLYGON));
+    }
+
+    private static MapHoverTargets buildTargetsWithCells(Map<String, List<double[]>> fillPolygons) {
+
         var targetsMock = mock(MapHoverTargets.class);
 
         when(targetsMock.getFillPolygonByCellId())
-            .thenReturn(Map.of(HOVERED_SYSTEM_ID, CELL_POLYGON));
+            .thenReturn(fillPolygons);
+            
         when(targetsMock.getClusterIndex())
             .thenReturn(SystemClusterIndex.indexClusters(
                 List.of(List.of(HOVERED_SYSTEM_ID, NEIGHBOUR_SYSTEM_ID))));
@@ -76,14 +118,22 @@ final class MapHoverPublisherTest {
     @Nested
     class PublishHoverFrom {
 
+        // What the host's look answers an arrival with, mutable so the case about a player who has
+        // silenced the tick can state that the way a look does - by naming no cue at all.
+        private UiSoundCue cellArrivalCue;
         private MockedStatic<MapCursor> cursorMock;
         private MapHoverState hoverState;
         private ModelviewMatrixReader readerMock;
+        private UiSoundPlayerFake soundPlayerFake;
 
         @BeforeEach
         void setUp() {
+
             readerMock = mock(ModelviewMatrixReader.class);
+            soundPlayerFake = new UiSoundPlayerFake();
+            cellArrivalCue = CELL_ARRIVAL_CUE;
             cursorMock = mockStatic(MapCursor.class);
+
             stubCursorAt(POINT_ON_CELL);
 
             // A standing hover from an earlier frame, so a parking assertion distinguishes "parked"
@@ -101,7 +151,8 @@ final class MapHoverPublisherTest {
 
         @Test
         void publishHoverFromPublishesTheHoveredCellWithItsCluster() {
-            new MapHoverPublisher(readerMock)
+
+            buildPublisher()
                 .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
 
             // The cell resolves only if the world point reached the hit test, and the neighbour
@@ -116,7 +167,7 @@ final class MapHoverPublisherTest {
         void publishHoverFromReadsTheCursorThroughTheBindingItWasBuiltWith() {
             // Which reader binds is the caller's decision, so a publisher that resolved its own
             // would silently ignore the choice - and pick the wrong one under Fast Rendering.
-            new MapHoverPublisher(readerMock)
+            buildPublisher()
                 .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
 
             cursorMock.verify(() ->
@@ -125,9 +176,10 @@ final class MapHoverPublisherTest {
 
         @Test
         void publishHoverFromParksTheHoverWhenTheCursorIsOverNoCell() {
+
             stubCursorAt(POINT_OFF_CELL);
 
-            new MapHoverPublisher(readerMock)
+            buildPublisher()
                 .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
 
             assertThat(hoverState.getHover())
@@ -138,7 +190,7 @@ final class MapHoverPublisherTest {
         void publishHoverFromParksTheHoverWhenNothingWasPainted() {
             // No targets at all: a diagnostic overlay stood in for the production draw lists, or
             // the first build has yet to succeed. There are no cell shapes to test against.
-            new MapHoverPublisher(readerMock).publishHoverFrom(null, MAP_ZOOM);
+            buildPublisher().publishHoverFrom(null, MAP_ZOOM);
 
             assertThat(hoverState.getHover())
                 .isSameAs(MapHover.NONE);
@@ -151,11 +203,108 @@ final class MapHoverPublisherTest {
             // Which is which is MapCursorTest's to pin.
             stubCursorAt(null);
 
-            new MapHoverPublisher(readerMock)
+            buildPublisher()
                 .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
 
             assertThat(hoverState.getHover())
                 .isSameAs(MapHover.NONE);
+        }
+
+        @Test
+        void publishHoverFromTicksAsTheCursorReachesACell() {
+            // The whole moment: the map answers the cursor getting somewhere, and it answers with
+            // what the host's look named rather than with a sample or a level of the pass's own.
+            buildPublisher()
+                .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            assertThat(soundPlayerFake.getPlayedCues())
+                .containsExactly(CELL_ARRIVAL_CUE);
+        }
+
+        @Test
+        void publishHoverFromTicksOnceWhileTheCursorRestsOnACell() {
+            // The pass runs every frame and the cursor is usually still, so a tick per frame is what
+            // an unlatched read would give - a cell held under the pointer buzzing until it moves.
+            var publisher = buildPublisher();
+
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            assertThat(soundPlayerFake.getPlayedCues())
+                .containsExactly(CELL_ARRIVAL_CUE);
+        }
+
+        @Test
+        void publishHoverFromTicksAgainForACellReachedFromItsNeighbour() {
+            // Crossing straight from one cell to the next never leaves the map, so an arrival
+            // detected only from off a cell would tick once for a whole sweep across the map. Two
+            // cells of one cluster, deliberately: the tick answers the cell the hover box names and
+            // not the cluster around it, so a move within one cluster is still a move.
+            var publisher = buildPublisher();
+            publisher.publishHoverFrom(buildTargetsWithTwoCells(), MAP_ZOOM);
+
+            stubCursorAt(POINT_ON_NEIGHBOUR_CELL);
+            publisher.publishHoverFrom(buildTargetsWithTwoCells(), MAP_ZOOM);
+
+            assertThat(soundPlayerFake.getPlayedCues())
+                .containsExactly(CELL_ARRIVAL_CUE, CELL_ARRIVAL_CUE);
+        }
+
+        @Test
+        void publishHoverFromTicksAgainWhenTheCursorReturnsToTheCellItLeft() {
+            // Parking has to forget where the cursor was, or a cell left for empty space and come
+            // back to is silent - the one return trip a player makes constantly, the map being mostly
+            // the space between cells.
+            var publisher = buildPublisher();
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            stubCursorAt(POINT_OFF_CELL);
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            stubCursorAt(POINT_ON_CELL);
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            assertThat(soundPlayerFake.getPlayedCues())
+                .containsExactly(CELL_ARRIVAL_CUE, CELL_ARRIVAL_CUE);
+        }
+
+        @Test
+        void publishHoverFromReachesACellSilentlyWhenTheLookNamesNoCue() {
+            // A player who has pulled the tick's slider to the bottom, which the look states by
+            // naming no cue at all. Nothing reaches the player rather than a sound played at nothing.
+            cellArrivalCue = null;
+
+            buildPublisher()
+                .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            assertThat(soundPlayerFake.getPlayedCues())
+                .isEmpty();
+        }
+
+        @Test
+        void publishHoverFromTicksAtWhateverTheLookNamesWhenTheMomentComes() {
+            // The cue is asked for per arrival rather than held from construction, so a level changed
+            // on the settings screen reaches a publisher built when the map first drew - which is the
+            // only publisher there is, one being kept for the session.
+            var publisher = buildPublisher();
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            cellArrivalCue = RETUNED_CELL_ARRIVAL_CUE;
+            
+            stubCursorAt(POINT_OFF_CELL);
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            stubCursorAt(POINT_ON_CELL);
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            assertThat(soundPlayerFake.getPlayedCues())
+                .containsExactly(CELL_ARRIVAL_CUE, RETUNED_CELL_ARRIVAL_CUE);
+        }
+
+        // The publisher under test, reading the case's own cue field so a case can retune or silence
+        // the look between frames the way the settings screen does between visits.
+        private MapHoverPublisher buildPublisher() {
+            return new MapHoverPublisher(readerMock, soundPlayerFake, () -> cellArrivalCue);
         }
 
         private void stubCursorAt(Vector2f worldPoint) {

@@ -2,15 +2,21 @@ package kmu.maplayers.base.hover;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.starsector.ui.input.KeyedHoverArrival;
 import kmlib.starsector.ui.map.transform.MapCursor;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReader;
+import kmlib.starsector.ui.sound.UiSoundCue;
+import kmlib.starsector.ui.sound.UiSoundPlayer;
 
 import kmu.maplayers.base.geometry.CellHitTest;
 
 import org.apache.log4j.Logger;
 
+import java.util.function.Supplier;
+
 /**
- * Works out which cell the cursor is over on the map and publishes it for the frame.
+ * Works out which cell the cursor is over on the map, publishes it for the frame, and answers the
+ * moment the cursor reaches a new one.
  *
  * <p>Runs inside the map's render pass because that is the only place it can: the cursor read it
  * drives needs the map widget's GL matrices, which are bound only while that pass runs. A layer
@@ -22,25 +28,50 @@ import org.apache.log4j.Logger;
  * {@link MapHoverState} already declares the value, the shared holder and the consumers, so the
  * sequencing between them is the last piece a second layer would otherwise have to work out again
  * - and it would have to get every park right to avoid lighting a cell the cursor is not on.
+ *
+ * <p>Which frames are an <em>arrival</em> is the same question the trace has always asked - the cell
+ * changed under a cursor that was somewhere else before - so one {@link KeyedHoverArrival} answers
+ * both what is sounded and what is logged. Two latches over one question would be two chances to
+ * disagree about when the cursor got somewhere, and a tick without a line beside it is exactly the
+ * moment the trace exists to explain.
  */
 public final class MapHoverPublisher {
     private static final Logger LOG = Global.getLogger(MapHoverPublisher.class);
+
+    // Whether the cursor has just reached a cell it was not on. Keyed by the cell rather than by the
+    // cluster around it, so the tick answers the same change the hover box does - a sweep across one
+    // cluster still changes which system is being named - and the shared latch is what makes
+    // "reached" mean the same thing here as it does on a panel's controls.
+    private final KeyedHoverArrival<String> cellArrival = new KeyedHoverArrival<>();
+
+    // What an arrival sounds like, asked at the moment rather than held, so the level the player set
+    // is the one in force now: this publisher outlives any number of visits to the settings screen.
+    private final Supplier<UiSoundCue> cellArrivalCueSource;
 
     // Where the map's modelview is read back from. Held rather than resolved per frame because the
     // renderer underneath cannot change while the game runs, so the binding is a fixed collaborator
     // of this publisher's session-long life.
     private final ModelviewMatrixReader modelviewMatrixReader;
 
-    // The last system named in the log, so the trace reports each move onto a new cell once rather
-    // than re-reporting the same cell every frame the cursor rests on it.
-    private String lastLoggedSystemId;
+    private final UiSoundPlayer soundPlayer;
 
     /**
      * @param modelviewMatrixReader the binding the running renderer needs, from
      *                              {@code ModelviewMatrixReaders#selectForActiveRenderer}
+     * @param soundPlayer           where the arrival tick goes
+     * @param cellArrivalCueSource  what that tick sounds like when one is owed, from the host's own
+     *                              look - {@code MapHoverCues#composeCellArrivalCue} for this mod's
+     *                              map. A source rather than a cue because the level behind it is the
+     *                              player's and may change under a publisher already built
      */
-    public MapHoverPublisher(ModelviewMatrixReader modelviewMatrixReader) {
+    public MapHoverPublisher(
+            ModelviewMatrixReader modelviewMatrixReader,
+            UiSoundPlayer soundPlayer,
+            Supplier<UiSoundCue> cellArrivalCueSource) {
+
         this.modelviewMatrixReader = modelviewMatrixReader;
+        this.soundPlayer = soundPlayer;
+        this.cellArrivalCueSource = cellArrivalCueSource;
     }
 
     /**
@@ -84,25 +115,36 @@ public final class MapHoverPublisher {
             hoveredSystemId,
             targets.getClusterIndex().findClusterMembersOf(hoveredSystemId)));
 
-        logHoverChange(hoveredSystemId);
+        announceArrivalAt(hoveredSystemId);
     }
 
-    // Parks the hover and resets the log guard, so stepping off a cell and back onto it reports
-    // again rather than being swallowed as unchanged.
+    // Parks the hover and forgets which cell the cursor was on, so stepping off a cell and back onto
+    // it is reached again rather than being swallowed as unchanged.
     private void parkHover() {
         MapHoverState.getInstance().clearHover();
-        lastLoggedSystemId = null;
+        cellArrival.resetArrival();
+    }
+
+    // What is owed on the cursor reaching a cell, as opposed to resting on one: the tick the player
+    // hears and the line the trace prints. The latch is stepped before either is asked for, so a
+    // moment left unanswered - a silenced cue, a trace at INFO - still tracks where the cursor is.
+    private void announceArrivalAt(String hoveredSystemId) {
+
+        if (!cellArrival.detectArrivalAt(hoveredSystemId)) {
+            return;
+        }
+        soundPlayer.playCueIfPresent(cellArrivalCueSource.get());
+        logHoverArrival(hoveredSystemId);
     }
 
     // Traces each move onto a new cell: which system the cursor resolved to and how large a
     // cluster that pulls in - the two answers this pass exists to produce, and the ones a wrong
     // highlight is diagnosed against. Set KMU log verbosity to DEBUG in LunaLib to see it.
-    private void logHoverChange(String hoveredSystemId) {
-        if (hoveredSystemId.equals(lastLoggedSystemId) || !LOG.isDebugEnabled()) {
+    private void logHoverArrival(String hoveredSystemId) {
+
+        if (!LOG.isDebugEnabled()) {
             return;
         }
-        lastLoggedSystemId = hoveredSystemId;
-
         LOG.debug("Map hover resolved; system="
             + hoveredSystemId
             + " clusterMembers="

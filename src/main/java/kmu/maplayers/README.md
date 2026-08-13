@@ -170,7 +170,13 @@ about what the overlay means.
   frame's drawn cell shapes and the clusters they fuse into. What it owns is the sequencing and the
   parking: a cursor that cannot be trusted must clear the hover rather than leave the last frame's
   standing, and getting that wrong lights a cell the cursor is not on. The pixel-to-world inversion
-  underneath is KMLib's. `HoverHighlightGeometry` resolves the highlight geometry and
+  underneath is KMLib's. It also answers the *moment* the cursor reaches a cell, over KMLib's own
+  `KeyedHoverArrival`: one latch for the tick the player hears and the line the trace prints, since
+  both ask the same question and two would be two chances to disagree about when the cursor got
+  somewhere. What that tick sounds like is `MapHoverCues` beside it - the map's own sample and the
+  player's own level, read live like the switches are, and no cue at all once that level reaches the
+  bottom of its slider. The cell rather than the cluster is what the tick is keyed by, so it answers
+  the same change the hover box does. `HoverHighlightGeometry` resolves the highlight geometry and
   `HoverHighlightRenderer` burns the halo and the wash, both over a `HoverHighlightSource` - the
   two questions only the layer that owns the clusters can answer: the loops the hovered cell might
   sit inside, and the shade its fill draws in. Both seams extend `PaintedCellShapes`, the frame's

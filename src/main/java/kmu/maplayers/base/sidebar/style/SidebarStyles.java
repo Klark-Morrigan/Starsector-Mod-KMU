@@ -53,11 +53,6 @@ import java.awt.Color;
  */
 public final class SidebarStyles {
 
-    // The level at which a moment stops being played at all. A volume of zero would still reach the
-    // engine as a sound played at nothing, which is wiring that half worked rather than a panel that was
-    // asked to be quiet - so the scheme names no role instead once the balance says silence.
-    private static final float SILENT_VOLUME = 0f;
-
     // The body face: the insignia body font, the narrower face the body-control labels read in. The tab
     // face is separate below, since the tabs are both measured and drawn in theirs.
     private static final StarsectorFont BODY_FONT = StarsectorFont.VANILLA_INSIGNIA_15;
@@ -212,7 +207,7 @@ public final class SidebarStyles {
 
         var listScrollVolume = KmuMapLayerSettings.getMapSidebarListScrollVolume();
 
-        return listScrollVolume <= SILENT_VOLUME
+        return listScrollVolume <= UiSoundCue.SILENT_VOLUME
             ? null
             : new UiSoundCue(StarsectorUiSound.LIST_SCROLLED, listScrollVolume);
     }
@@ -230,9 +225,9 @@ public final class SidebarStyles {
     // levels arrive from a stored double narrowed to a float, and a slider parked at its own minimum has
     // no business turning on how that landed.
     private static boolean isEveryArrivalSilenced(PointerArrivalVolumes arrivalVolumes) {
-        return arrivalVolumes.panelChromeVolume() <= SILENT_VOLUME
-            && arrivalVolumes.singleOptionControlVolume() <= SILENT_VOLUME
-            && arrivalVolumes.listedItemVolume() <= SILENT_VOLUME;
+        return arrivalVolumes.panelChromeVolume() <= UiSoundCue.SILENT_VOLUME
+            && arrivalVolumes.singleOptionControlVolume() <= UiSoundCue.SILENT_VOLUME
+            && arrivalVolumes.listedItemVolume() <= UiSoundCue.SILENT_VOLUME;
     }
 
     // The accent steps the panel is ruled and framed in, under whichever palette the player pointed it
