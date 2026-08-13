@@ -196,20 +196,16 @@ public final class SidebarStyles {
     }
 
     // What the wheel makes as it moves the sidebar's list, or nothing at all once the player has pulled its
-    // slider to the bottom. Silence stated by naming no cue rather than by playing one at zero, the same
-    // rule the arrivals answer to - a sound played at nothing is still a sound played, and reads as wiring
-    // that half worked rather than as a list deliberately quiet.
+    // slider to the bottom - the library's own rule for a level composed from a slider, silence being
+    // stated by naming no cue rather than by playing one at zero.
     //
     // A level of its own and not part of the arrival balance: the wheel is one act the player asked for,
     // sounding once however far the list travels, where the arrival levels are set against how many things
     // one sweep of the pointer crosses.
     private static UiSoundCue resolveListScrollCue() {
-
-        var listScrollVolume = KmuMapLayerSettings.getMapSidebarListScrollVolume();
-
-        return listScrollVolume <= UiSoundCue.SILENT_VOLUME
-            ? null
-            : new UiSoundCue(StarsectorUiSound.LIST_SCROLLED, listScrollVolume);
+        return UiSoundCue.createIfAudible(
+            StarsectorUiSound.LIST_SCROLLED,
+            KmuMapLayerSettings.getMapSidebarListScrollVolume());
     }
 
     // Whether the pointer sounds at all, which is the balance's own answer: a player who has pulled every

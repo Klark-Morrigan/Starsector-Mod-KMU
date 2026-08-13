@@ -26,15 +26,12 @@ public final class MapHoverCues {
 
     /**
      * @return what the cursor reaching a new cell sounds like, or null once the player has pulled its
-     *         level to the bottom - silence stated by naming no cue rather than by playing one at
-     *         nothing, a sound asked for at zero still being a sound played
+     *         level to the bottom - the library's own rule for a level composed from a slider, so the
+     *         map states silence the way the sidebar does
      */
     public static UiSoundCue composeCellArrivalCue() {
-
-        var cellArrivalVolume = KmuMapLayerSettings.getMapCellArrivalVolume();
-
-        return cellArrivalVolume <= UiSoundCue.SILENT_VOLUME
-            ? null
-            : new UiSoundCue(StarsectorUiSound.TEXT_TYPED, cellArrivalVolume);
+        return UiSoundCue.createIfAudible(
+            StarsectorUiSound.TEXT_TYPED,
+            KmuMapLayerSettings.getMapCellArrivalVolume());
     }
 }
