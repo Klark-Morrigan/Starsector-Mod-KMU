@@ -90,21 +90,28 @@ import javax.swing.SwingUtilities;
  * screenshot, after a feature had been built on them.
  */
 final class SectorGeometryViewer {
+
     private static final Path SVG_DIRECTORY = Path.of("build", "reports", "political-map");
+
     private static final String CSV_EXTENSION = ".csv";
     private static final String SVG_EXTENSION = ".svg";
+
     private static final int WINDOW_WIDTH = 1500;
     private static final int WINDOW_HEIGHT = 1000;
     private static final int CONTROL_WIDTH = 300;
+
     private static final double ZOOM_PER_NOTCH = 1.15;
     private static final double INITIAL_MARGIN = 1.05;
     private static final int SLIDER_STEPS = 1000;
     private static final float SITE_RADIUS = 120f;
     private static final float CELL_STROKE = 30f;
     private static final float RING_STROKE = 90f;
+
     private static final int HUE_RANGE = 360;
+
     private static final float OWNER_SATURATION = 0.8f;
     private static final float OWNER_BRIGHTNESS = 0.55f;
+
     private static final int OWNER_FILL_ALPHA = 90;
     private static final int OPAQUE_ALPHA = 255;
     private static final int PANEL_PADDING = 8;
@@ -112,6 +119,7 @@ final class SectorGeometryViewer {
     private static final int SLIDER_ROWS = 2;
     private static final int SLIDER_COLUMNS = 1;
     private static final long NANOS_PER_MILLI = 1_000_000L;
+
     // Slider ranges: wide enough either side of the shipped defaults to see a knob's effect
     // break down, not just vary. The reach floor sits below any real system spacing and the
     // ceiling well past it, so both "cells never meet" and "cells swallow the sector" are
@@ -151,12 +159,18 @@ final class SectorGeometryViewer {
      *             resources; the first one found otherwise
      */
     public static void main(String[] args) {
-        var sectorName = args.length > 0 ? args[0] : SectorFixture.listSectorNames().get(0);
+
+        var sectorName = args.length > 0
+            ? args[0]
+            : SectorFixture.listSectorNames().get(0);
+
         SwingUtilities.invokeLater(() -> new SectorGeometryViewer(sectorName).showWindow());
     }
 
     private void showWindow() {
+
         var frame = new JFrame("KMU political map - " + sectorName);
+
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
         frame.add(canvas, BorderLayout.CENTER);
@@ -207,11 +221,16 @@ final class SectorGeometryViewer {
     // for keeping an interesting shape - to attach to a plan, or to diff against a later run -
     // and only the person looking at it knows when it has become interesting.
     private JButton buildSaveSvgButton() {
+
         var button = new JButton("Save SVG of current shape");
+
         button.addActionListener(event -> {
+
             var target = SVG_DIRECTORY.resolve(
-                    sectorName.replace(CSV_EXTENSION, SVG_EXTENSION));
+                sectorName.replace(CSV_EXTENSION, SVG_EXTENSION));
+
             SectorSvgWriter.writeSectorSvg(target, fixture, geometry);
+
             canvas.statusLabel.setText("<html>wrote<br>" + target.toAbsolutePath() + "</html>");
         });
         return button;
@@ -261,8 +280,11 @@ final class SectorGeometryViewer {
     }
 
     private static Path2D buildPath(List<double[]> ring) {
+
         var path = new Path2D.Double();
+
         for (var i = 0; i < ring.size(); i++) {
+
             if (i == 0) {
                 path.moveTo(ring.get(i)[0], ring.get(i)[1]);
             } else {
@@ -275,6 +297,7 @@ final class SectorGeometryViewer {
 
     /** Paints the geometry in world coordinates under a pan/zoom transform. */
     private final class MapCanvas extends JPanel {
+
         private final JLabel statusLabel = new JLabel();
         private double scale;
         private double offsetX;
@@ -282,28 +305,36 @@ final class SectorGeometryViewer {
         private Point2D dragAnchor;
 
         private MapCanvas() {
+
             setBackground(BACKGROUND);
             addMouseWheelListener(event -> {
+
                 var factor = Math.pow(ZOOM_PER_NOTCH, -event.getWheelRotation());
+
                 // Zoom about the cursor rather than the origin, so the feature being
                 // inspected stays under the pointer instead of sliding off.
                 offsetX = event.getX() - (event.getX() - offsetX) * factor;
                 offsetY = event.getY() - (event.getY() - offsetY) * factor;
                 scale *= factor;
+
                 repaint();
             });
             addMouseListener(new java.awt.event.MouseAdapter() {
+                
                 @Override
                 public void mousePressed(java.awt.event.MouseEvent event) {
                     dragAnchor = event.getPoint();
                 }
             });
             addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+
                 @Override
                 public void mouseDragged(java.awt.event.MouseEvent event) {
+
                     offsetX += event.getX() - dragAnchor.getX();
                     offsetY += event.getY() - dragAnchor.getY();
                     dragAnchor = event.getPoint();
+
                     repaint();
                 }
             });
@@ -311,17 +342,26 @@ final class SectorGeometryViewer {
 
         @Override
         protected void paintComponent(Graphics g) {
+
             super.paintComponent(g);
+
             var g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g2.setRenderingHint(
+                RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+
             if (scale == 0) {
                 fitToSector();
             }
+
             // World y grows upward and screen y downward, so the drawing is flipped once here
             // rather than at every vertex - a sector drawn upside down would read as a bug.
             g2.translate(offsetX, offsetY);
             g2.scale(scale, -scale);
+
             paintGeometry(g2);
+
             g2.dispose();
         }
 
@@ -332,9 +372,11 @@ final class SectorGeometryViewer {
                 g2.draw(buildPath(toRing(edges)));
             }
             g2.setStroke(new BasicStroke(RING_STROKE));
+
             // Unowned per the geometry's own keys, not the fixture's: a cell the build
             // grouped or unowned must be drawn as the build left it.
             for (var entry : geometry.shapedCellByCellId().entrySet()) {
+
                 if (geometry.ownerByCellId().containsKey(entry.getKey())
                         || entry.getValue().fillPolygon().size()
                             < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
@@ -348,7 +390,9 @@ final class SectorGeometryViewer {
             // paints an enclave as another island of the owner's colour, which is the opposite of
             // what it means.
             for (var entry : geometry.ringsByOwner().entrySet()) {
+
                 var cluster = new Path2D.Double(Path2D.WIND_EVEN_ODD);
+
                 for (var ring : entry.getValue()) {
                     cluster.append(buildPath(ring), false);
                 }
@@ -358,31 +402,42 @@ final class SectorGeometryViewer {
                 g2.draw(cluster);
             }
             g2.setColor(SITE_COLOUR);
+
             for (var site : fixture.getSites()) {
-                g2.fill(new java.awt.geom.Ellipse2D.Double(site[0] - SITE_RADIUS,
-                        site[1] - SITE_RADIUS, SITE_RADIUS * 2, SITE_RADIUS * 2));
+
+                g2.fill(new java.awt.geom.Ellipse2D.Double(
+                    site[0] - SITE_RADIUS,
+                    site[1] - SITE_RADIUS,
+                    SITE_RADIUS * 2,
+                    SITE_RADIUS * 2));
             }
         }
 
         private void fitToSector() {
+
             var minX = Double.MAX_VALUE;
             var minY = Double.MAX_VALUE;
             var maxX = -Double.MAX_VALUE;
             var maxY = -Double.MAX_VALUE;
+
             for (var site : fixture.getSites()) {
                 minX = Math.min(minX, site[0]);
                 minY = Math.min(minY, site[1]);
                 maxX = Math.max(maxX, site[0]);
                 maxY = Math.max(maxY, site[1]);
             }
+            
             var span = Math.max(maxX - minX, maxY - minY) * INITIAL_MARGIN;
+
             scale = Math.min(getWidth(), getHeight()) / span;
             offsetX = getWidth() / 2.0 - (minX + maxX) / 2.0 * scale;
             offsetY = getHeight() / 2.0 + (minY + maxY) / 2.0 * scale;
         }
 
         private List<double[]> toRing(List<CellEdge> edges) {
-            return edges.stream().map(edge -> new double[] {edge.x1(), edge.y1()}).toList();
+            return edges.stream()
+                .map(edge -> new double[] {edge.x1(), edge.y1()})
+                .toList();
         }
     }
 }

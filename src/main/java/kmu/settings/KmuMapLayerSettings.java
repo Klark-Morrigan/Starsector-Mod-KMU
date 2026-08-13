@@ -17,9 +17,12 @@ package kmu.settings;
  * where it does no harm - the Java side says which half of the map code owns a knob, the
  * stored key stays put.
  *
- * <p>The knobs lay out across three tabs. {@code Map - Visuals} carries the overlay
+ * <p>The knobs lay out across four tabs. {@code Map - Visuals} carries the overlay
  * sidebar, the map labels, the two upper hover tiers and how tightly a hover box is set -
- * what every layer shares.
+ * what every layer shares. {@code Map - Sound} carries how loudly each moment the panel and
+ * the map answer audibly plays, which is a component of the look for the same reason a fill
+ * colour is but browsed by a player who has come looking for the volume rather than for the
+ * shades.
  * {@code Map - Keybinds} carries the layer shortcuts, which are controls rather than
  * appearance. {@code Map - Dev} carries the tuning surfaces a player does not browse:
  * the national border's tracing tolerances, the label-anchor search's modifiers, and the
@@ -120,6 +123,35 @@ public final class KmuMapLayerSettings {
         "kmu_map_visuals_tooltips_leader_thickness";
     private static final String TOOLTIP_LEADER_OPACITY_FIELD =
         "kmu_map_visuals_tooltips_leader_opacity";
+
+    // How loudly the sidebar answers the cursor reaching something (Map - Sound tab), one level per kind
+    // of thing there is to reach. Each scales the level the engine already holds for the sample, so 1 is
+    // vanilla's own mouseover and anything below it is the panel answering more quietly than the chrome
+    // around it. Three levels rather than one because what vanilla balanced its mouseover for is a screen
+    // carrying a handful of hit targets, and the sidebar packs a column of them: a listed item is crossed
+    // several at a time on the way to the one thing the player aimed at, so it is pitched under the two
+    // that are aimed at. The kinds are named for what the player is reaching rather than for the widget
+    // classes, which is what keeps the set closed as widgets are added.
+    private static final String SIDEBAR_PANEL_CHROME_ARRIVAL_VOLUME_FIELD =
+        "kmu_map_sound_sidebar_arrival_panelChrome";
+    private static final String SIDEBAR_SINGLE_OPTION_CONTROL_ARRIVAL_VOLUME_FIELD =
+        "kmu_map_sound_sidebar_arrival_singleOptionControl";
+    private static final String SIDEBAR_LISTED_ITEM_ARRIVAL_VOLUME_FIELD =
+        "kmu_map_sound_sidebar_arrival_listedItem";
+
+    // How loudly the sidebar's list sounds as the wheel moves it (Map - Sound tab). Its own knob and not
+    // one of the arrival levels above, because scrolling is not an arrival: the rows travel under a parked
+    // cursor, so the movement is answered once for the whole turn of the wheel rather than once per row
+    // that passed. It is also what makes the listed-item level liveable, a fast wheel otherwise ticking
+    // down the whole list.
+    private static final String SIDEBAR_LIST_SCROLL_VOLUME_FIELD =
+        "kmu_map_sound_sidebar_listScroll";
+
+    // How loudly the map ticks as the cursor reaches a new system's cell (Map - Sound tab). Beside the
+    // sidebar's levels rather than among them: a cell is not a control and the tick is its own sample, so
+    // what it shares with them is the moment being answered at all and not the balance they are tuned to.
+    private static final String MAP_CELL_ARRIVAL_VOLUME_FIELD =
+        "kmu_map_sound_hover_cellArrival";
 
     // Border tracing (Map - Dev tab): the raw ring chaining and miter inset that turn a cluster's
     // cell edges into one outline. Always applied - it is upstream of the smoothing passes a
@@ -281,6 +313,18 @@ public final class KmuMapLayerSettings {
     private static final float DEFAULT_TOOLTIP_LEADER_THICKNESS = 1f;
     private static final float DEFAULT_TOOLTIP_LEADER_OPACITY = 0.65f;
 
+    // The shipped balance: vanilla's own mouseover level halved for anything the player aims at, and
+    // halved again for the items a sweep crosses several of on its way there. The gap between the two
+    // numbers is the whole of what stops a column of listed rows reading as chatter, so they are only
+    // meaningful against each other - a player raising one has retuned the balance rather than turned up
+    // a part of it. The scroll and the map's cell tick are single moments and sit at the aimed-at level.
+    // Mirror the CSV defaultValue column like every fallback here.
+    private static final float DEFAULT_SIDEBAR_PANEL_CHROME_ARRIVAL_VOLUME = 0.5f;
+    private static final float DEFAULT_SIDEBAR_SINGLE_OPTION_CONTROL_ARRIVAL_VOLUME = 0.5f;
+    private static final float DEFAULT_SIDEBAR_LISTED_ITEM_ARRIVAL_VOLUME = 0.25f;
+    private static final float DEFAULT_SIDEBAR_LIST_SCROLL_VOLUME = 0.5f;
+    private static final float DEFAULT_MAP_CELL_ARRIVAL_VOLUME = 0.5f;
+
     // Border-tracing knobs (ungated).
     private static final double DEFAULT_BORDER_WELD_TOLERANCE = 100.0;
     private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
@@ -409,6 +453,61 @@ public final class KmuMapLayerSettings {
         return KmuLunaSettings.readFloat(
             TOOLTIP_LEADER_OPACITY_FIELD,
             DEFAULT_TOOLTIP_LEADER_OPACITY);
+    }
+
+    /**
+     * @return how loudly the sidebar's own furniture - a header tab, the collapse handle - sounds as
+     *         the cursor reaches it, as a multiple of the level the engine holds for the sample; 0.5
+     *         by default, which is vanilla's mouseover halved, and 0 to reach it silently
+     */
+    public static float getMapSidebarPanelChromeArrivalVolume() {
+        return KmuLunaSettings.readFloat(
+            SIDEBAR_PANEL_CHROME_ARRIVAL_VOLUME_FIELD,
+            DEFAULT_SIDEBAR_PANEL_CHROME_ARRIVAL_VOLUME);
+    }
+
+    /**
+     * @return how loudly a sidebar control with one answer to give - a tick box, a switch - sounds as
+     *         the cursor reaches it, on the same scale; 0.5 by default, level with the panel's own
+     *         furniture because both are aimed at rather than crossed
+     */
+    public static float getMapSidebarSingleOptionControlArrivalVolume() {
+        return KmuLunaSettings.readFloat(
+            SIDEBAR_SINGLE_OPTION_CONTROL_ARRIVAL_VOLUME_FIELD,
+            DEFAULT_SIDEBAR_SINGLE_OPTION_CONTROL_ARRIVAL_VOLUME);
+    }
+
+    /**
+     * @return how loudly one of many alike - one option of a row of them, one row of a list - sounds
+     *         as the cursor reaches it, on the same scale; 0.25 by default, under the two levels above
+     *         because a sweep crosses several of these on the way to the one thing aimed at
+     */
+    public static float getMapSidebarListedItemArrivalVolume() {
+        return KmuLunaSettings.readFloat(
+            SIDEBAR_LISTED_ITEM_ARRIVAL_VOLUME_FIELD,
+            DEFAULT_SIDEBAR_LISTED_ITEM_ARRIVAL_VOLUME);
+    }
+
+    /**
+     * @return how loudly the sidebar's list sounds as the wheel moves it, on the same scale; 0.5 by
+     *         default. One answer for the whole movement rather than one per row that passed, which
+     *         is what the moment honestly is - the player turned the wheel once
+     */
+    public static float getMapSidebarListScrollVolume() {
+        return KmuLunaSettings.readFloat(
+            SIDEBAR_LIST_SCROLL_VOLUME_FIELD,
+            DEFAULT_SIDEBAR_LIST_SCROLL_VOLUME);
+    }
+
+    /**
+     * @return how loudly the map ticks as the cursor reaches a new system's cell, on the same scale;
+     *         0.5 by default. Silenced by 0 here and, with every other answer the map makes to the
+     *         cursor, by the hovering switches above
+     */
+    public static float getMapCellArrivalVolume() {
+        return KmuLunaSettings.readFloat(
+            MAP_CELL_ARRIVAL_VOLUME_FIELD,
+            DEFAULT_MAP_CELL_ARRIVAL_VOLUME);
     }
 
     /**

@@ -7,6 +7,9 @@ import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.render.gl.style.BoxColours;
 import kmlib.starsector.ui.render.gl.style.ControlHoverWash;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
+import kmlib.starsector.ui.sound.PointerArrivalVolumes;
+import kmlib.starsector.ui.sound.StarsectorUiSound;
+import kmlib.starsector.ui.sound.UiSoundCue;
 import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.widgets.tabs.style.HotkeyStyle;
 import kmlib.starsector.ui.widgets.tabs.style.TabBox;
@@ -43,15 +46,10 @@ import java.awt.Color;
  */
 public final class SidebarStyles {
 
-    /**
-     * How the sidebar answers a press and the pointer arriving: the engine's own scheme, the sidebar
-     * being drawn to sit among vanilla chrome.
-     *
-     * <p>Public because the panel's controller is handed this directly rather than reading it off the
-     * widget style each frame - the moments it answers are pointer events, not paint passes - so the
-     * scheme has to be one named value both sides take, or the panel would look and sound from two.
-     */
-    public static final UiSoundScheme SIDEBAR_SOUND_SCHEME = UiSoundScheme.createVanillaSoundScheme();
+    // The level at which a moment stops being played at all. A volume of zero would still reach the
+    // engine as a sound played at nothing, which is wiring that half worked rather than a panel that was
+    // asked to be quiet - so the scheme names no role instead once the balance says silence.
+    private static final float SILENT_VOLUME = 0f;
 
     // The body face: the insignia body font, the narrower face the body-control labels read in. The tab
     // face is separate below, since the tabs are both measured and drawn in theirs.
@@ -155,6 +153,60 @@ public final class SidebarStyles {
      */
     public static WidgetStyle buildChromeFramedStyle(TabStyle tabStyle) {
         return composeStyle(tabStyle, SidebarFraming.CHROME_DARK);
+    }
+
+    /**
+     * How the sidebar answers a press and the pointer arriving: the engine's own roles, the panel being
+     * drawn to sit among vanilla chrome, at the levels the player set them to.
+     *
+     * <p>The roles are vanilla's and the balance is not, which is the whole of what this composes. What
+     * the engine mixed its mouseover for is a screen carrying a handful of hit targets, and this panel
+     * packs a column of them into a strip - so matching the chrome around it means matching it under one
+     * pointer sweep, which the ids alone cannot do at any volume they ship with.
+     *
+     * <p>Read here rather than watched, on the rule the colours beside it follow: a scheme is composed
+     * whenever the panel's look is, which is often enough that a slider moved mid-session is heard
+     * shortly after. A binding that pushed changes over would be a second mechanism for a value already
+     * re-read.
+     *
+     * <p>Public because the panel's controller takes the scheme directly rather than reading it off the
+     * widget style each frame - the moments it answers are pointer events, not paint passes - so both
+     * sides have to compose from this one factory, or the panel would look and sound from two.
+     *
+     * @return the scheme this sidebar's moments sound by
+     */
+    public static UiSoundScheme buildSidebarSoundScheme() {
+
+        var arrivalVolumes = new PointerArrivalVolumes(
+            KmuMapLayerSettings.getMapSidebarPanelChromeArrivalVolume(),
+            KmuMapLayerSettings.getMapSidebarSingleOptionControlArrivalVolume(),
+            KmuMapLayerSettings.getMapSidebarListedItemArrivalVolume());
+
+        return new UiSoundScheme(
+            // The press keeps the engine's own level, having no slider of its own: it is one act the
+            // player asked for, so the case for quietening it - a sweep crossing many things at once -
+            // never arises.
+            UiSoundCue.createAtFullVolume(StarsectorUiSound.BUTTON_PRESSED),
+            resolveArrivalSound(arrivalVolumes),
+            arrivalVolumes);
+    }
+
+    // Whether the pointer sounds at all, which is the balance's own answer: a player who has pulled every
+    // level down to nothing has asked for a panel that is quiet under the pointer, and a look states that
+    // by naming no role rather than by playing one at zero. Named per moment and not per kind because one
+    // role covers every arrival - silencing one kind alone is a balance the scheme has no way to hold.
+    private static StarsectorUiSound resolveArrivalSound(PointerArrivalVolumes arrivalVolumes) {
+        return isEveryArrivalSilenced(arrivalVolumes) ? null : StarsectorUiSound.BUTTON_MOUSEOVER;
+    }
+
+    // Silence read off the levels rather than off a switch of its own, so the sliders are the only place
+    // the panel's volume is stated. Compared against the floor rather than for equality with it: the
+    // levels arrive from a stored double narrowed to a float, and a slider parked at its own minimum has
+    // no business turning on how that landed.
+    private static boolean isEveryArrivalSilenced(PointerArrivalVolumes arrivalVolumes) {
+        return arrivalVolumes.panelChromeVolume() <= SILENT_VOLUME
+            && arrivalVolumes.singleOptionControlVolume() <= SILENT_VOLUME
+            && arrivalVolumes.listedItemVolume() <= SILENT_VOLUME;
     }
 
     // The accent steps the panel is ruled and framed in, under whichever palette the player pointed it
@@ -274,7 +326,8 @@ public final class SidebarStyles {
     // backdrop, the colour scheme's accent steps for the controls, the wash the pointer lifts one of those
     // controls by, the insignia body face, the given tab
     // style, the collapse handle's chevron shades for the colour the player picked, and the vanilla
-    // button sounds its controls answer by. Everything but the framing is shared by every screen the
+    // button sounds its controls answer by at the levels the player set them to. Everything but the
+    // framing is shared by every screen the
     // sidebar draws on, so a screen choosing its frame chooses nothing else by accident.
     //
     // The set is resolved here and spent on both the controls and the frame, so the one scheme reaches
@@ -307,7 +360,7 @@ public final class SidebarStyles {
                 KmuMapLayerSettings.getMapSidebarChevronColour(),
                 accentColours.base(),
                 accentColours.bright()),
-            SIDEBAR_SOUND_SCHEME);
+            buildSidebarSoundScheme());
     }
 
     /**

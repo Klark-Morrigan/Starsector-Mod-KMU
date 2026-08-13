@@ -233,7 +233,9 @@ is left untouched, so the key appears only once the player moves the panel.
 Hosts are process-lifetime singletons, so `BaseSidebarHost.restoreFoldFromSave` replaces the
 controller per load with one constructed at the stored fold. Replacing rather than mutating avoids
 reaching into the collapse animation (the two ends are the widget's own two constructors) and clears
-the previous save's scroll offset in the same move.
+the previous save's scroll offset in the same move. It is also where the panel's sound scheme is
+composed from the player's levels, the seed built at class load having no settings mod to read yet -
+see [Styling](#styling).
 
 ## Picker state
 
@@ -339,10 +341,22 @@ recolours - which is the case it exists for. `Chrome grey` is the third, droppin
 entirely; it is also the one scheme with no engine dark to take, since the fixed palette's dark role
 is the button teal, so it steps its own grey down instead.
 
-The look also says how the panel *sounds*, and the sidebar takes the engine's own scheme through
-`SidebarStyles.SIDEBAR_SOUND_SCHEME`. It is the one part of the look the panel's controller is
-handed directly rather than rebuilt each frame - the moments it answers are pointer events, not paint
-passes - so both sides read that one constant.
+The look also says how the panel *sounds*, and `SidebarStyles.buildSidebarSoundScheme` composes that:
+the engine's own roles - a vanilla button's press and its mouseover - at the levels the player set on
+the `Map - Sound` settings tab. The roles are vanilla's because the panel is drawn among vanilla
+chrome; the levels are not, because what the engine mixed its mouseover for is a screen carrying a
+handful of hit targets and this panel packs a column of them. One level per kind of thing the pointer
+can reach - the panel's own furniture, a control with one answer to give, one of many alike - pitched
+so a sweep crossing a listed column does not chatter. A balance pulled to nothing everywhere composes
+a scheme naming no arrival role at all, silence being something a look states rather than a cue played
+at zero.
+
+It is the one part of the look the panel's controller is handed directly rather than reading off the
+widget style each frame - the moments it answers are pointer events, not paint passes. The controller
+therefore takes a scheme composed at the moment it is built: the constructor's seed takes the
+library's own balance, being built during class initialisation where reaching for the settings mod
+would tie this mod's load order to it and being a controller nothing can be heard through, and
+`restoreFoldFromSave` composes from the sliders for the controller a player actually reaches.
 
 Both hosts build through that one file rather than each spelling its look out, so the parts the two
 screens share cannot drift into two spellings of them. Where they do differ, they choose between
@@ -578,7 +592,9 @@ rather than being pushed into the draw pass, which is what keeps the two rows fr
 
 The border width, opacity, collapse seconds, and both anchors' paddings are LunaLib fields read
 through `kmu.settings.KmuMapLayerSettings`, as are the colour scheme and the chevron colour - those
-two in their own "Overlay sidebar - colours" section below the box's dimensions.
+two in their own "Overlay sidebar - colours" section below the box's dimensions. The three arrival
+levels and the list-scroll level are fields of the same class on the `Map - Sound` tab, which is
+where the volume half of the look is stated rather than beside the shades.
 
 ## What is not here
 

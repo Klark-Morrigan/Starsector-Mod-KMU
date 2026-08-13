@@ -116,6 +116,7 @@ final class LunaSettingsCsvIntegrationTest {
         "Map - Visuals",
         "Map - Politics - Visuals",
         "Map - Politics - Domination",
+        "Map - Sound",
         "Map - Keybinds",
         "Map - Dev",
         "Map - Politics - Dev",

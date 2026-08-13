@@ -371,6 +371,21 @@ final class IntelSidebarHostTest {
     @Nested
     class RestoreFoldFromSave {
 
+        // The reseed composes the panel's sound scheme from the player's own levels, which is a real
+        // settings read - so it is stood in for here as it is wherever the look is built, whichever fold
+        // the case is about.
+        private SidebarSettingsMock sidebarSettingsMock;
+
+        @BeforeEach
+        void mockLiveSettings() {
+            sidebarSettingsMock = SidebarSettingsMock.install();
+        }
+
+        @AfterEach
+        void closeLiveSettings() {
+            sidebarSettingsMock.close();
+        }
+
         @Test
         void restoreFoldFromSaveOpensDockedWhenTheSaveHoldsNoChoiceYet() {
             // A fresh save has never written the key, so the default applies and the rail stays clear of

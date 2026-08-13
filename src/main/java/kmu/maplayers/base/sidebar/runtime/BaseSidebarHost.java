@@ -3,6 +3,7 @@ package kmu.maplayers.base.sidebar.runtime;
 import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.starsector.ui.input.TabPanelController;
+import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
 import kmlib.starsector.ui.widgets.tabs.TabPanelHotkeys;
 import kmlib.starsector.ui.widgets.tabs.TabStrip;
@@ -70,7 +71,14 @@ public abstract class BaseSidebarHost implements SidebarHost {
         this.foldSelection = foldSelection;
         this.layerSelection = layerSelection;
         this.consoleOverlay = consoleOverlay;
-        this.controller = createControllerAtFold(foldSelection.isRailDocked());
+        // The seed takes the library's own balance rather than the player's, being the one controller
+        // nothing can be heard through: a host is a process-lifetime singleton built before any sector
+        // exists, so no panel is on screen for a pointer to reach until the load below replaces it. What
+        // that buys is a host whose construction reads no setting at all, which is what keeps a singleton
+        // built at class load from depending on the settings mod having loaded first.
+        this.controller = createControllerAtFold(
+            foldSelection.isRailDocked(),
+            UiSoundScheme.createVanillaSoundScheme());
     }
 
     @Override
@@ -144,7 +152,12 @@ public abstract class BaseSidebarHost implements SidebarHost {
      */
     @Override
     public final void restoreFoldFromSave() {
-        controller = createControllerAtFold(foldSelection.isRailDocked());
+        // The first controller a player can actually reach, so this is where the panel's own balance
+        // arrives: composed from the sliders rather than taken from the library, and composed afresh on
+        // each load so a level changed between saves is answered at the next one.
+        controller = createControllerAtFold(
+            foldSelection.isRailDocked(),
+            SidebarStyles.buildSidebarSoundScheme());
     }
 
     /**
@@ -163,18 +176,22 @@ public abstract class BaseSidebarHost implements SidebarHost {
      */
     protected abstract boolean isHostScreenShowing();
 
-    // A controller opened at the given fold, answering by the sidebar's own sound scheme. The docked seed
-    // and the expanded default are the widget's own two constructors, so the fold a host opens at is chosen
-    // here rather than animated into.
+    // A controller opened at the given fold, answering by the given sound scheme. The docked seed and the
+    // expanded default are the widget's own two constructors, so the fold a host opens at is chosen here
+    // rather than animated into.
     //
-    // The scheme comes from where the look is composed rather than from the widget's vanilla default, so a
-    // sidebar that ever wants quieter controls has one value to change and not two places to remember.
-    private static TabPanelController createControllerAtFold(boolean isRailDocked) {
+    // The scheme is a parameter rather than composed here because the two callers want different ones and
+    // for a reason that is not about sound: the seed is built during class initialisation, where reading a
+    // setting would be reaching for another mod mid-load, and the reseed runs with a sector up, where the
+    // player's own levels are there to be read. Both hand over a whole scheme, so neither can compose half
+    // of one.
+    private static TabPanelController createControllerAtFold(
+        boolean isRailDocked,
+        UiSoundScheme soundScheme) {
 
         // Bound once so the two folds differ in the fold alone: the sound wiring is the same either way,
         // and written twice it would be a place for the docked panel to drift from the expanded one.
         var soundPlayer = new VanillaUiSoundPlayer();
-        var soundScheme = SidebarStyles.SIDEBAR_SOUND_SCHEME;
 
         return isRailDocked
             ? TabPanelController.createStartingDocked(soundPlayer, soundScheme)
