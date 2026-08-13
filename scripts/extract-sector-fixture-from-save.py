@@ -3,9 +3,10 @@
     python scripts/extract-sector-fixture-from-save.py <path-to-campaign.xml> [out.csv]
 
 Default output is a new fixture beside the ones the tests already read, under
-src/test/resources/kmu/maplayers/politicalmap/, named for the sector it describes
-(sector-<n>systems-<n>owned-<n>blocs.csv). The tests run over EVERY fixture in that
-folder, so extracting another save adds coverage rather than replacing it: a second
+src/utils/resources/kmu/maplayers/base/geometry/, named for the sector it describes
+(sector-<n>systems-<n>owned-<n>blocs-<m>of<d>factions.csv). The tests run over EVERY
+fixture in that folder, so extracting another save adds coverage rather than replacing
+it: a second
 sector with a different density, a different empty-space ratio, or a different bloc count
 exercises shapes the first one never produces. The name carries the metrics because that
 is what distinguishes one sector's geometry from another's - a save name would not.
@@ -42,7 +43,7 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from pathlib import Path
 
-DEFAULT_OUT_DIR = Path("src/test/resources/kmu/maplayers/politicalmap")
+DEFAULT_OUT_DIR = Path("src/utils/resources/kmu/maplayers/base/geometry")
 # A market owned by one of these holds no political ground - a derelict or an abandoned
 # station - so it must not make a system read as owned.
 UNOWNED_FACTIONS = {None, "", "neutral"}
