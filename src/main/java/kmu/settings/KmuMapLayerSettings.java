@@ -151,7 +151,7 @@ public final class KmuMapLayerSettings {
     // sidebar's levels rather than among them: a cell is not a control and the tick is its own sample, so
     // what it shares with them is the moment being answered at all and not the balance they are tuned to.
     private static final String MAP_CELL_ARRIVAL_VOLUME_FIELD =
-        "kmu_map_sound_hover_cellArrival";
+        "kmu_map_sound_map_cellArrival";
 
     // Border tracing (Map - Dev tab): the raw ring chaining and miter inset that turn a cluster's
     // cell edges into one outline. Always applied - it is upstream of the smoothing passes a

@@ -116,14 +116,14 @@ kmu_politicalMapPatrolLowStabilityPenalty,,,,Patrol low-stability penalty,,Doubl
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
-kmu_soundSidebarHeader,,,,Collapsible sidebar,,Header,Collapsible sidebar,,,,,,,,,Map - Sound
+kmu_map_sound_sidebar_header,,,,Collapsible sidebar,,Header,Collapsible sidebar,,,,,,,,,Map - Sound
 kmu_map_sound_sidebar_arrival_panelChrome,,,,Cursor on panel furniture,,Double,0.5,,,,"How loudly the overlay control box's own furniture sounds as the cursor reaches it - a tab in its header, or its collapse handle. 1 is the game's own mouseover level, the one every vanilla button plays at; below that the box answers more quietly than the chrome around it, and 0 silences that one kind of thing. With this and the two below all at 0 the box makes no sound under the cursor at all. Default: 0.5.",,,0,1,Map - Sound
 kmu_map_sound_sidebar_arrival_singleOptionControl,,,,Cursor on a control,,Double,0.5,,,,"How loudly a control with one answer to give - a tick box, a switch - sounds as the cursor reaches it. Same scale as above: 1 is the game's own mouseover level and 0 is silence. Default: 0.5.",,,0,1,Map - Sound
 kmu_map_sound_sidebar_arrival_listedItem,,,,Cursor on a listed item,,Double,0.25,,,,"How loudly one of many alike - one option of a row of them, one row of a list - sounds as the cursor reaches it. Set below the two above because a cursor crossing the box sweeps several of these on the way to the one thing you aimed at; raised to match them, a column of listed items is what makes the box chatter. 0 is silence. Default: 0.25.",,,0,1,Map - Sound
 kmu_map_sound_sidebar_listScroll,,,,List scrolling,,Double,0.5,,,,"How loudly the overlay control box's list sounds as the wheel scrolls it. One sound for the whole movement rather than one per row that passes under a parked cursor - you turned the wheel once. 0 is silence. Default: 0.5.",,,0,1,Map - Sound
 ,,,,,,,,,,,,,,,,
-kmu_soundMapHoverHeader,,,,Map mouseover,,Header,Map mouseover,,,,,,,,,Map - Sound
-kmu_map_sound_hover_cellArrival,,,,Cursor on a map cell,,Double,0.5,,,,"How loudly the map ticks as the cursor reaches a new star system's cell - the same moment the hover tooltip changes what it is naming. Silenced by 0 here, and by the hovering switches on the Map - Visuals tab along with everything else the map does in answer to the cursor. Default: 0.5.",,,0,1,Map - Sound
+kmu_map_sound_map_header,,,,Map mouseover,,Header,Map mouseover,,,,,,,,,Map - Sound
+kmu_map_sound_map_cellArrival,,,,Cursor on a map cell,,Double,0.5,,,,"How loudly the map ticks as the cursor reaches a new star system's cell - the same moment the hover tooltip changes what it is naming. Silenced by 0 here, and by the hovering switches on the Map - Visuals tab along with everything else the map does in answer to the cursor. Default: 0.5.",,,0,1,Map - Sound
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
