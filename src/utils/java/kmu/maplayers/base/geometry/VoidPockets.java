@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
 import java.util.ArrayList;
@@ -167,7 +168,7 @@ final class VoidPockets {
                 absorbingOwner == null
                     ? findHolesInside(withChannel, hole)
                     : findHoleAround(atFills, hole),
-                findCentre(hole.boundary()),
+                Points.computeMean(hole.boundary()),
                 hole.ringing(),
                 measureWidestSpan(hole.corners()),
                 absorbingOwner));
@@ -217,7 +218,10 @@ final class VoidPockets {
 
         var inside = new ArrayList<List<double[]>>();
         for (var candidate : narrowed) {
-            if (isPointInside(candidate.boundary().get(0), hole.boundary())) {
+
+            var probe = candidate.boundary().get(0);
+
+            if (PolygonRegions.isPointInsideRing(hole.boundary(), probe[0], probe[1])) {
                 inside.add(candidate.boundary());
             }
         }
@@ -229,33 +233,16 @@ final class VoidPockets {
     // own outline that is tested.
     private static List<List<double[]>> findHoleAround(List<Hole> widened, Hole hole) {
 
+        var probe = hole.boundary().get(0);
+
         for (var candidate : widened) {
-            if (isPointInside(hole.boundary().get(0), candidate.boundary())) {
+            if (PolygonRegions.isPointInsideRing(
+                    candidate.boundary(), probe[0], probe[1])) {
                 return List.of(candidate.boundary());
             }
         }
         return List.of();
     }
-
-    // Ray casting: a ray from the point crosses a closed outline an odd number of times when
-    // it starts inside it.
-    private static boolean isPointInside(double[] point, List<double[]> outline) {
-
-        var inside = false;
-        for (var index = 0; index < outline.size(); index++) {
-
-            var from = outline.get(index);
-            var to = outline.get((index + 1) % outline.size());
-
-            if (from[1] > point[1] != to[1] > point[1]
-                    && point[0] < (to[0] - from[0]) * (point[1] - from[1])
-                        / (to[1] - from[1]) + from[0]) {
-                inside = !inside;
-            }
-        }
-        return inside;
-    }
-
 
     // Every stretch of every circle that no other disc covers, which is the whole boundary of
     // the union - outer silhouettes and holes alike, not yet told apart.
@@ -462,22 +449,6 @@ final class VoidPockets {
         return new Hole(boundary, corners, List.copyOf(ringing));
     }
 
-    private static double[] findCentre(List<double[]> boundary) {
-
-        var x = 0.0;
-        var y = 0.0;
-
-        for (var point : boundary) {
-
-            x += point[0];
-            y += point[1];
-        }
-        return new double[] {
-            x / boundary.size(),
-            y / boundary.size()};
-    }
-
-
     // The owner that rings a pocket on every side, if one does. What an unowned cell does
     // to that is the caller's call: counting it against absorption is what a cell does with
     // unowned space, and setting it aside asks instead whether any RIVAL is present.
@@ -563,6 +534,9 @@ final class VoidPockets {
         return turned < 0 ? turned + FULL_TURN : turned;
     }
 
+    // Kept local rather than taken from kmlib's Points: its computeDistance is overloaded
+    // on an LWJGL vector type the tooling has no classpath for, so the call will not
+    // resolve here however plain the arithmetic is.
     private static double measureDistance(double[] from, double[] to) {
         return Math.hypot(to[0] - from[0], to[1] - from[1]);
     }

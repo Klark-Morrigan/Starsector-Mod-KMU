@@ -1127,74 +1127,23 @@ final class SectorGeometryViewer {
                 double[] from,
                 double[] to) {
 
-            var midX = (from[0] + to[0]) / 2.0;
-            var midY = (from[1] + to[1]) / 2.0;
-            var nearest = Double.MAX_VALUE;
-            var facesCell = false;
+            var nearest = CellEdges.findNearestEdge(
+                trueEdges,
+                (from[0] + to[0]) / 2.0,
+                (from[1] + to[1]) / 2.0);
 
-            for (var edge : trueEdges) {
-
-                var distance = measureDistanceToSegment(
-                    midX,
-                    midY,
-                    edge.x1(),
-                    edge.y1(),
-                    edge.x2(),
-                    edge.y2());
-
-                if (distance < nearest) {
-
-                    nearest = distance;
-                    facesCell = edge.target() instanceof EdgeTarget.AcrossSystem;
-                }
-            }
-            return facesCell;
-        }
-
-        private static double measureDistanceToSegment(
-                double x,
-                double y,
-                double x1,
-                double y1,
-                double x2,
-                double y2) {
-
-            var spanX = x2 - x1;
-            var spanY = y2 - y1;
-            var lengthSquared = spanX * spanX + spanY * spanY;
-
-            if (lengthSquared <= 0) {
-                return Math.hypot(x - x1, y - y1);
-            }
-
-            var along = Math.max(
-                0.0,
-                Math.min(
-                    1.0,
-                    ((x - x1) * spanX + (y - y1) * spanY) / lengthSquared));
-
-            return Math.hypot(x - (x1 + along * spanX), y - (y1 + along * spanY));
+            return nearest != null && nearest.target() instanceof EdgeTarget.AcrossSystem;
         }
 
         private void fitToSector() {
 
-            var minX = Double.MAX_VALUE;
-            var minY = Double.MAX_VALUE;
-            var maxX = -Double.MAX_VALUE;
-            var maxY = -Double.MAX_VALUE;
+            var bounds = SiteBounds.measureAround(fixture.getSites());
 
-            for (var site : fixture.getSites()) {
-                minX = Math.min(minX, site[0]);
-                minY = Math.min(minY, site[1]);
-                maxX = Math.max(maxX, site[0]);
-                maxY = Math.max(maxY, site[1]);
-            }
-            
-            var span = Math.max(maxX - minX, maxY - minY) * INITIAL_MARGIN;
+            var span = bounds.measureWidestSpan() * INITIAL_MARGIN;
 
             scale = Math.min(getWidth(), getHeight()) / span;
-            offsetX = getWidth() / 2.0 - (minX + maxX) / 2.0 * scale;
-            offsetY = getHeight() / 2.0 + (minY + maxY) / 2.0 * scale;
+            offsetX = getWidth() / 2.0 - bounds.findCentreX() * scale;
+            offsetY = getHeight() / 2.0 + bounds.findCentreY() * scale;
         }
 
         private List<double[]> toRing(List<CellEdge> edges) {

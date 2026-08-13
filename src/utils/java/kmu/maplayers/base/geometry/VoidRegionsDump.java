@@ -29,7 +29,8 @@ final class VoidRegionsDump {
     private static final boolean UNOWNED_BLOCKS_ABSORPTION = true;
 
     // Area percentiles worth naming when deciding where the "leave it alone" threshold sits.
-    private static final double[] REPORTED_PERCENTILES = {0.5, 0.9, 1.0};
+    private static final double MEDIAN_FRACTION = 0.5;
+    private static final double[] REPORTED_PERCENTILES = {MEDIAN_FRACTION, 0.9, 1.0};
 
     private VoidRegionsDump() {
     }
@@ -125,18 +126,8 @@ final class VoidRegionsDump {
                 var to = fill.get((index + 1) % fill.size());
                 var midX = (from[0] + to[0]) / 2;
                 var midY = (from[1] + to[1]) / 2;
-                var nearest = Double.MAX_VALUE;
+                var source = CellEdges.findNearestEdge(edges, midX, midY);
 
-                CellEdge source = null;
-
-                for (var edge : edges) {
-                    
-                    var gap = measureGapToSegment(midX, midY, edge);
-                    if (gap < nearest) {
-                        nearest = gap;
-                        source = edge;
-                    }
-                }
                 if (source == null) {
                     continue;
                 }
@@ -144,7 +135,7 @@ final class VoidRegionsDump {
                 (source.target() instanceof EdgeTarget.AcrossSystem
                     ? cellFacing
                     : reachFacing)
-                        .add(nearest);
+                        .add(CellEdges.measureGapToEdge(source, midX, midY));
             }
         }
         System.out.printf(
@@ -157,27 +148,6 @@ final class VoidRegionsDump {
             reachFacing.size());
     }
 
-    private static double measureGapToSegment(double x, double y, CellEdge edge) {
-
-        var spanX = edge.x2() - edge.x1();
-        var spanY = edge.y2() - edge.y1();
-        var lengthSquared = spanX * spanX + spanY * spanY;
-
-        if (lengthSquared <= 0) {
-            return Math.hypot(x - edge.x1(), y - edge.y1());
-        }
-
-        var along = Math.max(
-            0.0,
-            Math.min(
-                1.0,
-                ((x - edge.x1()) * spanX + (y - edge.y1()) * spanY) / lengthSquared));
-
-        return Math.hypot(
-            x - (edge.x1() + along * spanX),
-            y - (edge.y1() + along * spanY));
-    }
-
     private static double findMedian(List<Double> values) {
 
         if (values.isEmpty()) {
@@ -187,7 +157,7 @@ final class VoidRegionsDump {
         var sorted = new ArrayList<>(values);
         sorted.sort(Double::compare);
 
-        return sorted.get(sorted.size() / 2);
+        return findPercentile(sorted, MEDIAN_FRACTION);
     }
 
     // How many holes there are at the reach the channel is taken at, against how many

@@ -55,7 +55,7 @@ final class SectorSvgWriter {
      * @param geometry the assembled geometry to draw
      */
     static void writeSectorSvg(Path target, SectorFixture fixture, SectorGeometry geometry) {
-        var bounds = computeBounds(fixture.getSites());
+        var bounds = SiteBounds.measureAround(fixture.getSites()).expandBy(MARGIN);
         var svg = new StringBuilder();
         openSvg(svg, bounds);
         // The raw partition, drawn faintly underneath: it is the reference the shaped cells and
@@ -77,7 +77,7 @@ final class SectorSvgWriter {
     // World y grows upward and SVG y grows downward, so the whole drawing is flipped once
     // here rather than at every vertex - a map drawn upside down would read as a geometry
     // bug that is not there.
-    private static void openSvg(StringBuilder svg, Bounds bounds) {
+    private static void openSvg(StringBuilder svg, SiteBounds bounds) {
         var width = bounds.maxX() - bounds.minX();
         var height = bounds.maxY() - bounds.minY();
         var viewHeight = (int) Math.round(VIEW_WIDTH * height / width);
@@ -87,12 +87,6 @@ final class SectorSvgWriter {
                 .append("\">\n<rect width=\"100%\" height=\"100%\" fill=\"#111\"/>\n")
                 .append("<g transform=\"translate(").append(fmt(-bounds.minX())).append(' ')
                 .append(fmt(bounds.maxY())).append(") scale(1 -1)\">\n");
-    }
-
-    // The drawing's extent, padded. A record rather than a four-slot array because the slots
-    // mean different things: reading a corner back out by index invites a transposed x for y
-    // that draws a plausible, wrong map.
-    private record Bounds(double minX, double minY, double maxX, double maxY) {
     }
 
     private static void appendRawCells(StringBuilder svg, Map<String, List<CellEdge>> cellEdges) {
@@ -177,20 +171,6 @@ final class SectorSvgWriter {
 
     private static String pickOwnerColour(String ownerId) {
         return "hsl(" + Math.floorMod(ownerId.hashCode(), HUE_RANGE) + " 80% 55%)";
-    }
-
-    private static Bounds computeBounds(List<double[]> sites) {
-        var minX = Double.MAX_VALUE;
-        var minY = Double.MAX_VALUE;
-        var maxX = -Double.MAX_VALUE;
-        var maxY = -Double.MAX_VALUE;
-        for (var site : sites) {
-            minX = Math.min(minX, site[0]);
-            minY = Math.min(minY, site[1]);
-            maxX = Math.max(maxX, site[0]);
-            maxY = Math.max(maxY, site[1]);
-        }
-        return new Bounds(minX - MARGIN, minY - MARGIN, maxX + MARGIN, maxY + MARGIN);
     }
 
     private static String fmt(double value) {

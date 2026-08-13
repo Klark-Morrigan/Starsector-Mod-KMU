@@ -40,7 +40,8 @@ final class UnboundedCells {
      */
     static List<List<double[]>> buildUnboundedCells(List<double[]> sites, int boundSegments) {
 
-        var radius = measureSectorExtent(sites) * BOUND_EXTENT_MULTIPLIER;
+        var radius = SiteBounds.measureAround(sites).measureWidestSpan()
+            * BOUND_EXTENT_MULTIPLIER;
         var cells = new ArrayList<List<double[]>>(sites.size());
 
         for (var index = 0; index < sites.size(); index++) {
@@ -52,22 +53,5 @@ final class UnboundedCells {
                 boundSegments));
         }
         return cells;
-    }
-
-    private static double measureSectorExtent(List<double[]> sites) {
-
-        var minX = Double.MAX_VALUE;
-        var minY = Double.MAX_VALUE;
-        var maxX = -Double.MAX_VALUE;
-        var maxY = -Double.MAX_VALUE;
-
-        for (var site : sites) {
-            
-            minX = Math.min(minX, site[0]);
-            minY = Math.min(minY, site[1]);
-            maxX = Math.max(maxX, site[0]);
-            maxY = Math.max(maxY, site[1]);
-        }
-        return Math.max(maxX - minX, maxY - minY);
     }
 }
