@@ -19,27 +19,39 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SystemStandingsTest {
 
+    // How many markets each hand-built footprint stands for. Fixed, because the ranking reads
+    // weights alone: a count that varied between fixtures would read as though it mattered.
+    private static final int SINGLE_MARKET = 1;
+
     @Nested
     class RankByDominationScore {
 
         @Test
         void returnsNoGroupsForAnUninhabitedSystem() {
+
             assertThat(SystemStandings.rankByDominationScore(
-                    Map.of(), HolderGrouping.identity()))
-                    .isEmpty();
+                    Map.of(),
+                    HolderGrouping.identity()))
+                .isEmpty();
         }
 
         @Test
         void returnsOneSingletonGroupForASingleHolderSystem() {
+
             var footprints = listOrderedFootprints(
-                    "hegemony", new MarketFootprint(7, 5, 5));
+                "hegemony",
+                buildWeightedFootprint(7, 5, 5));
 
             var standings = SystemStandings.rankByDominationScore(
-                    footprints, HolderGrouping.identity());
+                footprints,
+                HolderGrouping.identity());
 
-            assertThat(standings).containsExactly(
-                    new GroupStanding("hegemony", 7,
-                            List.of(new FactionStanding("hegemony", 7))));
+            assertThat(standings)
+                .containsExactly(
+                    new GroupStanding(
+                        "hegemony",
+                        7,
+                        List.of(new FactionStanding("hegemony", 7))));
         }
 
         @Test
@@ -47,16 +59,19 @@ class SystemStandingsTest {
             // Two owned markets: the identity grouping makes each faction its own singleton group, so
             // the two groups rank by score with the higher first though it is listed second.
             var footprints = listOrderedFootprints(
-                    "tritachyon", new MarketFootprint(4, 4, 0),
-                    "hegemony", new MarketFootprint(9, 5, 5));
+                "tritachyon",
+                buildWeightedFootprint(4, 4, 0),
+                "hegemony",
+                buildWeightedFootprint(9, 5, 5));
 
             var standings = SystemStandings.rankByDominationScore(
-                    footprints, HolderGrouping.identity());
+                footprints,
+                HolderGrouping.identity());
 
             assertThat(standings).extracting(GroupStanding::blocId)
-                    .containsExactly("hegemony", "tritachyon");
+                .containsExactly("hegemony", "tritachyon");
             assertThat(standings).extracting(GroupStanding::aggregateScore)
-                    .containsExactly(9, 4);
+                .containsExactly(9, 4);
         }
 
         @Test
@@ -64,14 +79,17 @@ class SystemStandingsTest {
             // Equal scores fall to the lowest bloc id, so the order is deterministic and independent
             // of the walk order the higher id is listed in first.
             var footprints = listOrderedFootprints(
-                    "tritachyon", new MarketFootprint(6, 6, 6),
-                    "hegemony", new MarketFootprint(6, 6, 6));
+                "tritachyon",
+                buildWeightedFootprint(6, 6, 6),
+                "hegemony",
+                buildWeightedFootprint(6, 6, 6));
 
             var standings = SystemStandings.rankByDominationScore(
-                    footprints, HolderGrouping.identity());
+                footprints,
+                HolderGrouping.identity());
 
             assertThat(standings).extracting(GroupStanding::blocId)
-                    .containsExactly("hegemony", "tritachyon");
+                .containsExactly("hegemony", "tritachyon");
         }
 
         @Test
@@ -79,13 +97,19 @@ class SystemStandingsTest {
             // Both allied factions fold into one bloc: its aggregate is their sum, and its two
             // members are ranked descending by their own score though the weaker is listed first.
             var footprints = listOrderedFootprints(
-                    "astral_armada", new MarketFootprint(3, 3, 0),
-                    "hegemony", new MarketFootprint(8, 5, 5));
+                "astral_armada",
+                buildWeightedFootprint(3, 3, 0),
+                "hegemony",
+                buildWeightedFootprint(8, 5, 5));
 
             var standings = SystemStandings.rankByDominationScore(footprints, buildAllianceGrouping());
 
-            assertThat(standings).containsExactly(
-                    new GroupStanding("alliance-1", 11, List.of(
+            assertThat(standings)
+                .containsExactly(
+                    new GroupStanding(
+                        "alliance-1",
+                        11,
+                        List.of(
                             new FactionStanding("hegemony", 8),
                             new FactionStanding("astral_armada", 3))));
         }
@@ -95,14 +119,17 @@ class SystemStandingsTest {
             // Both allied members score the same within their bloc, so the lower faction id ranks
             // first - the id tie-break applies at the member tier as well as the group tier.
             var footprints = listOrderedFootprints(
-                    "hegemony", new MarketFootprint(5, 5, 0),
-                    "astral_armada", new MarketFootprint(5, 5, 0));
+                "hegemony",
+                buildWeightedFootprint(5, 5, 0),
+                "astral_armada",
+                buildWeightedFootprint(5, 5, 0));
 
             var standings = SystemStandings.rankByDominationScore(footprints, buildAllianceGrouping());
 
-            assertThat(standings).hasSize(1);
+            assertThat(standings)
+                .hasSize(1);
             assertThat(standings.get(0).members()).extracting(FactionStanding::factionId)
-                    .containsExactly("astral_armada", "hegemony");
+                .containsExactly("astral_armada", "hegemony");
         }
 
         @Test
@@ -111,13 +138,18 @@ class SystemStandingsTest {
             // colony still owns its system), so a zero-score faction stays a group rather than
             // vanishing from the breakdown.
             var footprints = listOrderedFootprints(
-                    "hegemony", new MarketFootprint(0, 0, 0));
+                "hegemony",
+                buildWeightedFootprint(0, 0, 0));
 
             var standings = SystemStandings.rankByDominationScore(
-                    footprints, HolderGrouping.identity());
+                footprints,
+                HolderGrouping.identity());
 
             assertThat(standings).containsExactly(
-                    new GroupStanding("hegemony", 0, List.of(new FactionStanding("hegemony", 0))));
+                new GroupStanding(
+                    "hegemony",
+                    0,
+                    List.of(new FactionStanding("hegemony", 0))));
         }
 
         @Test
@@ -125,18 +157,21 @@ class SystemStandingsTest {
             // Neither allied member outscores the outsider alone, but their summed bloc does, so the
             // bloc ranks first - the two-tier sum, not any single member, decides the top tier.
             var footprints = listOrderedFootprints(
-                    "tritachyon", new MarketFootprint(7, 7, 0),
-                    "hegemony", new MarketFootprint(5, 3, 3),
-                    "astral_armada", new MarketFootprint(4, 4, 0));
+                "tritachyon",
+                buildWeightedFootprint(7, 7, 0),
+                "hegemony",
+                buildWeightedFootprint(5, 3, 3),
+                "astral_armada",
+                buildWeightedFootprint(4, 4, 0));
 
             var standings = SystemStandings.rankByDominationScore(footprints, buildAllianceGrouping());
 
             assertThat(standings).extracting(GroupStanding::blocId)
-                    .containsExactly("alliance-1", "tritachyon");
+                .containsExactly("alliance-1", "tritachyon");
             assertThat(standings).extracting(GroupStanding::aggregateScore)
-                    .containsExactly(9, 7);
+                .containsExactly(9, 7);
             assertThat(standings.get(0).members()).extracting(FactionStanding::factionId)
-                    .containsExactly("hegemony", "astral_armada");
+                .containsExactly("hegemony", "astral_armada");
         }
     }
 
@@ -144,16 +179,33 @@ class SystemStandingsTest {
     // a test can pit the bloc's summed score against the lone faction off one grouping.
     private static HolderGrouping buildAllianceGrouping() {
         return new HolderGrouping(
-                Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
-                Map.of("alliance-1", "hegemony"),
-                Map.of("alliance-1", "Allied Powers"));
+            Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
+            Map.of("alliance-1", "hegemony"),
+            Map.of("alliance-1", "Allied Powers"));
+    }
+
+    // A footprint stating only the three weights the ranking reads, standing for one held market,
+    // so each fixture reads as the scores the two tiers rank on and nothing else.
+    private static MarketFootprint buildWeightedFootprint(
+            int totalWeight,
+            int largestMarketWeight,
+            int planetWeight) {
+
+        return new MarketFootprint(
+            SINGLE_MARKET,
+            totalWeight,
+            largestMarketWeight,
+            planetWeight);
     }
 
     // Builds the footprint map preserving insertion order, so a test can list the higher-scoring or
     // higher-id entry first and still expect the rule to rank it correctly.
     private static Map<String, MarketFootprint> listOrderedFootprints(Object... idsAndFootprints) {
+
         var footprints = new LinkedHashMap<String, MarketFootprint>();
+
         for (var i = 0; i < idsAndFootprints.length; i += 2) {
+            
             footprints.put((String) idsAndFootprints[i],
                     (MarketFootprint) idsAndFootprints[i + 1]);
         }

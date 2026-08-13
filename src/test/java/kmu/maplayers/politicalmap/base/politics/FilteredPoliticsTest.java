@@ -20,6 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class FilteredPoliticsTest {
 
+    // How many markets each hand-built footprint stands for. Fixed, because the classification
+    // reads weights alone: a count that varied between fixtures would read as though it mattered.
+    private static final int SINGLE_MARKET = 1;
+
     @Nested
     class ClassifySelectedBlocPresence {
 
@@ -27,10 +31,10 @@ class FilteredPoliticsTest {
         void returnsAbsentWhenTheSelectedBlocHasNoFootprint() {
             // A rival holds the system and the selected bloc owns nothing here, so its real
             // holder draws (receded) rather than the spotlighted bloc.
-            var footprints = listOrderedFootprints("hegemony", new MarketFootprint(9, 5, 5));
+            var footprints = listOrderedFootprints("hegemony", buildWeightedFootprint(9, 5, 5));
 
             assertThat(FilteredPolitics.classifySelectedBlocPresence(footprints, "tritachyon"))
-                    .isEqualTo(SelectedBlocPresence.ABSENT);
+                .isEqualTo(SelectedBlocPresence.ABSENT);
         }
 
         @Test
@@ -38,17 +42,20 @@ class FilteredPoliticsTest {
             // An uninhabited system has no footprint for any bloc, so the selected bloc is
             // absent there like everywhere it owns nothing.
             assertThat(FilteredPolitics.classifySelectedBlocPresence(Map.of(), "hegemony"))
-                    .isEqualTo(SelectedBlocPresence.ABSENT);
+                .isEqualTo(SelectedBlocPresence.ABSENT);
         }
 
         @Test
         void returnsDominatesWhenTheSelectedBlocWinsTheSystem() {
+
             var footprints = listOrderedFootprints(
-                    "hegemony", new MarketFootprint(9, 5, 5),
-                    "tritachyon", new MarketFootprint(3, 3, 0));
+                "hegemony",
+                buildWeightedFootprint(9, 5, 5),
+                "tritachyon",
+                buildWeightedFootprint(3, 3, 0));
 
             assertThat(FilteredPolitics.classifySelectedBlocPresence(footprints, "hegemony"))
-                    .isEqualTo(SelectedBlocPresence.DOMINATES);
+                .isEqualTo(SelectedBlocPresence.DOMINATES);
         }
 
         @Test
@@ -56,11 +63,13 @@ class FilteredPoliticsTest {
             // The selected bloc owns a market but loses the dominance comparison, so it draws
             // contested (hatched) in its own palette rather than ceding the cell to the rival.
             var footprints = listOrderedFootprints(
-                    "hegemony", new MarketFootprint(9, 5, 5),
-                    "tritachyon", new MarketFootprint(3, 3, 0));
+                "hegemony",
+                buildWeightedFootprint(9, 5, 5),
+                "tritachyon",
+                buildWeightedFootprint(3, 3, 0));
 
             assertThat(FilteredPolitics.classifySelectedBlocPresence(footprints, "tritachyon"))
-                    .isEqualTo(SelectedBlocPresence.PRESENT_BUT_DOMINATED);
+                .isEqualTo(SelectedBlocPresence.PRESENT_BUT_DOMINATED);
         }
 
         @Test
@@ -70,7 +79,7 @@ class FilteredPoliticsTest {
             var footprints = listOrderedFootprints("hegemony", MarketFootprint.EMPTY);
 
             assertThat(FilteredPolitics.classifySelectedBlocPresence(footprints, "hegemony"))
-                    .isEqualTo(SelectedBlocPresence.DOMINATES);
+                .isEqualTo(SelectedBlocPresence.DOMINATES);
         }
     }
 
@@ -81,15 +90,33 @@ class FilteredPoliticsTest {
         void returnsFalseForARealFactionId() {
             // The synthetic key uses a sentinel a real id cannot carry, so no faction is ever
             // mistaken for the spotlighted bloc and wrongly kept at full strength.
-            assertThat(FilteredPolitics.isSpotlitBloc("hegemony")).isFalse();
+            assertThat(FilteredPolitics.isSpotlitBloc("hegemony"))
+                .isFalse();
         }
+    }
+
+    // A footprint stating only the three weights the dominance rule compares, standing for one
+    // held market, so each fixture reads as the contest the classifier resolves and nothing else.
+    private static MarketFootprint buildWeightedFootprint(
+            int totalWeight,
+            int largestMarketWeight,
+            int planetWeight) {
+
+        return new MarketFootprint(
+            SINGLE_MARKET,
+            totalWeight,
+            largestMarketWeight,
+            planetWeight);
     }
 
     // Builds the footprint map preserving insertion order, so a test can list the winner and the
     // loser in either order and still exercise the dominance rule the classifier leans on.
     private static Map<String, MarketFootprint> listOrderedFootprints(Object... idsAndFootprints) {
+
         var footprints = new LinkedHashMap<String, MarketFootprint>();
+
         for (var i = 0; i < idsAndFootprints.length; i += 2) {
+            
             footprints.put((String) idsAndFootprints[i],
                     (MarketFootprint) idsAndFootprints[i + 1]);
         }

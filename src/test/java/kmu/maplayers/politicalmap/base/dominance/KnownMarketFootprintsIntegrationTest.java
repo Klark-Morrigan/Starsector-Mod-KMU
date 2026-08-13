@@ -222,6 +222,11 @@ class KnownMarketFootprintsIntegrationTest {
 
             assertThat(footprints.get("independent").totalWeight())
                 .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
+
+            // The count follows the same resolution: one place held is one holding, however many
+            // markets the mod left standing on the entity.
+            assertThat(footprints.get("independent").marketCount())
+                .isEqualTo(1);
         }
 
         @Test

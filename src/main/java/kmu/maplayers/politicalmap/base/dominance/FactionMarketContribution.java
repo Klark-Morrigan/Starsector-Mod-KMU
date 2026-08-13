@@ -5,9 +5,10 @@ package kmu.maplayers.politicalmap.base.dominance;
  * rule ranks and the raw summed colony size the picker's "market size" metric reads. The two travel
  * together because both come from one walk of the system's markets under the same "counts as a
  * colony" filter, so reading them apart would walk - and filter - the economy twice. Raw market size
- * stays out of {@link MarketFootprint}, which is scoped to the dominance-weight quantities the rule
- * compares; this pairing is the one place the two otherwise-separate quantities are carried side by
- * side from the single read that produces them.
+ * stays out of {@link MarketFootprint}, which is scoped to what the dominance model itself publishes
+ * about a holder - the weights the rule compares and the count of holdings behind them; this pairing
+ * is the one place the two otherwise-separate quantities are carried side by side from the single
+ * read that produces them.
  *
  * @param footprint  the faction's dominance footprint in the system
  * @param marketSize the faction's summed raw colony size in the system
@@ -35,8 +36,8 @@ public record FactionMarketContribution(
     }
 
     /**
-     * Folds one owned market into this contribution: its dominance weight into the footprint and its
-     * raw colony size into the market-size total.
+     * Folds one owned market into this contribution: its dominance weight into the footprint - which
+     * counts the holding as it does so - and its raw colony size into the market-size total.
      *
      * @param marketWeight   the market's dominance weight, folded into the footprint's totals
      * @param isPlanetMarket whether the market sits on a planet rather than a station, which the

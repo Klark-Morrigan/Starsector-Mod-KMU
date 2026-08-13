@@ -19,21 +19,28 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SystemDominanceTest {
 
+    // How many markets each hand-built footprint stands for. Fixed, because the rule compares
+    // weights alone: a count that varied between fixtures would read as though it mattered.
+    private static final int SINGLE_MARKET = 1;
+
     @Nested
     class ResolveDominantFactionId {
 
         @Test
         void returnsNullForNoOwnedMarkets() {
-            assertThat(SystemDominance.resolveDominantFactionId(Map.of())).isNull();
+            assertThat(SystemDominance.resolveDominantFactionId(Map.of()))
+                .isNull();
         }
 
         @Test
         void picksTheOnlyFactionPresent() {
+
             var footprints = listOrderedFootprints(
-                    "hegemony", new MarketFootprint(7, 5, 5));
+                "hegemony",
+                buildWeightedFootprint(7, 5, 5));
 
             assertThat(SystemDominance.resolveDominantFactionId(footprints))
-                    .isEqualTo("hegemony");
+                .isEqualTo("hegemony");
         }
 
         @Test
@@ -42,22 +49,26 @@ class SystemDominanceTest {
             // weight, but combined weight is the top level, so the larger sum
             // wins.
             var footprints = listOrderedFootprints(
-                    "tritachyon", new MarketFootprint(6, 6, 6),
-                    "hegemony", new MarketFootprint(8, 4, 0));
+                "tritachyon",
+                buildWeightedFootprint(6, 6, 6),
+                "hegemony",
+                buildWeightedFootprint(8, 4, 0));
 
             assertThat(SystemDominance.resolveDominantFactionId(footprints))
-                    .isEqualTo("hegemony");
+                .isEqualTo("hegemony");
         }
 
         @Test
         void breaksCombinedWeightTieByHeaviestSingleMarket() {
             // Equal totals: the faction holding the single heaviest market wins.
             var footprints = listOrderedFootprints(
-                    "tritachyon", new MarketFootprint(9, 4, 0),
-                    "hegemony", new MarketFootprint(9, 6, 0));
+                "tritachyon",
+                buildWeightedFootprint(9, 4, 0),
+                "hegemony",
+                buildWeightedFootprint(9, 6, 0));
 
             assertThat(SystemDominance.resolveDominantFactionId(footprints))
-                    .isEqualTo("hegemony");
+                .isEqualTo("hegemony");
         }
 
         @Test
@@ -65,11 +76,13 @@ class SystemDominanceTest {
             // Equal total and equal heaviest market: more weight on planets (vs
             // stations) outranks a footprint leaning on stations.
             var footprints = listOrderedFootprints(
-                    "tritachyon", new MarketFootprint(9, 5, 2),
-                    "hegemony", new MarketFootprint(9, 5, 7));
+                "tritachyon",
+                buildWeightedFootprint(9, 5, 2),
+                "hegemony",
+                buildWeightedFootprint(9, 5, 7));
 
             assertThat(SystemDominance.resolveDominantFactionId(footprints))
-                    .isEqualTo("hegemony");
+                .isEqualTo("hegemony");
         }
 
         @Test
@@ -77,11 +90,13 @@ class SystemDominanceTest {
             // Identical footprints fall to the lowest faction id, so the result
             // is deterministic and independent of insertion order.
             var footprints = listOrderedFootprints(
-                    "tritachyon", new MarketFootprint(9, 5, 5),
-                    "hegemony", new MarketFootprint(9, 5, 5));
+                "tritachyon",
+                buildWeightedFootprint(9, 5, 5),
+                "hegemony",
+                buildWeightedFootprint(9, 5, 5));
 
             assertThat(SystemDominance.resolveDominantFactionId(footprints))
-                    .isEqualTo("hegemony");
+                .isEqualTo("hegemony");
         }
 
         @Test
@@ -90,12 +105,15 @@ class SystemDominanceTest {
             // orders first - here reverse order, so the higher id wins, proving
             // the tie-break comes from the comparator and not the natural id order.
             var footprints = listOrderedFootprints(
-                    "hegemony", new MarketFootprint(9, 5, 5),
-                    "tritachyon", new MarketFootprint(9, 5, 5));
+                "hegemony",
+                buildWeightedFootprint(9, 5, 5),
+                "tritachyon",
+                buildWeightedFootprint(9, 5, 5));
 
             assertThat(SystemDominance.resolveDominantFactionId(
-                    footprints, Comparator.<String>reverseOrder()))
-                    .isEqualTo("tritachyon");
+                    footprints,
+                    Comparator.<String>reverseOrder()))
+                .isEqualTo("tritachyon");
         }
 
         @Test
@@ -104,24 +122,45 @@ class SystemDominanceTest {
             // so a comparator that would throw if consulted proves the rule never
             // reaches it without a full tie.
             var footprints = listOrderedFootprints(
-                    "tritachyon", new MarketFootprint(6, 6, 6),
-                    "hegemony", new MarketFootprint(8, 4, 0));
+                "tritachyon",
+                buildWeightedFootprint(6, 6, 6),
+                "hegemony",
+                buildWeightedFootprint(8, 4, 0));
+
             Comparator<String> throwingTieBreak = (left, right) -> {
                 throw new AssertionError("tie-break consulted without a full tie");
             };
 
             assertThat(SystemDominance.resolveDominantFactionId(footprints, throwingTieBreak))
-                    .isEqualTo("hegemony");
+                .isEqualTo("hegemony");
         }
+    }
+
+    // A footprint stating only the three weights the rule compares, standing for one held
+    // market, so each fixture reads as the levels the tie-break walks and nothing else.
+    private static MarketFootprint buildWeightedFootprint(
+            int totalWeight,
+            int largestMarketWeight,
+            int planetWeight) {
+
+        return new MarketFootprint(
+            SINGLE_MARKET,
+            totalWeight,
+            largestMarketWeight,
+            planetWeight);
     }
 
     // Builds the input map preserving insertion order, so a test can list the
     // higher-id faction first and still expect the rule to pick the right one.
     private static Map<String, MarketFootprint> listOrderedFootprints(Object... idsAndFootprints) {
+
         var footprints = new LinkedHashMap<String, MarketFootprint>();
+
         for (var i = 0; i < idsAndFootprints.length; i += 2) {
-            footprints.put((String) idsAndFootprints[i],
-                    (MarketFootprint) idsAndFootprints[i + 1]);
+
+            footprints.put(
+                (String) idsAndFootprints[i],
+                (MarketFootprint) idsAndFootprints[i + 1]);
         }
         return footprints;
     }
