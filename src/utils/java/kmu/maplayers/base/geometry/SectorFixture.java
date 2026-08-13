@@ -144,6 +144,21 @@ final class SectorFixture {
     }
 
     /**
+     * Each site's owner, index-aligned with {@link #getSites()}.
+     *
+     * @return the owner per site, null where the site is unowned
+     */
+    List<String> getOwnerBySite() {
+
+        var owners = new ArrayList<String>(systemIds.size());
+
+        for (var systemId : systemIds) {
+            owners.add(ownerBySystemId.get(systemId));
+        }
+        return owners;
+    }
+
+    /**
      * The owner per system, in the shape every geometry consumer takes: an owned
      * system maps to its owner id, and an unowned one is absent from the map entirely -
      * which is what makes it a frontier star to {@link EdgeClassifier}.
