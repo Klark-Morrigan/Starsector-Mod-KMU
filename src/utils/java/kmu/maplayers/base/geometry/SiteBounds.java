@@ -43,11 +43,16 @@ record SiteBounds(
     }
 
     /**
-     * The longer of the two sides.
+     * The longer of the box's two sides.
      *
-     * @return how far the sector reaches across at its widest
+     * <p>Named for the side rather than for a span, because it is not one: it is the wider of
+     * two axis-aligned extents, which is shorter than the box's diagonal and shorter again
+     * than the furthest apart two sites actually are. Callers wanting a size to scale a view
+     * by want this; callers wanting how far something really reaches across do not.
+     *
+     * @return the longer side
      */
-    double measureWidestSpan() {
+    double measureLongerSide() {
         return Math.max(maxX - minX, maxY - minY);
     }
 

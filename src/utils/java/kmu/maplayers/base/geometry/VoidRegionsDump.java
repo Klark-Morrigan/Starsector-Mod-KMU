@@ -22,7 +22,6 @@ final class VoidRegionsDump {
 
     private static final double PERCENT_SCALE = 100.0;
     private static final int CELL_BOUND_SEGMENTS = 24;
-    private static final int POCKET_ARC_SEGMENTS = 12;
 
     // One cell across, which is the size a section of void is cut to: a piece of void the
     // size of a system's own cell is comparable to what surrounds it, and a longer one is
@@ -55,8 +54,7 @@ final class VoidRegionsDump {
                     sites,
                     fixture.getOwnerBySite(),
                     SectorGeometryParameters.createDefaults(),
-                    POCKET_ARC_SEGMENTS,
-                    SECTION_LENGTH),
+                            SECTION_LENGTH),
                 fixture);
 
             System.out.println();
@@ -195,7 +193,6 @@ final class VoidRegionsDump {
                 0,
                 shipped.weldTolerance(),
                 shipped.miterSpikeLimit()),
-            POCKET_ARC_SEGMENTS,
             SECTION_LENGTH).size();
     }
 

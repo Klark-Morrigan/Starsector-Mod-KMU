@@ -150,35 +150,34 @@ final class VoidSections {
     /**
      * Cuts a pocket across into roughly cell-sized sections.
      *
-     * @param boundary      the pocket's outline at the reach that defines the void - what the
-     *                      sections are carved out of, and what a cut's ends are placed on
-     * @param ringing       the sites whose cells ring the pocket
+     * @param hole          the pocket at the reach that defines the void - what the sections
+     *                      are carved out of, whose cells the cuts run between, and whose
+     *                      reach a corridor's width is measured against
      * @param sites         every site, because a cell that does not ring the pocket can
      *                      still lie across a candidate cut
-     * @param trueReach     how far a cell reaches, which is what makes a point void and so
-     *                      what a corridor's width is measured against
      * @param span          how far the pocket reaches across, which decides how many sections
-     *                      it is owed
+     *                      it is owed. Taken from the caller rather than measured here
+     *                      because it is the pocket's own extent, reported as such and tested
+     *                      against elsewhere, and two places measuring it apart would let a
+     *                      pocket be called too long while being cut into one section
      * @param sectionLength how long a section should be - a cell's width, so a section is
      *                      about the size of the thing it will end up beside
      * @return how it came out divided, holding no cuts and the whole pocket as its one
      *         section when it is already section-sized or nothing in it can be cut across
      */
     static VoidDivision divideVoidPocket(
-            List<double[]> boundary,
-            List<Integer> ringing,
+            VoidHole hole,
             List<double[]> sites,
-            double trueReach,
             double span,
             double sectionLength) {
 
         var wantedSections = (int) Math.ceil(span / sectionLength);
 
         if (wantedSections <= UNDIVIDED) {
-            return new VoidDivision(List.of(), List.of(boundary));
+            return new VoidDivision(List.of(), List.of(hole.boundary()));
         }
 
-        var candidates = findCrossings(ringing, sites, trueReach);
+        var candidates = findCrossings(hole.ringing(), sites, hole.reach());
 
         // Narrowest first, which decides only what order the candidates are offered in. The
         // sites break ties, and only so that two equally narrow crossings are always offered
@@ -188,11 +187,11 @@ final class VoidSections {
             .thenComparingInt(Crossing::fromSite)
             .thenComparingInt(Crossing::toSite));
 
-        var pocketArea = measureArea(boundary);
+        var pocketArea = measureArea(hole.boundary());
 
         return takeDividingCuts(
             candidates,
-            boundary,
+            hole.boundary(),
             wantedSections - 1,
             pocketArea / wantedSections * MIN_SECTION_SHARE);
     }

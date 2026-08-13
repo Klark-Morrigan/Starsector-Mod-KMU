@@ -221,11 +221,6 @@ final class SectorGeometryViewer {
     private static final double OPACITY_MAXIMUM = 255;
     private static final Color SITE_COLOUR = new Color(0x88, 0x88, 0x88);
 
-    // How finely each of a pocket's bounding arcs is sampled. The arcs are exact; this only
-    // decides how smooth they look, and matching the cells' own bound segment count keeps a
-    // pocket's edge as faceted as the cell it runs against rather than visibly rounder.
-    private static final int POCKET_ARC_SEGMENTS = 12;
-
     private final String sectorName;
     private final SectorFixture fixture;
     private final MapCanvas canvas = new MapCanvas();
@@ -663,7 +658,6 @@ final class SectorGeometryViewer {
             fixture.getSites(),
             fixture.getOwnerBySite(),
             parameters,
-            POCKET_ARC_SEGMENTS,
             measureSectionLength());
 
         canvas.repaint();
@@ -1217,7 +1211,7 @@ final class SectorGeometryViewer {
 
             var bounds = SiteBounds.measureAround(fixture.getSites());
 
-            var span = bounds.measureWidestSpan() * INITIAL_MARGIN;
+            var span = bounds.measureLongerSide() * INITIAL_MARGIN;
 
             scale = Math.min(getWidth(), getHeight()) / span;
             offsetX = getWidth() / 2.0 - bounds.findCentreX() * scale;

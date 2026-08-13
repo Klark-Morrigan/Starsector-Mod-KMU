@@ -70,6 +70,10 @@ final class VoidPockets {
     // in proportion to how little of the circle it covers.
     private static final int MIN_ARC_SAMPLES = 2;
 
+    // What converts a count of sides round a whole circle into a count of samples per half
+    // turn of arc.
+    private static final int HALF_TURNS_PER_CIRCLE = 2;
+
     // Stands in for a neighbouring circle where there is none: a disc that overlaps nothing
     // contributes its whole circle as one arc, with no disc entered or left at either end.
     private static final int NO_CIRCLE = -1;
@@ -129,8 +133,6 @@ final class VoidPockets {
      *                     area rather than between owners
      * @param parameters   the same knobs the cells are built under, so the void takes the
      *                     reach that decides where it begins and the channel the cells leave
-     * @param arcSegments  how finely a half-turn of arc is sampled; a shorter arc takes
-     *                     proportionally fewer points
      * @param sectionLength how long a piece of a pocket should be before it is cut into
      *                     more than one, in world units; a cell's width is the size that
      *                     makes a section comparable to what lies around it
@@ -140,8 +142,14 @@ final class VoidPockets {
             List<double[]> sites,
             List<String> ownerBySite,
             SectorGeometryParameters parameters,
-            int arcSegments,
             double sectionLength) {
+
+        // Taken from the cells' own bound rather than set apart from it. The two count the
+        // same thing in different units - a bound is so many sides round a whole circle, an
+        // arc is sampled so many times per half turn - so a pocket sampled at its own number
+        // comes out at a different smoothness from the cell it runs against, and the knob
+        // that refines the cells leaves the pockets where they were.
+        var arcSegments = parameters.boundSegments() / HALF_TURNS_PER_CIRCLE;
 
         var trueHoles = findHolesAtReach(
             sites,
@@ -164,12 +172,6 @@ final class VoidPockets {
 
             var absorbingOwner = resolveAbsorbingOwner(hole.ringing(), ownerBySite);
 
-            // Across the corners alone. Every disc bounding a pocket has its centre OUTSIDE
-            // it, so each arc bulges into the pocket rather than away from it, and the
-            // pocket's extreme points can only be the corners where two arcs join. That makes
-            // this the true widest span rather than an artefact of how finely the arcs were
-            // sampled - and it runs over the arc count, which is a handful, instead of over
-            // the sample count.
             var span = VoidSections.measureWidestSpan(hole.corners());
 
             pockets.add(new VoidPocket(
@@ -180,13 +182,7 @@ final class VoidPockets {
                 hole.ringing(),
                 span,
                 absorbingOwner,
-                VoidSections.divideVoidPocket(
-                    hole.boundary(),
-                    hole.ringing(),
-                    sites,
-                    parameters.cellRadius(),
-                    span,
-                    sectionLength)));
+                VoidSections.divideVoidPocket(hole, sites, span, sectionLength)));
         }
         return pockets;
     }
@@ -200,14 +196,14 @@ final class VoidPockets {
     // ring is not the same ring at a different reach: a cell whose arc its neighbours have
     // swallowed drops out of it, and a pocket can pinch in two. Redrawing in place cannot
     // express either, and reads both as the pocket having closed.
-    private static List<Hole> findHolesAtReach(
+    private static List<VoidHole> findHolesAtReach(
             List<double[]> sites,
             double radius,
             int arcSegments) {
 
         var arcs = findUncoveredArcs(sites, radius);
         var successors = linkArcsIntoCycles(arcs, sites.size());
-        var holes = new ArrayList<Hole>();
+        var holes = new ArrayList<VoidHole>();
         var walked = new boolean[arcs.size()];
 
         for (var start = 0; start < arcs.size(); start++) {
@@ -229,7 +225,7 @@ final class VoidPockets {
     // one when it pinches the pocket in two. A point on a narrowed hole's outline is further
     // from every site than the true reach, so it lies in the true void, and in the very
     // pocket it came out of.
-    private static List<List<double[]>> findHolesInside(List<Hole> narrowed, Hole hole) {
+    private static List<List<double[]>> findHolesInside(List<VoidHole> narrowed, VoidHole hole) {
 
         var inside = new ArrayList<List<double[]>>();
         for (var candidate : narrowed) {
@@ -246,7 +242,7 @@ final class VoidPockets {
     // The widened hole a pocket opens into, if it stays closed at all. The other way round
     // from the narrowed case: the pocket is inside the widened hole, so it is the pocket's
     // own outline that is tested.
-    private static List<List<double[]>> findHoleAround(List<Hole> widened, Hole hole) {
+    private static List<List<double[]>> findHoleAround(List<VoidHole> widened, VoidHole hole) {
 
         var probe = hole.boundary().get(0);
 
@@ -431,7 +427,7 @@ final class VoidPockets {
     // A cycle is a hole when it winds the opposite way to a silhouette. Each arc is walked
     // anticlockwise on its own circle, which keeps the discs' interior to the left the whole
     // way round, so an outer cycle comes out anticlockwise and a hole clockwise.
-    private static Hole buildHole(
+    private static VoidHole buildHole(
             List<Integer> cycle,
             List<Arc> arcs,
             List<double[]> sites,
@@ -466,7 +462,7 @@ final class VoidPockets {
 
         // Reversed so a hole reads the same way round as any other filled shape.
         java.util.Collections.reverse(boundary);
-        return new Hole(boundary, corners, List.copyOf(ringing));
+        return new VoidHole(boundary, corners, List.copyOf(ringing), radius);
     }
 
     // The owner that rings a pocket on every side, if one does. An unowned cell counts
@@ -528,21 +524,6 @@ final class VoidPockets {
     private static double normaliseAngle(double angle) {
         var turned = angle % FULL_TURN;
         return turned < 0 ? turned + FULL_TURN : turned;
-    }
-
-    /**
-     * One hole in the union of the discs at a single reach, before anything is decided about
-     * it. Not a pocket yet: a pocket is a hole at the TRUE reach, together with what becomes
-     * of it at the reach it is drawn at.
-     *
-     * @param boundary its outline
-     * @param corners  where its arcs meet, which are its only extreme points
-     * @param ringing  the sites whose circles it runs on, in the order it meets them
-     */
-    private record Hole(
-        List<double[]> boundary,
-        List<double[]> corners,
-        List<Integer> ringing) {
     }
 
     /**

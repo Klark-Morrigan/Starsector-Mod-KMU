@@ -40,7 +40,7 @@ final class UnboundedCells {
      */
     static List<List<double[]>> buildUnboundedCells(List<double[]> sites, int boundSegments) {
 
-        var radius = SiteBounds.measureAround(sites).measureWidestSpan()
+        var radius = SiteBounds.measureAround(sites).measureLongerSide()
             * BOUND_EXTENT_MULTIPLIER;
         var cells = new ArrayList<List<double[]>>(sites.size());
 
