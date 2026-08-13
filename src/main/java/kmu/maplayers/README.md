@@ -131,7 +131,7 @@ about what the overlay means.
 | Whether the box is folded to its rail | per screen, persisted |
 | How far the body is scrolled | per screen, for the session |
 | Political-map view, bloc spotlight, sort, columns, and every other control value | shared, persisted once |
-| Appearance settings | shared, in LunaLib |
+| Appearance and sound settings | shared, in LunaLib |
 
 ## Where each part lives
 

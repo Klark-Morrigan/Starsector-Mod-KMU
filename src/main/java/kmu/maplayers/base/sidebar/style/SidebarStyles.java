@@ -24,11 +24,18 @@ import java.awt.Color;
 
 /**
  * Composes the look bundles a sidebar host wears: the tab style its band is laid out and painted from,
- * and the widget style the panel around it is painted from. Which look a screen wears is its host's
- * answer, but a look built from the running game's colours and the player's live scheme choice cannot be
- * a constant a host holds, so the composition sits here as a factory each host calls with its own
- * dimensions - one place the sidebar's shades and faces are written down, so two screens sharing a look
- * cannot drift into two spellings of it.
+ * the widget style the panel around it is painted from, and the sound scheme its moments answer by.
+ * Which look a screen wears is its host's answer, but a look built from the running game's colours, the
+ * player's live scheme choice, and the levels the player set cannot be a constant a host holds, so the
+ * composition sits here as a factory each host calls with its own dimensions - one place the sidebar's
+ * shades, faces, and volumes are written down, so two screens sharing a look cannot drift into two
+ * spellings of it.
+ *
+ * <p>The sound scheme is a bundle of its own rather than something read off the widget style, because
+ * the two halves of the panel take it at different moments: the paint pass carries it inside the style
+ * it draws from, while the controller answering pointer events is handed one directly at the point it is
+ * built. Both compose through the same factory, which is what keeps a panel from looking and sounding
+ * from two.
  *
  * <p>Which palette those shades come from is the player's, not a host's: the frame, the control accents,
  * the notch, and the tab row's chrome rule all resolve from one scheme choice, so the panel cannot end

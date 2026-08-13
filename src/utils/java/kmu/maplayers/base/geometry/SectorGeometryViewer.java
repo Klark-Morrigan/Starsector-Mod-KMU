@@ -134,6 +134,7 @@ final class SectorGeometryViewer {
     private static final double MITER_MAXIMUM = 12;
     private static final double SEGMENTS_MINIMUM = 3;
     private static final double SEGMENTS_MAXIMUM = 96;
+
     private static final Color BACKGROUND = new Color(0x11, 0x11, 0x11);
     private static final Color CELL_COLOUR = new Color(0x2a, 0x2a, 0x2a);
     private static final Color NEUTRAL_COLOUR = new Color(0x55, 0x55, 0x55);
@@ -182,6 +183,7 @@ final class SectorGeometryViewer {
 
     private JPanel buildControls() {
         var controls = new JPanel();
+
         controls.setLayout(new BoxLayout(controls, BoxLayout.Y_AXIS));
         controls.setPreferredSize(new Dimension(CONTROL_WIDTH, 0));
         controls.setBorder(BorderFactory.createEmptyBorder(

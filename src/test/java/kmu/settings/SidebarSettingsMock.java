@@ -1,5 +1,7 @@
 package kmu.settings;
 
+import kmlib.starsector.ui.sound.PointerArrivalVolumes;
+
 import org.mockito.MockedStatic;
 
 import static org.mockito.Mockito.mockStatic;
@@ -38,22 +40,22 @@ public final class SidebarSettingsMock implements AutoCloseable {
     public static final NotchChevronColourChoice CHEVRON_COLOUR = NotchChevronColourChoice.PANEL_ACCENT;
 
     /**
-     * The level the panel's own furniture is reached at under every case. Three distinct numbers rather
-     * than the shipped balance, deliberately: two of the three levels ship at the same value, so a
-     * composition handing them over in the wrong order would agree with itself and pass - and a panel
-     * whose chrome answers at its list's level is wrong only to the ear.
+     * The balance every case runs under: how loudly the panel's furniture, a control with one answer to
+     * give, and one of many alike are reached. Three distinct numbers rather than the shipped levels,
+     * deliberately - two of the three ship at the same value, so a composition handing them over in the
+     * wrong order would agree with itself and pass, and a panel whose chrome answers at its list's level
+     * is wrong only to the ear.
+     *
+     * <p>One value rather than three constants for the reason the record itself exists: a case asserting
+     * on the whole scheme and this fixture setting it would otherwise each spell the same balance out,
+     * and two spellings of one balance is the transposition all over again.
      */
-    public static final float PANEL_CHROME_ARRIVAL_VOLUME = 0.8f;
+    public static final PointerArrivalVolumes ARRIVAL_VOLUMES = new PointerArrivalVolumes(0.8f, 0.6f, 0.3f);
 
-    /** The level a control with one answer to give is reached at; distinct from the two beside it. */
-    public static final float SINGLE_OPTION_CONTROL_ARRIVAL_VOLUME = 0.6f;
-
-    /** The level one of many alike is reached at; distinct from the two above it. */
-    public static final float LISTED_ITEM_ARRIVAL_VOLUME = 0.3f;
-
-    // The bottom of every arrival slider - what a player asking for a panel that is quiet under the
+    // Every level at the bottom of its slider - what a player asking for a panel that is quiet under the
     // pointer sets, and the one balance that is stated as a role the look does not name.
-    private static final float SILENT_ARRIVAL_VOLUME = 0f;
+    private static final PointerArrivalVolumes SILENT_ARRIVAL_VOLUMES =
+        new PointerArrivalVolumes(0f, 0f, 0f);
 
     private final MockedStatic<KmuMapLayerSettings> settingsMock;
 
@@ -77,10 +79,7 @@ public final class SidebarSettingsMock implements AutoCloseable {
             .thenReturn(CHEVRON_COLOUR);
 
         installed.selectColourScheme(COLOUR_SCHEME);
-        installed.setArrivalVolumes(
-            PANEL_CHROME_ARRIVAL_VOLUME,
-            SINGLE_OPTION_CONTROL_ARRIVAL_VOLUME,
-            LISTED_ITEM_ARRIVAL_VOLUME);
+        installed.setArrivalVolumes(ARRIVAL_VOLUMES);
 
         return installed;
     }
@@ -100,41 +99,31 @@ public final class SidebarSettingsMock implements AutoCloseable {
 
     /**
      * Pulls every arrival level to the bottom, for the case about a player who has asked for a panel
-     * that stays quiet under the pointer. Named for the intent rather than left to a case passing three
-     * zeroes, since it is the whole balance being silenced that the look answers to and not any one of
-     * them.
+     * that stays quiet under the pointer. Named for the intent rather than left to a case handing over a
+     * balance of zeroes, since it is the whole balance being silenced that the look answers to and not
+     * any one level of it.
      */
     public void silenceEveryArrival() {
-        setArrivalVolumes(
-            SILENT_ARRIVAL_VOLUME,
-            SILENT_ARRIVAL_VOLUME,
-            SILENT_ARRIVAL_VOLUME);
+        setArrivalVolumes(SILENT_ARRIVAL_VOLUMES);
     }
 
     /**
-     * Retunes the whole balance, for a case about what a level change moves. The three together because
-     * that is what they are - the levels are only meaningful against each other - and re-stubbed rather
-     * than installed as a second mock, so a case can retune them mid-case and rebuild the look from what
-     * it set.
+     * Retunes the balance, for a case about what a level change moves. Re-stubs rather than installing a
+     * second mock, so a case can retune mid-case and rebuild the look from what it set.
      *
-     * @param panelChromeVolume         the level the panel's own furniture is reached at
-     * @param singleOptionControlVolume the level a control with one answer to give is reached at
-     * @param listedItemVolume          the level one of many alike is reached at
+     * @param arrivalVolumes how loudly each kind of thing the pointer reaches is to sound
      */
-    public void setArrivalVolumes(
-        float panelChromeVolume,
-        float singleOptionControlVolume,
-        float listedItemVolume) {
+    public void setArrivalVolumes(PointerArrivalVolumes arrivalVolumes) {
 
         settingsMock
             .when(KmuMapLayerSettings::getMapSidebarPanelChromeArrivalVolume)
-            .thenReturn(panelChromeVolume);
+            .thenReturn(arrivalVolumes.panelChromeVolume());
         settingsMock
             .when(KmuMapLayerSettings::getMapSidebarSingleOptionControlArrivalVolume)
-            .thenReturn(singleOptionControlVolume);
+            .thenReturn(arrivalVolumes.singleOptionControlVolume());
         settingsMock
             .when(KmuMapLayerSettings::getMapSidebarListedItemArrivalVolume)
-            .thenReturn(listedItemVolume);
+            .thenReturn(arrivalVolumes.listedItemVolume());
     }
 
     @Override
