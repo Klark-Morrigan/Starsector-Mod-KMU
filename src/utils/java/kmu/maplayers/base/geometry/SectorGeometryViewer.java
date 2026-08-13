@@ -534,6 +534,10 @@ final class SectorGeometryViewer {
 
         // Stepped in hundredths, so the threshold can be moved by a fraction of a cell
         // radius rather than jumping a whole one at a time.
+        //
+        // Recomputed rather than merely repainted, unlike every other knob down here, because
+        // this one no longer only decides a colour: the same length is what a pocket is cut
+        // into sections of, and those are geometry.
         controls.add(ViewerControls.buildSlider(
             "Void span multiple",
             "Void span, in cell radii (x100)",
@@ -555,6 +559,12 @@ final class SectorGeometryViewer {
         // one the divider can be dragged past the knobs and they vanish with no way back.
         scroller.setMinimumSize(new Dimension(CONTROL_MINIMUM_WIDTH, 0));
         scroller.getVerticalScrollBar().setUnitIncrement(SCROLL_UNIT_INCREMENT);
+
+        // A knob restored from the last session applies its remembered value as it is built,
+        // and the geometry was built before any of them existed. That did not matter while
+        // the void knobs only chose colours; the section length is geometry, so the pockets
+        // are rebuilt once the knobs have had their say.
+        refreshVoidPockets();
 
         return scroller;
     }
