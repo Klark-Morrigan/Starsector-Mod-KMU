@@ -307,7 +307,7 @@ final class VoidSections {
                 continue;
             }
 
-            var halves = splitPiece(pieces.get(landing.piece()), landing, candidate);
+            var halves = splitPiece(landing, candidate);
 
             if (halves.isEmpty() || !doHalvesHoldSections(halves, leastSectionArea)) {
                 continue;
@@ -358,7 +358,7 @@ final class VoidSections {
                     && measureDistance(piece.get(start), candidate.start()) <= snapDistance
                     && measureDistance(piece.get(end), candidate.end()) <= snapDistance) {
 
-                return new Landing(index, start, end);
+                return new Landing(index, piece, start, end);
             }
         }
         return null;
@@ -367,11 +367,9 @@ final class VoidSections {
     // The two pieces a cut leaves. Its ends replace the outline vertices they landed nearest,
     // rather than being inserted beside them, so each half closes exactly on the cut and the
     // two halves meet along it with nothing between them.
-    private static List<List<double[]>> splitPiece(
-            List<double[]> piece,
-            Landing landing,
-            Crossing candidate) {
+    private static List<List<double[]>> splitPiece(Landing landing, Crossing candidate) {
 
+        var piece = landing.outline();
         var first = Math.min(landing.atStart(), landing.atEnd());
         var second = Math.max(landing.atStart(), landing.atEnd());
 
@@ -504,17 +502,23 @@ final class VoidSections {
      * Where a cut comes down on the pocket: which piece it falls on, and which vertices of
      * that piece's outline its two ends land nearest.
      *
-     * <p>Those vertices are carried rather than found again when the piece is split, because
-     * they are what decides both questions - whether the cut can be taken at all, and where
-     * the outline is opened to take it. Working them out twice would let the two answers
-     * disagree, and the split would then be made somewhere the cut was never checked.
+     * <p>The outline and its two vertices are carried rather than found again when the piece
+     * is split, because they are what decides both questions - whether the cut can be taken
+     * at all, and where the outline is opened to take it. Working them out twice would let
+     * the two answers disagree, and the split would then be made somewhere the cut was never
+     * checked. Carrying the outline itself alongside its index does the same for the piece:
+     * handed both separately, a caller can pass an outline that is not the one the index
+     * names, and the split lands on a piece nothing was ever measured against.
      *
-     * @param piece   which piece of the pocket the cut falls on
-     * @param atStart the vertex its {@code start} end landed nearest
+     * @param piece   which piece of the pocket the cut falls on, for replacing it with the
+     *                two the cut leaves
+     * @param outline that piece's own outline, which the cut is measured and opened against
+     * @param atStart the vertex of {@code outline} its {@code start} end landed nearest
      * @param atEnd   the vertex its {@code end} end landed nearest
      */
     private record Landing(
         int piece,
+        List<double[]> outline,
         int atStart,
         int atEnd) {
     }
