@@ -204,6 +204,29 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
+        void readByFactionCountsEachHeldColonyAndSumsTheirWeights() {
+            // Two colonies of one faction standing on two places: the weights sum (5 + 3 -> 8 grid
+            // units) and the count reaches 2. The count is what the weights cannot be divided back
+            // into - one size-8 colony and two smaller ones can weigh the same without being the
+            // same holding.
+            var hegemony = buildFaction("hegemony");
+            var sector = buildSectorWith(
+                "twin-colony-system",
+                buildVisibleMarket(hegemony, 5),
+                buildVisibleMarket(hegemony, 3));
+
+            var footprints = KnownMarketFootprints.readByFaction(
+                sector,
+                buildOnlySystem(sector),
+                buildRules().build());
+
+            assertThat(footprints.get("hegemony").totalWeight())
+                .isEqualTo(8 * DOMINANCE_WEIGHT_SCALE);
+            assertThat(footprints.get("hegemony").marketCount())
+                .isEqualTo(2);
+        }
+
+        @Test
         void readByFactionBanksOneColonyOnceWhenTwoMarketsShareItsEntity() {
             // A mod that supersedes a market by adding its own beside vanilla's leaves two
             // markets on one station. Summing both would read the owner as holding 3 + 5;
@@ -466,6 +489,52 @@ class KnownMarketFootprintsIntegrationTest {
                 .containsOnlyKeys("knights_of_selkie");
             assertThat(footprints.get("knights_of_selkie").totalWeight())
                 .isEqualTo(DOMINANCE_WEIGHT_SCALE);
+        }
+
+        @Test
+        void readByFactionLeavesAnUndiscoveredColonyOutOfTheCountBesideAKnownOne() {
+            // The count passes the known-to-player filter exactly as the weights do: beside a
+            // discovered colony the undiscovered station lifts neither, so the faction reads as
+            // holding one place worth 5 grid units. The exclusion cases above cannot show this -
+            // a faction present through no other colony has no footprint to inspect either way.
+            var selkie = buildFaction("knights_of_selkie");
+            var sector = buildSectorWith(
+                "half-known-system",
+                buildVisibleMarket(selkie, 5),
+                buildUndiscoveredHiddenMarket(selkie, 5));
+
+            var footprints = KnownMarketFootprints.readByFaction(
+                sector,
+                buildOnlySystem(sector),
+                buildRules().build());
+
+            assertThat(footprints.get("knights_of_selkie").totalWeight())
+                .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
+            assertThat(footprints.get("knights_of_selkie").marketCount())
+                .isEqualTo(1);
+        }
+
+        @Test
+        void readByFactionCountsAnUndiscoveredColonyBesideAKnownOneUnderTheDevReveal() {
+            // The dev reveal drops that filter for the count as well: the same two colonies read
+            // as two holdings, the hidden one at its fixed token weight (5 + 1 grid units), so the
+            // count always describes exactly the set of colonies the pass admitted.
+            var selkie = buildFaction("knights_of_selkie");
+            var sector = buildSectorWith(
+                "half-known-system",
+                buildVisibleMarket(selkie, 5),
+                buildUndiscoveredHiddenMarket(selkie, 5));
+
+            var footprints = KnownMarketFootprints.readByFaction(
+                sector,
+                buildOnlySystem(sector),
+                buildRules().build(),
+                true);
+
+            assertThat(footprints.get("knights_of_selkie").totalWeight())
+                .isEqualTo(6 * DOMINANCE_WEIGHT_SCALE);
+            assertThat(footprints.get("knights_of_selkie").marketCount())
+                .isEqualTo(2);
         }
 
         @Test
@@ -1481,6 +1550,11 @@ class KnownMarketFootprintsIntegrationTest {
                 .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
             assertThat(contributions.get("hegemony").marketSize())
                 .isEqualTo(5);
+
+            // The count is held to the same line as the weight: the unlisted colony does not lift
+            // it either, so nothing reading the count can show a holding the pass never weighed.
+            assertThat(contributions.get("hegemony").footprint().marketCount())
+                .isEqualTo(1);
         }
 
         @Test
