@@ -19,13 +19,19 @@ import java.util.List;
  * makes it read as that bloc's holdings ending rather than as an unowned gap between two
  * rivals. The band's last run is left open, a divider having nothing to part it from.
  *
- * <p>A cell draws a ribbon exactly when some bloc other than the one it was painted for is
- * present in it. Phrasing the gate on the painter rather than on "two or more blocs" is what
- * makes the sparse cases fall out right: a system claimed by decree whose decreed bloc holds
- * nothing there draws the one bloc that is present, alone, because that single bloc is still
- * something the fill does not already say. The converse is the gate's real work - a
- * single-holder system says nothing the fill has not said, and a large part of the sector is
- * single-holder systems, all of which stay bare.
+ * <p>A cell draws a ribbon when some bloc other than the one it was painted for is present in it,
+ * or when the cell holds anything at all and {@link UncontestedCellBands} admits the uncontested
+ * ones. Phrasing the first arm on the painter rather than on "two or more blocs" is what makes the
+ * sparse cases fall out right: a system claimed by decree whose decreed bloc holds nothing there
+ * draws the one bloc that is present, alone, because that single bloc is still something the fill
+ * does not already say.
+ *
+ * <p>Two arms rather than one rewritten rule, because they answer different questions. A cell with
+ * a rival in it bands because the fill cannot report a contest, which is what the whole readout is
+ * for; a cell with a lone holder bands because the player asked to see footprints. Folded into a
+ * single settings-dependent rule, the switch over the second would reach the first as well - and
+ * the one band a map must not be able to lose is the one saying a system is contested. A cell
+ * nothing is present in draws under neither arm: there is no footprint to report.
  *
  * <p>The painting bloc draws in the ribbon like any other present bloc. Its own segments are
  * what give the rivals beside them a scale: a lone rival segment against a long run of the
@@ -52,23 +58,63 @@ public record RibbonPlan(
     /**
      * Plans one cell's ribbon from the blocs present in it, in the order they were ranked.
      *
-     * @param paintingBlocId  the bloc the cell's fill was painted for, whose presence alone
-     *                        is not worth a band; an id no listed bloc carries - a cell
-     *                        painted for nobody - simply leaves every bloc a rival
-     * @param rankedPresences the blocs present in the cell, already ranked as the fill was
-     *                        decided, since the runs come out in exactly this order
-     * @param lengths         how far a market's segment and an interjection run
-     * @return the cell's runs in draw order, or {@link #NONE} where no bloc but the painter
-     *         is present
+     * @param paintingBlocId    the bloc the cell's fill was painted for, whose presence alone is
+     *                          worth a band only where the uncontested cells are admitted; an id
+     *                          no listed bloc carries - a cell painted for nobody - simply leaves
+     *                          every bloc a rival
+     * @param rankedPresences   the blocs present in the cell, already ranked as the fill was
+     *                          decided, since the runs come out in exactly this order
+     * @param lengths           how far a market's segment and an interjection run
+     * @param uncontestedBands  what a cell nobody but its painter holds anything in draws: whether
+     *                          it bands at all, and at what run length
+     * @return the cell's runs in draw order, or {@link #NONE} where the cell draws no band
      */
     public static RibbonPlan planCellRibbon(
             String paintingBlocId,
             List<BlocPresence> rankedPresences,
-            RibbonSegmentLengths lengths) {
+            RibbonSegmentLengths lengths,
+            UncontestedCellBands uncontestedBands) {
 
-        if (!hasRivalPresence(paintingBlocId, rankedPresences)) {
+        if (hasRivalPresence(paintingBlocId, rankedPresences)) {
+            return layBlocRuns(rankedPresences, lengths);
+        }
+        // Nothing but the painter is here, so the band is the player's to ask for - and there has
+        // to be something for it to report, which a decreed system its decreed bloc holds nothing
+        // in has not.
+        if (!uncontestedBands.isBandDrawn() || !hasAnyPresence(rankedPresences)) {
             return NONE;
         }
+        return layBlocRuns(rankedPresences, uncontestedBands.resolveRunLengths(lengths));
+    }
+
+    /**
+     * How far the whole ribbon runs, in ribbon widths.
+     *
+     * <p>The budget the drawn size is settled against: a cell whose perimeter cannot hold
+     * this many widths shrinks what a width is worth until it can, rather than wrapping the
+     * band or cutting it short.
+     *
+     * @return the total length of every run, or zero where the cell draws no ribbon
+     */
+    public int sumLengthUnits() {
+
+        var lengthUnits = 0;
+        for (var segment : segments) {
+            lengthUnits += segment.lengthUnits();
+        }
+        return lengthUnits;
+    }
+
+    // Lays the whole band: every bloc's run in the order handed over, each closed off by its own
+    // dark shade wherever another bloc's run follows it.
+    //
+    // Reached from both arms of the gate and given its lengths rather than choosing them, since
+    // what the two arms differ on is which cells band and how long their runs are - not what a band
+    // is made of. A second copy for the uncontested cells would let their bands drift into a
+    // different shape from the contested ones, which is the one comparison the readout rests on.
+    private static RibbonPlan layBlocRuns(
+            List<BlocPresence> rankedPresences,
+            RibbonSegmentLengths lengths) {
 
         var segments = new ArrayList<RibbonSegment>();
         BlocPresence outgoingBloc = null;
@@ -91,24 +137,6 @@ public record RibbonPlan(
         return new RibbonPlan(segments);
     }
 
-    /**
-     * How far the whole ribbon runs, in ribbon widths.
-     *
-     * <p>The budget the drawn size is settled against: a cell whose perimeter cannot hold
-     * this many widths shrinks what a width is worth until it can, rather than wrapping the
-     * band or cutting it short.
-     *
-     * @return the total length of every run, or zero where the cell draws no ribbon
-     */
-    public int sumLengthUnits() {
-
-        var lengthUnits = 0;
-        for (var segment : segments) {
-            lengthUnits += segment.lengthUnits();
-        }
-        return lengthUnits;
-    }
-
     // Whether any bloc but the painter holds something in the cell. A bloc counted at nothing
     // is not presence: it holds no market the score was decided on, so there is nothing about
     // it for a band to report, and admitting it would draw an empty ribbon on a cell that
@@ -119,6 +147,19 @@ public record RibbonPlan(
 
         for (var presence : rankedPresences) {
             if (presence.marketCount() > 0 && !presence.blocId().equals(paintingBlocId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Whether the cell holds anything at all, which is what the second arm of the gate is stated
+    // over: a footprint is what it offers to report, and a cell whose painter is there by decree
+    // alone has none - so admitting it would lay a band of no runs on a system holding nothing.
+    private static boolean hasAnyPresence(List<BlocPresence> rankedPresences) {
+
+        for (var presence : rankedPresences) {
+            if (presence.marketCount() > 0) {
                 return true;
             }
         }

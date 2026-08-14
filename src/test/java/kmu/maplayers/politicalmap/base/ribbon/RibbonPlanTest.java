@@ -15,10 +15,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins the segment rule on hand-built presences: which cells get a band at all, and what the
  * runs inside one look like.
  *
- * <p>Two things carry the whole design and are stated here on literals. The presence gate -
- * a band exactly where some bloc other than the painter holds something - is checked from
- * both sides, including the decree case where the painter holds nothing itself and a single
- * other bloc is enough. The partings - a dark one between two markets of one bloc, and one
+ * <p>Two things carry the whole design and are stated here on literals. The presence gate is
+ * checked from both sides on each of its arms: a band wherever some bloc other than the painter
+ * holds something, the decree case where the painter holds nothing itself and a single other bloc
+ * is enough, and a lone holder's cell banding only where the uncontested cells are admitted - at
+ * the shortened runs that admission carries, and never taking those runs into a contested cell.
+ * The partings - a dark one between two markets of one bloc, and one
  * more in the outgoing bloc's shade wherever another bloc's run follows - are checked on a
  * run long enough to have an inside, across a handover, and at the end of a band, which is
  * the one boundary that stays open.
@@ -38,6 +40,19 @@ final class RibbonPlanTest {
     // The design's own proportions: a market three widths long, parted by one width.
     private static final RibbonSegmentLengths STANDARD_LENGTHS = new RibbonSegmentLengths(3, 1);
 
+    // The uncontested cells left bare, which is what every case about the first arm of the gate
+    // is posed under: with them admitted, a single-holder cell bands and the case would be
+    // stating the second arm's answer instead.
+    private static final UncontestedCellBands NO_UNCONTESTED_BANDS =
+        new UncontestedCellBands(false, false);
+
+    // The uncontested cells admitted, at the two run lengths that tell the second knob's two
+    // answers apart: the authored run, and the tally of single widths.
+    private static final UncontestedCellBands UNCONTESTED_BANDS_AT_FULL_RUNS =
+        new UncontestedCellBands(true, false);
+    private static final UncontestedCellBands UNCONTESTED_BANDS_AT_SHORT_RUNS =
+        new UncontestedCellBands(true, true);
+
     @Nested
     class PlanCellRibbon {
 
@@ -45,7 +60,11 @@ final class RibbonPlanTest {
         void drawsNoRibbonInACellNoBlocIsPresentIn() {
             // A decreed system nobody holds anything in: the decree painted the fill, and
             // there is no presence anywhere for a band to report.
-            assertThat(RibbonPlan.planCellRibbon("hegemony", List.of(), STANDARD_LENGTHS))
+            assertThat(RibbonPlan.planCellRibbon(
+                    "hegemony",
+                    List.of(),
+                    STANDARD_LENGTHS,
+                    NO_UNCONTESTED_BANDS))
                 .isEqualTo(RibbonPlan.NONE);
         }
 
@@ -56,7 +75,8 @@ final class RibbonPlanTest {
             assertThat(RibbonPlan.planCellRibbon(
                     "hegemony",
                     List.of(buildHegemonyPresence(4)),
-                    STANDARD_LENGTHS))
+                    STANDARD_LENGTHS,
+                    NO_UNCONTESTED_BANDS))
                 .isEqualTo(RibbonPlan.NONE);
         }
 
@@ -67,7 +87,77 @@ final class RibbonPlanTest {
             assertThat(RibbonPlan.planCellRibbon(
                     "hegemony",
                     List.of(buildHegemonyPresence(2), buildTriTachyonPresence(0)),
-                    STANDARD_LENGTHS))
+                    STANDARD_LENGTHS,
+                    NO_UNCONTESTED_BANDS))
+                .isEqualTo(RibbonPlan.NONE);
+        }
+
+        @Test
+        void drawsThePainterAloneWhereTheUncontestedCellsAreAdmitted() {
+            // The second arm of the gate: nobody contests the system, and the band is there to
+            // say how much is in it rather than whose it is - which its fill has already said.
+            var plan = RibbonPlan.planCellRibbon(
+                "hegemony",
+                List.of(buildHegemonyPresence(2)),
+                STANDARD_LENGTHS,
+                UNCONTESTED_BANDS_AT_FULL_RUNS);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3));
+        }
+
+        @Test
+        void drawsEachMarketAtOneWidthOnAnAdmittedUncontestedCell() {
+            // The shortening, which is what keeps a large lone holding from laying more band than
+            // the contested cells the readout exists for. Only the market runs shorten: the
+            // parting keeps its own length, or the ticks and the gaps between them would be
+            // indistinguishable.
+            var plan = RibbonPlan.planCellRibbon(
+                "hegemony",
+                List.of(buildHegemonyPresence(3)),
+                STANDARD_LENGTHS,
+                UNCONTESTED_BANDS_AT_SHORT_RUNS);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1));
+        }
+
+        @Test
+        void keepsTheAuthoredRunLengthOnAContestedCellWhileTheShorteningIsOn() {
+            // The shortening reaches only the cells the second arm admitted. A contested cell is
+            // the first arm's, and the two arms answer different questions - so no knob under the
+            // second one may change how a contest is drawn.
+            var plan = RibbonPlan.planCellRibbon(
+                "hegemony",
+                List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
+                STANDARD_LENGTHS,
+                UNCONTESTED_BANDS_AT_SHORT_RUNS);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 3));
+        }
+
+        @Test
+        void drawsNoRibbonInAnEmptyCellEvenWhereTheUncontestedCellsAreAdmitted() {
+            // A system held by decree alone: the second arm asks for the footprints of a lone
+            // holder, and there is no holder here - so admitting the cell would lay a band of no
+            // runs on a system holding nothing.
+            assertThat(RibbonPlan.planCellRibbon(
+                    "hegemony",
+                    List.of(buildHegemonyPresence(0)),
+                    STANDARD_LENGTHS,
+                    UNCONTESTED_BANDS_AT_SHORT_RUNS))
                 .isEqualTo(RibbonPlan.NONE);
         }
 
@@ -79,7 +169,8 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(3)),
-                STANDARD_LENGTHS);
+                STANDARD_LENGTHS,
+                NO_UNCONTESTED_BANDS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -101,7 +192,8 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(3), buildTriTachyonPresence(2)),
-                STANDARD_LENGTHS);
+                STANDARD_LENGTHS,
+                NO_UNCONTESTED_BANDS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -127,7 +219,8 @@ final class RibbonPlanTest {
                     buildHegemonyPresence(1),
                     buildTriTachyonPresence(1),
                     buildDiktatPresence(1)),
-                STANDARD_LENGTHS);
+                STANDARD_LENGTHS,
+                NO_UNCONTESTED_BANDS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -146,7 +239,8 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
-                STANDARD_LENGTHS);
+                STANDARD_LENGTHS,
+                NO_UNCONTESTED_BANDS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -162,7 +256,8 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "sindria",
                 List.of(buildTriTachyonPresence(2)),
-                STANDARD_LENGTHS);
+                STANDARD_LENGTHS,
+                NO_UNCONTESTED_BANDS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -178,7 +273,8 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildTriTachyonPresence(1), buildHegemonyPresence(1)),
-                STANDARD_LENGTHS);
+                STANDARD_LENGTHS,
+                NO_UNCONTESTED_BANDS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -199,7 +295,8 @@ final class RibbonPlanTest {
                     buildHegemonyPresence(2),
                     buildDiktatPresence(0),
                     buildTriTachyonPresence(1)),
-                STANDARD_LENGTHS);
+                STANDARD_LENGTHS,
+                NO_UNCONTESTED_BANDS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -221,7 +318,8 @@ final class RibbonPlanTest {
                     buildDiktatPresence(0),
                     buildHegemonyPresence(2),
                     buildTriTachyonPresence(1)),
-                STANDARD_LENGTHS);
+                STANDARD_LENGTHS,
+                NO_UNCONTESTED_BANDS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -244,7 +342,8 @@ final class RibbonPlanTest {
                     buildHegemonyPresence(1),
                     buildTriTachyonPresence(1),
                     buildDiktatPresence(0)),
-                STANDARD_LENGTHS);
+                STANDARD_LENGTHS,
+                NO_UNCONTESTED_BANDS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -261,7 +360,8 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(2), buildTriTachyonPresence(1)),
-                new RibbonSegmentLengths(4, 2));
+                new RibbonSegmentLengths(4, 2),
+                NO_UNCONTESTED_BANDS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -296,7 +396,8 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(3), buildTriTachyonPresence(2)),
-                STANDARD_LENGTHS);
+                STANDARD_LENGTHS,
+                NO_UNCONTESTED_BANDS);
 
             assertThat(plan.sumLengthUnits())
                 .isEqualTo(19);

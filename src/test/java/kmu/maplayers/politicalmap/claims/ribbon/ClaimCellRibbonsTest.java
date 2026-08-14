@@ -13,6 +13,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -79,7 +80,10 @@ final class ClaimCellRibbonsTest {
     // The design's own proportions - a market three widths long, parted by one width - paired
     // with the colours every case reads its runs back in.
     private static final RibbonPlanInputs STANDARD_INPUTS =
-        new RibbonPlanInputs(PALETTES, new RibbonSegmentLengths(3, 1));
+        new RibbonPlanInputs(
+            PALETTES,
+            new RibbonSegmentLengths(3, 1),
+            new UncontestedCellBands(false, false));
 
     // The faction view, where a bloc is a single faction. The alliance case states its own.
     private static final HolderGrouping NO_ALLIANCES = HolderGrouping.identity();

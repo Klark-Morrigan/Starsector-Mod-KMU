@@ -85,11 +85,6 @@ class KnownMarketFootprintsIntegrationTest {
     // right entity has something to name.
     private static final String STATION_NAME = "Fort Ludd";
 
-    // What the plain stubbed market's primary entity is marked with on the map: nothing, its token
-    // carrying no icon spec at all. Named so the colonies the icon cases are not about read as
-    // deliberately unmarked rather than as an oversight.
-    private static final Optional<EntityMapIcon> NO_ICON = Optional.empty();
-
     // The unlisted colony every off-economy case poses, identified as the read answers it - vanilla's
     // own deliberately unregistered market, whose stubbed entity carries no icon spec.
     private static final EntityNameplate UNLISTED_ACADEMY =

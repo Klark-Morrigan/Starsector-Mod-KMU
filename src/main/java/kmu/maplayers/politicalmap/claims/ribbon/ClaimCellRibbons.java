@@ -75,8 +75,8 @@ public final class ClaimCellRibbons {
      * @param grouping       the grouping that folds each standing's faction into its bloc, so a
      *                       band is drawn in the same units the fill was
      * @param inputs         where a bloc's shades are read from, and how far its runs go
-     * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where no bloc but the
-     *         painter is present
+     * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where the gate the counts
+     *         are handed to leaves the cell bare
      */
     public static RibbonPlan planClaimCellRibbon(
             String paintingBlocId,
@@ -89,7 +89,8 @@ public final class ClaimCellRibbons {
             BlocPresence.collectColouredPresences(
                 countMarketsByBloc(contest, grouping),
                 inputs.palettes()),
-            inputs.lengths());
+            inputs.lengths(),
+            inputs.uncontestedBands());
     }
 
     // Each bloc's colony count in the order the contest ranked them. Insertion order carries that

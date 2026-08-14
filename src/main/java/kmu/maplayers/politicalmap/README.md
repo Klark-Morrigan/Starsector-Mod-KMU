@@ -32,7 +32,8 @@ For each controlling bloc the overlay draws four things:
 A system where somebody other than the bloc painting it also has colonies carries a fifth: a banded
 stroke running inside that one cell, a run per colony in the bloc's own colours, so a cell reads as
 who is there and in what proportion without the fill having to be split. A system its painter holds
-alone stays bare, which is most of the sector.
+alone - most of the sector - bands only where the player asks for the uncontested ones, and then at
+one width a colony, so its cell says how much is there without out-shouting the contested ones.
 
 The tab body picks the view by radio, and a filter picker below it can spotlight one bloc. When a
 bloc is spotlighted, the rest fade into a muted background. The radio always lists the views in
@@ -335,9 +336,15 @@ number of points with no grid behind it, so no rating-to-weight change is stated
 per market every bloc present in the cell holds, runs of one bloc parted by its dark shade and a
 bloc's whole run closed off in that same shade wherever another bloc's follows - the divider being
 the outgoing bloc's, so it reads as its holdings ending rather than as a gap belonging to nobody,
-and the band's last run left open - and no band at all on a cell no bloc but the one it was painted
-for is present in - `RibbonPlan` over a ranked list of `BlocPresence`,
-emitted as `RibbonSegment`s at the two proportions `RibbonSegmentLengths` pairs. Only that shared
+and the band's last run left open - `RibbonPlan` over a ranked list of `BlocPresence`,
+emitted as `RibbonSegment`s at the two proportions `RibbonSegmentLengths` pairs. Which cells band at
+all is two arms of one gate, because they answer different questions: a cell some bloc other than
+its own painter holds something in bands unconditionally, that being the contest the fill cannot
+report, and a cell held by one bloc alone bands only where `UncontestedCellBands` admits it - the
+player's answer to whether a lone holder's footprint is worth saying, and at one width a colony
+rather than the authored run so it cannot out-shout the contests beside it. Stated as two arms
+rather than one settings-dependent rule so that no switch reaches the bands that report a contest.
+A cell nothing is present in bands under neither. Only that shared
 vocabulary is here, plus the two ports the rule is stated over - `BlocPaletteReader` for a bloc's
 shades and `SystemRibbonPlanner` for the counting itself - because where the counts come from is
 each mechanic's own business, and that is what keeps one band meaning one thing on every view. Each
@@ -375,9 +382,12 @@ longer meet for a draw order to settle. Every size the band is drawn at is the p
 `RibbonStyleReader` on the Visuals tab: the width, the clearance from the border, and the two run
 lengths those are multiples of - the ratio between the last two being what makes a bloc's stretch
 read as several colonies rather than one. All four are world sizes, so nothing about a band is
-asked of the camera. The one knob that is not a size is the switch, which takes the counting off
+asked of the camera. The knobs that are not sizes are the switch, which takes the counting off
 the rebuild as well as the bands off the map, since a band nobody sees is not worth a walk of the
-sector's markets),
+sector's markets, and the uncontested pair beneath it - whether the lone holders' cells band, and
+whether those bands run short - read as one `UncontestedCellBands` at the start of a pass and
+carried in `RibbonPlanInputs` beside the palettes and the proportions, so every cell of one pass is
+gated by one answer),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 reached through [the sidebar](../base/sidebar/README.md) one level up (the picker is KMLib's, bound

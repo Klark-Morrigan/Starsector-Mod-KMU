@@ -20,6 +20,7 @@ import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
 import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.util.KmuStrings;
@@ -108,7 +109,10 @@ final class ClaimsViewTest {
             var planner = ClaimsView.INSTANCE.resolveRibbonPlanner(
                 mock(SectorAPI.class),
                 HolderGrouping.identity(),
-                new RibbonPlanInputs(blocId -> null, new RibbonSegmentLengths(3, 1)));
+                new RibbonPlanInputs(
+                    blocId -> null,
+                    new RibbonSegmentLengths(3, 1),
+                    new UncontestedCellBands(false, false)));
 
             assertThat(planner)
                 .isInstanceOf(ClaimedSystemRibbonPlanner.class);

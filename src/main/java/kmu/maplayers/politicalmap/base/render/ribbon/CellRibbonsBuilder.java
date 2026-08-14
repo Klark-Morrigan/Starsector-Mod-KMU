@@ -12,6 +12,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
 import kmu.settings.KmuPoliticalMapSettings;
 
 import java.util.List;
@@ -99,13 +100,14 @@ public final class CellRibbonsBuilder {
         }
         var style = RibbonStyleReader.readRibbonStyle();
 
-        // The colour source and the proportions are sampled here, once, and handed to whatever
-        // planner the view resolves - so both mechanics of a composed planner read a bloc's
-        // shades through one object.
+        // The colour source, the proportions and the uncontested-cell rule are sampled here, once,
+        // and handed to whatever planner the view resolves - so both mechanics of a composed
+        // planner read a bloc's shades through one object and gate their cells by one rule.
         var inputs = RibbonPlanInputs.createForSector(
             sector,
             viewGrouping.grouping(),
-            style.lengths());
+            style.lengths(),
+            UncontestedCellBands.readFromLunaSettings());
 
         return new CellRibbonsBuilder(
             viewGrouping.view().resolveRibbonPlanner(sector, viewGrouping.grouping(), inputs),

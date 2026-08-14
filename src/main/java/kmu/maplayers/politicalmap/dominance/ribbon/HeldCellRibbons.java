@@ -42,8 +42,8 @@ public final class HeldCellRibbons {
      * @param footprintByBlocId each bloc's footprint in the cell's system, as the dominance pass
      *                       folded them under the view's grouping
      * @param inputs         where a bloc's shades are read from, and how far its runs go
-     * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where no bloc but the
-     *         painter is present
+     * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where the gate the counts
+     *         are handed to leaves the cell bare
      */
     public static RibbonPlan planHeldCellRibbon(
             String paintingBlocId,
@@ -55,7 +55,8 @@ public final class HeldCellRibbons {
             BlocPresence.collectColouredPresences(
                 rankMarketCounts(paintingBlocId, footprintByBlocId),
                 inputs.palettes()),
-            inputs.lengths());
+            inputs.lengths(),
+            inputs.uncontestedBands());
     }
 
     // Each bloc's colony count in the band's order: the painter, then the rest by descending

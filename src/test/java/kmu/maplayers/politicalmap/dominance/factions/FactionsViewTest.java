@@ -23,6 +23,7 @@ import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProv
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
 import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner;
 
 import org.junit.jupiter.api.Nested;
@@ -96,7 +97,10 @@ final class FactionsViewTest {
                 var planner = FactionsView.INSTANCE.resolveRibbonPlanner(
                     mock(SectorAPI.class),
                     HolderGrouping.identity(),
-                    new RibbonPlanInputs(blocId -> null, new RibbonSegmentLengths(3, 1)));
+                    new RibbonPlanInputs(
+                        blocId -> null,
+                        new RibbonSegmentLengths(3, 1),
+                        new UncontestedCellBands(false, false)));
 
                 assertThat(planner)
                     .isInstanceOf(HeldOrClaimedSystemRibbonPlanner.class);

@@ -16,6 +16,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -59,7 +60,10 @@ final class ClaimedSystemRibbonPlannerTest {
         ::get;
 
     private static final RibbonPlanInputs STANDARD_INPUTS =
-        new RibbonPlanInputs(PALETTES, new RibbonSegmentLengths(3, 1));
+        new RibbonPlanInputs(
+            PALETTES,
+            new RibbonSegmentLengths(3, 1),
+            new UncontestedCellBands(false, false));
 
     // No memory flag imposed a claimant, so the contest settled the system on its own.
     private static final String NO_DECREE = null;

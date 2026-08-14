@@ -8,6 +8,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -64,7 +65,10 @@ final class HeldCellRibbonsTest {
     // The design's own proportions - a market three widths long, parted by one width - paired
     // with the colours every case reads its runs back in.
     private static final RibbonPlanInputs STANDARD_INPUTS =
-        new RibbonPlanInputs(PALETTES, new RibbonSegmentLengths(3, 1));
+        new RibbonPlanInputs(
+            PALETTES,
+            new RibbonSegmentLengths(3, 1),
+            new UncontestedCellBands(false, false));
 
     // The two weights below the combined one. Held constant across every case: the ordering reads
     // the combined weight alone, so a case varying either would vary nothing the rule can see.
@@ -155,6 +159,29 @@ final class HeldCellRibbonsTest {
                     new RibbonSegment(PERSEAN_BRIGHT, 3),
                     new RibbonSegment(PERSEAN_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
+        }
+
+        @Test
+        void drawsThePainterAloneAtOneWidthAMarketWhereTheUncontestedCellsAreAdmitted() {
+            // The same single-holder cell as above, under a player who asked to see the lone
+            // holders' footprints: the rule the counts are handed to is the one that decides, so
+            // what the held mechanic owes it is the counts and the answer it was sampled with.
+            var footprints = new LinkedHashMap<String, MarketFootprint>();
+            footprints.put(HEGEMONY, buildFootprint(2, 9000));
+
+            var plan = HeldCellRibbons.planHeldCellRibbon(
+                HEGEMONY,
+                footprints,
+                new RibbonPlanInputs(
+                    PALETTES,
+                    new RibbonSegmentLengths(3, 1),
+                    new UncontestedCellBands(true, true)));
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1));
         }
 
         @Test
