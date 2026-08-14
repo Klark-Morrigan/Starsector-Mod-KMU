@@ -102,6 +102,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     // Narrow enough to push the knobs aside for a good look at the map, wide enough that
     // the divider is still findable.
     private static final int CONTROL_MINIMUM_WIDTH = 80;
+    
     // A slider row is about this tall, so one wheel notch moves the control panel by roughly
     // one knob rather than by one pixel.
     private static final int SCROLL_UNIT_INCREMENT = 16;
@@ -110,44 +111,29 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     private static final double INITIAL_MARGIN = 1.05;
 
     private static final float SITE_RADIUS = 120f;
+
     // The mark standing in for a pocket with no room to draw. Fixed in world units like the
     // site dots, so it reads as a pin on the map rather than as a shape of that size.
-    private static final float VOID_MARK_RADIUS = 200f;
-    // Screen pixels, not world units: the readout keeps its size at every zoom, because a
-    // label that shrank with the map would be unreadable at exactly the zoom where a
-    // coordinate is wanted.
     private static final int READOUT_OFFSET_X = 14;
     private static final int READOUT_OFFSET_Y = 20;
     private static final int READOUT_PADDING = 4;
+
     // Generous enough to cover the drawn label whatever the coordinates are, so the repaint
     // it asks for erases the old one without measuring text twice.
     private static final int READOUT_BOX_WIDTH = 240;
     private static final int READOUT_BOX_HEIGHT = 40;
+
     private static final Color READOUT_TEXT = new Color(0xff, 0xff, 0xff);
     private static final Color READOUT_BACKDROP = new Color(0x00, 0x00, 0x00, 0xc0);
+
     private static final float CELL_STROKE = 30f;
     private static final float RING_STROKE = 90f;
-
-    private static final int HUE_RANGE = 360;
-
-    // The odd 32-bit approximation of the golden ratio, the standard multiplier for spreading
-    // a hash's low bits across the whole word. Only its bit pattern matters, not its value.
-    private static final int HASH_MIX_MULTIPLIER = 0x9E3779B9;
-
-    private static final float OWNER_SATURATION = 0.8f;
-    private static final float OWNER_BRIGHTNESS = 0.55f;
 
     private static final int OPAQUE_ALPHA = 255;
 
     private static final long NANOS_PER_MILLI = 1_000_000L;
 
     private static final Color BACKGROUND = new Color(0x11, 0x11, 0x11);
-    private static final Color CELL_COLOUR = new Color(0x2a, 0x2a, 0x2a);
-    private static final Color NEUTRAL_COLOUR = new Color(0x55, 0x55, 0x55);
-
-    // Wider than a cell edge, because a cut is read against a fill rather than against the
-    // black, and it has to stay findable at the zoom where a whole pocket fits on screen.
-    private static final float SECTION_CUT_STROKE = 120f;
 
     // Not final: the fixture is picked from a dropdown, so a session can move between
     // sectors without restarting - a shape only worth judging is one that holds on more
