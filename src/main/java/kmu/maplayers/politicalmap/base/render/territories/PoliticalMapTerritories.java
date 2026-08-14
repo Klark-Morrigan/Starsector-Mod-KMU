@@ -87,9 +87,9 @@ public final class PoliticalMapTerritories implements
     // Each drawn cell's presence band, baked against the very shape above by its own pass once
     // the names have been placed. Emptied for a cell whenever that shape is replaced, so a band
     // is never read against a ring it was not laid in - the band pass then fills it back in for
-    // the cells it re-bakes. Most cells have none - a band is drawn only where a bloc the cell is
-    // not painted for is present - so the map is sparse against the two above rather than
-    // parallel to them.
+    // the cells it re-bakes. Most cells have none - a band reports what is held in a system, and
+    // most of the sector is cells nobody lives in - so the map is sparse against the two above
+    // rather than parallel to them.
     private final Map<String, CellRibbon> ribbonByCellId = new LinkedHashMap<>();
 
     // Retained derivation inputs. The holder map is mutated in place as systems flip; the

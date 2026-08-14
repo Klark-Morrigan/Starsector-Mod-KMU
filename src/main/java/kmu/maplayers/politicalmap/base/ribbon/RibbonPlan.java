@@ -48,7 +48,8 @@ import java.util.List;
 public record RibbonPlan(
     List<RibbonSegment> segments) {
 
-    // The cell draws no band: either nothing but the painter is present, or nothing is.
+    // The cell draws no band: nothing is present in it, or nothing but its own painter is and the
+    // uncontested cells are not admitted.
     public static final RibbonPlan NONE = new RibbonPlan(List.of());
 
     public RibbonPlan {

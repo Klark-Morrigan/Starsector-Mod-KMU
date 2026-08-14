@@ -9,14 +9,17 @@ import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
 import kmu.settings.KmuPoliticalMapSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
@@ -138,6 +141,30 @@ final class CellRibbonsBuilderTest {
         }
 
         @Test
+        void handsThePlayersUncontestedAnswerToTheMechanicTheViewCountsBy() {
+            // The one place the two uncontested knobs reach the counting: they are sampled by the
+            // pass and carried in the inputs every planner is built from. Read anywhere else, or
+            // not read at all, they would show only as a setting a player moves to no effect.
+            settingsMock
+                .when(KmuPoliticalMapSettings::shouldDrawPoliticalMapUncontestedRibbons)
+                .thenReturn(true);
+            settingsMock
+                .when(KmuPoliticalMapSettings::shouldShortenPoliticalMapUncontestedRibbonRuns)
+                .thenReturn(false);
+
+            var viewMock = buildViewMock(system -> ANY_PLAN);
+
+            buildThrough(viewMock);
+
+            var inputsCaptor = ArgumentCaptor.forClass(RibbonPlanInputs.class);
+
+            verify(viewMock)
+                .resolveRibbonPlanner(any(), any(), inputsCaptor.capture());
+            assertThat(inputsCaptor.getValue().uncontestedBands())
+                .isEqualTo(new UncontestedCellBands(true, false));
+        }
+
+        @Test
         void asksNoPlannerAboutAPaintedCellWhileTheBandsAreSwitchedOff() {
             // The half of the switch that is invisible either way: with the bands off, a rebuild
             // must not still be counting every painted system's colonies for a readout nothing
@@ -166,6 +193,22 @@ final class CellRibbonsBuilderTest {
     // A pass over two painted systems - one placed, one with no site recorded - and one system no
     // bloc paints, counted through the given planner.
     private static CellRibbonsBuilder buildWith(SystemRibbonPlanner planner) {
+        return buildThrough(buildViewMock(planner));
+    }
+
+    // The view the pass asks for its mechanic, answering with the given planner. Built apart from
+    // the pass so a case can hold on to it and read what it was handed.
+    private static PoliticalMapView buildViewMock(SystemRibbonPlanner planner) {
+
+        var viewMock = mock(PoliticalMapView.class);
+
+        when(viewMock.resolveRibbonPlanner(any(), any(), any()))
+            .thenReturn(planner);
+
+        return viewMock;
+    }
+
+    private static CellRibbonsBuilder buildThrough(PoliticalMapView viewMock) {
 
         // The systems are built before the stubbing rather than inside it: each is itself a mock,
         // and building one while another stubbing is open reads to Mockito as an unfinished stub.
@@ -178,11 +221,6 @@ final class CellRibbonsBuilderTest {
 
         when(sectorMock.getStarSystems())
             .thenReturn(systems);
-
-        var viewMock = mock(PoliticalMapView.class);
-
-        when(viewMock.resolveRibbonPlanner(any(), any(), any()))
-            .thenReturn(planner);
 
         var geometryCacheMock = mock(CellGeometryCache.class);
 

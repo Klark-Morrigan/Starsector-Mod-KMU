@@ -163,8 +163,8 @@ follows, and `CellRibbonsBaker` reads the shape back off this record rather than
 What ties the two is the write that records a shape *dropping* whatever band the cell was carrying:
 a band is triangles laid inside one particular ring, so a re-shaped cell keeping its band would
 draw the last shape's band inside this shape's cell. Unlike the two maps beside it this one is
-sparse - a bandless cell is left out rather than held as an empty value - since a band is drawn
-only where a bloc the cell is *not* painted for is present in it, which most of the sector is not.
+sparse - a bandless cell is left out rather than held as an empty value - since a band reports what
+is held in a system, and most of the sector is cells nobody lives in.
 
 ## The split fill: solid, hatched, unfilled
 
