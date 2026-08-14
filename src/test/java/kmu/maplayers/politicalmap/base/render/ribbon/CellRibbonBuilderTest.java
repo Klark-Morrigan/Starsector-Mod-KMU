@@ -23,10 +23,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * geometry and completely wrong as a readout. Pinning the four together is what makes the
  * convention a fact about the code rather than about whichever cell was looked at in play.
  *
- * <p>One case is about the band being one shape rather than a row of them: where two runs meet on
- * a corner of the cell, the band turns through that corner instead of stopping square either side
- * of it. That is the difference between stroking the whole band once and stroking it a run at a
- * time, and it is invisible to every other case here.
+ * <p>Two cases are about the band being one shape rather than a row of them. Where two runs meet
+ * on a corner of the cell, the band turns through that corner instead of stopping square either
+ * side of it - the difference between stroking the whole band once and stroking it a run at a
+ * time, and invisible to every other case here. And because the runs are then read back out of
+ * one stroke by position, a run that draws nothing has to hold its place in it, or every run
+ * after one takes its neighbour's colour.
  *
  * <p>The remaining cases are the two ends of the size question the design answers deliberately:
  * a band longer than its cell's outline compresses rather than being cut short, and a cell with
@@ -75,6 +77,11 @@ final class CellRibbonBuilderTest {
     // is 24000 units of band around an outline of 12800.
     private static final int CROWDED_RUN_COUNT = 60;
     private static final int CROWDED_RUN_LENGTH = 3;
+
+    // A run of no length at all - a plan can carry one, since a run's length is a plain count of
+    // widths with nothing forbidding zero. It draws nothing, and what it must not do is take the
+    // colour off the runs after it.
+    private static final int NO_WIDTHS = 0;
 
     // Four widths of run is 1600 units, exactly the distance from the band's start above the
     // cell's site to the cell's top right corner - so a plan of these puts a run boundary on that
@@ -163,6 +170,30 @@ final class CellRibbonBuilderTest {
             assertThat(ribbon.bands())
                 .hasSize(CROWDED_RUN_COUNT)
                 .allSatisfy(band -> assertThat(band.triangles()).isNotEmpty());
+        }
+
+        @Test
+        void keepsEveryRunsOwnColourWhereARunInTheMiddleDrawsNothing() {
+            // A run drawing nothing is dropped from the bands, and the runs after it are not: the
+            // whole band is stroked in one go and its runs read back off the result by position,
+            // so a stroker that dropped an empty run instead of holding its place would hand the
+            // third run's stretch the second run's colour. The last band's far end at x=2800 is
+            // what says the geometry stayed with its colour rather than both shifting together.
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                CELL_SITE,
+                new RibbonPlan(List.of(
+                    new RibbonSegment(BRIGHT, ONE_WIDTH),
+                    new RibbonSegment(DARK, NO_WIDTHS),
+                    new RibbonSegment(BRIGHT, ONE_WIDTH))),
+                STYLE);
+
+            assertThat(ribbon.bands())
+                .extracting(RibbonBand::colour)
+                .containsExactly(BRIGHT, BRIGHT);
+
+            assertThat(hasCorner(ribbon.bands().get(1), 2800.0, 3800.0))
+                .isTrue();
         }
 
         @Test
