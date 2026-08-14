@@ -4,6 +4,7 @@ import kmlib.math.geometry.Points;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The void the bridges close around, as shapes to draw.
@@ -29,10 +30,10 @@ import java.util.List;
  * bridges wall off and the pockets the cells enclose come out of the same test.
  *
  * <p><b>Nothing here is offset.</b> The arcs come from a trace at the reach that leaves the
- * channel, exactly as the other construction gets its outline. The chord takes no channel of
- * its own: a channel separates a fill from what lies across it, and what lies across a bridge
- * is the same void rather than another fill, so insetting there would open a gap against
- * nothing.
+ * channel, exactly as the other construction gets its outline, and the bridge keeps the same
+ * channel the cells do - one that two neighbouring pockets share, half of it each. Both are
+ * the same trace at a different distance rather than a shape pushed outward afterwards, which
+ * is why the corners come out where the circles actually cross instead of on a mitre.
  *
  * <p>{@link #measureWorstChordStray} is the check that governs this. A fill can sit perfectly
  * against every cell and still close on a line nowhere near its bridge, so measuring the
@@ -123,10 +124,10 @@ final class VoidBridgePockets {
      * pockets that come back are two different computations of one thing.
      *
      * <p>Traced at the reach that leaves the channel, exactly as the other construction gets
-     * its own outline, so nothing here is offset. The chord takes no channel of its own,
-     * because a channel separates a fill from what lies across it and what lies across a
-     * bridge is the same void, not another fill. Insetting there would open a gap against
-     * nothing.
+     * its own outline, so nothing here is offset. The bridges keep that same channel: each
+     * pocket stops half of one short of the wall, so two pockets meeting across a bridge are
+     * held apart by the same gap that holds a pocket off the cells around it, and every
+     * section reads as its own shape rather than as part of one mass.
      *
      * @param sites       the sites
      * @param bridges     the bridges, as {@link VoidBridges} found them
@@ -146,11 +147,38 @@ final class VoidBridgePockets {
                 sites,
                 parameters.measureDrawnReach(),
                 arcSegments,
-                buildChords(bridges))) {
+                buildChords(bridges),
+                parameters.borderInset())) {
 
             outlines.add(hole.boundary());
         }
         return outlines;
+    }
+
+    /**
+     * The bridges that end up drawn as walls, which is fewer than are offered.
+     *
+     * <p>A bridge drops out when its mouth is buried inside another disc - its two cells have
+     * closed over at the drawn reach and there is no gap left to wall - or when a bridge
+     * taken earlier already holds that mouth, two leaving one cell within a channel of each
+     * other. Worth counting rather than inferring: it is the difference between the rings the
+     * graph says are there and the pockets the trace hands back.
+     *
+     * @param sites      the sites
+     * @param bridges    the bridges, as {@link VoidBridges} found them
+     * @param parameters the knobs the cells are built under
+     * @return the chords actually laid, in the order the bridges were offered
+     */
+    static List<DiscUnionBoundary.Chord> findLaidChords(
+            List<double[]> sites,
+            List<CellGaps.CellGap> bridges,
+            SectorGeometryParameters parameters) {
+
+        return DiscUnionBoundary.findAttachableChords(
+            sites,
+            parameters.measureDrawnReach(),
+            buildChords(bridges),
+            parameters.borderInset());
     }
 
     /**
@@ -161,9 +189,21 @@ final class VoidBridgePockets {
      * and still close on a line nowhere near its bridge, which is what happened. This asks
      * the question that can actually fail.
      *
-     * <p>Only the chords that could be laid are looked for. One whose end is buried inside
-     * another disc is not on the boundary and was never traced, so demanding an outline
-     * carry it would fail the construction for doing the right thing.
+     * <p>Two filters, and both are needed. Only chords that were actually LAID are looked
+     * for - one whose mouth is buried inside another disc, or crowded out by a chord that
+     * got there first, was never traced, so demanding an outline carry it would fail the
+     * construction for doing the right thing. And only chords that close a RING, because a
+     * chain of them bounds a silhouette rather than a pocket and there is no fill for its
+     * ends to be on.
+     *
+     * <p>The laid set is worked out over every bridge, exactly as the trace works it out, and
+     * the ring-closing ones are picked out of THAT. Filtering the other way round would offer
+     * a shorter list to the greedy pass, which could then lay a chord the trace had dropped.
+     *
+     * <p>Asked of a chord's better SIDE, not of both. Once a bridge keeps a channel it is two
+     * lines, and only one of them has a pocket against it - the other faces the cells, whose
+     * silhouette is not a fill and is not drawn. Demanding both would fail every chord by
+     * exactly the width of the channel.
      *
      * @param captured   what {@link #findCapturedPockets} handed back
      * @param sites      the sites
@@ -179,21 +219,39 @@ final class VoidBridgePockets {
             SectorGeometryParameters parameters) {
 
         var drawnReach = parameters.measureDrawnReach();
+        var capturing = Set.copyOf(
+            buildChords(findCapturingBridges(sites, bridges, parameters.cellRadius())));
+
         var worst = 0.0;
 
-        for (var chord : DiscUnionBoundary.findAttachableChords(
-                sites,
-                drawnReach,
-                buildChords(findCapturingBridges(sites, bridges, parameters.cellRadius())))) {
+        for (var chord : findLaidChords(sites, bridges, parameters)) {
 
-            for (var end : List.of(
-                    DiscUnionBoundary.findChordEnd(
-                        sites, drawnReach, chord.fromCircle(), chord.toCircle()),
-                    DiscUnionBoundary.findChordEnd(
-                        sites, drawnReach, chord.toCircle(), chord.fromCircle()))) {
-
-                worst = Math.max(worst, measureDistanceToNearestVertex(captured, end));
+            if (!capturing.contains(chord)) {
+                continue;
             }
+            var bestSide = Double.MAX_VALUE;
+
+            for (var side : DiscUnionBoundary.findChordSides(
+                    sites, drawnReach, chord, parameters.borderInset())) {
+
+                bestSide = Math.min(bestSide, measureWorstStrayOnSide(captured, side));
+            }
+            worst = Math.max(worst, bestSide);
+        }
+        return worst;
+    }
+
+    // How far the further of one side's two ends sits from the outline that should carry it.
+    // The further of the two rather than the nearer, because a line that landed one end right
+    // and the other end nowhere has not landed.
+    private static double measureWorstStrayOnSide(
+            List<List<double[]>> captured,
+            List<double[]> side) {
+
+        var worst = 0.0;
+
+        for (var end : side) {
+            worst = Math.max(worst, measureDistanceToNearestVertex(captured, end));
         }
         return worst;
     }

@@ -584,6 +584,13 @@ final class VoidRegionsDump {
 
         System.out.printf(
             Locale.ROOT,
+            "%d of them are drawn as walls (the rest have closed over or crowd a mouth "
+                + "already taken)%n",
+            VoidBridgePockets.findLaidChords(
+                fixture.getSites(), bridges, SectorGeometryParameters.createDefaults()).size());
+
+        System.out.printf(
+            Locale.ROOT,
             "walking the cells' borders with those bridges laid across them closes %d "
                 + "pockets; worst fill edge strays %.1f from its bridge (has to be 0)%n",
             captured.size(),

@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The boundary of the union of the cells' reach discs, as closed cycles of circular arcs.
@@ -29,11 +30,16 @@ import java.util.List;
  * neighbour LEAVES the first disc - a point named by the pair of circles rather than by its
  * position, so two circles computing it separately and landing a rounding apart still agree.
  *
- * <p>A {@link Chord} joins that walk on the same terms. It is a straight wall between two
- * circles, and it meets each of them at the single angle where that circle faces the other,
- * so the arc is simply split there and the chord's ends are outline vertices by construction.
- * That is the whole reason chords are traced with the arcs rather than cut into the finished
- * outline afterwards: a cut has to find where the chord went, and finding is what strays.
+ * <p>A {@link Chord} joins that walk as a covering interval of its own. Where a neighbouring
+ * disc takes a stretch of circle out of the boundary, a chord takes out the mouth it comes
+ * through: the stretch facing the circle at its far end, as wide as the channel it keeps. The
+ * arcs either side of that mouth are then the two sides of the chord, one bounding the void
+ * on each side of it, and the channel between them is the gap the two never claim.
+ *
+ * <p>So a chord is exactly a cover whose ends are named by the chord rather than by a
+ * neighbouring circle, and one sweep merges both kinds. Nothing is offset and nothing is cut:
+ * every vertex of every shape is a point of some circle, arrived at by arithmetic rather than
+ * by finding the nearest sample on a finished outline.
  *
  * <p>Shared because the reach is a parameter rather than a fact: run at the true reach it
  * finds the pockets, run at the reach plus the channel it finds what is left of them once the
@@ -44,6 +50,7 @@ import java.util.List;
 final class DiscUnionBoundary {
 
     private static final double FULL_TURN = 2 * Math.PI;
+    private static final double HALF_TURN = Math.PI;
 
     // Enough to keep a short arc from collapsing to a chord once the sampling is scaled down
     // in proportion to how little of the circle it covers.
@@ -54,8 +61,12 @@ final class DiscUnionBoundary {
     private static final int NO_CIRCLE = -1;
     private static final int NO_SUCCESSOR = -1;
 
+    // No arc begins here, so an arc pointed at it simply has no successor. Beyond the range
+    // either kind of real terminal can reach, rather than a value one of them might produce.
+    private static final long NO_TERMINAL = Long.MIN_VALUE;
+
     // Which of a chord's two circles a terminal belongs to. A chord meets each of its circles
-    // once, so the pair of side markers names its two ends and nothing else does.
+    // once, so the pair of side markers names its two mouths and nothing else does.
     private static final int FROM_SIDE = 0;
     private static final int TO_SIDE = 1;
 
@@ -99,7 +110,7 @@ final class DiscUnionBoundary {
             double radius,
             int arcSegments) {
 
-        return traceHolesAcrossChords(sites, radius, arcSegments, List.of());
+        return traceHolesAcrossChords(sites, radius, arcSegments, List.of(), 0);
     }
 
     /**
@@ -110,7 +121,13 @@ final class DiscUnionBoundary {
      * enclosed one is, and told apart from the silhouette it was cut from by which way it
      * winds. Nothing has to ask which piece holds the cells.
      *
-     * <p>A chord whose end is buried inside some other disc is not on the boundary at all,
+     * <p>The channel is what keeps the two sides apart. A chord walled with no channel is one
+     * line that both pockets close on, so they meet along it and read as one shape; given a
+     * channel, each side closes on its own line half a channel out, and the strip between
+     * them belongs to neither. It costs nothing to trace, because moving the wall sideways
+     * only moves where it meets each circle - which is still one angle, still exact.
+     *
+     * <p>A chord whose mouth is buried inside some other disc is not on the boundary at all,
      * and is dropped. That is what becomes of one whose two cells have already closed over
      * at this reach, so a bridge too short to still be a gap costs nothing to offer.
      *
@@ -118,17 +135,19 @@ final class DiscUnionBoundary {
      * @param radius      how far each cell reaches
      * @param arcSegments how finely a half-turn of arc is sampled
      * @param chords      the walls to lay across the void, as pairs of circles
+     * @param channel     how far each side of a wall holds back from it
      * @return the holes, wound the way any other filled shape is
      */
     static List<VoidHole> traceHolesAcrossChords(
             List<double[]> sites,
             double radius,
             int arcSegments,
-            List<Chord> chords) {
+            List<Chord> chords,
+            double channel) {
 
         var holes = new ArrayList<VoidHole>();
 
-        for (var cycle : traceCyclesAtReach(sites, radius, arcSegments, chords)) {
+        for (var cycle : traceCyclesAtReach(sites, radius, arcSegments, chords, channel)) {
 
             // A cycle is a hole when it winds the opposite way to a silhouette. Each arc is
             // walked anticlockwise on its own circle, which keeps the discs' interior to the
@@ -153,55 +172,90 @@ final class DiscUnionBoundary {
      * <p>Wanted by anything measuring the result: a chord that was dropped has no business
      * being looked for on an outline, and one that was laid has to be on one.
      *
-     * @param sites  the sites
-     * @param radius how far each cell reaches
-     * @param chords the chords on offer
-     * @return those with both ends on the boundary, in the order they were offered
+     * <p>Two things stop a chord. Its mouth can be buried inside another disc, which is what
+     * becomes of a bridge whose cells have closed over. Or it can land on a mouth already
+     * taken by an earlier chord on the same circle, two bridges leaving a cell within a
+     * channel's width of each other - and one mouth cannot serve two walls, because the
+     * merged cover would swallow the arc that one of them needs to start from.
+     *
+     * <p>Offered in order and taken greedily, so the caller's own ordering decides which of
+     * two crowding chords survives.
+     *
+     * @param sites   the sites
+     * @param radius  how far each cell reaches
+     * @param chords  the chords on offer
+     * @param channel how far each side of a wall holds back from it
+     * @return those that can be laid, in the order they were offered
      */
     static List<Chord> findAttachableChords(
             List<double[]> sites,
             double radius,
-            List<Chord> chords) {
+            List<Chord> chords,
+            double channel) {
 
+        var mouth = measureMouthHalfWidth(radius, channel);
+        var takenByCircle = new LinkedHashMap<Integer, List<Double>>();
         var attachable = new ArrayList<Chord>();
 
         for (var chord : chords) {
 
-            if (isChordEndOnBoundary(sites, radius, chord.fromCircle(), chord.toCircle())
-                    && isChordEndOnBoundary(
-                        sites,
-                        radius,
-                        chord.toCircle(),
-                        chord.fromCircle())) {
+            var facingFrom = measureAngleTowards(sites, chord.fromCircle(), chord.toCircle());
+            var facingTo = measureAngleTowards(sites, chord.toCircle(), chord.fromCircle());
 
-                attachable.add(chord);
+            if (!isMouthOnBoundary(sites, radius, mouth, chord.fromCircle(), facingFrom)
+                    || !isMouthOnBoundary(sites, radius, mouth, chord.toCircle(), facingTo)
+                    || isMouthTaken(takenByCircle, chord.fromCircle(), facingFrom, mouth)
+                    || isMouthTaken(takenByCircle, chord.toCircle(), facingTo, mouth)) {
+
+                continue;
             }
+            recordMouth(takenByCircle, chord.fromCircle(), facingFrom);
+            recordMouth(takenByCircle, chord.toCircle(), facingTo);
+
+            attachable.add(chord);
         }
         return attachable;
     }
 
     /**
-     * Where a chord meets one of its circles.
+     * The two lines a laid chord actually becomes, as their end points.
      *
-     * <p>The point of that circle facing the other one - no search, no snapping. One formula
-     * so that whatever lays the chord and whatever checks it cannot land in two places.
+     * <p>A chord with a channel is two lines rather than one: each runs half a channel from
+     * the centre, so each meets the two circles at its own pair of points, and the void on
+     * one side of the wall closes on one of them while the void on the other side closes on
+     * the other. Handed back paired rather than as four loose points, because the pairing is
+     * not the obvious one - a line leaves one circle on the near edge of its mouth and
+     * arrives at the other on the FAR edge, since the two circles face opposite ways.
      *
-     * @param sites          the sites
-     * @param radius         how far each cell reaches
-     * @param onCircle       whose circle the end sits on
-     * @param towardsCircle  the circle at the chord's far end
-     * @return the meeting point
+     * <p>No search and no snapping: the mouth's half-width is the angle whose sine is the
+     * channel over the radius, and the ends are that angle either side of facing.
+     *
+     * @param sites   the sites
+     * @param radius  how far each cell reaches
+     * @param chord   the chord
+     * @param channel how far each side of it holds back from the centre
+     * @return the two lines, each as its pair of end points
      */
-    static double[] findChordEnd(
+    static List<List<double[]>> findChordSides(
             List<double[]> sites,
             double radius,
-            int onCircle,
-            int towardsCircle) {
+            Chord chord,
+            double channel) {
 
-        return findPointOnCircle(
-            sites.get(onCircle),
-            radius,
-            measureAngleTowards(sites, onCircle, towardsCircle));
+        var mouth = measureMouthHalfWidth(radius, channel);
+        var from = sites.get(chord.fromCircle());
+        var to = sites.get(chord.toCircle());
+
+        var facingFrom = measureAngleTowards(sites, chord.fromCircle(), chord.toCircle());
+        var facingTo = measureAngleTowards(sites, chord.toCircle(), chord.fromCircle());
+
+        return List.of(
+            List.of(
+                findPointOnCircle(from, radius, facingFrom - mouth),
+                findPointOnCircle(to, radius, facingTo + mouth)),
+            List.of(
+                findPointOnCircle(to, radius, facingTo - mouth),
+                findPointOnCircle(from, radius, facingFrom + mouth)));
     }
 
     // The holes the channel leaves inside one pocket - none when it closes over, more than
@@ -226,10 +280,11 @@ final class DiscUnionBoundary {
             List<double[]> sites,
             double radius,
             int arcSegments,
-            List<Chord> chords) {
+            List<Chord> chords,
+            double channel) {
 
-        var laid = findAttachableChords(sites, radius, chords);
-        var arcs = findUncoveredArcs(sites, radius, laid);
+        var laid = findAttachableChords(sites, radius, chords, channel);
+        var arcs = findUncoveredArcs(sites, radius, laid, channel);
         var successors = linkArcsIntoCycles(arcs);
         var cycles = new ArrayList<VoidHole>();
         var walked = new boolean[arcs.size()];
@@ -249,105 +304,42 @@ final class DiscUnionBoundary {
         return cycles;
     }
 
-    // Every stretch of every circle that no other disc covers, which is the whole boundary of
-    // the union - outer silhouettes and holes alike, not yet told apart - cut at every point
-    // where a chord comes down on it.
+    // Every stretch of every circle that nothing covers, which is the whole boundary of the
+    // union - outer silhouettes and holes alike, not yet told apart - with the chords' mouths
+    // taken out of it alongside the neighbouring discs.
     private static List<Arc> findUncoveredArcs(
             List<double[]> sites,
             double cellRadius,
-            List<Chord> chords) {
+            List<Chord> chords,
+            double channel) {
 
         var arcs = new ArrayList<Arc>();
         for (var circle = 0; circle < sites.size(); circle++) {
-            arcs.addAll(findUncoveredArcsOn(circle, sites, cellRadius, chords));
+            arcs.addAll(findUncoveredArcsOn(circle, sites, cellRadius, chords, channel));
         }
         return arcs;
     }
 
-    // One circle's uncovered stretches, as the gaps between its neighbours' covering
-    // intervals. Kept as angles rather than points so the two ends of a gap stay attributed to
-    // the neighbour that made them.
+    // One circle's uncovered stretches, as the gaps between everything that covers it. Kept
+    // as angles rather than points so the two ends of a gap stay attributed to whatever made
+    // them, be that a neighbouring disc or a chord's mouth.
     private static List<Arc> findUncoveredArcsOn(
             int circle,
             List<double[]> sites,
             double cellRadius,
-            List<Chord> chords) {
+            List<Chord> chords,
+            double channel) {
 
-        var attachments = findAttachmentsOn(circle, sites, chords);
         var covers = findCoveringIntervals(circle, sites, cellRadius);
+        covers.addAll(findChordCovers(circle, sites, cellRadius, chords, channel));
 
         if (covers.isEmpty()) {
 
-            // A disc overlapping nothing is a closed cycle on its own, and stays one unless a
-            // chord comes down on it, in which case the chords alone cut it up.
-            if (attachments.isEmpty()) {
-
-                var whole = formatDiscTerminal(circle, NO_CIRCLE, sites.size());
-                return List.of(new Arc(circle, 0, FULL_TURN, whole, whole));
-            }
-            return buildWholeCircleArcs(circle, attachments);
+            // A disc that nothing overlaps and no chord reaches is a closed cycle on its own.
+            var whole = formatDiscTerminal(circle, NO_CIRCLE, sites.size());
+            return List.of(new Arc(circle, 0, FULL_TURN, whole, whole));
         }
-        return splitArcsAtAttachments(
-            buildArcsBetweenCovers(circle, covers, sites.size()), attachments);
-    }
-
-    // The gaps a circle's covering intervals leave between them, swept once round in order.
-    // Each gap runs from wherever the last interval let go to wherever the next takes hold,
-    // so its two ends are named by the neighbours that made them.
-    private static List<Arc> buildArcsBetweenCovers(
-            int circle,
-            List<Cover> covers,
-            int siteCount) {
-
-        covers.sort(Comparator.comparingDouble(Cover::start));
-
-        var origin = covers.get(0).start();
-        var windowEnd = origin + FULL_TURN;
-
-        // An interval running past the far end of the window covers the near end of it as
-        // well, so the sweep has to start already covered up to wherever that reaches.
-        // Without this the sweep reports a gap that the wrapping interval actually fills.
-        var coveredTo = origin;
-        var coveredBy = NO_CIRCLE;
-
-        for (var cover : covers) {
-
-            var wrapped = cover.start() + cover.width() - FULL_TURN;
-
-            if (wrapped > coveredTo) {
-                coveredTo = wrapped;
-                coveredBy = cover.other();
-            }
-        }
-
-        var arcs = new ArrayList<Arc>();
-        for (var cover : covers) {
-
-            if (cover.start() > coveredTo) {
-
-                arcs.add(new Arc(
-                    circle,
-                    coveredTo,
-                    cover.start(),
-                    formatDiscTerminal(circle, coveredBy, siteCount),
-                    formatDiscTerminal(cover.other(), circle, siteCount)));
-            }
-
-            if (cover.start() + cover.width() > coveredTo) {
-
-                coveredTo = cover.start() + cover.width();
-                coveredBy = cover.other();
-            }
-        }
-        if (coveredTo < windowEnd) {
-            arcs.add(new Arc(
-                circle,
-                coveredTo,
-                windowEnd,
-                formatDiscTerminal(circle, coveredBy, siteCount),
-                formatDiscTerminal(covers.get(0).other(), circle, siteCount)));
-        }
-        return arcs;
+        return buildArcsBetweenCovers(circle, covers);
     }
 
     // The stretch of one circle lying inside a neighbour's disc. With equal radii the two
@@ -377,129 +369,98 @@ final class DiscUnionBoundary {
 
             covers.add(new Cover(
                 normaliseAngle(towards - halfWidth),
-                2 * halfWidth, other));
+                2 * halfWidth,
+                formatDiscTerminal(other, circle, sites.size()),
+                formatDiscTerminal(circle, other, sites.size())));
         }
         return covers;
     }
 
-    // Where the chords come down on one circle. A chord meets it at the single angle facing
-    // the circle at its far end, so there is nothing to search for and nothing to round.
-    private static List<Attachment> findAttachmentsOn(
+    // The stretch of one circle taken up by a chord's mouth: the arc facing the circle at the
+    // chord's far end, wide enough for the channel to pass through. The boundary arriving at
+    // its near edge leaves along the chord and reappears at the far circle's own mouth; the
+    // boundary leaving its far edge is where the chord coming the other way put it down.
+    private static List<Cover> findChordCovers(
             int circle,
             List<double[]> sites,
-            List<Chord> chords) {
+            double cellRadius,
+            List<Chord> chords,
+            double channel) {
 
-        var attachments = new ArrayList<Attachment>();
+        var mouth = measureMouthHalfWidth(cellRadius, channel);
+        var covers = new ArrayList<Cover>();
 
         for (var index = 0; index < chords.size(); index++) {
 
             var chord = chords.get(index);
+            var isFromSide = chord.fromCircle() == circle;
 
-            if (chord.fromCircle() == circle) {
-
-                attachments.add(new Attachment(
-                    measureAngleTowards(sites, circle, chord.toCircle()), index, FROM_SIDE));
-
-            } else if (chord.toCircle() == circle) {
-
-                attachments.add(new Attachment(
-                    measureAngleTowards(sites, circle, chord.fromCircle()), index, TO_SIDE));
+            if (!isFromSide && chord.toCircle() != circle) {
+                continue;
             }
+            var other = isFromSide ? chord.toCircle() : chord.fromCircle();
+
+            covers.add(new Cover(
+                normaliseAngle(measureAngleTowards(sites, circle, other) - mouth),
+                2 * mouth,
+                formatChordTerminal(index, isFromSide ? TO_SIDE : FROM_SIDE),
+                formatChordTerminal(index, isFromSide ? FROM_SIDE : TO_SIDE)));
         }
-        return attachments;
+        return covers;
     }
 
-    // A circle no disc covers, cut into arcs by the chords alone: each runs from one
-    // attachment round to the next, and the last wraps back to the first.
-    private static List<Arc> buildWholeCircleArcs(int circle, List<Attachment> attachments) {
+    // The gaps a circle's covers leave between them, swept once round in order. Each gap runs
+    // from wherever the last cover let go to wherever the next takes hold, so its two ends are
+    // named by the covers that made them and nothing has to be matched up by position.
+    private static List<Arc> buildArcsBetweenCovers(int circle, List<Cover> covers) {
 
-        var ordered = new ArrayList<>(attachments);
-        ordered.sort(Comparator.comparingDouble(Attachment::angle));
+        covers.sort(Comparator.comparingDouble(Cover::start));
 
-        var arcs = new ArrayList<Arc>(ordered.size());
+        var origin = covers.get(0).start();
+        var windowEnd = origin + FULL_TURN;
 
-        for (var index = 0; index < ordered.size(); index++) {
+        // An interval running past the far end of the window covers the near end of it as
+        // well, so the sweep has to start already covered up to wherever that reaches.
+        // Without this the sweep reports a gap that the wrapping interval actually fills.
+        var coveredTo = origin;
+        var departingFrom = NO_TERMINAL;
 
-            var from = ordered.get(index);
-            var to = ordered.get((index + 1) % ordered.size());
+        for (var cover : covers) {
 
-            // A single attachment wraps the whole way round to itself, so the far angle is
-            // never taken as the near one.
-            var toAngle = to.angle() > from.angle()
-                ? to.angle()
-                : to.angle() + FULL_TURN;
+            var wrapped = cover.start() + cover.width() - FULL_TURN;
+
+            if (wrapped > coveredTo) {
+                coveredTo = wrapped;
+                departingFrom = cover.departure();
+            }
+        }
+
+        var arcs = new ArrayList<Arc>();
+        for (var cover : covers) {
+
+            if (cover.start() > coveredTo) {
+
+                arcs.add(new Arc(
+                    circle, coveredTo, cover.start(), departingFrom, cover.arrival()));
+            }
+
+            if (cover.start() + cover.width() > coveredTo) {
+
+                coveredTo = cover.start() + cover.width();
+                departingFrom = cover.departure();
+            }
+        }
+        if (coveredTo < windowEnd) {
 
             arcs.add(new Arc(
-                circle,
-                from.angle(),
-                toAngle,
-                formatChordTerminal(from.chord(), from.side()),
-                formatChordTerminal(to.chord(), crossSide(to.side()))));
+                circle, coveredTo, windowEnd, departingFrom, covers.get(0).arrival()));
         }
         return arcs;
     }
 
-    private static List<Arc> splitArcsAtAttachments(
-            List<Arc> arcs,
-            List<Attachment> attachments) {
-
-        if (attachments.isEmpty()) {
-            return arcs;
-        }
-
-        var split = new ArrayList<Arc>(arcs.size() + attachments.size());
-        for (var arc : arcs) {
-            split.addAll(splitArcAtAttachments(arc, attachments));
-        }
-        return split;
-    }
-
-    // One uncovered stretch, cut wherever a chord comes down inside it. The piece arriving at
-    // an attachment carries on along the chord, so its far terminal is the one the chord's
-    // OTHER end starts at; the piece leaving carries that end's own terminal.
-    private static List<Arc> splitArcAtAttachments(Arc arc, List<Attachment> attachments) {
-
-        var inside = new ArrayList<Attachment>();
-
-        for (var attachment : attachments) {
-
-            // Turned into the arc's own window before comparing, because an arc's angles are
-            // measured from wherever its circle's sweep began rather than from zero.
-            var placed = arc.fromAngle() + normaliseAngle(attachment.angle() - arc.fromAngle());
-
-            if (placed < arc.toAngle()) {
-                inside.add(new Attachment(placed, attachment.chord(), attachment.side()));
-            }
-        }
-        if (inside.isEmpty()) {
-            return List.of(arc);
-        }
-        inside.sort(Comparator.comparingDouble(Attachment::angle));
-
-        var pieces = new ArrayList<Arc>(inside.size() + 1);
-        var fromAngle = arc.fromAngle();
-        var startsAt = arc.startsAt();
-
-        for (var attachment : inside) {
-
-            pieces.add(new Arc(
-                arc.circle(),
-                fromAngle,
-                attachment.angle(),
-                startsAt,
-                formatChordTerminal(attachment.chord(), crossSide(attachment.side()))));
-
-            fromAngle = attachment.angle();
-            startsAt = formatChordTerminal(attachment.chord(), attachment.side());
-        }
-        pieces.add(new Arc(arc.circle(), fromAngle, arc.toAngle(), startsAt, arc.endsAt()));
-
-        return pieces;
-    }
-
     // Which arc the boundary continues onto, as a plain join: every arc names the terminal it
     // begins at and the terminal it runs on to, and the two are the same name. That holds for
-    // a crossing between two discs and for a chord's two ends alike, so nothing here has to
+    // a crossing between two discs and for a chord's two mouths alike, so nothing here has to
     // know which kind it is looking at.
     private static int[] linkArcsIntoCycles(List<Arc> arcs) {
 
@@ -600,7 +561,7 @@ final class DiscUnionBoundary {
         var sweep = toAngle - fromAngle;
         var steps = Math.max(
             MIN_ARC_SAMPLES,
-            (int) Math.ceil(arcSegments * sweep / Math.PI));
+            (int) Math.ceil(arcSegments * sweep / HALF_TURN));
 
         var points = new ArrayList<double[]>(steps);
 
@@ -612,29 +573,60 @@ final class DiscUnionBoundary {
         return points;
     }
 
-    // A chord end sits on the boundary when no disc but its own circle's swallows it. Asked
-    // of the point rather than of the angles, because that is the definition of the boundary
-    // and needs no interval arithmetic to agree with. The chord's own partner is asked like
-    // any other: a partner nearer than two radii covers the end, which is exactly the case
-    // where the two cells have closed over and there is no gap left to wall off.
-    private static boolean isChordEndOnBoundary(
+    // A mouth sits on the boundary when no disc but its own circle's swallows either edge of
+    // it. Asked of the points rather than of the angles, because that is the definition of
+    // the boundary and needs no interval arithmetic to agree with. A third disc reaching into
+    // the middle of a mouth without touching an edge changes nothing: its cover nests inside
+    // the mouth's, so the merged sweep still opens the arcs at the mouth's own edges.
+    private static boolean isMouthOnBoundary(
             List<double[]> sites,
             double radius,
-            int onCircle,
-            int towardsCircle) {
+            double mouth,
+            int circle,
+            double facing) {
 
-        var end = findChordEnd(sites, radius, onCircle, towardsCircle);
+        for (var edge : List.of(facing - mouth, facing + mouth)) {
 
-        for (var site = 0; site < sites.size(); site++) {
+            var point = findPointOnCircle(sites.get(circle), radius, edge);
 
-            if (site == onCircle) {
-                continue;
-            }
-            if (Points.computeDistance(end, sites.get(site)) < radius) {
-                return false;
+            for (var site = 0; site < sites.size(); site++) {
+
+                if (site != circle && Points.computeDistance(point, sites.get(site)) < radius) {
+                    return false;
+                }
             }
         }
         return true;
+    }
+
+    private static boolean isMouthTaken(
+            Map<Integer, List<Double>> takenByCircle,
+            int circle,
+            double facing,
+            double mouth) {
+
+        for (var taken : takenByCircle.getOrDefault(circle, List.of())) {
+
+            if (measureAngleGap(taken, facing) < 2 * mouth) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void recordMouth(
+            Map<Integer, List<Double>> takenByCircle,
+            int circle,
+            double facing) {
+
+        takenByCircle.computeIfAbsent(circle, held -> new ArrayList<>()).add(facing);
+    }
+
+    // Half the angle a channel takes up on a circle: the wall runs half a channel either side
+    // of the line joining the sites, and a line that far off centre meets a circle of this
+    // radius at the angle whose sine is the one over the other.
+    private static double measureMouthHalfWidth(double radius, double channel) {
+        return channel <= 0 || channel >= radius ? 0 : Math.asin(channel / radius);
     }
 
     private static double measureAngleTowards(
@@ -645,6 +637,13 @@ final class DiscUnionBoundary {
         return normaliseAngle(Math.atan2(
             sites.get(toCircle)[1] - sites.get(fromCircle)[1],
             sites.get(toCircle)[0] - sites.get(fromCircle)[0]));
+    }
+
+    // How far apart two directions are, whichever way round is shorter.
+    private static double measureAngleGap(double from, double to) {
+
+        var turned = normaliseAngle(to - from);
+        return turned > HALF_TURN ? FULL_TURN - turned : turned;
     }
 
     private static double[] findPointOnCircle(double[] centre, double radius, double angle) {
@@ -665,11 +664,7 @@ final class DiscUnionBoundary {
     }
 
     private static boolean isChordTerminal(long terminal) {
-        return terminal < 0;
-    }
-
-    private static int crossSide(int side) {
-        return side == FROM_SIDE ? TO_SIDE : FROM_SIDE;
+        return terminal < 0 && terminal != NO_TERMINAL;
     }
 
     private static double normaliseAngle(double angle) {
@@ -678,39 +673,32 @@ final class DiscUnionBoundary {
     }
 
     /**
-     * One stretch of a circle that lies inside a neighbour's disc.
+     * One stretch of a circle that the boundary does not run along.
      *
-     * @param start the angle it begins at, anticlockwise
-     * @param width how far it runs, always under a half turn
-     * @param other the neighbouring circle that covers it
+     * <p>Either a neighbouring disc swallowing it or a chord's mouth passing through it - the
+     * sweep merges both the same way, and each names what the arcs either side of it link to
+     * so that nothing downstream has to know which kind made the gap.
+     *
+     * @param start     the angle it begins at, anticlockwise
+     * @param width     how far it runs
+     * @param arrival   what an arc ending at {@code start} continues onto
+     * @param departure what an arc beginning at the far end of it is named by
      */
     private record Cover(
         double start,
         double width,
-        int other) {
+        long arrival,
+        long departure) {
     }
 
     /**
-     * Where one chord comes down on one circle.
-     *
-     * @param angle the angle on that circle, which faces the chord's other circle
-     * @param chord which chord it belongs to
-     * @param side  which of that chord's two circles this is
-     */
-    private record Attachment(
-        double angle,
-        int chord,
-        int side) {
-    }
-
-    /**
-     * One stretch of a circle that no disc covers - a single edge of the union's boundary.
+     * One stretch of a circle that nothing covers - a single edge of the union's boundary.
      *
      * @param circle    whose circle it runs on
      * @param fromAngle the angle it begins at
      * @param toAngle   the angle it ends at, always greater than {@code fromAngle}
      * @param startsAt  the terminal it begins at, naming either the disc it comes out of or
-     *                  the chord end it leaves
+     *                  the chord mouth it leaves
      * @param endsAt    the terminal it runs on to, which is the {@code startsAt} of whichever
      *                  arc the boundary continues along
      */
