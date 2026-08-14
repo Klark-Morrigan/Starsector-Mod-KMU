@@ -23,6 +23,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * geometry and completely wrong as a readout. Pinning the four together is what makes the
  * convention a fact about the code rather than about whichever cell was looked at in play.
  *
+ * <p>One case is about the band being one shape rather than a row of them: where two runs meet on
+ * a corner of the cell, the band turns through that corner instead of stopping square either side
+ * of it. That is the difference between stroking the whole band once and stroking it a run at a
+ * time, and it is invisible to every other case here.
+ *
  * <p>The remaining cases are the two ends of the size question the design answers deliberately:
  * a band longer than its cell's outline compresses rather than being cut short, and a cell with
  * no room for a band at all draws none rather than one crushed against its own border.
@@ -70,6 +75,15 @@ final class CellRibbonBuilderTest {
     // is 24000 units of band around an outline of 12800.
     private static final int CROWDED_RUN_COUNT = 60;
     private static final int CROWDED_RUN_LENGTH = 3;
+
+    // Four widths of run is 1600 units, exactly the distance from the band's start above the
+    // cell's site to the cell's top right corner - so a plan of these puts a run boundary on that
+    // corner, which is the case the band has to turn through rather than butt at.
+    private static final int RUN_REACHING_THE_CORNER = 4;
+
+    // How near a stroked corner has to land to be that corner. The band's coordinates come out of
+    // rail intersections, so they carry a rounding whisker rather than being stated arithmetic.
+    private static final double CORNER_SLACK = 0.01;
 
     @Nested
     class BuildCellRibbon {
@@ -152,6 +166,34 @@ final class CellRibbonBuilderTest {
         }
 
         @Test
+        void turnsARunBoundaryThroughACornerOfTheCell() {
+            // Two runs meeting exactly on the cell's top right corner, where the band's centreline
+            // turns from running east to running south. Stroked a run at a time, the first run
+            // would stop square across the corner at (3600,3800) and the second start square at
+            // (3800,3600), leaving a wedge of the corner uncovered - which is what the band was
+            // pinching to on most of its boundaries, a rounded outline putting a corner every few
+            // hundred units. Stroked as one band the boundary takes the corner's own mitre, so the
+            // first run reaches the outer mitre at (3800,3800) and both runs meet along the line
+            // from there to the inner one at (3400,3400).
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                CELL_SITE,
+                new RibbonPlan(List.of(
+                    new RibbonSegment(BRIGHT, RUN_REACHING_THE_CORNER),
+                    new RibbonSegment(DARK, RUN_REACHING_THE_CORNER))),
+                STYLE);
+
+            assertThat(hasCorner(ribbon.bands().get(0), 3800.0, 3800.0))
+                .isTrue();
+            assertThat(hasCorner(ribbon.bands().get(0), 3400.0, 3400.0))
+                .isTrue();
+            assertThat(hasCorner(ribbon.bands().get(0), 3600.0, 3800.0))
+                .isFalse();
+            assertThat(hasCorner(ribbon.bands().get(1), 3800.0, 3800.0))
+                .isTrue();
+        }
+
+        @Test
         void drawsNoBandOnACellWithNoRoomToHoldOne() {
             // The cell smaller than the pad and width together. The inset of such a ring comes
             // back tidy and correctly wound while being no inset at all, so the answer here is
@@ -163,5 +205,21 @@ final class CellRibbonBuilderTest {
                     STYLE))
                 .isEqualTo(CellRibbon.NONE);
         }
+    }
+
+    // Whether a run turns on the given world point - whether any of its triangles has a corner
+    // there. A run's shape is asserted through the corners it reaches, since which of its
+    // triangles carries one is the stroker's own business.
+    private static boolean hasCorner(RibbonBand band, double x, double y) {
+
+        for (var vertex = 0; vertex + 1 < band.triangles().length; vertex += 2) {
+
+            if (Math.abs(band.triangles()[vertex] - x) < CORNER_SLACK
+                    && Math.abs(band.triangles()[vertex + 1] - y) < CORNER_SLACK) {
+
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -90,37 +90,63 @@ public final class CellRibbonBuilder {
         return Math.min(style.widthWorld(), perimeter / totalLengthUnits);
     }
 
-    // Each run stroked over its own stretch of the path, laid end to end from the start.
+    // The whole band stroked in one piece and cut into its runs afterwards, rather than a run
+    // at a time.
     //
-    // A run is stroked from the corners the path turns at within its stretch, not from its two
-    // ends, so a run spanning a corner of the cell turns with it. Consecutive runs butt at the
-    // distance they share rather than being joined: they are different colours, so there is no
-    // join to make - what would be one band's mitre is two bands' shared edge.
+    // The band is one shape whatever it is coloured in: stroking each run on its own leaves
+    // every boundary between two runs a pair of square ends butted together, which opens a wedge
+    // wherever that boundary lands on a corner of the path - and a cell's ring is rounded, so
+    // most boundaries land on one. Stroked once, a boundary is a point the band turns at like
+    // any other, and only the band's two outer ends are left square.
     private static List<RibbonBand> strokeSegments(
             RingPath path,
             RibbonPlan plan,
             double lengthUnitWorld,
             RibbonStyle style) {
 
-        var bands = new ArrayList<RibbonBand>(plan.segments().size());
+        var strokedSpans = PolylineBands.strokeSpansToTriangles(
+            collectSegmentSpans(path, plan, lengthUnitWorld),
+            style.widthWorld(),
+            style.miterSpikeLimit());
+
+        var bands = new ArrayList<RibbonBand>(strokedSpans.size());
+
+        for (var segment = 0; segment < strokedSpans.size(); segment++) {
+
+            var triangles = strokedSpans.get(segment);
+
+            // A run that came out with no area - a zero-length segment in the plan, or a stretch
+            // the path collapsed - is left out rather than kept as an empty draw. The stroker
+            // keeps such a run in place rather than dropping it, so a run and its colour are
+            // still read off each other by position here.
+            if (!triangles.isEmpty()) {
+                bands.add(new RibbonBand(
+                    plan.segments().get(segment).colour(),
+                    GlVertexRuns.flattenVertices(triangles)));
+            }
+        }
+        return bands;
+    }
+
+    // Each run's own stretch of the path, laid end to end from the start.
+    //
+    // A stretch carries the corners the path turns at within it, not just its two ends, so a run
+    // spanning a corner of the cell turns with it rather than cutting across.
+    private static List<List<double[]>> collectSegmentSpans(
+            RingPath path,
+            RibbonPlan plan,
+            double lengthUnitWorld) {
+
+        var spans = new ArrayList<List<double[]>>(plan.segments().size());
         var arcLength = 0.0;
 
         for (var segment : plan.segments()) {
-            var span = segment.lengthUnits() * lengthUnitWorld;
-            var triangles = PolylineBands.strokeToTriangles(
-                path.collectPointsBetween(arcLength, arcLength + span),
-                style.widthWorld(),
-                style.miterSpikeLimit());
 
-            // A run that came out with no area - a zero-length segment in the plan, or a stretch
-            // the path collapsed - is left out rather than kept as an empty draw.
-            if (!triangles.isEmpty()) {
-                bands.add(new RibbonBand(
-                    segment.colour(),
-                    GlVertexRuns.flattenVertices(triangles)));
-            }
+            var span = segment.lengthUnits() * lengthUnitWorld;
+
+            spans.add(path.collectPointsBetween(arcLength, arcLength + span));
             arcLength += span;
         }
-        return bands;
+        return spans;
     }
 }

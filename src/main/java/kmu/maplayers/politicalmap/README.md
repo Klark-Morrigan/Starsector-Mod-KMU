@@ -349,7 +349,11 @@ extend themselves, not a mechanic of its own.
 `render.ribbon` then lays a plan around its cell: `RingPath` traces the ring
 inset by the pad and half the width, the length one width is worth is cut down where the whole band
 would outrun that ring (so a crowded cell compresses rather than losing a bloc off the end), and
-each run is stroked into the mitred triangles of a `RibbonBand`. All of it world-sized and baked at
+the whole band is stroked in one piece and cut into a `RibbonBand` of mitred triangles per run.
+Stroked in one piece because the band is one shape whatever it is coloured in: a run stroked on
+its own stops square at each end, so a boundary between two runs landing on a corner of the ring
+leaves a wedge of that corner uncovered, and a rounded ring puts a corner every few hundred units.
+All of it world-sized and baked at
 rebuild, so a band holds its share of a cell's outline at every zoom and the draw is a triangle list
 like the fills. `CellPresenceRibbonRenderer` is that draw, and it is emitted clear of the map's own
 nebula sprites rather than with the fills beneath them: a band is a readout of a system, so being
