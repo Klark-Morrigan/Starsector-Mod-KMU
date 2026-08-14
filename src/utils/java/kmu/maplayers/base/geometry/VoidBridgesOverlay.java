@@ -15,14 +15,24 @@ import java.util.List;
  * notion of a shape at all. Two colours would claim they were two kinds of thing, when the
  * whole point of drawing them together is that they are not.
  *
- * <p>It has no fills to lay down. A bridge is a span and nothing else, which is most of what
- * distinguishes this construction from the other.
+ * <p>It has fills as well as spans, and they are built the same way the other construction
+ * builds its own - see {@link VoidBridgePockets} for why the bridges can be turned back into
+ * a reach and traced rather than offset.
  */
 final class VoidBridgesOverlay {
+
+    // What converts a count of sides round a whole circle into a count of samples per half
+    // turn of arc.
+    private static final int HALF_TURNS_PER_CIRCLE = 2;
+
+    // A fill's outline is read against the fill rather than against the black, so it wants a
+    // fraction of the weight a span crossing open void needs.
+    private static final float SPAN_STROKES_PER_EDGE = 4f;
 
     private final ViewerSettings settings;
 
     private List<CellGaps.CellGap> bridges = List.of();
+    private List<List<double[]>> captured = List.of();
 
     VoidBridgesOverlay(ViewerSettings settings) {
         this.settings = settings;
@@ -41,6 +51,14 @@ final class VoidBridgesOverlay {
                 settings.parameters.cellRadius(),
                 settings.parameters.cellRadius() * settings.bridgeReachMultiple)
             : List.of();
+
+        captured = bridges.isEmpty()
+            ? List.of()
+            : VoidBridgePockets.findCapturedPockets(
+                fixture.getSites(),
+                bridges,
+                settings.parameters,
+                settings.parameters.boundSegments() / HALF_TURNS_PER_CIRCLE);
     }
 
     /**

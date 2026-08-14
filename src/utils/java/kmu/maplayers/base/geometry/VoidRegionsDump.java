@@ -563,6 +563,19 @@ final class VoidRegionsDump {
         }
         widths.sort(Double::compare);
 
+        var capturing = VoidBridgePockets.findCapturingBridges(
+            fixture.getSites(),
+            bridges,
+            SectorGeometryParameters.DEFAULT_CELL_RADIUS);
+
+        System.out.printf(
+            Locale.ROOT,
+            "of those %d bridges, %d close a ring and shut void in; %d only chain systems "
+                + "together and shut in nothing%n",
+            bridges.size(),
+            capturing.size(),
+            bridges.size() - capturing.size());
+
         System.out.printf(
             Locale.ROOT,
             "void bridges at %.0f cell radii apart: %d, of which %d span void no pocket "

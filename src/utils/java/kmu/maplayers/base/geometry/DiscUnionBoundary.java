@@ -1,0 +1,381 @@
+package kmu.maplayers.base.geometry;
+
+import kmlib.math.geometry.PolygonRegions;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+
+/**
+ * The boundary of the union of the cells' reach discs, as closed cycles of circular arcs.
+ *
+ * <p>A point is void when its nearest site is further than the reach, so the void is exactly
+ * the complement of the union of one disc of that radius per site. The boundary of that union
+ * is a set of closed cycles, and each cycle is either the outer silhouette of a run of
+ * overlapping cells or a hole enclosed by them. The holes are the void the cells bind.
+ *
+ * <p>Every disc has the same radius, which is what makes this cheap and exact rather than a
+ * general shape union. Equal radii mean no disc can contain another, so two discs either miss
+ * each other or cross at exactly two points, and the part of one circle lying inside another
+ * is a single angular interval computed in closed form. Each circle's boundary arcs are then
+ * the gaps left when its neighbours' intervals are merged.
+ *
+ * <p>The arcs link without matching any coordinates. An arc ends where its circle enters some
+ * neighbour's disc, and the boundary continues on that neighbour from the point where the
+ * neighbour LEAVES the first disc - a point named by the pair of circles rather than by its
+ * position, so two circles computing it separately and landing a rounding apart still agree.
+ *
+ * <p>Shared because the reach is a parameter rather than a fact: run at the true reach it
+ * finds the pockets, run at the reach plus the channel it finds what is left of them once the
+ * channel is taken out, and run at the reach minus it, what they become when the cells fill
+ * right up to them. Every consumer that wants a pocket at some reach wants this, and there is
+ * now more than one of them.
+ */
+final class DiscUnionBoundary {
+
+    private static final double FULL_TURN = 2 * Math.PI;
+    private static final int MIN_BOUNDARY_VERTICES = 3;
+
+    // Enough to keep a short arc from collapsing to a chord once the sampling is scaled down
+    // in proportion to how little of the circle it covers.
+    private static final int MIN_ARC_SAMPLES = 2;
+
+    // Stands in for a neighbouring circle where there is none: a disc that overlaps nothing
+    // contributes its whole circle as one arc, with no disc entered or left at either end.
+    private static final int NO_CIRCLE = -1;
+    private static final int NO_SUCCESSOR = -1;
+
+    private DiscUnionBoundary() {
+    }
+
+    // Every hole in the union of discs of one radius. Run at the true reach it finds the
+    // pockets; run at the reach plus the channel it finds what is left of them once the
+    // channel is taken out; run at the reach minus it, what they become when the cells fill
+    // right up to them.
+    //
+    // Run afresh at each reach rather than redrawing one ring's arcs at another radius. A
+    // ring is not the same ring at a different reach: a cell whose arc its neighbours have
+    // swallowed drops out of it, and a pocket can pinch in two. Redrawing in place cannot
+    // express either, and reads both as the pocket having closed.
+    static List<VoidHole> traceHolesAtReach(
+            List<double[]> sites,
+            double radius,
+            int arcSegments) {
+
+        var arcs = findUncoveredArcs(sites, radius);
+        var successors = linkArcsIntoCycles(arcs, sites.size());
+        var holes = new ArrayList<VoidHole>();
+        var walked = new boolean[arcs.size()];
+
+        for (var start = 0; start < arcs.size(); start++) {
+
+            var cycle = walkCycleFrom(start, arcs, successors, walked);
+            if (cycle.isEmpty()) {
+                continue;
+            }
+
+            var hole = buildHole(cycle, arcs, sites, radius, arcSegments);
+            if (hole != null) {
+                holes.add(hole);
+            }
+        }
+        return holes;
+    }
+
+    // Every stretch of every circle that no other disc covers, which is the whole boundary of
+    // the union - outer silhouettes and holes alike, not yet told apart.
+    private static List<Arc> findUncoveredArcs(List<double[]> sites, double cellRadius) {
+
+        var arcs = new ArrayList<Arc>();
+        for (var circle = 0; circle < sites.size(); circle++) {
+            arcs.addAll(findUncoveredArcsOn(circle, sites, cellRadius));
+        }
+        return arcs;
+    }
+
+    // One circle's uncovered stretches, as the gaps between its neighbours' covering
+    // intervals. Kept as angles rather than points so the two ends of a gap stay attributed to
+    // the neighbour that made them.
+    private static List<Arc> findUncoveredArcsOn(
+            int circle,
+            List<double[]> sites,
+            double cellRadius) {
+
+        var covers = findCoveringIntervals(circle, sites, cellRadius);
+        if (covers.isEmpty()) {
+            return List.of(new Arc(circle, 0, FULL_TURN, NO_CIRCLE, NO_CIRCLE));
+        }
+
+        covers.sort(Comparator.comparingDouble(Cover::start));
+
+        var origin = covers.get(0).start();
+        var windowEnd = origin + FULL_TURN;
+
+        // An interval running past the far end of the window covers the near end of it as
+        // well, so the sweep has to start already covered up to wherever that reaches.
+        // Without this the sweep reports a gap that the wrapping interval actually fills.
+        var coveredTo = origin;
+        var coveredBy = NO_CIRCLE;
+
+        for (var cover : covers) {
+
+            var wrapped = cover.start() + cover.width() - FULL_TURN;
+
+            if (wrapped > coveredTo) {
+                coveredTo = wrapped;
+                coveredBy = cover.other();
+            }
+        }
+
+        var arcs = new ArrayList<Arc>();
+        for (var cover : covers) {
+
+            if (cover.start() > coveredTo) {
+
+                arcs.add(new Arc(circle, coveredTo, cover.start(), coveredBy, cover.other()));
+            }
+
+            if (cover.start() + cover.width() > coveredTo) {
+
+                coveredTo = cover.start() + cover.width();
+                coveredBy = cover.other();
+            }
+        }
+        if (coveredTo < windowEnd) {
+            arcs.add(new Arc(
+                circle,
+                coveredTo,
+                windowEnd,
+                coveredBy,
+                covers.get(0).other()));
+        }
+        return arcs;
+    }
+
+    // The stretch of one circle lying inside a neighbour's disc. With equal radii the two
+    // circles cross symmetrically about the line joining the sites, so the interval is the
+    // half-angle whose cosine is half the separation over the radius, either side of that
+    // line - no intersection points needed to find it.
+    private static List<Cover> findCoveringIntervals(
+            int circle,
+            List<double[]> sites,
+            double cellRadius) {
+
+        var centre = sites.get(circle);
+        var covers = new ArrayList<Cover>();
+
+        for (var other = 0; other < sites.size(); other++) {
+
+            if (other == circle) {
+                continue;
+            }
+            // Plain arithmetic rather than kmlib's Points.computeDistance: that is overloaded
+            // on an LWJGL vector type the tooling has no classpath for, so the call will not
+            // resolve here.
+            var separation = Math.hypot(
+                sites.get(other)[0] - centre[0],
+                sites.get(other)[1] - centre[1]);
+            if (separation >= 2 * cellRadius || separation == 0) {
+                continue;
+            }
+            var towards = Math.atan2(
+                sites.get(other)[1] - centre[1],
+                sites.get(other)[0] - centre[0]);
+
+            var halfWidth = Math.acos(separation / (2 * cellRadius));
+
+            covers.add(new Cover(
+                normaliseAngle(towards - halfWidth),
+                2 * halfWidth, other));
+        }
+        return covers;
+    }
+
+    // Which arc the boundary continues onto. An arc stops where its circle enters a
+    // neighbour's disc; from there the boundary runs along that neighbour, starting where the
+    // neighbour in turn leaves this circle's disc. Two circles cross twice, but only one of
+    // those crossings is where the neighbour leaves, so the pair names one arc.
+    private static int[] linkArcsIntoCycles(List<Arc> arcs, int siteCount) {
+
+        var byExit = new LinkedHashMap<Long, Integer>();
+
+        for (var index = 0; index < arcs.size(); index++) {
+
+            var arc = arcs.get(index);
+            byExit.put(formatLinkKey(arc.circle(), arc.leavesCircle(), siteCount), index);
+        }
+
+        var successors = new int[arcs.size()];
+
+        for (var index = 0; index < arcs.size(); index++) {
+
+            var arc = arcs.get(index);
+
+            if (arc.entersCircle() == NO_CIRCLE) {
+                // A disc overlapping nothing is its own closed cycle.
+                successors[index] = index;
+                continue;
+            }
+
+            var next = byExit.get(
+                formatLinkKey(arc.entersCircle(), arc.circle(), siteCount));
+
+            successors[index] = next == null
+                ? NO_SUCCESSOR
+                : next;
+        }
+        return successors;
+    }
+
+    private static List<Integer> walkCycleFrom(
+            int start,
+            List<Arc> arcs,
+            int[] successors,
+            boolean[] walked) {
+
+        if (walked[start]) {
+            return List.of();
+        }
+
+        var cycle = new ArrayList<Integer>();
+        var at = start;
+
+        while (at != NO_SUCCESSOR && !walked[at]) {
+
+            walked[at] = true;
+            cycle.add(at);
+            at = successors[at];
+        }
+        // A run that stopped on an arc it had already walked, rather than on the one it
+        // started from, is a chain into an earlier cycle and not a cycle of its own.
+        return at == start ? cycle : List.of();
+    }
+
+    // A cycle is a hole when it winds the opposite way to a silhouette. Each arc is walked
+    // anticlockwise on its own circle, which keeps the discs' interior to the left the whole
+    // way round, so an outer cycle comes out anticlockwise and a hole clockwise.
+    private static VoidHole buildHole(
+            List<Integer> cycle,
+            List<Arc> arcs,
+            List<double[]> sites,
+            double radius,
+            int arcSegments) {
+
+        var boundary = new ArrayList<double[]>();
+        var corners = new ArrayList<double[]>(cycle.size());
+        var ringing = new LinkedHashSet<Integer>();
+
+        for (var index : cycle) {
+
+            var arc = arcs.get(index);
+
+            ringing.add(arc.circle());
+
+            var points = sampleArc(
+                sites.get(arc.circle()),
+                radius,
+                arc.fromAngle(),
+                arc.toAngle(),
+                arcSegments);
+
+            corners.add(points.get(0));
+            boundary.addAll(points);
+        }
+
+        if (boundary.size() < MIN_BOUNDARY_VERTICES
+                || PolygonRegions.computeSignedArea(boundary) >= 0) {
+            return null;
+        }
+
+        // Reversed so a hole reads the same way round as any other filled shape.
+        java.util.Collections.reverse(boundary);
+        return new VoidHole(boundary, corners, List.copyOf(ringing), radius);
+    }
+
+    // Sampled in proportion to how much of the circle the arc covers, so a long arc is not
+    // left coarser than a short one merely because both got the same number of points.
+    private static List<double[]> sampleArc(
+            double[] centre,
+            double radius,
+            double fromAngle,
+            double toAngle,
+            int arcSegments) {
+
+        var sweep = toAngle - fromAngle;
+        var steps = Math.max(
+            MIN_ARC_SAMPLES,
+            (int) Math.ceil(arcSegments * sweep / Math.PI));
+
+        var points = new ArrayList<double[]>(steps);
+
+        // The far end is left off: the next arc round the cycle begins on it.
+        for (var step = 0; step < steps; step++) {
+
+            var angle = fromAngle + sweep * step / steps;
+
+            points.add(new double[] {
+                centre[0] + radius * Math.cos(angle),
+                centre[1] + radius * Math.sin(angle)});
+        }
+        return points;
+    }
+
+    private static long formatLinkKey(int circle, int neighbour, int siteCount) {
+        return (long) circle * siteCount + neighbour;
+    }
+
+    private static double normaliseAngle(double angle) {
+        var turned = angle % FULL_TURN;
+        return turned < 0 ? turned + FULL_TURN : turned;
+    }
+
+    /**
+     * One stretch of a circle that lies inside a neighbour's disc.
+     *
+     * @param start the angle it begins at, anticlockwise
+     * @param width how far it runs, always under a half turn
+     * @param other the neighbouring circle that covers it
+     */
+    private record Cover(
+        double start,
+        double width,
+        int other) {
+    }
+
+    /**
+     * One stretch of a circle that no disc covers - a single edge of the union's boundary.
+     *
+     * @param circle       whose circle it runs on
+     * @param fromAngle    the angle it begins at
+     * @param toAngle      the angle it ends at, always greater than {@code fromAngle}
+     * @param leavesCircle the disc the circle comes out of at {@code fromAngle}
+     * @param entersCircle the disc the circle goes into at {@code toAngle}
+     */
+    private record Arc(
+        int circle,
+        double fromAngle,
+        double toAngle,
+        int leavesCircle,
+        int entersCircle) {
+    }
+
+    // The holes the channel leaves inside one pocket - none when it closes over, more than
+    // one when it pinches the pocket in two. A point on a narrowed hole's outline is further
+    // from every site than the true reach, so it lies in the true void, and in the very
+    // pocket it came out of.
+    static List<List<double[]>> findHolesInside(List<VoidHole> narrowed, VoidHole hole) {
+
+        var inside = new ArrayList<List<double[]>>();
+        for (var candidate : narrowed) {
+
+            var probe = candidate.boundary().get(0);
+
+            if (PolygonRegions.isPointInsideRing(hole.boundary(), probe[0], probe[1])) {
+                inside.add(candidate.boundary());
+            }
+        }
+        return inside;
+    }
+}
