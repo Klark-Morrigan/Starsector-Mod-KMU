@@ -330,8 +330,8 @@ number of points with no grid behind it, so no rating-to-weight change is stated
 per market every bloc present in the cell holds, runs of one bloc parted by its dark shade and a
 bloc's whole run closed off in that same shade wherever another bloc's follows - the divider being
 the outgoing bloc's, so it reads as its holdings ending rather than as a gap belonging to nobody,
-and the last run left open - and no band at all on a cell no bloc
-but the one it was painted for is present in - `RibbonPlan` over a ranked list of `BlocPresence`,
+and the band's last run left open - and no band at all on a cell no bloc but the one it was painted
+for is present in - `RibbonPlan` over a ranked list of `BlocPresence`,
 emitted as `RibbonSegment`s at the two proportions `RibbonSegmentLengths` pairs. Only that shared
 vocabulary is here, plus the two ports the rule is stated over - `BlocPaletteReader` for a bloc's
 shades and `SystemRibbonPlanner` for the counting itself - because where the counts come from is

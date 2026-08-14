@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.ribbon;
 
+import kmlib.starsector.factions.FactionPalette;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -77,8 +79,11 @@ public record RibbonPlan(
             if (presence.marketCount() <= 0) {
                 continue;
             }
+            // The divider closing the run just laid is the outgoing bloc's own, not the
+            // incoming one's: it is that bloc's holdings ending, and drawn in the newcomer's
+            // shade it would read as a gap belonging to whoever arrives next.
             if (outgoingBloc != null) {
-                appendHandoverDivider(segments, outgoingBloc, lengths);
+                segments.add(createParting(outgoingBloc.palette(), lengths));
             }
             appendBlocRun(segments, presence, lengths);
             outgoingBloc = presence;
@@ -132,9 +137,7 @@ public record RibbonPlan(
         var palette = presence.palette();
         for (var market = 0; market < presence.marketCount(); market++) {
             if (market > 0) {
-                segments.add(new RibbonSegment(
-                    palette.secondaryColour(),
-                    lengths.interjectionLengthUnits()));
+                segments.add(createParting(palette, lengths));
             }
             segments.add(new RibbonSegment(
                 palette.primaryColour(),
@@ -142,21 +145,17 @@ public record RibbonPlan(
         }
     }
 
-    // Closes the run just laid, in the shade of the bloc that laid it, because another bloc's
-    // run follows. Drawn in the outgoing bloc's own dark colour rather than in a neutral one
-    // so the divider reads as that bloc's punctuation - its holdings ending - rather than as
-    // a gap belonging to nobody between two rivals.
-    //
-    // The same length as the parting inside a run, off the same knob: two dividers of
-    // different lengths in one band would look like a statement about the blocs they part
-    // rather than like the boundary they are.
-    private static void appendHandoverDivider(
-            List<RibbonSegment> segments,
-            BlocPresence outgoingBloc,
+    // The band's one kind of boundary, made once for both the places that need it: between two
+    // of a bloc's markets, and closing that bloc's whole run where another bloc's follows. Both
+    // are the same bloc's dark shade at the same length, and stating that twice would let a
+    // later edit make one boundary say more than the other - which the design reads as a claim
+    // about the blocs being parted rather than as the boundary it is.
+    private static RibbonSegment createParting(
+            FactionPalette palette,
             RibbonSegmentLengths lengths) {
 
-        segments.add(new RibbonSegment(
-            outgoingBloc.palette().secondaryColour(),
-            lengths.interjectionLengthUnits()));
+        return new RibbonSegment(
+            palette.secondaryColour(),
+            lengths.interjectionLengthUnits());
     }
 }

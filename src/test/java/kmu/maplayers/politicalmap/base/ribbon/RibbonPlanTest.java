@@ -211,6 +211,49 @@ final class RibbonPlanTest {
         }
 
         @Test
+        void laysNoDividerAheadOfTheFirstBlocWithSomethingToDraw() {
+            // The decree shape: the painting bloc is listed and holds nothing, so the first run
+            // in the band is the second bloc's. A divider laid for the empty bloc would open the
+            // band on a parting, which parts the first run from nothing at all.
+            var plan = RibbonPlan.planCellRibbon(
+                "sindria",
+                List.of(
+                    buildDiktatPresence(0),
+                    buildHegemonyPresence(2),
+                    buildTriTachyonPresence(1)),
+                STANDARD_LENGTHS);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 3));
+        }
+
+        @Test
+        void laysNoDividerAfterTheLastBlocWithSomethingToDraw() {
+            // A bloc ranked last on a weight it holds no markets behind still reaches the rule.
+            // It draws no run, so the band has to end on Tri-Tachyon's segment: a divider for
+            // the empty bloc would close the band on a parting belonging to a bloc that is not
+            // in it.
+            var plan = RibbonPlan.planCellRibbon(
+                "hegemony",
+                List.of(
+                    buildHegemonyPresence(1),
+                    buildTriTachyonPresence(1),
+                    buildDiktatPresence(0)),
+                STANDARD_LENGTHS);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 3));
+        }
+
+        @Test
         void takesBothRunLengthsFromTheOnesItWasGiven() {
             // Neither length is the rule's own: a four-wide market parted by two reads as the
             // same holdings at the proportions the player set. The divider takes that same
