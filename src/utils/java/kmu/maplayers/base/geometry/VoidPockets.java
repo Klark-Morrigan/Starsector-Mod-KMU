@@ -143,20 +143,14 @@ final class VoidPockets {
         // that refines the cells leaves the pockets where they were.
         var arcSegments = parameters.boundSegments() / HALF_TURNS_PER_CIRCLE;
 
-        var trueHoles = DiscUnionBoundary.traceHolesAtReach(
-            sites,
-            parameters.cellRadius(),
-            arcSegments);
+        var trueHoles = DiscUnionBoundary.traceHoles(
+            new DiscUnion(sites, parameters.cellRadius()), arcSegments);
 
-        var withChannel = DiscUnionBoundary.traceHolesAtReach(
-            sites,
-            parameters.measureDrawnReach(),
-            arcSegments);
+        var withChannel = DiscUnionBoundary.traceHoles(
+            new DiscUnion(sites, parameters.measureDrawnReach()), arcSegments);
 
-        var atFills = DiscUnionBoundary.traceHolesAtReach(
-            sites,
-            parameters.measureFilledReach(),
-            arcSegments);
+        var atFills = DiscUnionBoundary.traceHoles(
+            new DiscUnion(sites, parameters.measureFilledReach()), arcSegments);
 
         var pockets = new ArrayList<VoidPocket>(trueHoles.size());
 

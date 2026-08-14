@@ -143,12 +143,10 @@ final class VoidBridgePockets {
 
         var outlines = new ArrayList<List<double[]>>();
 
-        for (var hole : DiscUnionBoundary.traceHolesAcrossChords(
-                sites,
-                parameters.measureDrawnReach(),
-                arcSegments,
-                buildChords(bridges),
-                parameters.borderInset())) {
+        for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
+                buildDrawnUnion(sites, parameters),
+                buildWalls(bridges, parameters),
+                arcSegments)) {
 
             outlines.add(hole.boundary());
         }
@@ -175,10 +173,8 @@ final class VoidBridgePockets {
             SectorGeometryParameters parameters) {
 
         return DiscUnionBoundary.findAttachableChords(
-            sites,
-            parameters.measureDrawnReach(),
-            buildChords(bridges),
-            parameters.borderInset());
+            buildDrawnUnion(sites, parameters),
+            buildWalls(bridges, parameters));
     }
 
     /**
@@ -218,7 +214,7 @@ final class VoidBridgePockets {
             List<CellGaps.CellGap> bridges,
             SectorGeometryParameters parameters) {
 
-        var drawnReach = parameters.measureDrawnReach();
+        var union = buildDrawnUnion(sites, parameters);
         var capturing = Set.copyOf(
             buildChords(findCapturingBridges(sites, bridges, parameters.cellRadius())));
 
@@ -232,7 +228,7 @@ final class VoidBridgePockets {
             var bestSide = Double.MAX_VALUE;
 
             for (var side : DiscUnionBoundary.findChordSides(
-                    sites, drawnReach, chord, parameters.borderInset())) {
+                    union, chord, parameters.borderInset())) {
 
                 bestSide = Math.min(bestSide, measureWorstStrayOnSide(captured, side));
             }
@@ -266,6 +262,25 @@ final class VoidBridgePockets {
             chords.add(new DiscUnionBoundary.Chord(bridge.fromSite(), bridge.toSite()));
         }
         return chords;
+    }
+
+    // The union everything here traces against: the cells at the reach that leaves the
+    // channel, so a fill stops one channel short of the cells around it.
+    private static DiscUnion buildDrawnUnion(
+            List<double[]> sites,
+            SectorGeometryParameters parameters) {
+
+        return new DiscUnion(sites, parameters.measureDrawnReach());
+    }
+
+    // The walls the bridges become. The channel is the same border inset the cells keep, so
+    // two pockets meeting across a bridge are held apart by the same gap that holds a pocket
+    // off the cells around it.
+    private static DiscUnionBoundary.Walls buildWalls(
+            List<CellGaps.CellGap> bridges,
+            SectorGeometryParameters parameters) {
+
+        return new DiscUnionBoundary.Walls(buildChords(bridges), parameters.borderInset());
     }
 
     private static double measureDistanceToNearestVertex(

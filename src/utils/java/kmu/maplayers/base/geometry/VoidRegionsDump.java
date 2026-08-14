@@ -540,10 +540,15 @@ final class VoidRegionsDump {
             SectorFixture fixture,
             List<VoidPockets.VoidPocket> pockets) {
 
+        // One site list and one set of knobs for every question asked below, so no two of
+        // them can quietly measure against different geometry.
+        var sites = fixture.getSites();
+        var shipped = SectorGeometryParameters.createDefaults();
+
         var bridges = VoidBridges.findVoidBridges(
-            fixture.getSites(),
-            SectorGeometryParameters.DEFAULT_CELL_RADIUS,
-            SectorGeometryParameters.DEFAULT_CELL_RADIUS * BRIDGE_REACH_MULTIPLE);
+            sites,
+            shipped.cellRadius(),
+            shipped.cellRadius() * BRIDGE_REACH_MULTIPLE);
 
         if (bridges.isEmpty()) {
             System.out.println("void bridges: none");
@@ -564,9 +569,7 @@ final class VoidRegionsDump {
         widths.sort(Double::compare);
 
         var capturing = VoidBridgePockets.findCapturingBridges(
-            fixture.getSites(),
-            bridges,
-            SectorGeometryParameters.DEFAULT_CELL_RADIUS);
+            sites, bridges, shipped.cellRadius());
 
         System.out.printf(
             Locale.ROOT,
@@ -577,28 +580,20 @@ final class VoidRegionsDump {
             bridges.size() - capturing.size());
 
         var captured = VoidBridgePockets.findCapturedPockets(
-            fixture.getSites(),
-            bridges,
-            SectorGeometryParameters.createDefaults(),
-            CELL_BOUND_SEGMENTS / 2);
+            sites, bridges, shipped, CELL_BOUND_SEGMENTS / 2);
 
         System.out.printf(
             Locale.ROOT,
             "%d of them are drawn as walls (the rest have closed over or crowd a mouth "
                 + "already taken)%n",
-            VoidBridgePockets.findLaidChords(
-                fixture.getSites(), bridges, SectorGeometryParameters.createDefaults()).size());
+            VoidBridgePockets.findLaidChords(sites, bridges, shipped).size());
 
         System.out.printf(
             Locale.ROOT,
             "walking the cells' borders with those bridges laid across them closes %d "
                 + "pockets; worst fill edge strays %.1f from its bridge (has to be 0)%n",
             captured.size(),
-            VoidBridgePockets.measureWorstChordStray(
-                captured,
-                fixture.getSites(),
-                bridges,
-                SectorGeometryParameters.createDefaults()));
+            VoidBridgePockets.measureWorstChordStray(captured, sites, bridges, shipped));
 
         System.out.printf(
             Locale.ROOT,
