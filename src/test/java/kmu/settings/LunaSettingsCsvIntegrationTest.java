@@ -56,7 +56,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>A Boolean row's default column is held the same way where the value is a decision rather than a
  * taste: the hover tiers ship on so that switching them is the player's move and not the file's, and
  * the Java fallback beside each getter cannot stand in for that - it answers only while LunaLib has
- * no stored value, so it is this column a fresh player is actually given.
+ * no stored value, so it is this column a fresh player is actually given. Which way a switch ships is
+ * that one table's business; that the two spellings of it agree is every Boolean row's, so the
+ * fallback beside each is walked against its own column exactly as the numeric ones are - the two
+ * checks reading the same column for different reasons, one for what it says and one for whether
+ * anything else says it differently.
  *
  * <p>That same fallback is held against a choice row's default column, for the case the sentence above
  * sets aside: the two answer at different moments - the constant while LunaLib has nothing stored, the
@@ -189,13 +193,16 @@ final class LunaSettingsCsvIntegrationTest {
     // each in the terms that type is spelt in.
     private static final Set<String> NUMERIC_FIELD_TYPES = Set.of("Double", "Int");
 
-    // The three links a numeric row's two defaults are followed along, each anchored on the name
-    // the previous one yielded: the field id to the constant declaring it, that constant to the
-    // fallback passed beside it at the read, and that fallback to the number it is declared as.
+    // The three links a row's two defaults are followed along, each anchored on the name the
+    // previous one yielded: the field id to the constant declaring it, that constant to the
+    // fallback passed beside it at the read, and that fallback to the value it is declared as.
     // Following the shipped text rather than tabulating the pairs is what holds the convention the
     // getters are written to, since a getter written some other way fails the walk rather than
     // dropping out of it.
-    private static final String NUMERIC_FIELD_CONSTANT_PATTERN = "(\\w+)\\s*=\\s*\"%s\"";
+    //
+    // The first link is the same whatever the row holds - a field id is a field id - so it is
+    // shared, and only the two that read a value are spelt per type.
+    private static final String FIELD_CONSTANT_PATTERN = "(\\w+)\\s*=\\s*\"%s\"";
 
     // Every typed read a numeric row can be fetched through. Named one by one rather than as a
     // wildcard so that a read this walk has no answer for - a choice or a boolean read against a
@@ -205,6 +212,14 @@ final class LunaSettingsCsvIntegrationTest {
         "read(?:Double|Float|Int)\\(\\s*%s\\s*,\\s*(\\w+)\\s*\\)";
 
     private static final String NUMERIC_DEFAULT_PATTERN = "\\b%s\\s*=\\s*(-?[\\d.]+[fFdD]?)\\s*;";
+
+    // The same last two links for a Boolean row. Only one read can fetch one, so unlike the numeric
+    // alternation this names a single method - which is what makes a switch read through anything
+    // else fail the walk rather than pass it.
+    private static final String BOOLEAN_FALLBACK_READ_PATTERN =
+        "readBoolean\\(\\s*%s\\s*,\\s*(\\w+)\\s*\\)";
+
+    private static final String BOOLEAN_DEFAULT_PATTERN = "\\b%s\\s*=\\s*(true|false)\\s*;";
 
     // Section captions carry an id so LunaLib can place them, but store nothing, so no source reads
     // one. Every other row holds a value.
@@ -329,6 +344,29 @@ final class LunaSettingsCsvIntegrationTest {
                     fieldId,
                     SETTINGS_CSV)
                 .isEqualTo(Double.parseDouble(readColumn(fieldId, DEFAULT_VALUE_COLUMN, fieldType)));
+        }
+    }
+
+    @Nested
+    class BooleanFallbackDefaults {
+
+        @ParameterizedTest(name = "{0}")
+        @ArgumentsSource(BooleanFieldIdsProvider.class)
+        void booleanFallbackDefaultsMatchTheirRowsOwnDefault(String fieldId) {
+
+            var defaultConstant = findBooleanFallbackConstant(fieldId);
+
+            assertThat(readDeclaredFlag(defaultConstant))
+                .as(
+                    "%s in the settings sources against the default of %s in %s: the row's default"
+                        + " is the state a fresh player is given and the constant is what answers"
+                        + " while LunaLib has none, so a feature is switched one way before the"
+                        + " settings load and the other after, with nothing on screen to say why",
+                    defaultConstant,
+                    fieldId,
+                    SETTINGS_CSV)
+                .isEqualTo(readColumn(fieldId, DEFAULT_VALUE_COLUMN, BOOLEAN_FIELD_TYPE)
+                    .equalsIgnoreCase(BOOLEAN_ON_VALUE));
         }
     }
 
@@ -612,19 +650,34 @@ final class LunaSettingsCsvIntegrationTest {
                     + ", which is no option of the enum this row's table names"));
     }
 
-    // The constant a numeric row's getter passes as its fallback, found by following the two links
-    // the sources spell out: the field id to the constant holding it, then that constant to the
-    // read it is passed to. Walked rather than tabulated so the pairing is the shipped one; a
-    // getter written some other way is named by the failure rather than quietly skipped, which is
-    // what keeps the convention itself held.
+    // The constant a numeric row's getter passes as its fallback, followed through any of the typed
+    // reads a number may be fetched by.
     private static String findNumericFallbackConstant(String fieldId) {
+        return findFallbackConstant(fieldId, NUMERIC_FALLBACK_READ_PATTERN);
+    }
+
+    // The same two links for a Boolean row, followed through the one read a switch is fetched by.
+    private static String findBooleanFallbackConstant(String fieldId) {
+        return findFallbackConstant(fieldId, BOOLEAN_FALLBACK_READ_PATTERN);
+    }
+
+    // The constant a row's getter passes as its fallback, found by following the two links the
+    // sources spell out: the field id to the constant holding it, then that constant to the read it
+    // is passed to. Walked rather than tabulated so the pairing is the shipped one; a getter written
+    // some other way is named by the failure rather than quietly skipped, which is what keeps the
+    // convention itself held.
+    //
+    // Only the second link varies by type, so it is the parameter: which reads may fetch this kind
+    // of row is the caller's statement, and a row fetched through some other kind of read then fails
+    // as an unfollowed link rather than being matched and held against the wrong kind of default.
+    private static String findFallbackConstant(String fieldId, String fallbackReadPattern) {
 
         var fieldConstant = findSoleMatch(
-            NUMERIC_FIELD_CONSTANT_PATTERN.formatted(Pattern.quote(fieldId)),
+            FIELD_CONSTANT_PATTERN.formatted(Pattern.quote(fieldId)),
             "the constant holding field id " + fieldId);
 
         return findSoleMatch(
-            NUMERIC_FALLBACK_READ_PATTERN.formatted(Pattern.quote(fieldConstant)),
+            fallbackReadPattern.formatted(Pattern.quote(fieldConstant)),
             "the fallback passed beside " + fieldConstant);
     }
 
@@ -638,6 +691,16 @@ final class LunaSettingsCsvIntegrationTest {
             "a declaration of " + defaultConstant);
 
         return Double.parseDouble(declared.replaceAll("[fFdD]$", ""));
+    }
+
+    // The state a switch's fallback constant is declared as, read out of the source text for the
+    // same reason its numeric neighbour is: the constants are private, so there is no other way to
+    // reach one.
+    private static boolean readDeclaredFlag(String defaultConstant) {
+
+        return Boolean.parseBoolean(findSoleMatch(
+            BOOLEAN_DEFAULT_PATTERN.formatted(Pattern.quote(defaultConstant)),
+            "a declaration of " + defaultConstant));
     }
 
     // The one capture the pattern finds across every shipped source. Exactly one is expected: none
@@ -845,6 +908,24 @@ final class LunaSettingsCsvIntegrationTest {
                 .stream()
                 .filter(row -> NUMERIC_FIELD_TYPES.contains(row.get(FIELD_TYPE_COLUMN)))
                 .map(row -> Arguments.of(row.get(FIELD_ID_COLUMN), row.get(FIELD_TYPE_COLUMN)));
+        }
+    }
+
+    /**
+     * Every switch in the file, one case each, so the row whose two defaults disagree is named by
+     * the failure rather than found by reading the file afterwards.
+     */
+    static final class BooleanFieldIdsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(
+                ParameterDeclarations parameters,
+                ExtensionContext context) {
+
+            return readFieldRows()
+                .stream()
+                .filter(row -> BOOLEAN_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN)))
+                .map(row -> Arguments.of(row.get(FIELD_ID_COLUMN)));
         }
     }
 
