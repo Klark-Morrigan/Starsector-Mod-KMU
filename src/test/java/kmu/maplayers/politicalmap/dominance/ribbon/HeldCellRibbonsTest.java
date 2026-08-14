@@ -88,8 +88,8 @@ final class HeldCellRibbonsTest {
         @Test
         void drawsOneSegmentPerMarketTheFootprintBanked() {
             // The count comes off the footprint the fill was decided from, so three colonies are
-            // three runs - parted by the bloc's dark shade, and butted directly against the
-            // rival's run with no parting at the handover.
+            // three runs, parted by the bloc's dark shade and closed off in it where the rival's
+            // run takes over.
             var footprints = new LinkedHashMap<String, MarketFootprint>();
             footprints.put(HEGEMONY, buildFootprint(3, 9000));
             footprints.put(TRITACHYON, buildFootprint(1, 2000));
@@ -101,6 +101,7 @@ final class HeldCellRibbonsTest {
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
                     new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
 
@@ -116,6 +117,7 @@ final class HeldCellRibbonsTest {
             assertThat(planFor(HEGEMONY, footprints).segments())
                 .containsExactly(
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
 
@@ -131,7 +133,9 @@ final class HeldCellRibbonsTest {
             assertThat(planFor(HEGEMONY, footprints).segments())
                 .containsExactly(
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                    new RibbonSegment(TRITACHYON_DARK, 1),
                     new RibbonSegment(PERSEAN_BRIGHT, 3));
         }
 
@@ -147,7 +151,9 @@ final class HeldCellRibbonsTest {
             assertThat(planFor(HEGEMONY, footprints).segments())
                 .containsExactly(
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(PERSEAN_BRIGHT, 3),
+                    new RibbonSegment(PERSEAN_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
 

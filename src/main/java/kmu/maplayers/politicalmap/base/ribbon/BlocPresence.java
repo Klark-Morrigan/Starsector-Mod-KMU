@@ -22,13 +22,14 @@ import java.util.Map;
  * two that could disagree about what a band means.
  *
  * <p>The palette is the bloc's own authored pair - bright into the market segments, dark
- * into the interjections between them - so a run draws in the same two shades the rest of
- * the map already gives that bloc.
+ * into every parting, both the ones between its markets and the divider closing its run
+ * where another bloc's follows - so a run draws in the same two shades the rest of the map
+ * already gives that bloc.
  *
  * @param blocId      the bloc this stake belongs to: a faction id in the faction view, an
  *                    alliance bloc id in the alliances view
- * @param palette     the bloc's bright and dark shades, the segment and interjection
- *                    colours of its run
+ * @param palette     the bloc's bright and dark shades, the segment and parting colours of
+ *                    its run
  * @param marketCount how many markets the bloc holds in the cell that affected the score
  *                    the cell was painted from; a bloc holding none is present in nothing
  *                    the ribbon reports, so it neither draws a run nor counts as presence

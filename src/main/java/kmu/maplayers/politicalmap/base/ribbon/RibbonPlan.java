@@ -9,11 +9,13 @@ import java.util.List;
  * market it holds and an interjection between two of its own.
  *
  * <p>What the band says is how a system splits - how many colonies, whose, and in what
- * proportion - with no glyph and no label. Two rules carry all of that. Markets of one bloc
- * are parted by an interjection in that bloc's dark shade, so a long run reads as several
- * holdings rather than as one large one. Markets of different blocs butt directly, so the
- * only boundary between two blocs is the colour change itself, and the eye reads a handover
- * where it sees one rather than counting separators.
+ * proportion - with no glyph and no label. One shade carries every parting in it. Markets of
+ * one bloc are parted by an interjection in that bloc's dark shade, so a long run reads as
+ * several holdings rather than as one large one; and where another bloc's run follows, that
+ * same dark shade closes the outgoing run, so a handover is punctuated as well as recoloured.
+ * The divider belongs to the bloc going out rather than to the one coming in, which is what
+ * makes it read as that bloc's holdings ending rather than as an unowned gap between two
+ * rivals. The band's last run is left open, a divider having nothing to part it from.
  *
  * <p>A cell draws a ribbon exactly when some bloc other than the one it was painted for is
  * present in it. Phrasing the gate on the painter rather than on "two or more blocs" is what
@@ -67,8 +69,19 @@ public record RibbonPlan(
         }
 
         var segments = new ArrayList<RibbonSegment>();
+        BlocPresence outgoingBloc = null;
         for (var presence : rankedPresences) {
+            // A bloc holding nothing counted lays no run, so it opens no handover either: a
+            // divider laid for it would part two blocs across a run that is not there, and
+            // the bloc actually going out would go unclosed.
+            if (presence.marketCount() <= 0) {
+                continue;
+            }
+            if (outgoingBloc != null) {
+                appendHandoverDivider(segments, outgoingBloc, lengths);
+            }
             appendBlocRun(segments, presence, lengths);
+            outgoingBloc = presence;
         }
         return new RibbonPlan(segments);
     }
@@ -109,8 +122,8 @@ public record RibbonPlan(
 
     // Lays down one bloc's run: a bright segment per market, parted by a dark interjection.
     // The interjection goes before every market after the first, which is what keeps it
-    // strictly between two of one bloc's markets - so a run never opens or closes on one, and
-    // the join to the next bloc's run stays bare.
+    // strictly between two of one bloc's markets - so a run neither opens nor closes on one,
+    // and whether it is closed off at all is the caller's to decide from what follows it.
     private static void appendBlocRun(
             List<RibbonSegment> segments,
             BlocPresence presence,
@@ -127,5 +140,23 @@ public record RibbonPlan(
                 palette.primaryColour(),
                 lengths.marketLengthUnits()));
         }
+    }
+
+    // Closes the run just laid, in the shade of the bloc that laid it, because another bloc's
+    // run follows. Drawn in the outgoing bloc's own dark colour rather than in a neutral one
+    // so the divider reads as that bloc's punctuation - its holdings ending - rather than as
+    // a gap belonging to nobody between two rivals.
+    //
+    // The same length as the parting inside a run, off the same knob: two dividers of
+    // different lengths in one band would look like a statement about the blocs they part
+    // rather than like the boundary they are.
+    private static void appendHandoverDivider(
+            List<RibbonSegment> segments,
+            BlocPresence outgoingBloc,
+            RibbonSegmentLengths lengths) {
+
+        segments.add(new RibbonSegment(
+            outgoingBloc.palette().secondaryColour(),
+            lengths.interjectionLengthUnits()));
     }
 }

@@ -47,11 +47,15 @@ final class ClaimedSystemRibbonPlannerTest {
     private static final Color HEGEMONY_BRIGHT = new Color(140, 160, 220);
     private static final Color TRITACHYON_BRIGHT = new Color(120, 220, 200);
 
+    // The dark shade a run is closed off in where another bloc's follows. Only Tri-Tachyon's is
+    // named, that being the one bloc a case here reads a divider back from.
+    private static final Color TRITACHYON_DARK = new Color(20, 90, 80);
+
     private static final BlocPaletteReader PALETTES = Map.of(
             HEGEMONY,
             new FactionPalette(HEGEMONY_BRIGHT, new Color(40, 60, 120)),
             TRITACHYON,
-            new FactionPalette(TRITACHYON_BRIGHT, new Color(20, 90, 80)))
+            new FactionPalette(TRITACHYON_BRIGHT, TRITACHYON_DARK))
         ::get;
 
     private static final RibbonPlanInputs STANDARD_INPUTS =
@@ -88,6 +92,7 @@ final class ClaimedSystemRibbonPlannerTest {
             assertThat(planFrom(contest).segments())
                 .containsExactly(
                     new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                    new RibbonSegment(TRITACHYON_DARK, 1),
                     new RibbonSegment(HEGEMONY_BRIGHT, 3));
         }
 

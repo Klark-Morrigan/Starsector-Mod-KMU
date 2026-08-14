@@ -2,7 +2,8 @@ package kmu.maplayers.politicalmap.base.ribbon;
 
 /**
  * How far the ribbon's two kinds of run go, in ribbon widths: the segment one market draws,
- * and the interjection parting two markets of the same bloc.
+ * and the interjection parting two runs - two markets of one bloc, or one bloc's whole run
+ * from the next bloc's.
  *
  * <p>Paired in a value of their own so two lengths of the same type can never be handed over
  * the wrong way round, and so the proportion between them is set in one place. That
@@ -14,7 +15,10 @@ package kmu.maplayers.politicalmap.base.ribbon;
  * which is where a finer size belongs.
  *
  * @param marketLengthUnits       how far one market's segment runs
- * @param interjectionLengthUnits how far the parting between two of one bloc's markets runs
+ * @param interjectionLengthUnits how far a parting runs, whether it stands between two of one
+ *                                bloc's markets or closes that bloc's run at a handover; one
+ *                                length for both, since two would read as a claim about the
+ *                                blocs a divider parts
  */
 public record RibbonSegmentLengths(
     int marketLengthUnits,

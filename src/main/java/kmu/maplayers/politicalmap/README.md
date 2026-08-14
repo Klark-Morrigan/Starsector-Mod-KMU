@@ -327,8 +327,10 @@ its siblings' do not. The resolver shares the entry model and the block
 vocabulary with the domination pair but not their number grammar - a claim score is a small whole
 number of points with no grid behind it, so no rating-to-weight change is stated),
 `ribbon` (what a cell's presence band is made of, planned as pure data ahead of any geometry: a run
-per market every bloc present in the cell holds, runs of one bloc parted by its dark shade and two
-blocs' runs butted so the colour change is the only boundary, and no band at all on a cell no bloc
+per market every bloc present in the cell holds, runs of one bloc parted by its dark shade and a
+bloc's whole run closed off in that same shade wherever another bloc's follows - the divider being
+the outgoing bloc's, so it reads as its holdings ending rather than as a gap belonging to nobody,
+and the last run left open - and no band at all on a cell no bloc
 but the one it was painted for is present in - `RibbonPlan` over a ranked list of `BlocPresence`,
 emitted as `RibbonSegment`s at the two proportions `RibbonSegmentLengths` pairs. Only that shared
 vocabulary is here, plus the two ports the rule is stated over - `BlocPaletteReader` for a bloc's

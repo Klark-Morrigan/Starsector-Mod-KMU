@@ -13,7 +13,8 @@ import java.awt.Color;
  * of what the band says.
  *
  * @param colour      the shade this run draws in: a bloc's bright colour for a market, its
- *                    dark colour for an interjection parting two of them
+ *                    dark colour for a parting - between two of its own markets, or closing
+ *                    its whole run where another bloc's follows
  * @param lengthUnits how far the run goes, in ribbon widths
  */
 public record RibbonSegment(

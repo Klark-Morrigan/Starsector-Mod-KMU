@@ -845,9 +845,12 @@ public final class KmuPoliticalMapSettings {
     }
 
     /**
-     * @return how far the parting between two colonies of one bloc reaches, in band widths. The
-     *         setting screen calls it a separator, the counting rule an interjection: the same
-     *         run under a name a player reads and a name the design states it by
+     * @return how far a parting in the band reaches, in band widths - both the one between two
+     *         colonies of one bloc and the one closing that bloc's run where another bloc's
+     *         follows, since two parting lengths in one band would read as a claim about the
+     *         blocs they part. The setting screen calls it a separator, the counting rule an
+     *         interjection: the same run under a name a player reads and a name the design
+     *         states it by
      */
     public static int getPoliticalMapRibbonInterjectionLength() {
         return KmuLunaSettings.readInt(

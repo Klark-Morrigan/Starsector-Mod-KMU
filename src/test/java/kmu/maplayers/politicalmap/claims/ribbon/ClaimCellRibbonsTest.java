@@ -140,7 +140,7 @@ final class ClaimCellRibbonsTest {
         @Test
         void drawsBothFactionsWhereAnotherStandsBesideTheClaimant() {
             // The contested row: Hegemony took the system and Tri-Tachyon is in it, so the band
-            // is the two of them butted together with the colour change as the only boundary.
+            // is a colony each, parted by the divider closing the Hegemony's run.
             var contest = buildContest(
                 NO_DECREE,
                 HEGEMONY,
@@ -151,6 +151,7 @@ final class ClaimCellRibbonsTest {
             assertThat(planFor(HEGEMONY, contest).segments())
                 .containsExactly(
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
 
@@ -200,6 +201,7 @@ final class ClaimCellRibbonsTest {
             assertThat(planFor(HEGEMONY, contest).segments())
                 .containsExactly(
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3),
                     new RibbonSegment(TRITACHYON_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
@@ -222,6 +224,7 @@ final class ClaimCellRibbonsTest {
             assertThat(planFor(HEGEMONY, contest).segments())
                 .containsExactly(
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
 
@@ -242,6 +245,7 @@ final class ClaimCellRibbonsTest {
             assertThat(planFor(HEGEMONY, contest).segments())
                 .containsExactly(
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
 
@@ -297,6 +301,7 @@ final class ClaimCellRibbonsTest {
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
                     new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
 
@@ -316,6 +321,7 @@ final class ClaimCellRibbonsTest {
             assertThat(planFor(HEGEMONY, contest).segments())
                 .containsExactly(
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
 
@@ -334,6 +340,7 @@ final class ClaimCellRibbonsTest {
             assertThat(planFor(DIKTAT, contest).segments())
                 .containsExactly(
                     new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                    new RibbonSegment(TRITACHYON_DARK, 1),
                     new RibbonSegment(HEGEMONY_BRIGHT, 3));
         }
     }

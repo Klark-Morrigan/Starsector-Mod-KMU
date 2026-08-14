@@ -18,9 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Two things carry the whole design and are stated here on literals. The presence gate -
  * a band exactly where some bloc other than the painter holds something - is checked from
  * both sides, including the decree case where the painter holds nothing itself and a single
- * other bloc is enough. The interjection boundary - a dark parting between two markets of one
- * bloc, and nothing at all where two blocs meet - is checked on a run long enough to have an
- * inside, and across a handover.
+ * other bloc is enough. The partings - a dark one between two markets of one bloc, and one
+ * more in the outgoing bloc's shade wherever another bloc's run follows - are checked on a
+ * run long enough to have an inside, across a handover, and at the end of a band, which is
+ * the one boundary that stays open.
  *
  * <p>Every case names its blocs in a deliberate order and expects that same order out, since
  * the rule ranks nothing itself and a case that happened to be sorted would hide it.
@@ -73,7 +74,8 @@ final class RibbonPlanTest {
         @Test
         void partsOneBlocsMarketsWithInterjectionsInItsDarkShade() {
             // Three markets of one bloc come out as three bright segments with two dark
-            // partings strictly between them - the run neither opens nor closes on one.
+            // partings strictly between them - the run itself neither opens nor closes on one,
+            // and the only other parting here is the divider the bloc ahead of it is closed by.
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(3)),
@@ -82,6 +84,7 @@ final class RibbonPlanTest {
             assertThat(plan.segments())
                 .containsExactly(
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3),
                     new RibbonSegment(TRITACHYON_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3),
@@ -90,9 +93,11 @@ final class RibbonPlanTest {
         }
 
         @Test
-        void buttsTwoBlocsRunsAgainstEachOtherWithNoInterjection() {
-            // Hegemony with three markets beside Tri-Tachyon with two: eight runs, and the
-            // only boundary between the two blocs is the colour change itself.
+        void closesABlocsRunInItsOwnDarkShadeWhereAnotherBlocsRunFollows() {
+            // Hegemony with three markets beside Tri-Tachyon with two. The divider between them
+            // is Hegemony's dark shade, not Tri-Tachyon's: it closes the run it follows, which
+            // is what makes it read as the Hegemony's holdings ending rather than as a gap
+            // belonging to nobody.
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(3), buildTriTachyonPresence(2)),
@@ -105,15 +110,39 @@ final class RibbonPlanTest {
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
                     new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3),
                     new RibbonSegment(TRITACHYON_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
 
         @Test
-        void drawsOneBareSegmentForABlocHoldingASingleMarket() {
-            // A one-market bloc has no inside, so it takes no parting at all - the smallest
-            // rival mark the ribbon can make.
+        void leavesTheLastBlocsRunOpen() {
+            // Three blocs of one market each: a divider at each of the two handovers and none
+            // after the last run, since a band ending on a divider would part its final bloc
+            // from nothing at all.
+            var plan = RibbonPlan.planCellRibbon(
+                "hegemony",
+                List.of(
+                    buildHegemonyPresence(1),
+                    buildTriTachyonPresence(1),
+                    buildDiktatPresence(1)),
+                STANDARD_LENGTHS);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                    new RibbonSegment(TRITACHYON_DARK, 1),
+                    new RibbonSegment(DIKTAT_BRIGHT, 3));
+        }
+
+        @Test
+        void drawsNoPartingInsideABlocHoldingASingleMarket() {
+            // A one-market bloc has no inside, so nothing parts it from itself - the smallest
+            // rival mark the ribbon can make is one bright segment, and the only dark run in
+            // this band is the divider between the two blocs.
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
@@ -122,6 +151,7 @@ final class RibbonPlanTest {
             assertThat(plan.segments())
                 .containsExactly(
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
 
@@ -153,13 +183,16 @@ final class RibbonPlanTest {
             assertThat(plan.segments())
                 .containsExactly(
                     new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                    new RibbonSegment(TRITACHYON_DARK, 1),
                     new RibbonSegment(HEGEMONY_BRIGHT, 3));
         }
 
         @Test
         void leavesOutABlocHoldingNothingWhileDrawingTheRest() {
             // The Diktat is listed but holds nothing counted, so it takes no run; the band is
-            // the painter's two markets and the one real rival, with no gap where it was.
+            // the painter's two markets and the one real rival, with no gap where it was. It
+            // takes no divider either: the single dark run at the handover is the Hegemony's,
+            // closing the run it actually follows.
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(
@@ -173,13 +206,15 @@ final class RibbonPlanTest {
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
                     new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
 
         @Test
         void takesBothRunLengthsFromTheOnesItWasGiven() {
             // Neither length is the rule's own: a four-wide market parted by two reads as the
-            // same holdings at the proportions the player set.
+            // same holdings at the proportions the player set. The divider takes that same
+            // parting length, so no knob can make one boundary say more than the other.
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(2), buildTriTachyonPresence(1)),
@@ -190,6 +225,7 @@ final class RibbonPlanTest {
                     new RibbonSegment(HEGEMONY_BRIGHT, 4),
                     new RibbonSegment(HEGEMONY_DARK, 2),
                     new RibbonSegment(HEGEMONY_BRIGHT, 4),
+                    new RibbonSegment(HEGEMONY_DARK, 2),
                     new RibbonSegment(TRITACHYON_BRIGHT, 4));
         }
     }
@@ -211,15 +247,16 @@ final class RibbonPlanTest {
 
         @Test
         void addsUpEveryRunOfAPlannedRibbon() {
-            // The two halves over one cell: five markets and three partings planned, summed
-            // into the budget the drawn width is settled against on a crowded cell.
+            // The two halves over one cell: five markets, three partings inside the two runs
+            // and the divider between them, summed into the budget the drawn width is settled
+            // against on a crowded cell.
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(3), buildTriTachyonPresence(2)),
                 STANDARD_LENGTHS);
 
             assertThat(plan.sumLengthUnits())
-                .isEqualTo(18);
+                .isEqualTo(19);
         }
 
         @Test
