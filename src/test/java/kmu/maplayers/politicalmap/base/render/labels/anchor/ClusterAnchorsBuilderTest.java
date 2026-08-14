@@ -26,13 +26,13 @@ import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
-import kmu.maplayers.politicalmap.base.render.territories.ViewGrouping;
 import kmu.settings.KmuPoliticalMapSettings;
 
 import org.junit.jupiter.api.AfterEach;

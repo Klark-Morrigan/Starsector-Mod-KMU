@@ -2,6 +2,10 @@ package kmu.maplayers.politicalmap.base.ribbon;
 
 import kmlib.starsector.factions.FactionPalette;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 /**
  * One bloc's stake in one cell's presence ribbon: who it is, the two shades its runs draw
  * in, and how many markets it holds in the cell.
@@ -33,4 +37,41 @@ public record BlocPresence(
     String blocId,
     FactionPalette palette,
     int marketCount) {
+
+    /**
+     * Colours an already-ordered set of bloc counts into the presences a plan is stated over.
+     *
+     * <p>The step both mechanics finish on, held here rather than at each of them, because it is
+     * the one part of the walk that is not about counting: whatever a mechanic counted and however
+     * it ranked what it counted, the colours are looked up the same way and a bloc with none is
+     * dropped the same way. Two copies of that would be two places for a bloc to survive
+     * colourless.
+     *
+     * <p>Dropped rather than painted in a stand-in shade, since a bloc whose colour faction has
+     * gone from the sector is one the map cannot name - the same answer the holder and claim
+     * resolves give a system whose colour faction has gone.
+     *
+     * @param marketCountByBlocId how many markets each bloc holds, in the order its runs are to be
+     *                            drawn - the caller's ranking is kept exactly
+     * @param palettes            where each bloc's two shades are read from
+     * @return the blocs that have shades to draw in, in the order given
+     */
+    public static List<BlocPresence> collectColouredPresences(
+            Map<String, Integer> marketCountByBlocId,
+            BlocPaletteReader palettes) {
+
+        var presences = new ArrayList<BlocPresence>(marketCountByBlocId.size());
+
+        for (var blocMarketCount : marketCountByBlocId.entrySet()) {
+            var palette = palettes.readBlocPalette(blocMarketCount.getKey());
+
+            if (palette != null) {
+                presences.add(new BlocPresence(
+                    blocMarketCount.getKey(),
+                    palette,
+                    blocMarketCount.getValue()));
+            }
+        }
+        return presences;
+    }
 }

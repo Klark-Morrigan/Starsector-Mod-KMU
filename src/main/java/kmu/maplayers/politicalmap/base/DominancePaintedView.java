@@ -9,6 +9,9 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
+import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner;
 
 import java.util.function.Predicate;
 
@@ -26,6 +29,33 @@ import java.util.function.Predicate;
  * another mechanic implements the seam directly and pairs its own list with its own vocabulary.
  */
 public interface DominancePaintedView extends PoliticalMapView {
+
+    /**
+     * The band counting for a view the contest paints: held dominance where a bloc holds something
+     * in a system, and the claim contest where only a claim paints the cell.
+     *
+     * <p>Both halves are here because both are how such a view paints. Its holder source extends
+     * held territory with the systems a bloc claims but does not hold, so a cell of either kind can
+     * carry a band, and each has to be counted by the mechanic that painted it - the composition
+     * decides which per system off the very economy read the held count makes anyway.
+     *
+     * <p>Answered once for every such view for the same reason {@link #resolveBlocPicker} is: the
+     * assembly names the dominance planner, and on {@link PoliticalMapView} that name would reach
+     * the views the contest does not paint.
+     *
+     * @param sector   the sector the counts are read from
+     * @param grouping the grouping this pass resolved
+     * @param inputs   where a bloc's shades are read from, and how far its runs go
+     * @return the planner counting each system by the mechanic that painted it
+     */
+    @Override
+    default SystemRibbonPlanner resolveRibbonPlanner(
+            SectorAPI sector,
+            HolderGrouping grouping,
+            RibbonPlanInputs inputs) {
+                
+        return HeldOrClaimedSystemRibbonPlanner.createForSector(sector, grouping, inputs);
+    }
 
     /**
      * The picker for a view the domination contest paints: the blocs present under this view's own

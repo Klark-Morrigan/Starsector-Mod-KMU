@@ -18,7 +18,10 @@ import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 import kmu.maplayers.politicalmap.base.politics.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
+import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.util.KmuStrings;
 
 import org.junit.jupiter.api.Nested;
@@ -90,6 +93,25 @@ final class ClaimsViewTest {
             // rather than inheriting the held-plus-claims default.
             assertThat(ClaimsView.INSTANCE.resolveHolderProvider())
                 .isSameAs(ClaimsHolderProvider.INSTANCE);
+        }
+    }
+
+    @Nested
+    class ResolveRibbonPlanner {
+
+        @Test
+        void resolveRibbonPlannerCountsEveryCellFromTheClaimContest() {
+            // Every cell here is painted by the claim mechanic, held systems included, so the band
+            // is counted from the contest rather than by the dominance views' composition - which
+            // would count a claimed system its claimant does not hold by the markets of whoever
+            // does, and open the band on a bloc the cell is not painted for.
+            var planner = ClaimsView.INSTANCE.resolveRibbonPlanner(
+                mock(SectorAPI.class),
+                HolderGrouping.identity(),
+                new RibbonPlanInputs(blocId -> null, new RibbonSegmentLengths(3, 1)));
+
+            assertThat(planner)
+                .isInstanceOf(ClaimedSystemRibbonPlanner.class);
         }
     }
 

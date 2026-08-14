@@ -10,6 +10,7 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 
@@ -75,8 +76,10 @@ final class ClaimCellRibbonsTest {
             TRITACHYON_PALETTE)
         ::get;
 
-    // The design's own proportions: a market three widths long, parted by one width.
-    private static final RibbonSegmentLengths STANDARD_LENGTHS = new RibbonSegmentLengths(3, 1);
+    // The design's own proportions - a market three widths long, parted by one width - paired
+    // with the colours every case reads its runs back in.
+    private static final RibbonPlanInputs STANDARD_INPUTS =
+        new RibbonPlanInputs(PALETTES, new RibbonSegmentLengths(3, 1));
 
     // The faction view, where a bloc is a single faction. The alliance case states its own.
     private static final HolderGrouping NO_ALLIANCES = HolderGrouping.identity();
@@ -259,8 +262,7 @@ final class ClaimCellRibbonsTest {
                 HEGEMONY_ALLIANCE,
                 contest,
                 buildAllianceOf(HEGEMONY, PERSEAN),
-                PALETTES,
-                STANDARD_LENGTHS);
+                STANDARD_INPUTS);
 
             assertThat(plan)
                 .isEqualTo(RibbonPlan.NONE);
@@ -286,8 +288,7 @@ final class ClaimCellRibbonsTest {
                 HEGEMONY_ALLIANCE,
                 contest,
                 buildAllianceOf(HEGEMONY, PERSEAN),
-                PALETTES,
-                STANDARD_LENGTHS);
+                STANDARD_INPUTS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -344,8 +345,7 @@ final class ClaimCellRibbonsTest {
             paintingBlocId,
             contest,
             NO_ALLIANCES,
-            PALETTES,
-            STANDARD_LENGTHS);
+            STANDARD_INPUTS);
     }
 
     // A grouping in which the two named factions share one alliance bloc under the alliance's own

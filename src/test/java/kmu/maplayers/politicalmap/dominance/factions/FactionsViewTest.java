@@ -11,6 +11,7 @@ import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -20,6 +21,9 @@ import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -66,6 +70,37 @@ final class FactionsViewTest {
             // inherits the shared claim-augmented default rather than supplying one of its own.
             assertThat(FactionsView.INSTANCE.resolveHolderProvider())
                 .isSameAs(ClaimAugmentedHolderProvider.INSTANCE);
+        }
+    }
+
+    @Nested
+    class ResolveRibbonPlanner {
+
+        @Test
+        void resolveRibbonPlannerCountsEachSystemByTheMechanicThatPaintedIt() {
+            // The faction view paints held territory and extends it with claims, so its bands are
+            // counted the same way round: the shared composition every contest-painted view
+            // inherits, rather than one mechanic answering for cells the other painted.
+            // The held half samples the player's live dominance settings, which reach LunaLib -
+            // a class the test JVM cannot load - so the pass is handed over already resolved.
+            // What the case reads is which planner the view assembles, not where its knobs came
+            // from.
+            try (var passMock = mockStatic(DominancePass.class)) {
+                passMock
+                    .when(() -> DominancePass.readFromLunaSettings(any(HolderGrouping.class)))
+                    .thenReturn(new DominancePass(
+                        mock(DominanceRules.class),
+                        false, // Undiscovered colonies do not count, as on the live map.
+                        HolderGrouping.identity()));
+
+                var planner = FactionsView.INSTANCE.resolveRibbonPlanner(
+                    mock(SectorAPI.class),
+                    HolderGrouping.identity(),
+                    new RibbonPlanInputs(blocId -> null, new RibbonSegmentLengths(3, 1)));
+
+                assertThat(planner)
+                    .isInstanceOf(HeldOrClaimedSystemRibbonPlanner.class);
+            }
         }
     }
 

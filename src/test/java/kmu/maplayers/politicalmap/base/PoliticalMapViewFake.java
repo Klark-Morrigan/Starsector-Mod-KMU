@@ -4,6 +4,9 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
+import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 
 import java.util.Map;
 
@@ -39,6 +42,17 @@ final class PoliticalMapViewFake implements PoliticalMapView {
     @Override
     public HolderGrouping resolveGrouping() {
         return HolderGrouping.identity();
+    }
+
+    // No mechanic paints this view, so no system carries a band. Stated rather than defaulted
+    // because the seam has no default: naming one mechanic's planner on it would put that
+    // mechanic in front of every view.
+    @Override
+    public SystemRibbonPlanner resolveRibbonPlanner(
+            SectorAPI sector,
+            HolderGrouping grouping,
+            RibbonPlanInputs inputs) {
+        return system -> RibbonPlan.NONE;
     }
 
     @Override

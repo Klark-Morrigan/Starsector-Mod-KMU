@@ -18,6 +18,7 @@ import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
+import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonsBuilder;
@@ -200,8 +201,7 @@ public final class TerritoryBuilder {
             // same reads its fill was.
             var ribbonsBuilder = CellRibbonsBuilder.createForPass(
                 sector,
-                view,
-                grouping,
+                territories.getViewGrouping(),
                 ownerBySystemId,
                 geometryCache);
 

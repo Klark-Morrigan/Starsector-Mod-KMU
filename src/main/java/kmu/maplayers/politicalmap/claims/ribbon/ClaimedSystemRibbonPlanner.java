@@ -1,16 +1,13 @@
 package kmu.maplayers.politicalmap.claims.ribbon;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
-import kmu.maplayers.politicalmap.base.ribbon.SectorBlocPalettes;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 
 /**
@@ -33,46 +30,39 @@ public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
 
     private final ClaimBreakdownReader breakdownReader;
     private final HolderGrouping grouping;
-    private final BlocPaletteReader palettes;
-    private final RibbonSegmentLengths lengths;
+    private final RibbonPlanInputs inputs;
 
     /**
      * @param breakdownReader where the contest behind a claim is read from
      * @param grouping        the view's grouping, folding each standing's faction into the bloc
      *                        the cell was painted in
-     * @param palettes        where each present bloc's two shades are read from
-     * @param lengths         how far a market's segment and an interjection run
+     * @param inputs          where a bloc's shades are read from, and how far its runs go
      */
     public ClaimedSystemRibbonPlanner(
             ClaimBreakdownReader breakdownReader,
             HolderGrouping grouping,
-            BlocPaletteReader palettes,
-            RibbonSegmentLengths lengths) {
-                
+            RibbonPlanInputs inputs) {
+
         this.breakdownReader = breakdownReader;
         this.grouping = grouping;
-        this.palettes = palettes;
-        this.lengths = lengths;
+        this.inputs = inputs;
     }
 
     /**
      * The planner a view resolves its claimed bands through, reading vanilla's own claim contest.
      *
-     * @param sector   the sector each bloc's shades are read from
      * @param grouping the view's grouping, sampled once for the whole pass
-     * @param lengths  how far a market's segment and an interjection run
+     * @param inputs   where a bloc's shades are read from, and how far its runs go
      * @return the planner counting claimed cells from the vanilla contest
      */
     public static ClaimedSystemRibbonPlanner createForSector(
-            SectorAPI sector,
             HolderGrouping grouping,
-            RibbonSegmentLengths lengths) {
+            RibbonPlanInputs inputs) {
 
         return new ClaimedSystemRibbonPlanner(
             new VanillaClaimBreakdownReader(),
             grouping,
-            new SectorBlocPalettes(sector, grouping),
-            lengths);
+            inputs);
     }
 
     @Override
@@ -89,7 +79,6 @@ public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
             grouping.resolveBlocId(contest.claimantFactionId()),
             contest,
             grouping,
-            palettes,
-            lengths);
+            inputs);
     }
 }

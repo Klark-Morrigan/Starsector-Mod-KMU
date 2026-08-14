@@ -102,8 +102,7 @@ final class IncrementalPoliticsRefresh {
             // system that just lost its last colony must not still be offered a band.
             var ribbonsBuilder = CellRibbonsBuilder.createForPass(
                 sector,
-                territories.getView(),
-                territories.getGrouping(),
+                territories.getViewGrouping(),
                 territories.getHolderBySystemId(),
                 geometryCache);
 

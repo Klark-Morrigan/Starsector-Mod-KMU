@@ -5,6 +5,7 @@ import kmlib.starsector.factions.FactionPalette;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 
@@ -60,8 +61,10 @@ final class HeldCellRibbonsTest {
             new FactionPalette(PERSEAN_BRIGHT, PERSEAN_DARK))
         ::get;
 
-    // The design's own proportions: a market three widths long, parted by one width.
-    private static final RibbonSegmentLengths STANDARD_LENGTHS = new RibbonSegmentLengths(3, 1);
+    // The design's own proportions - a market three widths long, parted by one width - paired
+    // with the colours every case reads its runs back in.
+    private static final RibbonPlanInputs STANDARD_INPUTS =
+        new RibbonPlanInputs(PALETTES, new RibbonSegmentLengths(3, 1));
 
     // The two weights below the combined one. Held constant across every case: the ordering reads
     // the combined weight alone, so a case varying either would vary nothing the rule can see.
@@ -179,7 +182,6 @@ final class HeldCellRibbonsTest {
         return HeldCellRibbons.planHeldCellRibbon(
             paintingBlocId,
             footprintByBlocId,
-            PALETTES,
-            STANDARD_LENGTHS);
+            STANDARD_INPUTS);
     }
 }

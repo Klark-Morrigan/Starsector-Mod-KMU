@@ -13,8 +13,7 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
-import kmu.maplayers.politicalmap.base.ribbon.HeldOrClaimedSystemRibbonPlanner;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 
 import java.util.ArrayList;
@@ -96,12 +95,15 @@ public interface PoliticalMapView {
     }
 
     /**
-     * The mechanic this view's cells are counted by for their presence bands: for the faction and
-     * alliance views (the default), held dominance where a bloc holds something and the claim
-     * contest where only a claim paints the cell - the two halves the default holder source paints
-     * with, each counted by the mechanic that painted it.
+     * The mechanic this view's cells are counted by for their presence bands.
      *
-     * <p>Supplied per view for the same reason the hover box is: a band explains the fill it sits
+     * <p>Answered by every view rather than defaulted here, for the reason
+     * {@link DominancePaintedView} exists: a default would have to name one mechanic's planner,
+     * and naming it on this seam would put it in front of every view including the ones that
+     * mechanic does not paint. The views the contest paints answer it once between them, and a
+     * view painted by another mechanic answers with its own.
+     *
+     * <p>Per view at all for the same reason the hover box is: a band explains the fill it sits
      * inside, so counting it by a mechanic other than the one the cell was painted by would lead
      * the band on a bloc the cell is not painted for, or count a set of colonies the fill's own
      * score never saw.
@@ -110,16 +112,14 @@ public interface PoliticalMapView {
      *                 whole pass
      * @param grouping the grouping this pass resolved, so a band folds factions into blocs exactly
      *                 as the fill did
-     * @param lengths  how far a market's segment and an interjection run, read once by the pass so
-     *                 every cell's band is planned at one set of proportions
+     * @param inputs   where a bloc's shades are read from and how far its runs go, sampled once by
+     *                 the pass so every cell's band is planned at one set of proportions
      * @return the planner this view's bands are counted through
      */
-    default SystemRibbonPlanner resolveRibbonPlanner(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            RibbonSegmentLengths lengths) {
-        return HeldOrClaimedSystemRibbonPlanner.createForSector(sector, grouping, lengths);
-    }
+    SystemRibbonPlanner resolveRibbonPlanner(
+        SectorAPI sector,
+        HolderGrouping grouping,
+        RibbonPlanInputs inputs);
 
     /**
      * Whether a bloc paints in the muted independent cell style rather than the full

@@ -40,11 +40,12 @@ controls sit in - where it anchors on each screen, and how it folds away - is
 
 ## The views
 
-A view is a small set of rules on top of one shared draw pipeline. Each view answers three
+A view is a small set of rules on top of one shared draw pipeline. Each view answers four
 questions, and the pipeline paints the answer without knowing which view asked:
 
 - How do factions group into blocs?
 - Which systems does each bloc paint?
+- What is in a system, for the presence band inside each cell?
 - How is each bloc styled and named?
 
 | View | Groups by | Paints | Spotlight targets | Needs |
@@ -101,17 +102,26 @@ source, and never branches on which view is active.
 flowchart TD
     V([Selected view]) --> G[Grouping:<br/>how factions form blocs]
     V --> O[Ownership source:<br/>which systems each bloc paints]
+    V --> R[Ribbon planner:<br/>what each system holds]
     G --> PIPE[Shared draw pipeline]
     O --> PIPE
+    R --> PIPE
     PIPE --> S[Shape cells into<br/>bordered territories]
     S --> Fi[Split the fill:<br/>solid / hatched / unfilled]
-    Fi --> L[Overlay bloc names]
+    Fi --> B[Bake each cell's<br/>presence band]
+    B --> L[Overlay bloc names]
     L --> MAP([Coloured map])
 ```
 
-What changes between views is only the two inputs, the grouping and the ownership source; from the
-seam on, every view shapes, fills, and labels identically. The sources themselves and the three
-fill states are [ownership resolution](base/politics/holders/README.md).
+What changes between views is only those three inputs; from the seam on, every view shapes, fills,
+bands, and labels identically. The sources themselves and the three fill states are
+[ownership resolution](base/politics/holders/README.md).
+
+The third input is the second one layer along: a view's cells are painted by some mechanic, and its
+bands have to be *counted* by that same mechanic or they contradict the fills they sit inside. It
+carries no default on the view seam, deliberately - a default would name one mechanic's planner in
+front of every view, including the ones that mechanic does not paint. The contest-painted views
+answer it once between them on `DominancePaintedView`, and the claims view answers with its own.
 
 The spotlight list runs on the same principle one level down. `PoliticalMapView` asks a view for its
 whole picker - the blocs on offer *and* the vocabulary that ranks them - so the metrics a view's rows
@@ -326,10 +336,11 @@ the system, then the rest by the standings' own two keys. A claimed cell's is re
 contest by [`ClaimCellRibbons`](claims/ribbon/ClaimCellRibbons.java) - each faction's standing
 market plus the siblings that both told on its score and are colonies the player knows about. Both
 fold to blocs under the same `HolderGrouping` the fills use, and which of them answers for a cell is
-the view's own call, made through that seam beside its holder source and its hover box. The one
+the view's own call, made through that seam beside its holder source and its hover box. The
 composition that spans both - held dominance where a bloc holds something, the contest where only a
-claim does, told apart by the very economy read the held count needs anyway - stays here with the
-seam, as the claim-augmented holder source does one level down.
+claim does, told apart by the very economy read the held count needs anyway - lives on the dominance
+side, since a claim counts a cell there only where dominance paints nothing: that is how those views
+extend themselves, not a mechanic of its own.
 `render.ribbon` then lays a plan around its cell: `RingPath` traces the ring
 inset by the pad and half the width, the length one width is worth is cut down where the whole band
 would outrun that ring (so a crowded cell compresses rather than losing a bloc off the end), and

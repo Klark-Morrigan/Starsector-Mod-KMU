@@ -5,14 +5,12 @@ import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
 import kmu.maplayers.politicalmap.base.ribbon.BlocPresence;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.Map;
 
 /**
  * Plans the ribbon of a cell painted by the claim mechanic, where the count each bloc's run is
@@ -76,8 +74,7 @@ public final class ClaimCellRibbons {
      * @param contest        the whole claim contest for the cell's system, standings and all
      * @param grouping       the grouping that folds each standing's faction into its bloc, so a
      *                       band is drawn in the same units the fill was
-     * @param palettes       where each present bloc's two shades are read from
-     * @param lengths        how far a market's segment and an interjection run
+     * @param inputs         where a bloc's shades are read from, and how far its runs go
      * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where no bloc but the
      *         painter is present
      */
@@ -85,22 +82,22 @@ public final class ClaimCellRibbons {
             String paintingBlocId,
             SystemClaimBreakdown contest,
             HolderGrouping grouping,
-            BlocPaletteReader palettes,
-            RibbonSegmentLengths lengths) {
+            RibbonPlanInputs inputs) {
 
         return RibbonPlan.planCellRibbon(
             paintingBlocId,
-            resolveRankedPresences(contest, grouping, palettes),
-            lengths);
+            BlocPresence.collectColouredPresences(
+                countMarketsByBloc(contest, grouping),
+                inputs.palettes()),
+            inputs.lengths());
     }
 
-    // The blocs present in the system as the ribbon rule takes them, in the order the contest
-    // ranked them. Insertion order carries that ranking through the fold, so a bloc lands where
-    // its best-placed member stood and two allies do not report a place neither of them took.
-    private static List<BlocPresence> resolveRankedPresences(
+    // Each bloc's colony count in the order the contest ranked them. Insertion order carries that
+    // ranking through the fold, so a bloc lands where its best-placed member stood and two allies
+    // do not report a place neither of them took.
+    private static Map<String, Integer> countMarketsByBloc(
             SystemClaimBreakdown contest,
-            HolderGrouping grouping,
-            BlocPaletteReader palettes) {
+            HolderGrouping grouping) {
 
         var marketCountByBlocId = new LinkedHashMap<String, Integer>();
 
@@ -110,21 +107,7 @@ public final class ClaimCellRibbons {
                 countKnownScoringMarkets(standing),
                 Integer::sum);
         }
-        var presences = new ArrayList<BlocPresence>(marketCountByBlocId.size());
-
-        for (var blocMarketCount : marketCountByBlocId.entrySet()) {
-            var palette = palettes.readBlocPalette(blocMarketCount.getKey());
-
-            // A bloc with no shades to draw in is dropped rather than painted colourless, exactly
-            // as the claim resolve drops a claim whose colour faction has gone.
-            if (palette != null) {
-                presences.add(new BlocPresence(
-                    blocMarketCount.getKey(),
-                    palette,
-                    blocMarketCount.getValue()));
-            }
-        }
-        return presences;
+        return marketCountByBlocId;
     }
 
     // How many markets of one faction the ribbon has to report: the market its standing rests on,

@@ -2,10 +2,10 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import kmlib.starsector.factions.FactionPalette;
 
+import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
-import kmu.maplayers.politicalmap.base.render.territories.ViewGrouping;
 
 import java.util.Map;
 

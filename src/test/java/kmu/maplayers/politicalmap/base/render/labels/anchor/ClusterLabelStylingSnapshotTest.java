@@ -4,13 +4,13 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
 import kmu.maplayers.politicalmap.base.render.territories.MapStyling;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
-import kmu.maplayers.politicalmap.base.render.territories.ViewGrouping;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -6,10 +6,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
-import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
-import kmu.maplayers.politicalmap.base.ribbon.SectorBlocPalettes;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 
 import java.util.Optional;
@@ -27,30 +25,26 @@ import java.util.Optional;
  * <p>Reading the footprints is the same per-system economy read the holder resolve makes, so a
  * band costs one more walk of a system's own market list - not of the sector's.
  */
-public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner {
+public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldSystemRibbonSource {
 
     private final SectorAPI sector;
     private final DominancePass pass;
-    private final BlocPaletteReader palettes;
-    private final RibbonSegmentLengths lengths;
+    private final RibbonPlanInputs inputs;
 
     /**
      * @param sector   the sector whose economy each system's footprints are read from
      * @param pass     the weighting rule, dev reveal, and grouping this build resolves under,
      *                 sampled once so every band is counted under the settings the fills were
-     * @param palettes where each present bloc's two shades are read from
-     * @param lengths  how far a market's segment and an interjection run
+     * @param inputs   where a bloc's shades are read from, and how far its runs go
      */
     public HeldSystemRibbonPlanner(
             SectorAPI sector,
             DominancePass pass,
-            BlocPaletteReader palettes,
-            RibbonSegmentLengths lengths) {
-                
+            RibbonPlanInputs inputs) {
+
         this.sector = sector;
         this.pass = pass;
-        this.palettes = palettes;
-        this.lengths = lengths;
+        this.inputs = inputs;
     }
 
     /**
@@ -59,19 +53,18 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner {
      *
      * @param sector   the sector whose economy is read
      * @param grouping the view's grouping, sampled once for the whole pass
-     * @param lengths  how far a market's segment and an interjection run
+     * @param inputs   where a bloc's shades are read from, and how far its runs go
      * @return the planner counting held cells under the live settings
      */
     public static HeldSystemRibbonPlanner createForSector(
             SectorAPI sector,
             HolderGrouping grouping,
-            RibbonSegmentLengths lengths) {
+            RibbonPlanInputs inputs) {
 
         return new HeldSystemRibbonPlanner(
             sector,
             DominancePass.readFromLunaSettings(grouping),
-            new SectorBlocPalettes(sector, grouping),
-            lengths);
+            inputs);
     }
 
     @Override
@@ -82,15 +75,13 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner {
     /**
      * Plans a system's band, and says whether the held mechanic paints the system at all.
      *
-     * <p>The two answers are separate because a composed planner has to tell them apart: a held
-     * system whose only bloc is the one it is painted for draws no band and is still held, while
-     * a system holding nothing is one some other mechanic paints and some other mechanic must
-     * therefore count. Reading them off one economy walk is what keeps the distinction from
-     * costing a second one.
+     * <p>Both answers come off one economy walk, which is what keeps the distinction the
+     * composition turns on from costing a second one.
      *
      * @param system the system to count
      * @return the system's plan, or empty where no bloc holds a counted market there
      */
+    @Override
     public Optional<RibbonPlan> planHeldSystemRibbon(StarSystemAPI system) {
 
         if (sector == null || system == null || sector.getEconomy() == null) {
@@ -110,7 +101,6 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner {
         return Optional.of(HeldCellRibbons.planHeldCellRibbon(
             dominantBlocId,
             footprintByBlocId,
-            palettes,
-            lengths));
+            inputs));
     }
 }

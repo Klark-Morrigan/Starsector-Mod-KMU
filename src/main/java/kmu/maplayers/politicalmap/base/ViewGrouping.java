@@ -1,6 +1,5 @@
-package kmu.maplayers.politicalmap.base.render.territories;
+package kmu.maplayers.politicalmap.base;
 
-import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 /**

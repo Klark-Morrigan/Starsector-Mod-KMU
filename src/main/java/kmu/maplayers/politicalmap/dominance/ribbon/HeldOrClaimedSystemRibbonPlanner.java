@@ -1,11 +1,13 @@
-package kmu.maplayers.politicalmap.base.ribbon;
+package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
+import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
-import kmu.maplayers.politicalmap.dominance.ribbon.HeldSystemRibbonPlanner;
 
 /**
  * The planner behind a view whose cells are painted by held dominance and extended by claims:
@@ -18,48 +20,57 @@ import kmu.maplayers.politicalmap.dominance.ribbon.HeldSystemRibbonPlanner;
  * without a set of system ids carried alongside to remember the split.
  *
  * <p>Composed rather than branched inside either planner, so each one stays a plain statement of
- * its own mechanic and this holds the one rule about which of them speaks for a cell.
+ * its own mechanic and this holds the one rule about which of them speaks for a cell. It sits on
+ * the dominance side rather than between the two because that is the side that reaches for it: a
+ * claim counts a cell here only where dominance paints nothing, which is a fact about how the
+ * dominance-painted views extend themselves, not a mechanic of its own.
  */
 public final class HeldOrClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
 
-    private final HeldSystemRibbonPlanner heldPlanner;
+    private final HeldSystemRibbonSource heldSource;
     private final SystemRibbonPlanner claimedPlanner;
 
     /**
-     * @param heldPlanner    the held mechanic's planner, asked first, since a held system is one
-     *                       the claim extension never reached
+     * @param heldSource     the held mechanic's answer, asked first, since a held system is one
+     *                       the claim extension never reached. Taken as the narrow source rather
+     *                       than as the planner, because what this rule reads is the one thing a
+     *                       planner cannot say: whether the mechanic speaks for the system at all
      * @param claimedPlanner the claim mechanic's planner, asked for the systems the held one
      *                       paints nothing in
      */
     public HeldOrClaimedSystemRibbonPlanner(
-            HeldSystemRibbonPlanner heldPlanner,
+            HeldSystemRibbonSource heldSource,
             SystemRibbonPlanner claimedPlanner) {
-                
-        this.heldPlanner = heldPlanner;
+
+        this.heldSource = heldSource;
         this.claimedPlanner = claimedPlanner;
     }
 
     /**
      * The planner the faction and alliance views resolve their bands through.
      *
-     * @param sector   the sector whose economy and claims are read
+     * <p>Both halves are built from the one set of inputs, so the two mechanics read a bloc's
+     * colours through a single palette source rather than each resolving its own from the same
+     * sector and grouping.
+     *
+     * @param sector   the sector whose economy the held count is read from
      * @param grouping the view's grouping, sampled once for the whole pass
-     * @param lengths  how far a market's segment and an interjection run
+     * @param inputs   where a bloc's shades are read from, and how far its runs go
      * @return the planner counting each system by the mechanic that painted it
      */
     public static HeldOrClaimedSystemRibbonPlanner createForSector(
             SectorAPI sector,
             HolderGrouping grouping,
-            RibbonSegmentLengths lengths) {
+            RibbonPlanInputs inputs) {
 
         return new HeldOrClaimedSystemRibbonPlanner(
-            HeldSystemRibbonPlanner.createForSector(sector, grouping, lengths),
-            ClaimedSystemRibbonPlanner.createForSector(sector, grouping, lengths));
+            HeldSystemRibbonPlanner.createForSector(sector, grouping, inputs),
+            ClaimedSystemRibbonPlanner.createForSector(grouping, inputs));
     }
 
     @Override
     public RibbonPlan planSystemRibbon(StarSystemAPI system) {
-        return heldPlanner
+        return heldSource
             .planHeldSystemRibbon(system)
             .orElseGet(() -> claimedPlanner.planSystemRibbon(system));
     }

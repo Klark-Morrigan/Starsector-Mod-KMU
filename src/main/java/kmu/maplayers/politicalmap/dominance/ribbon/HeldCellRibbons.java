@@ -1,14 +1,13 @@
 package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
-import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
 import kmu.maplayers.politicalmap.base.ribbon.BlocPresence;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -28,7 +27,7 @@ import java.util.Map;
  * them in, so the band and the box agree about who is second.
  *
  * <p>Pure over the footprints a pass already read, with the one live read - a bloc's shades -
- * inverted to {@link BlocPaletteReader}, exactly as on the claim side.
+ * inverted to a port, exactly as on the claim side.
  */
 public final class HeldCellRibbons {
 
@@ -42,48 +41,41 @@ public final class HeldCellRibbons {
      *                       leads the band whatever settled its lead
      * @param footprintByBlocId each bloc's footprint in the cell's system, as the dominance pass
      *                       folded them under the view's grouping
-     * @param palettes       where each present bloc's two shades are read from
-     * @param lengths        how far a market's segment and an interjection run
+     * @param inputs         where a bloc's shades are read from, and how far its runs go
      * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where no bloc but the
      *         painter is present
      */
     public static RibbonPlan planHeldCellRibbon(
             String paintingBlocId,
             Map<String, MarketFootprint> footprintByBlocId,
-            BlocPaletteReader palettes,
-            RibbonSegmentLengths lengths) {
+            RibbonPlanInputs inputs) {
 
         return RibbonPlan.planCellRibbon(
             paintingBlocId,
-            resolveRankedPresences(paintingBlocId, footprintByBlocId, palettes),
-            lengths);
+            BlocPresence.collectColouredPresences(
+                rankMarketCounts(paintingBlocId, footprintByBlocId),
+                inputs.palettes()),
+            inputs.lengths());
     }
 
-    // The blocs present in the system in the band's order: the painter, then the rest by
-    // descending weight and by id.
-    private static List<BlocPresence> resolveRankedPresences(
+    // Each bloc's colony count in the band's order: the painter, then the rest by descending
+    // weight and by id. The weights are read no further than this - what the band reports is the
+    // count - so the ordering is the last thing a footprint is consulted for.
+    private static Map<String, Integer> rankMarketCounts(
             String paintingBlocId,
-            Map<String, MarketFootprint> footprintByBlocId,
-            BlocPaletteReader palettes) {
+            Map<String, MarketFootprint> footprintByBlocId) {
 
         var ranked = new ArrayList<>(footprintByBlocId.entrySet());
         ranked.sort(orderByPaintedThenWeight(paintingBlocId));
 
-        var presences = new ArrayList<BlocPresence>(ranked.size());
+        var marketCountByBlocId = new LinkedHashMap<String, Integer>();
 
         for (var blocFootprint : ranked) {
-            var palette = palettes.readBlocPalette(blocFootprint.getKey());
-
-            // A bloc with no shades to draw in is dropped rather than painted colourless, exactly
-            // as the holder resolve drops a system whose colour faction has gone.
-            if (palette != null) {
-                presences.add(new BlocPresence(
-                    blocFootprint.getKey(),
-                    palette,
-                    blocFootprint.getValue().marketCount()));
-            }
+            marketCountByBlocId.put(
+                blocFootprint.getKey(),
+                blocFootprint.getValue().marketCount());
         }
-        return presences;
+        return marketCountByBlocId;
     }
 
     // The band's order. The painter sorts ahead of everything because the dominance rule can

@@ -18,9 +18,11 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
+import kmu.maplayers.politicalmap.base.render.ribbon.RibbonBand;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
@@ -477,6 +479,83 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getFillPolygonByCellId())
                 .containsOnlyKeys("kept");
         }
+
+        @Test
+        void removeStyledCellDropsThePresenceBandWithTheCell() {
+            // A band is drawn inside a cell, so a cell that stops drawing takes its band with it -
+            // otherwise a dropped cell keeps painting a floating stripe of triangles.
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+
+            territories.putStyledCell(
+                "system",
+                buildAnyStyledCell(),
+                buildSquarePolygon(),
+                buildAnyRibbon());
+            territories.removeStyledCell("system");
+
+            assertThat(territories.getRibbonByCellId())
+                .isEmpty();
+        }
+    }
+
+    @Nested
+    class PutCellRibbon {
+
+        @Test
+        void putStyledCellRecordsABandUnderTheCellThatDrawsIt() {
+
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+            var ribbon = buildAnyRibbon();
+
+            territories.putStyledCell(
+                "system",
+                buildAnyStyledCell(),
+                buildSquarePolygon(),
+                ribbon);
+
+            assertThat(territories.getRibbonByCellId())
+                .containsOnlyKeys("system");
+            assertThat(territories.getRibbonByCellId().get("system"))
+                .isSameAs(ribbon);
+        }
+
+        @Test
+        void putStyledCellKeepsABandlessCellOutOfTheBandMap() {
+            // Most of the sector draws no band, so the map is kept sparse rather than parallel to
+            // the cells: the render pass walks the cells that draw one and no others.
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+
+            territories.putStyledCell(
+                "system",
+                buildAnyStyledCell(),
+                buildSquarePolygon(),
+                CellRibbon.NONE);
+
+            assertThat(territories.getRibbonByCellId())
+                .isEmpty();
+        }
+
+        @Test
+        void putStyledCellClearsAStandingBandWhenTheCellStopsDrawingOne() {
+            // The re-bake that finds nothing left to report - a rival's last colony in the system
+            // has gone. Without the clear, the cell would keep drawing the band it no longer earns.
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+
+            territories.putStyledCell(
+                "system",
+                buildAnyStyledCell(),
+                buildSquarePolygon(),
+                buildAnyRibbon());
+
+            territories.putStyledCell(
+                "system",
+                buildAnyStyledCell(),
+                buildSquarePolygon(),
+                CellRibbon.NONE);
+
+            assertThat(territories.getRibbonByCellId())
+                .isEmpty();
+        }
     }
 
     @Nested
@@ -608,6 +687,13 @@ final class PoliticalMapTerritoriesTest {
             new double[] {1, 0},
             new double[] {1, 1},
             new double[] {0, 1});
+    }
+
+    // A band that draws something, which is all these cases ask of it: what distinguishes it from
+    // CellRibbon.NONE is that it has a run at all, not what the run looks like.
+    private static CellRibbon buildAnyRibbon() {
+        return new CellRibbon(List.of(
+            new RibbonBand(Color.WHITE, new float[] {0, 0, 1, 0, 1, 1})));
     }
 
     private static List<double[]> buildTrianglePolygon() {

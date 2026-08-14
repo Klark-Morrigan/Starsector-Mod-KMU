@@ -18,12 +18,12 @@ import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
-import kmu.maplayers.politicalmap.base.render.territories.ViewGrouping;
 import kmu.settings.KmuPoliticalMapSettings;
 
 import org.apache.log4j.Logger;

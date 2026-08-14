@@ -19,10 +19,13 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
+import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritoryBuilder;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
 import kmu.maplayers.politicalmap.base.render.territories.StyledCellBuilder;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -85,6 +88,11 @@ final class IncrementalPoliticsRefreshTest {
     // What the caller's standing placements were fitted under, standing in the pair so the
     // re-fit can carry over the clusters this fold did not move. Opaque here - the tuning
     // inside is the fit's own business and no case reads it.
+    // What the stubbed planner reports for the marked system: one run, which is all the case
+    // reads - that a band was baked at all, rather than what it says.
+    private static final RibbonPlan BAND_OF_ONE_RUN =
+        new RibbonPlan(List.of(new RibbonSegment(Color.WHITE, 1)));
+
     private static final AnchorFitFingerprint STANDING_FIT =
         new AnchorFitFingerprint(null, GEOMETRY_REVISION - 1);
 
@@ -223,9 +231,11 @@ final class IncrementalPoliticsRefreshTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesRedrawsNothingWhenTheHolderDidNotChange() {
-            // The common resize: a colony grows, its faction still wins, and the drawing is
-            // identical - so the whole redraw below the re-derive must be skipped.
+        void applyStalePoliticsUpdatesReshapesNothingWhenTheHolderDidNotChange() {
+            // The common resize: a colony grows, its faction still wins, and every fill and
+            // border is identical - so no cell re-shapes and no territory rebuilds. The marked
+            // system's band is re-baked all the same, which the case below states; here the cell
+            // carries none, so the re-bake finds nothing to write.
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
             assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(HEGEMONY));
@@ -236,6 +246,41 @@ final class IncrementalPoliticsRefreshTest {
             assertThat(territories.getHolderBySystemId())
                 .containsExactly(buildEntryOwnedBy(FLIPPED_SYSTEM, HEGEMONY));
 
+            styledCellsMock.verifyNoInteractions();
+            territoriesMock.verifyNoInteractions();
+        }
+
+        @Test
+        void applyStalePoliticsUpdatesRebakesTheBandOfAMarkedSystemThatDidNotFlip() {
+            // What marks a system is a colony appearing, growing, or changing hands - which is
+            // exactly what changes how many colonies a band counts. So a marked system owes a
+            // re-baked band even on the frame where nothing about its fill moved, and waiting for
+            // a flip would leave the band reporting a colony that is no longer there.
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+
+            territories.putStyledCell(
+                FLIPPED_SYSTEM,
+                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
+                buildBandSizedCell(),
+                CellRibbon.NONE);
+
+            // The band starts above the cell's own site, so the marked system needs one; the
+            // shared geometry fixture records none, every other case being about shapes.
+            when(cellGeometry.cells().getSiteBySystemId())
+                .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
+
+            when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
+                .thenReturn(system -> BAND_OF_ONE_RUN);
+
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(HEGEMONY));
+
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            applyTo(territories);
+
+            assertThat(territories.getRibbonByCellId())
+                .containsOnlyKeys(FLIPPED_SYSTEM);
+
+            // Nothing else moved: a re-bake is not a re-shape.
             styledCellsMock.verifyNoInteractions();
             territoriesMock.verifyNoInteractions();
         }
@@ -441,6 +486,16 @@ final class IncrementalPoliticsRefreshTest {
                 new ArrayList<Label>(),
                 cellGeometry);
         }
+    }
+
+    // A cell large enough to hold the authored band clear of its own border, so a re-bake that
+    // ran comes back with runs rather than with the empty band a collapsed inset would give.
+    private static List<double[]> buildBandSizedCell() {
+        return List.of(
+            new double[] {0.0, 0.0},
+            new double[] {4000.0, 0.0},
+            new double[] {4000.0, 4000.0},
+            new double[] {0.0, 4000.0});
     }
 
     // A geometry cache holding two adjacent square cells, each drawing as its own star: the

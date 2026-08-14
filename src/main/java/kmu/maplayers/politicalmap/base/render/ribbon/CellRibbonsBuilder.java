@@ -6,9 +6,9 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.StarSystems;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
-import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 
 import java.util.List;
@@ -56,10 +56,10 @@ public final class CellRibbonsBuilder {
      * Samples everything one pass's bands are settled from.
      *
      * @param sector           the sector the counts are read from
-     * @param view             the active view, which supplies the mechanic its cells are counted
-     *                         by - the same one they were painted by
-     * @param grouping         the view's grouping, sampled once by the pass so a band folds
-     *                         factions into blocs exactly as the fill did
+     * @param viewGrouping     the active view and the grouping it resolved, the pair the pass
+     *                         already carries: the view supplies the mechanic its cells are
+     *                         counted by - the same one they were painted by - and the grouping
+     *                         folds factions into blocs exactly as the fill did
      * @param holderBySystemId who paints each system this pass, the gate deciding which cells are
      *                         asked for a band at all
      * @param geometryCache    the cells' geometry, read for each system's own site - the point a
@@ -68,15 +68,22 @@ public final class CellRibbonsBuilder {
      */
     public static CellRibbonsBuilder createForPass(
             SectorAPI sector,
-            PoliticalMapView view,
-            HolderGrouping grouping,
+            ViewGrouping viewGrouping,
             Map<String, DominantHolder> holderBySystemId,
             CellGeometryCache geometryCache) {
 
         var style = RibbonStyle.createAuthoredDefaults();
 
+        // The colour source and the proportions are sampled here, once, and handed to whatever
+        // planner the view resolves - so both mechanics of a composed planner read a bloc's
+        // shades through one object.
+        var inputs = RibbonPlanInputs.createForSector(
+            sector,
+            viewGrouping.grouping(),
+            style.lengths());
+
         return new CellRibbonsBuilder(
-            view.resolveRibbonPlanner(sector, grouping, style.lengths()),
+            viewGrouping.view().resolveRibbonPlanner(sector, viewGrouping.grouping(), inputs),
             style,
             holderBySystemId,
             StarSystems.indexById(sector),
