@@ -11,6 +11,7 @@ import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import org.apache.log4j.Logger;
 
@@ -25,7 +26,9 @@ import java.util.List;
  * where every cluster name on the map ended up. The names are fitted after the cells are shaped -
  * a name is placed inside the border its cluster's cells trace - so a band baked as its cell was
  * shaped would be laid before any name had a place, and the name would then be drawn across it.
- * Baking last is what lets the band keep out of the names' way instead.
+ * Baking last is what lets the band keep out of the names' way instead - which is the shipped
+ * answer rather than the only one, a player being free to hand the room back to the band and have
+ * the name draw across it after all.
  *
  * <p>The bands are read out of the cells' own recorded shapes rather than off a shaping pass, so
  * the incremental refresh re-bakes the cells it disturbed through the very same call the full
@@ -114,12 +117,18 @@ public final class CellRibbonsBaker {
             + " took=" + Timings.formatMillis(System.nanoTime() - bakeStart));
     }
 
-    // The room the names take up, or none at all where the player has the names switched off -
-    // in which case there is nothing on the map for a band to be interrupted by, whatever
-    // placements the anchor overlay may still be holding.
+    // The room the names take up, or none at all for either of two reasons, answered side by side
+    // so they read in one place: the player has the names switched off, in which case there is
+    // nothing on the map for a band to be interrupted by, whatever placements the anchor overlay
+    // may still be holding; or the player would rather the bands ran whole beneath the names.
+    // Nothing downstream branches on why - the builder takes the boxes and carves what it is
+    // handed, which is what keeps the carve testable on hand-built rings.
     private static List<List<double[]>> resolveNameBoxes(List<ClusterAnchor> clusterAnchors) {
 
-        return NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
+        var isBandKeptClearOfNames = NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
+            && KmuPoliticalMapSettings.shouldKeepPoliticalMapRibbonsClearOfNames();
+
+        return isBandKeptClearOfNames
             ? ClusterNameBoxes.listNameBoxes(clusterAnchors)
             : List.of();
     }

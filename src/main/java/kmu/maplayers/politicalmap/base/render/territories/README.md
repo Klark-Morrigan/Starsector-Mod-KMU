@@ -157,8 +157,8 @@ highlight reads the same shapes through `render/hover`'s adapter, so the cursor 
 disagree about what was drawn.
 
 The cell's presence band (`CellRibbon`, from `render.ribbon`) is written by its own call, because
-it is settled from more than the cell it sits in: a band keeps clear of the cluster names, and
-those are placed only once every cell has been shaped. So the shape goes in first and the band
+it is settled from more than the cell it sits in: a band keeps clear of the cluster names (a
+default the player can switch off), and those are placed only once every cell has been shaped. So the shape goes in first and the band
 follows, and `CellRibbonsBaker` reads the shape back off this record rather than being handed one.
 What ties the two is the write that records a shape *dropping* whatever band the cell was carrying:
 a band is triangles laid inside one particular ring, so a re-shaped cell keeping its band would

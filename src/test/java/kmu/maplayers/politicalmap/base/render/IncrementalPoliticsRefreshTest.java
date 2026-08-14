@@ -127,6 +127,7 @@ final class IncrementalPoliticsRefreshTest {
         private MockedStatic<FactionTerritoryBuilder> territoriesMock;
         private MockedStatic<ClusterAnchorsBuilder> anchorsMock;
         private MockedStatic<NameFormatPreference> nameFormatMock;
+        private MockedStatic<KmuPoliticalMapSettings> settingsMock;
 
         private SectorAPI sectorMock;
 
@@ -198,9 +199,11 @@ final class IncrementalPoliticsRefreshTest {
 
             // A re-bake reads the player's band sizes, which reach LunaLib - so the knobs answer
             // from a seam here, at the sizes the mod ships, since no case in this suite is about
-            // what a band is sized at.
-            RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(
-                openSeam(KmuPoliticalMapSettings.class));
+            // what a band is sized at. Held as a field for the reason the name choice above is:
+            // whether a band keeps clear of the names is one of these knobs, so the case about
+            // that answer re-stubs it.
+            settingsMock = openSeam(KmuPoliticalMapSettings.class);
+            RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
 
             // The stale set is static and shared, so a residue from another suite would
             // read here as a system this one never marked.
@@ -353,6 +356,45 @@ final class IncrementalPoliticsRefreshTest {
 
             when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
+
+            standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
+
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(HEGEMONY));
+
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            applyTo(territories);
+
+            assertThat(territories.getRibbonByCellId())
+                .containsOnlyKeys(FLIPPED_SYSTEM);
+        }
+
+        @Test
+        void applyStalePoliticsUpdatesReservesNoRoomForANameWhileTheBandsIgnoreTheNames() {
+            // The same name across the same cell, drawn this time, with the player having asked
+            // that the bands not give way to it: the band takes the whole ring and the word draws
+            // across it. The pair with the case above is the point - the two reasons a band has
+            // nothing to keep clear of reach the same result by different routes, one because
+            // there is no name on the map and one because the player would rather have the band.
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+
+            territories.putStyledCell(
+                FLIPPED_SYSTEM,
+                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
+                buildBandSizedCell());
+
+            when(cellGeometry.cells().getSiteBySystemId())
+                .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
+
+            when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
+                .thenReturn(system -> BAND_OF_ONE_RUN);
+
+            nameFormatMock
+                .when(NameFormatPreference::getSelectedNameFormat)
+                .thenReturn(FactionNameFormatChoice.SHORT);
+
+            settingsMock
+                .when(KmuPoliticalMapSettings::shouldKeepPoliticalMapRibbonsClearOfNames)
+                .thenReturn(false);
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
 

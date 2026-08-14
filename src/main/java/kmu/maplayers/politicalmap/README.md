@@ -362,7 +362,9 @@ side, since a claim counts a cell there only where dominance paints nothing: tha
 extend themselves, not a mechanic of its own.
 `render.ribbon` then lays a plan around its cell: `RingPath` traces the ring
 inset by the pad and half the width, the boxes the drawn cluster names occupy are carved off that
-ring, the length one width is worth is cut down where the whole band would outrun what is left of
+ring (while the player keeps the bands clear of the names - a toggle, since which of the two
+readouts wins the room they share is taste; off, the carve gets no boxes and a band runs its whole
+ring), the length one width is worth is cut down where the whole band would outrun what is left of
 it (so a crowded cell - or one much of whose ring is under a name - compresses rather than losing a
 bloc off the end), and each surviving stretch of ring is stroked in one piece and cut into a
 `RibbonBand` of mitred triangles per run - one piece because the band is one shape whatever it is
@@ -376,15 +378,18 @@ also why the bands are baked in a pass of their own after the names are placed
 rebuild, so a band holds its share of a cell's outline at every zoom and the draw is a triangle list
 like the fills. `CellPresenceRibbonRenderer` is that draw, and it is emitted clear of the map's own
 nebula sprites rather than with the fills beneath them: a band is a readout of a system, so being
-fogged would cost it the very thing it is for. It still goes under the bloc names, though nothing
-rests on that any more: a band is laid clear of every name before it is drawn, so the two no
-longer meet for a draw order to settle. Every size the band is drawn at is the player's, read through
+fogged would cost it the very thing it is for. It still goes under the bloc names, and by default nothing
+rests on that: a band is laid clear of every name before it is drawn, so the two never meet. With
+the name-clearing toggle off they do meet, and that order is what the toggle promises - the name
+draws across the band rather than under it. Every size the band is drawn at is the player's, read through
 `RibbonStyleReader` on the Visuals tab: the width, the clearance from the border, and the two run
 lengths those are multiples of - the ratio between the last two being what makes a bloc's stretch
 read as several colonies rather than one. All four are world sizes, so nothing about a band is
 asked of the camera. The knobs that are not sizes are the switch, which takes the counting off
 the rebuild as well as the bands off the map, since a band nobody sees is not worth a walk of the
-sector's markets, and the uncontested pair beneath it - whether the lone holders' cells band, and
+sector's markets, the name-clearing toggle above, answered in `CellRibbonsBaker` where the boxes
+are resolved so that it and the names-off case - the two reasons a band has nothing to keep clear
+of - read in one place, and the uncontested pair beneath it - whether the lone holders' cells band, and
 whether those bands run short - read as one `UncontestedCellBands` at the start of a pass and
 paired with the run lengths as the `RibbonPlanRules` every planner is handed through
 `RibbonPlanInputs`, so every cell of one pass is gated by one answer),

@@ -33,7 +33,9 @@ package kmu.settings;
  * thickness, its clearance from the border, and the two run lengths those are multiples of are
  * all stated in the units the cells are cut in, with nothing about a band left for a frame to
  * measure. Its on/off is a real switch rather than a zeroed opacity, since a band paints in the
- * palette colours of whichever blocs are present and has no shade of its own to take away.
+ * palette colours of whichever blocs are present and has no shade of its own to take away. Beside
+ * it sits the name-clearing switch: whether a band breaks around the room the cluster names take,
+ * or runs its whole ring and lets a name draw across it.
  *
  * <p>The "Map - Politics - Domination" tab holds the dominance rules - fields that change the
  * map's political verdicts rather than its styling, which is why they do not sit under
@@ -149,12 +151,17 @@ public final class KmuPoliticalMapSettings {
     // not whether the map bands at all, but whether a cell whose colonies all belong to one bloc
     // bands too, and how loudly. Kept apart from the switch so that the bands reporting a contest -
     // what the readout is for - are reachable by neither.
+    // The name-clearing toggle is the other non-size boolean: whether a band breaks around the room
+    // the cluster names take, or runs its whole ring and lets a name draw across it. A knob because
+    // which of the two readouts wins the room they share is taste rather than correctness.
     private static final String RIBBON_ENABLED_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_enabled";
     private static final String RIBBON_UNCONTESTED_ENABLED_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_uncontestedEnabled";
     private static final String RIBBON_UNCONTESTED_SHORT_RUNS_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_uncontestedShortRuns";
+    private static final String RIBBON_KEEP_CLEAR_OF_NAMES_FIELD =
+        "kmu_map_politics_visuals_presenceRibbons_keepClearOfNames";
     private static final String RIBBON_WIDTH_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_width";
     private static final String RIBBON_INSET_PAD_FIELD =
@@ -406,6 +413,11 @@ public final class KmuPoliticalMapSettings {
     // than the contests the readout exists for.
     private static final boolean DEFAULT_RIBBON_UNCONTESTED_ENABLED = true;
     private static final boolean DEFAULT_RIBBON_UNCONTESTED_SHORT_RUNS = true;
+
+    // The bands keep clear of the cluster names by default, so a name reads whole rather than
+    // sitting on a band running beneath it. A toggle because that is a taste call, not a
+    // correctness one: off returns the whole ring to the band and lets the names draw over it.
+    private static final boolean DEFAULT_RIBBON_KEEP_CLEAR_OF_NAMES = true;
 
     // The band's thickness in world units, and the gap between the border and the band's near
     // edge. Settled by eye on the shipped sector rather than derived: a band as thick as its own
@@ -845,6 +857,18 @@ public final class KmuPoliticalMapSettings {
         return KmuLunaSettings.readBoolean(
             RIBBON_UNCONTESTED_SHORT_RUNS_FIELD,
             DEFAULT_RIBBON_UNCONTESTED_SHORT_RUNS);
+    }
+
+    /**
+     * @return whether a band keeps out of the room the drawn cluster names take, breaking around
+     *         each name that lies over its cell; on by default. Off lays every band along its
+     *         whole ring and lets a name draw straight across it - which of the two readouts wins
+     *         the room they share is taste, so the player answers it rather than the map
+     */
+    public static boolean shouldKeepPoliticalMapRibbonsClearOfNames() {
+        return KmuLunaSettings.readBoolean(
+            RIBBON_KEEP_CLEAR_OF_NAMES_FIELD,
+            DEFAULT_RIBBON_KEEP_CLEAR_OF_NAMES);
     }
 
     /**

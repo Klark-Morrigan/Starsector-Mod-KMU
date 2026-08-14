@@ -31,6 +31,12 @@ public final class RibbonSettingsFixtures {
     private static final boolean UNCONTESTED_CELLS_BANDED = false;
     private static final boolean UNCONTESTED_RUNS_SHORTENED = false;
 
+    // The bands kept clear of the names, which is the shipped answer and the one every case about
+    // the carve is written against - a suite reaching for these and getting the other answer would
+    // see its name boxes silently dropped and its band run the whole ring. A suite about the knob
+    // itself states it on the case, for the reason the pair above are stated there.
+    private static final boolean BANDS_KEPT_CLEAR_OF_NAMES = true;
+
     // Stubs only; never instantiated.
     private RibbonSettingsFixtures() {
     }
@@ -65,5 +71,8 @@ public final class RibbonSettingsFixtures {
         settingsMock
             .when(KmuPoliticalMapSettings::shouldShortenPoliticalMapUncontestedRibbonRuns)
             .thenReturn(UNCONTESTED_RUNS_SHORTENED);
+        settingsMock
+            .when(KmuPoliticalMapSettings::shouldKeepPoliticalMapRibbonsClearOfNames)
+            .thenReturn(BANDS_KEPT_CLEAR_OF_NAMES);
     }
 }
