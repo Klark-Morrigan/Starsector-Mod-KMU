@@ -76,6 +76,16 @@ a version bump re-runs the PR gates on that commit, packages
 is this repo's [CHANGELOG.md](CHANGELOG.md) section for that version - so a
 release with no changelog section fails rather than shipping empty notes.
 
+Two committed files feed the update-check side of that release.
+[kmu.version](kmu.version) is the VersionChecker template: a complete
+`.version` file stating the shape KMU publishes, whose release-varying values
+are written as tokens for KMLib's `fill-version-file-template` action to
+substitute from `mod_info.json` - so no version number is restated by hand
+outside that file. The filled result rides inside the zip and is attached to
+the release in its own right, that copy being the only form an update checker
+can poll. [data/config/version/version_files.csv](data/config/version/version_files.csv)
+is what points VersionChecker at the shipped file in an install.
+
 ### Local linting
 
 Two delegating CI workflows lint the repo's non-Gradle surface on every pull

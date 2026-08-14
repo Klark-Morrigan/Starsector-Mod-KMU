@@ -1,0 +1,13 @@
+{
+  "masterVersionFile": "https://github.com/Klark-Morrigan/Starsector-Mod-KMU/releases/latest/download/kmu.version",
+  "modName": "{{modName}}",
+  "modVersion":
+  {
+    "major": "{{major}}",
+    "minor": "{{minor}}",
+    "patch": "{{patch}}"
+  },
+  "starsectorVersion": "{{starsectorVersion}}",
+  "directDownloadURL": "{{directDownloadURL}}",
+  "changelogURL": "https://raw.githubusercontent.com/Klark-Morrigan/Starsector-Mod-KMU/master/CHANGELOG.md"
+}
