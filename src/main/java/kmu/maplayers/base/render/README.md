@@ -43,7 +43,7 @@ read from resolving against a half-drawn frame and a staleness check from runnin
 
 The bands are named for their positions, not their contents. Which sub-layers ride above is a
 question about how the picture reads, and moving one is a change of which band a pass is emitted
-for - not a rename here. Today the geometry is beneath and the text above.
+for - not a rename here. Today what is merely seen is beneath and what is read is above.
 
 ## Three terrains, one draw
 

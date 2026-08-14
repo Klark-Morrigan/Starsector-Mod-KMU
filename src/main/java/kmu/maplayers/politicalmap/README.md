@@ -346,7 +346,10 @@ inset by the pad and half the width, the length one width is worth is cut down w
 would outrun that ring (so a crowded cell compresses rather than losing a bloc off the end), and
 each run is stroked into the mitred triangles of a `RibbonBand`. All of it world-sized and baked at
 rebuild, so a band holds its share of a cell's outline at every zoom and the draw is a triangle list
-like the fills),
+like the fills. `CellPresenceRibbonRenderer` is that draw, and it is emitted clear of the map's own
+nebula sprites rather than with the fills beneath them: a band is a readout of a system, so being
+fogged would cost it the very thing it is for. It still goes under the bloc names, a name being the
+coarser statement of the two),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 reached through [the sidebar](../base/sidebar/README.md) one level up (the picker is KMLib's, bound

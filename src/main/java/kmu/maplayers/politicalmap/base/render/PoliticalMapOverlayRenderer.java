@@ -11,6 +11,7 @@ import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverHighlightSource;
+import kmu.maplayers.politicalmap.base.render.ribbon.CellPresenceRibbonRenderer;
 import kmu.settings.KmuPoliticalMapSettings;
 
 import org.apache.log4j.Logger;
@@ -19,13 +20,14 @@ import org.apache.log4j.Logger;
  * Composes the political map's map-overlay layers over the {@link PoliticalMapCache}'s current
  * draw lists, bottom to top: the base view (the normal territories, or the debug border-tracing
  * overlay when it has replaced them), then the hover highlight, then the cluster-anchor debug
- * overlay, then the faction names. The two debug facilities compose rather than one hiding the
- * other - the anchor overlay layers over whichever base view drew - and each layer draws only
- * under its own toggle.
+ * overlay, then the per-cell presence bands, then the faction names. The two debug facilities
+ * compose rather than one hiding the other - the anchor overlay layers over whichever base view
+ * drew - and each layer draws only under its own toggle.
  *
  * <p>That stack is emitted one band at a time, because the map can put its own drawing between two
  * of the layers: the map holds its own nebula icons, drawn over the sector as a large sprite under
- * Starscape, and the faction names are the sub-layer that has to clear them. Which band a sub-layer belongs to is decided here
+ * Starscape, and the presence bands and the faction names are the sub-layers that have to clear
+ * them - both being read rather than merely seen. Which band a sub-layer belongs to is decided here
  * and nowhere else - the surfaces above only say which band they are painting, and the geometry
  * below is emitted the same way whichever band asks for it.
  */
@@ -53,7 +55,7 @@ final class PoliticalMapOverlayRenderer {
 
         switch (band) {
             case BENEATH_STARSCAPE_NEBULAE -> renderTerritoryBand(cache, factor, alphaMult);
-            case ABOVE_STARSCAPE_NEBULAE -> renderFactionNameBand(cache, factor, alphaMult);
+            case ABOVE_STARSCAPE_NEBULAE -> renderClearOfNebulaeBand(cache, factor, alphaMult);
 
             // A switch statement over an enum is not checked for exhaustiveness, so a band added
             // later would compile clean here and simply paint nothing - an overlay silently missing
@@ -111,12 +113,24 @@ final class PoliticalMapOverlayRenderer {
         }
     }
 
-    // The faction names, which draw last of the map passes: a name reads over its territory and the
-    // debug band, and - where a surface exists to put it there - over the map's nebulae too,
-    // while still staying beneath the vanilla star and constellation names the map draws after every
-    // terrain pass. The list is empty unless the name choice draws names, so this is an empty-list
-    // check when they are off.
-    private void renderFactionNameBand(PoliticalMapCache cache, float factor, float alphaMult) {
+    // Everything that has to be read rather than merely seen, and so cannot afford to sit under the
+    // map's nebula fog: the per-cell presence bands, and the faction names over them. Both draw
+    // - where a surface exists to put them there - over the map's nebulae, while still staying
+    // beneath the vanilla star and constellation names the map draws after every terrain pass.
+    //
+    // The names go last of the map passes, so a name wins where it meets a band: a name says which
+    // bloc a whole territory belongs to, which is the coarser statement of the two and the one a
+    // player is reading the map for. Each is an empty-list check when its own feature is off - the
+    // names when the name choice draws none, the bands on the cells where no rival is present.
+    private void renderClearOfNebulaeBand(PoliticalMapCache cache, float factor, float alphaMult) {
+        // The debug overlay replaced the draw lists the bands were baked into, so there is nothing
+        // to paint them from - the same reason the hover feedback stands down under it.
+        if (!cache.isDebug()) {
+            CellPresenceRibbonRenderer.renderOnMap(
+                cache.getTerritories().getRibbonByCellId(),
+                factor,
+                alphaMult);
+        }
         LabelRenderer.renderOnMap(cache.getFactionLabels(), factor, alphaMult);
     }
 
