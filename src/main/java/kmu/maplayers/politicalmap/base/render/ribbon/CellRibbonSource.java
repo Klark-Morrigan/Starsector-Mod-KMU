@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.StarSystems;
 
-import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
@@ -37,8 +36,13 @@ import java.util.Map;
  * call site. Most of the sector is cells nobody paints, and the claim mechanic's count walks a
  * system's whole market list; without the gate, every empty cell in the sector would pay for a
  * contest nobody is contesting.
+ *
+ * <p>Named a source rather than a builder because the per-cell work is
+ * {@link CellRibbonBuilder}'s: what this adds is the pass the work is done under, which is the
+ * same split {@link kmu.maplayers.politicalmap.dominance.ribbon.HeldSystemRibbonSource} makes one
+ * level up between a mechanic's answer and the rule that shapes it.
  */
-public final class CellRibbonsBuilder {
+public final class CellRibbonSource {
 
     // The sizes a pass with the bands switched off carries. Zeroes rather than the player's knobs
     // because no band is ever laid out to be sized: such a pass answers every cell at its gate,
@@ -54,7 +58,7 @@ public final class CellRibbonsBuilder {
     private final Map<String, double[]> siteBySystemId;
     private final List<List<double[]>> nameBoxes;
 
-    private CellRibbonsBuilder(
+    private CellRibbonSource(
             SystemRibbonPlanner planner,
             RibbonStyle style,
             Map<String, DominantHolder> holderBySystemId,
@@ -82,18 +86,20 @@ public final class CellRibbonsBuilder {
      *                         folds factions into blocs exactly as the fill did
      * @param holderBySystemId who paints each system this pass, the gate deciding which cells are
      *                         asked for a band at all
-     * @param geometryCache    the cells' geometry, read for each system's own site - the point a
-     *                         band's start is found above
+     * @param siteBySystemId   each system's own site, the point a band's start is found above.
+     *                         Taken as the one map this reads rather than as the geometry cache
+     *                         holding it, so what a band is laid out from is stated in the
+     *                         signature rather than reachable through it
      * @param nameBoxes        the room the drawn cluster names take up, which every cell's band
      *                         keeps out of; the whole map's, since a name reaches into cells its
      *                         own cluster does not hold
      * @return the source the pass bakes its bands through
      */
-    public static CellRibbonsBuilder createForPass(
+    public static CellRibbonSource createForPass(
             SectorAPI sector,
             ViewGrouping viewGrouping,
             Map<String, DominantHolder> holderBySystemId,
-            CellGeometryCache geometryCache,
+            Map<String, double[]> siteBySystemId,
             List<List<double[]>> nameBoxes) {
 
         if (!KmuPoliticalMapSettings.shouldDrawPoliticalMapRibbons()) {
@@ -111,12 +117,12 @@ public final class CellRibbonsBuilder {
                 style.lengths(),
                 UncontestedCellBands.readFromLunaSettings()));
 
-        return new CellRibbonsBuilder(
+        return new CellRibbonSource(
             viewGrouping.view().resolveRibbonPlanner(sector, viewGrouping.grouping(), inputs),
             style,
             holderBySystemId,
             StarSystems.indexById(sector),
-            geometryCache.getSiteBySystemId(),
+            siteBySystemId,
             nameBoxes);
     }
 
@@ -158,8 +164,8 @@ public final class CellRibbonsBuilder {
     // Nothing is sampled for it - no planner resolved, no system index built, no sizes read - so
     // the switch takes the counting off the rebuild as well as the bands off the map, which is the
     // half of it a player cannot see and the half that costs.
-    private static CellRibbonsBuilder createBandlessPass() {
-        return new CellRibbonsBuilder(
+    private static CellRibbonSource createBandlessPass() {
+        return new CellRibbonSource(
             system -> RibbonPlan.NONE,
             BANDLESS_SIZES,
             Map.of(),

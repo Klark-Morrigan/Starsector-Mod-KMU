@@ -122,7 +122,9 @@ flowchart TD
 The bands come after the names rather than before them because they are laid *around* them: a
 name is fitted inside the border its cluster's cells trace, so it has no place until the cells
 are shaped, and a band baked before that would run under a word. Baked last, each band carves the
-names' boxes out of its cell's ring and lays its runs along what is left.
+names' boxes out of its cell's ring and lays its runs along what is left - or carves nothing,
+where the player would rather have the whole band and let the name draw across it. Either way the
+pass runs last, so the ordering is what makes the choice available rather than what settles it.
 
 What changes between views is only those three inputs; from the seam on, every view shapes, fills,
 bands, and labels identically. The sources themselves and the three fill states are
@@ -332,67 +334,16 @@ whole score the contest weighed it at, presence included, so its listed terms ar
 its siblings' do not. The resolver shares the entry model and the block
 vocabulary with the domination pair but not their number grammar - a claim score is a small whole
 number of points with no grid behind it, so no rating-to-weight change is stated),
-`ribbon` (what a cell's presence band is made of, planned as pure data ahead of any geometry: a run
-per market every bloc present in the cell holds, runs of one bloc parted by its dark shade and a
-bloc's whole run closed off in that same shade wherever another bloc's follows - the divider being
-the outgoing bloc's, so it reads as its holdings ending rather than as a gap belonging to nobody,
-and the band's last run left open - `RibbonPlan` over a ranked list of `BlocPresence`,
-emitted as `RibbonSegment`s at the two proportions `RibbonSegmentLengths` pairs. Which cells band at
-all is two arms of one gate, because they answer different questions: a cell some bloc other than
-its own painter holds something in bands unconditionally, that being the contest the fill cannot
-report, and a cell held by one bloc alone bands only where `UncontestedCellBands` admits it - the
-player's answer to whether a lone holder's footprint is worth saying, and at one width a colony
-rather than the authored run so it cannot out-shout the contests beside it. Stated as two arms
-rather than one settings-dependent rule so that no switch reaches the bands that report a contest.
-A cell nothing is present in bands under neither. Only that shared
-vocabulary is here, plus the two ports the rule is stated over - `BlocPaletteReader` for a bloc's
-shades and `SystemRibbonPlanner` for the counting itself - because where the counts come from is
-each mechanic's own business, and that is what keeps one band meaning one thing on every view. Each
-mechanic's counting rule therefore lives with the mechanic. A held cell's count is
-`MarketFootprint.marketCount`, folded over the very colonies the dominance pass scored, ordered by
-[`HeldCellRibbons`](dominance/ribbon/HeldCellRibbons.java) - the painted bloc first whatever gave it
-the system, then the rest by the standings' own two keys. A claimed cell's is read out of the claim
-contest by [`ClaimCellRibbons`](claims/ribbon/ClaimCellRibbons.java) - each faction's standing
-market plus the siblings that both told on its score and are colonies the player knows about. Both
-fold to blocs under the same `HolderGrouping` the fills use, and which of them answers for a cell is
-the view's own call, made through that seam beside its holder source and its hover box. The
-composition that spans both - held dominance where a bloc holds something, the contest where only a
-claim does, told apart by the very economy read the held count needs anyway - lives on the dominance
-side, since a claim counts a cell there only where dominance paints nothing: that is how those views
-extend themselves, not a mechanic of its own.
-`render.ribbon` then lays a plan around its cell: `RingPath` traces the ring
-inset by the pad and half the width, the boxes the drawn cluster names occupy are carved off that
-ring (while the player keeps the bands clear of the names - a toggle, since which of the two
-readouts wins the room they share is taste; off, the carve gets no boxes and a band runs its whole
-ring), the length one width is worth is cut down where the whole band would outrun what is left of
-it (so a crowded cell - or one much of whose ring is under a name - compresses rather than losing a
-bloc off the end), and each surviving stretch of ring is stroked in one piece and cut into a
-`RibbonBand` of mitred triangles per run - one piece because the band is one shape whatever it is
-coloured in, and a run stroked on its own would butt against its neighbours rather than turn with
-them. The names are carved off the *ring* and never off the plan: a run's length is the readout, so
-a run cut short by a word would say something false about the system, where a run interrupted by
-one simply draws as two pieces of its own colour. Every name on the map is carved off every cell,
-since a name sits wherever its own cluster is roomiest and that can be over a neighbour - which is
-also why the bands are baked in a pass of their own after the names are placed
-(`CellRibbonsBaker`), rather than as each cell is shaped. All of it world-sized and baked at
-rebuild, so a band holds its share of a cell's outline at every zoom and the draw is a triangle list
-like the fills. `CellPresenceRibbonRenderer` is that draw, and it is emitted clear of the map's own
-nebula sprites rather than with the fills beneath them: a band is a readout of a system, so being
-fogged would cost it the very thing it is for. It still goes under the bloc names, and by default nothing
-rests on that: a band is laid clear of every name before it is drawn, so the two never meet. With
-the name-clearing toggle off they do meet, and that order is what the toggle promises - the name
-draws across the band rather than under it. Every size the band is drawn at is the player's, read through
-`RibbonStyleReader` on the Visuals tab: the width, the clearance from the border, and the two run
-lengths those are multiples of - the ratio between the last two being what makes a bloc's stretch
-read as several colonies rather than one. All four are world sizes, so nothing about a band is
-asked of the camera. The knobs that are not sizes are the switch, which takes the counting off
-the rebuild as well as the bands off the map, since a band nobody sees is not worth a walk of the
-sector's markets, the name-clearing toggle above, answered in `CellRibbonsBaker` where the boxes
-are resolved so that it and the names-off case - the two reasons a band has nothing to keep clear
-of - read in one place, and the uncontested pair beneath it - whether the lone holders' cells band, and
-whether those bands run short - read as one `UncontestedCellBands` at the start of a pass and
-paired with the run lengths as the `RibbonPlanRules` every planner is handed through
-`RibbonPlanInputs`, so every cell of one pass is gated by one answer),
+`ribbon` (the vocabulary a cell's presence band is planned in - the runs, the dividers between
+them, and the two-armed gate deciding which cells band at all - held apart from where a band's
+colony counts come from, since that is each painting mechanic's own business and keeping it there
+is what makes one band mean one thing on every view. The band spans four packages, each with its
+own register: the [plan and its gate](base/ribbon/README.md), the
+[ring geometry and the draw](base/render/ribbon/README.md), and the two counting rules -
+[held cells](dominance/ribbon/README.md), counted off the very footprints the fill was ranked
+from, and [claimed cells](claims/ribbon/README.md), counted off the contest that settled the
+claim. Which of the two answers for a cell is the view's own call, made through the same seam it
+picks its holder source and its hover box by),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 reached through [the sidebar](../base/sidebar/README.md) one level up (the picker is KMLib's, bound

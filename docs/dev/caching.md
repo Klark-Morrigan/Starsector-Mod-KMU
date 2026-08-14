@@ -196,9 +196,11 @@ stroked at, and how far each run reaches all resolve at rebuild, so a frame draw
 triangle list rather than laying one out.
 
 The bands are baked in a pass of their own after the rest of a rebuild, because a band keeps
-clear of the cluster names and the names are placed only once every cell has been shaped -
-each is fitted inside the border its cluster's cells trace. So the cells' shapes go in first
-and the bands follow, over the shapes the territories already hold. Recording a shape drops
+clear of the cluster names by default and the names are placed only once every cell has been
+shaped - each is fitted inside the border its cluster's cells trace. So the cells' shapes go in
+first and the bands follow, over the shapes the territories already hold. A player who would
+rather keep the whole band can switch that clearance off, which leaves the ordering doing
+nothing rather than making it wrong: the pass still runs last, and simply carves nothing. Recording a shape drops
 whatever band that cell was carrying, which is what keeps a band from outliving the ring it
 was laid in; the band pass then fills it back in.
 
@@ -311,7 +313,10 @@ Per frame, in increasing cost:
    the fills only weigh them. A flip widens that to every band on the map, because it
    re-fits the names: a re-fitted name is placed wherever its new cluster is roomiest,
    which can be over a cell this batch never touched, and a band that kept clear of where
-   that name used to sit is no longer clear of it.
+   that name used to sit is no longer clear of it. The widening is unconditional rather
+   than asked of the name-clearing setting, since a band that keeps clear of nothing is
+   re-baked to the same triangles either way - and a gate here would trade a rebuild the
+   flip already pays for against a wrong map the moment the setting is switched back on.
 3. **Content changed** (a setting, a sidebar toggle, a view's own live input) - the
    territories are rebuilt in full over the standing geometry. The cells are
    untouched, since ownership and styling do not move a border. The label placements

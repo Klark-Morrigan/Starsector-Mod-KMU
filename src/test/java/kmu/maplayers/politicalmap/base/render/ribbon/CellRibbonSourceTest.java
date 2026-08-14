@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -47,7 +46,7 @@ import static org.mockito.Mockito.when;
  * elsewhere and a switched-off feature that still walks the sector's markets is a cost with
  * nothing to show for it.
  */
-final class CellRibbonsBuilderTest {
+final class CellRibbonSourceTest {
 
     private static final String PAINTED_SYSTEM = "corvus";
     private static final String UNPAINTED_SYSTEM = "empty";
@@ -192,7 +191,7 @@ final class CellRibbonsBuilderTest {
 
     // A pass over two painted systems - one placed, one with no site recorded - and one system no
     // bloc paints, counted through the given planner.
-    private static CellRibbonsBuilder buildWith(SystemRibbonPlanner planner) {
+    private static CellRibbonSource buildWith(SystemRibbonPlanner planner) {
         return buildThrough(buildViewMock(planner));
     }
 
@@ -208,7 +207,7 @@ final class CellRibbonsBuilderTest {
         return viewMock;
     }
 
-    private static CellRibbonsBuilder buildThrough(PoliticalMapView viewMock) {
+    private static CellRibbonSource buildThrough(PoliticalMapView viewMock) {
 
         // The systems are built before the stubbing rather than inside it: each is itself a mock,
         // and building one while another stubbing is open reads to Mockito as an unfinished stub.
@@ -222,20 +221,15 @@ final class CellRibbonsBuilderTest {
         when(sectorMock.getStarSystems())
             .thenReturn(systems);
 
-        var geometryCacheMock = mock(CellGeometryCache.class);
-
-        // Only the placed system has a site; the other painted one is what a band with nowhere to
-        // start is posed on.
-        when(geometryCacheMock.getSiteBySystemId())
-            .thenReturn(Map.of(PAINTED_SYSTEM, new double[] {2000.0, 2000.0}));
-
-        return CellRibbonsBuilder.createForPass(
+        return CellRibbonSource.createForPass(
             sectorMock,
             new ViewGrouping(viewMock, HolderGrouping.identity()),
             Map.of(
                 PAINTED_SYSTEM, buildHolder(),
                 SITELESS_SYSTEM, buildHolder()),
-            geometryCacheMock,
+            // Only the placed system has a site; the other painted one is what a band with
+            // nowhere to start is posed on.
+            Map.of(PAINTED_SYSTEM, new double[] {2000.0, 2000.0}),
             // No names anywhere near these cells: where a name falls is pinned by the builder
             // that lays a band inside one cell, not by which cells are offered a band at all.
             List.of());

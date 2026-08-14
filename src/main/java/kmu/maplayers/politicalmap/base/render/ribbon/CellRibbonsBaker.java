@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Bakes the presence bands over cells that have already been shaped and named.
@@ -45,17 +46,17 @@ public final class CellRibbonsBaker {
     private static final Logger LOG = Global.getLogger(CellRibbonsBaker.class);
 
     private final PoliticalMapTerritories territories;
-    private final CellGeometryCache geometryCache;
-    private final CellRibbonsBuilder ribbonsBuilder;
+    private final Map<String, String> systemIdByCellId;
+    private final CellRibbonSource ribbonSource;
 
     private CellRibbonsBaker(
             PoliticalMapTerritories territories,
-            CellGeometryCache geometryCache,
-            CellRibbonsBuilder ribbonsBuilder) {
+            Map<String, String> systemIdByCellId,
+            CellRibbonSource ribbonSource) {
 
         this.territories = territories;
-        this.geometryCache = geometryCache;
-        this.ribbonsBuilder = ribbonsBuilder;
+        this.systemIdByCellId = systemIdByCellId;
+        this.ribbonSource = ribbonSource;
     }
 
     /**
@@ -74,14 +75,18 @@ public final class CellRibbonsBaker {
             SectorAPI sector,
             List<ClusterAnchor> clusterAnchors) {
 
+        // Both geometry reads are taken here, once, rather than per cell inside the loop: each
+        // hands back a fresh unmodifiable view over the live cells, so asking per cell would mint
+        // a wrapper per cell to answer one lookup. Taking them apart here is also what lets each
+        // consumer state the one map it reads instead of holding the cache both live in.
         return new CellRibbonsBaker(
             territories,
-            geometryCache,
-            CellRibbonsBuilder.createForPass(
+            geometryCache.getSystemIdByCellId(),
+            CellRibbonSource.createForPass(
                 sector,
                 territories.getViewGrouping(),
                 territories.getHolderBySystemId(),
-                geometryCache,
+                geometryCache.getSiteBySystemId(),
                 resolveNameBoxes(clusterAnchors)));
     }
 
@@ -145,8 +150,8 @@ public final class CellRibbonsBaker {
             if (fillPolygon == null) {
                 continue;
             }
-            var ribbon = ribbonsBuilder.buildCellRibbon(
-                geometryCache.getSystemIdByCellId().get(cellId),
+            var ribbon = ribbonSource.buildCellRibbon(
+                systemIdByCellId.get(cellId),
                 fillPolygon);
 
             territories.putCellRibbon(cellId, ribbon);
