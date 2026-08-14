@@ -41,7 +41,7 @@ public final class CellRibbonsBuilder {
     // well before a ring is traced, so reading the real sizes for it would be a settings read
     // taken to settle nothing.
     private static final RibbonStyle BANDLESS_SIZES =
-        new RibbonStyle(0, 0, 0, new RibbonSegmentLengths(0, 0), 0);
+        new RibbonStyle(0, 0, 0, new RibbonSegmentLengths(0, 0));
 
     private final SystemRibbonPlanner planner;
     private final RibbonStyle style;

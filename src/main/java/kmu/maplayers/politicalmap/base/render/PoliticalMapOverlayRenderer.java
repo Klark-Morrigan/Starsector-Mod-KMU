@@ -12,7 +12,6 @@ import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverHighlightSource;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellPresenceRibbonRenderer;
-import kmu.maplayers.politicalmap.base.render.ribbon.RibbonStyleReader;
 import kmu.settings.KmuPoliticalMapSettings;
 
 import org.apache.log4j.Logger;
@@ -128,14 +127,10 @@ final class PoliticalMapOverlayRenderer {
         // to paint them from - the same reason the hover feedback stands down under it.
         if (!cache.isDebug()) {
 
-            // The sizes are read here rather than carried on the draw lists because only one of
-            // them is asked at draw time - whether the bands are still thick enough to read at
-            // this zoom - and that answer moves with the camera, not with the rebuild the rest of
-            // the sizes were baked into. Read through the same seam the bake used, so the width
-            // measured against the floor is the width the bands were laid at.
+            // The baked bands are the whole of what this pass needs: every size a band carries is
+            // a world size settled at rebuild, so nothing about the player's knobs is read here.
             CellPresenceRibbonRenderer.renderOnMap(
                 cache.getTerritories().getRibbonByCellId().values(),
-                RibbonStyleReader.readRibbonStyle(),
                 factor,
                 alphaMult);
         }

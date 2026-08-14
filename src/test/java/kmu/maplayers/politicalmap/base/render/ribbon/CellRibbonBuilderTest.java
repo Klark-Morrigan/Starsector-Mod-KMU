@@ -56,15 +56,12 @@ final class CellRibbonBuilderTest {
 
     // Round numbers rather than the shipped sizes, so the expected coordinates below are the
     // convention being pinned and not an echo of whatever the defaults happen to be: a 400-wide
-    // band 200 clear of the border runs its centreline exactly 400 inside the cell. The screen
-    // floor is zero because nothing here is on screen - laying a band out is settled entirely in
-    // the world, and how thin it may be drawn is the frame's question.
+    // band 200 clear of the border runs its centreline exactly 400 inside the cell.
     private static final RibbonStyle STYLE = new RibbonStyle(
         400.0,
         200.0,
         2.0,
-        new RibbonSegmentLengths(3, 1),
-        0.0);
+        new RibbonSegmentLengths(3, 1));
 
     private static final Color BRIGHT = new Color(140, 160, 220);
     private static final Color DARK = new Color(40, 60, 120);

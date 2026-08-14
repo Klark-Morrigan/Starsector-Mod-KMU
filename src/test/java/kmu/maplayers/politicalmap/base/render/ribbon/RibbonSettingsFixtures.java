@@ -9,22 +9,21 @@ import org.mockito.MockedStatic;
  * sizes it is baked at.
  *
  * <p>Needed at all because reading a knob for real reaches LunaLib, which no test JVM has a game
- * to load; and shared because the alternative is the same six stubbings written out in each suite
+ * to load; and shared because the alternative is the same five stubbings written out in each suite
  * that happens to run the bake, where one of them drifting would show as a band mysteriously
  * absent from that suite alone.
  */
 public final class RibbonSettingsFixtures {
 
     // Sizes a band draws at and a four-thousand-unit cell holds, which is all any suite reaching
-    // for these needs. Deliberately not offered as "the shipped sizes" even though they currently
-    // match: the CSV row and its fallback constant are pinned against each other, and a third copy
-    // claiming to be the same number would be the only one nothing checks - so a default moved
-    // later would leave this quietly disagreeing while still reading as authoritative.
+    // for these needs. Deliberately not the shipped sizes: the CSV row and its fallback constant
+    // are pinned against each other, and a third copy claiming to be the same number would be the
+    // only one nothing checks - so a default moved on the settings screen would leave this quietly
+    // disagreeing while still reading as authoritative.
     private static final double BAND_WIDTH_WORLD = 120.0;
     private static final double BAND_INSET_PAD_WORLD = 60.0;
     private static final int SEGMENT_LENGTH_UNITS = 3;
     private static final int INTERJECTION_LENGTH_UNITS = 1;
-    private static final double MIN_DRAWN_WIDTH_PIXELS = 1.5;
 
     // Stubs only; never instantiated.
     private RibbonSettingsFixtures() {
@@ -54,8 +53,5 @@ public final class RibbonSettingsFixtures {
         settingsMock
             .when(KmuPoliticalMapSettings::getPoliticalMapRibbonInterjectionLength)
             .thenReturn(INTERJECTION_LENGTH_UNITS);
-        settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonMinDrawnWidth)
-            .thenReturn(MIN_DRAWN_WIDTH_PIXELS);
     }
 }

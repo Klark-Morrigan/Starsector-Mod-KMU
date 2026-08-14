@@ -11,7 +11,7 @@ import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins that each band knob lands in the slot it names, and that the mitre limit stays the code's
- * own rather than becoming a sixth knob.
+ * own rather than becoming a knob beside them.
  *
  * <p>Worth pinning by value because the sizes are interchangeable by type: a width read into the
  * pad, or the two run lengths handed over the wrong way round, compiles clean and shows only as a
@@ -25,7 +25,6 @@ final class RibbonStyleReaderTest {
     private static final double INSET_PAD_WORLD = 22.0;
     private static final int SEGMENT_LENGTH_UNITS = 7;
     private static final int INTERJECTION_LENGTH_UNITS = 4;
-    private static final double MIN_DRAWN_WIDTH_PIXELS = 3.5;
 
     // The authored mitre limit, which is no knob: it is the angle past which a corner's mitre
     // becomes a spike, a property of stroking rather than of how the readout looks.
@@ -50,8 +49,6 @@ final class RibbonStyleReaderTest {
                     .isEqualTo(SEGMENT_LENGTH_UNITS);
                 assertThat(style.lengths().interjectionLengthUnits())
                     .isEqualTo(INTERJECTION_LENGTH_UNITS);
-                assertThat(style.minDrawnWidthPixels())
-                    .isEqualTo(MIN_DRAWN_WIDTH_PIXELS);
             }
         }
 
@@ -81,8 +78,5 @@ final class RibbonStyleReaderTest {
         settingsMock
             .when(KmuPoliticalMapSettings::getPoliticalMapRibbonInterjectionLength)
             .thenReturn(INTERJECTION_LENGTH_UNITS);
-        settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonMinDrawnWidth)
-            .thenReturn(MIN_DRAWN_WIDTH_PIXELS);
     }
 }

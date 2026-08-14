@@ -101,7 +101,6 @@ final class PoliticalMapOverlayRendererTest {
                 ribbonRendererMock.verify(() ->
                     CellPresenceRibbonRenderer.renderOnMap(
                         any(),
-                        any(),
                         anyFloat(),
                         anyFloat()));
 

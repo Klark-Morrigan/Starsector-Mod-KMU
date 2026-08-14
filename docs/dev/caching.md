@@ -197,10 +197,9 @@ triangle list rather than laying one out. The band is written through the same c
 cell's shape for that reason - it is triangles laid inside that shape, so the two move
 together or not at all.
 
-A frame measures exactly one thing about a band, and it is the one thing world sizes
-cannot answer: whether the width, scaled to the screen, still clears the player's
-minimum. That is a single comparison for the whole pass rather than one per cell, since
-compression shortens a crowded cell's runs but never thins the band.
+A frame measures nothing about a band at all: every size in one is a world size, so how
+large it lands on screen is the map's own scaling of the triangle list and no question
+the pass has to answer.
 
 Retaining those inputs is what makes the incremental path *correct* rather than
 merely cheap:
