@@ -287,11 +287,13 @@ final class PoliticalMapCache {
                 // The bands come last, after the names have places, because they are laid around
                 // them: a band is cut by the room the names take, so baking one before the fit
                 // would leave it running under a word rather than clear of it.
-                CellRibbonsBaker.bakeAllCellRibbons(
-                    territories,
-                    cellGeometry.cells(),
-                    Global.getSector(),
-                    standingAnchors.getAnchors());
+                CellRibbonsBaker
+                    .createForPass(
+                        territories,
+                        cellGeometry.cells(),
+                        Global.getSector(),
+                        standingAnchors.getAnchors())
+                    .bakeAllCellRibbons();
             }
 
             // The name labels are minted from the placements just rebuilt (empty when the names

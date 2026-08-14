@@ -111,12 +111,13 @@ final class IncrementalPoliticsRefresh {
                 // or remove one. So the bands of the marked systems are re-baked against the
                 // names already standing, and nothing else is. Logged so an un-updated colour can
                 // be confirmed a no-op flip rather than a missed event.
-                CellRibbonsBaker.bakeCellRibbonsOf(
-                    territories,
-                    geometryCache,
-                    sector,
-                    standingAnchors.getAnchors(),
-                    staleSystemIds);
+                CellRibbonsBaker
+                    .createForPass(
+                        territories,
+                        geometryCache,
+                        sector,
+                        standingAnchors.getAnchors())
+                    .bakeCellRibbonsOf(staleSystemIds);
 
                 LOG.debug("Political map politics update: no holder changed; stale="
                     + staleSystemIds.size());
@@ -176,11 +177,13 @@ final class IncrementalPoliticsRefresh {
             // placed wherever its new cluster is roomiest - which can be a cell this batch never
             // touched. A band that kept clear of where that name used to sit is no longer clear
             // of it, so the only cells this could safely skip are the ones it cannot identify.
-            CellRibbonsBaker.bakeAllCellRibbons(
-                territories,
-                geometryCache,
-                sector,
-                standingAnchors.getAnchors());
+            CellRibbonsBaker
+                .createForPass(
+                    territories,
+                    geometryCache,
+                    sector,
+                    standingAnchors.getAnchors())
+                .bakeAllCellRibbons();
 
             LOG.debug("Political map politics updated incrementally; stale="
                 + staleSystemIds.size()

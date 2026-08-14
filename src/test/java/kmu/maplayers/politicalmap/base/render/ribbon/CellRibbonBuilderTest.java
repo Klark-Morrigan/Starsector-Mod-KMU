@@ -26,9 +26,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Two cases are about the band being one shape rather than a row of them. Where two runs meet
  * on a corner of the cell, the band turns through that corner instead of stopping square either
  * side of it - the difference between stroking the whole band once and stroking it a run at a
- * time, and invisible to every other case here. And because the runs are then read back out of
- * one stroke by position, a run that draws nothing has to hold its place in it, or every run
- * after one takes its neighbour's colour.
+ * time, and invisible to every other case here. And a run of no length lays nothing at all, with
+ * the runs after it keeping their own colours: each piece of band carries the run it came from,
+ * so what is drawn and what colours it cannot fall out of step however many pieces a run takes.
  *
  * <p>The remaining cases are the two ends of the size question the design answers deliberately:
  * a band longer than its cell's outline compresses rather than being cut short, and a cell with
@@ -204,11 +204,10 @@ final class CellRibbonBuilderTest {
 
         @Test
         void keepsEveryRunsOwnColourWhereARunInTheMiddleDrawsNothing() {
-            // A run drawing nothing is dropped from the bands, and the runs after it are not: the
-            // whole band is stroked in one go and its runs read back off the result by position,
-            // so a stroker that dropped an empty run instead of holding its place would hand the
-            // third run's stretch the second run's colour. The last band's far end at x=2800 is
-            // what says the geometry stayed with its colour rather than both shifting together.
+            // A run drawing nothing lays no piece, and the runs after it are unaffected: each
+            // piece carries the run it came from, so dropping one shifts no other run's colour.
+            // The last band's far end at x=2800 is what says the geometry stayed with its colour
+            // rather than both shifting together.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
                 CELL_SITE,
@@ -307,6 +306,24 @@ final class CellRibbonBuilderTest {
                 .isTrue();
             assertThat(hasCorner(ribbon.bands().get(1), 3200.0, 3800.0))
                 .isTrue();
+        }
+
+        @Test
+        void leavesAStretchOfRingBareWhereThePlanRanOutBeforeReachingIt() {
+            // The band stops where the plan does, not where the ring does. This one run fills
+            // exactly the stretch up to the name, so the long stretch beyond it carries nothing -
+            // and a pass that stroked a stretch it laid no runs on would put an uncoloured band
+            // round most of the cell.
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                CELL_SITE,
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
+                STYLE,
+                NAME_ACROSS_THE_TOP_EDGE);
+
+            assertThat(ribbon.bands())
+                .singleElement()
+                .satisfies(band -> assertThat(hasCorner(band, 2400.0, 3800.0)).isTrue());
         }
 
         @Test

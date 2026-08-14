@@ -57,10 +57,6 @@ final class CellRibbonsBuilderTest {
     private static final RibbonPlan ANY_PLAN =
         new RibbonPlan(List.of(new RibbonSegment(BAND_COLOUR, 1)));
 
-    // A map whose names lie nowhere near these cells - where the names fall is pinned by the
-    // builder that lays a band inside one cell, not by which cells are offered a band at all.
-    private static final List<List<double[]>> NO_NAMES = List.of();
-
     // A cell large enough to hold the shipped band clear of its own border.
     private static final List<double[]> SQUARE_CELL = List.of(
         new double[] {0.0, 0.0},
@@ -202,7 +198,9 @@ final class CellRibbonsBuilderTest {
                 PAINTED_SYSTEM, buildHolder(),
                 SITELESS_SYSTEM, buildHolder()),
             geometryCacheMock,
-            NO_NAMES);
+            // No names anywhere near these cells: where a name falls is pinned by the builder
+            // that lays a band inside one cell, not by which cells are offered a band at all.
+            List.of());
     }
 
     private static StarSystemAPI buildSystem(String systemId) {

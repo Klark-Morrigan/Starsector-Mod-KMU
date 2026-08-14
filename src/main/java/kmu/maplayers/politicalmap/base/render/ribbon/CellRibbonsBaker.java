@@ -28,38 +28,63 @@ import java.util.List;
  * Baking last is what lets the band keep out of the names' way instead.
  *
  * <p>The bands are read out of the cells' own recorded shapes rather than off a shaping pass, so
- * the incremental refresh re-bakes through the very same call with the cells it disturbed - which
- * is what keeps an incrementally-updated band identical to the one a full rebuild would lay.
+ * the incremental refresh re-bakes the cells it disturbed through the very same call the full
+ * rebuild bakes all of them through - which is what keeps an incrementally-updated band identical
+ * to the one a full rebuild would lay.
+ *
+ * <p>Sampled once per pass and then asked, like the band source it holds: what a pass bakes from -
+ * the cells, their geometry, and the room the names took - must not vary between the cells of one
+ * pass, and holding it is what makes baking every cell and baking a handful the same operation
+ * over the same snapshot rather than two calls that have to be handed matching inputs.
  */
 public final class CellRibbonsBaker {
-    
+
     private static final Logger LOG = Global.getLogger(CellRibbonsBaker.class);
 
-    // Bakes only; never instantiated.
-    private CellRibbonsBaker() {
+    private final PoliticalMapTerritories territories;
+    private final CellGeometryCache geometryCache;
+    private final CellRibbonsBuilder ribbonsBuilder;
+
+    private CellRibbonsBaker(
+            PoliticalMapTerritories territories,
+            CellGeometryCache geometryCache,
+            CellRibbonsBuilder ribbonsBuilder) {
+
+        this.territories = territories;
+        this.geometryCache = geometryCache;
+        this.ribbonsBuilder = ribbonsBuilder;
     }
 
     /**
-     * Bakes the band of every drawn cell, replacing whatever each was carrying.
+     * Samples everything one pass's bands are baked from.
      *
      * @param territories    the built cells, read for their shapes and written back with their
      *                       bands
      * @param geometryCache  the cells' geometry, for the system each draws as and its site
      * @param sector         the sector the counts are read from
      * @param clusterAnchors the cluster names' placements, whose boxes the bands keep out of
+     * @return the pass, ready to bake whichever cells the caller names
      */
-    public static void bakeAllCellRibbons(
+    public static CellRibbonsBaker createForPass(
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
             SectorAPI sector,
             List<ClusterAnchor> clusterAnchors) {
 
-        bakeCellRibbonsOf(
+        return new CellRibbonsBaker(
             territories,
             geometryCache,
-            sector,
-            clusterAnchors,
-            territories.getFillPolygonByCellId().keySet());
+            CellRibbonsBuilder.createForPass(
+                sector,
+                territories.getViewGrouping(),
+                territories.getHolderBySystemId(),
+                geometryCache,
+                resolveNameBoxes(clusterAnchors)));
+    }
+
+    /** Bakes the band of every drawn cell, replacing whatever each was carrying. */
+    public void bakeAllCellRibbons() {
+        bakeCellRibbonsOf(territories.getFillPolygonByCellId().keySet());
     }
 
     /**
@@ -70,33 +95,18 @@ public final class CellRibbonsBaker {
      * something happened to, and one of them losing its last colony is one of the things that
      * can have happened.
      *
-     * @param territories    the built cells, read for their shapes and written back with their
-     *                       bands
-     * @param geometryCache  the cells' geometry, for the system each draws as and its site
-     * @param sector         the sector the counts are read from
-     * @param clusterAnchors the cluster names' placements, whose boxes the bands keep out of
-     * @param cellIds        the cells to re-bake
+     * @param cellIds the cells to re-bake
      */
-    public static void bakeCellRibbonsOf(
-            PoliticalMapTerritories territories,
-            CellGeometryCache geometryCache,
-            SectorAPI sector,
-            List<ClusterAnchor> clusterAnchors,
-            Collection<String> cellIds) {
+    public void bakeCellRibbonsOf(Collection<String> cellIds) {
 
         var bakeStart = System.nanoTime();
 
         // A band's count walks a system's markets - the claim mechanic's walks all of them - so
         // this is the one part of a rebuild that could rival the known label-fit stall, and it is
         // profiled and timed on its own so a rebuild that slows down says which half slowed.
-        var bakedCells = KmuProfiling.getProfiler().measure(
-            "politicalMap.bakeRibbons",
-            () -> bakeCellRibbons(
-                territories,
-                geometryCache,
-                sector,
-                clusterAnchors,
-                cellIds));
+        var bakedCells = KmuProfiling
+            .getProfiler()
+            .measure("politicalMap.bakeRibbons", () -> bakeCellRibbons(cellIds));
 
         LOG.debug("Political map presence bands baked; cells="
             + cellIds.size()
@@ -104,21 +114,19 @@ public final class CellRibbonsBaker {
             + " took=" + Timings.formatMillis(System.nanoTime() - bakeStart));
     }
 
-    // Samples the pass's one snapshot - the counting mechanic, the sizes, and the room the names
-    // took - then bakes each named cell's band inside the shape that cell already records.
-    private static int bakeCellRibbons(
-            PoliticalMapTerritories territories,
-            CellGeometryCache geometryCache,
-            SectorAPI sector,
-            List<ClusterAnchor> clusterAnchors,
-            Collection<String> cellIds) {
+    // The room the names take up, or none at all where the player has the names switched off -
+    // in which case there is nothing on the map for a band to be interrupted by, whatever
+    // placements the anchor overlay may still be holding.
+    private static List<List<double[]>> resolveNameBoxes(List<ClusterAnchor> clusterAnchors) {
 
-        var ribbonsBuilder = CellRibbonsBuilder.createForPass(
-            sector,
-            territories.getViewGrouping(),
-            territories.getHolderBySystemId(),
-            geometryCache,
-            resolveNameBoxes(clusterAnchors));
+        return NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
+            ? ClusterNameBoxes.listNameBoxes(clusterAnchors)
+            : List.of();
+    }
+
+    // Bakes each named cell's band inside the shape that cell already records, reporting how many
+    // of them came back with anything to draw.
+    private int bakeCellRibbons(Collection<String> cellIds) {
 
         var bakedCells = 0;
 
@@ -136,15 +144,5 @@ public final class CellRibbonsBaker {
             bakedCells += ribbon.isEmpty() ? 0 : 1;
         }
         return bakedCells;
-    }
-
-    // The room the names take up, or none at all where the player has the names switched off -
-    // in which case there is nothing on the map for a band to be interrupted by, whatever
-    // placements the anchor overlay may still be holding.
-    private static List<List<double[]>> resolveNameBoxes(List<ClusterAnchor> clusterAnchors) {
-
-        return NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
-            ? ClusterNameBoxes.listNameBoxes(clusterAnchors)
-            : List.of();
     }
 }

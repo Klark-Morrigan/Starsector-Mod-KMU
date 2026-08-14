@@ -336,6 +336,36 @@ final class IncrementalPoliticsRefreshTest {
         }
 
         @Test
+        void applyStalePoliticsUpdatesReservesNoRoomForANameWhileTheNamesAreSwitchedOff() {
+            // The same name across the same cell, with the names switched off: nothing is drawn
+            // for the band to be interrupted by, so it takes the whole ring. The placements are
+            // still standing - they are built for the anchor overlay too - which is why the room
+            // they would take is read off the name choice rather than off the list being empty.
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+
+            territories.putStyledCell(
+                FLIPPED_SYSTEM,
+                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
+                buildBandSizedCell());
+
+            when(cellGeometry.cells().getSiteBySystemId())
+                .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
+
+            when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
+                .thenReturn(system -> BAND_OF_ONE_RUN);
+
+            standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
+
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(HEGEMONY));
+
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            applyTo(territories);
+
+            assertThat(territories.getRibbonByCellId())
+                .containsOnlyKeys(FLIPPED_SYSTEM);
+        }
+
+        @Test
         void applyStalePoliticsUpdatesRecordsTheNewHolderWhenASystemChangesHands() {
 
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));

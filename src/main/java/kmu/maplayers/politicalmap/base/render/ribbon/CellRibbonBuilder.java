@@ -160,8 +160,10 @@ public final class CellRibbonBuilder {
         for (var arc = 0; arc < clearArcs.size(); arc++) {
             piecesByArc.add(new ArrayList<>());
         }
+        // There is always a stretch to start on: a cell whose ring left none was answered before
+        // the plan was ever laid out, since one width would then be worth nothing.
         var arcIndex = 0;
-        var cursor = clearArcs.isEmpty() ? 0.0 : clearArcs.get(0)[0];
+        var cursor = clearArcs.get(0)[0];
 
         for (var segment = 0; segment < plan.segments().size(); segment++) {
 
@@ -205,6 +207,8 @@ public final class CellRibbonBuilder {
             List<RibbonPiece> pieces,
             RibbonStyle style) {
 
+        // A stretch of ring the plan never reached - it ran out on an earlier one - carries
+        // nothing to stroke, and a stroke of nothing is not a band the cell should hold.
         if (pieces.isEmpty()) {
             return;
         }
@@ -220,19 +224,14 @@ public final class CellRibbonBuilder {
             style.widthWorld(),
             style.miterSpikeLimit());
 
+        // One band per piece, each in the colour of the run the piece came from - read off the
+        // piece rather than off its position, since a run interrupted by a name is two pieces and
+        // a run of no length is none at all, so the two lists have not lined up since the names
+        // started cutting the ring.
         for (var piece = 0; piece < strokedSpans.size(); piece++) {
-
-            var triangles = strokedSpans.get(piece);
-
-            // A piece that came out with no area - a stretch the path collapsed - is left out
-            // rather than kept as an empty draw. The stroker keeps such a piece in place rather
-            // than dropping it, so a piece and its colour are still read off each other by
-            // position here.
-            if (!triangles.isEmpty()) {
-                bands.add(new RibbonBand(
-                    plan.segments().get(pieces.get(piece).segmentIndex()).colour(),
-                    GlVertexRuns.flattenVertices(triangles)));
-            }
+            bands.add(new RibbonBand(
+                plan.segments().get(pieces.get(piece).segmentIndex()).colour(),
+                GlVertexRuns.flattenVertices(strokedSpans.get(piece))));
         }
     }
 
