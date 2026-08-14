@@ -7,7 +7,7 @@ import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
-import kmu.maplayers.base.labels.NameLineBoxes;
+import kmu.maplayers.base.labels.LabelLineBoxes;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
@@ -145,7 +145,7 @@ public final class CellRibbonsBaker {
         }
         return switch (KmuPoliticalMapSettings.getPoliticalMapRibbonNameClearance()) {
             case FITTED_BOX -> ClusterNameBoxes.listNameBoxes(clusterAnchors);
-            case WORDS -> NameLineBoxes.listLineBoxes(clusterAnchors);
+            case WORDS -> LabelLineBoxes.listLineBoxes(clusterAnchors);
         };
     }
 

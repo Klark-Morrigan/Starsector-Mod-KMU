@@ -28,10 +28,10 @@ import java.util.List;
  * different rules. What this adds is each line's measured length and the turn from a centred line
  * into an oriented rectangle.
  */
-public final class NameLineBoxes {
+public final class LabelLineBoxes {
 
     // Derives only; never instantiated.
-    private NameLineBoxes() {
+    private LabelLineBoxes() {
     }
 
     /**

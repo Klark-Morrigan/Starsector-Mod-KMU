@@ -71,7 +71,7 @@ below that branches - `CellRibbonBuilder` takes boxes and knows nothing about wh
 empty, which is what keeps the carve testable on hand-built rings.
 
 How much room a name is taken to need is the player's as well, and the same call answers it: the
-name's fitted box (`ClusterNameBoxes`) or the drawn words (`NameLineBoxes`, the default), both from
+name's fitted box (`ClusterNameBoxes`) or the drawn words (`LabelLineBoxes`, the default), both from
 [`base.labels`](../../../../base/labels/README.md). The fitted box is the chord the placement
 search accepted, which reaches past the words by however much it beat them, so a band keeping clear
 of it gives up ring to a name the reader cannot see there. Either way the builder is handed world

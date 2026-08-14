@@ -24,7 +24,7 @@ Part of [the map-layer framework](../../README.md); see the
 ## Layout
 
 - `base.labels` (this package) - the drawn name: `Label`, `LabelsBuilder`, `LabelRenderer`,
-  the shared `LabelFonts`, and `NameLineBoxes`, which reads the room the drawn lines take.
+  the shared `LabelFonts`, and `LabelLineBoxes`, which reads the room the drawn lines take.
 - `base.labels.anchor` - the placement subsystem that decides where each name sits and paints
   its debug overlay, plus the `DiagnosticPalette` every diagnostic grades its stages by.
 - `base.labels.anchor.specifications` - the search's tuning surface, read once per rebuild:
@@ -96,7 +96,7 @@ instead, and there are two honest readings of it - both oriented world boxes, bo
 | Reading | Class | A name occupies |
 | --- | --- | --- |
 | the fitted box | [`ClusterNameBoxes`](anchor/ClusterNameBoxes.java) | the accepted line at the block's fitted girth - one box per name |
-| the words | [`NameLineBoxes`](NameLineBoxes.java) | each drawn line's measured length by one line height - one box per line |
+| the words | [`LabelLineBoxes`](LabelLineBoxes.java) | each drawn line's measured length by one line height - one box per line |
 
 The fitted box is what the search reserved and what the diagnostic overlay draws, so what is shown
 and what is kept clear of are one reading of the placement. It is also the looser of the two: the
@@ -104,7 +104,7 @@ fit accepts a chord as soon as it is at least as long as the widest wrapped line
 then drawn centred on that chord, so the box overhangs the words at both ends by however much the
 chord beat them.
 
-`NameLineBoxes` closes that gap by measuring each line at the height it renders at, off the same
+`LabelLineBoxes` closes that gap by measuring each line at the height it renders at, off the same
 plan `LabelsBuilder` mints its strings from - so what is kept clear of is what is drawn, by
 construction. Per glyph is the level below and is the wrong one: it cuts the room into a comb of
 arcs between letters, and anything laying a shape into what is left ends up in the gap between two

@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the one thing that says how much ring a name genuinely costs, and a box that quietly took its
  * length from the placement instead would pass every other check here.
  */
-final class NameLineBoxesTest {
+final class LabelLineBoxesTest {
 
     // A cluster line running east, well longer than the name it carries: what a fitted box would be
     // measured against, and what a box measured off the words must not inherit.
@@ -82,7 +82,7 @@ final class NameLineBoxesTest {
     // The boxes of one placement, measured through a width that scales with the font height the way
     // a real face does, so a box built at the wrong height fails rather than passing by chance.
     private static List<List<double[]>> measureBoxes(ClusterAnchor anchor) {
-        return NameLineBoxes.measureLineBoxes(List.of(anchor), buildCharacterWideMeasurer());
+        return LabelLineBoxes.measureLineBoxes(List.of(anchor), buildCharacterWideMeasurer());
     }
 
     private static LineWidthMeasurer buildCharacterWideMeasurer() {
