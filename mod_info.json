@@ -4,7 +4,6 @@
   "author": "Klark Morrigan",
   "utility": "true",
   "version": "0.1.0",
-  "prerelease": "true",
   "description": "Utility and quality of life tools.",
   "gameVersion": "0.98a-RC8",
   "jars": ["jars/KMU.jar"],
