@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
+import kmu.maplayers.politicalmap.dominance.ribbon.HeldSystemRibbonPlanner;
 
 /**
  * The planner behind a view whose cells are painted by held dominance and extended by claims:

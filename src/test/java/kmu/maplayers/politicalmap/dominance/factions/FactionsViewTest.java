@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.factions;
+package kmu.maplayers.politicalmap.dominance.factions;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;

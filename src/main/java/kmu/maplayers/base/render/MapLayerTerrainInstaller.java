@@ -48,7 +48,7 @@ public final class MapLayerTerrainInstaller {
 
         // After the map-layers carve, before the shared pipeline moved from the faction package
         // to base.render.
-        "kmu.maplayers.politicalmap.factions.render.FactionsPoliticalMapTerrainPlugin",
+        "kmu.maplayers.politicalmap.dominance.factions.render.FactionsPoliticalMapTerrainPlugin",
 
         // After that move, while the render surface still sat inside the political map - before
         // the map-layer carve lifted it into the framework and dropped the feature from its name.

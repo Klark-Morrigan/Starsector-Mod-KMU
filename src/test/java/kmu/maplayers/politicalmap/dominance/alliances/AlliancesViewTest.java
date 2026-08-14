@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.alliances;
+package kmu.maplayers.politicalmap.dominance.alliances;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;

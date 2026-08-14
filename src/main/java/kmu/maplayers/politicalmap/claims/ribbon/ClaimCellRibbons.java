@@ -1,10 +1,14 @@
-package kmu.maplayers.politicalmap.base.ribbon;
+package kmu.maplayers.politicalmap.claims.ribbon;
 
 import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
+import kmu.maplayers.politicalmap.base.ribbon.BlocPresence;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

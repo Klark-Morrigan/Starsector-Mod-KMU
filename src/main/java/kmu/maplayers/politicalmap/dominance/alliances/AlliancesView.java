@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.alliances;
+package kmu.maplayers.politicalmap.dominance.alliances;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
@@ -16,7 +16,7 @@ import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
-import kmu.maplayers.politicalmap.factions.FactionsView;
+import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStrings;
 

@@ -54,7 +54,7 @@ class MapLayerTerrainInstallerTest {
     private static final List<String> FORMER_TERRAIN_PLUGIN_CLASSES = List.of(
         "kmu.politicalmap.render.PoliticalMapTerrainPlugin",
         "kmu.politicalmap.render.FactionsPoliticalMapTerrainPlugin",
-        "kmu.maplayers.politicalmap.factions.render.FactionsPoliticalMapTerrainPlugin",
+        "kmu.maplayers.politicalmap.dominance.factions.render.FactionsPoliticalMapTerrainPlugin",
         "kmu.maplayers.politicalmap.base.render.PoliticalMapTerrainPlugin");
 
     // What the installer registers on the engine's XStream is checked against a stand-in rather than

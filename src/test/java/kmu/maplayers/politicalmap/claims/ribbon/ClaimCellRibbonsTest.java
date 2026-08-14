@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.ribbon;
+package kmu.maplayers.politicalmap.claims.ribbon;
 
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.factions.FactionPalette;
@@ -8,6 +8,10 @@ import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

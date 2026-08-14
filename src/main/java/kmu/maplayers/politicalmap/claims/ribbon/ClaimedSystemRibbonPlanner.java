@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.ribbon;
+package kmu.maplayers.politicalmap.claims.ribbon;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
@@ -7,6 +7,11 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.politicalmap.base.ribbon.SectorBlocPalettes;
+import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 
 /**
  * The live read behind a claimed cell's band: the contest that settled the system's claim,

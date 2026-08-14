@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.alliances;
+package kmu.maplayers.politicalmap.dominance.alliances;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 

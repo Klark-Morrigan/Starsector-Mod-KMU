@@ -19,11 +19,11 @@ import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 import kmu.maplayers.politicalmap.base.politics.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
-import kmu.maplayers.politicalmap.base.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
-import kmu.maplayers.politicalmap.factions.FactionsView;
+import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
+import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
 import kmu.util.KmuStrings;
 
 import java.util.Optional;

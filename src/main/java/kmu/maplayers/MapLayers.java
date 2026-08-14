@@ -4,12 +4,12 @@ import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.NoLayer;
-import kmu.maplayers.politicalmap.alliances.AlliancesView;
 import kmu.maplayers.politicalmap.base.PoliticalMapLayer;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.claims.ClaimsView;
-import kmu.maplayers.politicalmap.factions.FactionsView;
+import kmu.maplayers.politicalmap.dominance.alliances.AlliancesView;
+import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import java.util.ArrayList;

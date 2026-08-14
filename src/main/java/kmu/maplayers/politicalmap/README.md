@@ -123,6 +123,15 @@ directly and pairs its own list with its own vocabulary rather than widening the
 
 ## Where each part lives
 
+The top level is divided by *mechanic*, not by view: `dominance` holds the two views painted by the
+market contest - `dominance/factions` and `dominance/alliances`, which differ only in how they group
+- and `claims` is its peer, painted by the vanilla claim mechanic. A view is not a unit of anything
+except its own rules, so grouping Factions beside Claims put two mechanics on one shelf and split
+one mechanic across two; anything a mechanic owns beyond its views (its ribbon counting, so far)
+folds in beside them rather than pooling in `base`. What stays in `base` is what every mechanic
+shares: the view seam itself, the pipeline the seam feeds, and the vocabulary both sides state their
+answers in.
+
 - **[Ownership resolution](base/politics/holders/README.md)** - the per-view ownership seam, the
   three sources, the three fill states, and the claim mechanic.
 - **[Territory fills and borders](base/render/territories/README.md)** - how cells become each
@@ -306,21 +315,22 @@ number of points with no grid behind it, so no rating-to-weight change is stated
 per market every bloc present in the cell holds, runs of one bloc parted by its dark shade and two
 blocs' runs butted so the colour change is the only boundary, and no band at all on a cell no bloc
 but the one it was painted for is present in - `RibbonPlan` over a ranked list of `BlocPresence`,
-emitted as `RibbonSegment`s at the two proportions `RibbonSegmentLengths` pairs. Where the counts
-behind those runs come from is each mechanic's own business, which is what keeps one band meaning one
-thing on every view: a held cell's count is `MarketFootprint.marketCount`, folded over the very
-colonies the dominance pass scored and ordered by `HeldCellRibbons` - the painted bloc first
-whatever gave it the system, then the rest by the standings' own two keys - while a claimed cell's
-is read out of the claim contest by
-`ClaimCellRibbons` - each faction's standing market
-plus the siblings that both told on its score and are colonies the player knows about, folded to blocs
-under the same `HolderGrouping` the fills use and coloured through `BlocPaletteReader`, so the one
-live read sits outside the rule.
-Which of the two answers for a cell is the view's own call, made through the `SystemRibbonPlanner`
-seam beside its holder source and its hover box: the claims view counts every cell from the contest,
-and the held layers count each system by the mechanic that painted it - held dominance where a bloc
-holds something, the contest where only a claim does, told apart by the very economy read the held
-count needs anyway. `render.ribbon` then lays a plan around its cell: `RingPath` traces the ring
+emitted as `RibbonSegment`s at the two proportions `RibbonSegmentLengths` pairs. Only that shared
+vocabulary is here, plus the two ports the rule is stated over - `BlocPaletteReader` for a bloc's
+shades and `SystemRibbonPlanner` for the counting itself - because where the counts come from is
+each mechanic's own business, and that is what keeps one band meaning one thing on every view. Each
+mechanic's counting rule therefore lives with the mechanic. A held cell's count is
+`MarketFootprint.marketCount`, folded over the very colonies the dominance pass scored, ordered by
+[`HeldCellRibbons`](dominance/ribbon/HeldCellRibbons.java) - the painted bloc first whatever gave it
+the system, then the rest by the standings' own two keys. A claimed cell's is read out of the claim
+contest by [`ClaimCellRibbons`](claims/ribbon/ClaimCellRibbons.java) - each faction's standing
+market plus the siblings that both told on its score and are colonies the player knows about. Both
+fold to blocs under the same `HolderGrouping` the fills use, and which of them answers for a cell is
+the view's own call, made through that seam beside its holder source and its hover box. The one
+composition that spans both - held dominance where a bloc holds something, the contest where only a
+claim does, told apart by the very economy read the held count needs anyway - stays here with the
+seam, as the claim-augmented holder source does one level down.
+`render.ribbon` then lays a plan around its cell: `RingPath` traces the ring
 inset by the pad and half the width, the length one width is worth is cut down where the whole band
 would outrun that ring (so a crowded cell compresses rather than losing a bloc off the end), and
 each run is stroked into the mitred triangles of a `RibbonBand`. All of it world-sized and baked at

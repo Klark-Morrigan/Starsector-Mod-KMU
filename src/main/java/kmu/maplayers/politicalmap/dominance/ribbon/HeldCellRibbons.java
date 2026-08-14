@@ -1,6 +1,10 @@
-package kmu.maplayers.politicalmap.base.ribbon;
+package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
+import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
+import kmu.maplayers.politicalmap.base.ribbon.BlocPresence;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 
 import java.util.ArrayList;
 import java.util.Comparator;

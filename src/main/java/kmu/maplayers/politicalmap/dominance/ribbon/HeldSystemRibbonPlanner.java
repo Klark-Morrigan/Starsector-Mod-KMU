@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.ribbon;
+package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
@@ -6,6 +6,11 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
+import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.politicalmap.base.ribbon.SectorBlocPalettes;
+import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 
 import java.util.Optional;
 
