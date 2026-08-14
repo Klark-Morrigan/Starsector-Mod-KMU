@@ -1,78 +1,43 @@
 package kmu.maplayers.base.geometry;
 
-import kmlib.math.geometry.Points;
-import kmlib.math.geometry.PolygonRegions;
-
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The void a run of bridges closes around, as shapes to draw.
+ * The void the bridges close around, as shapes to draw.
  *
- * <p>Bridges say which void two cells hold between them, but a bridge is a line and a line
- * has nothing to fill. What is wanted is the space a connected run of them shuts in - and at
- * the same quality as {@link VoidPockets} draws its own, which means the same construction
- * rather than an imitation of it.
+ * <p>A bridge is a line, and a line has nothing to fill. What is wanted is the space a run of
+ * them shuts in, drawn to the same standard {@link VoidPockets} draws its own.
  *
- * <p><b>The reach is what makes that possible.</b> A pocket in {@code VoidPockets} is not a
- * shape that gets offset; it is defined outright as the points further than some reach from
- * every site, so its outline at any other reach is another trace rather than an offset of the
- * first. That is where its exactness comes from: every corner is where two circles actually
- * cross, and nothing is ever mitred to a guess.
+ * <p><b>Only a bridge that closes a ring shuts anything in.</b> One whose two cells were
+ * already reachable from each other completes a loop, and a loop has an inside; one that
+ * joins two things not otherwise connected merely strings them together, and a chain of those
+ * encloses no more than a single one does. Everything beyond such a chain is the unbounded
+ * outside, so treating every bridge as enclosing fills the ocean in.
  *
- * <p>A bridged pocket can be defined the same way, because a bridge is only ever a gap that
- * is nearly closed. A corridor of width {@code w} shuts the moment every cell reaches
- * {@code w / 2} further, so the void a run of bridges captures is exactly a hole in the union
- * of the discs at that grown reach. Which is what the four-reach range was always saying: at
- * four reaches apart a whole further cell fits the gap, so half its width is what closing the
- * gap costs.
+ * <p>Those bridges are then handed to {@link DiscUnionBoundary} as chords and traced along
+ * with the arcs, rather than cut into a finished outline. The cells' borders and the chords
+ * are both boundary, so the shape is what walking them together closes around - and because
+ * a chord meets a circle at the one angle facing the other circle, its ends are vertices of
+ * that walk by construction. Cutting instead means finding where the chord went on a sampled
+ * outline, and finding is what strays.
  *
- * <p>So there is no new geometry here and no offsetting anywhere. A captured pocket is traced
- * at the grown reach, its channel is taken out by tracing again at the grown reach plus the
- * channel, and both are the shared arc walk. Everything that makes the first construction
- * exact holds here for the same reasons.
+ * <p>Which piece is void needs no asking either. A cycle that winds against the silhouettes
+ * has void inside it, whether it was closed by a chord or by the cells alone, so the bays the
+ * bridges wall off and the pockets the cells enclose come out of the same test.
  *
- * <p><b>This does not work, and the reason is the growth itself.</b> The construction was
- * argued for on the grounds that the shrink it costs would read as deliberate. On screen it
- * does not: the growth is half a bridge's width, which runs to thousands of units against a
- * channel of a hundred and fifty, so every fill sits back from the cells by roughly twelve
- * times the gap the rest of the map uses and reads as a hole in the drawing rather than as a
- * pocket. No sweep or threshold fixes that - the shift is the method.
+ * <p><b>Nothing here is offset.</b> The arcs come from a trace at the reach that leaves the
+ * channel, exactly as the other construction gets its outline. The chord takes no channel of
+ * its own: a channel separates a fill from what lies across it, and what lies across a bridge
+ * is the same void rather than another fill, so insetting there would open a gap against
+ * nothing.
  *
- * <p>A second fault compounds it. A hole is kept when a bridge midpoint lies inside it, but at
- * the larger growths separate pockets merge into single vast regions that still contain a
- * midpoint, so those are captured too - and the dedupe that was meant to drop a pocket met
- * twice compares a hole's mean boundary point, which for a star-shaped pocket falls outside
- * the pocket, so the same region survives at several growths and is painted over itself.
- *
- * <p>What it has to be instead is the mixed offset: arcs re-reached to {@code r + channel} and
- * the bridge chords shifted perpendicular into the pocket by the channel, with each corner
- * taken as the intersection of the two offset edges meeting there. Arc-to-line and
- * line-to-line intersections are both closed form, so that stays exact and never mitres a
- * corner it cannot see - it keeps the guarantee this shortcut was trying to borrow.
- *
- * <p><b>How far to grow is swept rather than chosen.</b> The first attempt grew by the
- * widest bridge in each connected run of them, on the reasoning that only bridges sharing a
- * pocket bear on each other. That was wrong by a mile: bridges join nearly every cell on the
- * map into one run, so the widest bridge anywhere set the growth everywhere, and a growth of
- * almost a whole reach merged the sector into four pockets.
- *
- * <p>So the growth is swept from nothing up to half the widest bridge, and each pocket is
- * kept from the first step that closes it. That is the least-grown version of it, which is
- * the largest and the truest - a pocket shut by a narrow corridor keeps almost all of its
- * void, and only one shut by a wide one pays for it. Holes shrink as the growth rises, so a
- * pocket met again at a later step sits inside the one already kept and is dropped.
+ * <p>{@link #measureWorstChordStray} is the check that governs this. A fill can sit perfectly
+ * against every cell and still close on a line nowhere near its bridge, so measuring the
+ * distance to the cells proves nothing about the part that can go wrong; the distance from
+ * each chord end to the outline that should carry it is the number that can fail.
  */
 final class VoidBridgePockets {
-
-    // Half, because closing a corridor means each of the two cells either side of it reaching
-    // half the distance across.
-    private static final double CELLS_PER_GAP = 2;
-
-    // How many growths to try between nothing and enough to close the widest bridge. Enough
-    // that a pocket shut by a narrow corridor is not charged for a wide one elsewhere, few
-    // enough that the whole sweep stays quick enough to sit behind a slider.
-    private static final int GROWTH_STEPS = 8;
 
     private VoidBridgePockets() {
     }
@@ -136,6 +101,136 @@ final class VoidBridgePockets {
         return capturing;
     }
 
+    /**
+     * Finds what the bridges close around, shaped ready to draw.
+     *
+     * <p>EVERY bridge becomes a chord across the union of the cells' reach discs, and the
+     * whole boundary - arcs and chords together - is walked in one pass. Every cycle that
+     * comes out winding against the silhouettes has void inside it: the bays the chords wall
+     * off, and the pockets the cells enclose without any help from a bridge.
+     *
+     * <p>Every one, rather than only the ring-closing ones, because the winding is what says
+     * whether anything was shut in and it can only say so about boundary that is actually
+     * there. A chain of bridges shuts in nothing, and traced it shuts in nothing - it draws a
+     * dumbbell that winds like any other silhouette. But leave the chain out and lay only the
+     * bridge that closes the ring, and its two ends sit on two silhouettes with nothing drawn
+     * between them, so it strings THOSE together instead and the pocket never appears.
+     *
+     * <p>{@link #findCapturingBridges} is then the independent second opinion rather than a
+     * filter: it counts the same rings by walking the graph, so its count and the number of
+     * pockets that come back are two different computations of one thing.
+     *
+     * <p>Traced at the reach that leaves the channel, exactly as the other construction gets
+     * its own outline, so nothing here is offset. The chord takes no channel of its own,
+     * because a channel separates a fill from what lies across it and what lies across a
+     * bridge is the same void, not another fill. Insetting there would open a gap against
+     * nothing.
+     *
+     * @param sites       the sites
+     * @param bridges     the bridges, as {@link VoidBridges} found them
+     * @param parameters  the knobs the cells are built under
+     * @param arcSegments how finely a half-turn of arc is sampled
+     * @return one outline per captured pocket, at the reach that leaves the channel
+     */
+    static List<List<double[]>> findCapturedPockets(
+            List<double[]> sites,
+            List<CellGaps.CellGap> bridges,
+            SectorGeometryParameters parameters,
+            int arcSegments) {
+
+        var outlines = new ArrayList<List<double[]>>();
+
+        for (var hole : DiscUnionBoundary.traceHolesAcrossChords(
+                sites,
+                measureDrawnReach(parameters),
+                arcSegments,
+                buildChords(bridges))) {
+
+            outlines.add(hole.boundary());
+        }
+        return outlines;
+    }
+
+    /**
+     * How far the worst captured outline strays from the bridge it should close on.
+     *
+     * <p>The check the earlier attempts lacked. Both measured how far a fill sat from the
+     * CELLS, which was never what was broken - a fill can sit perfectly against every cell
+     * and still close on a line nowhere near its bridge, which is what happened. This asks
+     * the question that can actually fail.
+     *
+     * <p>Only the chords that could be laid are looked for. One whose end is buried inside
+     * another disc is not on the boundary and was never traced, so demanding an outline
+     * carry it would fail the construction for doing the right thing.
+     *
+     * @param captured   what {@link #findCapturedPockets} handed back
+     * @param sites      the sites
+     * @param bridges    the bridges, as {@link VoidBridges} found them
+     * @param parameters the knobs the cells are built under
+     * @return the largest distance from any chord end to the nearest vertex of any captured
+     *         outline, which is zero when every fill closes on its own bridge
+     */
+    static double measureWorstChordStray(
+            List<List<double[]>> captured,
+            List<double[]> sites,
+            List<CellGaps.CellGap> bridges,
+            SectorGeometryParameters parameters) {
+
+        var drawnReach = measureDrawnReach(parameters);
+        var worst = 0.0;
+
+        for (var chord : DiscUnionBoundary.findAttachableChords(
+                sites,
+                drawnReach,
+                buildChords(findCapturingBridges(sites, bridges, parameters.cellRadius())))) {
+
+            for (var end : List.of(
+                    DiscUnionBoundary.findChordEnd(
+                        sites, drawnReach, chord.fromCircle(), chord.toCircle()),
+                    DiscUnionBoundary.findChordEnd(
+                        sites, drawnReach, chord.toCircle(), chord.fromCircle()))) {
+
+                worst = Math.max(worst, measureDistanceToNearestVertex(captured, end));
+            }
+        }
+        return worst;
+    }
+
+    // The bridges as the chords they become on the boundary: the pair of cells and nothing
+    // else, because a chord's ends are fixed by which circles it runs between.
+    private static List<DiscUnionBoundary.Chord> buildChords(List<CellGaps.CellGap> bridges) {
+
+        var chords = new ArrayList<DiscUnionBoundary.Chord>();
+
+        for (var bridge : bridges) {
+            chords.add(new DiscUnionBoundary.Chord(bridge.fromSite(), bridge.toSite()));
+        }
+        return chords;
+    }
+
+    // The reach the fills are drawn at: far enough out to leave the channel between a fill
+    // and the cells around it.
+    private static double measureDrawnReach(SectorGeometryParameters parameters) {
+        return parameters.cellRadius() + parameters.borderInset();
+    }
+
+    private static double measureDistanceToNearestVertex(
+            List<List<double[]>> outlines,
+            double[] point) {
+
+        var nearest = Double.MAX_VALUE;
+
+        for (var outline : outlines) {
+            for (var vertex : outline) {
+
+                nearest = Math.min(
+                    nearest,
+                    Math.hypot(vertex[0] - point[0], vertex[1] - point[1]));
+            }
+        }
+        return nearest == Double.MAX_VALUE ? 0 : nearest;
+    }
+
     private static int findReach(int[] reachedFrom, int site) {
 
         var root = site;
@@ -159,95 +254,5 @@ final class VoidBridgePockets {
 
     private static void joinReach(int[] reachedFrom, int first, int second) {
         reachedFrom[findReach(reachedFrom, first)] = findReach(reachedFrom, second);
-    }
-
-    /**
-     * Finds what the bridges close around, shaped ready to draw.
-     *
-     * @param sites       the sites
-     * @param bridges     the bridges, as {@link VoidBridges} found them
-     * @param parameters  the knobs the cells are built under, for the reach the growth starts
-     *                    from and the channel every fill gives up
-     * @param arcSegments how finely a half-turn of arc is sampled
-     * @return one outline per captured pocket, at the reach that leaves the channel, so a
-     *         caller can fill them beside the cells with nothing touching
-     */
-    static List<List<double[]>> findCapturedPockets(
-            List<double[]> sites,
-            List<CellGaps.CellGap> bridges,
-            SectorGeometryParameters parameters,
-            int arcSegments) {
-
-        var captured = new ArrayList<List<double[]>>();
-        var widest = measureWidestBridge(bridges);
-
-        for (var step = 1; step <= GROWTH_STEPS; step++) {
-
-            var grown = parameters.cellRadius()
-                + widest / CELLS_PER_GAP * step / GROWTH_STEPS;
-
-            var atGrown = DiscUnionBoundary.traceHolesAtReach(sites, grown, arcSegments);
-
-            var withChannel = DiscUnionBoundary.traceHolesAtReach(
-                sites,
-                grown + parameters.borderInset(),
-                arcSegments);
-
-            for (var hole : atGrown) {
-
-                // Only holes a bridge shut, and only the first time each is met. Growing the
-                // reach closes every corridor narrower than the growth whether a bridge
-                // claimed it or not, and a pocket already kept from an earlier step is met
-                // again here as a smaller version of itself.
-                if (doesAnyBridgeCross(hole, bridges) && !isAlreadyCaptured(captured, hole)) {
-
-                    captured.addAll(DiscUnionBoundary.findHolesInside(withChannel, hole));
-                }
-            }
-        }
-        return captured;
-    }
-
-    private static double measureWidestBridge(List<CellGaps.CellGap> bridges) {
-
-        var widest = 0.0;
-
-        for (var bridge : bridges) {
-            widest = Math.max(widest, bridge.width());
-        }
-        return widest;
-    }
-
-    // Whether anything already kept holds this hole's middle. A pocket met at a later, larger
-    // growth is the same pocket shrunk, so it lands inside the version already taken.
-    private static boolean isAlreadyCaptured(
-            List<List<double[]>> captured,
-            VoidHole hole) {
-
-        var middle = Points.computeMean(hole.boundary());
-
-        for (var outline : captured) {
-
-            if (PolygonRegions.isPointInsideRing(outline, middle[0], middle[1])) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // Whether a bridge shut this hole, asked by whether one lies in it. A bridge that closed
-    // a hole runs across the mouth it closed, so its midpoint sits inside.
-    private static boolean doesAnyBridgeCross(VoidHole hole, List<CellGaps.CellGap> bridges) {
-
-        for (var bridge : bridges) {
-
-            var middleX = (bridge.start()[0] + bridge.end()[0]) / 2;
-            var middleY = (bridge.start()[1] + bridge.end()[1]) / 2;
-
-            if (PolygonRegions.isPointInsideRing(hole.boundary(), middleX, middleY)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

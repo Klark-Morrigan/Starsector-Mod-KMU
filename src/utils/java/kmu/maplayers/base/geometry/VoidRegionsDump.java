@@ -576,6 +576,23 @@ final class VoidRegionsDump {
             capturing.size(),
             bridges.size() - capturing.size());
 
+        var captured = VoidBridgePockets.findCapturedPockets(
+            fixture.getSites(),
+            bridges,
+            SectorGeometryParameters.createDefaults(),
+            CELL_BOUND_SEGMENTS / 2);
+
+        System.out.printf(
+            Locale.ROOT,
+            "walking the cells' borders with those bridges laid across them closes %d "
+                + "pockets; worst fill edge strays %.1f from its bridge (has to be 0)%n",
+            captured.size(),
+            VoidBridgePockets.measureWorstChordStray(
+                captured,
+                fixture.getSites(),
+                bridges,
+                SectorGeometryParameters.createDefaults()));
+
         System.out.printf(
             Locale.ROOT,
             "void bridges at %.0f cell radii apart: %d, of which %d span void no pocket "

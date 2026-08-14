@@ -529,6 +529,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             }
 
             voidPockets.paintFills(g2);
+            voidBridges.paintFills(g2);
 
             // The channel is the ring a cell leaves between its true edge and its inset
             // fill, so painting the whole true cell and letting the fill cover the middle

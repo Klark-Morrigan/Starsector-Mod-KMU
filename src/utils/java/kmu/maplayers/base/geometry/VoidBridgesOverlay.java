@@ -62,6 +62,29 @@ final class VoidBridgesOverlay {
     }
 
     /**
+     * Draws the void the bridges close around, beneath the cells.
+     *
+     * <p>Under them for the same reason the other construction's fills are: a stray edge
+     * then reads as the mistake it is rather than painting over the shape it got wrong.
+     *
+     * @param g2 what to draw with
+     */
+    void paintFills(Graphics2D g2) {
+
+        g2.setStroke(new BasicStroke(ViewerPainting.SPAN_STROKE / SPAN_STROKES_PER_EDGE));
+
+        for (var outline : captured) {
+
+            ViewerPainting.paintFilledShape(
+                g2,
+                ViewerPainting.buildPath(outline),
+                settings.wideVoidColour,
+                settings.voidCellOpacity,
+                settings.wideVoidEdge);
+        }
+    }
+
+    /**
      * Draws every bridge, over the top of everything.
      *
      * <p>Untrimmed, unlike a pocket's cuts: there is no inset fill for a bridge to stop

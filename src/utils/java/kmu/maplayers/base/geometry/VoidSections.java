@@ -1,6 +1,5 @@
 package kmu.maplayers.base.geometry;
 
-import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.PolygonRegions;
 
 import java.util.ArrayList;
@@ -69,13 +68,6 @@ final class VoidSections {
 
     // A pocket that wants one section is the pocket. Nothing to cut.
     private static final int UNDIVIDED = 1;
-
-    // How far an end of a cut may sit from the nearest vertex of a piece's outline and still
-    // be taken as lying on it, as a multiple of how far apart that outline's own vertices
-    // are. Scaled to the outline rather than fixed, because how finely the arcs were sampled
-    // is a knob, and a fixed tolerance would read as correct at one setting and reject every
-    // cut at another.
-    private static final double SNAP_VERTEX_SPACINGS = 1.5;
 
     private VoidSections() {
     }
@@ -233,7 +225,7 @@ final class VoidSections {
         pieces.add(boundary);
 
         var cuts = new ArrayList<CellGaps.CellGap>(wantedCuts);
-        var snapDistance = measureLongestVertexGap(boundary) * SNAP_VERTEX_SPACINGS;
+        var snapDistance = PolygonChords.measureSnapDistance(boundary);
 
         for (var candidate : candidates) {
 
@@ -241,13 +233,14 @@ final class VoidSections {
                 break;
             }
 
-            var landing = findLanding(pieces, candidate, snapDistance);
+            var landing = PolygonChords.findLanding(
+                pieces, candidate.start(), candidate.end(), snapDistance);
 
             if (landing == null) {
                 continue;
             }
 
-            var halves = splitPiece(landing, candidate);
+            var halves = PolygonChords.splitPiece(landing, candidate.start(), candidate.end());
 
             if (halves.isEmpty() || !doHalvesHoldSections(halves, leastSectionArea)) {
                 continue;
@@ -281,58 +274,6 @@ final class VoidSections {
         return true;
     }
 
-    // Where on the pocket a cut comes down, or null when its two ends come down on two
-    // different pieces - which is what a cut crossing one already taken looks like.
-    private static Landing findLanding(
-            List<List<double[]>> pieces,
-            CellGaps.CellGap candidate,
-            double snapDistance) {
-
-        for (var index = 0; index < pieces.size(); index++) {
-
-            var piece = pieces.get(index);
-            var start = findNearestVertex(piece, candidate.start());
-            var end = findNearestVertex(piece, candidate.end());
-
-            if (start != end
-                    && measureDistance(piece.get(start), candidate.start()) <= snapDistance
-                    && measureDistance(piece.get(end), candidate.end()) <= snapDistance) {
-
-                return new Landing(index, piece, start, end);
-            }
-        }
-        return null;
-    }
-
-    // The two pieces a cut leaves. Its ends replace the outline vertices they landed nearest,
-    // rather than being inserted beside them, so each half closes exactly on the cut and the
-    // two halves meet along it with nothing between them.
-    private static List<List<double[]>> splitPiece(Landing landing, CellGaps.CellGap candidate) {
-
-        var piece = landing.outline();
-        var first = Math.min(landing.atStart(), landing.atEnd());
-        var second = Math.max(landing.atStart(), landing.atEnd());
-
-        var atFirst = first == landing.atStart() ? candidate.start() : candidate.end();
-        var atSecond = first == landing.atStart() ? candidate.end() : candidate.start();
-
-        var near = new ArrayList<double[]>();
-        near.add(atFirst);
-        near.addAll(piece.subList(first + 1, second));
-        near.add(atSecond);
-
-        var far = new ArrayList<double[]>();
-        far.add(atSecond);
-        far.addAll(piece.subList(second + 1, piece.size()));
-        far.addAll(piece.subList(0, first));
-        far.add(atFirst);
-
-        return near.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA
-                || far.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA
-            ? List.of()
-            : List.of(near, far);
-    }
-
     // Unsigned, because a pocket's outline winds the opposite way to a filled shape's and
     // the pieces cut out of it inherit that. Which way a piece is wound says nothing about
     // how much of the pocket it holds, which is the only thing asked of it here.
@@ -340,39 +281,7 @@ final class VoidSections {
         return Math.abs(PolygonRegions.computeSignedArea(piece));
     }
 
-    private static int findNearestVertex(List<double[]> piece, double[] point) {
 
-        var nearest = 0;
-        var least = Double.MAX_VALUE;
-
-        for (var index = 0; index < piece.size(); index++) {
-
-            var distance = measureDistance(piece.get(index), point);
-
-            if (distance < least) {
-                least = distance;
-                nearest = index;
-            }
-        }
-        return nearest;
-    }
-
-    // How far apart the outline's vertices are at their widest, which is the scale below
-    // which a point is indistinguishable from lying on the outline.
-    private static double measureLongestVertexGap(List<double[]> boundary) {
-
-        var longest = 0.0;
-
-        for (var index = 0; index < boundary.size(); index++) {
-
-            longest = Math.max(
-                longest,
-                measureDistance(
-                    boundary.get(index),
-                    boundary.get((index + 1) % boundary.size())));
-        }
-        return longest;
-    }
 
     // Kept local for the same reason VoidPockets keeps its own: kmlib's Points.computeDistance
     // is overloaded on an LWJGL vector type the tooling has no classpath for, so the call will
@@ -381,28 +290,4 @@ final class VoidSections {
         return Math.hypot(to[0] - from[0], to[1] - from[1]);
     }
 
-    /**
-     * Where a cut comes down on the pocket: which piece it falls on, and which vertices of
-     * that piece's outline its two ends land nearest.
-     *
-     * <p>The outline and its two vertices are carried rather than found again when the piece
-     * is split, because they are what decides both questions - whether the cut can be taken
-     * at all, and where the outline is opened to take it. Working them out twice would let
-     * the two answers disagree, and the split would then be made somewhere the cut was never
-     * checked. Carrying the outline itself alongside its index does the same for the piece:
-     * handed both separately, a caller can pass an outline that is not the one the index
-     * names, and the split lands on a piece nothing was ever measured against.
-     *
-     * @param piece   which piece of the pocket the cut falls on, for replacing it with the
-     *                two the cut leaves
-     * @param outline that piece's own outline, which the cut is measured and opened against
-     * @param atStart the vertex of {@code outline} its {@code start} end landed nearest
-     * @param atEnd   the vertex its {@code end} end landed nearest
-     */
-    private record Landing(
-        int piece,
-        List<double[]> outline,
-        int atStart,
-        int atEnd) {
-    }
 }
