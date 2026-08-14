@@ -36,11 +36,9 @@ import java.util.List;
  * their own: their discs overlap, which is what made them neighbours, so their crossing has
  * negative width and never becomes a candidate. There is no adjacency test.
  *
- * <p>A crossing is only a cut if it stays in the void the whole way. Two cells can be close
- * without the space between them being part of this pocket - a third cell may sit across the
- * line, in which case the crossing runs through that cell rather than through the gap. So
- * each candidate is checked against every site: no site may come within reach of the
- * segment.
+ * <p>A crossing is only a cut if it stays in the void the whole way, which {@link CellGaps}
+ * answers - a third cell can sit across the line between two that are close, and the space
+ * between them then belongs to that cell rather than to this pocket.
  *
  * <p><b>Narrowest is not, on its own, the right cut.</b> The narrowest place in a pocket is
  * almost never its waist - it is the tip of one of its arms, where two cells run nearly
@@ -72,12 +70,6 @@ final class VoidSections {
     // A pocket that wants one section is the pocket. Nothing to cut.
     private static final int UNDIVIDED = 1;
 
-    // Slack on "is this site far enough from the cut", in world units. A site whose circle
-    // grazes the segment is on the boundary of the test, and the sector is measured in tens
-    // of thousands, so this is small enough to change no real answer and large enough to
-    // stop a grazing site being read as a blocking one by a rounding.
-    private static final double COVER_TOLERANCE = 1e-6;
-
     // How far an end of a cut may sit from the nearest vertex of a piece's outline and still
     // be taken as lying on it, as a multiple of how far apart that outline's own vertices
     // are. Scaled to the outline rather than fixed, because how finely the arcs were sampled
@@ -89,21 +81,6 @@ final class VoidSections {
     }
 
     /**
-     * One crossing of a pocket, dividing what is on either side of it.
-     *
-     * @param from  where it meets the outline on one side
-     * @param to    where it meets the outline on the other
-     * @param width how wide the corridor is there, measured at the reach that defines the
-     *              void rather than the reach the pocket is drawn at, so two cuts stay
-     *              comparable when the channel width is changed
-     */
-    record VoidCut(
-        double[] from,
-        double[] to,
-        double width) {
-    }
-
-    /**
      * What a pocket came out divided into.
      *
      * <p>The sections come back alongside the cuts because they are the only thing that says
@@ -111,13 +88,13 @@ final class VoidSections {
      * owed and still be badly divided, if what those cuts left is one large piece and a row
      * of small ones.
      *
-     * @param cuts     where it was cut, in the order the cuts were taken
+     * @param cuts     the corridors it was cut across, in the order the cuts were taken
      * @param sections what those cuts left, as closed outlines at the reach that defines the
      *                 void, largest first - one entry holding the whole pocket when it was
      *                 not cut at all
      */
     record VoidDivision(
-        List<VoidCut> cuts,
+        List<CellGaps.CellGap> cuts,
         List<List<double[]>> sections) {
     }
 
@@ -203,9 +180,9 @@ final class VoidSections {
         // sites break ties, and only so that two equally narrow crossings are always offered
         // in the same order.
         candidates.sort(Comparator
-            .comparingDouble(Crossing::width)
-            .thenComparingInt(Crossing::fromSite)
-            .thenComparingInt(Crossing::toSite));
+            .comparingDouble(CellGaps.CellGap::width)
+            .thenComparingInt(CellGaps.CellGap::fromSite)
+            .thenComparingInt(CellGaps.CellGap::toSite));
 
         var pocketArea = measureArea(hole.boundary());
 
@@ -220,71 +197,34 @@ final class VoidSections {
     // spanning it. The pair is the cut: with one reach for every cell, the narrowest crossing
     // between two of them is the one along the line joining their sites, so there is one
     // candidate per pair and no shorter one to look for.
-    private static List<Crossing> findCrossings(
+    private static List<CellGaps.CellGap> findCrossings(
             List<Integer> ringing,
             List<double[]> sites,
             double trueReach) {
 
-        var crossings = new ArrayList<Crossing>();
+        var crossings = new ArrayList<CellGaps.CellGap>();
 
         for (var first = 0; first < ringing.size(); first++) {
             for (var second = first + 1; second < ringing.size(); second++) {
 
-                var fromSite = ringing.get(first);
-                var toSite = ringing.get(second);
+                var gap = CellGaps.findGapBetween(
+                    sites,
+                    ringing.get(first),
+                    ringing.get(second),
+                    trueReach);
 
-                var from = sites.get(fromSite);
-                var to = sites.get(toSite);
-                var separation = measureDistance(from, to);
-                var width = separation - 2 * trueReach;
-
-                // Non-positive means the two cells overlap, which is what makes them
-                // neighbours around the pocket - there is no corridor between them to cut.
-                if (width <= 0) {
-                    continue;
+                if (gap != null && CellGaps.isGapClear(gap, sites, trueReach)) {
+                    crossings.add(gap);
                 }
-
-                var start = projectAlong(from, to, trueReach, separation);
-                var end = projectAlong(to, from, trueReach, separation);
-
-                if (!isCrossingClear(sites, trueReach, start, end)) {
-                    continue;
-                }
-
-                crossings.add(new Crossing(fromSite, toSite, width, start, end));
             }
         }
         return crossings;
     }
 
-    // Whether the corridor between two cells is really open, or whether some third cell lies
-    // across it. Two cells being close says nothing on its own: the space between them can
-    // belong to a cell that sits between them rather than to the pocket, and a cut drawn
-    // there would run straight through that cell.
-    // The corridor's own two cells need no exempting, which is why they are not passed. The
-    // segment runs between their circles rather than between their sites, so it begins and
-    // ends exactly one reach from each of them along the line joining them - the nearest
-    // point on it to either site is that site's own end of it, at exactly the reach. Neither
-    // can come in under the reach, so neither can fail a test that asks for strictly less.
-    private static boolean isCrossingClear(
-            List<double[]> sites,
-            double trueReach,
-            double[] start,
-            double[] end) {
-
-        for (var site : sites) {
-
-            if (measureDistanceToSegment(site, start, end) < trueReach - COVER_TOLERANCE) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     // Takes cuts in the order offered, keeping the ones that leave a section's worth on both
     // sides of them.
     private static VoidDivision takeDividingCuts(
-            List<Crossing> candidates,
+            List<CellGaps.CellGap> candidates,
             List<double[]> boundary,
             int wantedCuts,
             double leastSectionArea) {
@@ -292,7 +232,7 @@ final class VoidSections {
         var pieces = new ArrayList<List<double[]>>();
         pieces.add(boundary);
 
-        var cuts = new ArrayList<VoidCut>(wantedCuts);
+        var cuts = new ArrayList<CellGaps.CellGap>(wantedCuts);
         var snapDistance = measureLongestVertexGap(boundary) * SNAP_VERTEX_SPACINGS;
 
         for (var candidate : candidates) {
@@ -316,7 +256,7 @@ final class VoidSections {
             pieces.remove(landing.piece());
             pieces.addAll(halves);
 
-            cuts.add(new VoidCut(candidate.start(), candidate.end(), candidate.width()));
+            cuts.add(candidate);
         }
 
         // Largest first, so the piece most likely to still want dividing is the one read
@@ -345,7 +285,7 @@ final class VoidSections {
     // different pieces - which is what a cut crossing one already taken looks like.
     private static Landing findLanding(
             List<List<double[]>> pieces,
-            Crossing candidate,
+            CellGaps.CellGap candidate,
             double snapDistance) {
 
         for (var index = 0; index < pieces.size(); index++) {
@@ -367,7 +307,7 @@ final class VoidSections {
     // The two pieces a cut leaves. Its ends replace the outline vertices they landed nearest,
     // rather than being inserted beside them, so each half closes exactly on the cut and the
     // two halves meet along it with nothing between them.
-    private static List<List<double[]>> splitPiece(Landing landing, Crossing candidate) {
+    private static List<List<double[]>> splitPiece(Landing landing, CellGaps.CellGap candidate) {
 
         var piece = landing.outline();
         var first = Math.min(landing.atStart(), landing.atEnd());
@@ -434,68 +374,11 @@ final class VoidSections {
         return longest;
     }
 
-    // The point that far from one site along the line towards another.
-    private static double[] projectAlong(
-            double[] from,
-            double[] to,
-            double distance,
-            double separation) {
-
-        return new double[] {
-            from[0] + (to[0] - from[0]) * distance / separation,
-            from[1] + (to[1] - from[1]) * distance / separation};
-    }
-
-    private static double measureDistanceToSegment(
-            double[] point,
-            double[] start,
-            double[] end) {
-
-        var runX = end[0] - start[0];
-        var runY = end[1] - start[1];
-        var lengthSquared = runX * runX + runY * runY;
-
-        if (lengthSquared == 0) {
-            return measureDistance(point, start);
-        }
-
-        // Clamped, so a site level with the segment measures to the nearest point on it and a
-        // site off either end measures to that end rather than to the infinite line, which
-        // would report the segment as blocked by a cell it passes nowhere near.
-        var along = Math.max(0, Math.min(1,
-            ((point[0] - start[0]) * runX + (point[1] - start[1]) * runY) / lengthSquared));
-
-        return Math.hypot(
-            point[0] - (start[0] + along * runX),
-            point[1] - (start[1] + along * runY));
-    }
-
     // Kept local for the same reason VoidPockets keeps its own: kmlib's Points.computeDistance
     // is overloaded on an LWJGL vector type the tooling has no classpath for, so the call will
     // not resolve here however plain the arithmetic is.
     private static double measureDistance(double[] from, double[] to) {
         return Math.hypot(to[0] - from[0], to[1] - from[1]);
-    }
-
-    /**
-     * One candidate cut, with the two cells it runs between still attached.
-     *
-     * <p>Those are why this is not a {@link VoidCut} yet: a candidate is offered against
-     * every piece of the pocket in turn and may be turned down by all of them, and until one
-     * takes it there is nothing to say about it beyond which two cells made it.
-     *
-     * @param fromSite which cell it starts on
-     * @param toSite   which cell it ends on
-     * @param width    how wide the corridor is between them
-     * @param start    where it meets the outline on the {@code fromSite} side
-     * @param end      where it meets the outline on the other
-     */
-    private record Crossing(
-        int fromSite,
-        int toSite,
-        double width,
-        double[] start,
-        double[] end) {
     }
 
     /**

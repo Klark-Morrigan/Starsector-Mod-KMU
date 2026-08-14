@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.Limits;
+import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.VoronoiCellBuilder;
 
 import java.util.ArrayList;
@@ -36,6 +37,10 @@ final class VoidRegionsDump {
 
     private static final VoidSections.SectionRules SECTION_RULES =
         new VoidSections.SectionRules(SECTION_LENGTH, MIN_SECTION_SHARE);
+
+    // Four cell radii centre to centre, which leaves a gap of two - a whole cell's width.
+    // What the viewer opens on, so this report describes what a reader would see there.
+    private static final double BRIDGE_REACH_MULTIPLE = 4;
 
     // Shares to sweep the division across, so the knob has a starting range instead of being
     // a bare slider. Spread over the whole span rather than clustered near the default,
@@ -413,6 +418,7 @@ final class VoidRegionsDump {
         reportRingingOwners(pockets, fixture);
         reportEachPocket(pockets);
         reportShareSweep(fixture);
+        reportBridges(fixture, pockets);
 
         var shares = new ArrayList<Double>(pockets.size());
         var sections = new ArrayList<Double>(pockets.size());
@@ -522,6 +528,76 @@ final class VoidRegionsDump {
             longestSection = Math.max(longestSection, longestHere);
         }
         return new DivisionSummary(toDivide, cuts, overLength, widestCut, longestSection);
+    }
+
+    // What the other construction over the same void finds, and the one number that says
+    // whether it is doing something different rather than the same thing another way: how
+    // many of its bridges span void that no pocket encloses. A pocket has to be ringed by
+    // cells to exist at all, so void that opens outward is invisible to that construction
+    // and ordinary to this one. If that count were zero the two would only disagree about
+    // where to draw, not about what there is.
+    private static void reportBridges(
+            SectorFixture fixture,
+            List<VoidPockets.VoidPocket> pockets) {
+
+        var bridges = VoidBridges.findVoidBridges(
+            fixture.getSites(),
+            SectorGeometryParameters.DEFAULT_CELL_RADIUS,
+            SectorGeometryParameters.DEFAULT_CELL_RADIUS * BRIDGE_REACH_MULTIPLE);
+
+        if (bridges.isEmpty()) {
+            System.out.println("void bridges: none");
+            return;
+        }
+
+        var widths = new ArrayList<Double>(bridges.size());
+        var outsideEveryPocket = 0;
+
+        for (var bridge : bridges) {
+
+            widths.add(bridge.width());
+
+            if (!doesAnyPocketHold(pockets, findMidpoint(bridge))) {
+                outsideEveryPocket++;
+            }
+        }
+        widths.sort(Double::compare);
+
+        System.out.printf(
+            Locale.ROOT,
+            "void bridges at %.0f cell radii apart: %d, of which %d span void no pocket "
+                + "encloses; width p50 %.0f / p90 %.0f / max %.0f%n",
+            BRIDGE_REACH_MULTIPLE,
+            bridges.size(),
+            outsideEveryPocket,
+            findPercentile(widths, REPORTED_PERCENTILES[0]),
+            findPercentile(widths, REPORTED_PERCENTILES[1]),
+            findPercentile(widths, REPORTED_PERCENTILES[2]));
+    }
+
+    // Against the sections rather than the pockets' own outlines, because the sections are
+    // the pocket at the reach that defines the void and tile it exactly, while an outline is
+    // the pocket pulled in by the channel and would report a bridge near its rim as outside.
+    private static boolean doesAnyPocketHold(
+            List<VoidPockets.VoidPocket> pockets,
+            double[] point) {
+
+        for (var pocket : pockets) {
+            for (var section : pocket.division().sections()) {
+
+                if (PolygonRegions.isPointInsideRing(section, point[0], point[1])) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static double[] findMidpoint(CellGaps.CellGap bridge) {
+
+        return new double[] {
+            (bridge.start()[0] + bridge.end()[0]) / 2,
+            (bridge.start()[1] + bridge.end()[1]) / 2};
     }
 
     private static double findPercentile(List<Double> sorted, double fraction) {

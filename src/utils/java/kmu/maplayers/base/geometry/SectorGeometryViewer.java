@@ -213,6 +213,15 @@ final class SectorGeometryViewer {
     // the two ends of its range are two different wrong answers - slivers shaved off the
     // tips at the bottom, chords thrown across open void at the top - and where the good
     // answers sit between them is a question about a shape rather than about a number.
+    // How far apart two cells may sit and still be taken to hold the void between them, in
+    // cell radii from centre to centre. Four is the width at which a whole further cell
+    // would fit in the gap, which is the point past which the void between two cells stops
+    // being theirs.
+    private static final double BRIDGE_REACH_MINIMUM = 2;
+    private static final double BRIDGE_REACH_MAXIMUM = 10;
+    private static final double BRIDGE_REACH_DEFAULT = 4;
+    private static final double BRIDGE_REACH_STEP_SCALE = 100.0;
+
     private static final double MIN_SECTION_MINIMUM = 0;
     private static final double MIN_SECTION_MAXIMUM = 100;
     
@@ -254,6 +263,13 @@ final class SectorGeometryViewer {
     private int voidCellOpacity = OWNER_FILL_ALPHA;
     private double voidSpanMultiple = VOID_SPAN_DEFAULT;
     private double minSectionShare = MIN_SECTION_DEFAULT / MIN_SECTION_SCALE;
+    private double bridgeReachMultiple = BRIDGE_REACH_DEFAULT;
+
+    // Two constructions over the same void, drawn together so one can be judged against the
+    // other on the same map rather than from two screenshots taken minutes apart.
+    private boolean showVoidPockets = true;
+    private boolean showVoidBridges = true;
+    private List<CellGaps.CellGap> voidBridges = List.of();
 
     private Color wideVoidColour = WIDE_VOID_DEFAULT;
     private Color wideVoidEdge = WIDE_VOID_DEFAULT;
@@ -509,6 +525,19 @@ final class SectorGeometryViewer {
             colour -> voidCellEdge = colour,
             canvas::repaint));
 
+        controls.add(ViewerControls.buildToggleRow(
+            this::refreshVoidPockets,
+            new ViewerControls.Toggle(
+                "Show void pockets",
+                "Void pockets",
+                true,
+                on -> showVoidPockets = on),
+            new ViewerControls.Toggle(
+                "Show void bridges",
+                "Void bridges",
+                true,
+                on -> showVoidBridges = on)));
+
         controls.add(ViewerControls.buildColourPair(
             "Wide void",
             "Void wider than that",
@@ -569,6 +598,16 @@ final class SectorGeometryViewer {
             VOID_SPAN_DEFAULT * VOID_SPAN_STEP_SCALE,
             multiple -> voidSpanMultiple = multiple / VOID_SPAN_STEP_SCALE,
             this::refreshVoidPockets,
+            () -> { }));
+
+        controls.add(ViewerControls.buildSlider(
+            "Bridge reach multiple",
+            "Bridge reach, in cell radii (x100)",
+            BRIDGE_REACH_MINIMUM * BRIDGE_REACH_STEP_SCALE,
+            BRIDGE_REACH_MAXIMUM * BRIDGE_REACH_STEP_SCALE,
+            BRIDGE_REACH_DEFAULT * BRIDGE_REACH_STEP_SCALE,
+            multiple -> bridgeReachMultiple = multiple / BRIDGE_REACH_STEP_SCALE,
+            this::refreshVoidBridges,
             () -> { }));
 
         controls.add(ViewerControls.buildSlider(
@@ -682,11 +721,31 @@ final class SectorGeometryViewer {
     // reaches, and they are only the same colour by accident of both being unpainted.
     private void refreshVoidPockets() {
 
-        voidPockets = VoidPockets.findVoidPockets(
-            fixture.getSites(),
-            fixture.getOwnerBySite(),
-            parameters,
-            buildSectionRules());
+        // Emptied rather than skipped at paint time when it is switched off, the same way
+        // the unbounded cells are: every pass over them then reads one list, and nothing has
+        // to remember to check the toggle a second time.
+        voidPockets = showVoidPockets
+            ? VoidPockets.findVoidPockets(
+                fixture.getSites(),
+                fixture.getOwnerBySite(),
+                parameters,
+                buildSectionRules())
+            : List.of();
+
+        refreshVoidBridges();
+    }
+
+    // The other construction over the same void. Rebuilt alongside the pockets rather than
+    // on its own schedule, because the two are only worth anything side by side and a knob
+    // that moved one without the other would be comparing two different maps.
+    private void refreshVoidBridges() {
+
+        voidBridges = showVoidBridges
+            ? VoidBridges.findVoidBridges(
+                fixture.getSites(),
+                parameters.cellRadius(),
+                parameters.cellRadius() * bridgeReachMultiple)
+            : List.of();
 
         canvas.repaint();
     }
@@ -1073,7 +1132,7 @@ final class SectorGeometryViewer {
 
             paintFillContours(g2);
             paintCentrelines(g2);
-            paintSectionCuts(g2);
+            paintVoidSpans(g2);
 
             g2.setColor(siteColour);
 
@@ -1109,10 +1168,24 @@ final class SectorGeometryViewer {
         // crossing the cells rather than the void. The pull-back is exactly the channel width
         // and no offsetting is needed to find it: the cut already runs along the line joining
         // the two sites, which is the line the moved reach is measured along.
-        private void paintSectionCuts(Graphics2D g2) {
+        //
+        // The bridges are drawn in the same colour and stroke as the cuts, and deliberately
+        // so: both are a line across void saying "this much is held between these two
+        // cells", arrived at from opposite ends. Two colours would say they were two kinds
+        // of thing, and the whole point of showing them together is that they are not.
+        private void paintVoidSpans(Graphics2D g2) {
 
             g2.setStroke(new BasicStroke(SECTION_CUT_STROKE));
             g2.setColor(applyAlpha(sectionCutColour, OPAQUE_ALPHA));
+
+            for (var bridge : voidBridges) {
+
+                g2.draw(new Line2D.Double(
+                    bridge.start()[0],
+                    bridge.start()[1],
+                    bridge.end()[0],
+                    bridge.end()[1]));
+            }
 
             for (var pocket : voidPockets) {
 
@@ -1129,10 +1202,10 @@ final class SectorGeometryViewer {
             }
         }
 
-        private static Line2D buildTrimmedCut(VoidSections.VoidCut cut, double trim) {
+        private static Line2D buildTrimmedCut(CellGaps.CellGap cut, double trim) {
 
-            var runX = cut.to()[0] - cut.from()[0];
-            var runY = cut.to()[1] - cut.from()[1];
+            var runX = cut.end()[0] - cut.start()[0];
+            var runY = cut.end()[1] - cut.start()[1];
             var length = Math.hypot(runX, runY);
 
             // A corridor narrower than two channels has no drawn outline for the cut to reach,
@@ -1141,10 +1214,10 @@ final class SectorGeometryViewer {
             var pullBack = length > 2 * trim ? trim / length : 0;
 
             return new Line2D.Double(
-                cut.from()[0] + runX * pullBack,
-                cut.from()[1] + runY * pullBack,
-                cut.to()[0] - runX * pullBack,
-                cut.to()[1] - runY * pullBack);
+                cut.start()[0] + runX * pullBack,
+                cut.start()[1] + runY * pullBack,
+                cut.end()[0] - runX * pullBack,
+                cut.end()[1] - runY * pullBack);
         }
 
         private void paintVoidMark(Graphics2D g2, double[] centre, Color colour) {
