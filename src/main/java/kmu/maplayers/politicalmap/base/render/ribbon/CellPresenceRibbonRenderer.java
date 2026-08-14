@@ -44,19 +44,27 @@ public final class CellPresenceRibbonRenderer {
      * fully faded-out map emits nothing rather than every run at zero effective alpha, which
      * would cost the whole pass for pixels that cannot appear.
      *
+     * <p>A map zoomed far enough out is the third skip, and the one the sizes answer rather than
+     * the bands: below the player's floor a world-sized band is thinner than a pixel, where it
+     * stops reading as a band and starts reading as a discolouring of the border it runs inside.
+     * Dropping it there is what makes it fade out as a feature rather than as an artefact.
+     *
      * @param ribbons   the frame's baked bands, one per cell that draws one; the cells that draw
      *                  none are not among them. Taken as the bands alone rather than as the map
      *                  they are held in, since which cell a band belongs to is settled where it
      *                  was baked and says nothing about how it is painted
+     * @param style     the sizes the bands were baked at, read for the one question a baked band
+     *                  cannot answer for itself: whether it is thick enough at this zoom to read
      * @param factor    the map's world-to-screen scale, applied to every coordinate
      * @param alphaMult the map's own fade, applied over each run's colour
      */
     public static void renderOnMap(
             Collection<CellRibbon> ribbons,
+            RibbonStyle style,
             float factor,
             float alphaMult) {
 
-        if (ribbons.isEmpty() || alphaMult <= 0f) {
+        if (ribbons.isEmpty() || alphaMult <= 0f || !style.isVisibleAtScale(factor)) {
             return;
         }
         // Profiled like the other map passes, since this runs every frame the map is open; only

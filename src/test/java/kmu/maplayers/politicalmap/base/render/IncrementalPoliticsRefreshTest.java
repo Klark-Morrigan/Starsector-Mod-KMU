@@ -20,12 +20,14 @@ import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
+import kmu.maplayers.politicalmap.base.render.ribbon.RibbonSettingsFixtures;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritoryBuilder;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
 import kmu.maplayers.politicalmap.base.render.territories.StyledCellBuilder;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -185,6 +187,12 @@ final class IncrementalPoliticsRefreshTest {
             // every case here folds into: a fold that overwrote the label without re-fitting
             // would read as agreeing with itself if the pair started blank.
             standingAnchors.replaceAnchors(List.of(), STANDING_FIT);
+
+            // A re-bake reads the player's band sizes, which reach LunaLib - so the knobs answer
+            // from a seam here, at the sizes the mod ships, since no case in this suite is about
+            // what a band is sized at.
+            RibbonSettingsFixtures.stubBandsOnAtShippedSizes(
+                openSeam(KmuPoliticalMapSettings.class));
 
             // The stale set is static and shared, so a residue from another suite would
             // read here as a system this one never marked.

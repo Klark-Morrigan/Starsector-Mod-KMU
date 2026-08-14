@@ -354,7 +354,14 @@ rebuild, so a band holds its share of a cell's outline at every zoom and the dra
 like the fills. `CellPresenceRibbonRenderer` is that draw, and it is emitted clear of the map's own
 nebula sprites rather than with the fills beneath them: a band is a readout of a system, so being
 fogged would cost it the very thing it is for. It still goes under the bloc names, a name being the
-coarser statement of the two),
+coarser statement of the two. Every size the band is drawn at is the player's, read through
+`RibbonStyleReader` on the Visuals tab: the width, the clearance from the border, and the two run
+lengths those are multiples of - the ratio between the last two being what makes a bloc's stretch
+read as several colonies rather than one. Two of the knobs are not sizes. The switch takes the
+counting off the rebuild as well as the bands off the map, since a band nobody sees is not worth a
+walk of the sector's markets; and a floor in pixels - the one screen quantity in the whole design -
+drops the bands at the zoom where a world-sized band thins past a pixel and starts reading as a
+discolouring of the border rather than as a band),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 reached through [the sidebar](../base/sidebar/README.md) one level up (the picker is KMLib's, bound

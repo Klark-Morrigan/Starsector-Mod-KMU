@@ -25,8 +25,16 @@ package kmu.settings;
  * opacity is the only way to hide a shade with no alternative. Whether the uninhabited
  * outline draws at all is the on-map sidebar's checkbox rather than a field here, so the
  * setting screen never duplicates that control. All are tuned under the LunaLib
- * "Map - Politics - Visuals" tab, which also carries this layer's own hover pair and the
- * halo and wash those switch.
+ * "Map - Politics - Visuals" tab, which also carries the presence bands and this layer's own
+ * hover pair with the halo and wash those switch.
+ *
+ * <p>The presence-band fields there are the one group whose knobs are world sizes rather than
+ * opacities and pixel widths: a band is baked into a cell's own geometry at rebuild, so its
+ * thickness, its clearance from the border, and the two run lengths those are multiples of are
+ * all stated in the units the cells are cut in. Only its floor is a screen size, because what
+ * that answers is whether a band can still be read at the current zoom rather than how large it
+ * is. Its on/off is a real switch rather than a zeroed opacity, since a band paints in the
+ * palette colours of whichever blocs are present and has no shade of its own to take away.
  *
  * <p>The "Map - Politics - Domination" tab holds the dominance rules - fields that change the
  * map's political verdicts rather than its styling, which is why they do not sit under
@@ -130,6 +138,27 @@ public final class KmuPoliticalMapSettings {
         "kmu_politicalMapDesaturationDarkening";
     private static final String PRESENCE_LIGHTENING_FIELD =
         "kmu_politicalMapPresenceLightening";
+
+    // Presence band fields (Map - Politics - Visuals tab): the banded stroke a cell draws inside
+    // its own border to say which factions hold colonies in that system and how many. The switch
+    // is a real on/off rather than an opacity, since a band has no shade of its own to zero - it
+    // paints in the palette colours of whoever is present. The four sizes are the whole of the
+    // design's proportions: the width every other size is stated against, the gap that keeps the
+    // band clear of the border, and the two run lengths whose ratio is what makes a faction's
+    // stretch read as several colonies rather than one. All four are world sizes bar the last
+    // field, which is the screen floor below which a band is too thin to read and is dropped.
+    private static final String RIBBON_ENABLED_FIELD =
+        "kmu_map_politics_visuals_presenceRibbons_enabled";
+    private static final String RIBBON_WIDTH_FIELD =
+        "kmu_map_politics_visuals_presenceRibbons_width";
+    private static final String RIBBON_INSET_PAD_FIELD =
+        "kmu_map_politics_visuals_presenceRibbons_insetPad";
+    private static final String RIBBON_SEGMENT_LENGTH_FIELD =
+        "kmu_map_politics_visuals_presenceRibbons_segmentLength";
+    private static final String RIBBON_INTERJECTION_LENGTH_FIELD =
+        "kmu_map_politics_visuals_presenceRibbons_interjectionLength";
+    private static final String RIBBON_MIN_DRAWN_WIDTH_FIELD =
+        "kmu_map_politics_visuals_presenceRibbons_minDrawnWidth";
 
     // Hover tiers, this layer's own pair (Map - Politics - Visuals tab): the same two kinds
     // of feedback the framework switches globally, scoped to this one layer's paint. Each ANDs
@@ -360,6 +389,31 @@ public final class KmuPoliticalMapSettings {
     // unmistakable at a glance, which is the whole of what sparing it is for. Mirrors the CSV row's
     // defaultValue.
     private static final double DEFAULT_PRESENCE_LIGHTENING = 1.0;
+
+    // On by default: the bands are a readout of what the fills leave out, and a sector where most
+    // cells stay bare is what the gate already guarantees, so shipping them off would hide the
+    // feature rather than spare the map.
+    private static final boolean DEFAULT_RIBBON_ENABLED = true;
+
+    // The band's thickness in world units. Read against the 150-unit border inset the cells are
+    // shaped by: a band near that thickness sits clearly inside a cell without competing with the
+    // border it follows.
+    private static final double DEFAULT_RIBBON_WIDTH = 120.0;
+
+    // Half a width of gap between the border and the band's near edge, so the band reads as
+    // separated from the border rather than doubling it.
+    private static final double DEFAULT_RIBBON_INSET_PAD = 60.0;
+
+    // The design's own proportions: a colony runs three widths, and two colonies of one bloc are
+    // parted by one. Whole widths rather than fractions - a run is a count of holdings expressed as
+    // a length, and how large a width is in the world is the width knob's business.
+    private static final int DEFAULT_RIBBON_SEGMENT_LENGTH = 3;
+    private static final int DEFAULT_RIBBON_INTERJECTION_LENGTH = 1;
+
+    // A pixel and a half: enough that a band still reads as a coloured band rather than as a tint
+    // on the border beneath it, and low enough that it only cuts in near the bottom of the map's
+    // zoom range.
+    private static final double DEFAULT_RIBBON_MIN_DRAWN_WIDTH = 1.5;
 
     // Both of this layer's hover switches on by default, like the two tiers above them: a tiered
     // gate that shipped with any level off would read to a player as a feature that is broken
@@ -753,6 +807,63 @@ public final class KmuPoliticalMapSettings {
         return KmuLunaSettings.readDouble(
             PRESENCE_LIGHTENING_FIELD,
             DEFAULT_PRESENCE_LIGHTENING);
+    }
+
+    /**
+     * @return whether a cell draws the banded stroke inside its own border that says which blocs
+     *         hold colonies in that system and how many; on by default. Off skips the counting
+     *         as well as the drawing, so a rebuild pays nothing for the bands at all
+     */
+    public static boolean shouldDrawPoliticalMapRibbons() {
+        return KmuLunaSettings.readBoolean(RIBBON_ENABLED_FIELD, DEFAULT_RIBBON_ENABLED);
+    }
+
+    /**
+     * @return how thick the presence band is drawn, in world units - the size every other size
+     *         in the band is a multiple of, and a world quantity so a band holds the same share
+     *         of its cell's outline at every zoom
+     */
+    public static double getPoliticalMapRibbonWidth() {
+        return KmuLunaSettings.readDouble(RIBBON_WIDTH_FIELD, DEFAULT_RIBBON_WIDTH);
+    }
+
+    /**
+     * @return how far clear of the cell's own border the presence band's near edge runs, in world
+     *         units; a cell with no room for this gap and the band's width together draws no band
+     */
+    public static double getPoliticalMapRibbonInsetPad() {
+        return KmuLunaSettings.readDouble(RIBBON_INSET_PAD_FIELD, DEFAULT_RIBBON_INSET_PAD);
+    }
+
+    /**
+     * @return how far the run one colony draws reaches, in band widths
+     */
+    public static int getPoliticalMapRibbonSegmentLength() {
+        return KmuLunaSettings.readInt(
+            RIBBON_SEGMENT_LENGTH_FIELD,
+            DEFAULT_RIBBON_SEGMENT_LENGTH);
+    }
+
+    /**
+     * @return how far the parting between two colonies of one bloc reaches, in band widths. The
+     *         setting screen calls it a separator, the counting rule an interjection: the same
+     *         run under a name a player reads and a name the design states it by
+     */
+    public static int getPoliticalMapRibbonInterjectionLength() {
+        return KmuLunaSettings.readInt(
+            RIBBON_INTERJECTION_LENGTH_FIELD,
+            DEFAULT_RIBBON_INTERJECTION_LENGTH);
+    }
+
+    /**
+     * @return how thin a presence band may be drawn on screen, in pixels, before it is left out
+     *         of the frame entirely - the one screen size in a design stated in world units, since
+     *         what it answers is whether a band can still be read rather than how large it is
+     */
+    public static double getPoliticalMapRibbonMinDrawnWidth() {
+        return KmuLunaSettings.readDouble(
+            RIBBON_MIN_DRAWN_WIDTH_FIELD,
+            DEFAULT_RIBBON_MIN_DRAWN_WIDTH);
     }
 
     /**

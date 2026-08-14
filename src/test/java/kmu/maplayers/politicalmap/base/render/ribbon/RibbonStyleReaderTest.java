@@ -1,0 +1,88 @@
+package kmu.maplayers.politicalmap.base.render.ribbon;
+
+import kmu.settings.KmuPoliticalMapSettings;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mockStatic;
+
+/**
+ * Pins that each band knob lands in the slot it names, and that the mitre limit stays the code's
+ * own rather than becoming a sixth knob.
+ *
+ * <p>Worth pinning by value because the sizes are interchangeable by type: a width read into the
+ * pad, or the two run lengths handed over the wrong way round, compiles clean and shows only as a
+ * band that looks slightly off in play - and "slightly off" is indistinguishable from a slider set
+ * somewhere odd. Distinct sentinels per knob turn that into a failing test.
+ */
+final class RibbonStyleReaderTest {
+
+    // Distinct per knob so a slot reading its neighbour's setting is caught by value.
+    private static final double WIDTH_WORLD = 111.0;
+    private static final double INSET_PAD_WORLD = 22.0;
+    private static final int SEGMENT_LENGTH_UNITS = 7;
+    private static final int INTERJECTION_LENGTH_UNITS = 4;
+    private static final double MIN_DRAWN_WIDTH_PIXELS = 3.5;
+
+    // The authored mitre limit, which is no knob: it is the angle past which a corner's mitre
+    // becomes a spike, a property of stroking rather than of how the readout looks.
+    private static final double AUTHORED_MITER_SPIKE_LIMIT = 2.0;
+
+    @Nested
+    class ReadRibbonStyle {
+
+        @Test
+        void readRibbonStyleThreadsEachBandSettingIntoItsMatchingSize() {
+            try (var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                stubBandSettings(settingsMock);
+
+                var style = RibbonStyleReader.readRibbonStyle();
+
+                assertThat(style.widthWorld())
+                    .isEqualTo(WIDTH_WORLD);
+                assertThat(style.insetPadWorld())
+                    .isEqualTo(INSET_PAD_WORLD);
+                assertThat(style.lengths().marketLengthUnits())
+                    .isEqualTo(SEGMENT_LENGTH_UNITS);
+                assertThat(style.lengths().interjectionLengthUnits())
+                    .isEqualTo(INTERJECTION_LENGTH_UNITS);
+                assertThat(style.minDrawnWidthPixels())
+                    .isEqualTo(MIN_DRAWN_WIDTH_PIXELS);
+            }
+        }
+
+        @Test
+        void readRibbonStyleKeepsTheMitreLimitAuthored() {
+            try (var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                stubBandSettings(settingsMock);
+
+                assertThat(RibbonStyleReader.readRibbonStyle().miterSpikeLimit())
+                    .isEqualTo(AUTHORED_MITER_SPIKE_LIMIT);
+            }
+        }
+    }
+
+    private static void stubBandSettings(MockedStatic<KmuPoliticalMapSettings> settingsMock) {
+
+        settingsMock
+            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonWidth)
+            .thenReturn(WIDTH_WORLD);
+        settingsMock
+            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonInsetPad)
+            .thenReturn(INSET_PAD_WORLD);
+        settingsMock
+            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonSegmentLength)
+            .thenReturn(SEGMENT_LENGTH_UNITS);
+        settingsMock
+            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonInterjectionLength)
+            .thenReturn(INTERJECTION_LENGTH_UNITS);
+        settingsMock
+            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonMinDrawnWidth)
+            .thenReturn(MIN_DRAWN_WIDTH_PIXELS);
+    }
+}

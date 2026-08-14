@@ -8,8 +8,11 @@ import kmlib.starsector.systems.StarSystems;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
+import kmu.settings.KmuPoliticalMapSettings;
 
 import java.util.List;
 import java.util.Map;
@@ -20,10 +23,11 @@ import java.util.Map;
  *
  * <p>What it holds is what must not vary across a pass. The planner is the mechanic the active
  * view paints by, resolved once so no cell is counted by a different one; the sizes are one read
- * of the design's proportions; the holder map is the pass's own, so the cells that get a band are
- * exactly the cells something painted. Sampling them here mirrors how the rest of a rebuild is
- * driven - one snapshot, then a per-item call over it - and is what lets the incremental re-shape
- * bake a band identical to the one the full rebuild would have.
+ * of the player's proportions, so a slider moved mid-pass cannot leave two cells drawn to
+ * different designs; the holder map is the pass's own, so the cells that get a band are exactly
+ * the cells something painted. Sampling them here mirrors how the rest of a rebuild is driven -
+ * one snapshot, then a per-item call over it - and is what lets the incremental re-shape bake a
+ * band identical to the one the full rebuild would have.
  *
  * <p>The holder map is also the cost gate, and the reason it is held rather than looked up per
  * call site. Most of the sector is cells nobody paints, and the claim mechanic's count walks a
@@ -31,6 +35,13 @@ import java.util.Map;
  * contest nobody is contesting.
  */
 public final class CellRibbonsBuilder {
+
+    // The sizes a pass with the bands switched off carries. Zeroes rather than the player's knobs
+    // because no band is ever laid out to be sized: such a pass answers every cell at its gate,
+    // well before a ring is traced, so reading the real sizes for it would be a settings read
+    // taken to settle nothing.
+    private static final RibbonStyle BANDLESS_SIZES =
+        new RibbonStyle(0, 0, 0, new RibbonSegmentLengths(0, 0), 0);
 
     private final SystemRibbonPlanner planner;
     private final RibbonStyle style;
@@ -53,7 +64,9 @@ public final class CellRibbonsBuilder {
     }
 
     /**
-     * Samples everything one pass's bands are settled from.
+     * Samples everything one pass's bands are settled from, or nothing at all where the player has
+     * the bands switched off - in which case every cell is answered "no band" without a count, a
+     * size read, or a ring traced.
      *
      * @param sector           the sector the counts are read from
      * @param viewGrouping     the active view and the grouping it resolved, the pair the pass
@@ -72,7 +85,10 @@ public final class CellRibbonsBuilder {
             Map<String, DominantHolder> holderBySystemId,
             CellGeometryCache geometryCache) {
 
-        var style = RibbonStyle.createAuthoredDefaults();
+        if (!KmuPoliticalMapSettings.shouldDrawPoliticalMapRibbons()) {
+            return createBandlessPass();
+        }
+        var style = RibbonStyleReader.readRibbonStyle();
 
         // The colour source and the proportions are sampled here, once, and handed to whatever
         // planner the view resolves - so both mechanics of a composed planner read a bloc's
@@ -120,5 +136,19 @@ public final class CellRibbonsBuilder {
             site,
             planner.planSystemRibbon(system),
             style);
+    }
+
+    // A pass with the bands switched off, which the empty holding states outright: the holding is
+    // the gate every cell is answered by, so an empty one answers "no band" for the whole sector.
+    // Nothing is sampled for it - no planner resolved, no system index built, no sizes read - so
+    // the switch takes the counting off the rebuild as well as the bands off the map, which is the
+    // half of it a player cannot see and the half that costs.
+    private static CellRibbonsBuilder createBandlessPass() {
+        return new CellRibbonsBuilder(
+            system -> RibbonPlan.NONE,
+            BANDLESS_SIZES,
+            Map.of(),
+            Map.of(),
+            Map.of());
     }
 }

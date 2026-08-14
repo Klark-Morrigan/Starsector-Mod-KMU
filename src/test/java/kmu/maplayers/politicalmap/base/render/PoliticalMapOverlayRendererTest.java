@@ -93,11 +93,18 @@ final class PoliticalMapOverlayRendererTest {
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
-                    buildCacheMock(), FACTOR, ALPHA_MULT,
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 ribbonRendererMock.verify(() ->
-                    CellPresenceRibbonRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+                    CellPresenceRibbonRenderer.renderOnMap(
+                        any(),
+                        any(),
+                        anyFloat(),
+                        anyFloat()));
+
                 labelRendererMock.verify(() ->
                     LabelRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
 
@@ -124,7 +131,9 @@ final class PoliticalMapOverlayRendererTest {
                 // Built inside the construction mock, since the highlight renderer is a field this
                 // compositor creates for itself - there is no seam to inject one through.
                 new PoliticalMapOverlayRenderer().renderOnMap(
-                    buildCacheMock(), FACTOR, ALPHA_MULT,
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
                 anchorRendererMock.verify(() ->
@@ -148,7 +157,9 @@ final class PoliticalMapOverlayRendererTest {
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 new PoliticalMapOverlayRenderer().renderOnMap(
-                    buildCacheMock(), FACTOR, ALPHA_MULT,
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 anchorRendererMock
@@ -176,7 +187,9 @@ final class PoliticalMapOverlayRendererTest {
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
-                    buildDebugCacheMock(), FACTOR, ALPHA_MULT,
+                    buildDebugCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
                 borderStageRendererMock.verify(() ->
@@ -203,7 +216,9 @@ final class PoliticalMapOverlayRendererTest {
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
-                    buildDebugCacheMock(), FACTOR, ALPHA_MULT,
+                    buildDebugCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 ribbonRendererMock
@@ -253,6 +268,7 @@ final class PoliticalMapOverlayRendererTest {
     private static PoliticalMapCache buildCacheMock() {
 
         var territoriesMock = mock(PoliticalMapTerritories.class);
+        
         when(territoriesMock.getStyledCellByCellId())
             .thenReturn(Map.of());
 
@@ -268,6 +284,7 @@ final class PoliticalMapOverlayRendererTest {
             .thenReturn(mock(GlobalStyle.class));
 
         var cacheMock = mock(PoliticalMapCache.class);
+
         when(cacheMock.isDebug())
             .thenReturn(false);
         when(cacheMock.getTerritories())
@@ -285,10 +302,12 @@ final class PoliticalMapOverlayRendererTest {
     private static PoliticalMapCache buildDebugCacheMock() {
 
         var borderStageOverlayMock = mock(ClusterBorderStageOverlay.class);
+
         when(borderStageOverlayMock.baseLoops())
             .thenReturn(List.of());
 
         var cacheMock = mock(PoliticalMapCache.class);
+
         when(cacheMock.isDebug())
             .thenReturn(true);
         when(cacheMock.getBorderStageOverlay())
