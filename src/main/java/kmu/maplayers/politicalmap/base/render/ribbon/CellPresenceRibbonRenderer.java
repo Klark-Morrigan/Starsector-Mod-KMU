@@ -44,10 +44,6 @@ public final class CellPresenceRibbonRenderer {
      * fully faded-out map emits nothing rather than every run at zero effective alpha, which
      * would cost the whole pass for pixels that cannot appear.
      *
-     * <p>Those two are the whole of the pass's judgement, and zoom is not among them: every size a
-     * band carries is a world size settled at rebuild, so how large it lands on screen is the map's
-     * own scaling of it and no more a question here than it is for the fills.
-     *
      * @param ribbons   the frame's baked bands, one per cell that draws one; the cells that draw
      *                  none are not among them. Taken as the bands alone rather than as the map
      *                  they are held in, since which cell a band belongs to is settled where it

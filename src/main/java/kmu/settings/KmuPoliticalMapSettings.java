@@ -31,9 +31,8 @@ package kmu.settings;
  * <p>The presence-band fields there are the one group whose knobs are world sizes rather than
  * opacities and pixel widths: a band is baked into a cell's own geometry at rebuild, so its
  * thickness, its clearance from the border, and the two run lengths those are multiples of are
- * all stated in the units the cells are cut in. Only its floor is a screen size, because what
- * that answers is whether a band can still be read at the current zoom rather than how large it
- * is. Its on/off is a real switch rather than a zeroed opacity, since a band paints in the
+ * all stated in the units the cells are cut in, with nothing about a band left for a frame to
+ * measure. Its on/off is a real switch rather than a zeroed opacity, since a band paints in the
  * palette colours of whichever blocs are present and has no shade of its own to take away.
  *
  * <p>The "Map - Politics - Domination" tab holds the dominance rules - fields that change the
@@ -145,8 +144,7 @@ public final class KmuPoliticalMapSettings {
     // paints in the palette colours of whoever is present. The four sizes are the whole of the
     // design's proportions: the width every other size is stated against, the gap that keeps the
     // band clear of the border, and the two run lengths whose ratio is what makes a faction's
-    // stretch read as several colonies rather than one. All four are world sizes, so a band holds
-    // its share of a cell's outline at every zoom and nothing about it is asked of the camera.
+    // stretch read as several colonies rather than one.
     private static final String RIBBON_ENABLED_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_enabled";
     private static final String RIBBON_WIDTH_FIELD =

@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
+import kmlib.opengl.GlPasses;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -10,23 +12,35 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the two conditions under which the pass emits nothing at all, which is the only decision it
- * makes: everything past the guard is a walk over the baked bands in order, and it needs a live GL
- * context to run. Both skips are observed as "the bands were never read" rather than as an absence
- * of GL calls, so the checks hold without a context and without mocking the driver.
+ * Pins what the pass decides, which is only whether to emit at all: everything past the guard is a
+ * walk over the baked bands in order, and it needs a live GL context to run.
  *
- * <p>Worth holding because neither skip shows on screen when it stops happening. A sector where no
- * cell carries a band is the normal case rather than an edge one, and reaching the emission for it
- * - or for a frame the map has already faded out - costs a state push, a blend-mode switch, and a
- * walk, all for pixels that could not appear.
+ * <p>The two skips are observed as "the bands were never read", so those checks hold without a
+ * context and without mocking the driver. Worth holding because neither shows on screen when it
+ * stops happening. A sector where no cell carries a band is the normal case rather than an edge
+ * one, and reaching the emission for it - or for a frame the map has already faded out - costs a
+ * state push, a blend-mode switch, and a walk, all for pixels that could not appear.
+ *
+ * <p>The zoom case is the other direction and is observed at the GL entry point instead, since a
+ * frame that goes on to draw cannot be watched from the band list without a context. Standing the
+ * pass down over a scale is what it must never do: every size a band carries is settled in the
+ * world, so how small it lands on screen is the map's own scaling of it and no judgement of this
+ * pass - and a band withheld looks exactly like a system with no rival in it, which is the one
+ * thing the readout exists to tell apart.
  */
 final class CellPresenceRibbonRendererTest {
 
     private static final float FULL_ALPHA = 1f;
     private static final float FADED_OUT_ALPHA = 0f;
     private static final float ANY_MAP_FACTOR = 1f;
+
+    // Far enough out that a two-hundred-unit band lands well under a pixel across, which is the
+    // scale a screen-sized rule would have refused.
+    private static final float ZOOMED_FAR_OUT_MAP_FACTOR = 0.001f;
 
     @Nested
     class RenderOnMap {
@@ -59,6 +73,23 @@ final class CellPresenceRibbonRendererTest {
 
             assertThat(ribbonsFake.hasReadBands())
                 .isFalse();
+        }
+
+        @Test
+        void renderOnMapEmitsTheBandsHoweverFarTheMapIsZoomedOut() {
+
+            // The pass is watched at the GL entry point rather than at the band list, since the
+            // walk behind it is what needs a context: reaching the entry point at all is the whole
+            // of what "the scale did not stand this frame down" means.
+            try (var glPassesMock = mockStatic(GlPasses.class)) {
+
+                CellPresenceRibbonRenderer.renderOnMap(
+                    buildRibbonsCarryingOneBand(),
+                    ZOOMED_FAR_OUT_MAP_FACTOR,
+                    FULL_ALPHA);
+
+                glPassesMock.verify(() -> GlPasses.runBlendedPass(any(), any(), any()));
+            }
         }
     }
 

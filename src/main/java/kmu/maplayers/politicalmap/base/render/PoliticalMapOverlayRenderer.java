@@ -127,8 +127,6 @@ final class PoliticalMapOverlayRenderer {
         // to paint them from - the same reason the hover feedback stands down under it.
         if (!cache.isDebug()) {
 
-            // The baked bands are the whole of what this pass needs: every size a band carries is
-            // a world size settled at rebuild, so nothing about the player's knobs is read here.
             CellPresenceRibbonRenderer.renderOnMap(
                 cache.getTerritories().getRibbonByCellId().values(),
                 factor,
