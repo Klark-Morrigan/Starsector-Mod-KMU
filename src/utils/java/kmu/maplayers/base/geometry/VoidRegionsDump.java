@@ -193,10 +193,10 @@ final class VoidRegionsDump {
                 + "(fills' own reach): %d%n",
             shipped.cellRadius(),
             countHolesAt(fixture, shipped.cellRadius()),
-            shipped.cellRadius() + shipped.borderInset(),
-            countHolesAt(fixture, shipped.cellRadius() + shipped.borderInset()),
-            shipped.cellRadius() - shipped.borderInset(),
-            countHolesAt(fixture, shipped.cellRadius() - shipped.borderInset()));
+            shipped.measureDrawnReach(),
+            countHolesAt(fixture, shipped.measureDrawnReach()),
+            shipped.measureFilledReach(),
+            countHolesAt(fixture, shipped.measureFilledReach()));
     }
 
     private static int countHolesAt(SectorFixture fixture, double reach) {

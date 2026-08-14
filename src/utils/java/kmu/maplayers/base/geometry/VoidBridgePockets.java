@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Points;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -142,7 +144,7 @@ final class VoidBridgePockets {
 
         for (var hole : DiscUnionBoundary.traceHolesAcrossChords(
                 sites,
-                measureDrawnReach(parameters),
+                parameters.measureDrawnReach(),
                 arcSegments,
                 buildChords(bridges))) {
 
@@ -176,7 +178,7 @@ final class VoidBridgePockets {
             List<CellGaps.CellGap> bridges,
             SectorGeometryParameters parameters) {
 
-        var drawnReach = measureDrawnReach(parameters);
+        var drawnReach = parameters.measureDrawnReach();
         var worst = 0.0;
 
         for (var chord : DiscUnionBoundary.findAttachableChords(
@@ -208,12 +210,6 @@ final class VoidBridgePockets {
         return chords;
     }
 
-    // The reach the fills are drawn at: far enough out to leave the channel between a fill
-    // and the cells around it.
-    private static double measureDrawnReach(SectorGeometryParameters parameters) {
-        return parameters.cellRadius() + parameters.borderInset();
-    }
-
     private static double measureDistanceToNearestVertex(
             List<List<double[]>> outlines,
             double[] point) {
@@ -223,9 +219,7 @@ final class VoidBridgePockets {
         for (var outline : outlines) {
             for (var vertex : outline) {
 
-                nearest = Math.min(
-                    nearest,
-                    Math.hypot(vertex[0] - point[0], vertex[1] - point[1]));
+                nearest = Math.min(nearest, Points.computeDistance(point, vertex));
             }
         }
         return nearest == Double.MAX_VALUE ? 0 : nearest;

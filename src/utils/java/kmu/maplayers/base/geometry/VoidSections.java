@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
 import java.util.ArrayList;
@@ -130,7 +131,7 @@ final class VoidSections {
 
                 widest = Math.max(
                     widest,
-                    measureDistance(points.get(first), points.get(second)));
+                    Points.computeDistance(points.get(first), points.get(second)));
             }
         }
         return widest;
@@ -280,14 +281,4 @@ final class VoidSections {
     private static double measureArea(List<double[]> piece) {
         return Math.abs(PolygonRegions.computeSignedArea(piece));
     }
-
-
-
-    // Kept local for the same reason VoidPockets keeps its own: kmlib's Points.computeDistance
-    // is overloaded on an LWJGL vector type the tooling has no classpath for, so the call will
-    // not resolve here however plain the arithmetic is.
-    private static double measureDistance(double[] from, double[] to) {
-        return Math.hypot(to[0] - from[0], to[1] - from[1]);
-    }
-
 }

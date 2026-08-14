@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Limits;
+import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
 import java.util.ArrayList;
@@ -42,7 +44,6 @@ import java.util.List;
 final class DiscUnionBoundary {
 
     private static final double FULL_TURN = 2 * Math.PI;
-    private static final int MIN_BOUNDARY_VERTICES = 3;
 
     // Enough to keep a short arc from collapsing to a chord once the sampling is scaled down
     // in proportion to how little of the circle it covers.
@@ -286,6 +287,17 @@ final class DiscUnionBoundary {
             }
             return buildWholeCircleArcs(circle, attachments);
         }
+        return splitArcsAtAttachments(
+            buildArcsBetweenCovers(circle, covers, sites.size()), attachments);
+    }
+
+    // The gaps a circle's covering intervals leave between them, swept once round in order.
+    // Each gap runs from wherever the last interval let go to wherever the next takes hold,
+    // so its two ends are named by the neighbours that made them.
+    private static List<Arc> buildArcsBetweenCovers(
+            int circle,
+            List<Cover> covers,
+            int siteCount) {
 
         covers.sort(Comparator.comparingDouble(Cover::start));
 
@@ -317,8 +329,8 @@ final class DiscUnionBoundary {
                     circle,
                     coveredTo,
                     cover.start(),
-                    formatDiscTerminal(circle, coveredBy, sites.size()),
-                    formatDiscTerminal(cover.other(), circle, sites.size())));
+                    formatDiscTerminal(circle, coveredBy, siteCount),
+                    formatDiscTerminal(cover.other(), circle, siteCount)));
             }
 
             if (cover.start() + cover.width() > coveredTo) {
@@ -332,10 +344,10 @@ final class DiscUnionBoundary {
                 circle,
                 coveredTo,
                 windowEnd,
-                formatDiscTerminal(circle, coveredBy, sites.size()),
-                formatDiscTerminal(covers.get(0).other(), circle, sites.size())));
+                formatDiscTerminal(circle, coveredBy, siteCount),
+                formatDiscTerminal(covers.get(0).other(), circle, siteCount)));
         }
-        return splitArcsAtAttachments(arcs, attachments);
+        return arcs;
     }
 
     // The stretch of one circle lying inside a neighbour's disc. With equal radii the two
@@ -355,19 +367,12 @@ final class DiscUnionBoundary {
             if (other == circle) {
                 continue;
             }
-            // Plain arithmetic rather than kmlib's Points.computeDistance: that is overloaded
-            // on an LWJGL vector type the tooling has no classpath for, so the call will not
-            // resolve here.
-            var separation = Math.hypot(
-                sites.get(other)[0] - centre[0],
-                sites.get(other)[1] - centre[1]);
+            var separation = Points.computeDistance(centre, sites.get(other));
+
             if (separation >= 2 * cellRadius || separation == 0) {
                 continue;
             }
-            var towards = Math.atan2(
-                sites.get(other)[1] - centre[1],
-                sites.get(other)[0] - centre[0]);
-
+            var towards = measureAngleTowards(sites, circle, other);
             var halfWidth = Math.acos(separation / (2 * cellRadius));
 
             covers.add(new Cover(
@@ -577,7 +582,7 @@ final class DiscUnionBoundary {
             }
         }
 
-        if (boundary.size() < MIN_BOUNDARY_VERTICES) {
+        if (boundary.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
             return null;
         }
         return new VoidHole(boundary, corners, List.copyOf(ringing), radius);
@@ -625,9 +630,7 @@ final class DiscUnionBoundary {
             if (site == onCircle) {
                 continue;
             }
-            if (Math.hypot(sites.get(site)[0] - end[0], sites.get(site)[1] - end[1])
-                    < radius) {
-
+            if (Points.computeDistance(end, sites.get(site)) < radius) {
                 return false;
             }
         }

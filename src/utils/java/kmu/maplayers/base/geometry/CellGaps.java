@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segments;
 
 import java.util.List;
@@ -83,10 +84,7 @@ final class CellGaps {
         var from = sites.get(fromSite);
         var to = sites.get(toSite);
 
-        // Plain arithmetic rather than kmlib's Points.computeDistance: that is overloaded on
-        // an LWJGL vector type the tooling has no classpath for, so the call will not resolve
-        // here.
-        var separation = Math.hypot(to[0] - from[0], to[1] - from[1]);
+        var separation = Points.computeDistance(from, to);
         var width = separation - 2 * reach;
 
         if (width <= 0) {

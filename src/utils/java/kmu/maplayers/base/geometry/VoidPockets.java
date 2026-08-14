@@ -150,12 +150,12 @@ final class VoidPockets {
 
         var withChannel = DiscUnionBoundary.traceHolesAtReach(
             sites,
-            parameters.cellRadius() + parameters.borderInset(),
+            parameters.measureDrawnReach(),
             arcSegments);
 
         var atFills = DiscUnionBoundary.traceHolesAtReach(
             sites,
-            parameters.cellRadius() - parameters.borderInset(),
+            parameters.measureFilledReach(),
             arcSegments);
 
         var pockets = new ArrayList<VoidPocket>(trueHoles.size());

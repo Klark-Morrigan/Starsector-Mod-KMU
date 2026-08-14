@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.Limits;
+import kmlib.math.geometry.Points;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,8 +79,8 @@ final class PolygonChords {
             var atEnd = findNearestVertex(piece, end);
 
             if (atStart != atEnd
-                    && measureDistance(piece.get(atStart), start) <= snapDistance
-                    && measureDistance(piece.get(atEnd), end) <= snapDistance) {
+                    && Points.computeDistance(piece.get(atStart), start) <= snapDistance
+                    && Points.computeDistance(piece.get(atEnd), end) <= snapDistance) {
 
                 return new Landing(index, piece, atStart, atEnd);
             }
@@ -136,7 +137,7 @@ final class PolygonChords {
             var here = outline.get(index);
             var next = outline.get((index + 1) % outline.size());
 
-            longest = Math.max(longest, Math.hypot(next[0] - here[0], next[1] - here[1]));
+            longest = Math.max(longest, Points.computeDistance(here, next));
         }
         return longest;
     }
@@ -148,8 +149,7 @@ final class PolygonChords {
 
         for (var index = 0; index < piece.size(); index++) {
 
-            var vertex = piece.get(index);
-            var distance = Math.hypot(point[0] - vertex[0], point[1] - vertex[1]);
+            var distance = Points.computeDistance(point, piece.get(index));
 
             if (distance < least) {
                 least = distance;
@@ -157,9 +157,5 @@ final class PolygonChords {
             }
         }
         return nearest;
-    }
-
-    private static double measureDistance(double[] from, double[] to) {
-        return Math.hypot(to[0] - from[0], to[1] - from[1]);
     }
 }

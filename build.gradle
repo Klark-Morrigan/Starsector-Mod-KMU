@@ -213,6 +213,10 @@ dependencies {
     utilsCompileOnly xstreamJars
     utilsCompileOnly kmlibDependency
     utilsCompileOnly files(lazyLibJarFile)
+    // At compile time as well as at runtime, because KMLib's geometry is overloaded on LWJGL's
+    // vector type: without the jar to resolve those signatures against, every such call fails
+    // to compile and the caller writes its own arithmetic instead of using the shared one.
+    utilsCompileOnly lwjglJars
     utilsRuntimeOnly consoleCommandsJars
     utilsRuntimeOnly nexJars
     utilsRuntimeOnly kmlibDependency

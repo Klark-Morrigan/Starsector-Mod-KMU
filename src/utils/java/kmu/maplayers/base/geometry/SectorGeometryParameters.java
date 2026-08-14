@@ -48,4 +48,29 @@ record SectorGeometryParameters(
                 DEFAULT_WELD_TOLERANCE,
                 DEFAULT_MITER_SPIKE_LIMIT);
     }
+
+    /**
+     * How far a cell reaches once the channel is taken off the void's side.
+     *
+     * <p>The reach a void shape is DRAWN at. A pocket traced here stops one channel short of
+     * the cells around it, which is what leaves the gap between a fill and a border.
+     *
+     * @return the reach to trace a drawn void shape at
+     */
+    double measureDrawnReach() {
+        return cellRadius + borderInset;
+    }
+
+    /**
+     * How far a cell reaches once the channel is taken off the cell's own side.
+     *
+     * <p>The reach a CELL is filled to. A pocket traced here is what the void becomes when
+     * the cells around it fill right up to it, which is how a pocket is told from a channel
+     * that merely widened.
+     *
+     * @return the reach to trace a filled cell at
+     */
+    double measureFilledReach() {
+        return cellRadius - borderInset;
+    }
 }
