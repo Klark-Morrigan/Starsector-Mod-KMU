@@ -84,11 +84,12 @@ public final class PoliticalMapTerritories implements
     // hover is exactly what the frame painted.
     private final Map<String, List<double[]>> fillPolygonByCellId = new LinkedHashMap<>();
 
-    // Each drawn cell's presence band, baked against the very shape above. Written on the same
-    // one path for the same reason: a band is triangles laid inside a particular ring, so a cell
-    // re-shaped without its band re-baked would draw last shape's band inside this shape's cell.
-    // Most cells have none - a band is drawn only where a bloc the cell is not painted for is
-    // present - so the map is sparse against the two above rather than parallel to them.
+    // Each drawn cell's presence band, baked against the very shape above by its own pass once
+    // the names have been placed. Emptied for a cell whenever that shape is replaced, so a band
+    // is never read against a ring it was not laid in - the band pass then fills it back in for
+    // the cells it re-bakes. Most cells have none - a band is drawn only where a bloc the cell is
+    // not painted for is present - so the map is sparse against the two above rather than
+    // parallel to them.
     private final Map<String, CellRibbon> ribbonByCellId = new LinkedHashMap<>();
 
     // Retained derivation inputs. The holder map is mutated in place as systems flip; the
@@ -174,24 +175,40 @@ public final class PoliticalMapTerritories implements
      * writes here is what makes that true by construction instead of by two call sites
      * remembering to agree.
      *
+     * <p>Any band the cell was carrying goes with the shape it was laid inside. A band is
+     * triangles fitted to one particular ring, so a cell re-shaped and left holding its old band
+     * would draw the last shape's band inside this shape's cell; dropping it here means a cell
+     * only ever carries a band the band pass laid in the shape it holds now.
+     *
      * @param cellId      the cell this record is for
      * @param styledCell  its draw record
      * @param fillPolygon the shaped fill it was built from - the cell's painted extent, with the
      *                    border inset, frontier setback, and keep-out clipping already applied
-     * @param ribbon      the presence band baked inside that same fill, or
-     *                    {@link CellRibbon#NONE} where the cell draws none. Taken here rather than
-     *                    written separately because it is geometry derived from the shape beside
-     *                    it: a caller replacing one has to replace the other, and passing it makes
-     *                    that so by construction
      */
     public void putStyledCell(
             String cellId,
             StyledCell styledCell,
-            List<double[]> fillPolygon,
-            CellRibbon ribbon) {
+            List<double[]> fillPolygon) {
 
         styledCellByCellId.put(cellId, styledCell);
         fillPolygonByCellId.put(cellId, fillPolygon);
+        ribbonByCellId.remove(cellId);
+    }
+
+    /**
+     * Records one cell's presence band, baked inside the shape that cell already holds.
+     *
+     * <p>Written on its own pass rather than beside the shape above, because a band is settled
+     * from more than the cell it sits in: it keeps clear of the cluster names, and those are
+     * placed only once every cell has been shaped. So the shape goes in first and the band
+     * follows, and the band pass reads the shape back off this record rather than being handed
+     * one - which is what keeps the two describing the same ring without either caller having to
+     * remember the other.
+     *
+     * @param cellId the cell this band is for
+     * @param ribbon the baked band, or {@link CellRibbon#NONE} where the cell draws none
+     */
+    public void putCellRibbon(String cellId, CellRibbon ribbon) {
 
         // A bandless cell is left out of the map rather than holding an empty value, so the render
         // pass walks only the cells that draw one - which is a small share of them.

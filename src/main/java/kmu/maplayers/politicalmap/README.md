@@ -113,10 +113,15 @@ flowchart TD
     R --> PIPE
     PIPE --> S[Shape cells into<br/>bordered territories]
     S --> Fi[Split the fill:<br/>solid / hatched / unfilled]
-    Fi --> B[Bake each cell's<br/>presence band]
-    B --> L[Overlay bloc names]
-    L --> MAP([Coloured map])
+    Fi --> L[Overlay bloc names]
+    L --> B[Bake each cell's presence band,<br/>around the names]
+    B --> MAP([Coloured map])
 ```
+
+The bands come after the names rather than before them because they are laid *around* them: a
+name is fitted inside the border its cluster's cells trace, so it has no place until the cells
+are shaped, and a band baked before that would run under a word. Baked last, each band carves the
+names' boxes out of its cell's ring and lays its runs along what is left.
 
 What changes between views is only those three inputs; from the seam on, every view shapes, fills,
 bands, and labels identically. The sources themselves and the three fill states are
@@ -349,16 +354,24 @@ claim does, told apart by the very economy read the held count needs anyway - li
 side, since a claim counts a cell there only where dominance paints nothing: that is how those views
 extend themselves, not a mechanic of its own.
 `render.ribbon` then lays a plan around its cell: `RingPath` traces the ring
-inset by the pad and half the width, the length one width is worth is cut down where the whole band
-would outrun that ring (so a crowded cell compresses rather than losing a bloc off the end), and
-the whole band is stroked in one piece and cut into a `RibbonBand` of mitred triangles per run -
-one piece because the band is one shape whatever it is coloured in, and a run stroked on its own
-would butt against its neighbours rather than turn with them. All of it world-sized and baked at
+inset by the pad and half the width, the boxes the drawn cluster names occupy are carved off that
+ring, the length one width is worth is cut down where the whole band would outrun what is left of
+it (so a crowded cell - or one much of whose ring is under a name - compresses rather than losing a
+bloc off the end), and each surviving stretch of ring is stroked in one piece and cut into a
+`RibbonBand` of mitred triangles per run - one piece because the band is one shape whatever it is
+coloured in, and a run stroked on its own would butt against its neighbours rather than turn with
+them. The names are carved off the *ring* and never off the plan: a run's length is the readout, so
+a run cut short by a word would say something false about the system, where a run interrupted by
+one simply draws as two pieces of its own colour. Every name on the map is carved off every cell,
+since a name sits wherever its own cluster is roomiest and that can be over a neighbour - which is
+also why the bands are baked in a pass of their own after the names are placed
+(`CellRibbonsBaker`), rather than as each cell is shaped. All of it world-sized and baked at
 rebuild, so a band holds its share of a cell's outline at every zoom and the draw is a triangle list
 like the fills. `CellPresenceRibbonRenderer` is that draw, and it is emitted clear of the map's own
 nebula sprites rather than with the fills beneath them: a band is a readout of a system, so being
-fogged would cost it the very thing it is for. It still goes under the bloc names, a name being the
-coarser statement of the two. Every size the band is drawn at is the player's, read through
+fogged would cost it the very thing it is for. It still goes under the bloc names, though nothing
+rests on that any more: a band is laid clear of every name before it is drawn, so the two no
+longer meet for a draw order to settle. Every size the band is drawn at is the player's, read through
 `RibbonStyleReader` on the Visuals tab: the width, the clearance from the border, and the two run
 lengths those are multiples of - the ratio between the last two being what makes a bloc's stretch
 read as several colonies rather than one. All four are world sizes, so nothing about a band is

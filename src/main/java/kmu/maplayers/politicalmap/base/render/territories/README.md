@@ -33,18 +33,18 @@ identical to a full rebuild.
   cell (settled but unheld, or uninhabited) does not fuse, so it becomes a `LoneCell` carrying its
   own fill and outline, and resolves both palette slots to the shared neutral colour. Of the two,
   only a settled cell takes the pass's recede - see [what recedes](#what-recedes) below.
-- `CellRibbonsBuilder` (in [`render.ribbon`](../ribbon/CellRibbonsBuilder.java)) bakes one cell's
-  presence band from the same shape `StyledCellBuilder` just styled: the view's planner counts what
-  is in the system,
-  and the band is laid inside the cell's own ring as coloured triangles. It holds the pass's
-  ownership map as its gate, so only the cells something paints are counted at all - the claim
-  mechanic's count walks a system's whole market list, and most of the sector is cells nobody
-  paints.
 - `FactionTerritoryBuilder` bakes one bloc into a `StyledClusterGroup`: every body it holds, each
   with its national border traced across the systems in it, and each body's fill - which it hands
   to the framework's `SplitFillBuilder`, see
   [the split fill](#the-split-fill-solid-hatched-unfilled) below. Fill and border come from the
   same loops, so they cannot drift apart.
+
+No presence band is laid here. A band is baked *around* the cluster names, and the names are
+fitted after this pass - each inside the border these very cells trace - so the bands are a pass
+of their own afterwards, over the shapes this one recorded. `CellRibbonsBaker` (in
+[`render.ribbon`](../ribbon/CellRibbonsBaker.java)) drives it, and both the full rebuild and the
+incremental refresh reach it through the same call, which is what keeps an incrementally-updated
+band identical to the one a full rebuild would lay.
 
 The shaping the cell and territory builders drive is the framework's, in
 [`base.render.clusters`](../../../../base/render/clusters/README.md): `BorderSmoothing` sands spikes
@@ -156,10 +156,13 @@ against are the shapes this frame painted, never a re-derivation that could drif
 highlight reads the same shapes through `render/hover`'s adapter, so the cursor and the halo cannot
 disagree about what was drawn.
 
-The cell's presence band (`CellRibbon`, from `render.ribbon`) rides on that same write for the same
-reason, being triangles laid inside that very polygon: a cell re-shaped without its band re-baked
-would draw the last shape's band inside this shape's cell. It is a third argument rather than a
-second call, so no caller can replace one without the other. Unlike the two beside it the map is
+The cell's presence band (`CellRibbon`, from `render.ribbon`) is written by its own call, because
+it is settled from more than the cell it sits in: a band keeps clear of the cluster names, and
+those are placed only once every cell has been shaped. So the shape goes in first and the band
+follows, and `CellRibbonsBaker` reads the shape back off this record rather than being handed one.
+What ties the two is the write that records a shape *dropping* whatever band the cell was carrying:
+a band is triangles laid inside one particular ring, so a re-shaped cell keeping its band would
+draw the last shape's band inside this shape's cell. Unlike the two maps beside it this one is
 sparse - a bandless cell is left out rather than held as an empty value - since a band is drawn
 only where a bloc the cell is *not* painted for is present in it, which most of the sector is not.
 

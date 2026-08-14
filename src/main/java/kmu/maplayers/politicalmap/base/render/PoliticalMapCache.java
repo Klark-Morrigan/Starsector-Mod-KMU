@@ -22,6 +22,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.render.debug.DebugBorderTracingBuilder;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterLabelStylingSnapshot;
+import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder;
 import kmu.settings.KmuLunaSettings;
@@ -282,6 +283,15 @@ final class PoliticalMapCache {
                     cellGeometry,
                     Global.getSector(),
                     ClusterLabelStylingSnapshot.resolveFrom(territories));
+
+                // The bands come last, after the names have places, because they are laid around
+                // them: a band is cut by the room the names take, so baking one before the fit
+                // would leave it running under a word rather than clear of it.
+                CellRibbonsBaker.bakeAllCellRibbons(
+                    territories,
+                    cellGeometry.cells(),
+                    Global.getSector(),
+                    standingAnchors.getAnchors());
             }
 
             // The name labels are minted from the placements just rebuilt (empty when the names

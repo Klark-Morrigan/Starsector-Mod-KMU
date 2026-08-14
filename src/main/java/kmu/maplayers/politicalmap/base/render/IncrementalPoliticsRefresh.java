@@ -20,7 +20,7 @@ import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterLabelStylingSnapshot;
-import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonsBuilder;
+import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritoryBuilder;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.StyledCellBuilder;
@@ -44,6 +44,12 @@ import java.util.Set;
  * (the old holder's and the new one's) through the same {@link StyledCellBuilder} and
  * {@link FactionTerritoryBuilder} primitives a full rebuild uses, so the incremental result
  * matches a full rebuild.
+ *
+ * <p>The presence bands are baked last here for the reason they are baked last in a full
+ * rebuild: they are laid around the cluster names, so they follow the re-fit rather than the
+ * re-shape. What that costs differs between the two paths, and only because a re-fit does: a
+ * batch that flipped nothing moved no name, so only the marked systems' bands are re-baked,
+ * while a flip can place a re-fitted name over any cell at all and so re-bakes every band.
  */
 final class IncrementalPoliticsRefresh {
     private static final Logger LOG = Global.getLogger(IncrementalPoliticsRefresh.class);
@@ -98,36 +104,27 @@ final class IncrementalPoliticsRefresh {
                     systemId,
                     disturbance);
             }
-            // Built after the re-derive, so the holding it gates bands on is the updated one: a
-            // system that just lost its last colony must not still be offered a band.
-            var ribbonsBuilder = CellRibbonsBuilder.createForPass(
-                sector,
-                territories.getViewGrouping(),
-                territories.getHolderBySystemId(),
-                geometryCache);
-
             if (!disturbance.hasFlips()) {
                 // Every marked system resized without flipping its holder, so no fill or border
-                // moved - but a band counts colonies rather than weighing them, and the events
-                // that mark a system are exactly the ones that add or remove one. So the bands of
-                // the marked systems are re-baked and nothing else is. Logged so an un-updated
-                // colour can be confirmed a no-op flip rather than a missed event.
-                rebakeRibbonsInPlace(territories, ribbonsBuilder, staleSystemIds, Set.of());
+                // moved and no name was re-fitted - but a band counts colonies rather than
+                // weighing them, and the events that mark a system are exactly the ones that add
+                // or remove one. So the bands of the marked systems are re-baked against the
+                // names already standing, and nothing else is. Logged so an un-updated colour can
+                // be confirmed a no-op flip rather than a missed event.
+                CellRibbonsBaker.bakeCellRibbonsOf(
+                    territories,
+                    geometryCache,
+                    sector,
+                    standingAnchors.getAnchors(),
+                    staleSystemIds);
+
                 LOG.debug("Political map politics update: no holder changed; stale="
                     + staleSystemIds.size());
                 return;
             }
             for (var cellId : disturbance.getCellIdsToReshape()) {
-                reshapeCellInPlace(territories, geometryCache, ribbonsBuilder, cellId);
+                reshapeCellInPlace(territories, geometryCache, cellId);
             }
-
-            // The marked systems the flips left standing: their shape is untouched, so they were
-            // not re-shaped above, but their colony count may have moved all the same.
-            rebakeRibbonsInPlace(
-                territories,
-                ribbonsBuilder,
-                staleSystemIds,
-                disturbance.getCellIdsToReshape());
 
             // A flip changes which systems are contiguous - it can sever one territory in two or
             // bridge two into one - so the cursor read's cluster index is re-derived off the
@@ -173,6 +170,17 @@ final class IncrementalPoliticsRefresh {
                 factionLabels,
                 standingAnchors.getAnchors(),
                 NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
+
+            // Every band, not only the disturbed cells', and after the re-fit above rather than
+            // beside the re-shape. A flip can re-partition clusters, and a re-fitted name is
+            // placed wherever its new cluster is roomiest - which can be a cell this batch never
+            // touched. A band that kept clear of where that name used to sit is no longer clear
+            // of it, so the only cells this could safely skip are the ones it cannot identify.
+            CellRibbonsBaker.bakeAllCellRibbons(
+                territories,
+                geometryCache,
+                sector,
+                standingAnchors.getAnchors());
 
             LOG.debug("Political map politics updated incrementally; stale="
                 + staleSystemIds.size()
@@ -244,46 +252,14 @@ final class IncrementalPoliticsRefresh {
         return neighbours;
     }
 
-    // Re-bakes the presence bands of the marked systems this batch did not re-shape, over the
-    // shapes they already carry.
-    //
-    // Marked-but-unflipped is the case the fills have nothing to do for and a band does: the
-    // colonisation and transfer events that mark a system are exactly the events that change how
-    // many colonies are in it, and a band is a count of colonies. The re-shaped cells are skipped
-    // because their bands were baked afresh against their new shapes a moment ago.
-    //
-    // Written through the same pairing put as everything else - the cell's standing draw record
-    // and shape go back in beside the new band - so a band can never be replaced on its own
-    // against a shape that has moved.
-    private static void rebakeRibbonsInPlace(
-            PoliticalMapTerritories territories,
-            CellRibbonsBuilder ribbonsBuilder,
-            Set<String> staleSystemIds,
-            Set<String> reshapedCellIds) {
-
-        for (var systemId : staleSystemIds) {
-
-            var styled = territories.getStyledCellByCellId().get(systemId);
-            var fillPolygon = territories.getFillPolygonByCellId().get(systemId);
-
-            if (reshapedCellIds.contains(systemId) || styled == null || fillPolygon == null) {
-                continue;
-            }
-            territories.putStyledCell(
-                systemId,
-                styled,
-                fillPolygon,
-                ribbonsBuilder.buildCellRibbon(systemId, fillPolygon));
-        }
-    }
-
     // Re-shapes one cell against the now-updated holders and replaces its draw record, or
     // drops it when the cell contributes nothing (inset-collapsed, or factionless with
-    // neither its fill nor its outline drawn).
+    // neither its fill nor its outline drawn). The cell's band is not laid here: replacing the
+    // shape drops it, and the band pass at the end of the batch lays a fresh one inside the new
+    // shape, once the names it has to keep clear of have been re-fitted.
     private static void reshapeCellInPlace(
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
-            CellRibbonsBuilder ribbonsBuilder,
             String cellId) {
 
         var edges = geometryCache.getCellEdgesByCellId().get(cellId);
@@ -307,13 +283,7 @@ final class IncrementalPoliticsRefresh {
         if (styled == null) {
             territories.removeStyledCell(cellId);
         } else {
-            // The band is baked against the shape this re-shape just produced, never carried
-            // over: it is triangles laid inside a particular ring, and the ring has moved.
-            territories.putStyledCell(
-                cellId,
-                styled,
-                shaped.fillPolygon(),
-                ribbonsBuilder.buildCellRibbon(drawnSystemId, shaped.fillPolygon()));
+            territories.putStyledCell(cellId, styled, shaped.fillPolygon());
         }
     }
 

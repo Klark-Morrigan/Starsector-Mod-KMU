@@ -193,9 +193,14 @@ styling, the view grouping, the filter snapshot, and who holds each system.
 Each drawn cell's presence band is baked into it too, and baked rather than emitted
 because every size in it is a world quantity: the ring it runs along, the width it is
 stroked at, and how far each run reaches all resolve at rebuild, so a frame draws a
-triangle list rather than laying one out. The band is written through the same call as the
-cell's shape for that reason - it is triangles laid inside that shape, so the two move
-together or not at all.
+triangle list rather than laying one out.
+
+The bands are baked in a pass of their own after the rest of a rebuild, because a band keeps
+clear of the cluster names and the names are placed only once every cell has been shaped -
+each is fitted inside the border its cluster's cells trace. So the cells' shapes go in first
+and the bands follow, over the shapes the territories already hold. Recording a shape drops
+whatever band that cell was carrying, which is what keeps a band from outliving the ring it
+was laid in; the band pass then fills it back in.
 
 A frame measures nothing about a band at all: every size in one is a world size, so how
 large it lands on screen is the map's own scaling of the triangle list and no question
@@ -303,7 +308,10 @@ Per frame, in increasing cost:
    territories rebuilt. The marked systems' presence bands are re-baked whether or not
    anything flipped: the colonisation and transfer events that mark a system are exactly
    the events that change how many colonies are in it, and a band counts colonies where
-   the fills only weigh them.
+   the fills only weigh them. A flip widens that to every band on the map, because it
+   re-fits the names: a re-fitted name is placed wherever its new cluster is roomiest,
+   which can be over a cell this batch never touched, and a band that kept clear of where
+   that name used to sit is no longer clear of it.
 3. **Content changed** (a setting, a sidebar toggle, a view's own live input) - the
    territories are rebuilt in full over the standing geometry. The cells are
    untouched, since ownership and styling do not move a border. The label placements

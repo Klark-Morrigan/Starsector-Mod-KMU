@@ -17,6 +17,7 @@ Part of [the map-layer framework](../../README.md); see the
 
 - [Layout](#layout)
 - [Placement: where a name sits](#placement-where-a-name-sits)
+- [The room a name takes](#the-room-a-name-takes)
 - [Rendering: the name and its overlay](#rendering-the-name-and-its-overlay)
 - [What is not here](#what-is-not-here)
 
@@ -84,6 +85,21 @@ name goes. Both resolvers are
 resolved in one step into a [`ClusterLabelSubject`](anchor/ClusterLabelSubject.java) bound to the
 cluster's identity, so neither can be taken for a different owner than the other - and restyling a
 carried placement is a substitution rather than three parallel values to keep in step.
+
+## The room a name takes
+
+A placement states where its name sits as a line plus the girth of the block filling it, which is
+what the fit searched with. Anything that has to stay out of a name's way wants those two read as
+one shape instead, so [`ClusterNameBoxes`](anchor/ClusterNameBoxes.java) turns the placements into
+the oriented boxes the words occupy - through `Segment.computeBandCorners`, the same box the
+diagnostic overlay draws, so what is shown and what is kept clear of cannot be two readings of one
+placement. A collapsed fit contributes none, having nothing drawn to be in the way of.
+
+The boxes are the whole map's, never one cluster's: a name sits wherever its own cluster is
+roomiest, and that can be over a neighbour's cells entirely, so whoever a box belongs to says
+nothing about whose way it is in. The political map's presence bands are what read them today,
+which is also why those bands are baked after the placements are fitted rather than as their cells
+are shaped.
 
 ## Rendering: the name and its overlay
 

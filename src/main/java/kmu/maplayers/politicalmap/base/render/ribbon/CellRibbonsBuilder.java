@@ -25,7 +25,9 @@ import java.util.Map;
  * view paints by, resolved once so no cell is counted by a different one; the sizes are one read
  * of the player's proportions, so a slider moved mid-pass cannot leave two cells drawn to
  * different designs; the holder map is the pass's own, so the cells that get a band are exactly
- * the cells something painted. Sampling them here mirrors how the rest of a rebuild is driven -
+ * the cells something painted; and the names' boxes are one reading of where the map's names
+ * ended up, so no two cells keep clear of different placements of the same name. Sampling them
+ * here mirrors how the rest of a rebuild is driven -
  * one snapshot, then a per-item call over it - and is what lets the incremental re-shape bake a
  * band identical to the one the full rebuild would have.
  *
@@ -48,19 +50,22 @@ public final class CellRibbonsBuilder {
     private final Map<String, DominantHolder> holderBySystemId;
     private final Map<String, StarSystemAPI> systemById;
     private final Map<String, double[]> siteBySystemId;
+    private final List<List<double[]>> nameBoxes;
 
     private CellRibbonsBuilder(
             SystemRibbonPlanner planner,
             RibbonStyle style,
             Map<String, DominantHolder> holderBySystemId,
             Map<String, StarSystemAPI> systemById,
-            Map<String, double[]> siteBySystemId) {
-                
+            Map<String, double[]> siteBySystemId,
+            List<List<double[]>> nameBoxes) {
+
         this.planner = planner;
         this.style = style;
         this.holderBySystemId = holderBySystemId;
         this.systemById = systemById;
         this.siteBySystemId = siteBySystemId;
+        this.nameBoxes = nameBoxes;
     }
 
     /**
@@ -77,13 +82,17 @@ public final class CellRibbonsBuilder {
      *                         asked for a band at all
      * @param geometryCache    the cells' geometry, read for each system's own site - the point a
      *                         band's start is found above
+     * @param nameBoxes        the room the drawn cluster names take up, which every cell's band
+     *                         keeps out of; the whole map's, since a name reaches into cells its
+     *                         own cluster does not hold
      * @return the source the pass bakes its bands through
      */
     public static CellRibbonsBuilder createForPass(
             SectorAPI sector,
             ViewGrouping viewGrouping,
             Map<String, DominantHolder> holderBySystemId,
-            CellGeometryCache geometryCache) {
+            CellGeometryCache geometryCache,
+            List<List<double[]>> nameBoxes) {
 
         if (!KmuPoliticalMapSettings.shouldDrawPoliticalMapRibbons()) {
             return createBandlessPass();
@@ -103,7 +112,8 @@ public final class CellRibbonsBuilder {
             style,
             holderBySystemId,
             StarSystems.indexById(sector),
-            geometryCache.getSiteBySystemId());
+            geometryCache.getSiteBySystemId(),
+            nameBoxes);
     }
 
     /**
@@ -135,7 +145,8 @@ public final class CellRibbonsBuilder {
             fillPolygon,
             site,
             planner.planSystemRibbon(system),
-            style);
+            style,
+            nameBoxes);
     }
 
     // A pass with the bands switched off, which the empty holding states outright: the holding is
@@ -149,6 +160,7 @@ public final class CellRibbonsBuilder {
             BANDLESS_SIZES,
             Map.of(),
             Map.of(),
-            Map.of());
+            Map.of(),
+            List.of());
     }
 }

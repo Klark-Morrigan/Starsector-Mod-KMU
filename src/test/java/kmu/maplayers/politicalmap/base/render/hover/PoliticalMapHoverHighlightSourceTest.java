@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.render.hover;
 
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
-import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
@@ -173,8 +172,7 @@ final class PoliticalMapHoverHighlightSourceTest {
             territories.putStyledCell(
                 cell.getKey(),
                 PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-                cell.getValue(),
-                CellRibbon.NONE);
+                cell.getValue());
         }
         if (clusterGroup != null) {
             territories.getStyledClusterGroupByOwnerId().put(FACTION_ID, clusterGroup);

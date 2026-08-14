@@ -399,7 +399,7 @@ final class PoliticalMapTerritoriesTest {
             var styledCell = buildAnyStyledCell();
             var fillPolygon = buildSquarePolygon();
 
-            territories.putStyledCell("system", styledCell, fillPolygon, CellRibbon.NONE);
+            territories.putStyledCell("system", styledCell, fillPolygon);
 
             assertThat(territories.getStyledCellByCellId())
                 .containsOnlyKeys("system");
@@ -417,21 +417,33 @@ final class PoliticalMapTerritoriesTest {
             // The drift the paired write exists to prevent: a re-shaped cell must not keep
             // answering the cursor with the extent it had before it was re-shaped.
             var territories = buildDrawablesWith(Map.of(), Map.of());
-            territories.putStyledCell(
-                "system",
-                buildAnyStyledCell(),
-                buildSquarePolygon(),
-                CellRibbon.NONE);
+            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
 
             var reshapedCell = buildAnyStyledCell();
             var reshapedPolygon = buildTrianglePolygon();
 
-            territories.putStyledCell("system", reshapedCell, reshapedPolygon, CellRibbon.NONE);
+            territories.putStyledCell("system", reshapedCell, reshapedPolygon);
 
             assertThat(territories.getStyledCellByCellId().get("system"))
                 .isSameAs(reshapedCell);
             assertThat(territories.getFillPolygonByCellId().get("system"))
                 .isSameAs(reshapedPolygon);
+        }
+
+        @Test
+        void putStyledCellDropsTheBandLaidInsideTheShapeItReplaces() {
+            // A band is triangles fitted to one particular ring, so a re-shaped cell keeping its
+            // band would draw the last shape's stripe inside this shape's cell. The band pass
+            // lays a fresh one afterwards; what must not survive is the old one.
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+
+            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
+            territories.putCellRibbon("system", buildAnyRibbon());
+
+            territories.putStyledCell("system", buildAnyStyledCell(), buildTrianglePolygon());
+
+            assertThat(territories.getRibbonByCellId())
+                .isEmpty();
         }
     }
 
@@ -444,11 +456,7 @@ final class PoliticalMapTerritoriesTest {
             // shape must go with the draw record rather than linger as a phantom hit cluster.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell(
-                "system",
-                buildAnyStyledCell(),
-                buildSquarePolygon(),
-                CellRibbon.NONE);
+            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
             territories.removeStyledCell("system");
 
             assertThat(territories.getStyledCellByCellId())
@@ -462,16 +470,8 @@ final class PoliticalMapTerritoriesTest {
 
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell(
-                "dropped",
-                buildAnyStyledCell(),
-                buildSquarePolygon(),
-                CellRibbon.NONE);
-            territories.putStyledCell(
-                "kept",
-                buildAnyStyledCell(),
-                buildTrianglePolygon(),
-                CellRibbon.NONE);
+            territories.putStyledCell("dropped", buildAnyStyledCell(), buildSquarePolygon());
+            territories.putStyledCell("kept", buildAnyStyledCell(), buildTrianglePolygon());
             territories.removeStyledCell("dropped");
 
             assertThat(territories.getStyledCellByCellId())
@@ -486,11 +486,8 @@ final class PoliticalMapTerritoriesTest {
             // otherwise a dropped cell keeps painting a floating stripe of triangles.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell(
-                "system",
-                buildAnyStyledCell(),
-                buildSquarePolygon(),
-                buildAnyRibbon());
+            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
+            territories.putCellRibbon("system", buildAnyRibbon());
             territories.removeStyledCell("system");
 
             assertThat(territories.getRibbonByCellId())
@@ -502,16 +499,12 @@ final class PoliticalMapTerritoriesTest {
     class PutCellRibbon {
 
         @Test
-        void putStyledCellRecordsABandUnderTheCellThatDrawsIt() {
+        void putCellRibbonRecordsABandUnderTheCellThatDrawsIt() {
 
             var territories = buildDrawablesWith(Map.of(), Map.of());
             var ribbon = buildAnyRibbon();
 
-            territories.putStyledCell(
-                "system",
-                buildAnyStyledCell(),
-                buildSquarePolygon(),
-                ribbon);
+            territories.putCellRibbon("system", ribbon);
 
             assertThat(territories.getRibbonByCellId())
                 .containsOnlyKeys("system");
@@ -520,38 +513,25 @@ final class PoliticalMapTerritoriesTest {
         }
 
         @Test
-        void putStyledCellKeepsABandlessCellOutOfTheBandMap() {
+        void putCellRibbonKeepsABandlessCellOutOfTheBandMap() {
             // Most of the sector draws no band, so the map is kept sparse rather than parallel to
             // the cells: the render pass walks the cells that draw one and no others.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell(
-                "system",
-                buildAnyStyledCell(),
-                buildSquarePolygon(),
-                CellRibbon.NONE);
+            territories.putCellRibbon("system", CellRibbon.NONE);
 
             assertThat(territories.getRibbonByCellId())
                 .isEmpty();
         }
 
         @Test
-        void putStyledCellClearsAStandingBandWhenTheCellStopsDrawingOne() {
+        void putCellRibbonClearsAStandingBandWhenTheCellStopsDrawingOne() {
             // The re-bake that finds nothing left to report - a rival's last colony in the system
             // has gone. Without the clear, the cell would keep drawing the band it no longer earns.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell(
-                "system",
-                buildAnyStyledCell(),
-                buildSquarePolygon(),
-                buildAnyRibbon());
-
-            territories.putStyledCell(
-                "system",
-                buildAnyStyledCell(),
-                buildSquarePolygon(),
-                CellRibbon.NONE);
+            territories.putCellRibbon("system", buildAnyRibbon());
+            territories.putCellRibbon("system", CellRibbon.NONE);
 
             assertThat(territories.getRibbonByCellId())
                 .isEmpty();

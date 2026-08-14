@@ -4,6 +4,8 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.math.geometry.Segment;
+
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
@@ -11,6 +13,8 @@ import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
+import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.ClusterIdentity;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
@@ -19,7 +23,6 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
-import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
 import kmu.maplayers.politicalmap.base.render.ribbon.RibbonSettingsFixtures;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritoryBuilder;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
@@ -41,6 +44,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -122,6 +126,7 @@ final class IncrementalPoliticsRefreshTest {
         private MockedStatic<StyledCellBuilder> styledCellsMock;
         private MockedStatic<FactionTerritoryBuilder> territoriesMock;
         private MockedStatic<ClusterAnchorsBuilder> anchorsMock;
+        private MockedStatic<NameFormatPreference> nameFormatMock;
 
         private SectorAPI sectorMock;
 
@@ -178,8 +183,11 @@ final class IncrementalPoliticsRefreshTest {
             openSeam(LabelsBuilder.class);
 
             // Read as an argument to the label rebuild, so it evaluates even with that
-            // rebuild neutralised - and it reads save-backed memory no test JVM has.
-            openSeam(NameFormatPreference.class)
+            // rebuild neutralised - and it reads save-backed memory no test JVM has. Held as a
+            // field because a band's re-bake reads it too: the room a name takes is reserved only
+            // while the names are drawing, so a case about that re-stubs this.
+            nameFormatMock = openSeam(NameFormatPreference.class);
+            nameFormatMock
                 .when(NameFormatPreference::getSelectedNameFormat)
                 .thenReturn(FactionNameFormatChoice.NONE);
 
@@ -269,8 +277,7 @@ final class IncrementalPoliticsRefreshTest {
             territories.putStyledCell(
                 FLIPPED_SYSTEM,
                 PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-                buildBandSizedCell(),
-                CellRibbon.NONE);
+                buildBandSizedCell());
 
             // The band starts above the cell's own site, so the marked system needs one; the
             // shared geometry fixture records none, every other case being about shapes.
@@ -291,6 +298,41 @@ final class IncrementalPoliticsRefreshTest {
             // Nothing else moved: a re-bake is not a re-shape.
             styledCellsMock.verifyNoInteractions();
             territoriesMock.verifyNoInteractions();
+        }
+
+        @Test
+        void applyStalePoliticsUpdatesRebakesABandClearOfTheNamesAlreadyPlaced() {
+            // A band is laid around the cluster names, so a re-bake has to read the placements the
+            // map is drawing rather than lay a band as though there were none. This name lies
+            // across the whole marked cell, which leaves its ring with nowhere to put one - a
+            // re-bake blind to the names would hand it a band running under the word.
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+
+            territories.putStyledCell(
+                FLIPPED_SYSTEM,
+                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
+                buildBandSizedCell());
+
+            when(cellGeometry.cells().getSiteBySystemId())
+                .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
+
+            when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
+                .thenReturn(system -> BAND_OF_ONE_RUN);
+
+            // A name takes up room only while the names are being drawn at all.
+            nameFormatMock
+                .when(NameFormatPreference::getSelectedNameFormat)
+                .thenReturn(FactionNameFormatChoice.SHORT);
+
+            standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
+
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(HEGEMONY));
+
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            applyTo(territories);
+
+            assertThat(territories.getRibbonByCellId())
+                .isEmpty();
         }
 
         @Test
@@ -494,6 +536,24 @@ final class IncrementalPoliticsRefreshTest {
                 new ArrayList<Label>(),
                 cellGeometry);
         }
+    }
+
+    // A placement whose name covers the whole band-sized cell above: the line runs clear across
+    // it and the block is girthier than the cell, so no stretch of that cell's ring is left
+    // uncovered. Only the accepted line and the girth are read off a placement here.
+    private static ClusterAnchor buildNameAcrossTheCell() {
+        return new ClusterAnchor(
+            new ClusterIdentity(HEGEMONY, Set.of(FLIPPED_SYSTEM)),
+            0f,
+            0f,
+            Color.WHITE,
+            List.of(),
+            0f,
+            new Segment(-1000.0, 2000.0, 5000.0, 2000.0),
+            null,
+            null,
+            6000f,
+            1);
     }
 
     // A cell large enough to hold the authored band clear of its own border, so a re-bake that

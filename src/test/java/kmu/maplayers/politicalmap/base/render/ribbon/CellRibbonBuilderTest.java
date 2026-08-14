@@ -33,6 +33,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>The remaining cases are the two ends of the size question the design answers deliberately:
  * a band longer than its cell's outline compresses rather than being cut short, and a cell with
  * no room for a band at all draws none rather than one crushed against its own border.
+ *
+ * <p>The names' cases are the same question asked of the room a cluster name takes: the band
+ * stops where a name starts and resumes past it, a run interrupted that way keeps its whole
+ * length across the two pieces rather than being cut short by the interruption, and a cell whose
+ * ring is wholly under a name draws nothing.
  */
 final class CellRibbonBuilderTest {
 
@@ -54,6 +59,26 @@ final class CellRibbonBuilderTest {
     // The cell's own site, the point the band's start is found above.
     private static final double[] CELL_SITE = new double[] {2000.0, 2000.0};
 
+    // A map whose names are all somewhere else, which is the state most cells are in: the band
+    // has its cell's whole ring to itself.
+    private static final List<List<double[]>> NO_NAMES = List.of();
+
+    // A name lying across the cell's top edge, 400 to 800 along the band's path from its start
+    // above the site - so the band meets it a run in and is clear of it a run later.
+    private static final List<List<double[]>> NAME_ACROSS_THE_TOP_EDGE = List.of(List.of(
+        new double[] {2400.0, 3400.0},
+        new double[] {2800.0, 3400.0},
+        new double[] {2800.0, 3800.0},
+        new double[] {2400.0, 3800.0}));
+
+    // A name across the whole cell - a long name over a small cluster, which leaves its cell's
+    // ring with no stretch clear anywhere.
+    private static final List<List<double[]>> NAME_ACROSS_THE_WHOLE_CELL = List.of(List.of(
+        new double[] {0.0, 0.0},
+        new double[] {4000.0, 0.0},
+        new double[] {4000.0, 4000.0},
+        new double[] {0.0, 4000.0}));
+
     // Round numbers rather than the shipped sizes, so the expected coordinates below are the
     // convention being pinned and not an echo of whatever the defaults happen to be: a 400-wide
     // band 200 clear of the border runs its centreline exactly 400 inside the cell.
@@ -69,6 +94,10 @@ final class CellRibbonBuilderTest {
     // One width of run - the shortest a segment can be, and short enough here to sit wholly on
     // the cell's top edge, so what it strokes is a plain quad with no corner in it.
     private static final int ONE_WIDTH = 1;
+
+    // Two widths of run, which is longer than the stretch of ring the name below leaves before
+    // it - so a run of this length has to be drawn in two pieces or lose half of itself.
+    private static final int TWO_WIDTHS = 2;
 
     // A plan far longer than any cell's outline can hold at full size: sixty runs of three widths
     // is 24000 units of band around an outline of 12800.
@@ -100,7 +129,8 @@ final class CellRibbonBuilderTest {
                     SQUARE_CELL,
                     CELL_SITE,
                     RibbonPlan.NONE,
-                    STYLE))
+                    STYLE,
+                    NO_NAMES))
                 .isEqualTo(CellRibbon.NONE);
         }
 
@@ -114,7 +144,8 @@ final class CellRibbonBuilderTest {
                 SQUARE_CELL,
                 CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
-                STYLE);
+                STYLE,
+                NO_NAMES);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -141,7 +172,8 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, ONE_WIDTH),
                     new RibbonSegment(BRIGHT, ONE_WIDTH))),
-                STYLE);
+                STYLE,
+                NO_NAMES);
 
             assertThat(ribbon.bands())
                 .extracting(RibbonBand::colour)
@@ -162,7 +194,8 @@ final class CellRibbonBuilderTest {
                 SQUARE_CELL,
                 CELL_SITE,
                 new RibbonPlan(crowdedRuns),
-                STYLE);
+                STYLE,
+                NO_NAMES);
 
             assertThat(ribbon.bands())
                 .hasSize(CROWDED_RUN_COUNT)
@@ -183,7 +216,8 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, NO_WIDTHS),
                     new RibbonSegment(BRIGHT, ONE_WIDTH))),
-                STYLE);
+                STYLE,
+                NO_NAMES);
 
             assertThat(ribbon.bands())
                 .extracting(RibbonBand::colour)
@@ -209,7 +243,8 @@ final class CellRibbonBuilderTest {
                 new RibbonPlan(List.of(
                     new RibbonSegment(BRIGHT, RUN_REACHING_THE_CORNER),
                     new RibbonSegment(DARK, RUN_REACHING_THE_CORNER))),
-                STYLE);
+                STYLE,
+                NO_NAMES);
 
             assertThat(hasCorner(ribbon.bands().get(0), 3800.0, 3800.0))
                 .isTrue();
@@ -222,6 +257,73 @@ final class CellRibbonBuilderTest {
         }
 
         @Test
+        void breaksTheBandWhereANameLiesAcrossTheRing() {
+            // The name covers the ring from 400 to 800 along, so the first run fills the stretch
+            // up to it and the second begins on the far side rather than under the word. What
+            // makes this the carve and not a coincidence is the far end of the second run: at
+            // 3200 it is one full run past where the name ends, so nothing of it was eaten.
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                CELL_SITE,
+                new RibbonPlan(List.of(
+                    new RibbonSegment(BRIGHT, ONE_WIDTH),
+                    new RibbonSegment(DARK, ONE_WIDTH))),
+                STYLE,
+                NAME_ACROSS_THE_TOP_EDGE);
+
+            assertThat(ribbon.bands())
+                .extracting(RibbonBand::colour)
+                .containsExactly(BRIGHT, DARK);
+
+            assertThat(hasCorner(ribbon.bands().get(0), 2400.0, 3800.0))
+                .isTrue();
+            assertThat(hasCorner(ribbon.bands().get(1), 2800.0, 3800.0))
+                .isTrue();
+            assertThat(hasCorner(ribbon.bands().get(1), 3200.0, 3800.0))
+                .isTrue();
+        }
+
+        @Test
+        void keepsAnInterruptedRunsWholeLengthAcrossThePiecesItDrawsAs() {
+            // A single run meeting a name: it carries on past it rather than stopping there, so
+            // the two pieces together are as long as the run would have been. A run's length is
+            // what says how many colonies a bloc holds, so a run cut short by a word would say
+            // something false about the system - which is why the names carve the ring and not
+            // the plan.
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                CELL_SITE,
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, TWO_WIDTHS))),
+                STYLE,
+                NAME_ACROSS_THE_TOP_EDGE);
+
+            assertThat(ribbon.bands())
+                .extracting(RibbonBand::colour)
+                .containsExactly(BRIGHT, BRIGHT);
+
+            // 400 of the run before the name and 400 after it: the second piece reaches 3200,
+            // where a run cut short at the name would have stopped at 2800.
+            assertThat(hasCorner(ribbon.bands().get(0), 2400.0, 3800.0))
+                .isTrue();
+            assertThat(hasCorner(ribbon.bands().get(1), 3200.0, 3800.0))
+                .isTrue();
+        }
+
+        @Test
+        void drawsNoBandOnACellWhoseRingIsWhollyUnderAName() {
+            // A long name over a small cluster. There is no stretch of ring left to state the
+            // plan on at any size, so the cell says nothing rather than squeezing a smear of
+            // colour into whatever slivers remain.
+            assertThat(CellRibbonBuilder.buildCellRibbon(
+                    SQUARE_CELL,
+                    CELL_SITE,
+                    new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
+                    STYLE,
+                    NAME_ACROSS_THE_WHOLE_CELL))
+                .isEqualTo(CellRibbon.NONE);
+        }
+
+        @Test
         void drawsNoBandOnACellWithNoRoomToHoldOne() {
             // The cell smaller than the pad and width together. The inset of such a ring comes
             // back tidy and correctly wound while being no inset at all, so the answer here is
@@ -230,7 +332,8 @@ final class CellRibbonBuilderTest {
                     TINY_CELL,
                     CELL_SITE,
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
-                    STYLE))
+                    STYLE,
+                    NO_NAMES))
                 .isEqualTo(CellRibbon.NONE);
         }
     }

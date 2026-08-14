@@ -179,31 +179,30 @@ public final class ClusterAnchorRenderer {
         }
     }
 
-    // The four corners of a band, in draw (factor-scaled) coordinates: the centreline
-    // segment widened to the girth along its own perpendicular. Null when the segment has
-    // no length to take a direction from, so the band collapses to its centreline.
+    // The four corners of a band, in draw (factor-scaled) coordinates: the world box the
+    // centreline occupies at that girth, scaled for drawing. Null when the segment has no
+    // length to take a direction from, so the band collapses to its centreline.
+    //
+    // The box itself comes from the segment rather than being widened here, because the same
+    // box is what a name is kept clear of elsewhere: an overlay drawing its own reading of
+    // the footprint would be a diagnostic that agrees with the thing it is meant to check
+    // only by coincidence.
     private static float[] bandCorners(
             Segment segment,
             float thickness,
             float factor) {
 
-        var normal = unitNormalOf(segment);
-        if (normal == null) {
+        var corners = segment.computeBandCorners(thickness);
+        if (corners.isEmpty()) {
             return null;
         }
-        // Half the girth along the centreline's perpendicular - the offset from the
-        // centreline to each long edge.
-        var halfX = normal[0] * thickness / 2f;
-        var halfY = normal[1] * thickness / 2f;
-        return new float[] {
-            (float) (segment.startX() + halfX) * factor,
-            (float) (segment.startY() + halfY) * factor,
-            (float) (segment.endX() + halfX) * factor,
-            (float) (segment.endY() + halfY) * factor,
-            (float) (segment.endX() - halfX) * factor,
-            (float) (segment.endY() - halfY) * factor,
-            (float) (segment.startX() - halfX) * factor,
-            (float) (segment.startY() - halfY) * factor};
+        var scaled = new float[corners.size() * 2];
+
+        for (var corner = 0; corner < corners.size(); corner++) {
+            scaled[corner * 2] = (float) corners.get(corner)[0] * factor;
+            scaled[corner * 2 + 1] = (float) corners.get(corner)[1] * factor;
+        }
+        return scaled;
     }
 
     // The centreline's unit perpendicular, shared by the band's edges and its lane rules,
