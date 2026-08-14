@@ -73,7 +73,7 @@ final class CellRibbonsBuilderTest {
 
         settingsMock = mockStatic(KmuPoliticalMapSettings.class);
 
-        RibbonSettingsFixtures.stubBandsOnAtShippedSizes(settingsMock);
+        RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
     }
 
     @AfterEach

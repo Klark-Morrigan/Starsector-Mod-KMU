@@ -15,8 +15,11 @@ import org.mockito.MockedStatic;
  */
 public final class RibbonSettingsFixtures {
 
-    // The shipped sizes, so a band baked under these is the band a player sees, and a cell built
-    // to hold "the default band" in one suite holds the same one in another.
+    // Sizes a band draws at and a four-thousand-unit cell holds, which is all any suite reaching
+    // for these needs. Deliberately not offered as "the shipped sizes" even though they currently
+    // match: the CSV row and its fallback constant are pinned against each other, and a third copy
+    // claiming to be the same number would be the only one nothing checks - so a default moved
+    // later would leave this quietly disagreeing while still reading as authoritative.
     private static final double BAND_WIDTH_WORLD = 120.0;
     private static final double BAND_INSET_PAD_WORLD = 60.0;
     private static final int SEGMENT_LENGTH_UNITS = 3;
@@ -28,12 +31,12 @@ public final class RibbonSettingsFixtures {
     }
 
     /**
-     * Answers the band knobs with the shipped sizes and the bands switched on.
+     * Answers the band knobs with the bands switched on, at sizes a band draws at.
      *
      * @param settingsMock an open seam over the political map's settings, which the caller owns
      *                     and closes; a suite wanting the bands off re-stubs the switch on top
      */
-    public static void stubBandsOnAtShippedSizes(
+    public static void stubBandsOnAtSizesThatDraw(
             MockedStatic<KmuPoliticalMapSettings> settingsMock) {
 
         settingsMock

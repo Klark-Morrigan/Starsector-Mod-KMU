@@ -193,9 +193,14 @@ styling, the view grouping, the filter snapshot, and who holds each system.
 Each drawn cell's presence band is baked into it too, and baked rather than emitted
 because every size in it is a world quantity: the ring it runs along, the width it is
 stroked at, and how far each run reaches all resolve at rebuild, so a frame draws a
-triangle list and measures nothing. The band is written through the same call as the
+triangle list rather than laying one out. The band is written through the same call as the
 cell's shape for that reason - it is triangles laid inside that shape, so the two move
 together or not at all.
+
+A frame measures exactly one thing about a band, and it is the one thing world sizes
+cannot answer: whether the width, scaled to the screen, still clears the player's
+minimum. That is a single comparison for the whole pass rather than one per cell, since
+compression shortens a crowded cell's runs but never thins the band.
 
 Retaining those inputs is what makes the incremental path *correct* rather than
 merely cheap:

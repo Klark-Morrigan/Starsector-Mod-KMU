@@ -191,7 +191,7 @@ final class IncrementalPoliticsRefreshTest {
             // A re-bake reads the player's band sizes, which reach LunaLib - so the knobs answer
             // from a seam here, at the sizes the mod ships, since no case in this suite is about
             // what a band is sized at.
-            RibbonSettingsFixtures.stubBandsOnAtShippedSizes(
+            RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(
                 openSeam(KmuPoliticalMapSettings.class));
 
             // The stale set is static and shared, so a residue from another suite would
