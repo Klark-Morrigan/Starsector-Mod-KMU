@@ -7,6 +7,7 @@ import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.labels.NameLineBoxes;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
@@ -128,14 +129,24 @@ public final class CellRibbonsBaker {
     // may still be holding; or the player would rather the bands ran whole beneath the names.
     // Nothing downstream branches on why - the builder takes the boxes and carves what it is
     // handed, which is what keeps the carve testable on hand-built rings.
+    //
+    // How much room a name is then taken to need is the player's too, and the two readings differ
+    // by more than they sound: a placement's fitted box is the chord the search accepted, which
+    // overhangs the words by whatever it beat them by, while the drawn lines are what the reader
+    // sees a name occupying. Both come back as world boxes, so the choice reaches no further than
+    // this call.
     private static List<List<double[]>> resolveNameBoxes(List<ClusterAnchor> clusterAnchors) {
 
         var isBandKeptClearOfNames = NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
             && KmuPoliticalMapSettings.shouldKeepPoliticalMapRibbonsClearOfNames();
 
-        return isBandKeptClearOfNames
-            ? ClusterNameBoxes.listNameBoxes(clusterAnchors)
-            : List.of();
+        if (!isBandKeptClearOfNames) {
+            return List.of();
+        }
+        return switch (KmuPoliticalMapSettings.getPoliticalMapRibbonNameClearance()) {
+            case FITTED_BOX -> ClusterNameBoxes.listNameBoxes(clusterAnchors);
+            case WORDS -> NameLineBoxes.listLineBoxes(clusterAnchors);
+        };
     }
 
     // Bakes each named cell's band inside the shape that cell already records, reporting how many

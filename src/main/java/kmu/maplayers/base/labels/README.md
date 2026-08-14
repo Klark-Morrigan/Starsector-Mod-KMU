@@ -24,7 +24,7 @@ Part of [the map-layer framework](../../README.md); see the
 ## Layout
 
 - `base.labels` (this package) - the drawn name: `Label`, `LabelsBuilder`, `LabelRenderer`,
-  and the shared `LabelFonts`.
+  the shared `LabelFonts`, and `NameLineBoxes`, which reads the room the drawn lines take.
 - `base.labels.anchor` - the placement subsystem that decides where each name sits and paints
   its debug overlay, plus the `DiagnosticPalette` every diagnostic grades its stages by.
 - `base.labels.anchor.specifications` - the search's tuning surface, read once per rebuild:
@@ -89,17 +89,32 @@ carried placement is a substitution rather than three parallel values to keep in
 ## The room a name takes
 
 A placement states where its name sits as a line plus the girth of the block filling it, which is
-what the fit searched with. Anything that has to stay out of a name's way wants those two read as
-one shape instead, so [`ClusterNameBoxes`](anchor/ClusterNameBoxes.java) turns the placements into
-the oriented boxes the words occupy - through `Segment.computeBandCorners`, the same box the
-diagnostic overlay draws, so what is shown and what is kept clear of cannot be two readings of one
-placement. A collapsed fit contributes none, having nothing drawn to be in the way of.
+what the fit searched with. Anything that has to stay out of a name's way wants that read as a shape
+instead, and there are two honest readings of it - both oriented world boxes, both built through
+`Segment.computeBandCorners`, so a consumer takes one list either way:
+
+| Reading | Class | A name occupies |
+| --- | --- | --- |
+| the fitted box | [`ClusterNameBoxes`](anchor/ClusterNameBoxes.java) | the accepted line at the block's fitted girth - one box per name |
+| the words | [`NameLineBoxes`](NameLineBoxes.java) | each drawn line's measured length by one line height - one box per line |
+
+The fitted box is what the search reserved and what the diagnostic overlay draws, so what is shown
+and what is kept clear of are one reading of the placement. It is also the looser of the two: the
+fit accepts a chord as soon as it is at least as long as the widest wrapped line, and the block is
+then drawn centred on that chord, so the box overhangs the words at both ends by however much the
+chord beat them.
+
+`NameLineBoxes` closes that gap by measuring each line at the height it renders at, off the same
+plan `LabelsBuilder` mints its strings from - so what is kept clear of is what is drawn, by
+construction. Per glyph is the level below and is the wrong one: it cuts the room into a comb of
+arcs between letters, and anything laying a shape into what is left ends up in the gap between two
+words. A collapsed fit contributes to neither reading, having nothing drawn to be in the way of.
 
 The boxes are the whole map's, never one cluster's: a name sits wherever its own cluster is
 roomiest, and that can be over a neighbour's cells entirely, so whoever a box belongs to says
-nothing about whose way it is in. The political map's presence bands are what read them today,
-which is also why those bands are baked after the placements are fitted rather than as their cells
-are shaped.
+nothing about whose way it is in. The political map's presence bands are what read them today -
+under a player setting picking which reading they take - which is also why those bands are baked
+after the placements are fitted rather than as their cells are shaped.
 
 ## Rendering: the name and its overlay
 

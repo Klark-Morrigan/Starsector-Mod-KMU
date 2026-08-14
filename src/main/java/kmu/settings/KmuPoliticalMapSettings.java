@@ -153,7 +153,10 @@ public final class KmuPoliticalMapSettings {
     // what the readout is for - are reachable by neither.
     // The name-clearing toggle is the other non-size boolean: whether a band breaks around the room
     // the cluster names take, or runs its whole ring and lets a name draw across it. A knob because
-    // which of the two readouts wins the room they share is taste rather than correctness.
+    // which of the two readouts wins the room they share is taste rather than correctness. The
+    // clearance choice beneath it is that toggle's detail rather than a second answer to it: given
+    // that a band does keep clear, how much of the ring a name is taken to occupy - the box its
+    // placement reserved, or the words as drawn.
     private static final String RIBBON_ENABLED_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_enabled";
     private static final String RIBBON_UNCONTESTED_ENABLED_FIELD =
@@ -162,6 +165,8 @@ public final class KmuPoliticalMapSettings {
         "kmu_map_politics_visuals_presenceRibbons_uncontestedShortRuns";
     private static final String RIBBON_KEEP_CLEAR_OF_NAMES_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_keepClearOfNames";
+    private static final String RIBBON_NAME_CLEARANCE_FIELD =
+        "kmu_map_politics_visuals_presenceRibbons_nameClearance";
     private static final String RIBBON_WIDTH_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_width";
     private static final String RIBBON_INSET_PAD_FIELD =
@@ -418,6 +423,13 @@ public final class KmuPoliticalMapSettings {
     // sitting on a band running beneath it. A toggle because that is a taste call, not a
     // correctness one: off returns the whole ring to the band and lets the names draw over it.
     private static final boolean DEFAULT_RIBBON_KEEP_CLEAR_OF_NAMES = true;
+
+    // The words rather than the box they were fitted into, since the fitted box is the chord the
+    // search accepted and a chord is accepted as soon as it beats the widest line - so it reserves
+    // room at both ends that nothing is ever drawn in. Keeping clear of that room costs a band ring
+    // for a name the player cannot see there.
+    private static final RibbonNameClearanceChoice DEFAULT_RIBBON_NAME_CLEARANCE =
+        RibbonNameClearanceChoice.WORDS;
 
     // The band's thickness in world units, and the gap between the border and the band's near
     // edge. Settled by eye on the shipped sector rather than derived: a band as thick as its own
@@ -869,6 +881,18 @@ public final class KmuPoliticalMapSettings {
         return KmuLunaSettings.readBoolean(
             RIBBON_KEEP_CLEAR_OF_NAMES_FIELD,
             DEFAULT_RIBBON_KEEP_CLEAR_OF_NAMES);
+    }
+
+    /**
+     * @return how much of its ring a band gives up to a cluster name lying over it: FITTED_BOX the
+     *         whole box the name's placement reserved, WORDS each drawn line's own measured extent
+     *         (the default), which is what the reader sees a name occupying. Unread while the bands
+     *         do not keep clear of the names at all
+     */
+    public static RibbonNameClearanceChoice getPoliticalMapRibbonNameClearance() {
+        return KmuLunaSettings.readChoice(
+            RIBBON_NAME_CLEARANCE_FIELD,
+            DEFAULT_RIBBON_NAME_CLEARANCE);
     }
 
     /**

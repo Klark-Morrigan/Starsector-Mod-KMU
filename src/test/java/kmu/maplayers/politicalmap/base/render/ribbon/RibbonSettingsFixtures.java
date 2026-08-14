@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
 import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.RibbonNameClearanceChoice;
 
 import org.mockito.MockedStatic;
 
@@ -36,6 +37,14 @@ public final class RibbonSettingsFixtures {
     // see its name boxes silently dropped and its band run the whole ring. A suite about the knob
     // itself states it on the case, for the reason the pair above are stated there.
     private static final boolean BANDS_KEPT_CLEAR_OF_NAMES = true;
+
+    // The placements' own boxes rather than the drawn words, which is not the shipped answer and is
+    // the only stubbing here that is not. The words are measured with the map-label face, and no
+    // test JVM can load one, so under the shipped answer every name would measure as nothing and a
+    // suite about the carve would silently be posing a map with no names on it. The fitted box is
+    // read off the placement alone, so it is the reading a hand-built placement can actually state.
+    private static final RibbonNameClearanceChoice NAME_CLEARANCE =
+        RibbonNameClearanceChoice.FITTED_BOX;
 
     // Stubs only; never instantiated.
     private RibbonSettingsFixtures() {
@@ -74,5 +83,8 @@ public final class RibbonSettingsFixtures {
         settingsMock
             .when(KmuPoliticalMapSettings::shouldKeepPoliticalMapRibbonsClearOfNames)
             .thenReturn(BANDS_KEPT_CLEAR_OF_NAMES);
+        settingsMock
+            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonNameClearance)
+            .thenReturn(NAME_CLEARANCE);
     }
 }

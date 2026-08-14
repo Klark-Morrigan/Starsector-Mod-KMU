@@ -154,6 +154,10 @@ final class LunaSettingsCsvIntegrationTest {
             "DEFAULT_HIDDEN_MARKET_SCALING",
             HiddenMarketScalingChoice.values()),
         new ChoiceBackedRadio(
+            "kmu_map_politics_visuals_presenceRibbons_nameClearance",
+            "DEFAULT_RIBBON_NAME_CLEARANCE",
+            RibbonNameClearanceChoice.values()),
+        new ChoiceBackedRadio(
             "kmu_politicalMapFactionOuterBorderColor",
             "DEFAULT_FACTION_OUTER_BORDER_COLOUR",
             FactionPaletteChoice.values()),
