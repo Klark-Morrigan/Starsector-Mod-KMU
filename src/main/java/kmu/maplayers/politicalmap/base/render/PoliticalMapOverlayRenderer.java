@@ -127,7 +127,7 @@ final class PoliticalMapOverlayRenderer {
         // to paint them from - the same reason the hover feedback stands down under it.
         if (!cache.isDebug()) {
             CellPresenceRibbonRenderer.renderOnMap(
-                cache.getTerritories().getRibbonByCellId(),
+                cache.getTerritories().getRibbonByCellId().values(),
                 factor,
                 alphaMult);
         }

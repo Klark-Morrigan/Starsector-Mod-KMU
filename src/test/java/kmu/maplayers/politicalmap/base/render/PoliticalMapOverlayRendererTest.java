@@ -9,6 +9,7 @@ import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
+import kmu.maplayers.politicalmap.base.render.ribbon.CellPresenceRibbonRenderer;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.settings.KmuPoliticalMapSettings;
 
@@ -52,6 +53,7 @@ final class PoliticalMapOverlayRendererTest {
         void renderOnMapEmitsTheTerritoriesForTheBandBeneathTheNebulae() {
             try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
                     var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
@@ -71,15 +73,19 @@ final class PoliticalMapOverlayRendererTest {
                     .verifyNoInteractions();
                 labelRendererMock
                     .verifyNoInteractions();
+                ribbonRendererMock
+                    .verifyNoInteractions();
             }
         }
 
         @Test
-        void renderOnMapEmitsTheFactionNamesForTheBandAboveTheNebulae() {
-            // The names are the whole of the upper band, and the reason the band exists: text stops
-            // being readable under the fog well before a fill stops reading as territory.
+        void renderOnMapEmitsThePresenceBandsAndTheFactionNamesForTheBandAboveTheNebulae() {
+            // The two sub-layers that are read rather than merely seen, and the reason the band
+            // exists: text stops being readable under the fog well before a fill stops reading as
+            // territory, and a band that says how a system is split fails the same way.
             try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
                     var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
@@ -90,6 +96,8 @@ final class PoliticalMapOverlayRendererTest {
                     buildCacheMock(), FACTOR, ALPHA_MULT,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
+                ribbonRendererMock.verify(() ->
+                    CellPresenceRibbonRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
                 labelRendererMock.verify(() ->
                     LabelRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
 
@@ -178,6 +186,33 @@ final class PoliticalMapOverlayRendererTest {
                     .verifyNoInteractions();
             }
         }
+
+        @Test
+        void renderOnMapEmitsNoPresenceBandsUnderTheDebugOverlayInTheBandAboveTheNebulae() {
+            // The bands are baked into the territories, and a debug frame built the border-stage
+            // overlay instead of them - so there is nothing to paint them from, and asking would
+            // reach through a frame this cache never built. The names are unaffected, being held
+            // by the cache in their own right, and are asserted so the guard is seen to stop one
+            // sub-layer rather than the whole band.
+            try (var borderStageRendererMock = mockStatic(ClusterBorderStageRenderer.class);
+                    var labelRendererMock = mockStatic(LabelRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
+                    var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
+
+                overlayRenderer.renderOnMap(
+                    buildDebugCacheMock(), FACTOR, ALPHA_MULT,
+                    MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
+
+                ribbonRendererMock
+                    .verifyNoInteractions();
+
+                labelRendererMock.verify(() ->
+                    LabelRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+            }
+        }
     }
 
     // The two switches that gate sub-layers within a band rather than deciding which band they are
@@ -220,7 +255,13 @@ final class PoliticalMapOverlayRendererTest {
         var territoriesMock = mock(PoliticalMapTerritories.class);
         when(territoriesMock.getStyledCellByCellId())
             .thenReturn(Map.of());
-            
+
+        // Stated rather than left to the default a mock would answer with, since the upper band is
+        // asserted to have reached the band pass at all - and a stub that resolves by accident is
+        // one the pass could stop calling without any test noticing.
+        when(territoriesMock.getRibbonByCellId())
+            .thenReturn(Map.of());
+
         // Read while assembling the hover highlight's arguments, so it has to resolve even though
         // the highlight renderer itself is stood in for.
         when(territoriesMock.getGlobalStyle())

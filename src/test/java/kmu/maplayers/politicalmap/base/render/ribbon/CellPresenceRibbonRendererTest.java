@@ -4,11 +4,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
-import java.util.AbstractMap;
+import java.util.AbstractCollection;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,58 +33,52 @@ final class CellPresenceRibbonRendererTest {
 
         @Test
         void renderOnMapReadsNoBandsWhenNoCellCarriesOne() {
-            
-            var ribbonsByCellIdFake = new RibbonsByCellIdFake(Map.of());
 
-            CellPresenceRibbonRenderer.renderOnMap(
-                ribbonsByCellIdFake,
-                ANY_MAP_FACTOR,
-                FULL_ALPHA);
+            var ribbonsFake = new RibbonsFake(List.of());
 
-            assertThat(ribbonsByCellIdFake.hasReadBands())
+            CellPresenceRibbonRenderer.renderOnMap(ribbonsFake, ANY_MAP_FACTOR, FULL_ALPHA);
+
+            assertThat(ribbonsFake.hasReadBands())
                 .isFalse();
         }
 
         @Test
         void renderOnMapReadsNoBandsWhenTheOverlayIsFullyFadedOut() {
+
             // A cell that does carry a band, so only the fade can be what stops it: at the ends of
             // the map's zoom fade every run would emit at zero effective alpha.
-            var ribbonsByCellIdFake = new RibbonsByCellIdFake(Map.of(
-                "cell",
+            var ribbonsFake = new RibbonsFake(List.of(
                 new CellRibbon(List.of(new RibbonBand(Color.WHITE, new float[0])))));
 
-            CellPresenceRibbonRenderer.renderOnMap(
-                ribbonsByCellIdFake,
-                ANY_MAP_FACTOR,
-                FADED_OUT_ALPHA);
+            CellPresenceRibbonRenderer.renderOnMap(ribbonsFake, ANY_MAP_FACTOR, FADED_OUT_ALPHA);
 
-            assertThat(ribbonsByCellIdFake.hasReadBands())
+            assertThat(ribbonsFake.hasReadBands())
                 .isFalse();
         }
     }
 
-    // A hand-built band map that reports whether the pass got past the guard. Only the read the
-    // emission itself makes - the walk over the cells' bands - is recorded, so the guard's own
-    // emptiness check does not count as having reached for something to paint.
-    private static final class RibbonsByCellIdFake extends AbstractMap<String, CellRibbon> {
+    // A hand-built band list that reports whether the pass got past the guard. Only the walk the
+    // emission itself makes is recorded, so the guard's own emptiness check does not count as
+    // having reached for something to paint.
+    private static final class RibbonsFake extends AbstractCollection<CellRibbon> {
 
-        private final Map<String, CellRibbon> ribbonByCellId;
+        private final Collection<CellRibbon> ribbons;
 
         private boolean hasReadBands;
 
-        private RibbonsByCellIdFake(Map<String, CellRibbon> ribbonByCellId) {
-            this.ribbonByCellId = ribbonByCellId;
+        private RibbonsFake(Collection<CellRibbon> ribbons) {
+            this.ribbons = ribbons;
         }
 
         @Override
-        public Set<Entry<String, CellRibbon>> entrySet() {
-            return ribbonByCellId.entrySet();
-        }
-
-        @Override
-        public Collection<CellRibbon> values() {
+        public Iterator<CellRibbon> iterator() {
             hasReadBands = true;
-            return ribbonByCellId.values();
+            return ribbons.iterator();
+        }
+
+        @Override
+        public int size() {
+            return ribbons.size();
         }
 
         private boolean hasReadBands() {

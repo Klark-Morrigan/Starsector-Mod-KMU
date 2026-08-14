@@ -29,6 +29,11 @@ For each controlling bloc the overlay draws four things:
 - faint seams inside it,
 - the bloc's name across it.
 
+A system where somebody other than the bloc painting it also has colonies carries a fifth: a banded
+stroke running inside that one cell, a run per colony in the bloc's own colours, so a cell reads as
+who is there and in what proportion without the fill having to be split. A system its painter holds
+alone stays bare, which is most of the sector.
+
 The tab body picks the view by radio, and a filter picker below it can spotlight one bloc. When a
 bloc is spotlighted, the rest fade into a muted background. The radio always lists the views in
 the same order: **Factions**, then **Alliances** (only with Nexerelin), then **Claims**.

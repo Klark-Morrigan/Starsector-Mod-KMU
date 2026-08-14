@@ -10,7 +10,7 @@ import kmu.diagnostics.KmuProfiling;
 
 import org.lwjgl.opengl.GL11;
 
-import java.util.Map;
+import java.util.Collection;
 
 /**
  * Paints the cells' baked presence bands on the sector (M) map: each run of each band as its own
@@ -44,17 +44,19 @@ public final class CellPresenceRibbonRenderer {
      * fully faded-out map emits nothing rather than every run at zero effective alpha, which
      * would cost the whole pass for pixels that cannot appear.
      *
-     * @param ribbonByCellId the frame's baked bands, keyed by cell id; a cell drawing none is
-     *                       absent rather than present with an empty band
-     * @param factor         the map's world-to-screen scale, applied to every coordinate
-     * @param alphaMult      the map's own fade, applied over each run's colour
+     * @param ribbons   the frame's baked bands, one per cell that draws one; the cells that draw
+     *                  none are not among them. Taken as the bands alone rather than as the map
+     *                  they are held in, since which cell a band belongs to is settled where it
+     *                  was baked and says nothing about how it is painted
+     * @param factor    the map's world-to-screen scale, applied to every coordinate
+     * @param alphaMult the map's own fade, applied over each run's colour
      */
     public static void renderOnMap(
-            Map<String, CellRibbon> ribbonByCellId,
+            Collection<CellRibbon> ribbons,
             float factor,
             float alphaMult) {
 
-        if (ribbonByCellId.isEmpty() || alphaMult <= 0f) {
+        if (ribbons.isEmpty() || alphaMult <= 0f) {
             return;
         }
         // Profiled like the other map passes, since this runs every frame the map is open; only
@@ -64,7 +66,7 @@ public final class CellPresenceRibbonRenderer {
             () -> GlPasses.runBlendedPass(
                 GlBlendMode.ALPHA,
                 GlLineQuality.ALIASED,
-                () -> drawBands(ribbonByCellId, factor, alphaMult)));
+                () -> drawBands(ribbons, factor, alphaMult)));
     }
 
     // Every run of every band, in the order they were laid around their rings.
@@ -74,11 +76,11 @@ public final class CellPresenceRibbonRenderer {
     // at all. Grouping them would trade that for a per-frame sort over a set that changes only at
     // rebuild.
     private static void drawBands(
-            Map<String, CellRibbon> ribbonByCellId,
+            Collection<CellRibbon> ribbons,
             float factor,
             float alphaMult) {
 
-        for (var ribbon : ribbonByCellId.values()) {
+        for (var ribbon : ribbons) {
             for (var band : ribbon.bands()) {
                 GlColour.set(band.colour(), alphaMult);
                 GlRuns.drawScaled(GL11.GL_TRIANGLES, band.triangles(), factor);
