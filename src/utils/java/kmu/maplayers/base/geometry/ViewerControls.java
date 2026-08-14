@@ -14,8 +14,8 @@ import java.util.prefs.Preferences;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JColorChooser;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
@@ -88,7 +88,7 @@ final class ViewerControls {
             Runnable onSettled) {
 
         var saved = readDouble(key, fallback);
-        var slider = new JSlider(0, SLIDER_STEPS, toStep(saved, minimum, maximum));
+        var slider = new JSlider(0, SLIDER_STEPS, convertToStep(saved, minimum, maximum));
         var valueBox = new JTextField(VALUE_BOX_COLUMNS);
 
         valueBox.setMaximumSize(new Dimension(VALUE_BOX_WIDTH, VALUE_BOX_HEIGHT));
@@ -100,7 +100,7 @@ final class ViewerControls {
 
         slider.addChangeListener(event -> {
 
-            var value = toValue(slider.getValue(), minimum, maximum);
+            var value = convertToValue(slider.getValue(), minimum, maximum);
 
             if (!isSyncing[0]) {
                 valueBox.setText(formatValue(value));
@@ -122,7 +122,7 @@ final class ViewerControls {
 
             if (Double.isNaN(typed)) {
 
-                valueBox.setText(formatValue(toValue(slider.getValue(), minimum, maximum)));
+                valueBox.setText(formatValue(convertToValue(slider.getValue(), minimum, maximum)));
                 return;
             }
 
@@ -169,9 +169,7 @@ final class ViewerControls {
             Consumer<Boolean> apply,
             Runnable onChange) {
 
-        var saved = Preferences
-            .userNodeForPackage(ViewerControls.class)
-            .getBoolean(key, fallback);
+        var saved = findSavedValues().getBoolean(key, fallback);
 
         var toggle = new JCheckBox(title, saved);
 
@@ -179,9 +177,7 @@ final class ViewerControls {
 
             apply.accept(toggle.isSelected());
 
-            Preferences
-                .userNodeForPackage(ViewerControls.class)
-                .putBoolean(key, toggle.isSelected());
+            findSavedValues().putBoolean(key, toggle.isSelected());
 
             onChange.run();
         });
@@ -197,9 +193,7 @@ final class ViewerControls {
                 toggle.setSelected(fallback);
                 apply.accept(fallback);
 
-                Preferences
-                    .userNodeForPackage(ViewerControls.class)
-                    .putBoolean(key, fallback);
+                findSavedValues().putBoolean(key, fallback);
 
                 onChange.run();
 
@@ -240,7 +234,7 @@ final class ViewerControls {
     static JPanel buildToggleRow(Runnable onChange, Toggle... toggles) {
 
         var boxes = new JPanel(new GridLayout(SINGLE_ROW, toggles.length));
-        var saved = Preferences.userNodeForPackage(ViewerControls.class);
+        var saved = findSavedValues();
         var checks = new ArrayList<JCheckBox>(toggles.length);
 
         for (var toggle : toggles) {
@@ -421,8 +415,7 @@ final class ViewerControls {
             Runnable onChange) {
 
         var saved = new Color(
-            Preferences.userNodeForPackage(ViewerControls.class)
-                .getInt(key, fallback.getRGB()),
+            findSavedValues().getInt(key, fallback.getRGB()),
             true);
 
         var swatch = new JButton();
@@ -445,9 +438,7 @@ final class ViewerControls {
             swatch.setBackground(chosen);
             apply.accept(chosen);
 
-            Preferences
-                .userNodeForPackage(ViewerControls.class)
-                .putInt(key, chosen.getRGB());
+            findSavedValues().putInt(key, chosen.getRGB());
 
             onChange.run();
         });
@@ -463,9 +454,14 @@ final class ViewerControls {
         swatch.setBackground(fallback);
         apply.accept(fallback);
 
-        Preferences
-            .userNodeForPackage(ViewerControls.class)
-            .putInt(key, fallback.getRGB());
+        findSavedValues().putInt(key, fallback.getRGB());
+    }
+
+    // Where every knob's value is kept, in one place. Each factory reads on build and writes
+    // on change, so the node was named at eleven separate call sites; one of them naming a
+    // different class would have split the panel's memory in two without failing anything.
+    private static Preferences findSavedValues() {
+        return Preferences.userNodeForPackage(ViewerControls.class);
     }
 
     private static JButton buildResetButton(Runnable reset) {
@@ -502,9 +498,7 @@ final class ViewerControls {
         // A remembered pick can name something that is no longer there - a fixture renamed or
         // removed between sessions - and a dropdown set to a value not in its own list shows
         // blank and cannot be put back except by picking something else.
-        var saved = Preferences
-            .userNodeForPackage(ViewerControls.class)
-            .get(key, fallback);
+        var saved = findSavedValues().get(key, fallback);
 
         var picked = options.contains(saved) ? saved : fallback;
         var choice = new JComboBox<>(options.toArray(new String[0]));
@@ -517,7 +511,7 @@ final class ViewerControls {
 
             apply.accept(selected);
 
-            Preferences.userNodeForPackage(ViewerControls.class).put(key, selected);
+            findSavedValues().put(key, selected);
 
             onChange.run();
         });
@@ -572,21 +566,17 @@ final class ViewerControls {
             double maximum) {
                 
         isSyncing[0] = true;
-        slider.setValue(toStep(value, minimum, maximum));
+        slider.setValue(convertToStep(value, minimum, maximum));
         isSyncing[0] = false;
         valueBox.setText(formatValue(value));
     }
 
     private static double readDouble(String key, double fallback) {
-        return Preferences
-            .userNodeForPackage(ViewerControls.class)
-            .getDouble(key, fallback);
+        return findSavedValues().getDouble(key, fallback);
     }
 
     private static void writeDouble(String key, double value) {
-        Preferences
-            .userNodeForPackage(ViewerControls.class)
-            .putDouble(key, value);
+        findSavedValues().putDouble(key, value);
     }
 
     // Out-of-range clamps rather than being rejected, so typing a round number past the end
@@ -600,11 +590,11 @@ final class ViewerControls {
         }
     }
 
-    private static int toStep(double value, double minimum, double maximum) {
+    private static int convertToStep(double value, double minimum, double maximum) {
         return (int) Math.round((value - minimum) / (maximum - minimum) * SLIDER_STEPS);
     }
 
-    private static double toValue(int step, double minimum, double maximum) {
+    private static double convertToValue(int step, double minimum, double maximum) {
         return minimum + (maximum - minimum) * step / (double) SLIDER_STEPS;
     }
 

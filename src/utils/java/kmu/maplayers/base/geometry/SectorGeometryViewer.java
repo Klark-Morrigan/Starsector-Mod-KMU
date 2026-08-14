@@ -16,9 +16,6 @@ import java.awt.geom.Point2D;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
-import java.util.prefs.Preferences;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -94,7 +91,7 @@ import javax.swing.SwingUtilities;
  * pocket closes over, and this map's history is of exactly those being found late, from a
  * screenshot, after a feature had been built on them.
  */
-final class SectorGeometryViewer {
+final class SectorGeometryViewer implements ViewerRefreshes {
 
     private static final Path SVG_DIRECTORY = Path.of("build", "reports", "political-map");
 
@@ -102,19 +99,12 @@ final class SectorGeometryViewer {
     private static final String CSV_EXTENSION = ".csv";
     private static final String SVG_EXTENSION = ".svg";
 
-    private static final int WINDOW_WIDTH = 1500;
-    private static final int WINDOW_HEIGHT = 1000;
-    private static final int CONTROL_WIDTH = 300;
-
     // Narrow enough to push the knobs aside for a good look at the map, wide enough that
     // the divider is still findable.
     private static final int CONTROL_MINIMUM_WIDTH = 80;
-
-    // Keys the remembered layout is stored under. Named rather than inlined because the
-    // save and the restore have to agree, and a typo in one of them fails silently.
-    private static final String WINDOW_WIDTH_KEY = "windowWidth";
-    private static final String WINDOW_HEIGHT_KEY = "windowHeight";
-    private static final String CONTROL_WIDTH_KEY = "controlWidth";
+    // A slider row is about this tall, so one wheel notch moves the control panel by roughly
+    // one knob rather than by one pixel.
+    private static final int SCROLL_UNIT_INCREMENT = 16;
 
     private static final double ZOOM_PER_NOTCH = 1.15;
     private static final double INITIAL_MARGIN = 1.05;
@@ -147,106 +137,17 @@ final class SectorGeometryViewer {
     private static final float OWNER_SATURATION = 0.8f;
     private static final float OWNER_BRIGHTNESS = 0.55f;
 
-    private static final int OWNER_FILL_ALPHA = 90;
     private static final int OPAQUE_ALPHA = 255;
-    private static final int PANEL_PADDING = 8;
 
-    // A slider row is about this tall, so one wheel notch moves the control panel by roughly
-    // one knob rather than by one pixel.
-    private static final int SCROLL_UNIT_INCREMENT = 16;
     private static final long NANOS_PER_MILLI = 1_000_000L;
-
-    // Slider ranges: wide enough either side of the shipped defaults to see a knob's effect
-    // break down, not just vary. The reach floor sits below any real system spacing and the
-    // ceiling well past it, so both "cells never meet" and "cells swallow the sector" are
-    // reachable; the weld range spans the chord sagitta that makes clusters chain or not.
-    private static final double REACH_MINIMUM = 500;
-    private static final double REACH_MAXIMUM = 12000;
-    private static final double INSET_MINIMUM = 0;
-    private static final double INSET_MAXIMUM = 800;
-    private static final double WELD_MINIMUM = 0;
-    private static final double WELD_MAXIMUM = 400;
-    private static final double MITER_MINIMUM = 1;
-    private static final double MITER_MAXIMUM = 12;
-    private static final double SEGMENTS_MINIMUM = 3;
-    private static final double SEGMENTS_MAXIMUM = 96;
 
     private static final Color BACKGROUND = new Color(0x11, 0x11, 0x11);
     private static final Color CELL_COLOUR = new Color(0x2a, 0x2a, 0x2a);
     private static final Color NEUTRAL_COLOUR = new Color(0x55, 0x55, 0x55);
-    private static final Color OWNED_CELL_DEFAULT = new Color(0x4a, 0x8a, 0xd0);
-    private static final Color UNOWNED_CELL_DEFAULT = new Color(0x55, 0x55, 0x55);
-    private static final Color UNBOUNDED_CELL_DEFAULT = new Color(0x30, 0x30, 0x38);
-    private static final Color VOID_CELL_DEFAULT = new Color(0xb0, 0x8a, 0x30);
-    private static final Color WIDE_VOID_DEFAULT = new Color(0x30, 0xa0, 0xb0);
-    private static final Color CHANNEL_DEFAULT = new Color(0x22, 0x22, 0x26);
-
-    // Where a long pocket is cut into sections. Deliberately unlike anything else on the map:
-    // the cut is a proposal about where a division could go, not a thing that has been
-    // divided, and reading it as an existing border is the one mistake that would make the
-    // shape look right when it is not.
-    private static final Color SECTION_CUT_DEFAULT = new Color(0xff, 0xd0, 0x40);
 
     // Wider than a cell edge, because a cut is read against a fill rather than against the
     // black, and it has to stay findable at the zoom where a whole pocket fits on screen.
     private static final float SECTION_CUT_STROKE = 120f;
-
-    // The line down the middle of a channel: the true border two neighbouring cells share,
-    // which each of them insets away from by the same distance. Its own colour because it is
-    // its own thing - not the edge of anything drawn, but the line those edges were measured
-    // from, and the only place the partition itself is visible once the fills are in.
-    private static final Color CENTRELINE_DEFAULT = new Color(0x50, 0x50, 0x58);
-
-    // A bound pocket smaller than this share of a normal cell is one void cell rather than
-    // something to divide. Measured against a whole cell's area because that is the unit the
-    // map is already read in - "half a system's worth of gap" means something on sight, where
-    // a number of square units does not.
-    private static final double VOID_SPAN_MINIMUM = 0;
-    private static final double VOID_SPAN_MAXIMUM = 6;
-
-    // One cell across. A pocket no wider than a single cell has no two sides far enough
-    // apart for anything to reach between them, so there is nothing in it to divide.
-    private static final double VOID_SPAN_DEFAULT = 2;
-    private static final double VOID_SPAN_STEP_SCALE = 100.0;
-
-    // How much of a section a cut has to leave on either side of it, as a percentage. The
-    // knob that decides how evenly a pocket comes out divided, and the one worth sweeping:
-    // the two ends of its range are two different wrong answers - slivers shaved off the
-    // tips at the bottom, chords thrown across open void at the top - and where the good
-    // answers sit between them is a question about a shape rather than about a number.
-    // How far apart two cells may sit and still be taken to hold the void between them, in
-    // cell radii from centre to centre. Four is the width at which a whole further cell
-    // would fit in the gap, which is the point past which the void between two cells stops
-    // being theirs.
-    private static final double BRIDGE_REACH_MINIMUM = 2;
-    private static final double BRIDGE_REACH_MAXIMUM = 10;
-    private static final double BRIDGE_REACH_DEFAULT = 4;
-    private static final double BRIDGE_REACH_STEP_SCALE = 100.0;
-
-    private static final double MIN_SECTION_MINIMUM = 0;
-    private static final double MIN_SECTION_MAXIMUM = 100;
-    
-    // Settled by eye against the sweep at the end of the void regions dump. Above it the
-    // only crossings leaving that much on both sides are chords over the open middle, which
-    // read as thrown across a pocket rather than dividing it; below it the tips come back
-    // into range, win on being narrowest, and leave one long piece uncut behind them.
-    private static final double MIN_SECTION_DEFAULT = 40;
-    private static final double MIN_SECTION_SCALE = 100.0;
-
-    // How far brightness may wander either side of the chosen colour when jitter is on, as a
-    // percentage of the full range. The default is wide enough to tell two neighbours apart
-    // and narrow enough that they still read as one palette; the slider exists because which
-    // of those matters depends on what is being looked for.
-    private static final double JITTER_MINIMUM = 0;
-    private static final double JITTER_MAXIMUM = 100;
-    private static final float JITTER_DEFAULT = 35;
-    private static final double JITTER_SCALE = 100.0;
-
-    // Alpha runs the full byte, so a fill can be turned off entirely or made solid without
-    // touching the colour it was chosen as.
-    private static final double OPACITY_MINIMUM = 0;
-    private static final double OPACITY_MAXIMUM = 255;
-    private static final Color SITE_COLOUR = new Color(0x88, 0x88, 0x88);
 
     // Not final: the fixture is picked from a dropdown, so a session can move between
     // sectors without restarting - a shape only worth judging is one that holds on more
@@ -255,47 +156,12 @@ final class SectorGeometryViewer {
     private SectorFixture fixture;
     private final MapCanvas canvas = new MapCanvas();
 
-    private Color ownedCellColour = OWNED_CELL_DEFAULT;
-    private Color ownedCellEdge = OWNED_CELL_DEFAULT;
-    private Color unownedCellColour = UNOWNED_CELL_DEFAULT;
-    private Color unownedCellEdge = UNOWNED_CELL_DEFAULT;
-    private Color unboundedCellColour = UNBOUNDED_CELL_DEFAULT;
-    private Color unboundedCellEdge = UNBOUNDED_CELL_DEFAULT;
-    private Color voidCellColour = VOID_CELL_DEFAULT;
-    private Color voidCellEdge = VOID_CELL_DEFAULT;
-
-    private int voidCellOpacity = OWNER_FILL_ALPHA;
-    private double voidSpanMultiple = VOID_SPAN_DEFAULT;
-    private double minSectionShare = MIN_SECTION_DEFAULT / MIN_SECTION_SCALE;
-    private double bridgeReachMultiple = BRIDGE_REACH_DEFAULT;
-
-    // Two constructions over the same void, drawn together so one can be judged against the
-    // other on the same map rather than from two screenshots taken minutes apart.
-    private boolean showVoidPockets = true;
-    private boolean showVoidBridges = true;
     private List<CellGaps.CellGap> voidBridges = List.of();
-
-    private Color wideVoidColour = WIDE_VOID_DEFAULT;
-    private Color wideVoidEdge = WIDE_VOID_DEFAULT;
-    private Color sectionCutColour = SECTION_CUT_DEFAULT;
-    private Color siteColour = SITE_COLOUR;
-    private Color centrelineColour = CENTRELINE_DEFAULT;
-    private Color channelColour = CHANNEL_DEFAULT;
-    private Color channelEdge = CHANNEL_DEFAULT;
-    
-    private int channelOpacity = OWNER_FILL_ALPHA;
     private List<VoidPockets.VoidPocket> voidPockets = List.of();
-    private int ownedCellOpacity = OWNER_FILL_ALPHA;
-    private int unownedCellOpacity = OWNER_FILL_ALPHA;
-    private int unboundedCellOpacity = OWNER_FILL_ALPHA;
-    private boolean jitterOwned = true;
-    private boolean jitterUnowned;
-    private float jitterStrength = JITTER_DEFAULT;
-    private boolean showUnboundedCells;
     private List<List<double[]>> unboundedCells = List.of();
-    private SectorGeometryParameters parameters = SectorGeometryParameters.createDefaults();
     private SectorGeometry geometry;
     private long lastBuildMillis;
+    private final ViewerSettings settings = new ViewerSettings();
 
     private SectorGeometryViewer() {
     }
@@ -318,11 +184,13 @@ final class SectorGeometryViewer {
         fixture = SectorFixture.loadSector(name);
     }
 
-    // Refits the view as well as rebuilding, because two sectors do not occupy the same
-    // coordinates and keeping the old pan would open the new one off screen.
-    private void switchToSector(String name) {
+    // Run once the pick has been applied, never alongside it: the loading is the apply, and
+    // doing it here as well would parse the fixture twice on every change of sector.
+    //
+    // Refits as well as rebuilding, because two sectors do not occupy the same coordinates
+    // and keeping the old pan would open the new one off screen.
+    private void refitToLoadedSector() {
 
-        loadSector(name);
         canvas.markForRefit();
         rebuildGeometry();
     }
@@ -337,7 +205,7 @@ final class SectorGeometryViewer {
         // A split rather than a fixed east panel, so the knob column can be widened when a
         // long label needs reading and narrowed when the map does. The canvas takes the
         // slack on resize, since the controls have a natural width and the map does not.
-        var split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, canvas, buildControls());
+        var split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, canvas, buildControlColumn());
 
         split.setResizeWeight(1.0);
         split.setContinuousLayout(true);
@@ -345,301 +213,39 @@ final class SectorGeometryViewer {
         frame.add(split, BorderLayout.CENTER);
         frame.add(canvas.cursorBar, BorderLayout.SOUTH);
 
-        restoreWindowLayout(frame, split);
+        ViewerWindowLayout.restoreLayout(frame, split);
 
         frame.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent event) {
-                saveWindowLayout(frame, split);
+                ViewerWindowLayout.saveLayout(frame, split);
             }
         });
 
         frame.setVisible(true);
     }
 
-    // Window size and divider, kept across runs. A geometry knob is only worth anything at a
-    // particular zoom and a particular amount of screen, and having to re-establish both
-    // before every session is enough friction to stop someone checking a shape they would
-    // otherwise have checked.
-    private void restoreWindowLayout(JFrame frame, JSplitPane split) {
-
-        var saved = Preferences.userNodeForPackage(SectorGeometryViewer.class);
-
-        frame.setSize(
-            saved.getInt(WINDOW_WIDTH_KEY, WINDOW_WIDTH),
-            saved.getInt(WINDOW_HEIGHT_KEY, WINDOW_HEIGHT));
-
-        frame.setLocationRelativeTo(null);
-
-        // After the size, because a divider is positioned within the split's current width
-        // and setting it first would place it against the default.
-        split.setDividerLocation(frame.getWidth()
-            - saved.getInt(CONTROL_WIDTH_KEY, CONTROL_WIDTH));
-    }
-
-    private void saveWindowLayout(JFrame frame, JSplitPane split) {
-
-        var saved = Preferences.userNodeForPackage(SectorGeometryViewer.class);
-
-        saved.putInt(WINDOW_WIDTH_KEY, frame.getWidth());
-        saved.putInt(WINDOW_HEIGHT_KEY, frame.getHeight());
-
-        // Stored as the control column's width rather than the divider's position, so
-        // reopening at a different window size keeps the knobs the size they were set to
-        // instead of the map the size it happened to be.
-        saved.putInt(CONTROL_WIDTH_KEY, frame.getWidth() - split.getDividerLocation());
-    }
-
-    private JScrollPane buildControls() {
+    // Writing the SVG is an action the operator asks for, not something that happens to them.
+    // It captures whatever the sliders are currently showing, which is the point: the file is
+    // for keeping an interesting shape - to attach to a plan, or to diff against a later run -
+    // and only the person looking at it knows when it has become interesting.
+    // The sector picker and the SVG button bracket the knob rows rather than sitting among
+    // them: one decides which sector is loaded and the other writes a file, and neither is a
+    // setting the map is drawn with.
+    private JScrollPane buildControlColumn() {
 
         var controls = new JPanel();
 
         controls.setLayout(new BoxLayout(controls, BoxLayout.Y_AXIS));
-        controls.setBorder(BorderFactory.createEmptyBorder(
-            PANEL_PADDING,
-            PANEL_PADDING,
-            PANEL_PADDING,
-            PANEL_PADDING));
 
         controls.add(ViewerControls.buildChoice(
             "Sector fixture",
             "Sector",
             SectorFixture.listSectorNames(),
             this::loadSector,
-            () -> switchToSector(sectorName)));
+            this::refitToLoadedSector));
 
-        controls.add(buildSlider(
-            "Cell reach (cell radius)",
-            REACH_MINIMUM,
-            REACH_MAXIMUM,
-            parameters.cellRadius(),
-            value -> parameters = new SectorGeometryParameters(
-                value,
-                parameters.boundSegments(),
-                parameters.borderInset(),
-                parameters.weldTolerance(),
-                parameters.miterSpikeLimit())));
-
-        controls.add(buildSlider(
-            "Border channel (inset)",
-            INSET_MINIMUM,
-            INSET_MAXIMUM,
-            parameters.borderInset(),
-            value -> parameters = new SectorGeometryParameters(
-                parameters.cellRadius(),
-                parameters.boundSegments(),
-                value,
-                parameters.weldTolerance(),
-                parameters.miterSpikeLimit())));
-
-        controls.add(buildSlider(
-            "Weld tolerance",
-            WELD_MINIMUM,
-            WELD_MAXIMUM,
-            parameters.weldTolerance(),
-            value -> parameters = new SectorGeometryParameters(
-                parameters.cellRadius(),
-                parameters.boundSegments(),
-                parameters.borderInset(),
-                value,
-                parameters.miterSpikeLimit())));
-
-        controls.add(buildSlider(
-            "Miter spike limit",
-            MITER_MINIMUM,
-            MITER_MAXIMUM,
-            parameters.miterSpikeLimit(),
-            value -> parameters = new SectorGeometryParameters(
-                parameters.cellRadius(),
-                parameters.boundSegments(),
-                parameters.borderInset(),
-                parameters.weldTolerance(),
-                value)));
-
-        controls.add(buildSlider(
-            "Cell bound segments",
-            SEGMENTS_MINIMUM,
-            SEGMENTS_MAXIMUM,
-            parameters.boundSegments(),
-            value -> parameters = new SectorGeometryParameters(
-                parameters.cellRadius(),
-                (int) Math.round(value),
-                parameters.borderInset(),
-                parameters.weldTolerance(),
-                parameters.miterSpikeLimit())));
-
-        controls.add(ViewerControls.buildColourPair(
-            "Owned cells",
-            "Owned cells",
-            OWNED_CELL_DEFAULT,
-            OWNED_CELL_DEFAULT,
-            colour -> ownedCellColour = colour,
-            colour -> ownedCellEdge = colour,
-            canvas::repaint));
-
-        controls.add(buildOpacitySlider(
-            "Owned opacity",
-            opacity -> ownedCellOpacity = (int) opacity));
-
-        controls.add(ViewerControls.buildColourPair(
-            "Unowned cells",
-            "Unowned cells",
-            UNOWNED_CELL_DEFAULT,
-            UNOWNED_CELL_DEFAULT,
-            colour -> unownedCellColour = colour,
-            colour -> unownedCellEdge = colour,
-            canvas::repaint));
-
-        controls.add(buildOpacitySlider(
-            "Unowned opacity",
-            opacity -> unownedCellOpacity = (int) opacity));
-
-        controls.add(buildToggle(
-            "Trace unbounded cells",
-            false,
-            on -> {
-                showUnboundedCells = on;
-                refreshUnboundedCells();
-                refreshVoidPockets();
-            }));
-
-        controls.add(ViewerControls.buildColourPair(
-            "Unbounded cells",
-            "Unbounded cells",
-            UNBOUNDED_CELL_DEFAULT,
-            UNBOUNDED_CELL_DEFAULT,
-            colour -> unboundedCellColour = colour,
-            colour -> unboundedCellEdge = colour,
-            canvas::repaint));
-
-        controls.add(buildOpacitySlider(
-            "Unbounded opacity",
-            opacity -> unboundedCellOpacity = (int) opacity));
-
-        controls.add(ViewerControls.buildToggleRow(
-            canvas::repaint,
-            new ViewerControls.Toggle(
-                "Jitter owned",
-                "Jitter owned",
-                true,
-                on -> jitterOwned = on),
-            new ViewerControls.Toggle(
-                "Jitter unowned",
-                "Jitter unowned",
-                false,
-                on -> jitterUnowned = on)));
-
-        controls.add(buildSlider(
-            "Jitter strength",
-            JITTER_MINIMUM,
-            JITTER_MAXIMUM,
-            JITTER_DEFAULT,
-            strength -> jitterStrength = (float) strength));
-
-        controls.add(ViewerControls.buildColourPair(
-            "Void cells",
-            "Void within a cell",
-            VOID_CELL_DEFAULT,
-            VOID_CELL_DEFAULT,
-            colour -> voidCellColour = colour,
-            colour -> voidCellEdge = colour,
-            canvas::repaint));
-
-        controls.add(ViewerControls.buildToggleRow(
-            this::refreshVoidPockets,
-            new ViewerControls.Toggle(
-                "Show void pockets",
-                "Void pockets",
-                true,
-                on -> showVoidPockets = on),
-            new ViewerControls.Toggle(
-                "Show void bridges",
-                "Void bridges",
-                true,
-                on -> showVoidBridges = on)));
-
-        controls.add(ViewerControls.buildColourPair(
-            "Wide void",
-            "Void wider than that",
-            WIDE_VOID_DEFAULT, WIDE_VOID_DEFAULT,
-            colour -> wideVoidColour = colour,
-            colour -> wideVoidEdge = colour,
-            canvas::repaint));
-
-        controls.add(ViewerControls.buildColour(
-            "Site dots",
-            "Site dots",
-            SITE_COLOUR,
-            colour -> siteColour = colour,
-            canvas::repaint));
-
-        controls.add(ViewerControls.buildColour(
-            "Cell centrelines",
-            "Cell centrelines",
-            CENTRELINE_DEFAULT,
-            colour -> centrelineColour = colour,
-            canvas::repaint));
-
-        controls.add(ViewerControls.buildColourPair(
-            "Inset channels",
-            "Inset channels",
-            CHANNEL_DEFAULT,
-            CHANNEL_DEFAULT,
-            colour -> channelColour = colour,
-            colour -> channelEdge = colour,
-            canvas::repaint));
-
-        controls.add(buildOpacitySlider(
-            "Channel opacity",
-            opacity -> channelOpacity = (int) opacity));
-
-        controls.add(buildOpacitySlider(
-            "Void cell opacity",
-            opacity -> voidCellOpacity = (int) opacity));
-
-        controls.add(ViewerControls.buildColour(
-            "Void section cuts",
-            "Void section cuts",
-            SECTION_CUT_DEFAULT,
-            colour -> sectionCutColour = colour,
-            canvas::repaint));
-
-        // Stepped in hundredths, so the threshold can be moved by a fraction of a cell
-        // radius rather than jumping a whole one at a time.
-        //
-        // Recomputed rather than merely repainted, unlike every other knob down here, because
-        // this one no longer only decides a colour: the same length is what a pocket is cut
-        // into sections of, and those are geometry.
-        controls.add(ViewerControls.buildSlider(
-            "Void span multiple",
-            "Void span, in cell radii (x100)",
-            VOID_SPAN_MINIMUM * VOID_SPAN_STEP_SCALE,
-            VOID_SPAN_MAXIMUM * VOID_SPAN_STEP_SCALE,
-            VOID_SPAN_DEFAULT * VOID_SPAN_STEP_SCALE,
-            multiple -> voidSpanMultiple = multiple / VOID_SPAN_STEP_SCALE,
-            this::refreshVoidPockets,
-            () -> { }));
-
-        controls.add(ViewerControls.buildSlider(
-            "Bridge reach multiple",
-            "Bridge reach, in cell radii (x100)",
-            BRIDGE_REACH_MINIMUM * BRIDGE_REACH_STEP_SCALE,
-            BRIDGE_REACH_MAXIMUM * BRIDGE_REACH_STEP_SCALE,
-            BRIDGE_REACH_DEFAULT * BRIDGE_REACH_STEP_SCALE,
-            multiple -> bridgeReachMultiple = multiple / BRIDGE_REACH_STEP_SCALE,
-            this::refreshVoidBridges,
-            () -> { }));
-
-        controls.add(ViewerControls.buildSlider(
-            "Min section share",
-            "Least a cut leaves, as % of a section",
-            MIN_SECTION_MINIMUM,
-            MIN_SECTION_MAXIMUM,
-            MIN_SECTION_DEFAULT,
-            share -> minSectionShare = share / MIN_SECTION_SCALE,
-            this::refreshVoidPockets,
-            () -> { }));
-
+        controls.add(new ViewerSettingsPanel(settings, this).buildRows());
         controls.add(buildSaveSvgButton());
         controls.add(canvas.statusLabel);
 
@@ -653,19 +259,15 @@ final class SectorGeometryViewer {
         scroller.getVerticalScrollBar().setUnitIncrement(SCROLL_UNIT_INCREMENT);
 
         // Every knob applies its remembered value as it is built, and until they all have,
-        // nothing has the settings the session was left on - the fixture picked, the reach,
-        // the miter limit. So the one build of the geometry happens here, after the last of
-        // them, rather than in the constructor where it would run against the defaults and
-        // then sit there looking authoritative until something was touched.
+        // nothing has the settings the session was left on - the reach, the miter limit, the
+        // sector. So the one build of the geometry happens here, after the last of them,
+        // rather than in the constructor where it would run against the defaults and then sit
+        // there looking authoritative until something was touched.
         rebuildGeometry();
 
         return scroller;
     }
 
-    // Writing the SVG is an action the operator asks for, not something that happens to them.
-    // It captures whatever the sliders are currently showing, which is the point: the file is
-    // for keeping an interesting shape - to attach to a plan, or to diff against a later run -
-    // and only the person looking at it knows when it has become interesting.
     private JButton buildSaveSvgButton() {
 
         var button = new JButton("Save SVG of current shape");
@@ -682,51 +284,15 @@ final class SectorGeometryViewer {
         return button;
     }
 
-    // The cell geometry is cheap enough to rebuild on every pixel of drag; the void overlay
-    // is not, so it settles when the handle is released. Both hang off the same knobs,
-    // because the cells the overlay finds corridors between are these cells.
-    // The title doubles as the key. A knob's label is the one thing about it that is already
-    // unique and already meaningful, so keying on it means a knob cannot be added without
-    // being remembered - which is how the last panel ended up with several that were not.
-    private JPanel buildSlider(
-            String title,
-            double minimum,
-            double maximum,
-            double initial,
-            DoubleConsumer apply) {
-        return ViewerControls.buildSlider(
-            title,
-            title,
-            minimum,
-            maximum,
-            initial,
-            apply,
-            () -> {
-                rebuildGeometry();
-                canvas.repaint();
-            },
-            () -> { });
-    }
-
-    private JPanel buildOpacitySlider(String title, DoubleConsumer apply) {
-        return buildSlider(title, OPACITY_MINIMUM, OPACITY_MAXIMUM, OWNER_FILL_ALPHA, apply);
-    }
-
-    private JPanel buildToggle(String title, boolean initial, Consumer<Boolean> apply) {
-        return ViewerControls.buildToggle(title, title, initial, apply, () -> {
-            rebuildGeometry();
-            canvas.repaint();
-        });
-    }
-
     // Built only while they are on screen: the partition is over every site at once, so it
     // costs about what the clipped build costs, and nothing else in the window needs it.
-    private void refreshUnboundedCells() {
+    @Override
+    public void refreshUnboundedCells() {
 
-        unboundedCells = showUnboundedCells
+        unboundedCells = settings.showUnboundedCells
             ? UnboundedCells.buildUnboundedCells(
                 fixture.getSites(),
-                parameters.boundSegments())
+                settings.parameters.boundSegments())
             : List.of();
 
         canvas.repaint();
@@ -740,16 +306,17 @@ final class SectorGeometryViewer {
     // border channel, which is what made the classification impossible to check by eye: a
     // channel is two touching cells leaving room for a border, a pocket is space no cell
     // reaches, and they are only the same colour by accident of both being unpainted.
-    private void refreshVoidPockets() {
+    @Override
+    public void refreshVoidPockets() {
 
         // Emptied rather than skipped at paint time when it is switched off, the same way
         // the unbounded cells are: every pass over them then reads one list, and nothing has
         // to remember to check the toggle a second time.
-        voidPockets = showVoidPockets
+        voidPockets = settings.showVoidPockets
             ? VoidPockets.findVoidPockets(
                 fixture.getSites(),
                 fixture.getOwnerBySite(),
-                parameters,
+                settings.parameters,
                 buildSectionRules())
             : List.of();
 
@@ -759,13 +326,14 @@ final class SectorGeometryViewer {
     // The other construction over the same void. Rebuilt alongside the pockets rather than
     // on its own schedule, because the two are only worth anything side by side and a knob
     // that moved one without the other would be comparing two different maps.
-    private void refreshVoidBridges() {
+    @Override
+    public void refreshVoidBridges() {
 
-        voidBridges = showVoidBridges
+        voidBridges = settings.showVoidBridges
             ? VoidBridges.findVoidBridges(
                 fixture.getSites(),
-                parameters.cellRadius(),
-                parameters.cellRadius() * bridgeReachMultiple)
+                settings.parameters.cellRadius(),
+                settings.parameters.cellRadius() * settings.bridgeReachMultiple)
             : List.of();
 
         canvas.repaint();
@@ -773,7 +341,7 @@ final class SectorGeometryViewer {
 
     private VoidSections.SectionRules buildSectionRules() {
 
-        return new VoidSections.SectionRules(measureSectionLength(), minSectionShare);
+        return new VoidSections.SectionRules(measureSectionLength(), settings.minSectionShare);
     }
 
     // The same length twice over: the span past which a pocket is too long to be one thing is
@@ -781,19 +349,25 @@ final class SectorGeometryViewer {
     // decides the other and a pocket can never be called too long while being cut into
     // sections of some other size.
     private double measureSectionLength() {
-        return voidSpanMultiple * parameters.cellRadius();
+        return settings.voidSpanMultiple * settings.parameters.cellRadius();
     }
 
-    private void rebuildGeometry() {
+    @Override
+    public void repaintMap() {
+        canvas.repaint();
+    }
+
+    @Override
+    public void rebuildGeometry() {
 
         var start = System.nanoTime();
-        geometry = SectorGeometry.buildSectorGeometry(fixture, parameters);
+        geometry = SectorGeometry.buildSectorGeometry(fixture, settings.parameters);
 
-        if (showUnboundedCells) {
+        if (settings.showUnboundedCells) {
 
             unboundedCells = UnboundedCells.buildUnboundedCells(
                 fixture.getSites(),
-                parameters.boundSegments());
+                settings.parameters.boundSegments());
         }
         refreshVoidPockets();
         lastBuildMillis = (System.nanoTime() - start) / NANOS_PER_MILLI;
@@ -815,9 +389,9 @@ final class SectorGeometryViewer {
     // owner look like a different faction, which is what the shipped palette means, while a
     // brightness jitter reads as one thing seen in several places.
     private Color resolveOwnedColour(String ownerId) {
-        return jitterOwned
-            ? jitterBrightness(ownedCellColour, ownerId.hashCode(), jitterStrength)
-            : ownedCellColour;
+        return settings.jitterOwned
+            ? jitterBrightness(settings.ownedCellColour, ownerId.hashCode(), settings.jitterStrength)
+            : settings.ownedCellColour;
     }
 
     private static Color jitterBrightness(Color base, int seed, float strength) {
@@ -829,7 +403,7 @@ final class SectorGeometryViewer {
         var mixed = Math.floorMod(Integer.reverse(seed * HASH_MIX_MULTIPLIER), HUE_RANGE) / (float) HUE_RANGE;
         var brightness = Math.max(0f, Math.min(
             1f,
-            hsb[2] + (mixed - 0.5f) * (float) (strength / JITTER_SCALE)));
+            hsb[2] + (mixed - 0.5f) * strength));
 
         return Color.getHSBColor(hsb[0], hsb[1], brightness);
     }
@@ -1047,9 +621,9 @@ final class SectorGeometryViewer {
                 paintFilledShape(
                     g2,
                     buildPath(cell),
-                    unboundedCellColour,
-                    unboundedCellOpacity,
-                    unboundedCellEdge);
+                    settings.unboundedCellColour,
+                    settings.unboundedCellOpacity,
+                    settings.unboundedCellEdge);
             }
 
             // The same length the pocket was divided into sections of, so a pocket cannot be
@@ -1069,7 +643,7 @@ final class SectorGeometryViewer {
                     paintVoidMark(
                         g2,
                         pocket.centre(),
-                        isWide ? wideVoidColour : voidCellColour);
+                        isWide ? settings.wideVoidColour : settings.voidCellColour);
 
                     continue;
                 }
@@ -1081,15 +655,15 @@ final class SectorGeometryViewer {
                     if (pocket.absorbingOwner() != null) {
 
                         var fill = resolveOwnedColour(pocket.absorbingOwner());
-                        paintFilledShape(g2, path, fill, ownedCellOpacity, fill);
+                        paintFilledShape(g2, path, fill, settings.ownedCellOpacity, fill);
                         continue;
                     }
                     paintFilledShape(
                         g2,
                         path,
-                        isWide ? wideVoidColour : voidCellColour,
-                        voidCellOpacity,
-                        isWide ? wideVoidEdge : voidCellEdge);
+                        isWide ? settings.wideVoidColour : settings.voidCellColour,
+                        settings.voidCellOpacity,
+                        isWide ? settings.wideVoidEdge : settings.voidCellEdge);
                 }
             }
             // The channel is the ring a cell leaves between its true edge and its inset
@@ -1102,8 +676,8 @@ final class SectorGeometryViewer {
             // contour, stroked below once the fills are down.
             for (var cell : geometry.cellEdgesByCellId().values()) {
 
-                g2.setColor(applyAlpha(channelColour, channelOpacity));
-                g2.fill(buildPath(toRing(cell)));
+                g2.setColor(applyAlpha(settings.channelColour, settings.channelOpacity));
+                g2.fill(buildPath(convertEdgesToRing(cell)));
             }
 
             g2.setStroke(new BasicStroke(RING_STROKE));
@@ -1120,13 +694,13 @@ final class SectorGeometryViewer {
                 paintFilledShape(
                     g2,
                     buildPath(entry.getValue().fillPolygon()),
-                    jitterUnowned
-                        ? jitterBrightness(unownedCellColour,
+                    settings.jitterUnowned
+                        ? jitterBrightness(settings.unownedCellColour,
                             entry.getKey().hashCode(),
-                            jitterStrength)
-                        : unownedCellColour,
-                    unownedCellOpacity,
-                    unownedCellEdge);
+                            settings.jitterStrength)
+                        : settings.unownedCellColour,
+                    settings.unownedCellOpacity,
+                    settings.unownedCellEdge);
             }
             // One path per owner, filled even-odd, so a ring wound against the rest cuts a hole in
             // it - an enclave - instead of painting over it solid. Filling each ring on its own
@@ -1143,8 +717,8 @@ final class SectorGeometryViewer {
                     g2,
                     cluster,
                     resolveOwnedColour(entry.getKey()),
-                    ownedCellOpacity,
-                    ownedCellEdge);
+                    settings.ownedCellOpacity,
+                    settings.ownedCellEdge);
             }
 
             // Both passes go after the fills, not before. A cluster fuses its cells into
@@ -1155,7 +729,7 @@ final class SectorGeometryViewer {
             paintCentrelines(g2);
             paintVoidSpans(g2);
 
-            g2.setColor(siteColour);
+            g2.setColor(settings.siteColour);
 
             for (var site : fixture.getSites()) {
 
@@ -1197,7 +771,7 @@ final class SectorGeometryViewer {
         private void paintVoidSpans(Graphics2D g2) {
 
             g2.setStroke(new BasicStroke(SECTION_CUT_STROKE));
-            g2.setColor(applyAlpha(sectionCutColour, OPAQUE_ALPHA));
+            g2.setColor(applyAlpha(settings.sectionCutColour, OPAQUE_ALPHA));
 
             for (var bridge : voidBridges) {
 
@@ -1213,8 +787,8 @@ final class SectorGeometryViewer {
                 // Away from the cells when a pocket is pushed out to meet one owner's fills,
                 // towards them when it is pulled in to leave a border.
                 var trim = pocket.absorbingOwner() == null
-                    ? parameters.borderInset()
-                    : -parameters.borderInset();
+                    ? settings.parameters.borderInset()
+                    : -settings.parameters.borderInset();
 
                 for (var cut : pocket.division().cuts()) {
 
@@ -1251,7 +825,7 @@ final class SectorGeometryViewer {
             mark.lineTo(centre[0] - VOID_MARK_RADIUS, centre[1]);
             mark.closePath();
 
-            g2.setColor(applyAlpha(colour, voidCellOpacity));
+            g2.setColor(applyAlpha(colour, settings.voidCellOpacity));
             g2.fill(mark);
         }
 
@@ -1268,8 +842,8 @@ final class SectorGeometryViewer {
                 }
 
                 var cellEdge = geometry.ownerByCellId().containsKey(entry.getKey())
-                    ? ownedCellEdge
-                    : unownedCellEdge;
+                    ? settings.ownedCellEdge
+                    : settings.unownedCellEdge;
 
                 var fill = shaped.fillPolygon();
 
@@ -1286,8 +860,8 @@ final class SectorGeometryViewer {
                     var to = fill.get((index + 1) % fill.size());
 
                     g2.setColor(applyAlpha(
-                        facesAnotherCell(trueEdges, from, to)
-                            ? channelEdge
+                        doesFaceAnotherCell(trueEdges, from, to)
+                            ? settings.channelEdge
                             : cellEdge,
                         OPAQUE_ALPHA));
 
@@ -1303,7 +877,7 @@ final class SectorGeometryViewer {
         // silhouette, and belongs to the cell's own outline colour.
         private void paintCentrelines(Graphics2D g2) {
 
-            g2.setColor(applyAlpha(centrelineColour, OPAQUE_ALPHA));
+            g2.setColor(applyAlpha(settings.centrelineColour, OPAQUE_ALPHA));
 
             for (var edges : geometry.cellEdgesByCellId().values()) {
                 for (var edge : edges) {
@@ -1321,7 +895,7 @@ final class SectorGeometryViewer {
             }
         }
 
-        private static boolean facesAnotherCell(
+        private static boolean doesFaceAnotherCell(
                 List<CellEdge> trueEdges,
                 double[] from,
                 double[] to) {
@@ -1352,7 +926,7 @@ final class SectorGeometryViewer {
             offsetY = getHeight() / 2.0 + bounds.findCentreY() * scale;
         }
 
-        private List<double[]> toRing(List<CellEdge> edges) {
+        private List<double[]> convertEdgesToRing(List<CellEdge> edges) {
             return edges.stream()
                 .map(edge -> new double[] {edge.x1(), edge.y1()})
                 .toList();
