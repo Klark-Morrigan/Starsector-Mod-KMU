@@ -22,6 +22,7 @@ import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
 import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner;
@@ -99,8 +100,9 @@ final class FactionsViewTest {
                     HolderGrouping.identity(),
                     new RibbonPlanInputs(
                         blocId -> null,
-                        new RibbonSegmentLengths(3, 1),
-                        new UncontestedCellBands(false, false)));
+                        new RibbonPlanRules(
+                            new RibbonSegmentLengths(3, 1),
+                            new UncontestedCellBands(false, false))));
 
                 assertThat(planner)
                     .isInstanceOf(HeldOrClaimedSystemRibbonPlanner.class);

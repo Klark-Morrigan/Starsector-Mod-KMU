@@ -14,6 +14,7 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
@@ -62,8 +63,9 @@ final class ClaimedSystemRibbonPlannerTest {
     private static final RibbonPlanInputs STANDARD_INPUTS =
         new RibbonPlanInputs(
             PALETTES,
-            new RibbonSegmentLengths(3, 1),
-            new UncontestedCellBands(false, false));
+            new RibbonPlanRules(
+                new RibbonSegmentLengths(3, 1),
+                new UncontestedCellBands(false, false)));
 
     // No memory flag imposed a claimant, so the contest settled the system on its own.
     private static final String NO_DECREE = null;

@@ -55,8 +55,7 @@ public final class HeldCellRibbons {
             BlocPresence.collectColouredPresences(
                 rankMarketCounts(paintingBlocId, footprintByBlocId),
                 inputs.palettes()),
-            inputs.lengths(),
-            inputs.uncontestedBands());
+            inputs.rules());
     }
 
     // Each bloc's colony count in the band's order: the painter, then the rest by descending

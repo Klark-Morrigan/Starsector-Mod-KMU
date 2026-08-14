@@ -160,7 +160,7 @@ final class CellRibbonsBuilderTest {
 
             verify(viewMock)
                 .resolveRibbonPlanner(any(), any(), inputsCaptor.capture());
-            assertThat(inputsCaptor.getValue().uncontestedBands())
+            assertThat(inputsCaptor.getValue().rules().uncontestedBands())
                 .isEqualTo(new UncontestedCellBands(true, false));
         }
 

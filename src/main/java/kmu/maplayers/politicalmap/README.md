@@ -386,8 +386,8 @@ asked of the camera. The knobs that are not sizes are the switch, which takes th
 the rebuild as well as the bands off the map, since a band nobody sees is not worth a walk of the
 sector's markets, and the uncontested pair beneath it - whether the lone holders' cells band, and
 whether those bands run short - read as one `UncontestedCellBands` at the start of a pass and
-carried in `RibbonPlanInputs` beside the palettes and the proportions, so every cell of one pass is
-gated by one answer),
+paired with the run lengths as the `RibbonPlanRules` every planner is handed through
+`RibbonPlanInputs`, so every cell of one pass is gated by one answer),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 reached through [the sidebar](../base/sidebar/README.md) one level up (the picker is KMLib's, bound

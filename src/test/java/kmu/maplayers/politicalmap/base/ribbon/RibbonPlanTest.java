@@ -46,12 +46,16 @@ final class RibbonPlanTest {
     private static final UncontestedCellBands NO_UNCONTESTED_BANDS =
         new UncontestedCellBands(false, false);
 
+    // The rules most cases are posed under: the standard proportions, uncontested cells bare.
+    private static final RibbonPlanRules STANDARD_RULES =
+        new RibbonPlanRules(STANDARD_LENGTHS, NO_UNCONTESTED_BANDS);
+
     // The uncontested cells admitted, at the two run lengths that tell the second knob's two
     // answers apart: the authored run, and the tally of single widths.
-    private static final UncontestedCellBands UNCONTESTED_BANDS_AT_FULL_RUNS =
-        new UncontestedCellBands(true, false);
-    private static final UncontestedCellBands UNCONTESTED_BANDS_AT_SHORT_RUNS =
-        new UncontestedCellBands(true, true);
+    private static final RibbonPlanRules RULES_ADMITTING_UNCONTESTED_AT_FULL_RUNS =
+        new RibbonPlanRules(STANDARD_LENGTHS, new UncontestedCellBands(true, false));
+    private static final RibbonPlanRules RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS =
+        new RibbonPlanRules(STANDARD_LENGTHS, new UncontestedCellBands(true, true));
 
     @Nested
     class PlanCellRibbon {
@@ -63,8 +67,7 @@ final class RibbonPlanTest {
             assertThat(RibbonPlan.planCellRibbon(
                     "hegemony",
                     List.of(),
-                    STANDARD_LENGTHS,
-                    NO_UNCONTESTED_BANDS))
+                    STANDARD_RULES))
                 .isEqualTo(RibbonPlan.NONE);
         }
 
@@ -75,8 +78,7 @@ final class RibbonPlanTest {
             assertThat(RibbonPlan.planCellRibbon(
                     "hegemony",
                     List.of(buildHegemonyPresence(4)),
-                    STANDARD_LENGTHS,
-                    NO_UNCONTESTED_BANDS))
+                    STANDARD_RULES))
                 .isEqualTo(RibbonPlan.NONE);
         }
 
@@ -87,8 +89,7 @@ final class RibbonPlanTest {
             assertThat(RibbonPlan.planCellRibbon(
                     "hegemony",
                     List.of(buildHegemonyPresence(2), buildTriTachyonPresence(0)),
-                    STANDARD_LENGTHS,
-                    NO_UNCONTESTED_BANDS))
+                    STANDARD_RULES))
                 .isEqualTo(RibbonPlan.NONE);
         }
 
@@ -99,8 +100,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(2)),
-                STANDARD_LENGTHS,
-                UNCONTESTED_BANDS_AT_FULL_RUNS);
+                RULES_ADMITTING_UNCONTESTED_AT_FULL_RUNS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -118,8 +118,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(3)),
-                STANDARD_LENGTHS,
-                UNCONTESTED_BANDS_AT_SHORT_RUNS);
+                RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -138,8 +137,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
-                STANDARD_LENGTHS,
-                UNCONTESTED_BANDS_AT_SHORT_RUNS);
+                RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -156,8 +154,7 @@ final class RibbonPlanTest {
             assertThat(RibbonPlan.planCellRibbon(
                     "hegemony",
                     List.of(buildHegemonyPresence(0)),
-                    STANDARD_LENGTHS,
-                    UNCONTESTED_BANDS_AT_SHORT_RUNS))
+                    RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS))
                 .isEqualTo(RibbonPlan.NONE);
         }
 
@@ -169,8 +166,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(3)),
-                STANDARD_LENGTHS,
-                NO_UNCONTESTED_BANDS);
+                STANDARD_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -192,8 +188,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(3), buildTriTachyonPresence(2)),
-                STANDARD_LENGTHS,
-                NO_UNCONTESTED_BANDS);
+                STANDARD_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -219,8 +214,7 @@ final class RibbonPlanTest {
                     buildHegemonyPresence(1),
                     buildTriTachyonPresence(1),
                     buildDiktatPresence(1)),
-                STANDARD_LENGTHS,
-                NO_UNCONTESTED_BANDS);
+                STANDARD_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -239,8 +233,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
-                STANDARD_LENGTHS,
-                NO_UNCONTESTED_BANDS);
+                STANDARD_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -256,8 +249,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "sindria",
                 List.of(buildTriTachyonPresence(2)),
-                STANDARD_LENGTHS,
-                NO_UNCONTESTED_BANDS);
+                STANDARD_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -273,8 +265,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildTriTachyonPresence(1), buildHegemonyPresence(1)),
-                STANDARD_LENGTHS,
-                NO_UNCONTESTED_BANDS);
+                STANDARD_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -295,8 +286,7 @@ final class RibbonPlanTest {
                     buildHegemonyPresence(2),
                     buildDiktatPresence(0),
                     buildTriTachyonPresence(1)),
-                STANDARD_LENGTHS,
-                NO_UNCONTESTED_BANDS);
+                STANDARD_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -318,8 +308,7 @@ final class RibbonPlanTest {
                     buildDiktatPresence(0),
                     buildHegemonyPresence(2),
                     buildTriTachyonPresence(1)),
-                STANDARD_LENGTHS,
-                NO_UNCONTESTED_BANDS);
+                STANDARD_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -342,8 +331,7 @@ final class RibbonPlanTest {
                     buildHegemonyPresence(1),
                     buildTriTachyonPresence(1),
                     buildDiktatPresence(0)),
-                STANDARD_LENGTHS,
-                NO_UNCONTESTED_BANDS);
+                STANDARD_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -360,8 +348,9 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(2), buildTriTachyonPresence(1)),
-                new RibbonSegmentLengths(4, 2),
-                NO_UNCONTESTED_BANDS);
+                new RibbonPlanRules(
+                    new RibbonSegmentLengths(4, 2),
+                    NO_UNCONTESTED_BANDS));
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -396,8 +385,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 "hegemony",
                 List.of(buildHegemonyPresence(3), buildTriTachyonPresence(2)),
-                STANDARD_LENGTHS,
-                NO_UNCONTESTED_BANDS);
+                STANDARD_RULES);
 
             assertThat(plan.sumLengthUnits())
                 .isEqualTo(19);

@@ -89,8 +89,7 @@ public final class ClaimCellRibbons {
             BlocPresence.collectColouredPresences(
                 countMarketsByBloc(contest, grouping),
                 inputs.palettes()),
-            inputs.lengths(),
-            inputs.uncontestedBands());
+            inputs.rules());
     }
 
     // Each bloc's colony count in the order the contest ranked them. Insertion order carries that

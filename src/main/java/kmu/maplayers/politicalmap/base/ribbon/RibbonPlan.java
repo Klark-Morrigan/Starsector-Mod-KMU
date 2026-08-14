@@ -59,33 +59,35 @@ public record RibbonPlan(
     /**
      * Plans one cell's ribbon from the blocs present in it, in the order they were ranked.
      *
-     * @param paintingBlocId    the bloc the cell's fill was painted for, whose presence alone is
-     *                          worth a band only where the uncontested cells are admitted; an id
-     *                          no listed bloc carries - a cell painted for nobody - simply leaves
-     *                          every bloc a rival
-     * @param rankedPresences   the blocs present in the cell, already ranked as the fill was
-     *                          decided, since the runs come out in exactly this order
-     * @param lengths           how far a market's segment and an interjection run
-     * @param uncontestedBands  what a cell nobody but its painter holds anything in draws: whether
-     *                          it bands at all, and at what run length
+     * @param paintingBlocId  the bloc the cell's fill was painted for, whose presence alone is
+     *                        worth a band only where the uncontested cells are admitted; an id
+     *                        no listed bloc carries - a cell painted for nobody - simply leaves
+     *                        every bloc a rival
+     * @param rankedPresences the blocs present in the cell, already ranked as the fill was
+     *                        decided, since the runs come out in exactly this order
+     * @param rules           how a band is laid: the run lengths, and what a cell nobody
+     *                        contests draws
      * @return the cell's runs in draw order, or {@link #NONE} where the cell draws no band
      */
     public static RibbonPlan planCellRibbon(
             String paintingBlocId,
             List<BlocPresence> rankedPresences,
-            RibbonSegmentLengths lengths,
-            UncontestedCellBands uncontestedBands) {
+            RibbonPlanRules rules) {
 
         if (hasRivalPresence(paintingBlocId, rankedPresences)) {
-            return layBlocRuns(rankedPresences, lengths);
+            return layBlocRuns(rankedPresences, rules.lengths());
         }
+        var uncontestedBands = rules.uncontestedBands();
+
         // Nothing but the painter is here, so the band is the player's to ask for - and there has
         // to be something for it to report, which a decreed system its decreed bloc holds nothing
         // in has not.
         if (!uncontestedBands.isBandDrawn() || !hasAnyPresence(rankedPresences)) {
             return NONE;
         }
-        return layBlocRuns(rankedPresences, uncontestedBands.resolveRunLengths(lengths));
+        return layBlocRuns(
+            rankedPresences,
+            uncontestedBands.resolveRunLengths(rules.lengths()));
     }
 
     /**

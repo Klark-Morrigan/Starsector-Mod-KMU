@@ -6,6 +6,7 @@ import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
@@ -67,8 +68,9 @@ final class HeldCellRibbonsTest {
     private static final RibbonPlanInputs STANDARD_INPUTS =
         new RibbonPlanInputs(
             PALETTES,
-            new RibbonSegmentLengths(3, 1),
-            new UncontestedCellBands(false, false));
+            new RibbonPlanRules(
+                new RibbonSegmentLengths(3, 1),
+                new UncontestedCellBands(false, false)));
 
     // The two weights below the combined one. Held constant across every case: the ordering reads
     // the combined weight alone, so a case varying either would vary nothing the rule can see.
@@ -174,8 +176,9 @@ final class HeldCellRibbonsTest {
                 footprints,
                 new RibbonPlanInputs(
                     PALETTES,
-                    new RibbonSegmentLengths(3, 1),
-                    new UncontestedCellBands(true, true)));
+                    new RibbonPlanRules(
+                        new RibbonSegmentLengths(3, 1),
+                        new UncontestedCellBands(true, true))));
 
             assertThat(plan.segments())
                 .containsExactly(

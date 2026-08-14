@@ -11,6 +11,7 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
@@ -82,8 +83,9 @@ final class ClaimCellRibbonsTest {
     private static final RibbonPlanInputs STANDARD_INPUTS =
         new RibbonPlanInputs(
             PALETTES,
-            new RibbonSegmentLengths(3, 1),
-            new UncontestedCellBands(false, false));
+            new RibbonPlanRules(
+                new RibbonSegmentLengths(3, 1),
+                new UncontestedCellBands(false, false)));
 
     // The faction view, where a bloc is a single faction. The alliance case states its own.
     private static final HolderGrouping NO_ALLIANCES = HolderGrouping.identity();
