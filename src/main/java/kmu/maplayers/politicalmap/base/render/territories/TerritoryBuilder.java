@@ -20,6 +20,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
+import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonsBuilder;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 
@@ -193,19 +194,46 @@ public final class TerritoryBuilder {
                     cellGrouping,
                     CellShaper.BORDER_INSET_DISTANCE));
 
+            // The bands' one snapshot for this pass: the mechanic the active view counts by, the
+            // sizes they are drawn at, and the holding that decides which cells are asked for one.
+            // Sampled here, beside the styling above, so every cell's band is settled from the
+            // same reads its fill was.
+            var ribbonsBuilder = CellRibbonsBuilder.createForPass(
+                sector,
+                view,
+                grouping,
+                ownerBySystemId,
+                geometryCache);
+
+            // Time spent counting and baking bands alone, accumulated across the cell loop rather
+            // than read off the loop as a whole. A band's count walks a system's markets - the
+            // claim mechanic's walks all of them - so this is the one cost in the pass that could
+            // rival the known label-fit stall, and it is stated on its own so a rebuild that slows
+            // down says which half slowed.
+            var ribbonNanos = 0L;
+
             for (var entry : shapedCells.entrySet()) {
 
+                var drawnSystemId = cellGrouping.resolveDrawnSystemIdOf(entry.getKey());
                 var styled = StyledCellBuilder.buildStyledCellForSystem(
                     territories,
-                    cellGrouping.resolveDrawnSystemIdOf(entry.getKey()),
+                    drawnSystemId,
                     entry.getValue());
 
-                if (styled != null) {
-                    territories.putStyledCell(
-                        entry.getKey(),
-                        styled,
-                        entry.getValue().fillPolygon());
+                if (styled == null) {
+                    continue;
                 }
+                var ribbonStart = System.nanoTime();
+                var ribbon = ribbonsBuilder.buildCellRibbon(
+                    drawnSystemId,
+                    entry.getValue().fillPolygon());
+                ribbonNanos += System.nanoTime() - ribbonStart;
+
+                territories.putStyledCell(
+                    entry.getKey(),
+                    styled,
+                    entry.getValue().fillPolygon(),
+                    ribbon);
             }
             // The clusters the cursor read resolves a hovered cell's whole territory through.
             // Derived here off the same keys the shaping just fused the cells by, so a highlighted
@@ -231,6 +259,8 @@ public final class TerritoryBuilder {
                 + " styledCells=" + territories.getStyledCellByCellId().size()
                 + " blocs=" + territories.getStyledClusterGroupByOwnerId().size()
                 + " hatchSegments=" + countHatchSegments(territories)
+                + " ribbonCells=" + territories.getRibbonByCellId().size()
+                + " ribbonsTook=" + Timings.formatMillis(ribbonNanos)
                 + " took=" + Timings.formatMillis(System.nanoTime() - shapeStart));
 
             return territories;

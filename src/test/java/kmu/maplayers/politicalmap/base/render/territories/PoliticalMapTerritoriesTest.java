@@ -20,6 +20,7 @@ import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
@@ -396,7 +397,7 @@ final class PoliticalMapTerritoriesTest {
             var styledCell = buildAnyStyledCell();
             var fillPolygon = buildSquarePolygon();
 
-            territories.putStyledCell("system", styledCell, fillPolygon);
+            territories.putStyledCell("system", styledCell, fillPolygon, CellRibbon.NONE);
 
             assertThat(territories.getStyledCellByCellId())
                 .containsOnlyKeys("system");
@@ -414,12 +415,16 @@ final class PoliticalMapTerritoriesTest {
             // The drift the paired write exists to prevent: a re-shaped cell must not keep
             // answering the cursor with the extent it had before it was re-shaped.
             var territories = buildDrawablesWith(Map.of(), Map.of());
-            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
+            territories.putStyledCell(
+                "system",
+                buildAnyStyledCell(),
+                buildSquarePolygon(),
+                CellRibbon.NONE);
 
             var reshapedCell = buildAnyStyledCell();
             var reshapedPolygon = buildTrianglePolygon();
 
-            territories.putStyledCell("system", reshapedCell, reshapedPolygon);
+            territories.putStyledCell("system", reshapedCell, reshapedPolygon, CellRibbon.NONE);
 
             assertThat(territories.getStyledCellByCellId().get("system"))
                 .isSameAs(reshapedCell);
@@ -437,7 +442,11 @@ final class PoliticalMapTerritoriesTest {
             // shape must go with the draw record rather than linger as a phantom hit cluster.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
+            territories.putStyledCell(
+                "system",
+                buildAnyStyledCell(),
+                buildSquarePolygon(),
+                CellRibbon.NONE);
             territories.removeStyledCell("system");
 
             assertThat(territories.getStyledCellByCellId())
@@ -451,8 +460,16 @@ final class PoliticalMapTerritoriesTest {
 
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell("dropped", buildAnyStyledCell(), buildSquarePolygon());
-            territories.putStyledCell("kept", buildAnyStyledCell(), buildTrianglePolygon());
+            territories.putStyledCell(
+                "dropped",
+                buildAnyStyledCell(),
+                buildSquarePolygon(),
+                CellRibbon.NONE);
+            territories.putStyledCell(
+                "kept",
+                buildAnyStyledCell(),
+                buildTrianglePolygon(),
+                CellRibbon.NONE);
             territories.removeStyledCell("dropped");
 
             assertThat(territories.getStyledCellByCellId())

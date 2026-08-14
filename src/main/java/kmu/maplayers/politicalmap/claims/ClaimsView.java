@@ -19,6 +19,9 @@ import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 import kmu.maplayers.politicalmap.base.politics.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
+import kmu.maplayers.politicalmap.base.ribbon.ClaimedSystemRibbonPlanner;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.factions.FactionsView;
 import kmu.util.KmuStrings;
@@ -90,6 +93,18 @@ public final class ClaimsView implements PoliticalMapView {
         // Holder is the claim mechanic itself: every claimed system painted solid in its
         // claimant's colours, rather than the held-plus-claims default the faction view resolves.
         return ClaimsHolderProvider.INSTANCE;
+    }
+
+    @Override
+    public SystemRibbonPlanner resolveRibbonPlanner(
+            SectorAPI sector,
+            HolderGrouping grouping,
+            RibbonSegmentLengths lengths) {
+        // Every cell here is painted by the claim mechanic, held systems included, so every band is
+        // counted from the contest - where the held-plus-claims default would count a claimed system
+        // its claimant does not hold by the markets of whoever does, and lead the band on a bloc the
+        // cell is not painted for.
+        return ClaimedSystemRibbonPlanner.createForSector(sector, grouping, lengths);
     }
 
     @Override

@@ -190,6 +190,13 @@ holds what a full rebuild produced: the styled cells and faction territories the
 renderer paints, plus the derivation inputs an incremental re-shape needs - the
 styling, the view grouping, the filter snapshot, and who holds each system.
 
+Each drawn cell's presence band is baked into it too, and baked rather than emitted
+because every size in it is a world quantity: the ring it runs along, the width it is
+stroked at, and how far each run reaches all resolve at rebuild, so a frame draws a
+triangle list and measures nothing. The band is written through the same call as the
+cell's shape for that reason - it is triangles laid inside that shape, so the two move
+together or not at all.
+
 Retaining those inputs is what makes the incremental path *correct* rather than
 merely cheap:
 [`IncrementalPoliticsRefresh`](../../src/main/java/kmu/maplayers/politicalmap/base/render/IncrementalPoliticsRefresh.java)
@@ -289,7 +296,10 @@ Per frame, in increasing cost:
    common path.
 2. **Systems marked stale** - the stale set is drained and only those systems and
    their neighbours are re-derived and re-shaped, with the two affected factions'
-   territories rebuilt.
+   territories rebuilt. The marked systems' presence bands are re-baked whether or not
+   anything flipped: the colonisation and transfer events that mark a system are exactly
+   the events that change how many colonies are in it, and a band counts colonies where
+   the fills only weigh them.
 3. **Content changed** (a setting, a sidebar toggle, a view's own live input) - the
    territories are rebuilt in full over the standing geometry. The cells are
    untouched, since ownership and styling do not move a border. The label placements

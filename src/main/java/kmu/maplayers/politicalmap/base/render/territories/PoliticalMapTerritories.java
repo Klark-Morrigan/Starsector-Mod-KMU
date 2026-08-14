@@ -16,6 +16,7 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyling;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
@@ -81,6 +82,13 @@ public final class PoliticalMapTerritories implements
     // through putStyledCell/removeStyledCell alongside the styled cell above, so what answers a
     // hover is exactly what the frame painted.
     private final Map<String, List<double[]>> fillPolygonByCellId = new LinkedHashMap<>();
+
+    // Each drawn cell's presence band, baked against the very shape above. Written on the same
+    // one path for the same reason: a band is triangles laid inside a particular ring, so a cell
+    // re-shaped without its band re-baked would draw last shape's band inside this shape's cell.
+    // Most cells have none - a band is drawn only where a bloc the cell is not painted for is
+    // present - so the map is sparse against the two above rather than parallel to them.
+    private final Map<String, CellRibbon> ribbonByCellId = new LinkedHashMap<>();
 
     // Retained derivation inputs. The holder map is mutated in place as systems flip; the
     // rest are set once at build and only read after.
@@ -169,10 +177,28 @@ public final class PoliticalMapTerritories implements
      * @param styledCell  its draw record
      * @param fillPolygon the shaped fill it was built from - the cell's painted extent, with the
      *                    border inset, frontier setback, and keep-out clipping already applied
+     * @param ribbon      the presence band baked inside that same fill, or
+     *                    {@link CellRibbon#NONE} where the cell draws none. Taken here rather than
+     *                    written separately because it is geometry derived from the shape beside
+     *                    it: a caller replacing one has to replace the other, and passing it makes
+     *                    that so by construction
      */
-    public void putStyledCell(String cellId, StyledCell styledCell, List<double[]> fillPolygon) {
+    public void putStyledCell(
+            String cellId,
+            StyledCell styledCell,
+            List<double[]> fillPolygon,
+            CellRibbon ribbon) {
+
         styledCellByCellId.put(cellId, styledCell);
         fillPolygonByCellId.put(cellId, fillPolygon);
+
+        // A bandless cell is left out of the map rather than holding an empty value, so the render
+        // pass walks only the cells that draw one - which is a small share of them.
+        if (ribbon.isEmpty()) {
+            ribbonByCellId.remove(cellId);
+        } else {
+            ribbonByCellId.put(cellId, ribbon);
+        }
     }
 
     /**
@@ -184,6 +210,15 @@ public final class PoliticalMapTerritories implements
     public void removeStyledCell(String cellId) {
         styledCellByCellId.remove(cellId);
         fillPolygonByCellId.remove(cellId);
+        ribbonByCellId.remove(cellId);
+    }
+
+    /**
+     * @return each cell that draws a presence band, keyed by cell id; a cell drawing none is
+     *         absent rather than present with an empty band
+     */
+    public Map<String, CellRibbon> getRibbonByCellId() {
+        return ribbonByCellId;
     }
 
     /**

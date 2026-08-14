@@ -22,7 +22,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 ## Building: cells into territories
 
 `TerritoryBuilder` is the orchestration only: it resolves who holds each system, reads the theme,
-shapes the cached cells into merged clusters, and drives the two per-item builders. Its job is to
+shapes the cached cells into merged clusters, and drives the per-item builders. Its job is to
 sample every input exactly once so the whole pass keys off one snapshot - which is what lets an
 incremental re-shape reuse those same builders on a handful of cells and land on a result
 identical to a full rebuild.
@@ -33,13 +33,20 @@ identical to a full rebuild.
   cell (settled but unheld, or uninhabited) does not fuse, so it becomes a `LoneCell` carrying its
   own fill and outline, and resolves both palette slots to the shared neutral colour. Of the two,
   only a settled cell takes the pass's recede - see [what recedes](#what-recedes) below.
+- `CellRibbonsBuilder` (in [`render.ribbon`](../ribbon/CellRibbonsBuilder.java)) bakes one cell's
+  presence band from the same shape `StyledCellBuilder` just styled: the view's planner counts what
+  is in the system,
+  and the band is laid inside the cell's own ring as coloured triangles. It holds the pass's
+  ownership map as its gate, so only the cells something paints are counted at all - the claim
+  mechanic's count walks a system's whole market list, and most of the sector is cells nobody
+  paints.
 - `FactionTerritoryBuilder` bakes one bloc into a `StyledClusterGroup`: every body it holds, each
   with its national border traced across the systems in it, and each body's fill - which it hands
   to the framework's `SplitFillBuilder`, see
   [the split fill](#the-split-fill-solid-hatched-unfilled) below. Fill and border come from the
   same loops, so they cannot drift apart.
 
-The shaping the two builders drive is the framework's, in
+The shaping the cell and territory builders drive is the framework's, in
 [`base.render.clusters`](../../../../base/render/clusters/README.md): `BorderSmoothing` sands spikes
 and rounds corners of the traced borders, `VertexRuns` flattens shaped cells into GL vertex runs,
 and `StyledCell`, `StyledCluster` and `StyledClusterGroup` are the packets they bake into.
@@ -148,6 +155,13 @@ dropped by the same two calls, and that pairing is what lets it answer `base.hov
 against are the shapes this frame painted, never a re-derivation that could drift from them. The
 highlight reads the same shapes through `render/hover`'s adapter, so the cursor and the halo cannot
 disagree about what was drawn.
+
+The cell's presence band (`CellRibbon`, from `render.ribbon`) rides on that same write for the same
+reason, being triangles laid inside that very polygon: a cell re-shaped without its band re-baked
+would draw the last shape's band inside this shape's cell. It is a third argument rather than a
+second call, so no caller can replace one without the other. Unlike the two beside it the map is
+sparse - a bandless cell is left out rather than held as an empty value - since a band is drawn
+only where a bloc the cell is *not* painted for is present in it, which most of the sector is not.
 
 ## The split fill: solid, hatched, unfilled
 

@@ -309,11 +309,23 @@ but the one it was painted for is present in - `RibbonPlan` over a ranked list o
 emitted as `RibbonSegment`s at the two proportions `RibbonSegmentLengths` pairs. Where the counts
 behind those runs come from is each mechanic's own business, which is what keeps one band meaning one
 thing on every view: a held cell's count is `MarketFootprint.marketCount`, folded over the very
-colonies the dominance pass scored, while a claimed cell's is read out of the claim contest by
+colonies the dominance pass scored and ordered by `HeldCellRibbons` - the painted bloc first
+whatever gave it the system, then the rest by the standings' own two keys - while a claimed cell's
+is read out of the claim contest by
 `ClaimCellRibbons` - each faction's standing market
 plus the siblings that both told on its score and are colonies the player knows about, folded to blocs
 under the same `HolderGrouping` the fills use and coloured through `BlocPaletteReader`, so the one
-live read sits outside the rule),
+live read sits outside the rule.
+Which of the two answers for a cell is the view's own call, made through the `SystemRibbonPlanner`
+seam beside its holder source and its hover box: the claims view counts every cell from the contest,
+and the held layers count each system by the mechanic that painted it - held dominance where a bloc
+holds something, the contest where only a claim does, told apart by the very economy read the held
+count needs anyway. `render.ribbon` then lays a plan around its cell: `RingPath` traces the ring
+inset by the pad and half the width, the length one width is worth is cut down where the whole band
+would outrun that ring (so a crowded cell compresses rather than losing a bloc off the end), and
+each run is stroked into the mitred triangles of a `RibbonBand`. All of it world-sized and baked at
+rebuild, so a band holds its share of a cell's outline at every zoom and the draw is a triangle list
+like the fills),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are
 reached through [the sidebar](../base/sidebar/README.md) one level up (the picker is KMLib's, bound
