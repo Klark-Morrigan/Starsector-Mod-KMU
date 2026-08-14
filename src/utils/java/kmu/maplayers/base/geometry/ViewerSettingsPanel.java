@@ -256,12 +256,12 @@ final class ViewerSettingsPanel {
             refreshes::refreshVoidPockets,
             new ViewerControls.Toggle(
                 "Show void pockets",
-                "Void pockets",
+                "Void pockets v1",
                 true,
                 on -> settings.showVoidPockets = on),
             new ViewerControls.Toggle(
                 "Show void bridges",
-                "Void bridges",
+                "Void pockets v2",
                 true,
                 on -> settings.showVoidBridges = on)));
 

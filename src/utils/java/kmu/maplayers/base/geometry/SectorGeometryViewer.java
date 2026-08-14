@@ -156,12 +156,12 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     private SectorFixture fixture;
     private final MapCanvas canvas = new MapCanvas();
 
-    private List<CellGaps.CellGap> voidBridges = List.of();
-    private List<VoidPockets.VoidPocket> voidPockets = List.of();
     private List<List<double[]>> unboundedCells = List.of();
     private SectorGeometry geometry;
     private long lastBuildMillis;
     private final ViewerSettings settings = new ViewerSettings();
+    private final VoidPocketsOverlay voidPockets = new VoidPocketsOverlay(settings);
+    private final VoidBridgesOverlay voidBridges = new VoidBridgesOverlay(settings);
 
     private SectorGeometryViewer() {
     }
@@ -303,53 +303,21 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     // why the void colour is applied to the unbounded cells rather than to a shape of its
     // own.
     // The pockets of void the cells trap, as their own outlines. Not the same black as the
-    // border channel, which is what made the classification impossible to check by eye: a
-    // channel is two touching cells leaving room for a border, a pocket is space no cell
-    // reaches, and they are only the same colour by accident of both being unpainted.
     @Override
     public void refreshVoidPockets() {
 
-        // Emptied rather than skipped at paint time when it is switched off, the same way
-        // the unbounded cells are: every pass over them then reads one list, and nothing has
-        // to remember to check the toggle a second time.
-        voidPockets = settings.showVoidPockets
-            ? VoidPockets.findVoidPockets(
-                fixture.getSites(),
-                fixture.getOwnerBySite(),
-                settings.parameters,
-                buildSectionRules())
-            : List.of();
-
+        voidPockets.refresh(fixture);
         refreshVoidBridges();
     }
 
-    // The other construction over the same void. Rebuilt alongside the pockets rather than
-    // on its own schedule, because the two are only worth anything side by side and a knob
-    // that moved one without the other would be comparing two different maps.
+    // Rebuilt alongside the pockets rather than on its own schedule, because the two are only
+    // worth anything side by side and a knob that moved one without the other would be
+    // comparing two different maps.
     @Override
     public void refreshVoidBridges() {
 
-        voidBridges = settings.showVoidBridges
-            ? VoidBridges.findVoidBridges(
-                fixture.getSites(),
-                settings.parameters.cellRadius(),
-                settings.parameters.cellRadius() * settings.bridgeReachMultiple)
-            : List.of();
-
-        canvas.repaint();
-    }
-
-    private VoidSections.SectionRules buildSectionRules() {
-
-        return new VoidSections.SectionRules(measureSectionLength(), settings.minSectionShare);
-    }
-
-    // The same length twice over: the span past which a pocket is too long to be one thing is
-    // also the length the pieces it is cut into should be, so the slider that decides one
-    // decides the other and a pocket can never be called too long while being cut into
-    // sections of some other size.
-    private double measureSectionLength() {
-        return settings.voidSpanMultiple * settings.parameters.cellRadius();
+        voidBridges.refresh(fixture);
+        repaintMap();
     }
 
     @Override
@@ -384,72 +352,6 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             lastBuildMillis));
     }
 
-    // One chosen colour for every owner, optionally spread in brightness so neighbours can
-    // still be told apart. Brightness rather than hue on purpose: a hue jitter makes each
-    // owner look like a different faction, which is what the shipped palette means, while a
-    // brightness jitter reads as one thing seen in several places.
-    private Color resolveOwnedColour(String ownerId) {
-        return settings.jitterOwned
-            ? jitterBrightness(settings.ownedCellColour, ownerId.hashCode(), settings.jitterStrength)
-            : settings.ownedCellColour;
-    }
-
-    private static Color jitterBrightness(Color base, int seed, float strength) {
-
-        var hsb = Color.RGBtoHSB(base.getRed(), base.getGreen(), base.getBlue(), null);
-
-        // Hashes cluster in their low bits, so the spread is taken from a well-mixed value
-        // rather than from the seed itself - otherwise consecutive ids come out identical.
-        var mixed = Math.floorMod(Integer.reverse(seed * HASH_MIX_MULTIPLIER), HUE_RANGE) / (float) HUE_RANGE;
-        var brightness = Math.max(0f, Math.min(
-            1f,
-            hsb[2] + (mixed - 0.5f) * strength));
-
-        return Color.getHSBColor(hsb[0], hsb[1], brightness);
-    }
-
-    // The one way anything filled is drawn here: a translucent body under an opaque outline.
-    // Shared rather than repeated per layer so an owner's cell, an unowned cell and the
-    // partition underneath read as the same kind of thing in different colours - which is the
-    // only reason it is possible to tell at a glance which of them a shape belongs to.
-    private static void paintFilledShape(
-            Graphics2D g2,
-            Path2D shape,
-            Color fill,
-            int fillAlpha,
-            Color edge) {
-
-        g2.setColor(applyAlpha(fill, fillAlpha));
-        g2.fill(shape);
-        g2.setColor(applyAlpha(edge, OPAQUE_ALPHA));
-        g2.draw(shape);
-    }
-
-    private static Color applyAlpha(Color colour, int alpha) {
-        return new Color(
-            colour.getRed(),
-            colour.getGreen(),
-            colour.getBlue(),
-            alpha);
-    }
-
-    private static Path2D buildPath(List<double[]> ring) {
-
-        var path = new Path2D.Double();
-
-        for (var i = 0; i < ring.size(); i++) {
-
-            if (i == 0) {
-                path.moveTo(ring.get(i)[0], ring.get(i)[1]);
-            } else {
-                path.lineTo(ring.get(i)[0], ring.get(i)[1]);
-            }
-        }
-        path.closePath();
-        return path;
-    }
-
-    /** Paints the geometry in world coordinates under a pan/zoom transform. */
     private final class MapCanvas extends JPanel {
 
         private final JLabel statusLabel = new JLabel();
@@ -618,54 +520,16 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             g2.setStroke(new BasicStroke(CELL_STROKE));
 
             for (var cell : unboundedCells) {
-                paintFilledShape(
+                ViewerPainting.paintFilledShape(
                     g2,
-                    buildPath(cell),
+                    ViewerPainting.buildPath(cell),
                     settings.unboundedCellColour,
                     settings.unboundedCellOpacity,
                     settings.unboundedCellEdge);
             }
 
-            // The same length the pocket was divided into sections of, so a pocket cannot be
-            // coloured as too long to be one thing while holding one section, or the reverse.
-            var wideEnough = measureSectionLength();
+            voidPockets.paintFills(g2);
 
-            for (var pocket : voidPockets) {
-
-                var isWide = pocket.span() > wideEnough;
-
-                // Nothing to draw means the channel closed the pocket over, and drawing it
-                // flush against the cells instead would break the one rule every other shape
-                // here keeps. The mark says it is there without claiming an extent it has
-                // not got.
-                if (pocket.outlines().isEmpty()) {
-
-                    paintVoidMark(
-                        g2,
-                        pocket.centre(),
-                        isWide ? settings.wideVoidColour : settings.voidCellColour);
-
-                    continue;
-                }
-
-                for (var outline : pocket.outlines()) {
-
-                    var path = buildPath(outline);
-
-                    if (pocket.absorbingOwner() != null) {
-
-                        var fill = resolveOwnedColour(pocket.absorbingOwner());
-                        paintFilledShape(g2, path, fill, settings.ownedCellOpacity, fill);
-                        continue;
-                    }
-                    paintFilledShape(
-                        g2,
-                        path,
-                        isWide ? settings.wideVoidColour : settings.voidCellColour,
-                        settings.voidCellOpacity,
-                        isWide ? settings.wideVoidEdge : settings.voidCellEdge);
-                }
-            }
             // The channel is the ring a cell leaves between its true edge and its inset
             // fill, so painting the whole true cell and letting the fill cover the middle
             // leaves exactly that ring showing - no second shape to build, and it cannot
@@ -676,8 +540,8 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             // contour, stroked below once the fills are down.
             for (var cell : geometry.cellEdgesByCellId().values()) {
 
-                g2.setColor(applyAlpha(settings.channelColour, settings.channelOpacity));
-                g2.fill(buildPath(convertEdgesToRing(cell)));
+                g2.setColor(ViewerPainting.applyAlpha(settings.channelColour, settings.channelOpacity));
+                g2.fill(ViewerPainting.buildPath(convertEdgesToRing(cell)));
             }
 
             g2.setStroke(new BasicStroke(RING_STROKE));
@@ -691,11 +555,11 @@ final class SectorGeometryViewer implements ViewerRefreshes {
                             < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                     continue;
                 }
-                paintFilledShape(
+                ViewerPainting.paintFilledShape(
                     g2,
-                    buildPath(entry.getValue().fillPolygon()),
+                    ViewerPainting.buildPath(entry.getValue().fillPolygon()),
                     settings.jitterUnowned
-                        ? jitterBrightness(settings.unownedCellColour,
+                        ? ViewerPainting.jitterBrightness(settings.unownedCellColour,
                             entry.getKey().hashCode(),
                             settings.jitterStrength)
                         : settings.unownedCellColour,
@@ -711,12 +575,12 @@ final class SectorGeometryViewer implements ViewerRefreshes {
                 var cluster = new Path2D.Double(Path2D.WIND_EVEN_ODD);
 
                 for (var ring : entry.getValue()) {
-                    cluster.append(buildPath(ring), false);
+                    cluster.append(ViewerPainting.buildPath(ring), false);
                 }
-                paintFilledShape(
+                ViewerPainting.paintFilledShape(
                     g2,
                     cluster,
-                    resolveOwnedColour(entry.getKey()),
+                    ViewerPainting.resolveOwnedColour(settings, entry.getKey()),
                     settings.ownedCellOpacity,
                     settings.ownedCellEdge);
             }
@@ -727,7 +591,8 @@ final class SectorGeometryViewer implements ViewerRefreshes {
 
             paintFillContours(g2);
             paintCentrelines(g2);
-            paintVoidSpans(g2);
+            voidPockets.paintSpans(g2);
+            voidBridges.paintSpans(g2);
 
             g2.setColor(settings.siteColour);
 
@@ -768,67 +633,6 @@ final class SectorGeometryViewer implements ViewerRefreshes {
         // so: both are a line across void saying "this much is held between these two
         // cells", arrived at from opposite ends. Two colours would say they were two kinds
         // of thing, and the whole point of showing them together is that they are not.
-        private void paintVoidSpans(Graphics2D g2) {
-
-            g2.setStroke(new BasicStroke(SECTION_CUT_STROKE));
-            g2.setColor(applyAlpha(settings.sectionCutColour, OPAQUE_ALPHA));
-
-            for (var bridge : voidBridges) {
-
-                g2.draw(new Line2D.Double(
-                    bridge.start()[0],
-                    bridge.start()[1],
-                    bridge.end()[0],
-                    bridge.end()[1]));
-            }
-
-            for (var pocket : voidPockets) {
-
-                // Away from the cells when a pocket is pushed out to meet one owner's fills,
-                // towards them when it is pulled in to leave a border.
-                var trim = pocket.absorbingOwner() == null
-                    ? settings.parameters.borderInset()
-                    : -settings.parameters.borderInset();
-
-                for (var cut : pocket.division().cuts()) {
-
-                    g2.draw(buildTrimmedCut(cut, trim));
-                }
-            }
-        }
-
-        private static Line2D buildTrimmedCut(CellGaps.CellGap cut, double trim) {
-
-            var runX = cut.end()[0] - cut.start()[0];
-            var runY = cut.end()[1] - cut.start()[1];
-            var length = Math.hypot(runX, runY);
-
-            // A corridor narrower than two channels has no drawn outline for the cut to reach,
-            // so trimming it would turn it inside out. Left at its true extent instead, where
-            // it is at worst a short mark across a gap too tight to have been drawn anyway.
-            var pullBack = length > 2 * trim ? trim / length : 0;
-
-            return new Line2D.Double(
-                cut.start()[0] + runX * pullBack,
-                cut.start()[1] + runY * pullBack,
-                cut.end()[0] - runX * pullBack,
-                cut.end()[1] - runY * pullBack);
-        }
-
-        private void paintVoidMark(Graphics2D g2, double[] centre, Color colour) {
-
-            var mark = new Path2D.Double();
-
-            mark.moveTo(centre[0], centre[1] + VOID_MARK_RADIUS);
-            mark.lineTo(centre[0] + VOID_MARK_RADIUS, centre[1]);
-            mark.lineTo(centre[0], centre[1] - VOID_MARK_RADIUS);
-            mark.lineTo(centre[0] - VOID_MARK_RADIUS, centre[1]);
-            mark.closePath();
-
-            g2.setColor(applyAlpha(colour, settings.voidCellOpacity));
-            g2.fill(mark);
-        }
-
         private void paintFillContours(Graphics2D g2) {
 
             for (var entry : geometry.shapedCellByCellId().entrySet()) {
@@ -859,7 +663,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
                     var from = fill.get(index);
                     var to = fill.get((index + 1) % fill.size());
 
-                    g2.setColor(applyAlpha(
+                    g2.setColor(ViewerPainting.applyAlpha(
                         doesFaceAnotherCell(trueEdges, from, to)
                             ? settings.channelEdge
                             : cellEdge,
@@ -877,7 +681,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
         // silhouette, and belongs to the cell's own outline colour.
         private void paintCentrelines(Graphics2D g2) {
 
-            g2.setColor(applyAlpha(settings.centrelineColour, OPAQUE_ALPHA));
+            g2.setColor(ViewerPainting.applyAlpha(settings.centrelineColour, OPAQUE_ALPHA));
 
             for (var edges : geometry.cellEdgesByCellId().values()) {
                 for (var edge : edges) {
