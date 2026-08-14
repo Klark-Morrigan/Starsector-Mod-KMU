@@ -98,6 +98,7 @@ final class SectorGeometryViewer {
 
     private static final Path SVG_DIRECTORY = Path.of("build", "reports", "political-map");
 
+    private static final String WINDOW_TITLE = "KMU political map";
     private static final String CSV_EXTENSION = ".csv";
     private static final String SVG_EXTENSION = ".svg";
 
@@ -247,8 +248,11 @@ final class SectorGeometryViewer {
     private static final double OPACITY_MAXIMUM = 255;
     private static final Color SITE_COLOUR = new Color(0x88, 0x88, 0x88);
 
-    private final String sectorName;
-    private final SectorFixture fixture;
+    // Not final: the fixture is picked from a dropdown, so a session can move between
+    // sectors without restarting - a shape only worth judging is one that holds on more
+    // than one sector, and reopening the tool to find out is enough friction to skip it.
+    private String sectorName;
+    private SectorFixture fixture;
     private final MapCanvas canvas = new MapCanvas();
 
     private Color ownedCellColour = OWNED_CELL_DEFAULT;
@@ -293,30 +297,39 @@ final class SectorGeometryViewer {
     private SectorGeometry geometry;
     private long lastBuildMillis;
 
-    private SectorGeometryViewer(String sectorName) {
-        this.sectorName = sectorName;
-        this.fixture = SectorFixture.loadSector(sectorName);
-        rebuildGeometry();
+    private SectorGeometryViewer() {
     }
 
     /**
      * Opens the viewer.
      *
-     * @param args optionally the fixture to open, as named under the political-map test
-     *             resources; the first one found otherwise
+     * @param args ignored; the fixture is picked from the dropdown in the window, which
+     *             remembers what was last chosen
      */
     public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new SectorGeometryViewer().showWindow());
+    }
 
-        var sectorName = args.length > 0
-            ? args[0]
-            : SectorFixture.listSectorNames().get(0);
+    // Loading only. The geometry is not rebuilt here because the knobs have not applied their
+    // remembered values yet, and rebuilding against the defaults would only be thrown away.
+    private void loadSector(String name) {
 
-        SwingUtilities.invokeLater(() -> new SectorGeometryViewer(sectorName).showWindow());
+        sectorName = name;
+        fixture = SectorFixture.loadSector(name);
+    }
+
+    // Refits the view as well as rebuilding, because two sectors do not occupy the same
+    // coordinates and keeping the old pan would open the new one off screen.
+    private void switchToSector(String name) {
+
+        loadSector(name);
+        canvas.markForRefit();
+        rebuildGeometry();
     }
 
     private void showWindow() {
 
-        var frame = new JFrame("KMU political map - " + sectorName);
+        var frame = new JFrame(WINDOW_TITLE);
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
@@ -387,6 +400,13 @@ final class SectorGeometryViewer {
             PANEL_PADDING,
             PANEL_PADDING,
             PANEL_PADDING));
+
+        controls.add(ViewerControls.buildChoice(
+            "Sector fixture",
+            "Sector",
+            SectorFixture.listSectorNames(),
+            this::loadSector,
+            () -> switchToSector(sectorName)));
 
         controls.add(buildSlider(
             "Cell reach (cell radius)",
@@ -632,11 +652,12 @@ final class SectorGeometryViewer {
         scroller.setMinimumSize(new Dimension(CONTROL_MINIMUM_WIDTH, 0));
         scroller.getVerticalScrollBar().setUnitIncrement(SCROLL_UNIT_INCREMENT);
 
-        // A knob restored from the last session applies its remembered value as it is built,
-        // and the geometry was built before any of them existed. That did not matter while
-        // the void knobs only chose colours; the section length is geometry, so the pockets
-        // are rebuilt once the knobs have had their say.
-        refreshVoidPockets();
+        // Every knob applies its remembered value as it is built, and until they all have,
+        // nothing has the settings the session was left on - the fixture picked, the reach,
+        // the miter limit. So the one build of the geometry happens here, after the last of
+        // them, rather than in the constructor where it would run against the defaults and
+        // then sit there looking authoritative until something was touched.
+        rebuildGeometry();
 
         return scroller;
     }
@@ -1311,6 +1332,13 @@ final class SectorGeometryViewer {
                 (from[1] + to[1]) / 2.0);
 
             return nearest != null && nearest.target() instanceof EdgeTarget.AcrossSystem;
+        }
+
+        // Puts the view back to "not yet fitted", which is what a zero scale means to the
+        // paint pass. Named rather than having callers assign zero, because "scale = 0" reads
+        // as breaking the transform rather than as asking for it to be worked out again.
+        private void markForRefit() {
+            scale = 0;
         }
 
         private void fitToSector() {

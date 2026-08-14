@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
@@ -13,6 +14,7 @@ import java.util.prefs.Preferences;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JColorChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -476,6 +478,60 @@ final class ViewerControls {
         button.addActionListener(event -> reset.run());
 
         return button;
+    }
+
+    /**
+     * A dropdown that remembers what was picked, with a reset button.
+     *
+     * @param key      what to remember it under
+     * @param title    what the choice is called
+     * @param options  what can be picked, the first of which is the default
+     * @param apply    records the new pick
+     * @param onChange what to run once it changes
+     * @return the row
+     */
+    static JPanel buildChoice(
+            String key,
+            String title,
+            List<String> options,
+            Consumer<String> apply,
+            Runnable onChange) {
+
+        var fallback = options.get(0);
+
+        // A remembered pick can name something that is no longer there - a fixture renamed or
+        // removed between sessions - and a dropdown set to a value not in its own list shows
+        // blank and cannot be put back except by picking something else.
+        var saved = Preferences
+            .userNodeForPackage(ViewerControls.class)
+            .get(key, fallback);
+
+        var picked = options.contains(saved) ? saved : fallback;
+        var choice = new JComboBox<>(options.toArray(new String[0]));
+
+        choice.setSelectedItem(picked);
+
+        choice.addActionListener(event -> {
+
+            var selected = (String) choice.getSelectedItem();
+
+            apply.accept(selected);
+
+            Preferences.userNodeForPackage(ViewerControls.class).put(key, selected);
+
+            onChange.run();
+        });
+
+        apply.accept(picked);
+
+        var row = new JPanel(new BorderLayout());
+
+        row.add(new JLabel(title), BorderLayout.NORTH);
+        row.add(choice, BorderLayout.CENTER);
+        row.add(buildResetButton(() -> choice.setSelectedItem(fallback)), BorderLayout.EAST);
+        row.setBorder(BorderFactory.createEmptyBorder(ROW_PADDING, 0, ROW_PADDING, 0));
+
+        return row;
     }
 
     private static JPanel layOutLabelledRow(
