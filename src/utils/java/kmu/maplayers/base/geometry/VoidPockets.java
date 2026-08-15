@@ -60,21 +60,6 @@ import java.util.List;
  */
 final class VoidPockets {
 
-
-    // Enough to keep a short arc from collapsing to a chord once the sampling is scaled down
-    // in proportion to how little of the circle it covers.
-
-    // What converts a count of sides round a whole circle into a count of samples per half
-    // turn of arc.
-    private static final int HALF_TURNS_PER_CIRCLE = 2;
-
-    // Stands in for a neighbouring circle where there is none: a disc that overlaps nothing
-    // contributes its whole circle as one arc, with no disc entered or left at either end.
-
-    // Slack on the sweep comparison that decides a reshaped pocket is sound, in radians.
-    // Only there to keep an arc that did not move at all from reading as one that moved the
-    // wrong way.
-
     /**
      * One pocket of void, bound by the cells around it.
      *
@@ -136,12 +121,7 @@ final class VoidPockets {
             SectorGeometryParameters parameters,
             VoidSections.SectionRules sectionRules) {
 
-        // Taken from the cells' own bound rather than set apart from it. The two count the
-        // same thing in different units - a bound is so many sides round a whole circle, an
-        // arc is sampled so many times per half turn - so a pocket sampled at its own number
-        // comes out at a different smoothness from the cell it runs against, and the knob
-        // that refines the cells leaves the pockets where they were.
-        var arcSegments = parameters.boundSegments() / HALF_TURNS_PER_CIRCLE;
+        var arcSegments = parameters.measureArcSegments();
 
         var trueHoles = DiscUnionBoundary.traceHoles(
             new DiscUnion(sites, parameters.cellRadius()), arcSegments);

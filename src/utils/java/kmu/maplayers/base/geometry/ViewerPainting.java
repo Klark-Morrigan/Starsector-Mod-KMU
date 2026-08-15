@@ -26,6 +26,12 @@ final class ViewerPainting {
     // black, and it has to stay findable at the zoom where a whole pocket fits on screen.
     static final float SPAN_STROKE = 120f;
 
+    // How wide the mark on a run that crosses a cell is drawn. Heavier than any other line
+    // here, because it has to be findable at the zoom where a whole sector fits on screen -
+    // and shared, because two drawings marking the same fault at two weights read as two
+    // different findings.
+    static final float CROSSING_STROKE = 240f;
+
     // How wide a cell's own border is drawn. Shared because both drawings of this map use it
     // and because it is not only a look: it is how far either side of the true edge the drawn
     // edge reaches, which decides what a reader can see being on the wrong side of it.

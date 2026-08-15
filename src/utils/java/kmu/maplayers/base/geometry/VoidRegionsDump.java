@@ -664,10 +664,6 @@ final class VoidRegionsDump {
             "each crossing as depth/stretches skipped across it (0 = neighbours): %s%n",
             formatAgainstDepth(Coastlines.measureCrossingGaps(traced)));
 
-        System.out.printf(
-            Locale.ROOT,
-            "each crossing as depth/tangent shift (-1 = never reached the tangent): %s%n",
-            formatAgainstDepth(Coastlines.measureTangentShifts(traced)));
     }
 
     // Each crossing as its depth beside one other number about it. Shared by every such

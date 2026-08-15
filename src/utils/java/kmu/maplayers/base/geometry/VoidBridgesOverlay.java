@@ -21,10 +21,6 @@ import java.util.List;
  */
 final class VoidBridgesOverlay {
 
-    // What converts a count of sides round a whole circle into a count of samples per half
-    // turn of arc.
-    private static final int HALF_TURNS_PER_CIRCLE = 2;
-
     // A fill's outline is read against the fill rather than against the black, so it wants a
     // fraction of the weight a span crossing open void needs.
     private static final float SPAN_STROKES_PER_EDGE = 4f;
@@ -58,7 +54,7 @@ final class VoidBridgesOverlay {
                 fixture.getSites(),
                 bridges,
                 settings.parameters,
-                settings.parameters.boundSegments() / HALF_TURNS_PER_CIRCLE);
+                settings.parameters.measureArcSegments());
     }
 
     /**

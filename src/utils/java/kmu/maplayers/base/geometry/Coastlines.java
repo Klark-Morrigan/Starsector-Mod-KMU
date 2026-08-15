@@ -285,25 +285,6 @@ final class Coastlines {
      *         none of them enters one
      */
     /**
-     * How many straight runs of coast pass inside a cell.
-     *
-     * <p>The companion to {@link #measureDeepestIncursion}, which says how bad the worst one
-     * is and nothing about how many there are. One deep crossing is a bug in one place; forty
-     * shallow ones are a bug in the construction, and the two want different fixes.
-     *
-     * <p>Counted past a hair of slack, because a run begins and ends ON two borders and so
-     * touches those two cells to within rounding. Anything past that is the run inside a cell
-     * rather than against it.
-     *
-     * @param coasts what {@link #traceSmoothedCoasts} handed back
-     * @param union  the discs it was traced against
-     * @return how many runs go inside a cell
-     */
-    static int countPenetratingRuns(TracedCoasts traced) {
-        return findPenetrations(traced).size();
-    }
-
-    /**
      * The crossings deep enough to be seen, which are the only ones worth marking.
      *
      * <p>{@link #findPenetrations} answers a question about the geometry and answers it down
@@ -441,61 +422,6 @@ final class Coastlines {
             deepest = Math.max(deepest, penetration.depth());
         }
         return deepest;
-    }
-
-    /**
-     * How each crossing's run was resolved, and what the frontage did to it.
-     *
-     * <p>The test of the remaining reading: that these runs fall through to the outer tangent
-     * and are then clamped back into a frontage that does not contain the tangent point, so
-     * the run stops being tangent and becomes a secant - a line that cuts.
-     *
-     * <p>Two numbers say whether that is what happens. Whether the tangent was reached for at
-     * all, and how far the frontage moved it once it was. A run that never reached the
-     * fallback, or reached it and was not moved, is failing some other way and this reading
-     * is wrong too.
-     *
-     * @param traced what {@link #traceSectorCoasts} handed back
-     * @return one pair per crossing - how deep it goes, and how far along the border the
-     *         frontage pushed the tangent, which is zero when it did not - deepest first
-     */
-    static List<double[]> measureTangentShifts(TracedCoasts traced) {
-
-        var marks = mapMarksByCircle(traced);
-
-        return measureAgainstDepth(traced, crossing -> measureTangentShift(
-            traced.union(),
-            marks.get(crossing.from().circle()),
-            marks.get(crossing.to().circle())));
-    }
-
-    // How far along its own border the frontage pushed the tangent point, summed over the two
-    // ends. Negative when the run never fell through to the tangent at all, which is a
-    // different answer rather than a smaller one.
-    //
-    // Every step of it asks the algorithm rather than repeating it. A probe that reimplements
-    // what it reports on is worth nothing the moment the two drift, and this one is what the
-    // decision to fall back to the boundary was made on.
-    private static double measureTangentShift(
-            DiscUnion union,
-            DiscUnionBoundary.CoastMark from,
-            DiscUnionBoundary.CoastMark to) {
-
-        if (from == null || to == null) {
-            return -1;
-        }
-
-        var clamped = clampEdgeEnds(union, from, to);
-
-        if (isRunClearOfEveryCell(union, from, to, clamped)) {
-            return -1;
-        }
-
-        var tangent = measureTangentAngle(union, from, to);
-        var settled = findTangentEdge(union, from, to);
-
-        return (Angles.measureGap(settled.departAngle(), tangent)
-            + Angles.measureGap(settled.arriveAngle(), tangent)) * union.reach();
     }
 
     /**

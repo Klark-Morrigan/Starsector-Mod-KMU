@@ -20,10 +20,6 @@ import java.util.List;
  */
 final class CoastlinesOverlay {
 
-    // Heavier than any other line on the map, so a crossing is findable at the zoom where a
-    // whole sector fits on screen rather than only once somebody is already looking at it.
-    private static final float PENETRATION_STROKES = 2f;
-
     private final ViewerSettings settings;
 
     private List<Coastlines.Penetration> penetrations = List.of();
@@ -111,7 +107,7 @@ final class CoastlinesOverlay {
             }
         }
 
-        g2.setStroke(new BasicStroke(ViewerPainting.SPAN_STROKE * PENETRATION_STROKES));
+        g2.setStroke(new BasicStroke(ViewerPainting.CROSSING_STROKE));
         g2.setColor(ViewerPainting.applyAlpha(
             settings.coastCrossingColour, ViewerPainting.OPAQUE_ALPHA));
 

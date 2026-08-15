@@ -46,10 +46,6 @@ final class SectorSvgWriter {
     private static final int HUE_RANGE = 360;
     private static final String OWNER_FILL_OPACITY = "0.35";
 
-    // Heavier than any other line here, because it has to be findable at the zoom where a
-    // whole sector fits on screen.
-    private static final double PENETRATION_STROKE = 220.0;
-
     private static final int HEX_DIGITS = 6;
 
     // Drops the alpha byte an AWT colour packs above its three channels, which SVG has no
@@ -239,7 +235,7 @@ final class SectorSvgWriter {
                 svg,
                 List.of(penetration.from().point(), penetration.to().point()),
                 formatColour(ViewerSettings.COAST_CROSSING_DEFAULT),
-                PENETRATION_STROKE);
+                ViewerPainting.CROSSING_STROKE);
         }
     }
 
