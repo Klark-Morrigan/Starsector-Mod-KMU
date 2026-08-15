@@ -204,6 +204,13 @@ nothing rather than making it wrong: the pass still runs last, and simply carves
 whatever band that cell was carrying, which is what keeps a band from outliving the ring it
 was laid in; the band pass then fills it back in.
 
+That pass also traces each cell's band *path* when the band-path diagnostic is on - the ring a
+band would run along, held per cell and dropped by the same writes as the band. A cell drawing no
+band is the sector's ordinary state and also every one of the band's refusals, and the two are the
+same picture without it. Held only while the toggle is on: the bake hands over nothing per cell
+while it is off, and a settings change rebuilds every cell, so switching it off is what clears
+what an earlier pass left behind.
+
 A frame measures nothing about a band at all: every size in one is a world size, so how
 large it lands on screen is the map's own scaling of the triangle list and no question
 the pass has to answer.

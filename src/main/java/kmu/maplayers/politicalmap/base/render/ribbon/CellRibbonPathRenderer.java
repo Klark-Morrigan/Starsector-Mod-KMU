@@ -46,6 +46,11 @@ public final class CellRibbonPathRenderer {
     // own band does not hide the band it is drawn to be compared with.
     private static final float PATH_ALPHA = 0.9f;
 
+    // The path's first vertex in the packed [x, y, x, y, ...] run, which is the start a band opens
+    // at - named so the dot pass reads by what it marks rather than by bare index.
+    private static final int START_X = 0;
+    private static final int START_Y = 1;
+
     // Emits only; never instantiated.
     private CellRibbonPathRenderer() {
     }
@@ -87,9 +92,11 @@ public final class CellRibbonPathRenderer {
             float factor,
             float alphaMult) {
 
+        var pathAlpha = PATH_ALPHA * alphaMult;
+
         GL11.glLineWidth(PATH_LINE_WIDTH);
         for (var ribbonPath : ribbonPaths) {
-            GlColour.set(resolveVerdictColour(ribbonPath.verdict()), PATH_ALPHA * alphaMult);
+            GlColour.set(resolveVerdictColour(ribbonPath.verdict()), pathAlpha);
 
             // Closed by the emission rather than by the traced points, which do not repeat the
             // first vertex: a band runs the ring as a loop, and drawing it as an open line would
@@ -103,10 +110,10 @@ public final class CellRibbonPathRenderer {
         GL11.glPointSize(PATH_START_DOT_SIZE);
         GL11.glBegin(GL11.GL_POINTS);
         for (var ribbonPath : ribbonPaths) {
-            GlColour.set(resolveVerdictColour(ribbonPath.verdict()), PATH_ALPHA * alphaMult);
+            GlColour.set(resolveVerdictColour(ribbonPath.verdict()), pathAlpha);
             GL11.glVertex2f(
-                ribbonPath.centreline()[0] * factor,
-                ribbonPath.centreline()[1] * factor);
+                ribbonPath.centreline()[START_X] * factor,
+                ribbonPath.centreline()[START_Y] * factor);
         }
         GL11.glEnd();
     }

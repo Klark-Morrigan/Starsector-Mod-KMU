@@ -166,6 +166,12 @@ draw the last shape's band inside this shape's cell. Unlike the two maps beside 
 sparse - a bandless cell is left out rather than held as an empty value - since a band reports what
 is held in a system, and most of the sector is cells nobody lives in.
 
+Beside it sits the cell's band *path* (`CellRibbonPath`), written by the same pass and dropped by
+the same writes, for the same reason: a ring traced inside the last shape would report the
+overlay's staleness as this cell's geometry. It is held only while the player has the band-path
+diagnostic on - the bake hands over nothing per cell while it is off, which is how switching it off
+clears what an earlier pass left - so on an ordinary frame this map is empty.
+
 ## The split fill: solid, hatched, unfilled
 
 A bloc's footprint is traced as one border whatever its members' fills; the fill is what varies per

@@ -22,7 +22,9 @@ import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
+import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonPath;
 import kmu.maplayers.politicalmap.base.render.ribbon.RibbonBand;
+import kmu.maplayers.politicalmap.base.render.ribbon.RibbonPathVerdict;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
@@ -445,6 +447,22 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getRibbonByCellId())
                 .isEmpty();
         }
+
+        @Test
+        void putStyledCellDropsTheBandPathTracedInsideTheShapeItReplaces() {
+            // The diagnostic goes with the band for the same reason the band goes: a path traced
+            // in the last shape drawn over this one would report the overlay's own staleness as
+            // the cell's geometry, which is the one thing a diagnostic must not do.
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+
+            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
+            territories.putCellRibbonPath("system", buildAnyRibbonPath());
+
+            territories.putStyledCell("system", buildAnyStyledCell(), buildTrianglePolygon());
+
+            assertThat(territories.getRibbonPathByCellId())
+                .isEmpty();
+        }
     }
 
     @Nested
@@ -493,6 +511,20 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getRibbonByCellId())
                 .isEmpty();
         }
+
+        @Test
+        void removeStyledCellDropsTheBandPathWithTheCell() {
+            // A path is a ring around a cell, so a cell that stops drawing leaves the overlay
+            // marking out a shape nothing paints any more.
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+
+            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
+            territories.putCellRibbonPath("system", buildAnyRibbonPath());
+            territories.removeStyledCell("system");
+
+            assertThat(territories.getRibbonPathByCellId())
+                .isEmpty();
+        }
     }
 
     @Nested
@@ -534,6 +566,39 @@ final class PoliticalMapTerritoriesTest {
             territories.putCellRibbon("system", CellRibbon.NONE);
 
             assertThat(territories.getRibbonByCellId())
+                .isEmpty();
+        }
+    }
+
+    @Nested
+    class PutCellRibbonPath {
+
+        @Test
+        void putCellRibbonPathRecordsAPathUnderTheCellItWasTracedIn() {
+
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+            var ribbonPath = buildAnyRibbonPath();
+
+            territories.putCellRibbonPath("system", ribbonPath);
+
+            assertThat(territories.getRibbonPathByCellId())
+                .containsOnlyKeys("system");
+            assertThat(territories.getRibbonPathByCellId().get("system"))
+                .isSameAs(ribbonPath);
+        }
+
+        @Test
+        void putCellRibbonPathClearsAStandingPathWhenTheOverlayIsSwitchedOff() {
+            // The bake hands over nothing for every cell while the overlay is off, and that is
+            // the whole of how it is switched off: nothing else clears what an earlier pass laid,
+            // so a path surviving here would leave the map ringed with a diagnostic the player
+            // has turned off.
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+
+            territories.putCellRibbonPath("system", buildAnyRibbonPath());
+            territories.putCellRibbonPath("system", CellRibbonPath.NONE);
+
+            assertThat(territories.getRibbonPathByCellId())
                 .isEmpty();
         }
     }
@@ -674,6 +739,12 @@ final class PoliticalMapTerritoriesTest {
     private static CellRibbon buildAnyRibbon() {
         return new CellRibbon(List.of(
             new RibbonBand(Color.WHITE, new float[] {0, 0, 1, 0, 1, 1})));
+    }
+
+    private static CellRibbonPath buildAnyRibbonPath() {
+        return new CellRibbonPath(
+            new float[] {0, 0, 1, 0, 1, 1},
+            RibbonPathVerdict.LAID_AT_PAD);
     }
 
     private static List<double[]> buildTrianglePolygon() {

@@ -273,8 +273,13 @@ final class PoliticalMapOverlayRendererTest {
 
         // Stated rather than left to the default a mock would answer with, since the upper band is
         // asserted to have reached the band pass at all - and a stub that resolves by accident is
-        // one the pass could stop calling without any test noticing.
+        // one the pass could stop calling without any test noticing. The diagnostic paths beside
+        // them are stated for the same reason: the overlay is gated by its own emptiness rather
+        // than by a settings read, so this read is the only thing standing between an off toggle
+        // and a pass over the map.
         when(territoriesMock.getRibbonByCellId())
+            .thenReturn(Map.of());
+        when(territoriesMock.getRibbonPathByCellId())
             .thenReturn(Map.of());
 
         // Read while assembling the hover highlight's arguments, so it has to resolve even though

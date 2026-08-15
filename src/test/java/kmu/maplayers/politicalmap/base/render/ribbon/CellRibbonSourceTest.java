@@ -45,6 +45,11 @@ import static org.mockito.Mockito.when;
  * counting off the rebuild, not merely the bands off the map, since a rebuild already stalls
  * elsewhere and a switched-off feature that still walks the sector's markets is a cost with
  * nothing to show for it.
+ *
+ * <p>The diagnostic trace is pinned against the same gate rather than against its own, because
+ * what makes the overlay worth looking at is that it answers for exactly the cells the band pass
+ * considered. A trace reaching wider would ring cells no band was ever going to be laid on;
+ * a trace reaching narrower would fall silent on cells the reader is looking at it to explain.
  */
 final class CellRibbonSourceTest {
 
@@ -179,8 +184,51 @@ final class CellRibbonSourceTest {
         }
     }
 
+    @Nested
+    class TraceCellRibbonPath {
+
+        @Test
+        void tracesAPathForACellSomeBlocPaints() {
+
+            assertThat(traceFor(PAINTED_SYSTEM).verdict())
+                .isEqualTo(RibbonPathVerdict.LAID_AT_PAD);
+        }
+
+        @Test
+        void tracesNoPathForACellNothingPaints() {
+            // The overlay covers the cells the band pass considered and no more. Traced for every
+            // cell instead, it would ring every piece of empty space in the sector and bury the
+            // cells it is looked at to explain.
+            assertThat(traceFor(UNPAINTED_SYSTEM))
+                .isEqualTo(CellRibbonPath.NONE);
+        }
+
+        @Test
+        void tracesNoPathForAPaintedSystemWithNoRecordedSite() {
+            // A path opens above the cell's own site, so a system without one has no start to
+            // trace from - the same answer the band pass gives it.
+            assertThat(traceFor(SITELESS_SYSTEM))
+                .isEqualTo(CellRibbonPath.NONE);
+        }
+
+        @Test
+        void tracesNoPathForAPaintedCellWhileTheBandsAreSwitchedOff() {
+            // With the bands off there is no layout in play, so the overlay has nothing to report
+            // on: a ring drawn from sizes nothing is laid at would be a diagnostic of its own
+            // arithmetic.
+            switchBandsOff();
+
+            assertThat(traceFor(PAINTED_SYSTEM))
+                .isEqualTo(CellRibbonPath.NONE);
+        }
+    }
+
     private CellRibbon buildFor(String drawnSystemId) {
         return buildWith(system -> ANY_PLAN).buildCellRibbon(drawnSystemId, SQUARE_CELL);
+    }
+
+    private CellRibbonPath traceFor(String drawnSystemId) {
+        return buildWith(system -> ANY_PLAN).traceCellRibbonPath(drawnSystemId, SQUARE_CELL);
     }
 
     private void switchBandsOff() {
