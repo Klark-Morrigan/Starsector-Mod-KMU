@@ -35,10 +35,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * no room for a band at all draws none rather than one crushed against its own border.
  *
  * <p>The names' cases are the same question asked of the room a cluster name takes: the whole
- * band goes on the longest stretch the names leave and the rest of the ring stays bare, the
- * stretch straddling the band's own start is one stretch rather than the two intervals the carve
- * states it as, the clamp measures against that one stretch rather than against every stretch
- * together, and a cell whose ring is wholly under a name draws nothing.
+ * band goes on the longest stretch the names leave and the rest of the ring stays bare, the clamp
+ * measures against that one stretch rather than against every stretch together, and a cell whose
+ * ring is wholly under a name draws nothing.
+ *
+ * <p>Three of them are the same rule about the path's own start, which the carve states as two
+ * ends rather than as the one point it is. A stretch reaching both ends is one stretch and is
+ * read as one; a stretch reaching only one of them is not, whichever end it reaches. The
+ * distinction is invisible on a cell with no name near its start and decides where the band goes
+ * on every cell with one, so all three are posed rather than the first alone.
  */
 final class CellRibbonBuilderTest {
 
@@ -82,18 +87,42 @@ final class CellRibbonBuilderTest {
         new double[] {1400.0, 3800.0},
         new double[] {1000.0, 3800.0});
 
-    private static final List<List<double[]>> NAMES_EITHER_SIDE_OF_THE_START =
-        List.of(NAME_ACROSS_THE_TOP_EDGE, NAME_JUST_BEFORE_THE_START);
-
     // A name across the cell's bottom edge, 6000 to 6400 along - the far side of the ring from
     // the band's start, so what it leaves clear is one stretch running from it round past that
     // start and back again. The carve states that stretch as two intervals, one at each end of
     // the path, and it is the longest thing on the cell only once they are read as one.
-    private static final List<List<double[]>> NAME_ACROSS_THE_BOTTOM_EDGE = List.of(List.of(
+    private static final List<double[]> NAME_ACROSS_THE_BOTTOM_EDGE = List.of(
         new double[] {2000.0, 200.0},
         new double[] {2400.0, 200.0},
         new double[] {2400.0, 600.0},
-        new double[] {2000.0, 600.0}));
+        new double[] {2000.0, 600.0});
+
+    // A name lying over the band's own start, covering the path from 12600 round through the
+    // start and on to 200. The two stretches it leaves reach the path's two ends without
+    // meeting there, so a cell carrying this name has nothing at its start to fuse.
+    private static final List<double[]> NAME_ACROSS_THE_START = List.of(
+        new double[] {1800.0, 3400.0},
+        new double[] {2200.0, 3400.0},
+        new double[] {2200.0, 3800.0},
+        new double[] {1800.0, 3800.0});
+
+    // A name ending exactly on the band's start, covering 12400 to 12800. The stretch opening the
+    // path and the stretch closing it are the two the fuse joins on any other cell, and here they
+    // are separated by this name rather than being one stretch stated twice.
+    private static final List<double[]> NAME_ENDING_AT_THE_START = List.of(
+        new double[] {1600.0, 3400.0},
+        new double[] {2000.0, 3400.0},
+        new double[] {2000.0, 3800.0},
+        new double[] {1600.0, 3800.0});
+
+    private static final List<List<double[]>> NAMES_EITHER_SIDE_OF_THE_START =
+        List.of(NAME_ACROSS_THE_TOP_EDGE, NAME_JUST_BEFORE_THE_START);
+
+    private static final List<List<double[]>> NAMES_OVER_THE_START_AND_THE_BOTTOM_EDGE =
+        List.of(NAME_ACROSS_THE_START, NAME_ACROSS_THE_BOTTOM_EDGE);
+
+    private static final List<List<double[]>> NAMES_UP_TO_THE_START_AND_THE_TOP_EDGE =
+        List.of(NAME_ENDING_AT_THE_START, NAME_ACROSS_THE_TOP_EDGE);
 
     // A name across the whole cell - a long name over a small cluster, which leaves its cell's
     // ring with no stretch clear anywhere.
@@ -119,9 +148,9 @@ final class CellRibbonBuilderTest {
     // the cell's top edge, so what it strokes is a plain quad with no corner in it.
     private static final int ONE_WIDTH = 1;
 
-    // Thirty widths of run: 12000 units at full size, which outruns the 11000-unit stretch the
-    // two names above leave between them but not the 12000 those names leave in total. So it is
-    // exactly as long as tells a clamp measuring the chosen stretch from one measuring the ring.
+    // Thirty widths of run - 12000 units at full size, longer than any stretch the names above
+    // leave. A run this long is compressed to exactly fill the stretch it is laid on, so where it
+    // ends names that stretch, which is what tells one reading of the carved ring from another.
     private static final int RUN_OUTRUNNING_THE_STRETCH = 30;
 
     // A plan far longer than any cell's outline can hold at full size: sixty runs of three widths
@@ -323,13 +352,58 @@ final class CellRibbonBuilderTest {
                 CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
-                NAME_ACROSS_THE_BOTTOM_EDGE);
+                List.of(NAME_ACROSS_THE_BOTTOM_EDGE));
 
             assertThat(ribbon.bands())
                 .singleElement()
                 .satisfies(band -> {
                     assertThat(hasCorner(band, 2000.0, 600.0)).isTrue();
                     assertThat(hasCorner(band, 1600.0, 600.0)).isTrue();
+                    assertThat(hasCorner(band, 2000.0, 3800.0)).isFalse();
+                });
+        }
+
+        @Test
+        void takesTheLongerStretchWhereANameOverTheStartLeavesNothingToFuse() {
+            // The fuse is what a stretch reaching the path's two ends earns, not what reaching one
+            // of them does. This name sits on the start itself, so the stretches either side of it
+            // end where it begins rather than running into each other, and the band takes the
+            // longer of the two: 6400 to 12600, ending at 1800 along the cell's top edge. Fused
+            // regardless, the two would read as 12400 of room and the band would run at full size
+            // straight through both names, reaching the bottom edge at 2800.
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                CELL_SITE,
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
+                STYLE,
+                NAMES_OVER_THE_START_AND_THE_BOTTOM_EDGE);
+
+            assertThat(ribbon.bands())
+                .singleElement()
+                .satisfies(band -> {
+                    assertThat(hasCorner(band, 1800.0, 3800.0)).isTrue();
+                    assertThat(hasCorner(band, 2800.0, 600.0)).isFalse();
+                });
+        }
+
+        @Test
+        void takesTheLongerStretchWhereANameEndsOnTheStart() {
+            // The same rule read from the other end. The stretch closing the path stops 400 short
+            // of it, so the stretch opening the path is a stretch of its own however exactly the
+            // two nearly meet - and the band, laid on the longer, ends at 1600 where that name
+            // begins. Fused on the strength of the other stretch starting at the origin, it would
+            // draw over the name and finish on the start itself at 2000.
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                CELL_SITE,
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
+                STYLE,
+                NAMES_UP_TO_THE_START_AND_THE_TOP_EDGE);
+
+            assertThat(ribbon.bands())
+                .singleElement()
+                .satisfies(band -> {
+                    assertThat(hasCorner(band, 1600.0, 3800.0)).isTrue();
                     assertThat(hasCorner(band, 2000.0, 3800.0)).isFalse();
                 });
         }
