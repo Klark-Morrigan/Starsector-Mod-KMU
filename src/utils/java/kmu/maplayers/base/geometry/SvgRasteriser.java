@@ -4,7 +4,6 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -79,9 +78,6 @@ final class SvgRasteriser {
     private static final int RED_SHIFT = 16;
     private static final int GREEN_SHIFT = 8;
     private static final int PAIRED_HEX_DIGITS = 2;
-
-    // A radius either side of the centre makes the box a circle is drawn in.
-    private static final int DIAMETERS = 2;
 
     // Mid grey, for a colour notation this does not know. Visible and obviously not chosen,
     // so an unrendered shade reads as one rather than as a decision.
@@ -293,8 +289,7 @@ final class SvgRasteriser {
         var centreY = Double.parseDouble(findAttribute(CENTRE_Y, attributes, "0"));
         var radius = Double.parseDouble(findAttribute(RADIUS, attributes, "0"));
 
-        return new Ellipse2D.Double(
-            centreX - radius, centreY - radius, radius * DIAMETERS, radius * DIAMETERS);
+        return ViewerPainting.buildCircle(new double[] {centreX, centreY}, radius);
     }
 
     // The three notations the writer uses: a short hex, a long hex, and the hsl the owner

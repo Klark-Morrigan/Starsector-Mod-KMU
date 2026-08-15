@@ -24,6 +24,10 @@ record SectorGeometryParameters(
         double borderInset,
         double weldTolerance,
         double miterSpikeLimit) {
+    // What converts a count of sides round a whole circle into a count of samples per half
+    // turn of arc.
+    private static final int HALF_TURNS_PER_CIRCLE = 2;
+
     // KmuPoliticalMapSettings' DEFAULT_CELL_RADIUS. Duplicated rather than read, because reading
     // it would drag LunaLib into a pipeline that is otherwise pure geometry.
     static final double DEFAULT_CELL_RADIUS = 4000.0;
@@ -59,6 +63,21 @@ record SectorGeometryParameters(
      */
     double measureDrawnReach() {
         return cellRadius + borderInset;
+    }
+
+    /**
+     * How finely a half-turn of arc is sampled when tracing against these cells.
+     *
+     * <p>Taken from the cells' own bound rather than set apart from it. The two count the
+     * same thing in different units - a bound is so many sides round a whole circle, an arc
+     * is sampled so many times per half turn - so a shape sampled at its own number comes out
+     * at a different smoothness from the cell it runs against, and the knob that refines the
+     * cells leaves everything traced beside them where it was.
+     *
+     * @return the sample count a trace should be run at
+     */
+    int measureArcSegments() {
+        return boundSegments() / HALF_TURNS_PER_CIRCLE;
     }
 
     /**

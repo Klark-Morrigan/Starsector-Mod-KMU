@@ -73,7 +73,101 @@ final class Coastlines {
     }
 
     /**
-     * How aggressively a coast is smoothed.
+     * The knobs a coast is traced under, in the units they are set in.
+     *
+     * <p>Multiples of a cell radius rather than distances, because that is what they mean:
+     * "closer than a cell across" is a claim about the map, where a number of units stops
+     * being one the moment the reach slider moves. Converting to distances is this class's
+     * job and happens once, so no caller can do it differently.
+     *
+     * @param bridgeReachMultiple how far apart two cells may sit and still be walled together,
+     *                            centre to centre, in cell radii
+     * @param skipMultiple        how near the last kept point a cell must be to be dropped,
+     *                            in cell radii
+     * @param maxSkips            how many may be dropped in a row before one is kept whatever
+     *                            its distance, so a dense stretch still contributes a point
+     */
+    record CoastRules(
+        double bridgeReachMultiple,
+        double skipMultiple,
+        int maxSkips) {
+    }
+
+    /**
+     * What the viewer opens on, and so what every drawing of a coast describes.
+     *
+     * <p>Declared once here rather than beside each drawing. Three copies of these numbers is
+     * how a report comes to describe a different map from the one on screen without either of
+     * them saying so.
+     */
+    static final CoastRules DEFAULT_RULES = new CoastRules(4, 1, 5);
+
+    /**
+     * A traced coast and the two things it was traced against.
+     *
+     * <p>Handed back together because everything asked of a coast afterwards needs one or
+     * both: which cells a run crosses needs the discs, and how many stretches there were
+     * before smoothing needs the walls. Rebuilt separately by each asker, they can be built
+     * from knobs that have since moved.
+     *
+     * @param coasts      one closed run of points per run of connected cells
+     * @param union       the discs it was traced against
+     * @param walls       the walls laid across the void
+     * @param arcSegments how finely a half-turn of arc was sampled, so anything re-walking
+     *                    the same boundary walks it at the same smoothness
+     */
+    record TracedCoasts(
+        List<List<CoastVertex>> coasts,
+        DiscUnion union,
+        DiscUnionBoundary.Walls walls,
+        int arcSegments) {
+    }
+
+    /**
+     * Traces a whole sector's coast: the one place that knows how a coast is built.
+     *
+     * <p>The recipe is six steps - find the bridges, turn them into chords, wall the void
+     * with them, take the discs at the reach the cells are FILLED to, convert the knobs from
+     * cell radii to distances, and trace. Spelled out at each of the three places that wanted
+     * a coast, it had to be kept in step by hand, and changing the reach meant remembering
+     * all of them.
+     *
+     * @param sites      the sites
+     * @param parameters the knobs the cells are built under
+     * @param rules      the knobs the coast is traced under
+     * @return the coast, and what it was traced against
+     */
+    static TracedCoasts traceSectorCoasts(
+            List<double[]> sites,
+            SectorGeometryParameters parameters,
+            CoastRules rules) {
+
+        var walls = new DiscUnionBoundary.Walls(
+            DiscUnionBoundary.buildChordsFrom(VoidBridges.findVoidBridges(
+                sites,
+                parameters.cellRadius(),
+                parameters.cellRadius() * rules.bridgeReachMultiple())),
+            parameters.borderInset());
+
+        // At the reach the CELLS are filled to, not the one the void shapes are drawn at.
+        // Where a coast runs along a cell it should be the cell's own border and nothing
+        // else; traced a channel further out it sits a channel outside every cell it hugs.
+        var union = new DiscUnion(sites, parameters.measureFilledReach());
+
+        return new TracedCoasts(
+            traceSmoothedCoasts(
+                union,
+                walls,
+                new SmoothingRules(
+                    rules.skipMultiple() * parameters.cellRadius(), rules.maxSkips()),
+                parameters.measureArcSegments()),
+            union,
+            walls,
+            parameters.measureArcSegments());
+    }
+
+    /**
+     * How aggressively a coast is smoothed, in the units the smoothing works in.
      *
      * <p>One record because the two only mean anything together: the distance decides how
      * much is dropped and the cap decides how much may be dropped at once, and a distance
@@ -83,7 +177,7 @@ final class Coastlines {
      * @param maxConsecutiveSkips how many may be dropped in a row before one is kept whatever
      *                            its distance, so a dense stretch still contributes a point
      */
-    record SmoothingRules(
+    private record SmoothingRules(
         double skipDistance,
         int maxConsecutiveSkips) {
     }
@@ -120,7 +214,7 @@ final class Coastlines {
      * @param arcSegments how finely a half-turn of arc is sampled
      * @return one closed run of points per run of connected cells
      */
-    static List<List<CoastVertex>> traceSmoothedCoasts(
+    private static List<List<CoastVertex>> traceSmoothedCoasts(
             DiscUnion union,
             DiscUnionBoundary.Walls walls,
             SmoothingRules rules,
@@ -199,8 +293,8 @@ final class Coastlines {
      * @param union  the discs it was traced against
      * @return how many runs go inside a cell
      */
-    static int countPenetratingRuns(List<List<CoastVertex>> coasts, DiscUnion union) {
-        return findPenetrations(coasts, union).size();
+    static int countPenetratingRuns(TracedCoasts traced) {
+        return findPenetrations(traced).size();
     }
 
     /**
@@ -215,13 +309,11 @@ final class Coastlines {
      * @param union  the discs it was traced against
      * @return one entry per offending run, in the order they are drawn
      */
-    static List<Penetration> findPenetrations(
-            List<List<CoastVertex>> coasts,
-            DiscUnion union) {
+    static List<Penetration> findPenetrations(TracedCoasts traced) {
 
         var found = new ArrayList<Penetration>();
 
-        for (var coast : coasts) {
+        for (var coast : traced.coasts()) {
             for (var index = 0; index < coast.size(); index++) {
 
                 var from = coast.get(index);
@@ -231,16 +323,19 @@ final class Coastlines {
                     continue;
                 }
 
-                var pierced = findPiercedCircles(union, from, to);
+                var pierced = findPiercedCells(traced.union(), from, to);
 
-                if (!pierced.isEmpty()) {
-
-                    found.add(new Penetration(
-                        from.point(),
-                        to.point(),
-                        pierced,
-                        measureDepthInto(union, from, to, pierced.get(0))));
+                if (pierced.isEmpty()) {
+                    continue;
                 }
+
+                var circles = new ArrayList<Integer>(pierced.size());
+
+                for (var pierce : pierced) {
+                    circles.add(pierce.circle());
+                }
+                found.add(new Penetration(
+                    from.point(), to.point(), circles, pierced.get(0).depth()));
             }
         }
         return found;
@@ -264,26 +359,16 @@ final class Coastlines {
         double depth) {
     }
 
-    private static double measureDepthInto(
-            DiscUnion union,
-            CoastVertex from,
-            CoastVertex to,
-            int circle) {
-
-        return union.reach() - Segments.computeDistanceToPoint(
-            from.point(), to.point(), union.sites().get(circle));
-    }
-
-    // Which cells one straight run is inside, worst first. All of them rather than the worst
-    // alone, because a run that clips three cells and a run that buries itself in one are
-    // different failures and the drawing should not make them look alike.
-    private static List<Integer> findPiercedCircles(
+    // Which cells one straight run is inside and how far into each, worst first. Depths are
+    // kept rather than measured and dropped, because the deepest of them is the number that
+    // says whether this is a graze or a crossing and recomputing it invites the two answers
+    // to differ.
+    private static List<Pierce> findPiercedCells(
             DiscUnion union,
             CoastVertex from,
             CoastVertex to) {
 
-        var pierced = new ArrayList<Integer>();
-        var depthByCircle = new java.util.HashMap<Integer, Double>();
+        var pierced = new ArrayList<Pierce>();
 
         for (var site = 0; site < union.sites().size(); site++) {
 
@@ -291,36 +376,31 @@ final class Coastlines {
                 from.point(), to.point(), union.sites().get(site));
 
             if (depth > TOUCHING_TOLERANCE) {
-
-                pierced.add(site);
-                depthByCircle.put(site, depth);
+                pierced.add(new Pierce(site, depth));
             }
         }
-        pierced.sort(java.util.Comparator.comparingDouble(depthByCircle::get).reversed());
+        pierced.sort(java.util.Comparator.comparingDouble(Pierce::depth).reversed());
 
         return pierced;
     }
 
-    static double measureDeepestIncursion(List<List<CoastVertex>> coasts, DiscUnion union) {
+    /**
+     * One cell a straight run passes inside, and how far in it reaches.
+     *
+     * @param circle whose cell it is
+     * @param depth  how far inside it the run reaches
+     */
+    private record Pierce(
+        int circle,
+        double depth) {
+    }
+
+    static double measureDeepestIncursion(TracedCoasts traced) {
 
         var deepest = 0.0;
 
-        for (var coast : coasts) {
-            for (var index = 0; index < coast.size(); index++) {
-
-                var from = coast.get(index);
-                var to = coast.get((index + 1) % coast.size());
-
-                if (from.circle() == to.circle()) {
-                    continue;
-                }
-
-                for (var site = 0; site < union.sites().size(); site++) {
-
-                    deepest = Math.max(deepest, union.reach() - Segments.computeDistanceToPoint(
-                        from.point(), to.point(), union.sites().get(site)));
-                }
-            }
+        for (var penetration : findPenetrations(traced)) {
+            deepest = Math.max(deepest, penetration.depth());
         }
         return deepest;
     }
@@ -332,16 +412,18 @@ final class Coastlines {
      * kept count on its own cannot tell a coast that was already smooth from one the skip
      * rules refused to touch.
      *
-     * @param union       the discs to trace
-     * @param walls       the walls laid across the void
-     * @param arcSegments how finely a half-turn of arc is sampled
+     * @param traced what {@link #traceSectorCoasts} handed back
      * @return how many stretches there are in total, across every run
      */
-    static int countCoastMarks(DiscUnion union, DiscUnionBoundary.Walls walls, int arcSegments) {
+    static int countCoastMarks(TracedCoasts traced) {
 
         var marks = 0;
 
-        for (var coast : DiscUnionBoundary.traceSilhouetteCoasts(union, walls, arcSegments)) {
+        for (var coast : DiscUnionBoundary.traceSilhouetteCoasts(
+                traced.union(),
+                traced.walls(),
+                traced.arcSegments())) {
+
             marks += coast.size();
         }
         return marks;

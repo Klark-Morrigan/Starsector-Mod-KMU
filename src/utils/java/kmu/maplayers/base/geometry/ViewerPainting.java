@@ -2,12 +2,13 @@ package kmu.maplayers.base.geometry;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.util.List;
 
 /**
- * How this window puts a shape on screen: the handful of Java2D moves every pass shares.
+ * How this package puts a shape on screen: the handful of Java2D moves every drawing shares.
  *
  * <p>Gathered because the map is drawn by more than one thing now - the cells and clusters
  * by the viewer itself, and each rival void construction by its own overlay - and all of
@@ -28,6 +29,9 @@ final class ViewerPainting {
     static final int OPAQUE_ALPHA = 255;
 
     private static final int HUE_RANGE = 360;
+
+    // A radius either side of the centre makes the box a circle is drawn in.
+    private static final int DIAMETERS = 2;
 
     // The odd 32-bit approximation of the golden ratio, the standard multiplier for
     // spreading a hash's low bits across the whole word. Only its bit pattern matters, not
@@ -84,6 +88,23 @@ final class ViewerPainting {
             colour.getGreen(),
             colour.getBlue(),
             alpha);
+    }
+
+    /**
+     * The circle of one radius about one point.
+     *
+     * <p>Java2D takes the box a circle sits in rather than its centre and radius, and the
+     * conversion is the sort of arithmetic that gets written out by hand at every call and
+     * mistyped at one of them.
+     *
+     * @param centre where it is centred
+     * @param radius how far it reaches
+     * @return the circle
+     */
+    static Ellipse2D.Double buildCircle(double[] centre, double radius) {
+
+        return new Ellipse2D.Double(
+            centre[0] - radius, centre[1] - radius, radius * DIAMETERS, radius * DIAMETERS);
     }
 
     static Path2D buildPath(List<double[]> ring) {

@@ -2,7 +2,6 @@ package kmu.maplayers.base.geometry;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
-import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.util.List;
 
@@ -21,25 +20,17 @@ import java.util.List;
  */
 final class CoastlinesOverlay {
 
-    // What converts a count of sides round a whole circle into a count of samples per half
-    // turn of arc.
-    private static final int HALF_TURNS_PER_CIRCLE = 2;
-
     // Heavier than any other line on the map, so a crossing is findable at the zoom where a
     // whole sector fits on screen rather than only once somebody is already looking at it.
     private static final float PENETRATION_STROKES = 2f;
 
-    // A radius either side of the centre makes the box a circle is drawn in.
-    private static final int DIAMETERS = 2;
-
     private final ViewerSettings settings;
 
-    private List<List<Coastlines.CoastVertex>> coasts = List.of();
     private List<Coastlines.Penetration> penetrations = List.of();
 
-    // Held from the last trace so the marks can be drawn against the same discs the coast was
+    // Held from the last trace so the marks are drawn against the same discs the coast was
     // measured against, rather than against whatever the sliders have been moved to since.
-    private DiscUnion tracedUnion;
+    private Coastlines.TracedCoasts traced;
 
     CoastlinesOverlay(ViewerSettings settings) {
         this.settings = settings;
@@ -61,22 +52,20 @@ final class CoastlinesOverlay {
 
         if (!settings.showCoastlines) {
 
-            coasts = List.of();
+            traced = null;
             penetrations = List.of();
             return;
         }
 
-        var parameters = settings.parameters;
+        traced = Coastlines.traceSectorCoasts(
+            fixture.getSites(),
+            settings.parameters,
+            new Coastlines.CoastRules(
+                settings.bridgeReachMultiple,
+                settings.coastSkipMultiple,
+                settings.coastMaxSkips));
 
-        tracedUnion = new DiscUnion(fixture.getSites(), parameters.measureFilledReach());
-
-        coasts = Coastlines.traceSmoothedCoasts(
-            tracedUnion,
-            buildWalls(fixture, parameters),
-            buildSmoothingRules(),
-            parameters.boundSegments() / HALF_TURNS_PER_CIRCLE);
-
-        penetrations = Coastlines.findPenetrations(coasts, tracedUnion);
+        penetrations = Coastlines.findPenetrations(traced);
     }
 
     /**
@@ -86,11 +75,15 @@ final class CoastlinesOverlay {
      */
     void paintCoasts(Graphics2D g2) {
 
+        if (traced == null) {
+            return;
+        }
+
         g2.setStroke(new BasicStroke(ViewerPainting.SPAN_STROKE));
         g2.setColor(ViewerPainting.applyAlpha(
             settings.coastlineColour, ViewerPainting.OPAQUE_ALPHA));
 
-        for (var coast : coasts) {
+        for (var coast : traced.coasts()) {
             g2.draw(ViewerPainting.buildPath(Coastlines.collectPoints(coast)));
         }
         paintPenetrations(g2);
@@ -112,14 +105,8 @@ final class CoastlinesOverlay {
         for (var penetration : penetrations) {
             for (var circle : penetration.circles()) {
 
-                var centre = tracedUnion.sites().get(circle);
-                var reach = tracedUnion.reach();
-
-                g2.draw(new Ellipse2D.Double(
-                    centre[0] - reach,
-                    centre[1] - reach,
-                    reach * DIAMETERS,
-                    reach * DIAMETERS));
+                g2.draw(ViewerPainting.buildCircle(
+                    traced.union().sites().get(circle), traced.union().reach()));
             }
         }
 
@@ -135,31 +122,5 @@ final class CoastlinesOverlay {
                 penetration.to()[0],
                 penetration.to()[1]));
         }
-    }
-
-    private DiscUnionBoundary.Walls buildWalls(
-            SectorFixture fixture,
-            SectorGeometryParameters parameters) {
-
-        var chords = new java.util.ArrayList<DiscUnionBoundary.Chord>();
-
-        for (var bridge : VoidBridges.findVoidBridges(
-                fixture.getSites(),
-                parameters.cellRadius(),
-                parameters.cellRadius() * settings.bridgeReachMultiple)) {
-
-            chords.add(new DiscUnionBoundary.Chord(bridge.fromSite(), bridge.toSite()));
-        }
-        return new DiscUnionBoundary.Walls(chords, parameters.borderInset());
-    }
-
-    // The skip distance is set in cell radii rather than in world units, so it means the same
-    // thing after the reach slider moves - "closer than a cell across" is a claim about the
-    // map, where a number of units stops being one the moment the cells change size.
-    private Coastlines.SmoothingRules buildSmoothingRules() {
-
-        return new Coastlines.SmoothingRules(
-            settings.coastSkipMultiple * settings.parameters.cellRadius(),
-            settings.coastMaxSkips);
     }
 }

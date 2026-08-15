@@ -42,11 +42,6 @@ final class VoidRegionsDump {
     // What the viewer opens on, so this report describes what a reader would see there.
     private static final double BRIDGE_REACH_MULTIPLE = 4;
 
-    // The coast smoothing the viewer opens on, for the same reason.
-    private static final double COAST_SKIP_MULTIPLE = 1;
-
-    private static final int COAST_MAX_SKIPS = 5;
-
     // Shares to sweep the division across, so the knob has a starting range instead of being
     // a bare slider. Spread over the whole span rather than clustered near the default,
     // because both ends of it are wrong in a different way and seeing where each one sets in
@@ -623,29 +618,10 @@ final class VoidRegionsDump {
             List<CellGaps.CellGap> bridges,
             SectorGeometryParameters shipped) {
 
-        // The reach the cells are filled to, which is where the overlay traces it: a coast
-        // running along a cell has to BE that cell's drawn border rather than a line a
-        // channel outside it.
-        var union = new DiscUnion(sites, shipped.measureFilledReach());
-        var chords = new ArrayList<DiscUnionBoundary.Chord>(bridges.size());
-
-        for (var bridge : bridges) {
-            chords.add(new DiscUnionBoundary.Chord(bridge.fromSite(), bridge.toSite()));
-        }
-
-        var walls = new DiscUnionBoundary.Walls(chords, shipped.borderInset());
-        var arcSegments = CELL_BOUND_SEGMENTS / 2;
-
-        var coasts = Coastlines.traceSmoothedCoasts(
-            union,
-            walls,
-            new Coastlines.SmoothingRules(
-                COAST_SKIP_MULTIPLE * shipped.cellRadius(), COAST_MAX_SKIPS),
-            arcSegments);
-
+        var traced = Coastlines.traceSectorCoasts(sites, shipped, Coastlines.DEFAULT_RULES);
         var points = 0;
 
-        for (var coast : coasts) {
+        for (var coast : traced.coasts()) {
             points += coast.size();
         }
 
@@ -653,16 +629,16 @@ final class VoidRegionsDump {
             Locale.ROOT,
             "smoothed outer edges: %d, over %d stretches of coast, drawn through %d points; "
                 + "%d runs penetrate a cell, worst by %.1f (both have to be 0)%n",
-            coasts.size(),
-            Coastlines.countCoastMarks(union, walls, arcSegments),
+            traced.coasts().size(),
+            Coastlines.countCoastMarks(traced),
             points,
-            Coastlines.countPenetratingRuns(coasts, union),
-            Coastlines.measureDeepestIncursion(coasts, union));
+            Coastlines.countPenetratingRuns(traced),
+            Coastlines.measureDeepestIncursion(traced));
 
         System.out.printf(
             Locale.ROOT,
             "how deep each one goes, worst first: %s%n",
-            formatPenetrationDepths(Coastlines.findPenetrations(coasts, union)));
+            formatPenetrationDepths(Coastlines.findPenetrations(traced)));
     }
 
     // Every one of them rather than a summary, because the question is whether they are one

@@ -47,26 +47,15 @@ final class SectorSvgWriter {
     private static final int HUE_RANGE = 360;
     private static final String OWNER_FILL_OPACITY = "0.35";
 
-    // The smoothed outer edge, and the knobs it is traced under. The same values the viewer
-    // opens on, so this drawing shows what a reader would see there.
-    private static final String COAST_COLOUR = "#70e090";
-
-    // The two halves of a crossing, in colours nothing else on the map uses: the run that
-    // goes where it should not, and the cell it goes into. Read together they say which cell
-    // and which run, which is what deciding the fix needs and a count cannot give.
-    private static final String PENETRATION_COLOUR = "#ff2050";
-    private static final String PIERCED_CELL_COLOUR = "#ff9020";
-
     // Heavier than any other line here, because it has to be findable at the zoom where a
     // whole sector fits on screen.
     private static final double PENETRATION_STROKE = 220.0;
-    private static final double BRIDGE_REACH_MULTIPLE = 4;
-    private static final double COAST_SKIP_MULTIPLE = 1;
-    private static final int COAST_MAX_SKIPS = 5;
 
-    // What converts a count of sides round a whole circle into a count of samples per half
-    // turn of arc.
-    private static final int HALF_TURNS_PER_CIRCLE = 2;
+    private static final int HEX_DIGITS = 6;
+
+    // Drops the alpha byte an AWT colour packs above its three channels, which SVG has no
+    // notation for here.
+    private static final int RGB_MASK = 0xffffff;
 
     private SectorSvgWriter() {
     }
@@ -206,33 +195,19 @@ final class SectorSvgWriter {
     // cell is the failure worth seeing, which a cell drawn over the top would hide.
     private static void appendCoastlines(StringBuilder svg, List<double[]> sites) {
 
-        var parameters = SectorGeometryParameters.createDefaults();
+        var traced = Coastlines.traceSectorCoasts(
+            sites, SectorGeometryParameters.createDefaults(), Coastlines.DEFAULT_RULES);
 
-        var bridges = VoidBridges.findVoidBridges(
-            sites,
-            parameters.cellRadius(),
-            parameters.cellRadius() * BRIDGE_REACH_MULTIPLE);
+        for (var coast : traced.coasts()) {
 
-        var chords = new ArrayList<DiscUnionBoundary.Chord>(bridges.size());
-
-        for (var bridge : bridges) {
-            chords.add(new DiscUnionBoundary.Chord(bridge.fromSite(), bridge.toSite()));
+            appendPolygon(
+                svg,
+                Coastlines.collectPoints(coast),
+                "none",
+                formatColour(ViewerSettings.COASTLINE_DEFAULT),
+                RING_STROKE);
         }
-
-        var union = new DiscUnion(sites, parameters.measureFilledReach());
-
-        var coasts = Coastlines.traceSmoothedCoasts(
-            union,
-            new DiscUnionBoundary.Walls(chords, parameters.borderInset()),
-            new Coastlines.SmoothingRules(
-                COAST_SKIP_MULTIPLE * parameters.cellRadius(),
-                COAST_MAX_SKIPS),
-            parameters.boundSegments() / HALF_TURNS_PER_CIRCLE);
-
-        for (var coast : coasts) {
-            appendPolygon(svg, Coastlines.collectPoints(coast), "none", COAST_COLOUR, RING_STROKE);
-        }
-        appendPenetrations(svg, union, Coastlines.findPenetrations(coasts, union));
+        appendPenetrations(svg, traced.union(), Coastlines.findPenetrations(traced));
     }
 
     // The runs that go inside a cell, and the cells they go inside, both called out in their
@@ -251,7 +226,7 @@ final class SectorSvgWriter {
                     svg,
                     union.sites().get(circle),
                     union.reach(),
-                    PIERCED_CELL_COLOUR,
+                    formatColour(ViewerSettings.PIERCED_CELL_DEFAULT),
                     RING_STROKE);
             }
         }
@@ -261,7 +236,7 @@ final class SectorSvgWriter {
             appendPolyline(
                 svg,
                 List.of(penetration.from(), penetration.to()),
-                PENETRATION_COLOUR,
+                formatColour(ViewerSettings.COAST_CROSSING_DEFAULT),
                 PENETRATION_STROKE);
         }
     }
@@ -365,6 +340,15 @@ final class SectorSvgWriter {
 
     private static String pickOwnerColour(String ownerId) {
         return "hsl(" + Math.floorMod(ownerId.hashCode(), HUE_RANGE) + " 80% 55%)";
+    }
+
+    // The one place a colour is chosen is beside the viewer's own defaults, so the two
+    // drawings of the same map cannot come to disagree about which mark means what. Spelled
+    // out here in the notation SVG reads rather than kept as a second copy of the value.
+    private static String formatColour(java.awt.Color colour) {
+
+        var packed = Integer.toHexString(colour.getRGB() & RGB_MASK);
+        return "#" + "0".repeat(HEX_DIGITS - packed.length()) + packed;
     }
 
     private static String fmt(double value) {

@@ -87,6 +87,26 @@ final class DiscUnionBoundary {
     }
 
     /**
+     * The bridges as the chords they become on the boundary.
+     *
+     * <p>A chord is the pair of cells and nothing else, because where it meets each of them
+     * is fixed by which circles it runs between - so a bridge converts to one without any
+     * geometry being carried across.
+     *
+     * @param bridges the bridges, as {@link VoidBridges} found them
+     * @return one chord per bridge, in the order they were offered
+     */
+    static List<Chord> buildChordsFrom(List<CellGaps.CellGap> bridges) {
+
+        var chords = new ArrayList<Chord>(bridges.size());
+
+        for (var bridge : bridges) {
+            chords.add(new Chord(bridge.fromSite(), bridge.toSite()));
+        }
+        return chords;
+    }
+
+    /**
      * The walls to lay across the void: which chords, and the channel every one keeps.
      *
      * <p>One value because neither half means anything without the other. A chord list with

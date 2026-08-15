@@ -216,7 +216,7 @@ final class VoidBridgePockets {
 
         var union = buildDrawnUnion(sites, parameters);
         var capturing = Set.copyOf(
-            buildChords(findCapturingBridges(sites, bridges, parameters.cellRadius())));
+            DiscUnionBoundary.buildChordsFrom(findCapturingBridges(sites, bridges, parameters.cellRadius())));
 
         var worst = 0.0;
 
@@ -252,18 +252,6 @@ final class VoidBridgePockets {
         return worst;
     }
 
-    // The bridges as the chords they become on the boundary: the pair of cells and nothing
-    // else, because a chord's ends are fixed by which circles it runs between.
-    private static List<DiscUnionBoundary.Chord> buildChords(List<CellGaps.CellGap> bridges) {
-
-        var chords = new ArrayList<DiscUnionBoundary.Chord>();
-
-        for (var bridge : bridges) {
-            chords.add(new DiscUnionBoundary.Chord(bridge.fromSite(), bridge.toSite()));
-        }
-        return chords;
-    }
-
     // The union everything here traces against: the cells at the reach that leaves the
     // channel, so a fill stops one channel short of the cells around it.
     private static DiscUnion buildDrawnUnion(
@@ -280,7 +268,7 @@ final class VoidBridgePockets {
             List<CellGaps.CellGap> bridges,
             SectorGeometryParameters parameters) {
 
-        return new DiscUnionBoundary.Walls(buildChords(bridges), parameters.borderInset());
+        return new DiscUnionBoundary.Walls(DiscUnionBoundary.buildChordsFrom(bridges), parameters.borderInset());
     }
 
     private static double measureDistanceToNearestVertex(
