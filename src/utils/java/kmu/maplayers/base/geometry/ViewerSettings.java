@@ -40,6 +40,26 @@ final class ViewerSettings {
     // shape look right when it is not.
     static final Color SECTION_CUT_DEFAULT = new Color(0xff, 0xd0, 0x40);
 
+    // The smoothed outer edge. Unlike anything else drawn, because it is a proposal about
+    // where the edge could be rather than an edge anything has: reading it as one of the
+    // shapes underneath is the one mistake that would make it look right when it is not.
+    static final Color COASTLINE_DEFAULT = new Color(0x70, 0xe0, 0x90);
+
+    // One cell across. Two cells whose frontages are nearer than that are one stretch of
+    // coast as far as the eye is concerned, so joining both only redraws the scallop smaller.
+    static final double COAST_SKIP_DEFAULT = 1;
+    static final double COAST_SKIP_STEP_SCALE = 100.0;
+
+    // Enough that a tightly packed run reads as a line rather than as a row of bites, few
+    // enough that a whole coast cannot be swallowed and reduced to a triangle.
+    static final double COAST_MAX_SKIPS_DEFAULT = 5;
+
+    // The two halves of a coast crossing a cell, in colours nothing else on the map uses: the
+    // run that goes where it should not, and the cell it goes into. Diagnostic rather than
+    // decorative - when the construction is right, neither is ever drawn.
+    static final Color COAST_CROSSING_DEFAULT = new Color(0xff, 0x20, 0x50);
+    static final Color PIERCED_CELL_DEFAULT = new Color(0xff, 0x90, 0x20);
+
     static final Color SITE_COLOUR = new Color(0x88, 0x88, 0x88);
 
     // One cell across. A pocket no wider than a single cell has no two sides far enough
@@ -81,6 +101,16 @@ final class ViewerSettings {
     boolean showVoidPockets = true;
     boolean showVoidBridges = true;
 
+    // A third reading of the same map: not what the void is, but where the edge of what is
+    // NOT void could be drawn.
+    boolean showCoastlines = true;
+
+    double coastSkipMultiple = COAST_SKIP_DEFAULT;
+    int coastMaxSkips = (int) COAST_MAX_SKIPS_DEFAULT;
+
+    Color coastlineColour = COASTLINE_DEFAULT;
+    Color coastCrossingColour = COAST_CROSSING_DEFAULT;
+    Color piercedCellColour = PIERCED_CELL_DEFAULT;
     Color wideVoidColour = WIDE_VOID_DEFAULT;
     Color wideVoidEdge = WIDE_VOID_DEFAULT;
     Color sectionCutColour = SECTION_CUT_DEFAULT;

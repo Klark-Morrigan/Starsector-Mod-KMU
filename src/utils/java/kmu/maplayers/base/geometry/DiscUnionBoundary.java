@@ -48,9 +48,6 @@ import java.util.Map;
  */
 final class DiscUnionBoundary {
 
-    private static final double FULL_TURN = 2 * Math.PI;
-    private static final double HALF_TURN = Math.PI;
-
     // Enough to keep a short arc from collapsing to a chord once the sampling is scaled down
     // in proportion to how little of the circle it covers.
     private static final int MIN_ARC_SAMPLES = 2;
@@ -167,17 +164,62 @@ final class DiscUnionBoundary {
             // walked anticlockwise on its own circle, which keeps the discs' interior to the
             // left the whole way round, so an outer cycle comes out anticlockwise and a hole
             // clockwise.
-            if (PolygonRegions.computeSignedArea(cycle.boundary()) < 0) {
+            if (isHole(cycle)) {
+
+                var shape = cycle.shape();
 
                 // Reversed so a hole reads the same way round as any other filled shape.
-                var boundary = new ArrayList<>(cycle.boundary());
+                var boundary = new ArrayList<>(shape.boundary());
                 java.util.Collections.reverse(boundary);
 
                 holes.add(new VoidHole(
-                    boundary, cycle.corners(), cycle.ringing(), cycle.reach()));
+                    boundary, shape.corners(), shape.ringing(), shape.reach()));
             }
         }
         return holes;
+    }
+
+    /**
+     * The outer silhouettes, as the run of coast marks each is made of.
+     *
+     * <p>The other half of what the walk finds, and the half {@link #traceHolesAcrossWalls}
+     * throws away. A silhouette is where a run of connected cells meets the open void, so it
+     * is the outline anything smoothing the outer edge has to start from.
+     *
+     * <p>Handed back as marks in walk order rather than as a sampled outline, because what a
+     * smoother wants is one point per stretch of coast and the order they are passed in - and
+     * the walk already knows both. Recovering that from a finished polyline would mean
+     * working out which sample belongs to which cell, which is the kind of finding that
+     * strays.
+     *
+     * @param union       the discs to trace
+     * @param walls       the walls to lay across the void
+     * @param arcSegments how finely a half-turn of arc is sampled, to tell a silhouette from
+     *                    a hole by the area it comes out with
+     * @return one run of marks per silhouette, in walk order
+     */
+    static List<List<CoastMark>> traceSilhouetteCoasts(
+            DiscUnion union,
+            Walls walls,
+            int arcSegments) {
+
+        var coasts = new ArrayList<List<CoastMark>>();
+
+        for (var cycle : traceCycles(union, walls, arcSegments)) {
+
+            if (isHole(cycle)) {
+                continue;
+            }
+
+            var marks = new ArrayList<CoastMark>(cycle.arcs().size());
+
+            for (var arc : cycle.arcs()) {
+
+                marks.add(new CoastMark(arc.circle(), arc.fromAngle(), arc.toAngle()));
+            }
+            coasts.add(marks);
+        }
+        return coasts;
     }
 
     /**
@@ -282,7 +324,7 @@ final class DiscUnionBoundary {
         return inside;
     }
 
-    private static List<VoidHole> traceCycles(
+    private static List<TracedCycle> traceCycles(
             DiscUnion union,
             Walls walls,
             int arcSegments) {
@@ -290,7 +332,7 @@ final class DiscUnionBoundary {
         var laid = new Walls(findAttachableChords(union, walls), walls.channel());
         var arcs = findUncoveredArcs(union, laid);
         var successors = linkArcsIntoCycles(arcs);
-        var cycles = new ArrayList<VoidHole>();
+        var cycles = new ArrayList<TracedCycle>();
         var walked = new boolean[arcs.size()];
 
         for (var start = 0; start < arcs.size(); start++) {
@@ -302,10 +344,27 @@ final class DiscUnionBoundary {
 
             var built = buildHole(cycle, arcs, union, arcSegments);
             if (built != null) {
-                cycles.add(built);
+                cycles.add(new TracedCycle(collectArcs(cycle, arcs), built));
             }
         }
         return cycles;
+    }
+
+    // Walked anticlockwise on every circle, which keeps the discs' interior to the left the
+    // whole way round - so an outer cycle comes out anticlockwise and a hole clockwise, and
+    // the sign of the area is the whole test.
+    private static boolean isHole(TracedCycle cycle) {
+        return PolygonRegions.computeSignedArea(cycle.shape().boundary()) < 0;
+    }
+
+    private static List<Arc> collectArcs(List<Integer> cycle, List<Arc> arcs) {
+
+        var walked = new ArrayList<Arc>(cycle.size());
+
+        for (var index : cycle) {
+            walked.add(arcs.get(index));
+        }
+        return walked;
     }
 
     // Every stretch of every circle that nothing covers, which is the whole boundary of the
@@ -335,7 +394,7 @@ final class DiscUnionBoundary {
 
             // A disc that nothing overlaps and no chord reaches is a closed cycle on its own.
             var whole = formatDiscTerminal(circle, NO_CIRCLE, union.sites().size());
-            return List.of(new Arc(circle, 0, FULL_TURN, whole, whole));
+            return List.of(new Arc(circle, 0, Angles.FULL_TURN, whole, whole));
         }
         return buildArcsBetweenCovers(circle, covers);
     }
@@ -364,7 +423,7 @@ final class DiscUnionBoundary {
             var halfWidth = Math.acos(separation / (2 * union.reach()));
 
             covers.add(new Cover(
-                normaliseAngle(towards - halfWidth),
+                Angles.normalise(towards - halfWidth),
                 2 * halfWidth,
                 formatDiscTerminal(other, circle, sites.size()),
                 formatDiscTerminal(circle, other, sites.size())));
@@ -395,7 +454,7 @@ final class DiscUnionBoundary {
             var other = isFromSide ? chord.toCircle() : chord.fromCircle();
 
             covers.add(new Cover(
-                normaliseAngle(measureAngleTowards(union, circle, other) - mouth),
+                Angles.normalise(measureAngleTowards(union, circle, other) - mouth),
                 2 * mouth,
                 formatChordTerminal(index, isFromSide ? TO_SIDE : FROM_SIDE),
                 formatChordTerminal(index, isFromSide ? FROM_SIDE : TO_SIDE)));
@@ -411,7 +470,7 @@ final class DiscUnionBoundary {
         covers.sort(Comparator.comparingDouble(Cover::start));
 
         var origin = covers.get(0).start();
-        var windowEnd = origin + FULL_TURN;
+        var windowEnd = origin + Angles.FULL_TURN;
 
         // An interval running past the far end of the window covers the near end of it as
         // well, so the sweep has to start already covered up to wherever that reaches.
@@ -421,7 +480,7 @@ final class DiscUnionBoundary {
 
         for (var cover : covers) {
 
-            var wrapped = cover.start() + cover.width() - FULL_TURN;
+            var wrapped = cover.start() + cover.width() - Angles.FULL_TURN;
 
             if (wrapped > coveredTo) {
                 coveredTo = wrapped;
@@ -554,7 +613,7 @@ final class DiscUnionBoundary {
         var sweep = toAngle - fromAngle;
         var steps = Math.max(
             MIN_ARC_SAMPLES,
-            (int) Math.ceil(arcSegments * sweep / HALF_TURN));
+            (int) Math.ceil(arcSegments * sweep / Angles.HALF_TURN));
 
         var points = new ArrayList<double[]>(steps);
 
@@ -603,7 +662,7 @@ final class DiscUnionBoundary {
 
         for (var taken : takenByCircle.getOrDefault(circle, List.of())) {
 
-            if (measureAngleGap(taken, facing) < 2 * mouth) {
+            if (Angles.measureGap(taken, facing) < 2 * mouth) {
                 return true;
             }
         }
@@ -639,17 +698,18 @@ final class DiscUnionBoundary {
         var from = union.sites().get(fromCircle);
         var to = union.sites().get(toCircle);
 
-        return normaliseAngle(Math.atan2(to[1] - from[1], to[0] - from[0]));
+        return Angles.normalise(Math.atan2(to[1] - from[1], to[0] - from[0]));
     }
 
-    // How far apart two directions are, whichever way round is shorter.
-    private static double measureAngleGap(double from, double to) {
-
-        var turned = normaliseAngle(to - from);
-        return turned > HALF_TURN ? FULL_TURN - turned : turned;
-    }
-
-    private static double[] findPointOnCircle(double[] centre, double reach, double angle) {
+    /**
+     * The point at one angle on one circle.
+     *
+     * @param centre where the circle is centred
+     * @param reach  its radius
+     * @param angle  the direction from the centre
+     * @return the point on the circle
+     */
+    static double[] findPointOnCircle(double[] centre, double reach, double angle) {
 
         return new double[] {
             centre[0] + reach * Math.cos(angle),
@@ -670,9 +730,47 @@ final class DiscUnionBoundary {
         return terminal < 0 && terminal != NO_TERMINAL;
     }
 
-    private static double normaliseAngle(double angle) {
-        var turned = angle % FULL_TURN;
-        return turned < 0 ? turned + FULL_TURN : turned;
+    /**
+     * One stretch of a silhouette's coast, as the single point standing for it.
+     *
+     * <p>The whole stretch rather than a single point on it, because a smoothed coast wants
+     * two different things from it: the middle, which is where the line would pass if nothing
+     * were in the way, and the two ends, which bound how far along the cell's border the line
+     * may be slid when something is.
+     *
+     * @param circle    whose cell the stretch of coast belongs to
+     * @param fromAngle the angle it begins at
+     * @param toAngle   the angle it ends at, always greater than {@code fromAngle}
+     */
+    record CoastMark(
+        int circle,
+        double fromAngle,
+        double toAngle) {
+
+        /**
+         * The middle of the stretch - where a coast passes when nothing blocks it.
+         *
+         * @return the angle halfway along
+         */
+        double midAngle() {
+            return (fromAngle + toAngle) / 2;
+        }
+    }
+
+    /**
+     * One closed cycle of the boundary, kept both ways it is wanted.
+     *
+     * <p>As arcs for anything asking which cell each stretch belongs to and in what order, and
+     * as a sampled shape for anything asking which way it winds or wanting to draw it. Built
+     * together because both come out of one walk, and walking twice to get them separately is
+     * how two answers about the same cycle start to disagree.
+     *
+     * @param arcs  the arcs it runs along, in walk order
+     * @param shape the same cycle sampled into a closed outline
+     */
+    private record TracedCycle(
+        List<Arc> arcs,
+        VoidHole shape) {
     }
 
     /**

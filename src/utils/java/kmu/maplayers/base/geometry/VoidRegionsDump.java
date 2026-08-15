@@ -42,6 +42,11 @@ final class VoidRegionsDump {
     // What the viewer opens on, so this report describes what a reader would see there.
     private static final double BRIDGE_REACH_MULTIPLE = 4;
 
+    // The coast smoothing the viewer opens on, for the same reason.
+    private static final double COAST_SKIP_MULTIPLE = 1;
+
+    private static final int COAST_MAX_SKIPS = 5;
+
     // Shares to sweep the division across, so the knob has a starting range instead of being
     // a bare slider. Spread over the whole span rather than clustered near the default,
     // because both ends of it are wrong in a different way and seeing where each one sets in
@@ -595,6 +600,8 @@ final class VoidRegionsDump {
             captured.size(),
             VoidBridgePockets.measureWorstChordStray(captured, sites, bridges, shipped));
 
+        reportCoastlines(sites, bridges, shipped);
+
         System.out.printf(
             Locale.ROOT,
             "void bridges at %.0f cell radii apart: %d, of which %d span void no pocket "
@@ -605,6 +612,78 @@ final class VoidRegionsDump {
             findPercentile(widths, REPORTED_PERCENTILES[0]),
             findPercentile(widths, REPORTED_PERCENTILES[1]),
             findPercentile(widths, REPORTED_PERCENTILES[2]));
+    }
+
+    // What the smoothing takes out, as the two counts that say whether it did anything. Marks
+    // is how many stretches of coast the cells actually make; points is how many the smoothed
+    // line passes through. Equal counts mean the skip rules refused every candidate, which
+    // reads on screen exactly like the smoothing being switched off.
+    private static void reportCoastlines(
+            List<double[]> sites,
+            List<CellGaps.CellGap> bridges,
+            SectorGeometryParameters shipped) {
+
+        // The reach the cells are filled to, which is where the overlay traces it: a coast
+        // running along a cell has to BE that cell's drawn border rather than a line a
+        // channel outside it.
+        var union = new DiscUnion(sites, shipped.measureFilledReach());
+        var chords = new ArrayList<DiscUnionBoundary.Chord>(bridges.size());
+
+        for (var bridge : bridges) {
+            chords.add(new DiscUnionBoundary.Chord(bridge.fromSite(), bridge.toSite()));
+        }
+
+        var walls = new DiscUnionBoundary.Walls(chords, shipped.borderInset());
+        var arcSegments = CELL_BOUND_SEGMENTS / 2;
+
+        var coasts = Coastlines.traceSmoothedCoasts(
+            union,
+            walls,
+            new Coastlines.SmoothingRules(
+                COAST_SKIP_MULTIPLE * shipped.cellRadius(), COAST_MAX_SKIPS),
+            arcSegments);
+
+        var points = 0;
+
+        for (var coast : coasts) {
+            points += coast.size();
+        }
+
+        System.out.printf(
+            Locale.ROOT,
+            "smoothed outer edges: %d, over %d stretches of coast, drawn through %d points; "
+                + "%d runs penetrate a cell, worst by %.1f (both have to be 0)%n",
+            coasts.size(),
+            Coastlines.countCoastMarks(union, walls, arcSegments),
+            points,
+            Coastlines.countPenetratingRuns(coasts, union),
+            Coastlines.measureDeepestIncursion(coasts, union));
+
+        System.out.printf(
+            Locale.ROOT,
+            "how deep each one goes, worst first: %s%n",
+            formatPenetrationDepths(Coastlines.findPenetrations(coasts, union)));
+    }
+
+    // Every one of them rather than a summary, because the question is whether they are one
+    // population or two - a graze along a border the run is already leaving from, against a
+    // run cutting a cell in half - and a mean or a worst case cannot tell those apart.
+    private static String formatPenetrationDepths(List<Coastlines.Penetration> penetrations) {
+
+        var depths = new ArrayList<Double>(penetrations.size());
+
+        for (var penetration : penetrations) {
+            depths.add(penetration.depth());
+        }
+        depths.sort(java.util.Comparator.reverseOrder());
+
+        var listed = new StringBuilder();
+
+        for (var depth : depths) {
+            listed.append(listed.isEmpty() ? "" : " ").append(String.format(
+                Locale.ROOT, "%.0f", depth));
+        }
+        return listed.isEmpty() ? "none" : listed.toString();
     }
 
     // Against the sections rather than the pockets' own outlines, because the sections are

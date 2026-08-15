@@ -24,6 +24,9 @@ interface ViewerRefreshes {
     /** Finds the void held between facing cells again. */
     void refreshVoidBridges();
 
+    /** Traces the smoothed outer edge again. */
+    void refreshCoastlines();
+
     /** Traces the unclipped partition again. */
     void refreshUnboundedCells();
 

@@ -148,6 +148,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     private final ViewerSettings settings = new ViewerSettings();
     private final VoidPocketsOverlay voidPockets = new VoidPocketsOverlay(settings);
     private final VoidBridgesOverlay voidBridges = new VoidBridgesOverlay(settings);
+    private final CoastlinesOverlay coastlines = new CoastlinesOverlay(settings);
 
     private SectorGeometryViewer() {
     }
@@ -303,6 +304,13 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     public void refreshVoidBridges() {
 
         voidBridges.refresh(fixture);
+        refreshCoastlines();
+    }
+
+    @Override
+    public void refreshCoastlines() {
+
+        coastlines.refresh(fixture);
         repaintMap();
     }
 
@@ -580,6 +588,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             paintCentrelines(g2);
             voidPockets.paintSpans(g2);
             voidBridges.paintSpans(g2);
+            coastlines.paintCoasts(g2);
 
             g2.setColor(settings.siteColour);
 

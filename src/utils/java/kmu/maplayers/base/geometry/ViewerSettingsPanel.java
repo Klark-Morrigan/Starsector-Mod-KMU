@@ -74,6 +74,21 @@ final class ViewerSettingsPanel {
 
     private static final double MIN_SECTION_MAXIMUM = 100;
 
+    // How near the last kept point a cell's frontage has to be before it is dropped from the
+    // smoothed edge, in cell radii. Zero keeps every cell and reproduces the scallop exactly,
+    // which is the useful bottom end of the range: it is what the smoothing is judged
+    // against. The top is wide enough to cut a coast down to its corners.
+    private static final double COAST_SKIP_MINIMUM = 0;
+
+    private static final double COAST_SKIP_MAXIMUM = 4;
+
+    // How many cells may be dropped in a row. At zero nothing is skipped whatever the
+    // distance; the ceiling is past the point where a dense coast collapses to a few points,
+    // so what that failure looks like is reachable rather than merely describable.
+    private static final double COAST_MAX_SKIPS_MINIMUM = 0;
+
+    private static final double COAST_MAX_SKIPS_MAXIMUM = 20;
+
     // How far brightness may wander either side of the chosen colour when jitter is on, as a
     // percentage of the full range. The default is wide enough to tell two neighbours apart
     // and narrow enough that they still read as one palette; the slider exists because which
@@ -345,6 +360,53 @@ final class ViewerSettingsPanel {
             ViewerSettings.MIN_SECTION_DEFAULT,
             share -> settings.minSectionShare = share / ViewerSettings.MIN_SECTION_SCALE,
             refreshes::refreshVoidPockets,
+            () -> { }));
+
+        controls.add(ViewerControls.buildToggle(
+            "Show coastlines",
+            "Smoothed outer edge",
+            true,
+            on -> settings.showCoastlines = on,
+            refreshes::refreshCoastlines));
+
+        controls.add(ViewerControls.buildColour(
+            "Smoothed outer edge",
+            "Smoothed outer edge",
+            ViewerSettings.COASTLINE_DEFAULT,
+            colour -> settings.coastlineColour = colour,
+            refreshes::repaintMap));
+
+        // A pair rather than one, because the two say different halves of the same thing:
+        // which run went where it should not, and which cell it went into. Nothing is drawn
+        // in either once the construction stops crossing anything.
+        controls.add(ViewerControls.buildColourPair(
+            "Coast crossings",
+            "Coast crossing / crossed cell",
+            ViewerSettings.COAST_CROSSING_DEFAULT,
+            ViewerSettings.PIERCED_CELL_DEFAULT,
+            colour -> settings.coastCrossingColour = colour,
+            colour -> settings.piercedCellColour = colour,
+            refreshes::repaintMap));
+
+        controls.add(ViewerControls.buildSlider(
+            "Coast skip distance",
+            "Coast skip distance, in cell radii (x100)",
+            COAST_SKIP_MINIMUM * ViewerSettings.COAST_SKIP_STEP_SCALE,
+            COAST_SKIP_MAXIMUM * ViewerSettings.COAST_SKIP_STEP_SCALE,
+            ViewerSettings.COAST_SKIP_DEFAULT * ViewerSettings.COAST_SKIP_STEP_SCALE,
+            multiple -> settings.coastSkipMultiple =
+                multiple / ViewerSettings.COAST_SKIP_STEP_SCALE,
+            refreshes::refreshCoastlines,
+            () -> { }));
+
+        controls.add(ViewerControls.buildSlider(
+            "Coast max skips",
+            "Most cells skipped in a row",
+            COAST_MAX_SKIPS_MINIMUM,
+            COAST_MAX_SKIPS_MAXIMUM,
+            ViewerSettings.COAST_MAX_SKIPS_DEFAULT,
+            skips -> settings.coastMaxSkips = (int) Math.round(skips),
+            refreshes::refreshCoastlines,
             () -> { }));
 
         return controls;

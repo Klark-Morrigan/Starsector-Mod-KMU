@@ -30,18 +30,43 @@ import java.util.Map;
  * which only the game can supply, so they stay an in-game check.
  */
 final class SectorSvgWriter {
+
     private static final double MARGIN = 4000.0;
     private static final int VIEW_WIDTH = 1600;
+
     private static final String SITE_COLOUR = "#888";
     private static final String CELL_COLOUR = "#2a2a2a";
     private static final String NEUTRAL_COLOUR = "#555";
+
     private static final double CELL_STROKE = 30.0;
     private static final double RING_STROKE = 90.0;
     private static final double SITE_RADIUS = 120.0;
+
     // Spreads owner colours around the hue circle by id hash, so neighbouring owners are
     // very unlikely to share one and the eye can separate clusters at a glance.
     private static final int HUE_RANGE = 360;
     private static final String OWNER_FILL_OPACITY = "0.35";
+
+    // The smoothed outer edge, and the knobs it is traced under. The same values the viewer
+    // opens on, so this drawing shows what a reader would see there.
+    private static final String COAST_COLOUR = "#70e090";
+
+    // The two halves of a crossing, in colours nothing else on the map uses: the run that
+    // goes where it should not, and the cell it goes into. Read together they say which cell
+    // and which run, which is what deciding the fix needs and a count cannot give.
+    private static final String PENETRATION_COLOUR = "#ff2050";
+    private static final String PIERCED_CELL_COLOUR = "#ff9020";
+
+    // Heavier than any other line here, because it has to be findable at the zoom where a
+    // whole sector fits on screen.
+    private static final double PENETRATION_STROKE = 220.0;
+    private static final double BRIDGE_REACH_MULTIPLE = 4;
+    private static final double COAST_SKIP_MULTIPLE = 1;
+    private static final int COAST_MAX_SKIPS = 5;
+
+    // What converts a count of sides round a whole circle into a count of samples per half
+    // turn of arc.
+    private static final int HALF_TURNS_PER_CIRCLE = 2;
 
     private SectorSvgWriter() {
     }
@@ -55,20 +80,27 @@ final class SectorSvgWriter {
      * @param geometry the assembled geometry to draw
      */
     static void writeSectorSvg(Path target, SectorFixture fixture, SectorGeometry geometry) {
+
         var bounds = SiteBounds.measureAround(fixture.getSites()).expandBy(MARGIN);
         var svg = new StringBuilder();
+
         openSvg(svg, bounds);
+
         // The raw partition, drawn faintly underneath: it is the reference the shaped cells and
         // traced borders above are read against, so a channel or a fused seam can be seen against
         // the cell edge it came from.
         appendRawCells(svg, geometry.cellEdgesByCellId());
         appendNeutralCells(svg, geometry);
         appendOwnerRings(svg, geometry.ringsByOwner());
+        appendCoastlines(svg, fixture.getSites());
         appendSites(svg, fixture.getSites());
+
         svg.append("</g>\n</svg>\n");
+
         try {
             Files.createDirectories(target.getParent());
             Files.writeString(target, svg.toString(), StandardCharsets.UTF_8);
+
         } catch (IOException e) {
             throw new UncheckedIOException("cannot write " + target, e);
         }
@@ -78,18 +110,29 @@ final class SectorSvgWriter {
     // here rather than at every vertex - a map drawn upside down would read as a geometry
     // bug that is not there.
     private static void openSvg(StringBuilder svg, SiteBounds bounds) {
+
         var width = bounds.maxX() - bounds.minX();
         var height = bounds.maxY() - bounds.minY();
         var viewHeight = (int) Math.round(VIEW_WIDTH * height / width);
-        svg.append("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"").append(VIEW_WIDTH)
-                .append("\" height=\"").append(viewHeight)
-                .append("\" viewBox=\"0 0 ").append(fmt(width)).append(' ').append(fmt(height))
-                .append("\">\n<rect width=\"100%\" height=\"100%\" fill=\"#111\"/>\n")
-                .append("<g transform=\"translate(").append(fmt(-bounds.minX())).append(' ')
-                .append(fmt(bounds.maxY())).append(") scale(1 -1)\">\n");
+
+        svg
+            .append("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"").append(VIEW_WIDTH)
+            .append("\" height=\"")
+            .append(viewHeight)
+            .append("\" viewBox=\"0 0 ")
+            .append(fmt(width))
+            .append(' ')
+            .append(fmt(height))
+            .append("\">\n<rect width=\"100%\" height=\"100%\" fill=\"#111\"/>\n")
+            .append("<g transform=\"translate(")
+            .append(fmt(-bounds.minX()))
+            .append(' ')
+            .append(fmt(bounds.maxY()))
+            .append(") scale(1 -1)\">\n");
     }
 
     private static void appendRawCells(StringBuilder svg, Map<String, List<CellEdge>> cellEdges) {
+
         for (var edges : cellEdges.values()) {
             var ring = new ArrayList<double[]>(edges.size());
             for (var edge : edges) {
@@ -105,6 +148,7 @@ final class SectorSvgWriter {
     // than the fixture, so a cell the build itself grouped - or unowned - is drawn as the
     // build left it, not as the sector was handed in.
     private static void appendNeutralCells(StringBuilder svg, SectorGeometry geometry) {
+
         for (var entry : geometry.shapedCellByCellId().entrySet()) {
             if (geometry.ownerByCellId().containsKey(entry.getKey())) {
                 continue;
@@ -118,55 +162,205 @@ final class SectorSvgWriter {
     // enclaves and the keep-out clearings punched into it are both carried that way, and drawing
     // each ring on its own would paint them solid - the exact opposite of what they mean.
     private static void appendOwnerRings(
-            StringBuilder svg, Map<String, List<List<double[]>>> ringsByOwner) {
+            StringBuilder svg,
+            Map<String, List<List<double[]>>> ringsByOwner) {
+
         for (var entry : ringsByOwner.entrySet()) {
+
             var colour = pickOwnerColour(entry.getKey());
             var subPaths = new StringBuilder();
+
             for (var ring : entry.getValue()) {
                 if (ring.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                     continue;
                 }
                 for (var i = 0; i < ring.size(); i++) {
-                    subPaths.append(i == 0 ? 'M' : 'L')
-                            .append(fmt(ring.get(i)[0])).append(' ')
-                            .append(fmt(ring.get(i)[1])).append(' ');
+                    subPaths
+                        .append(i == 0 ? 'M' : 'L')
+                        .append(fmt(ring.get(i)[0]))
+                        .append(' ')
+                        .append(fmt(ring.get(i)[1]))
+                        .append(' ');
                 }
                 subPaths.append("Z ");
             }
             if (subPaths.length() == 0) {
                 continue;
             }
-            svg.append("<path fill-rule=\"evenodd\" d=\"").append(subPaths)
-                    .append("\" fill=\"").append(colour)
-                    .append("\" fill-opacity=\"").append(OWNER_FILL_OPACITY)
-                    .append("\" stroke=\"").append(colour)
-                    .append("\" stroke-width=\"").append(fmt(RING_STROKE)).append("\"/>\n");
+            svg.append("<path fill-rule=\"evenodd\" d=\"")
+                .append(subPaths)
+                .append("\" fill=\"")
+                .append(colour)
+                .append("\" fill-opacity=\"")
+                .append(OWNER_FILL_OPACITY)
+                .append("\" stroke=\"")
+                .append(colour)
+                .append("\" stroke-width=\"")
+                .append(fmt(RING_STROKE))
+                .append("\"/>\n");
         }
     }
 
+    // Over the cells rather than under them, because the question a coast is drawn to answer
+    // is where it runs against the shapes it was traced from - and a coast passing INSIDE a
+    // cell is the failure worth seeing, which a cell drawn over the top would hide.
+    private static void appendCoastlines(StringBuilder svg, List<double[]> sites) {
+
+        var parameters = SectorGeometryParameters.createDefaults();
+
+        var bridges = VoidBridges.findVoidBridges(
+            sites,
+            parameters.cellRadius(),
+            parameters.cellRadius() * BRIDGE_REACH_MULTIPLE);
+
+        var chords = new ArrayList<DiscUnionBoundary.Chord>(bridges.size());
+
+        for (var bridge : bridges) {
+            chords.add(new DiscUnionBoundary.Chord(bridge.fromSite(), bridge.toSite()));
+        }
+
+        var union = new DiscUnion(sites, parameters.measureFilledReach());
+
+        var coasts = Coastlines.traceSmoothedCoasts(
+            union,
+            new DiscUnionBoundary.Walls(chords, parameters.borderInset()),
+            new Coastlines.SmoothingRules(
+                COAST_SKIP_MULTIPLE * parameters.cellRadius(),
+                COAST_MAX_SKIPS),
+            parameters.boundSegments() / HALF_TURNS_PER_CIRCLE);
+
+        for (var coast : coasts) {
+            appendPolygon(svg, Coastlines.collectPoints(coast), "none", COAST_COLOUR, RING_STROKE);
+        }
+        appendPenetrations(svg, union, Coastlines.findPenetrations(coasts, union));
+    }
+
+    // The runs that go inside a cell, and the cells they go inside, both called out in their
+    // own colours and drawn last so nothing can cover them. A report saying nineteen runs
+    // cross something is a number to argue with; nineteen runs marked on the map, each beside
+    // the cell it crosses, is a thing to look at.
+    private static void appendPenetrations(
+            StringBuilder svg,
+            DiscUnion union,
+            List<Coastlines.Penetration> penetrations) {
+
+        for (var penetration : penetrations) {
+            for (var circle : penetration.circles()) {
+
+                appendCircle(
+                    svg,
+                    union.sites().get(circle),
+                    union.reach(),
+                    PIERCED_CELL_COLOUR,
+                    RING_STROKE);
+            }
+        }
+
+        for (var penetration : penetrations) {
+
+            appendPolyline(
+                svg,
+                List.of(penetration.from(), penetration.to()),
+                PENETRATION_COLOUR,
+                PENETRATION_STROKE);
+        }
+    }
+
+    // An open run rather than a closed one: a coast segment has two ends and joining them
+    // back up would draw a line that is not there.
+    private static void appendPolyline(
+            StringBuilder svg,
+            List<double[]> points,
+            String stroke,
+            double strokeWidth) {
+
+        svg.append("<polyline points=\"");
+
+        for (var point : points) {
+
+            svg.append(fmt(point[0]))
+                .append(',')
+                .append(fmt(point[1]))
+                .append(' ');
+        }
+
+        svg.append("\" fill=\"none\" stroke=\"")
+            .append(stroke)
+            .append("\" stroke-width=\"")
+            .append(fmt(strokeWidth))
+            .append("\"/>\n");
+    }
+
+    private static void appendCircle(
+            StringBuilder svg,
+            double[] centre,
+            double radius,
+            String stroke,
+            double strokeWidth) {
+
+        svg.append("<circle cx=\"")
+            .append(fmt(centre[0]))
+            .append("\" cy=\"")
+            .append(fmt(centre[1]))
+            .append("\" r=\"")
+            .append(fmt(radius))
+            .append("\" fill=\"none\" stroke=\"")
+            .append(stroke)
+            .append("\" stroke-width=\"")
+            .append(fmt(strokeWidth))
+            .append("\"/>\n");
+    }
+
     private static void appendSites(StringBuilder svg, List<double[]> sites) {
+
         for (var site : sites) {
-            svg.append("<circle cx=\"").append(fmt(site[0])).append("\" cy=\"")
-                    .append(fmt(site[1])).append("\" r=\"").append(fmt(SITE_RADIUS))
-                    .append("\" fill=\"").append(SITE_COLOUR).append("\"/>\n");
+
+            svg.append("<circle cx=\"")
+                .append(fmt(site[0]))
+                .append("\" cy=\"")
+                .append(fmt(site[1]))
+                .append("\" r=\"")
+                .append(fmt(SITE_RADIUS))
+                .append("\" fill=\"")
+                .append(SITE_COLOUR)
+                .append("\"/>\n");
         }
     }
 
     private static void appendPolygon(
-            StringBuilder svg, List<double[]> ring, String fill, String stroke, double strokeWidth) {
+            StringBuilder svg,
+            List<double[]> ring,
+            String fill,
+            String stroke,
+            double strokeWidth) {
+
         if (ring.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
             return;
         }
         svg.append("<polygon points=\"");
+
         for (var point : ring) {
-            svg.append(fmt(point[0])).append(',').append(fmt(point[1])).append(' ');
+
+            svg.append(fmt(point[0]))
+                .append(',')
+                .append(fmt(point[1]))
+                .append(' ');
         }
-        svg.append("\" fill=\"").append(fill).append('"');
+        svg.append("\" fill=\"")
+            .append(fill)
+            .append('"');
+
         if (!"none".equals(fill)) {
-            svg.append(" fill-opacity=\"").append(OWNER_FILL_OPACITY).append('"');
+
+            svg.append(" fill-opacity=\"")
+                .append(OWNER_FILL_OPACITY)
+                .append('"');
         }
-        svg.append(" stroke=\"").append(stroke).append("\" stroke-width=\"")
-                .append(fmt(strokeWidth)).append("\"/>\n");
+        svg.append(" stroke=\"")
+            .append(stroke)
+            .append("\" stroke-width=\"")
+            .append(fmt(strokeWidth))
+            .append("\"/>\n");
     }
 
     private static String pickOwnerColour(String ownerId) {
