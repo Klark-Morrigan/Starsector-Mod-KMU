@@ -61,11 +61,7 @@ public final class CellRibbonBuilder {
         if (totalLengthUnits <= 0) {
             return CellRibbon.NONE;
         }
-        var path = RingPath.traceInsetRing(
-            ring,
-            style.computeCentrelineInset(),
-            style.miterSpikeLimit(),
-            topAnchor);
+        var path = traceBandPath(ring, topAnchor, style);
 
         if (path.isEmpty()) {
             return CellRibbon.NONE;
@@ -78,10 +74,17 @@ public final class CellRibbonBuilder {
         // costs is room, which the clamp below already knows how to answer.
         var clearArcs = path.findClearArcs(nameBoxes);
 
-        if (clearArcs.isEmpty()) {
+        // A ring wholly under the names is the one case where keeping the band clear of them and
+        // drawing it at all cannot both be honoured, so one of the two gives way and which is the
+        // player's answer. By default the clearance does: a cell reporting nothing and a cell
+        // refused the room to report look identical to a reader, and only one of them is true.
+        if (clearArcs.isEmpty() && !style.isBandAlwaysDrawn()) {
             return CellRibbon.NONE;
         }
-        var stretch = selectLongestClearStretch(clearArcs, path.getPerimeter());
+        var stretch = clearArcs.isEmpty()
+            ? new double[] {0.0, path.getPerimeter()}
+            : selectLongestClearStretch(clearArcs, path.getPerimeter());
+
         var lengthUnitWorld = computeLengthUnit(
             stretch[1] - stretch[0],
             totalLengthUnits,
@@ -94,6 +97,34 @@ public final class CellRibbonBuilder {
             return CellRibbon.NONE;
         }
         return new CellRibbon(strokeSegments(path, plan, stretch[0], lengthUnitWorld, style));
+    }
+
+    // The ring walked at the inset the player authored - or, on a cell too narrow to take that
+    // inset, at the shallowest one a band can be traced at while still sitting inside the ring.
+    //
+    // The pad is what gives way, never the half width: the pad is a look, while the half width is
+    // what puts the band's near edge on the border rather than over it. A cell too narrow even for
+    // that is one narrower than the band is wide, where there is no band to draw rather than a
+    // tighter one, and it comes back empty however the setting stands.
+    private static RingPath traceBandPath(
+            List<double[]> ring,
+            double[] topAnchor,
+            RibbonStyle style) {
+
+        var path = RingPath.traceInsetRing(
+            ring,
+            style.computeCentrelineInset(),
+            style.miterSpikeLimit(),
+            topAnchor);
+
+        if (!path.isEmpty() || !style.isBandAlwaysDrawn()) {
+            return path;
+        }
+        return RingPath.traceInsetRing(
+            ring,
+            style.computeUnpaddedCentrelineInset(),
+            style.miterSpikeLimit(),
+            topAnchor);
     }
 
     // The one stretch of ring the whole band is laid on: the longest the names left, with the

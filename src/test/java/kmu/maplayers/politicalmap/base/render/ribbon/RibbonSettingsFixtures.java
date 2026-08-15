@@ -38,6 +38,11 @@ public final class RibbonSettingsFixtures {
     // itself states it on the case, for the reason the pair above are stated there.
     private static final boolean BANDS_KEPT_CLEAR_OF_NAMES = true;
 
+    // No band forced onto a cell whose ring has no room for one, which is not the shipped answer
+    // either. A suite reaching for these poses what a cell's own ring allows, and the forcing would
+    // quietly rescue the very cases meant to show a cell going bare.
+    private static final boolean BANDS_ALWAYS_DRAWN = false;
+
     // The placements' own boxes rather than the drawn words, which is not the shipped answer and is
     // the only stubbing here that is not. The words are measured with the map-label face, and no
     // test JVM can load one, so under the shipped answer every name would measure as nothing and a
@@ -86,5 +91,8 @@ public final class RibbonSettingsFixtures {
         settingsMock
             .when(KmuPoliticalMapSettings::getPoliticalMapRibbonNameClearance)
             .thenReturn(NAME_CLEARANCE);
+        settingsMock
+            .when(KmuPoliticalMapSettings::shouldAlwaysDrawPoliticalMapRibbons)
+            .thenReturn(BANDS_ALWAYS_DRAWN);
     }
 }

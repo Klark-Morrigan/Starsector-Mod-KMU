@@ -26,6 +26,10 @@ final class RibbonStyleReaderTest {
     private static final int SEGMENT_LENGTH_UNITS = 7;
     private static final int INTERJECTION_LENGTH_UNITS = 4;
 
+    // Read as the opposite of what it ships as, so a reader hard-wiring the shipped answer instead
+    // of asking for the player's would show here rather than only on a map nobody is looking at.
+    private static final boolean BAND_ALWAYS_DRAWN = false;
+
     // The authored mitre limit, which is no knob: it is the angle past which a corner's mitre
     // becomes a spike, a property of stroking rather than of how the readout looks.
     private static final double AUTHORED_MITER_SPIKE_LIMIT = 2.0;
@@ -49,6 +53,8 @@ final class RibbonStyleReaderTest {
                     .isEqualTo(SEGMENT_LENGTH_UNITS);
                 assertThat(style.lengths().interjectionLengthUnits())
                     .isEqualTo(INTERJECTION_LENGTH_UNITS);
+                assertThat(style.isBandAlwaysDrawn())
+                    .isEqualTo(BAND_ALWAYS_DRAWN);
             }
         }
 
@@ -78,5 +84,8 @@ final class RibbonStyleReaderTest {
         settingsMock
             .when(KmuPoliticalMapSettings::getPoliticalMapRibbonInterjectionLength)
             .thenReturn(INTERJECTION_LENGTH_UNITS);
+        settingsMock
+            .when(KmuPoliticalMapSettings::shouldAlwaysDrawPoliticalMapRibbons)
+            .thenReturn(BAND_ALWAYS_DRAWN);
     }
 }

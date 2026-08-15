@@ -11,6 +11,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 
 - [The three classes that build one](#the-three-classes-that-build-one)
 - [Laying a band inside a ring](#laying-a-band-inside-a-ring)
+- [When the ring has no room](#when-the-ring-has-no-room)
 - [Keeping clear of the names](#keeping-clear-of-the-names)
 - [One band, one stretch](#one-band-one-stretch)
 - [One stroke, many colours](#one-stroke-many-colours)
@@ -53,6 +54,25 @@ is cells nobody paints, and the claim mechanic's count walks a system's whole ma
    bloc off the end.
 4. Below `Limits.MIN_EDGE_LENGTH` the cell says nothing at all. That covers a cell smaller than the
    pad and width together, one narrowed to a neck, and one whose ring the names have eaten.
+
+## When the ring has no room
+
+Two of those refusals are the ring turning a band down rather than the system having nothing to
+report, and a reader cannot tell the two apart - both are a bare cell. So **Always draw a planned
+band** (on by default) turns each into a fallback:
+
+| Refusal | Fallback |
+| --- | --- |
+| the names cover the whole ring | the band takes the whole ring, clearance given up |
+| the cell cannot hold the pad and the half width | traced at `computeUnpaddedCentrelineInset()` |
+
+The pad is what gives way to a narrow cell, never the half width: the pad is a look, while the half
+width is what puts the band's near edge on the border instead of over it. A cell narrower than the
+band is wide has no band to draw rather than a tighter one, and comes back bare either way.
+
+Off, a cell short of room simply draws nothing - tidier, and no way to tell a system with nothing
+to say from one refused the room to say it. That difference is the knob's other use: with it on,
+a bare cell means the plan was empty.
 
 Compressing the *length* while leaving the width alone is deliberate: the band says its piece
 through the proportions between its runs, so shortening every run by one factor keeps all of them.

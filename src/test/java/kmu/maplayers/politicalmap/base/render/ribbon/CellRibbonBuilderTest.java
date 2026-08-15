@@ -65,6 +65,10 @@ final class CellRibbonBuilderTest {
     // The cell's own site, the point the band's start is found above.
     private static final double[] CELL_SITE = new double[] {2000.0, 2000.0};
 
+    // The tiny cell's own site, so the band it is forced to carry starts above the middle of it
+    // rather than over the corner an anchor outside the shape would fall back to.
+    private static final double[] TINY_CELL_SITE = new double[] {250.0, 250.0};
+
     // A map whose names are all somewhere else, which is the state most cells are in: the band
     // has its cell's whole ring to itself.
     private static final List<List<double[]>> NO_NAMES = List.of();
@@ -135,11 +139,23 @@ final class CellRibbonBuilderTest {
     // Round numbers rather than the shipped sizes, so the expected coordinates below are the
     // convention being pinned and not an echo of whatever the defaults happen to be: a 400-wide
     // band 200 clear of the border runs its centreline exactly 400 inside the cell.
+    // Forcing off, so the cases below state what a cell's own ring allows rather than what the
+    // fallbacks recover. The two cases that are about the fallbacks say so by taking the style
+    // beneath this one.
     private static final RibbonStyle STYLE = new RibbonStyle(
         400.0,
         200.0,
         2.0,
-        new RibbonSegmentLengths(3, 1));
+        new RibbonSegmentLengths(3, 1),
+        false);
+
+    // The same sizes with the shipped answer to a cell that has no room: draw the band anyway.
+    private static final RibbonStyle STYLE_FORCING_A_BAND = new RibbonStyle(
+        400.0,
+        200.0,
+        2.0,
+        new RibbonSegmentLengths(3, 1),
+        true);
 
     private static final Color BRIGHT = new Color(140, 160, 220);
     private static final Color DARK = new Color(40, 60, 120);
@@ -442,6 +458,47 @@ final class CellRibbonBuilderTest {
                     STYLE,
                     NAME_ACROSS_THE_WHOLE_CELL))
                 .isEqualTo(CellRibbon.NONE);
+        }
+
+        @Test
+        void laysTheBandOnTheWholeRingWhereTheNamesLeaveNoneAndABandIsForced() {
+            // The same cell and the same name as the case above, and the opposite answer, because
+            // the two cannot both be honoured: a ring wholly covered leaves keeping clear of the
+            // names and drawing the band at all in direct conflict. Forced, the clearance is what
+            // gives way, and the band runs from the cell's top centre as though no name were
+            // there.
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                CELL_SITE,
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
+                STYLE_FORCING_A_BAND,
+                NAME_ACROSS_THE_WHOLE_CELL);
+
+            assertThat(ribbon.bands())
+                .singleElement()
+                .satisfies(band -> {
+                    assertThat(hasCorner(band, 2000.0, 3800.0)).isTrue();
+                    assertThat(hasCorner(band, 2400.0, 3800.0)).isTrue();
+                });
+        }
+
+        @Test
+        void tracesAForcedBandWithoutItsPadOnACellThatCannotHoldBoth() {
+            // The cell the case below draws nothing on, forced. Its ring cannot take the pad and
+            // the half width together, so the pad is what gives way: the band's outer edge lands
+            // on the cell's own border at (250,500) rather than the 200 clear of it the pad asks
+            // for. The half width is kept whatever happens, since giving up any of that would hang
+            // the band outside the cell it reports on.
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                TINY_CELL,
+                TINY_CELL_SITE,
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
+                STYLE_FORCING_A_BAND,
+                NO_NAMES);
+
+            assertThat(ribbon.bands())
+                .singleElement()
+                .satisfies(band -> assertThat(hasCorner(band, 250.0, 500.0)).isTrue());
         }
 
         @Test

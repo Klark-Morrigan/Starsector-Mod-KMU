@@ -167,6 +167,8 @@ public final class KmuPoliticalMapSettings {
         "kmu_map_politics_visuals_presenceRibbons_keepClearOfNames";
     private static final String RIBBON_NAME_CLEARANCE_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_nameClearance";
+    private static final String RIBBON_ALWAYS_DRAWN_FIELD =
+        "kmu_map_politics_visuals_presenceRibbons_alwaysDrawn";
     private static final String RIBBON_WIDTH_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_width";
     private static final String RIBBON_INSET_PAD_FIELD =
@@ -423,6 +425,13 @@ public final class KmuPoliticalMapSettings {
     // sitting on a band running beneath it. A toggle because that is a taste call, not a
     // correctness one: off returns the whole ring to the band and lets the names draw over it.
     private static final boolean DEFAULT_RIBBON_KEEP_CLEAR_OF_NAMES = true;
+
+    // A planned band is drawn whatever room its cell leaves, by default. A cell that says nothing
+    // and a cell that was refused the room to speak look identical on the map, and of the two
+    // readings the map should default to the one that shows the sector: the room a band wants is
+    // this design's own business, and no player asked for a system's holdings to go unreported
+    // because its name landed across the ring.
+    private static final boolean DEFAULT_RIBBON_ALWAYS_DRAWN = true;
 
     // The words rather than the box they were fitted into, since the fitted box is the chord the
     // search accepted and a chord is accepted as soon as it beats the widest line - so it reserves
@@ -893,6 +902,19 @@ public final class KmuPoliticalMapSettings {
         return KmuLunaSettings.readChoice(
             RIBBON_NAME_CLEARANCE_FIELD,
             DEFAULT_RIBBON_NAME_CLEARANCE);
+    }
+
+    /**
+     * @return whether a cell with a band to draw draws one even where its ring leaves no room for
+     *         it; on by default. On, a name covering the whole ring is given up on rather than the
+     *         band, and a cell too narrow for the band and its inset together gives up the inset.
+     *         Off, such a cell draws nothing - which also makes a bare cell ambiguous between
+     *         having nothing to say and having been refused the room to say it
+     */
+    public static boolean shouldAlwaysDrawPoliticalMapRibbons() {
+        return KmuLunaSettings.readBoolean(
+            RIBBON_ALWAYS_DRAWN_FIELD,
+            DEFAULT_RIBBON_ALWAYS_DRAWN);
     }
 
     /**

@@ -39,6 +39,7 @@ public final class RibbonStyleReader {
             MITER_SPIKE_LIMIT,
             new RibbonSegmentLengths(
                 KmuPoliticalMapSettings.getPoliticalMapRibbonSegmentLength(),
-                KmuPoliticalMapSettings.getPoliticalMapRibbonInterjectionLength()));
+                KmuPoliticalMapSettings.getPoliticalMapRibbonInterjectionLength()),
+            KmuPoliticalMapSettings.shouldAlwaysDrawPoliticalMapRibbons());
     }
 }
