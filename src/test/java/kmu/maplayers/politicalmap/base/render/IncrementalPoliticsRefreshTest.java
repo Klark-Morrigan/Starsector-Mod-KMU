@@ -11,10 +11,12 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
+import kmu.maplayers.base.labels.LabelLineBoxes;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;
+import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
@@ -31,6 +33,7 @@ import kmu.maplayers.politicalmap.base.render.territories.StyledCellBuilder;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.RibbonNameClearanceChoice;
 
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -339,6 +342,58 @@ final class IncrementalPoliticsRefreshTest {
         }
 
         @Test
+        void applyStalePoliticsUpdatesRebakesABandAroundTheWordsWhereTheClearanceReadsThem() {
+            // The same name over the same cell, read by the words it draws rather than by the box
+            // its placement reserved. The two readings disagree about this cell outright - the
+            // fitted box covers it whole, while the words land elsewhere entirely - so a band comes
+            // back where the case above had none, and the reading the player did not pick is never
+            // asked for at all.
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+
+            territories.putStyledCell(
+                FLIPPED_SYSTEM,
+                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
+                buildBandSizedCell());
+
+            when(cellGeometry.cells().getSiteBySystemId())
+                .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
+
+            when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
+                .thenReturn(system -> BAND_OF_ONE_RUN);
+
+            nameFormatMock
+                .when(NameFormatPreference::getSelectedNameFormat)
+                .thenReturn(FactionNameFormatChoice.SHORT);
+
+            settingsMock
+                .when(KmuPoliticalMapSettings::getPoliticalMapRibbonNameClearance)
+                .thenReturn(RibbonNameClearanceChoice.WORDS);
+
+            // Both readings are seams here rather than one being left live: what a name measures
+            // to is pinned by each reading's own suite, and measuring the words for real would
+            // need the label face, which no test JVM loads. What belongs here is which of the two
+            // the choice reaches for.
+            var fittedBoxesMock = openSeam(ClusterNameBoxes.class);
+            var wordBoxesMock = openSeam(LabelLineBoxes.class);
+
+            wordBoxesMock
+                .when(() -> LabelLineBoxes.listLineBoxes(anyList()))
+                .thenReturn(List.of(buildWordsBoxAwayFromTheCell()));
+
+            standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
+
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(HEGEMONY));
+
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            applyTo(territories);
+
+            assertThat(territories.getRibbonByCellId())
+                .containsOnlyKeys(FLIPPED_SYSTEM);
+
+            fittedBoxesMock.verifyNoInteractions();
+        }
+
+        @Test
         void applyStalePoliticsUpdatesReservesNoRoomForANameWhileTheNamesAreSwitchedOff() {
             // The same name across the same cell, with the names switched off: nothing is drawn
             // for the band to be interrupted by, so it takes the whole ring. The placements are
@@ -626,6 +681,17 @@ final class IncrementalPoliticsRefreshTest {
             null,
             6000f,
             1);
+    }
+
+    // The room a name's words take where they fall nowhere near the marked cell. A real box, so
+    // the carve does run over it, but one that cell's ring never meets - which is what tells a
+    // band laid around the words apart from a band laid as though no name existed.
+    private static List<double[]> buildWordsBoxAwayFromTheCell() {
+        return List.of(
+            new double[] {-10000.0, -10000.0},
+            new double[] {-9000.0, -10000.0},
+            new double[] {-9000.0, -9000.0},
+            new double[] {-10000.0, -9000.0});
     }
 
     // A cell large enough to hold the authored band clear of its own border, so a re-bake that
