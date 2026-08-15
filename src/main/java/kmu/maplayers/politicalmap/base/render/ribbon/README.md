@@ -55,8 +55,8 @@ is cells nobody paints, and the claim mechanic's count walks a system's whole ma
    bloc off the end.
 4. Below `Limits.MIN_EDGE_LENGTH` the cell says nothing at all. That covers a cell smaller than the
    pad and width together, one narrowed to a neck, and one whose ring the names have eaten.
-5. `RibbonBandPlacement` settles where along the stretch the band sits - see [where a band
-   sits](#where-a-band-sits).
+5. `RingPath.placeSpanNearestStart` settles where along that stretch the band sits - see
+   [where a band sits](#where-a-band-sits).
 
 ## When the ring has no room
 
@@ -111,29 +111,28 @@ the split loses the very readout the carve protects and litters the cell for it.
 ring cut into two near-equal halves spends one of them.
 
 The stretch running through the path's own start arrives from `RingPath.findClearArcs` as two
-intervals, one at each end, since that carve deliberately does not wrap. They are fused here into
-`[lastStart, firstEnd + perimeter]`, which `RingPath.collectPointsBetween` walks as it stands -
-without the fuse, every cell whose name sits anywhere but its top centre would be judged on
+`RingStretch`es, one at each end, since that carve deliberately does not wrap.
+`RingPath.fuseStretchAcrossStart` reads them as the one stretch they are before the longest is
+chosen - without it, every cell whose name sits anywhere but its top centre would be judged on
 whichever half of its longest stretch happened to be bigger.
 
 ## Where a band sits
 
-A band shorter than its stretch can sit anywhere along it, so `RibbonBandPlacement` decides where
-rather than letting the surviving ring decide: **a band sits as near the cell's top centre as its
-stretch allows**. That landmark is the path's own origin and where the dominant bloc's run begins,
-so every cell is read from the same place.
+A band shorter than its stretch can sit anywhere along it, and where it sits is decided rather
+than left to the ring the names happened to leave: **a band sits as near the cell's top centre as
+its stretch allows**. That landmark is the path's own origin and where the dominant bloc's run
+begins, so every cell is read from the same place - which is what a band opening wherever a name
+left off costs the reader.
 
 Near is measured on the band's **start**, since the start is where the reading begins - a band
-pulled toward the anchor by its middle would straddle it and put the middle of the readout where
-its opening belongs.
+pulled toward the landmark by its middle would straddle it and put the middle of the readout
+where its opening belongs.
 
-One clamp states it: the band starts at the top centre, pulled into `[stretchStart, stretchEnd -
-bandLength]` by the shortest way round the ring. The range is never empty, because the clamp above
-has already sized the band to fit the stretch, so placement is never a refusal. Four behaviours
-fall out of it rather than being written as cases - the band opening on the anchor, backing up to
-reach it where a name begins too soon after, opening where a name over the anchor lets the ring
-resume, and taking whichever end of a far-off stretch puts its start nearer, with a tie taking the
-stretch's start.
+The rule itself is `RingPath.placeSpanNearestStart`, because it is arithmetic about a path rather
+than about a readout: one clamp, pulling the span's start into what the stretch leaves it by the
+shortest way round, ties taking the stretch's start. The range it clamps into is never empty
+here, since the clamp above has already sized the band to fit the stretch, so placement is never
+a refusal.
 
 ## One stroke, many colours
 

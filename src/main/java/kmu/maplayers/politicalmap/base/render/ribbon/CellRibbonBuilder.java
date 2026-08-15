@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.PolylineBands;
 import kmlib.math.geometry.RingPath;
+import kmlib.math.geometry.RingStretch;
 import kmlib.opengl.GlVertexRuns;
 
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
@@ -13,8 +14,7 @@ import java.util.List;
 /**
  * Lays one cell's planned band around that cell's own ring: the path it runs along, the longest
  * stretch of that path the cluster names leave it, how long a width is worth on that stretch,
- * where along it the band sits ({@link RibbonBandPlacement}), and the triangles each run comes
- * out as.
+ * where along it the band sits, and the triangles each run comes out as.
  *
  * <p>Everything the plan states is proportional - a run is so many widths long - and everything
  * this settles is the cell's own: where the ring lets a band run, and how much of that ring one
@@ -83,13 +83,10 @@ public final class CellRibbonBuilder {
             return CellRibbon.NONE;
         }
         var stretch = clearArcs.isEmpty()
-            ? new double[] {0.0, path.getPerimeter()}
-            : selectLongestClearStretch(clearArcs, path.getPerimeter());
+            ? new RingStretch(0.0, path.getPerimeter())
+            : selectLongestClearStretch(path.fuseStretchAcrossStart(clearArcs));
 
-        var lengthUnitWorld = computeLengthUnit(
-            stretch[1] - stretch[0],
-            totalLengthUnits,
-            style);
+        var lengthUnitWorld = computeLengthUnit(stretch.computeLength(), totalLengthUnits, style);
 
         // A unit compressed to nothing is a cell with too little ring left to state its own
         // contents at any size - too small to begin with, or too much of it under a name - so it
@@ -97,13 +94,13 @@ public final class CellRibbonBuilder {
         if (lengthUnitWorld < Limits.MIN_EDGE_LENGTH) {
             return CellRibbon.NONE;
         }
-        var bandStart = RibbonBandPlacement.placeBandStart(
-            stretch[0],
-            stretch[1],
-            totalLengthUnits * lengthUnitWorld,
-            path.getPerimeter());
+        // As near the cell's top centre as the stretch allows, rather than wherever the ring
+        // the names left happens to open. Every cell's band is read from that landmark - the
+        // dominant bloc first, running clockwise - so a band that could begin there and does
+        // not costs the reader the one thing every cell's band has in common.
+        var ribbonStart = path.placeSpanNearestStart(stretch, totalLengthUnits * lengthUnitWorld);
 
-        return new CellRibbon(strokeSegments(path, plan, bandStart, lengthUnitWorld, style));
+        return new CellRibbon(strokeSegments(path, plan, ribbonStart, lengthUnitWorld, style));
     }
 
     // The ring walked at the inset the player authored - or, on a cell too narrow to take that
@@ -146,52 +143,21 @@ public final class CellRibbonBuilder {
     // for it. One stretch means one shape, and a cell can be read at a glance again - at the
     // price of spending only part of a ring the names cut into halves, which is the cheaper of
     // the two losses.
-    private static double[] selectLongestClearStretch(
-            List<double[]> clearArcs,
-            double perimeter) {
+    //
+    // Taken over the stretches the path has already fused, never the carved ones: a cell whose
+    // name sits anywhere but its top centre has its longest run arrive as the two stretches
+    // either side of the path's start, and picking between those two judges the cell on
+    // whichever half happened to be bigger.
+    private static RingStretch selectLongestClearStretch(List<RingStretch> clearStretches) {
 
-        double[] longest = null;
+        RingStretch longest = null;
 
-        for (var stretch : fuseStretchAcrossTheStart(clearArcs, perimeter)) {
-            if (longest == null || stretch[1] - stretch[0] > longest[1] - longest[0]) {
+        for (var stretch : clearStretches) {
+            if (longest == null || stretch.computeLength() > longest.computeLength()) {
                 longest = stretch;
             }
         }
         return longest;
-    }
-
-    // The clear stretches with the one straddling the path's start read as the single stretch it
-    // is: the last and the first fused into an interval running past the perimeter.
-    //
-    // The carve hands back intervals that do not wrap, which is what makes "a layout beginning at
-    // the start begins at the first interval" true and is worth keeping. But a cell whose name
-    // sits anywhere but its top centre has its longest clear run arrive as two of those intervals,
-    // so choosing the longest without fusing them first would judge that cell on whichever half
-    // happened to be bigger. Fused here rather than in the carve, so only the reader that needs a
-    // wrapping stretch pays for one.
-    private static List<double[]> fuseStretchAcrossTheStart(
-            List<double[]> clearArcs,
-            double perimeter) {
-
-        // A single interval is either the whole ring or a stretch with covered ring at both ends;
-        // neither straddles the start, and fusing one with itself would double it.
-        if (clearArcs.size() < 2) {
-            return clearArcs;
-        }
-        var first = clearArcs.get(0);
-        var last = clearArcs.get(clearArcs.size() - 1);
-
-        // Two intervals meet across the start only by reaching it: one opening the path and one
-        // closing it. Anything else leaves the start itself under a name, where there is no
-        // stretch to fuse.
-        if (first[0] > Limits.MIN_EDGE_LENGTH || last[1] < perimeter - Limits.MIN_EDGE_LENGTH) {
-            return clearArcs;
-        }
-        var fused = new ArrayList<>(clearArcs.subList(1, clearArcs.size() - 1));
-
-        fused.add(new double[] {last[0], first[1] + perimeter});
-
-        return fused;
     }
 
     // How much of the ring one width is worth on this cell: the authored width, unless the whole

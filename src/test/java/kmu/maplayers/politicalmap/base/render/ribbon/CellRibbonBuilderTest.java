@@ -30,9 +30,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the runs after it keeping their own colours: a run that strokes to nothing drops out of what is
  * drawn without the runs behind it sliding onto each other's colours as the gap closes.
  *
- * <p>The remaining cases are the two ends of the size question the design answers deliberately:
- * a band longer than its cell's outline compresses rather than being cut short, and a cell with
- * no room for a band at all draws none rather than one crushed against its own border.
+ * <p>The remaining cases are the ends of the size question the design answers deliberately: a
+ * band longer than its cell's outline compresses rather than being cut short, compressing itself
+ * stops where a width would come to nothing, and a cell with no room for a band at all draws none
+ * rather than one crushed against its own border.
  *
  * <p>The names' cases are the same question asked of the room a cluster name takes: the whole
  * band goes on the longest stretch the names leave and the rest of the ring stays bare, the clamp
@@ -153,6 +154,22 @@ final class CellRibbonBuilderTest {
         new double[] {4000.0, 4000.0},
         new double[] {0.0, 4000.0}));
 
+    // Two names covering the whole cell but for a hairline between them at x=1000, which the ring
+    // crosses on its top edge and again on its bottom. Each crossing leaves a clear stretch of a
+    // ten-thousandth of a unit: a hundred times the shortest arc the carve keeps, and so a stretch
+    // that survives being carved while being nowhere near enough ring to state a plan along.
+    private static final List<List<double[]>> NAMES_LEAVING_ONLY_A_HAIRLINE = List.of(
+        List.of(
+            new double[] {0.0, 0.0},
+            new double[] {1000.0, 0.0},
+            new double[] {1000.0, 4000.0},
+            new double[] {0.0, 4000.0}),
+        List.of(
+            new double[] {1000.0001, 0.0},
+            new double[] {4000.0, 0.0},
+            new double[] {4000.0, 4000.0},
+            new double[] {1000.0001, 4000.0}));
+
     // Round numbers rather than the shipped sizes, so the expected coordinates below are the
     // convention being pinned and not an echo of whatever the defaults happen to be: a 400-wide
     // band 200 clear of the border runs its centreline exactly 400 inside the cell.
@@ -195,6 +212,12 @@ final class CellRibbonBuilderTest {
     // widths with nothing forbidding zero. It draws nothing, and what it must not do is take the
     // colour off the runs after it.
     private static final int NO_WIDTHS = 0;
+
+    // A thousand widths of run. Against a hairline of ring it compresses one width to a
+    // ten-millionth of a unit, which is where compressing stops being a readout and starts being
+    // a smear - a scale no plan a sector produces reaches, and the point of stating it here is
+    // that the floor answers it rather than that a system could plan it.
+    private static final int RUN_NO_HAIRLINE_CAN_STATE = 1000;
 
     // Four widths of run is 1600 units, exactly the distance from the band's start above the
     // cell's site to the cell's top right corner - so a plan of these puts a run boundary on that
@@ -502,6 +525,23 @@ final class CellRibbonBuilderTest {
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                     STYLE,
                     NAME_ACROSS_THE_WHOLE_CELL))
+                .isEqualTo(CellRibbon.NONE);
+        }
+
+        @Test
+        void drawsNoBandWhereTheRingLeftWouldCompressAWidthToNothing() {
+            // Where compressing stops. The carve keeps any stretch longer than its own shortest
+            // arc, so a cell can come back with ring to lay a band on and still have nowhere near
+            // enough of it: this hairline is a hundred times that floor and a ten-thousandth of
+            // one width. Compressed onto it the band would be a discoloured point on the outline,
+            // which says less than the bare cell does and reads as a fault rather than as a
+            // system with a great deal in it.
+            assertThat(CellRibbonBuilder.buildCellRibbon(
+                    SQUARE_CELL,
+                    CELL_SITE,
+                    new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_NO_HAIRLINE_CAN_STATE))),
+                    STYLE,
+                    NAMES_LEAVING_ONLY_A_HAIRLINE))
                 .isEqualTo(CellRibbon.NONE);
         }
 
