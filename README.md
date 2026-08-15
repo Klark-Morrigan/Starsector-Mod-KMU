@@ -77,14 +77,21 @@ is this repo's [CHANGELOG.md](CHANGELOG.md) section for that version - so a
 release with no changelog section fails rather than shipping empty notes.
 
 Two committed files feed the update-check side of that release.
-[kmu.version](kmu.version) is the VersionChecker template: a complete
-`.version` file stating the shape KMU publishes, whose release-varying values
-are written as tokens for KMLib's `fill-version-file-template` action to
+[kmu.version.template](kmu.version.template) is the VersionChecker template: a
+complete `.version` file stating the shape KMU publishes, whose release-varying
+values are written as tokens for KMLib's `fill-version-file-template` action to
 substitute from `mod_info.json` - so no version number is restated by hand
 outside that file. The filled result rides inside the zip and is attached to
 the release in its own right, that copy being the only form an update checker
 can poll. [data/config/version/version_files.csv](data/config/version/version_files.csv)
-is what points VersionChecker at the shipped file in an install.
+is what points VersionChecker at the filled `kmu.version` in an install.
+
+`gradlew jar` fills the same template into `kmu.version` at the repo root, so a
+checkout symlinked into `mods/` as a dev install reports the version a published
+zip would rather than the tokens. That generated file is never committed. The
+task doing it is `writeVersionFile`, which KMLib's shared Starsector conventions
+register for any mod that commits a template - KMU states no build wiring of its
+own for it.
 
 ### Local linting
 

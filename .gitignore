@@ -6,6 +6,10 @@
 # Machine-local values.
 gradle.properties
 
+# Generated from kmu.version.template; exists only where something
+# filled it (a release job, a local build), never committed.
+/kmu.version
+
 .idea/
 .vscode/
 bin/
