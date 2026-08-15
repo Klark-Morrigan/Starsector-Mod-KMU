@@ -17,6 +17,11 @@ package kmu.settings;
  * where it does no harm - the Java side says which half of the map code owns a knob, the
  * stored key stays put.
  *
+ * <p>The axis diagnostics below are the exception that rule allows: a toggle defaulting off
+ * holds nothing a rename could cost, so those two say {@code kmu_map_dev_diagnostics_*} -
+ * the tab and section a player finds them under - rather than the layer that first wanted
+ * them drawn.
+ *
  * <p>The knobs lay out across four tabs. {@code Map - Visuals} carries the overlay
  * sidebar, the map labels, the two upper hover tiers and how tightly a hover box is set -
  * what every layer shares. {@code Map - Sound} carries how loudly each moment the panel and
@@ -223,9 +228,9 @@ public final class KmuMapLayerSettings {
     // visible directly. Both meaningful only while the anchors themselves draw, which is
     // the drawing layer's own toggle.
     private static final String SHOW_REJECTED_AXES_FIELD =
-        "kmu_politicalMapShowRejectedAxes";
+        "kmu_map_dev_diagnostics_labels_boxes_areRejectedShown";
     private static final String SHOW_UNBIASED_AXES_FIELD =
-        "kmu_politicalMapShowUnbiasedAxes";
+        "kmu_map_dev_diagnostics_labels_boxes_areUnbiasedShown";
 
     // Fallbacks used only when a setting is read before LunaLib has loaded it;
     // the live values come from LunaLib. These mirror the defaultValue column in

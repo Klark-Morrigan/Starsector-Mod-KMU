@@ -344,13 +344,19 @@ public final class KmuPoliticalMapSettings {
     // accepted label line in green) so the clustering and axis fit behind the map
     // labels can be eyeballed on the map. Off by default.
     private static final String SHOW_CLUSTER_ANCHORS_FIELD =
-        "kmu_politicalMapShowClusterAnchors";
+        "kmu_map_dev_diagnostics_labels_boxes_areShown";
+
+    // Diagnostics (Map - Dev tab): draws the ring each cell's presence band would run along,
+    // graded by what the cell's own room lets a band do with it, so a cell that draws no band can
+    // still be told apart from one whose ring refused it. Off by default.
+    private static final String SHOW_RIBBON_PATHS_FIELD =
+        "kmu_map_dev_diagnostics_cells_ribbons_arePathsShown";
 
     // Diagnostics (Map - Dev tab): replaces the normal render with a border-tracing overlay that
     // layers the smoothing pipeline's stages (base, despiked, rounded) in distinct colours,
     // honouring the two smoothing gates. Off by default.
     private static final String DEBUG_BORDER_TRACING_FIELD =
-        "kmu_politicalMapDebugBorderTracing";
+        "kmu_map_dev_diagnostics_cells_borders_isDebugTracingShown";
 
     // Fallbacks used only when a setting is read before LunaLib has loaded it;
     // the live values come from LunaLib. These mirror the defaultValue column in
@@ -579,11 +585,12 @@ public final class KmuPoliticalMapSettings {
     private static final double HATCH_JOIN_TOLERANCE_PERCENT_PER_UNIT = 100.0;
 
     // Both reveal overrides off by default: the map draws exactly what the normal
-    // gates admit until the player opts into a wider view. The two diagnostics likewise,
+    // gates admit until the player opts into a wider view. The three diagnostics likewise,
     // so the map draws its result rather than its workings until asked.
     private static final boolean DEFAULT_SHOW_ALL_FACTIONS = false;
     private static final boolean DEFAULT_FORCE_ALL_SYSTEMS_ON_MAP = false;
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
+    private static final boolean DEFAULT_SHOW_RIBBON_PATHS = false;
     private static final boolean DEFAULT_DEBUG_BORDER_TRACING = false;
 
     private KmuPoliticalMapSettings() {
@@ -1381,6 +1388,19 @@ public final class KmuPoliticalMapSettings {
         return KmuLunaSettings.readBoolean(
             SHOW_CLUSTER_ANCHORS_FIELD,
             DEFAULT_SHOW_CLUSTER_ANCHORS);
+    }
+
+    /**
+     * @return whether the political map draws the ring each cell's presence band would run along,
+     *         coloured by what that cell's room lets a band do with it - green where the authored
+     *         inset held, yellow where the pad had to be given up, red where no band is laid at
+     *         all; off by default, a diagnostic for the cells that draw no band. Shows nothing
+     *         while the bands themselves are switched off, there being no layout to report on
+     */
+    public static boolean shouldShowPoliticalMapRibbonPaths() {
+        return KmuLunaSettings.readBoolean(
+            SHOW_RIBBON_PATHS_FIELD,
+            DEFAULT_SHOW_RIBBON_PATHS);
     }
 
     /**

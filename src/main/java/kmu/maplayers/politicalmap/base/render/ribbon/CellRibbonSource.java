@@ -37,6 +37,11 @@ import java.util.Map;
  * system's whole market list; without the gate, every empty cell in the sector would pay for a
  * contest nobody is contesting.
  *
+ * <p>The diagnostic overlay's paths are traced through the same pass, from the same sizes and the
+ * same gate, for the reason the overlay exists at all: it is worth looking at only while it is the
+ * cells' own paths it is drawing. A pass with the bands switched off holds nothing to lay them out
+ * from, so it traces nothing either - there is no band design in play for an overlay to report on.
+ *
  * <p>Named a source rather than a builder because the per-cell work is
  * {@link CellRibbonBuilder}'s: what this adds is the pass the work is done under, which is the
  * same split {@link kmu.maplayers.politicalmap.dominance.ribbon.HeldSystemRibbonSource} makes one
@@ -136,19 +141,12 @@ public final class CellRibbonSource {
      */
     public CellRibbon buildCellRibbon(String drawnSystemId, List<double[]> fillPolygon) {
 
-        // Nothing paints the cell, so there is no bloc for the band's gate to be stated against:
-        // an uninhabited cell reports no presence because presence is what a fill is, and a band
-        // only ever says what the fill beneath it leaves out.
-        if (drawnSystemId == null || !holderBySystemId.containsKey(drawnSystemId)) {
-            return CellRibbon.NONE;
-        }
-        var system = systemById.get(drawnSystemId);
-        var site = siteBySystemId.get(drawnSystemId);
+        var site = resolveBandLayoutSite(drawnSystemId);
+        var system = site == null ? null : systemById.get(drawnSystemId);
 
-        // A system the sector no longer lists, or one with no recorded site, leaves the band with
-        // nothing to count or nowhere to start from. Both are the same answer as an unpainted
-        // cell: no band, rather than one laid out from a stand-in point.
-        if (system == null || site == null) {
+        // A system the sector no longer lists leaves the band with nothing to count, which is the
+        // same answer as an unpainted cell: no band, rather than one counted off a stand-in.
+        if (system == null) {
             return CellRibbon.NONE;
         }
         return CellRibbonBuilder.buildCellRibbon(
@@ -157,6 +155,49 @@ public final class CellRibbonSource {
             planner.planSystemRibbon(system),
             style,
             nameBoxes);
+    }
+
+    /**
+     * Traces one cell's band path for the diagnostic overlay, whether or not a band was laid on
+     * it.
+     *
+     * <p>Over the cells the band pass considered rather than every cell on the map: a band is only
+     * ever laid where a bloc paints, so tracing the rest would bury the cells the overlay is asked
+     * about under a ring around every piece of empty space in the sector. What it adds to the pass
+     * above is everything downstream of the ring - a cell whose plan came back empty, and one
+     * refused the room to draw what it planned, both still show the path they would have used.
+     *
+     * @param drawnSystemId the system the cell draws as, or null for a cell with no star of its
+     *                      own - which nothing paints, so no band is ever laid on it
+     * @param fillPolygon   the cell's painted outline, the ring the path runs inside
+     * @return the cell's traced path, or {@link CellRibbonPath#NONE} where none was traced
+     */
+    public CellRibbonPath traceCellRibbonPath(String drawnSystemId, List<double[]> fillPolygon) {
+
+        var site = resolveBandLayoutSite(drawnSystemId);
+
+        return site == null
+            ? CellRibbonPath.NONE
+            : RibbonPathTracer.traceInspectedRibbonPath(fillPolygon, site, style);
+    }
+
+    // The point a cell's band is laid out from, or null on a cell no band is laid on at all.
+    //
+    // Two refusals in one answer, since both are the same fact about the cell rather than about
+    // the band. Nothing paints it, so there is no bloc for the band's gate to be stated against -
+    // an uninhabited cell reports no presence because presence is what a fill is, and a band only
+    // ever says what the fill beneath it leaves out; or it has no recorded site, leaving the band
+    // nowhere to start from rather than starting it somewhere arbitrary.
+    //
+    // Shared by the two calls above so the overlay covers exactly the cells the band pass
+    // considered: a diagnostic answering for a wider set than the pass it reports on would show
+    // paths where no band was ever going to be laid.
+    private double[] resolveBandLayoutSite(String drawnSystemId) {
+
+        if (drawnSystemId == null || !holderBySystemId.containsKey(drawnSystemId)) {
+            return null;
+        }
+        return siteBySystemId.get(drawnSystemId);
     }
 
     // A pass with the bands switched off, which the empty holding states outright: the holding is

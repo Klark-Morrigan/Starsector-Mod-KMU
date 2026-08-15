@@ -37,6 +37,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>A LunaLib field id is the key its value is stored under, so ids are frozen once
  * shipped: renaming one resets that setting for every existing player, exactly as a
  * persisted class or memory key cannot be renamed.
+ *
+ * <p>A diagnostic that defaults off is the one id worth renaming anyway. What a rename
+ * costs is a value a player set on purpose, and a toggle that draws the map's own workings
+ * is switched on to answer a question and off again after - so there is nothing to reset,
+ * and the id can be made to say what its subject actually is rather than which layer
+ * happened to want it first.
  */
 public final class KmuLunaSettings {
 

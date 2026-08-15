@@ -37,6 +37,11 @@ import java.util.Map;
  * rebuild bakes all of them through - which is what keeps an incrementally-updated band identical
  * to the one a full rebuild would lay.
  *
+ * <p>The diagnostic overlay's paths are traced in the same loop, under a toggle read once per pass
+ * like everything else a pass is settled by. Beside the bands rather than as a pass of its own
+ * because a path is traced inside the very shape the band beside it was laid in, and two passes
+ * over the same cells could only ever agree about that by both being run.
+ *
  * <p>Sampled once per pass and then asked, like the band source it holds: what a pass bakes from -
  * the cells, their geometry, and the room the names took - must not vary between the cells of one
  * pass, and holding it is what makes baking every cell and baking a handful the same operation
@@ -49,15 +54,18 @@ public final class CellRibbonsBaker {
     private final PoliticalMapTerritories territories;
     private final Map<String, String> systemIdByCellId;
     private final CellRibbonSource ribbonSource;
+    private final boolean isRibbonPathShown;
 
     private CellRibbonsBaker(
             PoliticalMapTerritories territories,
             Map<String, String> systemIdByCellId,
-            CellRibbonSource ribbonSource) {
+            CellRibbonSource ribbonSource,
+            boolean isRibbonPathShown) {
 
         this.territories = territories;
         this.systemIdByCellId = systemIdByCellId;
         this.ribbonSource = ribbonSource;
+        this.isRibbonPathShown = isRibbonPathShown;
     }
 
     /**
@@ -88,7 +96,8 @@ public final class CellRibbonsBaker {
                 territories.getViewGrouping(),
                 territories.getHolderBySystemId(),
                 geometryCache.getSiteBySystemId(),
-                resolveNameBoxes(clusterAnchors)));
+                resolveNameBoxes(clusterAnchors)),
+            KmuPoliticalMapSettings.shouldShowPoliticalMapRibbonPaths());
     }
 
     /** Bakes the band of every drawn cell, replacing whatever each was carrying. */
@@ -166,8 +175,24 @@ public final class CellRibbonsBaker {
                 fillPolygon);
 
             territories.putCellRibbon(cellId, ribbon);
+            territories.putCellRibbonPath(cellId, traceCellRibbonPath(cellId, fillPolygon));
             bakedCells += ribbon.isEmpty() ? 0 : 1;
         }
         return bakedCells;
+    }
+
+    // The cell's path for the diagnostic overlay, or nothing at all while the player has it off -
+    // which is what empties the paths a pass taken while it was on left behind, since a settings
+    // change rebuilds every cell.
+    //
+    // A second trace of the same ring rather than a reading of the one the band was laid on: what
+    // the overlay is asked about is the cells whose bands were never laid, so there is no result
+    // to read on exactly the cells it exists for. The cost is a dev toggle's, paid only while it
+    // is on, and it buys a production return type that carries nothing diagnostic.
+    private CellRibbonPath traceCellRibbonPath(String cellId, List<double[]> fillPolygon) {
+
+        return isRibbonPathShown
+            ? ribbonSource.traceCellRibbonPath(systemIdByCellId.get(cellId), fillPolygon)
+            : CellRibbonPath.NONE;
     }
 }

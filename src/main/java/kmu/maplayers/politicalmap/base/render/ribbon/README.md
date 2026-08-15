@@ -17,6 +17,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 - [Where a band sits](#where-a-band-sits)
 - [One stroke, many colours](#one-stroke-many-colours)
 - [Sizes and drawing](#sizes-and-drawing)
+- [Seeing the path a cell did not use](#seeing-the-path-a-cell-did-not-use)
 - [What is not here](#what-is-not-here)
 
 ## The three classes that build one
@@ -29,6 +30,7 @@ stating apart:
 | `CellRibbonsBaker` | the pass | drives the loop over cells and writes each band back |
 | `CellRibbonSource` | the pass | holds what a pass is settled from; answers one cell at a time |
 | `CellRibbonBuilder` | one cell | pure geometry: ring plus plan in, `CellRibbon` out |
+| `RibbonPathTracer` | one cell | pure geometry: the ring a band runs along, at whichever inset fits |
 
 `CellRibbonsBaker` runs as its own pass **after** the rest of a rebuild, because a band needs two
 things no single cell knows: the shape it runs inside, and where every cluster name on the map ended
@@ -46,8 +48,9 @@ is cells nobody paints, and the claim mechanic's count walks a system's whole ma
 
 `CellRibbonBuilder` is pure over a ring, a plan and the name boxes - no sector, no settings, no GL:
 
-1. `RingPath.traceInsetRing` insets the cell's ring by the pad plus half the width, normalises the
-   winding, and parameterises it by arc length from the cell's top centre, clockwise.
+1. `RibbonPathTracer` insets the cell's ring by the pad plus half the width through
+   `RingPath.traceInsetRing`, which normalises the winding and parameterises the ring by arc
+   length from the cell's top centre, clockwise.
 2. The name boxes are carved off that path, and the longest stretch left is the one the whole band
    goes on - see [one band, one stretch](#one-band-one-stretch).
 3. One width's worth of ring is clamped to that stretch: `min(width, stretchLength / totalUnits)`,
@@ -156,6 +159,34 @@ polyline rather than of how the readout looks.
 vertices). `CellPresenceRibbonRenderer` draws them in the `ABOVE_STARSCAPE_NEBULAE` band, so a band
 reads over the map's nebula sprites rather than being fogged by them - being fogged would cost it
 the very thing it is for.
+
+## Seeing the path a cell did not use
+
+A cell drawing nothing is the sector's ordinary state and also every one of the band's refusals,
+and on the map they are the same picture. **Show presence band paths** (Map - Dev, off by default)
+draws what is underneath that silence: the ring each cell's band would have run along, a dot at the
+point every band starts from, and the shared diagnostic ramp for what the cell's own room allowed.
+
+| Shade | `RibbonPathVerdict` | What the cell is |
+| --- | --- | --- |
+| green | `LAID_AT_PAD` | the ring held the authored inset |
+| yellow | `LAID_UNPADDED` | too narrow for the pad, and drawn anyway |
+| red | `REFUSED` | too narrow for the pad with **Always draw a planned band** off |
+
+A cell narrower than the band is wide has no path at all and so draws none, which is the one
+refusal the overlay cannot show. Nor does a shade promise a band: green says the ring offered room,
+while whether anything was laid on it is the plan's business and the names'.
+
+`RibbonPathTracer` is what makes the overlay worth looking at. Both the band pass and the overlay
+walk the same ladder there - the authored inset, then the pad given up - so the path drawn is the
+path a band would use, rather than a second reading that agrees with it by coincidence. They differ
+in one thing: the overlay traces the shallower inset even where the player has the fall switched
+off, since that cell is exactly the one it is looked at to explain.
+
+`CellRibbonsBaker` traces in the same loop as the bake, under a toggle read once per pass, and
+hands over nothing for every cell while it is off - which is also what clears the paths a pass
+taken while it was on left behind. `CellRibbonPathRenderer` draws them over the bands, so a band
+and the path it was laid on can be read against each other.
 
 ## What is not here
 

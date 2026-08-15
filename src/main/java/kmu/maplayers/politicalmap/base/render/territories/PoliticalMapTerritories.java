@@ -18,6 +18,7 @@ import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
+import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonPath;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyling;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
@@ -91,6 +92,13 @@ public final class PoliticalMapTerritories implements
     // most of the sector is cells nobody lives in - so the map is sparse against the two above
     // rather than parallel to them.
     private final Map<String, CellRibbon> ribbonByCellId = new LinkedHashMap<>();
+
+    // Each drawn cell's band path, held only while the player has the diagnostic overlay on and
+    // emptied by the same writes as the band above, for the same reason: a path traced inside one
+    // shape says nothing about the next. Kept beside the band rather than with the other overlays
+    // because its lifetime is a cell's shape, which is what this holds and what the map's other
+    // diagnostics are built without.
+    private final Map<String, CellRibbonPath> ribbonPathByCellId = new LinkedHashMap<>();
 
     // Retained derivation inputs. The holder map is mutated in place as systems flip; the
     // rest are set once at build and only read after.
@@ -193,6 +201,7 @@ public final class PoliticalMapTerritories implements
         styledCellByCellId.put(cellId, styledCell);
         fillPolygonByCellId.put(cellId, fillPolygon);
         ribbonByCellId.remove(cellId);
+        ribbonPathByCellId.remove(cellId);
     }
 
     /**
@@ -220,6 +229,29 @@ public final class PoliticalMapTerritories implements
     }
 
     /**
+     * Records one cell's band path for the diagnostic overlay, traced inside the shape that cell
+     * already holds.
+     *
+     * <p>Written by the band pass beside the band itself, so a cell can never show a path the band
+     * it carries was not laid on. A pass with the overlay switched off hands over nothing for
+     * every cell, which is what clears the paths a pass taken while it was on left behind.
+     *
+     * @param cellId     the cell this path is for
+     * @param ribbonPath the traced path, or {@link CellRibbonPath#NONE} where none was traced
+     */
+    public void putCellRibbonPath(String cellId, CellRibbonPath ribbonPath) {
+
+        // Left out of the map rather than held as an empty value, exactly as a bandless cell is:
+        // the overlay walks only the cells with a path to draw, which is none of them while the
+        // player has it off.
+        if (ribbonPath.isEmpty()) {
+            ribbonPathByCellId.remove(cellId);
+        } else {
+            ribbonPathByCellId.put(cellId, ribbonPath);
+        }
+    }
+
+    /**
      * Drops one cell entirely - it draws nothing, so it can be hovered over no more than
      * it can be seen.
      *
@@ -229,6 +261,7 @@ public final class PoliticalMapTerritories implements
         styledCellByCellId.remove(cellId);
         fillPolygonByCellId.remove(cellId);
         ribbonByCellId.remove(cellId);
+        ribbonPathByCellId.remove(cellId);
     }
 
     /**
@@ -237,6 +270,14 @@ public final class PoliticalMapTerritories implements
      */
     public Map<String, CellRibbon> getRibbonByCellId() {
         return ribbonByCellId;
+    }
+
+    /**
+     * @return each cell the diagnostic overlay has a band path for, keyed by cell id; empty while
+     *         the player has the overlay off
+     */
+    public Map<String, CellRibbonPath> getRibbonPathByCellId() {
+        return ribbonPathByCellId;
     }
 
     /**

@@ -12,6 +12,7 @@ import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverHighlightSource;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellPresenceRibbonRenderer;
+import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonPathRenderer;
 import kmu.settings.KmuPoliticalMapSettings;
 
 import org.apache.log4j.Logger;
@@ -20,9 +21,9 @@ import org.apache.log4j.Logger;
  * Composes the political map's map-overlay layers over the {@link PoliticalMapCache}'s current
  * draw lists, bottom to top: the base view (the normal territories, or the debug border-tracing
  * overlay when it has replaced them), then the hover highlight, then the cluster-anchor debug
- * overlay, then the per-cell presence bands, then the faction names. The two debug facilities
- * compose rather than one hiding the other - the anchor overlay layers over whichever base view
- * drew - and each layer draws only under its own toggle.
+ * overlay, then the per-cell presence bands, then the debug band-path overlay across them, then
+ * the faction names. The debug facilities compose rather than one hiding the other - the anchor
+ * overlay layers over whichever base view drew - and each layer draws only under its own toggle.
  *
  * <p>That stack is emitted one band at a time, because the map can put its own drawing between two
  * of the layers: the map holds its own nebula icons, drawn over the sector as a large sprite under
@@ -129,6 +130,15 @@ final class PoliticalMapOverlayRenderer {
 
             CellPresenceRibbonRenderer.renderOnMap(
                 cache.getTerritories().getRibbonByCellId().values(),
+                factor,
+                alphaMult);
+
+            // Over the bands it explains, so a band and the path it was laid on read against each
+            // other. Gated by the paths themselves rather than by a settings read here: the bake
+            // holds a path only while the player has the overlay on, so an off toggle arrives as
+            // an empty map.
+            CellRibbonPathRenderer.renderOnMap(
+                cache.getTerritories().getRibbonPathByCellId().values(),
                 factor,
                 alphaMult);
         }

@@ -62,7 +62,7 @@ public final class CellRibbonBuilder {
         if (totalLengthUnits <= 0) {
             return CellRibbon.NONE;
         }
-        var path = traceBandPath(ring, topAnchor, style);
+        var path = RibbonPathTracer.traceLaidRibbonPath(ring, topAnchor, style);
 
         if (path.isEmpty()) {
             return CellRibbon.NONE;
@@ -101,37 +101,6 @@ public final class CellRibbonBuilder {
         var ribbonStart = path.placeSpanNearestStart(stretch, totalLengthUnits * lengthUnitWorld);
 
         return new CellRibbon(strokeSegments(path, plan, ribbonStart, lengthUnitWorld, style));
-    }
-
-    // The ring walked at the inset the player authored - or, on a cell too narrow to take that
-    // inset, at the shallowest one a band can be traced at while still sitting inside the ring.
-    //
-    // The pad is what gives way, never the half width: the pad is a look, while the half width is
-    // what puts the band's near edge on the border rather than over it. A cell too narrow even for
-    // that is one narrower than the band is wide, where there is no band to draw rather than a
-    // tighter one, and it comes back empty however the setting stands.
-    private static RingPath traceBandPath(
-            List<double[]> ring,
-            double[] topAnchor,
-            RibbonStyle style) {
-
-        var path = traceRingAtInset(ring, topAnchor, style, style.computeCentrelineInset());
-
-        if (!path.isEmpty() || !style.isBandAlwaysDrawn()) {
-            return path;
-        }
-        return traceRingAtInset(ring, topAnchor, style, style.computeUnpaddedCentrelineInset());
-    }
-
-    // The ring walked at one named inset, so the two the fallback chooses between differ in the
-    // one thing that is different about them.
-    private static RingPath traceRingAtInset(
-            List<double[]> ring,
-            double[] topAnchor,
-            RibbonStyle style,
-            double insetDistance) {
-
-        return RingPath.traceInsetRing(ring, insetDistance, style.miterSpikeLimit(), topAnchor);
     }
 
     // The one stretch of ring the whole band is laid on: the longest the names left, with the
