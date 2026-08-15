@@ -39,7 +39,6 @@ final class SectorSvgWriter {
     private static final String NEUTRAL_COLOUR = "#555";
 
     private static final double CELL_STROKE = 30.0;
-    private static final double RING_STROKE = 90.0;
     private static final double SITE_RADIUS = 120.0;
 
     // Spreads owner colours around the hue circle by id hash, so neighbouring owners are
@@ -142,7 +141,7 @@ final class SectorSvgWriter {
             if (geometry.ownerByCellId().containsKey(entry.getKey())) {
                 continue;
             }
-            appendPolygon(svg, entry.getValue().fillPolygon(), "none", NEUTRAL_COLOUR, RING_STROKE);
+            appendPolygon(svg, entry.getValue().fillPolygon(), "none", NEUTRAL_COLOUR, ViewerPainting.RING_STROKE);
         }
     }
 
@@ -185,7 +184,7 @@ final class SectorSvgWriter {
                 .append("\" stroke=\"")
                 .append(colour)
                 .append("\" stroke-width=\"")
-                .append(fmt(RING_STROKE))
+                .append(fmt(ViewerPainting.RING_STROKE))
                 .append("\"/>\n");
         }
     }
@@ -205,9 +204,12 @@ final class SectorSvgWriter {
                 Coastlines.collectPoints(coast),
                 "none",
                 formatColour(ViewerSettings.COASTLINE_DEFAULT),
-                RING_STROKE);
+                ViewerPainting.RING_STROKE);
         }
-        appendPenetrations(svg, traced.union(), Coastlines.findPenetrations(traced));
+        appendPenetrations(
+            svg,
+            traced.union(),
+            Coastlines.findVisibleCrossings(traced, ViewerPainting.RING_STROKE));
     }
 
     // The runs that go inside a cell, and the cells they go inside, both called out in their
@@ -227,7 +229,7 @@ final class SectorSvgWriter {
                     union.sites().get(circle),
                     union.reach(),
                     formatColour(ViewerSettings.PIERCED_CELL_DEFAULT),
-                    RING_STROKE);
+                    ViewerPainting.RING_STROKE);
             }
         }
 

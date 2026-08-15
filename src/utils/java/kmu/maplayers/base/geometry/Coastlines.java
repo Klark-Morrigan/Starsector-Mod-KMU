@@ -69,6 +69,9 @@ final class Coastlines {
     // every one of them would count itself as crossing the two cells it runs between.
     private static final double TOUCHING_TOLERANCE = 1;
 
+    // A stroked line reaches half its width either side of the edge it draws.
+    private static final double DRAWN_EITHER_SIDE = 2;
+
     private Coastlines() {
     }
 
@@ -298,6 +301,39 @@ final class Coastlines {
      */
     static int countPenetratingRuns(TracedCoasts traced) {
         return findPenetrations(traced).size();
+    }
+
+    /**
+     * The crossings deep enough to be seen, which are the only ones worth marking.
+     *
+     * <p>{@link #findPenetrations} answers a question about the geometry and answers it down
+     * to a unit, because that is what the construction's own clearance test needs. Marking
+     * what it finds is a different question: a cell's border is drawn as a line of some width,
+     * so a run less than half of that inside the border is UNDER the line that draws it, and
+     * there is no pixel anywhere showing it on the wrong side of anything.
+     *
+     * <p>Kept apart rather than folded into one threshold. Loosening the construction's test
+     * would stop it trying to do better; marking at the construction's threshold puts marks on
+     * a map where nothing can be seen, and a reader who checks two of those stops checking the
+     * third. Both are wrong in the same way and only one of them is visible.
+     *
+     * @param traced       what {@link #traceSectorCoasts} handed back
+     * @param borderStroke how wide a cell's border is drawn
+     * @return the crossings that show, deepest first
+     */
+    static List<Penetration> findVisibleCrossings(TracedCoasts traced, double borderStroke) {
+
+        var visible = new ArrayList<Penetration>();
+
+        for (var crossing : findPenetrations(traced)) {
+
+            if (crossing.depth() > borderStroke / DRAWN_EITHER_SIDE) {
+                visible.add(crossing);
+            }
+        }
+        visible.sort(java.util.Comparator.comparingDouble(Penetration::depth).reversed());
+
+        return visible;
     }
 
     /**

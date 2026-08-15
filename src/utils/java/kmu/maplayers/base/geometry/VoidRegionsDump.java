@@ -632,11 +632,11 @@ final class VoidRegionsDump {
         System.out.printf(
             Locale.ROOT,
             "smoothed outer edges: %d, over %d stretches of coast, drawn through %d points; "
-                + "%d runs penetrate a cell, worst by %.1f (both have to be 0)%n",
+                + "%d runs visibly cross a cell, worst reach in %.1f (both have to be 0)%n",
             traced.coasts().size(),
             Coastlines.countCoastMarks(traced),
             points,
-            Coastlines.countPenetratingRuns(traced),
+            Coastlines.findVisibleCrossings(traced, ViewerPainting.RING_STROKE).size(),
             Coastlines.measureDeepestIncursion(traced));
 
         System.out.printf(

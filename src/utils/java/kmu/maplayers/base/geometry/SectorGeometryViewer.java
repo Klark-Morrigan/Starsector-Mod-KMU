@@ -127,7 +127,6 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     private static final Color READOUT_BACKDROP = new Color(0x00, 0x00, 0x00, 0xc0);
 
     private static final float CELL_STROKE = 30f;
-    private static final float RING_STROKE = 90f;
 
     private static final int OPAQUE_ALPHA = 255;
 
@@ -539,7 +538,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
                 g2.fill(ViewerPainting.buildPath(convertEdgesToRing(cell)));
             }
 
-            g2.setStroke(new BasicStroke(RING_STROKE));
+            g2.setStroke(new BasicStroke(ViewerPainting.RING_STROKE));
 
             // Unowned per the geometry's own keys, not the fixture's: a cell the build
             // grouped or unowned must be drawn as the build left it.

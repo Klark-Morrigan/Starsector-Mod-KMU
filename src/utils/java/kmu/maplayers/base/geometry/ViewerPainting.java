@@ -26,6 +26,11 @@ final class ViewerPainting {
     // black, and it has to stay findable at the zoom where a whole pocket fits on screen.
     static final float SPAN_STROKE = 120f;
 
+    // How wide a cell's own border is drawn. Shared because both drawings of this map use it
+    // and because it is not only a look: it is how far either side of the true edge the drawn
+    // edge reaches, which decides what a reader can see being on the wrong side of it.
+    static final float RING_STROKE = 90f;
+
     static final int OPAQUE_ALPHA = 255;
 
     private static final int HUE_RANGE = 360;

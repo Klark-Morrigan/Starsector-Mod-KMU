@@ -65,7 +65,8 @@ final class CoastlinesOverlay {
                 settings.coastSkipMultiple,
                 settings.coastMaxSkips));
 
-        penetrations = Coastlines.findPenetrations(traced);
+        penetrations = Coastlines.findVisibleCrossings(
+            traced, ViewerPainting.RING_STROKE);
     }
 
     /**
