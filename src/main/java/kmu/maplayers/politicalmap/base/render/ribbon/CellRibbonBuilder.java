@@ -11,9 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Lays one cell's planned band around that cell's own ring: the path it runs along, how much of
- * that path the cluster names leave it, how long a width is worth on what remains, and the
- * triangles each run comes out as.
+ * Lays one cell's planned band around that cell's own ring: the path it runs along, the longest
+ * stretch of that path the cluster names leave it, how long a width is worth on that stretch, and
+ * the triangles each run comes out as.
  *
  * <p>Everything the plan states is proportional - a run is so many widths long - and everything
  * this settles is the cell's own: where the ring lets a band run, and how much of that ring one
@@ -77,8 +77,13 @@ public final class CellRibbonBuilder {
         // its neighbours says something false about the system. Carved off the path, what a name
         // costs is room, which the clamp below already knows how to answer.
         var clearArcs = path.findClearArcs(nameBoxes);
+
+        if (clearArcs.isEmpty()) {
+            return CellRibbon.NONE;
+        }
+        var stretch = selectLongestClearStretch(clearArcs, path.getPerimeter());
         var lengthUnitWorld = computeLengthUnit(
-            sumArcLengths(clearArcs),
+            stretch[1] - stretch[0],
             totalLengthUnits,
             style);
 
@@ -88,12 +93,73 @@ public final class CellRibbonBuilder {
         if (lengthUnitWorld < Limits.MIN_EDGE_LENGTH) {
             return CellRibbon.NONE;
         }
-        return new CellRibbon(strokeSegments(path, plan, clearArcs, lengthUnitWorld, style));
+        return new CellRibbon(strokeSegments(path, plan, stretch[0], lengthUnitWorld, style));
+    }
+
+    // The one stretch of ring the whole band is laid on: the longest the names left, with the
+    // rest of the ring staying bare.
+    //
+    // A band scattered round the ring in pieces is not the readout it looks like: a reader
+    // cannot tell one run interrupted by a name from two runs of one colour, so a band split
+    // across stretches loses the very proportions the carve was protecting and litters the cell
+    // for it. One stretch means one shape, and a cell can be read at a glance again - at the
+    // price of spending only part of a ring the names cut into halves, which is the cheaper of
+    // the two losses.
+    private static double[] selectLongestClearStretch(
+            List<double[]> clearArcs,
+            double perimeter) {
+
+        double[] longest = null;
+
+        for (var stretch : fuseStretchAcrossTheStart(clearArcs, perimeter)) {
+            if (longest == null || stretch[1] - stretch[0] > longest[1] - longest[0]) {
+                longest = stretch;
+            }
+        }
+        return longest;
+    }
+
+    // The clear stretches with the one straddling the path's start read as the single stretch it
+    // is: the last and the first fused into an interval running past the perimeter.
+    //
+    // The carve hands back intervals that do not wrap, which is what makes "a layout beginning at
+    // the start begins at the first interval" true and is worth keeping. But a cell whose name
+    // sits anywhere but its top centre has its longest clear run arrive as two of those intervals,
+    // so choosing the longest without fusing them first would judge that cell on whichever half
+    // happened to be bigger. Fused here rather than in the carve, so only the reader that needs a
+    // wrapping stretch pays for one.
+    private static List<double[]> fuseStretchAcrossTheStart(
+            List<double[]> clearArcs,
+            double perimeter) {
+
+        // A single interval is either the whole ring or a stretch with covered ring at both ends;
+        // neither straddles the start, and fusing one with itself would double it.
+        if (clearArcs.size() < 2) {
+            return clearArcs;
+        }
+        var first = clearArcs.get(0);
+        var last = clearArcs.get(clearArcs.size() - 1);
+
+        // Two intervals meet across the start only by reaching it: one opening the path and one
+        // closing it. Anything else leaves the start itself under a name, where there is no
+        // stretch to fuse.
+        if (first[0] > Limits.MIN_EDGE_LENGTH || last[1] < perimeter - Limits.MIN_EDGE_LENGTH) {
+            return clearArcs;
+        }
+        var fused = new ArrayList<>(clearArcs.subList(1, clearArcs.size() - 1));
+
+        fused.add(new double[] {last[0], first[1] + perimeter});
+
+        return fused;
     }
 
     // How much of the ring one width is worth on this cell: the authored width, unless the whole
-    // band would then outrun the room the ring has left, in which case exactly as much as makes
-    // it fit.
+    // band would then outrun the stretch it is laid on, in which case exactly as much as makes it
+    // fit.
+    //
+    // Measured against that one stretch rather than against every clear stretch together, since
+    // the ring the band is not laid on is ring the band does not spend. A cell whose name covers
+    // much of its outline therefore compresses harder, which is the honest number.
     //
     // Compressing the length while leaving the width alone is deliberate. The band says its piece
     // through the proportions between its runs, and shortening every run by one factor keeps all
@@ -101,152 +167,64 @@ public final class CellRibbonBuilder {
     // band instead would fade the whole readout on precisely the cells carrying the most to say,
     // and would leave the path traced at an inset the band no longer matches.
     private static double computeLengthUnit(
-            double clearLength,
+            double stretchLength,
             int totalLengthUnits,
             RibbonStyle style) {
 
-        return Math.min(style.widthWorld(), clearLength / totalLengthUnits);
+        return Math.min(style.widthWorld(), stretchLength / totalLengthUnits);
     }
 
-    // How much band the cell's ring has left to offer, across every stretch of it no name covers.
-    private static double sumArcLengths(List<double[]> clearArcs) {
-
-        var length = 0.0;
-
-        for (var arc : clearArcs) {
-            length += arc[1] - arc[0];
-        }
-        return length;
-    }
-
-    // The band stroked one clear stretch of ring at a time, each stretch in one piece and cut
-    // into its runs afterwards.
+    // The plan laid end to end along the chosen stretch and stroked as the one band it is, each
+    // run coming back out of the stroke in its own colour.
     //
-    // The band is one shape whatever it is coloured in: stroking each run on its own leaves
-    // every boundary between two runs a pair of square ends butted together, which opens a wedge
+    // The band is one shape whatever it is coloured in: stroking each run on its own leaves every
+    // boundary between two runs a pair of square ends butted together, which opens a wedge
     // wherever that boundary lands on a corner of the path - and a cell's ring is rounded, so
-    // most boundaries land on one. Stroked once, a boundary is a point the band turns at like
-    // any other. Where a name interrupts the ring the band genuinely stops and starts again, so
-    // each stretch is its own stroke and its two ends are square - which is what an interruption
-    // should look like.
+    // most boundaries land on one. Stroked once, a boundary is a point the band turns at like any
+    // other, and only the band's own two ends are square.
     private static List<RibbonBand> strokeSegments(
             RingPath path,
             RibbonPlan plan,
-            List<double[]> clearArcs,
+            double startArcLength,
             double lengthUnitWorld,
             RibbonStyle style) {
 
-        var bands = new ArrayList<RibbonBand>(plan.segments().size());
+        var spans = new ArrayList<List<double[]>>(plan.segments().size());
+        var cursor = startArcLength;
 
-        for (var pieces : collectPiecesByArc(plan, clearArcs, lengthUnitWorld)) {
-            appendStrokedPieces(bands, path, plan, pieces, style);
+        // A run's stretch carries the corners the path turns at within it, not just its two ends,
+        // so a run spanning a corner of the cell turns with it rather than cutting across.
+        for (var segment : plan.segments()) {
+
+            var runEnd = cursor + segment.lengthUnits() * lengthUnitWorld;
+
+            spans.add(path.collectPointsBetween(cursor, runEnd));
+            cursor = runEnd;
         }
-        return bands;
-    }
-
-    // The plan laid end to end along the clear stretches, as the pieces each stretch carries.
-    //
-    // A run reaching the end of one stretch carries on at the start of the next rather than
-    // being cut short there: the plan is a proportional readout, so a run interrupted by a name
-    // has to keep its whole length or it says the wrong thing about the system. It draws as two
-    // pieces of one colour, which is what the interruption looks like from the reader's side.
-    private static List<List<RibbonPiece>> collectPiecesByArc(
-            RibbonPlan plan,
-            List<double[]> clearArcs,
-            double lengthUnitWorld) {
-
-        var piecesByArc = new ArrayList<List<RibbonPiece>>(clearArcs.size());
-
-        for (var arc = 0; arc < clearArcs.size(); arc++) {
-            piecesByArc.add(new ArrayList<>());
-        }
-        // There is always a stretch to start on: a cell whose ring left none was answered before
-        // the plan was ever laid out, since one width would then be worth nothing.
-        var arcIndex = 0;
-        var cursor = clearArcs.get(0)[0];
-
-        for (var segment = 0; segment < plan.segments().size(); segment++) {
-
-            var remaining = plan.segments().get(segment).lengthUnits() * lengthUnitWorld;
-
-            while (remaining > Limits.MIN_EDGE_LENGTH && arcIndex < clearArcs.size()) {
-
-                var arcEnd = clearArcs.get(arcIndex)[1];
-                var taken = Math.min(remaining, arcEnd - cursor);
-
-                if (taken > Limits.MIN_EDGE_LENGTH) {
-                    piecesByArc
-                        .get(arcIndex)
-                        .add(new RibbonPiece(segment, cursor, cursor + taken));
-                }
-                cursor += taken;
-                remaining -= taken;
-
-                // The stretch is spent, so the rest of this run - and everything after it -
-                // continues on the next one. The clamp above already made the plan fit the
-                // stretches together, so running out of them altogether is rounding rather
-                // than a plan that was too long, and the walk simply stops.
-                if (arcEnd - cursor <= Limits.MIN_EDGE_LENGTH) {
-                    arcIndex++;
-
-                    if (arcIndex < clearArcs.size()) {
-                        cursor = clearArcs.get(arcIndex)[0];
-                    }
-                }
-            }
-        }
-        return piecesByArc;
-    }
-
-    // One clear stretch's pieces stroked as the single band they are, each piece coming back out
-    // of it in its own run's colour.
-    private static void appendStrokedPieces(
-            List<RibbonBand> bands,
-            RingPath path,
-            RibbonPlan plan,
-            List<RibbonPiece> pieces,
-            RibbonStyle style) {
-
-        // A stretch of ring the plan never reached - it ran out on an earlier one - carries
-        // nothing to stroke, and a stroke of nothing is not a band the cell should hold.
-        if (pieces.isEmpty()) {
-            return;
-        }
-        var spans = new ArrayList<List<double[]>>(pieces.size());
-
-        // A piece's stretch carries the corners the path turns at within it, not just its two
-        // ends, so a run spanning a corner of the cell turns with it rather than cutting across.
-        for (var piece : pieces) {
-            spans.add(path.collectPointsBetween(piece.startArcLength(), piece.endArcLength()));
-        }
-        var strokedSpans = PolylineBands.strokeSpansToTriangles(
+        return collectStrokedBands(plan, PolylineBands.strokeSpansToTriangles(
             spans,
             style.widthWorld(),
-            style.miterSpikeLimit());
-
-        // One band per piece, each in the colour of the run the piece came from - read off the
-        // piece rather than off its position, since a run interrupted by a name is two pieces and
-        // a run of no length is none at all, so the two lists have not lined up since the names
-        // started cutting the ring.
-        for (var piece = 0; piece < strokedSpans.size(); piece++) {
-            bands.add(new RibbonBand(
-                plan.segments().get(pieces.get(piece).segmentIndex()).colour(),
-                GlVertexRuns.flattenVertices(strokedSpans.get(piece))));
-        }
+            style.miterSpikeLimit()));
     }
 
-    /**
-     * One run's share of one clear stretch of ring: which run of the plan it belongs to, and
-     * where along the path it begins and ends.
-     *
-     * <p>A run and a piece are not the same thing once the names have cut the ring up - a run
-     * interrupted by one is two pieces, and a stretch of ring carries pieces of several runs -
-     * so the piece carries the run it came from rather than the two being read off each other
-     * by position.
-     */
-    private record RibbonPiece(
-        int segmentIndex,
-        double startArcLength,
-        double endArcLength) {
+    // One band per run that drew something, in the run's own colour. A run of no length strokes
+    // to nothing - a plan may carry one - and it is dropped rather than kept as an empty band,
+    // since the renderer's work is per band and an empty one is a draw call for no triangles.
+    private static List<RibbonBand> collectStrokedBands(
+            RibbonPlan plan,
+            List<List<double[]>> strokedSpans) {
+
+        var bands = new ArrayList<RibbonBand>(strokedSpans.size());
+
+        for (var segment = 0; segment < strokedSpans.size(); segment++) {
+
+            if (strokedSpans.get(segment).isEmpty()) {
+                continue;
+            }
+            bands.add(new RibbonBand(
+                plan.segments().get(segment).colour(),
+                GlVertexRuns.flattenVertices(strokedSpans.get(segment))));
+        }
+        return bands;
     }
 }

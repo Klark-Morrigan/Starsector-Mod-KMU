@@ -27,17 +27,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * on a corner of the cell, the band turns through that corner instead of stopping square either
  * side of it - the difference between stroking the whole band once and stroking it a run at a
  * time, and invisible to every other case here. And a run of no length lays nothing at all, with
- * the runs after it keeping their own colours: each piece of band carries the run it came from,
- * so what is drawn and what colours it cannot fall out of step however many pieces a run takes.
+ * the runs after it keeping their own colours: a run that strokes to nothing drops out of what is
+ * drawn without the runs behind it sliding onto each other's colours as the gap closes.
  *
  * <p>The remaining cases are the two ends of the size question the design answers deliberately:
  * a band longer than its cell's outline compresses rather than being cut short, and a cell with
  * no room for a band at all draws none rather than one crushed against its own border.
  *
- * <p>The names' cases are the same question asked of the room a cluster name takes: the band
- * stops where a name starts and resumes past it, a run interrupted that way keeps its whole
- * length across the two pieces rather than being cut short by the interruption, and a cell whose
- * ring is wholly under a name draws nothing.
+ * <p>The names' cases are the same question asked of the room a cluster name takes: the whole
+ * band goes on the longest stretch the names leave and the rest of the ring stays bare, the
+ * stretch straddling the band's own start is one stretch rather than the two intervals the carve
+ * states it as, the clamp measures against that one stretch rather than against every stretch
+ * together, and a cell whose ring is wholly under a name draws nothing.
  */
 final class CellRibbonBuilderTest {
 
@@ -64,12 +65,35 @@ final class CellRibbonBuilderTest {
     private static final List<List<double[]>> NO_NAMES = List.of();
 
     // A name lying across the cell's top edge, 400 to 800 along the band's path from its start
-    // above the site - so the band meets it a run in and is clear of it a run later.
-    private static final List<List<double[]>> NAME_ACROSS_THE_TOP_EDGE = List.of(List.of(
+    // above the site - so the band meets it a run in.
+    private static final List<double[]> NAME_ACROSS_THE_TOP_EDGE = List.of(
         new double[] {2400.0, 3400.0},
         new double[] {2800.0, 3400.0},
         new double[] {2800.0, 3800.0},
-        new double[] {2400.0, 3800.0}));
+        new double[] {2400.0, 3800.0});
+
+    // A second name on the same edge but 11800 to 12200 along - a thousand short of the band's
+    // start, which the path reaches at 12800. The two together leave the ring in three stretches:
+    // a long one between them, and the two short ones either side of the start that are one
+    // stretch straddling it.
+    private static final List<double[]> NAME_JUST_BEFORE_THE_START = List.of(
+        new double[] {1000.0, 3400.0},
+        new double[] {1400.0, 3400.0},
+        new double[] {1400.0, 3800.0},
+        new double[] {1000.0, 3800.0});
+
+    private static final List<List<double[]>> NAMES_EITHER_SIDE_OF_THE_START =
+        List.of(NAME_ACROSS_THE_TOP_EDGE, NAME_JUST_BEFORE_THE_START);
+
+    // A name across the cell's bottom edge, 6000 to 6400 along - the far side of the ring from
+    // the band's start, so what it leaves clear is one stretch running from it round past that
+    // start and back again. The carve states that stretch as two intervals, one at each end of
+    // the path, and it is the longest thing on the cell only once they are read as one.
+    private static final List<List<double[]>> NAME_ACROSS_THE_BOTTOM_EDGE = List.of(List.of(
+        new double[] {2000.0, 200.0},
+        new double[] {2400.0, 200.0},
+        new double[] {2400.0, 600.0},
+        new double[] {2000.0, 600.0}));
 
     // A name across the whole cell - a long name over a small cluster, which leaves its cell's
     // ring with no stretch clear anywhere.
@@ -95,9 +119,10 @@ final class CellRibbonBuilderTest {
     // the cell's top edge, so what it strokes is a plain quad with no corner in it.
     private static final int ONE_WIDTH = 1;
 
-    // Two widths of run, which is longer than the stretch of ring the name below leaves before
-    // it - so a run of this length has to be drawn in two pieces or lose half of itself.
-    private static final int TWO_WIDTHS = 2;
+    // Thirty widths of run: 12000 units at full size, which outruns the 11000-unit stretch the
+    // two names above leave between them but not the 12000 those names leave in total. So it is
+    // exactly as long as tells a clamp measuring the chosen stretch from one measuring the ring.
+    private static final int RUN_OUTRUNNING_THE_STRETCH = 30;
 
     // A plan far longer than any cell's outline can hold at full size: sixty runs of three widths
     // is 24000 units of band around an outline of 12800.
@@ -204,8 +229,8 @@ final class CellRibbonBuilderTest {
 
         @Test
         void keepsEveryRunsOwnColourWhereARunInTheMiddleDrawsNothing() {
-            // A run drawing nothing lays no piece, and the runs after it are unaffected: each
-            // piece carries the run it came from, so dropping one shifts no other run's colour.
+            // A run drawing nothing lays no band, and the runs after it are unaffected: a run's
+            // colour is read where its own stroke came back, so dropping one shifts no other's.
             // The last band's far end at x=2800 is what says the geometry stayed with its colour
             // rather than both shifting together.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
@@ -256,11 +281,13 @@ final class CellRibbonBuilderTest {
         }
 
         @Test
-        void breaksTheBandWhereANameLiesAcrossTheRing() {
-            // The name covers the ring from 400 to 800 along, so the first run fills the stretch
-            // up to it and the second begins on the far side rather than under the word. What
-            // makes this the carve and not a coincidence is the far end of the second run: at
-            // 3200 it is one full run past where the name ends, so nothing of it was eaten.
+        void laysTheWholeBandOnTheLongestStretchTheNamesLeave() {
+            // Two names cut the ring into a long stretch and a short one. The whole band goes on
+            // the long one, in plan order from its start at 800 - so the first run runs 2800 to
+            // 3200 along the cell's top edge and the second carries on to the corner at 3600.
+            // The short stretch stays bare, which is what its own start at 1400 says: a band
+            // scattered over both stretches would have put a piece there, and a reader cannot
+            // tell such a piece from a run of its own.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
                 CELL_SITE,
@@ -268,62 +295,65 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, ONE_WIDTH))),
                 STYLE,
-                NAME_ACROSS_THE_TOP_EDGE);
+                NAMES_EITHER_SIDE_OF_THE_START);
 
             assertThat(ribbon.bands())
                 .extracting(RibbonBand::colour)
                 .containsExactly(BRIGHT, DARK);
 
-            assertThat(hasCorner(ribbon.bands().get(0), 2400.0, 3800.0))
+            assertThat(hasCorner(ribbon.bands().get(0), 2800.0, 3800.0))
                 .isTrue();
-            assertThat(hasCorner(ribbon.bands().get(1), 2800.0, 3800.0))
+            assertThat(hasCorner(ribbon.bands().get(1), 3600.0, 3800.0))
                 .isTrue();
-            assertThat(hasCorner(ribbon.bands().get(1), 3200.0, 3800.0))
-                .isTrue();
+            assertThat(hasCorner(ribbon.bands().get(0), 1400.0, 3800.0))
+                .isFalse();
+            assertThat(hasCorner(ribbon.bands().get(1), 1400.0, 3800.0))
+                .isFalse();
         }
 
         @Test
-        void keepsAnInterruptedRunsWholeLengthAcrossThePiecesItDrawsAs() {
-            // A single run meeting a name: it carries on past it rather than stopping there, so
-            // the two pieces together are as long as the run would have been. A run's length is
-            // what says how many colonies a bloc holds, so a run cut short by a word would say
-            // something false about the system - which is why the names carve the ring and not
-            // the plan.
-            var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                CELL_SITE,
-                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, TWO_WIDTHS))),
-                STYLE,
-                NAME_ACROSS_THE_TOP_EDGE);
-
-            assertThat(ribbon.bands())
-                .extracting(RibbonBand::colour)
-                .containsExactly(BRIGHT, BRIGHT);
-
-            // 400 of the run before the name and 400 after it: the second piece reaches 3200,
-            // where a run cut short at the name would have stopped at 2800.
-            assertThat(hasCorner(ribbon.bands().get(0), 2400.0, 3800.0))
-                .isTrue();
-            assertThat(hasCorner(ribbon.bands().get(1), 3200.0, 3800.0))
-                .isTrue();
-        }
-
-        @Test
-        void leavesAStretchOfRingBareWhereThePlanRanOutBeforeReachingIt() {
-            // The band stops where the plan does, not where the ring does. This one run fills
-            // exactly the stretch up to the name, so the long stretch beyond it carries nothing -
-            // and a pass that stroked a stretch it laid no runs on would put an uncoloured band
-            // round most of the cell.
+        void readsTheStretchStraddlingTheStartAsOneStretch() {
+            // One name on the far side of the ring leaves one clear stretch, and the carve states
+            // it as two intervals because it runs through the path's own origin. Read as two, the
+            // longer of them starts at the band's start above the site and the band would begin
+            // there; read as the one stretch it is, the band begins where the name lets the ring
+            // resume, at (2000,400) on the cell's bottom edge.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
                 CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
-                NAME_ACROSS_THE_TOP_EDGE);
+                NAME_ACROSS_THE_BOTTOM_EDGE);
 
             assertThat(ribbon.bands())
                 .singleElement()
-                .satisfies(band -> assertThat(hasCorner(band, 2400.0, 3800.0)).isTrue());
+                .satisfies(band -> {
+                    assertThat(hasCorner(band, 2000.0, 600.0)).isTrue();
+                    assertThat(hasCorner(band, 1600.0, 600.0)).isTrue();
+                    assertThat(hasCorner(band, 2000.0, 3800.0)).isFalse();
+                });
+        }
+
+        @Test
+        void compressesAgainstTheStretchItLaysOnRatherThanTheRingTheNamesLeaveInTotal() {
+            // The run is 12000 units at full size, against a chosen stretch of 11000 and 12000 of
+            // clear ring in total. Measured against the ring it would draw at full size and
+            // overrun the stretch by a whole name's worth; measured against the stretch it
+            // compresses to fit, ending at 1000 along the cell's top edge where the second name
+            // begins. The ring the band is not laid on is ring the band does not get to spend.
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                CELL_SITE,
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
+                STYLE,
+                NAMES_EITHER_SIDE_OF_THE_START);
+
+            assertThat(ribbon.bands())
+                .singleElement()
+                .satisfies(band -> {
+                    assertThat(hasCorner(band, 1000.0, 3800.0)).isTrue();
+                    assertThat(hasCorner(band, 2000.0, 3800.0)).isFalse();
+                });
         }
 
         @Test

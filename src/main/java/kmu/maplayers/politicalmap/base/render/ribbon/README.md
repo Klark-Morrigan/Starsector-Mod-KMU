@@ -12,6 +12,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 - [The three classes that build one](#the-three-classes-that-build-one)
 - [Laying a band inside a ring](#laying-a-band-inside-a-ring)
 - [Keeping clear of the names](#keeping-clear-of-the-names)
+- [One band, one stretch](#one-band-one-stretch)
 - [One stroke, many colours](#one-stroke-many-colours)
 - [Sizes and drawing](#sizes-and-drawing)
 - [What is not here](#what-is-not-here)
@@ -45,10 +46,11 @@ is cells nobody paints, and the claim mechanic's count walks a system's whole ma
 
 1. `RingPath.traceInsetRing` insets the cell's ring by the pad plus half the width, normalises the
    winding, and parameterises it by arc length from the cell's top centre, clockwise.
-2. The name boxes are carved off that path, leaving the clear stretches.
-3. One width's worth of ring is clamped to what those stretches leave:
-   `min(width, clearLength / totalUnits)`, so a crowded cell - or one much of whose ring is under a
-   name - compresses rather than losing a bloc off the end.
+2. The name boxes are carved off that path, and the longest stretch left is the one the whole band
+   goes on - see [one band, one stretch](#one-band-one-stretch).
+3. One width's worth of ring is clamped to that stretch: `min(width, stretchLength / totalUnits)`,
+   so a crowded cell - or one much of whose ring is under a name - compresses rather than losing a
+   bloc off the end.
 4. Below `Limits.MIN_EDGE_LENGTH` the cell says nothing at all. That covers a cell smaller than the
    pad and width together, one narrowed to a neck, and one whose ring the names have eaten.
 
@@ -58,8 +60,8 @@ through the proportions between its runs, so shortening every run by one factor 
 ## Keeping clear of the names
 
 The names are carved off the **path**, never off the plan. A run's length is the readout, so a run
-cut short by a word would say something false about the system, where a run interrupted by one
-simply draws as two pieces of its own colour. Carving the path first also means the clamp above
+cut short by a word would say something false about the system, where a name taken off the path
+costs the band room rather than proportion. Carving the path first also means the clamp above
 resizes against what room is left.
 
 Every name on the map is carved off every cell, since a name sits wherever its own cluster is
@@ -77,17 +79,28 @@ search accepted, which reaches past the words by however much it beat them, so a
 of it gives up ring to a name the reader cannot see there. Either way the builder is handed world
 boxes and carves the same way.
 
+## One band, one stretch
+
+The names can cut a ring into several clear stretches, and the band takes the longest of them; the
+rest of the ring stays bare. A band scattered over the stretches would not read as the proportional
+thing it is - a reader cannot tell one run interrupted by a word from two runs of one colour - so
+the split loses the very readout the carve protects and litters the cell for it. The cost is that a
+ring cut into two near-equal halves spends one of them.
+
+The stretch running through the path's own start arrives from `RingPath.findClearArcs` as two
+intervals, one at each end, since that carve deliberately does not wrap. They are fused here into
+`[lastStart, firstEnd + perimeter]`, which `RingPath.collectPointsBetween` walks as it stands -
+without the fuse, every cell whose name sits anywhere but its top centre would be judged on
+whichever half of its longest stretch happened to be bigger.
+
 ## One stroke, many colours
 
-A band is one shape whatever it is coloured in. Each clear stretch is stroked **once** through
+A band is one shape whatever it is coloured in. It is stroked **once** through
 `PolylineBands.strokeSpansToTriangles` and cut into its runs afterwards, rather than each run being
 stroked on its own: separate strokes butt square ends together, which opens a wedge wherever that
-boundary lands on a corner - and a cell's ring is rounded, so most boundaries land on one. Where a
-name interrupts the ring the band genuinely stops, so each stretch is its own stroke and its two
-ends are square, which is what an interruption should look like.
-
-A run and a piece are not the same thing once the names have cut the ring: `RibbonPiece` carries the
-run it came from rather than the two being matched up by position.
+boundary lands on a corner - and a cell's ring is rounded, so most boundaries land on one. Only the
+band's own two ends are square. Being one band on one stretch is what makes that true of a cell
+with names across it as much as of a cell without.
 
 ## Sizes and drawing
 
