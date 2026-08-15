@@ -205,7 +205,7 @@ final class SectorSvgWriter {
         appendPenetrations(
             svg,
             traced.union(),
-            Coastlines.findVisibleCrossings(traced, ViewerPainting.RING_STROKE));
+            CoastCrossings.findVisibleCrossings(traced, ViewerPainting.RING_STROKE));
     }
 
     // The runs that go inside a cell, and the cells they go inside, both called out in their
@@ -215,7 +215,7 @@ final class SectorSvgWriter {
     private static void appendPenetrations(
             StringBuilder svg,
             DiscUnion union,
-            List<Coastlines.Penetration> penetrations) {
+            List<CoastCrossings.Penetration> penetrations) {
 
         for (var penetration : penetrations) {
             for (var circle : penetration.circles()) {

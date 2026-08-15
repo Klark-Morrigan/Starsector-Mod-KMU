@@ -22,7 +22,7 @@ final class CoastlinesOverlay {
 
     private final ViewerSettings settings;
 
-    private List<Coastlines.Penetration> penetrations = List.of();
+    private List<CoastCrossings.Penetration> penetrations = List.of();
 
     // Held from the last trace so the marks are drawn against the same discs the coast was
     // measured against, rather than against whatever the sliders have been moved to since.
@@ -61,7 +61,7 @@ final class CoastlinesOverlay {
                 settings.coastSkipMultiple,
                 settings.coastMaxSkips));
 
-        penetrations = Coastlines.findVisibleCrossings(
+        penetrations = CoastCrossings.findVisibleCrossings(
             traced, ViewerPainting.RING_STROKE);
     }
 

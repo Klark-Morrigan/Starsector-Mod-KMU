@@ -634,17 +634,17 @@ final class VoidRegionsDump {
             "smoothed outer edges: %d, over %d stretches of coast, drawn through %d points; "
                 + "%d runs visibly cross a cell, worst reach in %.1f (both have to be 0)%n",
             traced.coasts().size(),
-            Coastlines.countCoastMarks(traced),
+            CoastMeasures.countCoastMarks(traced),
             points,
-            Coastlines.findVisibleCrossings(traced, ViewerPainting.RING_STROKE).size(),
-            Coastlines.measureDeepestIncursion(traced));
+            CoastCrossings.findVisibleCrossings(traced, ViewerPainting.RING_STROKE).size(),
+            CoastCrossings.measureDeepestIncursion(traced));
 
         System.out.printf(
             Locale.ROOT,
             "how deep each one goes, worst first: %s%n",
-            formatPenetrationDepths(Coastlines.findPenetrations(traced)));
+            formatPenetrationDepths(CoastCrossings.findPenetrations(traced)));
 
-        var frontages = new ArrayList<>(Coastlines.measureFrontages(traced));
+        var frontages = new ArrayList<>(CoastMeasures.measureFrontages(traced));
         frontages.sort(Double::compare);
 
         System.out.printf(
@@ -657,12 +657,12 @@ final class VoidRegionsDump {
         System.out.printf(
             Locale.ROOT,
             "each crossing as depth/frontage of the cell crossed: %s%n",
-            formatAgainstDepth(Coastlines.measureCrossingFrontages(traced)));
+            formatAgainstDepth(CoastMeasures.measureCrossingFrontages(traced)));
 
         System.out.printf(
             Locale.ROOT,
             "each crossing as depth/stretches skipped across it (0 = neighbours): %s%n",
-            formatAgainstDepth(Coastlines.measureCrossingGaps(traced)));
+            formatAgainstDepth(CoastMeasures.measureCrossingGaps(traced)));
 
     }
 
@@ -683,7 +683,7 @@ final class VoidRegionsDump {
     // Every one of them rather than a summary, because the question is whether they are one
     // population or two - a graze along a border the run is already leaving from, against a
     // run cutting a cell in half - and a mean or a worst case cannot tell those apart.
-    private static String formatPenetrationDepths(List<Coastlines.Penetration> penetrations) {
+    private static String formatPenetrationDepths(List<CoastCrossings.Penetration> penetrations) {
 
         var depths = new ArrayList<Double>(penetrations.size());
 
