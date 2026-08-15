@@ -451,7 +451,7 @@ final class Coastlines {
 
         var clamped = clampEdgeEnds(union, from, to);
 
-        if (isRunClear(union, from, to, clamped)) {
+        if (isRunClearOfEveryCell(union, from, to, clamped)) {
             return -1;
         }
 
@@ -941,7 +941,11 @@ final class Coastlines {
 
         var clamped = clampEdgeEnds(union, from, to);
 
-        return isRunClear(union, from, to, clamped)
+        // Asked of EVERY cell rather than only the two the run joins. The two are what the
+        // clamp was working against, so a run can satisfy both and still shave a third cell
+        // that neither end knows about - and that run was then accepted, which is where the
+        // shallow crossings came from.
+        return isRunClearOfEveryCell(union, from, to, clamped)
             ? clamped
             : findTangentEdge(union, from, to);
     }
