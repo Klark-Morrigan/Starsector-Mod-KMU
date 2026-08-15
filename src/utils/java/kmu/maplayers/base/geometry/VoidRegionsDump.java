@@ -657,24 +657,23 @@ final class VoidRegionsDump {
         System.out.printf(
             Locale.ROOT,
             "each crossing as depth/frontage of the cell crossed: %s%n",
-            formatCrossingFrontages(Coastlines.measureCrossingFrontages(traced)));
+            formatAgainstDepth(Coastlines.measureCrossingFrontages(traced)));
 
         System.out.printf(
             Locale.ROOT,
             "each crossing as depth/stretches skipped across it (0 = neighbours): %s%n",
-            formatCrossingFrontages(Coastlines.measureCrossingGaps(traced)));
+            formatAgainstDepth(Coastlines.measureCrossingGaps(traced)));
 
         System.out.printf(
             Locale.ROOT,
             "each crossing as depth/tangent shift (-1 = never reached the tangent): %s%n",
-            formatCrossingFrontages(Coastlines.measureTangentShifts(traced)));
+            formatAgainstDepth(Coastlines.measureTangentShifts(traced)));
     }
 
-    // Beside each crossing, how much border the cell it crossed had to offer. Read against
-    // the frontage percentiles above, this says whether the crossed cells are the crowded
-    // ones or ordinary ones - which is the difference between the arrival failing for want of
-    // anywhere to land and the fault being somewhere else entirely.
-    private static String formatCrossingFrontages(List<double[]> rows) {
+    // Each crossing as its depth beside one other number about it. Shared by every such
+    // report, because what varies between them is which number is asked for, not how a list
+    // of them reads.
+    private static String formatAgainstDepth(List<double[]> rows) {
 
         var listed = new StringBuilder();
 
