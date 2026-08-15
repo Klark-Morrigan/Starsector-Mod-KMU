@@ -47,7 +47,7 @@ offers and how the overlay is drawn.
 ### Versioning
 
 KMU follows the consumer-mod rules in
-[KMLib's versioning policy](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/main/docs/dev/versioning.md).
+[KMLib's versioning policy](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/versioning.md).
 In short: MAJOR for save-breaking changes, MINOR for save-safe new features,
 PATCH for fixes and tweaks. The same policy defines how KMU pins the KMLib
 dependency in both `mod_info.json` and `.github/workflows/*.yml`.

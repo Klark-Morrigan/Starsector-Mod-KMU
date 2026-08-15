@@ -7,7 +7,7 @@ then repaints it every frame.
 
 The shared library's caches are a separate and much simpler problem (font assets
 and pure derivations, none of which can go stale); they are documented in
-[KMLib's caching notes](https://github.com/<owner>/KMLib/blob/main/docs/dev/caching.md),
+[KMLib's caching notes](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/caching.md),
 including the `Fingerprints` primitive this document's revision counters fold
 through.
 
@@ -258,7 +258,7 @@ on the sector, the scope, and a revision the caller supplies. A body build runs 
 a frame (render and hit-test), so without a memo every picker would re-resolve its
 list several times a frame. It is KMLib's (`kmlib.starsector.ui.widgets.lists`), like
 the picker it feeds; [KMLib's caching
-notes](https://github.com/<owner>/KMLib/blob/main/docs/dev/caching.md) file it as an
+notes](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/caching.md) file it as an
 invalidation primitive rather than a cache, since what it holds and when it goes stale
 are entirely the consumer's declaration. How its key handles a save reloaded in the
 same session is documented there too, and is the one part of the memo KMU does not
@@ -369,7 +369,7 @@ carries the previous shape.
 
 ## Related reading
 
-- [KMLib caching notes](https://github.com/<owner>/KMLib/blob/main/docs/dev/caching.md) -
+- [KMLib caching notes](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/caching.md) -
   the font and glyph caches KMU draws through, and the `Fingerprints` primitive.
 - [Political map](../../src/main/java/kmu/maplayers/politicalmap/README.md) - what
   the overlay shows and how it is drawn.
