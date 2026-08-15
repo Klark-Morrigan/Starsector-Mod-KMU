@@ -14,15 +14,21 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins the tight reading of the room a name takes: one box per drawn line, no longer than the words
- * measure at the size they render at, and centred where the renderer hangs them.
+ * measure at the size they render at, laid along the slant the line reads at and centred where the
+ * renderer hangs it.
  *
  * <p>The length is the point of the whole reading. A placement's fitted box is as long as the chord
  * the search accepted, which is only bounded below by the text - so a box measured off the words is
- * the one thing that says how much ring a name genuinely costs, and a box that quietly took its
+ * the one thing that says how much room a name genuinely costs, and a box that quietly took its
  * length from the placement instead would pass every other check here.
+ *
+ * <p>Both cases carrying a box state all four corners rather than a width and a height, since a
+ * box is only right if it is in the right place: a rectangle of the correct size laid along the
+ * wrong axis, or centred on the block instead of on its own line, is what the two would miss.
  */
 final class LabelLineBoxesTest {
 
@@ -30,12 +36,21 @@ final class LabelLineBoxesTest {
     // measured against, and what a box measured off the words must not inherit.
     private static final Segment EASTWARD_AXIS = new Segment(-500, 10, 500, 10);
 
+    // The same midpoint on a 3-4-5 slope, so a box's slant is exercised with a direction whose sine
+    // and cosine are exact tenths - a swapped or sign-flipped pair lands nowhere near the corners
+    // below, where a horizontal line would hide both.
+    private static final Segment SLOPED_AXIS = new Segment(-400, -290, 400, 310);
+
     private static final float FONT_HEIGHT = 4f;
 
     // Two characters wide per unit of font height, so a line's expected length is a multiplication
     // a reader can do in their head, and a box taking the wrong font height comes out wrong rather
     // than coincidentally right.
     private static final double WIDTH_PER_CHARACTER_HEIGHT = 2.0;
+
+    // The slant is carried as degrees and turned back into a direction, so a corner on the sloped
+    // axis lands within float rounding of its exact value rather than on it.
+    private static final double CORNER_TOLERANCE = 1e-4;
 
     @Nested
     class ListLineBoxes {
@@ -46,20 +61,43 @@ final class LabelLineBoxesTest {
             // on the axis midpoint - a tenth of the 1000-long axis the placement was fitted along.
             assertThat(measureBoxes(buildAnchor(EASTWARD_AXIS, List.of("AB"))))
                 .singleElement()
-                .satisfies(box -> assertThat(box)
-                    .containsExactly(
-                        new double[] {-8, 12},
-                        new double[] {8, 12},
-                        new double[] {8, 8},
-                        new double[] {-8, 8}));
+                .satisfies(box -> assertBoxCorners(box, new double[][] {
+                    {-8, 12},
+                    {8, 12},
+                    {8, 8},
+                    {-8, 8}}));
         }
 
         @Test
-        void measureLineBoxesGivesEachStackedLineItsOwnBox() {
-            // A two-line name is two blocks of words at two hang points, so it is two boxes: one
-            // long box spanning both would claim the ring between them, which nothing draws in.
+        void measureLineBoxesLaysABoxAlongTheSlantItsLineReadsAt() {
+            // The same name on a line rising four across and three up: the box turns with it, so its
+            // long edges run 0.8/0.6 and its girth crosses them at 0.6/-0.8.
+            assertThat(measureBoxes(buildAnchor(SLOPED_AXIS, List.of("AB"))))
+                .singleElement()
+                .satisfies(box -> assertBoxCorners(box, new double[][] {
+                    {-7.6, 6.8},
+                    {5.2, 16.4},
+                    {7.6, 13.2},
+                    {-5.2, 3.6}}));
+        }
+
+        @Test
+        void measureLineBoxesGivesEachStackedLineItsOwnBoxAtItsOwnHangPoint() {
+            // A two-line name is two blocks of words at two hang points, four apart across the
+            // block's own girth of eight, so it is two boxes of different lengths - "CDEF" being
+            // twice "AB" - rather than one long box claiming the room between and around them.
             assertThat(measureBoxes(buildAnchor(EASTWARD_AXIS, List.of("AB", "CDEF"))))
-                .hasSize(2);
+                .satisfiesExactly(
+                    upperLine -> assertBoxCorners(upperLine, new double[][] {
+                        {-8, 14},
+                        {8, 14},
+                        {8, 10},
+                        {-8, 10}}),
+                    lowerLine -> assertBoxCorners(lowerLine, new double[][] {
+                        {-16, 10},
+                        {16, 10},
+                        {16, 6},
+                        {-16, 6}}));
         }
 
         @Test
@@ -89,10 +127,27 @@ final class LabelLineBoxesTest {
         return (line, fontSize) -> line.length() * fontSize * WIDTH_PER_CHARACTER_HEIGHT;
     }
 
+    // One box against the corners it should have, in ring order and to the slant's rounding. Named
+    // per corner so a failure says which one moved rather than printing two rings to compare by eye.
+    private static void assertBoxCorners(List<double[]> box, double[][] expectedCorners) {
+
+        assertThat(box).hasSameSizeAs(expectedCorners);
+
+        for (var corner = 0; corner < expectedCorners.length; corner++) {
+            assertThat(box.get(corner)[0])
+                .as("corner %d x", corner)
+                .isCloseTo(expectedCorners[corner][0], within(CORNER_TOLERANCE));
+            assertThat(box.get(corner)[1])
+                .as("corner %d y", corner)
+                .isCloseTo(expectedCorners[corner][1], within(CORNER_TOLERANCE));
+        }
+    }
+
     // One placement carrying just what a drawn line is read off - the accepted line the block is
-    // centred and slanted on, the wrapped lines, and the height they render at. Every other fitted
-    // component is inert here; the thickness is the girth a whole block takes, which is the fitted
-    // reading's input rather than this one's.
+    // centred and slanted on, the wrapped lines, and the height they render at. The anchor point is
+    // that line's own midpoint, as the placement search leaves it. Every other fitted component is
+    // inert here; the thickness is the girth the whole block takes, which is what the lines are
+    // stacked across.
     private static ClusterAnchor buildAnchor(Segment acceptedAxis, List<String> nameLines) {
 
         return new ClusterAnchor(
