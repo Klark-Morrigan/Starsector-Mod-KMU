@@ -52,6 +52,10 @@ final class VoidRegionsDump {
     private static final double MEDIAN_FRACTION = 0.5;
     private static final double[] REPORTED_PERCENTILES = {MEDIAN_FRACTION, 0.9, 1.0};
 
+    // The low end as well as the high, because what is being asked of the frontages is
+    // whether the crossed cells sit at the crowded end of the population.
+    private static final double[] FRONTAGE_PERCENTILES = {0.1, MEDIAN_FRACTION, 0.9};
+
     private VoidRegionsDump() {
     }
 
@@ -639,6 +643,46 @@ final class VoidRegionsDump {
             Locale.ROOT,
             "how deep each one goes, worst first: %s%n",
             formatPenetrationDepths(Coastlines.findPenetrations(traced)));
+
+        var frontages = new ArrayList<>(Coastlines.measureFrontages(traced));
+        frontages.sort(Double::compare);
+
+        System.out.printf(
+            Locale.ROOT,
+            "frontage offered, over every stretch: p10 %.0f / p50 %.0f / p90 %.0f%n",
+            findPercentile(frontages, FRONTAGE_PERCENTILES[0]),
+            findPercentile(frontages, FRONTAGE_PERCENTILES[1]),
+            findPercentile(frontages, FRONTAGE_PERCENTILES[2]));
+
+        System.out.printf(
+            Locale.ROOT,
+            "each crossing as depth/frontage of the cell crossed: %s%n",
+            formatCrossingFrontages(Coastlines.measureCrossingFrontages(traced)));
+
+        System.out.printf(
+            Locale.ROOT,
+            "each crossing as depth/stretches skipped across it (0 = neighbours): %s%n",
+            formatCrossingFrontages(Coastlines.measureCrossingGaps(traced)));
+
+        System.out.printf(
+            Locale.ROOT,
+            "each crossing as depth/tangent shift (-1 = never reached the tangent): %s%n",
+            formatCrossingFrontages(Coastlines.measureTangentShifts(traced)));
+    }
+
+    // Beside each crossing, how much border the cell it crossed had to offer. Read against
+    // the frontage percentiles above, this says whether the crossed cells are the crowded
+    // ones or ordinary ones - which is the difference between the arrival failing for want of
+    // anywhere to land and the fault being somewhere else entirely.
+    private static String formatCrossingFrontages(List<double[]> rows) {
+
+        var listed = new StringBuilder();
+
+        for (var row : rows) {
+            listed.append(listed.isEmpty() ? "" : " ").append(String.format(
+                Locale.ROOT, "%.0f/%.0f", row[0], row[1]));
+        }
+        return listed.isEmpty() ? "none" : listed.toString();
     }
 
     // Every one of them rather than a summary, because the question is whether they are one

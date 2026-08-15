@@ -117,10 +117,10 @@ final class CoastlinesOverlay {
         for (var penetration : penetrations) {
 
             g2.draw(new Line2D.Double(
-                penetration.from()[0],
-                penetration.from()[1],
-                penetration.to()[0],
-                penetration.to()[1]));
+                penetration.from().point()[0],
+                penetration.from().point()[1],
+                penetration.to().point()[0],
+                penetration.to().point()[1]));
         }
     }
 }

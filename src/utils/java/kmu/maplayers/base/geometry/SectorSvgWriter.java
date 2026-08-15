@@ -235,7 +235,7 @@ final class SectorSvgWriter {
 
             appendPolyline(
                 svg,
-                List.of(penetration.from(), penetration.to()),
+                List.of(penetration.from().point(), penetration.to().point()),
                 formatColour(ViewerSettings.COAST_CROSSING_DEFAULT),
                 PENETRATION_STROKE);
         }
