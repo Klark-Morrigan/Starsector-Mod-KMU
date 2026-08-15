@@ -4,10 +4,10 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.settings.KmuPoliticalMapSettings;
 
 /**
- * Reads the sizes the presence bands are laid out at out of the player's LunaLib settings into one
- * {@link RibbonStyle}. The single seam the band sizes are fetched through, so every size a bake
- * resolves is one read of the player's proportions rather than a knob fetched wherever it happens
- * to be wanted.
+ * Reads how the presence bands are laid out - the sizes, and the one answer that is not a size -
+ * out of the player's LunaLib settings into one {@link RibbonStyle}. The single seam those knobs
+ * are fetched through, so a bake resolves them in one read of the player's answers rather than
+ * fetching each wherever it happens to be wanted.
  *
  * <p>The proportions the whole design rests on are the player's, because they are a matter of
  * taste against a real sector: how thick a band has to be before it reads, how far a run should
@@ -28,9 +28,9 @@ public final class RibbonStyleReader {
     }
 
     /**
-     * Reads every band size as one snapshot.
+     * Reads every band knob as one snapshot.
      *
-     * @return the sizes the bands are laid out and drawn at
+     * @return how the bands are laid out and drawn
      */
     public static RibbonStyle readRibbonStyle() {
         return new RibbonStyle(

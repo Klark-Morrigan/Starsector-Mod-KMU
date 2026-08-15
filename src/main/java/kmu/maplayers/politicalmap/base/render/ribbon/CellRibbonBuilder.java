@@ -12,8 +12,9 @@ import java.util.List;
 
 /**
  * Lays one cell's planned band around that cell's own ring: the path it runs along, the longest
- * stretch of that path the cluster names leave it, how long a width is worth on that stretch, and
- * the triangles each run comes out as.
+ * stretch of that path the cluster names leave it, how long a width is worth on that stretch,
+ * where along it the band sits ({@link RibbonBandPlacement}), and the triangles each run comes
+ * out as.
  *
  * <p>Everything the plan states is proportional - a run is so many widths long - and everything
  * this settles is the cell's own: where the ring lets a band run, and how much of that ring one
@@ -40,9 +41,9 @@ public final class CellRibbonBuilder {
      * far round that what is left could not state the plan at any size.
      *
      * @param ring         the cell's painted outline, the shape the band runs inside
-     * @param topAnchor    the {x, y} the band's start is found above - the cell's own site, so
-     *                     every cell begins its band at its top centre and runs clockwise from
-     *                     there
+     * @param topAnchor    the {x, y} the path's start is found above - the cell's own site, so
+     *                     every cell begins its band as near its top centre as the names leave
+     *                     room for, and runs clockwise from there
      * @param plan         the cell's runs in draw order
      * @param style        the sizes the band is drawn at
      * @param nameBoxes    the room the drawn cluster names take up, as world rings the band
@@ -96,7 +97,13 @@ public final class CellRibbonBuilder {
         if (lengthUnitWorld < Limits.MIN_EDGE_LENGTH) {
             return CellRibbon.NONE;
         }
-        return new CellRibbon(strokeSegments(path, plan, stretch[0], lengthUnitWorld, style));
+        var bandStart = RibbonBandPlacement.placeBandStart(
+            stretch[0],
+            stretch[1],
+            totalLengthUnits * lengthUnitWorld,
+            path.getPerimeter());
+
+        return new CellRibbon(strokeSegments(path, plan, bandStart, lengthUnitWorld, style));
     }
 
     // The ring walked at the inset the player authored - or, on a cell too narrow to take that
@@ -111,20 +118,23 @@ public final class CellRibbonBuilder {
             double[] topAnchor,
             RibbonStyle style) {
 
-        var path = RingPath.traceInsetRing(
-            ring,
-            style.computeCentrelineInset(),
-            style.miterSpikeLimit(),
-            topAnchor);
+        var path = traceRingAtInset(ring, topAnchor, style, style.computeCentrelineInset());
 
         if (!path.isEmpty() || !style.isBandAlwaysDrawn()) {
             return path;
         }
-        return RingPath.traceInsetRing(
-            ring,
-            style.computeUnpaddedCentrelineInset(),
-            style.miterSpikeLimit(),
-            topAnchor);
+        return traceRingAtInset(ring, topAnchor, style, style.computeUnpaddedCentrelineInset());
+    }
+
+    // The ring walked at one named inset, so the two the fallback chooses between differ in the
+    // one thing that is different about them.
+    private static RingPath traceRingAtInset(
+            List<double[]> ring,
+            double[] topAnchor,
+            RibbonStyle style,
+            double insetDistance) {
+
+        return RingPath.traceInsetRing(ring, insetDistance, style.miterSpikeLimit(), topAnchor);
     }
 
     // The one stretch of ring the whole band is laid on: the longest the names left, with the

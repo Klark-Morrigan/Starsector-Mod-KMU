@@ -36,8 +36,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>The names' cases are the same question asked of the room a cluster name takes: the whole
  * band goes on the longest stretch the names leave and the rest of the ring stays bare, the clamp
- * measures against that one stretch rather than against every stretch together, and a cell whose
- * ring is wholly under a name draws nothing.
+ * measures against that one stretch rather than against every stretch together, the band sits as
+ * near the cell's top centre as that stretch allows rather than wherever the surviving ring
+ * happens to open, and a cell whose ring is wholly under a name draws nothing.
+ *
+ * <p>The forcing cases are the answer to a cell whose ring has no room, and they are as much about
+ * where that answer stops: the clearance gives way only where it left nothing, the pad gives way
+ * only as far as the half width, and a cell narrower than the band still draws none.
  *
  * <p>Three of them are the same rule about the path's own start, which the carve states as two
  * ends rather than as the one point it is. A stretch reaching both ends is one stretch and is
@@ -62,8 +67,20 @@ final class CellRibbonBuilderTest {
         new double[] {500.0, 500.0},
         new double[] {0.0, 500.0});
 
+    // A cell narrower than the band is wide. The pad given up entirely still leaves the half width
+    // the band needs on each side with nowhere to go, so there is no shallower trace to fall back
+    // to - which is where forcing a band onto a cell stops.
+    private static final List<double[]> CELL_NARROWER_THAN_THE_BAND = List.of(
+        new double[] {0.0, 0.0},
+        new double[] {300.0, 0.0},
+        new double[] {300.0, 300.0},
+        new double[] {0.0, 300.0});
+
     // The cell's own site, the point the band's start is found above.
     private static final double[] CELL_SITE = new double[] {2000.0, 2000.0};
+
+    // That cell's own site, so what it draws is not decided by an anchor lying outside it.
+    private static final double[] NARROW_CELL_SITE = new double[] {150.0, 150.0};
 
     // The tiny cell's own site, so the band it is forced to carry starts above the middle of it
     // rather than over the corner an anchor outside the shape would fall back to.
@@ -328,8 +345,10 @@ final class CellRibbonBuilderTest {
         @Test
         void laysTheWholeBandOnTheLongestStretchTheNamesLeave() {
             // Two names cut the ring into a long stretch and a short one. The whole band goes on
-            // the long one, in plan order from its start at 800 - so the first run runs 2800 to
-            // 3200 along the cell's top edge and the second carries on to the corner at 3600.
+            // the long one, in plan order from its opening at 800 - the top centre lies off that
+            // stretch, and its opening is the nearer of the stretch's two ends to it - so the
+            // first run runs 2800 to 3200 along the cell's top edge and the second carries on to
+            // the corner at 3600.
             // The short stretch stays bare, which is what its own start at 1400 says: a band
             // scattered over both stretches would have put a piece there, and a reader cannot
             // tell such a piece from a run of its own.
@@ -359,10 +378,11 @@ final class CellRibbonBuilderTest {
         @Test
         void readsTheStretchStraddlingTheStartAsOneStretch() {
             // One name on the far side of the ring leaves one clear stretch, and the carve states
-            // it as two intervals because it runs through the path's own origin. Read as two, the
-            // longer of them starts at the band's start above the site and the band would begin
-            // there; read as the one stretch it is, the band begins where the name lets the ring
-            // resume, at (2000,400) on the cell's bottom edge.
+            // it as two intervals because it runs through the path's own origin. Read as the one
+            // stretch it is, the top centre is a point within it with the whole cell's top edge
+            // clockwise of it, so the band opens there and runs east to (2400,3800). Read as two,
+            // the longer would be the interval closing the path, whose latest start puts the band
+            // 400 earlier - reaching the top centre from (1600,3800) rather than leaving it.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
                 CELL_SITE,
@@ -373,10 +393,35 @@ final class CellRibbonBuilderTest {
             assertThat(ribbon.bands())
                 .singleElement()
                 .satisfies(band -> {
-                    assertThat(hasCorner(band, 2000.0, 600.0)).isTrue();
-                    assertThat(hasCorner(band, 1600.0, 600.0)).isTrue();
-                    assertThat(hasCorner(band, 2000.0, 3800.0)).isFalse();
+                    assertThat(hasCorner(band, 2000.0, 3800.0)).isTrue();
+                    assertThat(hasCorner(band, 2400.0, 3800.0)).isTrue();
+                    assertThat(hasCorner(band, 1600.0, 3800.0)).isFalse();
                 });
+        }
+
+        @Test
+        void backsTheBandUpToReachTheTopCentreWhereItsStretchClosesTooSoonAfterIt() {
+            // The placement rule seen through a cell. The name on the top edge leaves a stretch
+            // opening 800 past the top centre and closing 400 after it, and the band reaches 800,
+            // so it cannot both open on the top centre and stay clear of the name. It backs up to
+            // (1600,3800) and finishes where the name begins at (2400,3800), which keeps the top
+            // centre on the band rather than throwing the whole thing round to the stretch's own
+            // opening at (2800,3800).
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                CELL_SITE,
+                new RibbonPlan(List.of(
+                    new RibbonSegment(BRIGHT, ONE_WIDTH),
+                    new RibbonSegment(DARK, ONE_WIDTH))),
+                STYLE,
+                List.of(NAME_ACROSS_THE_TOP_EDGE));
+
+            assertThat(hasCorner(ribbon.bands().get(0), 1600.0, 3800.0))
+                .isTrue();
+            assertThat(hasCorner(ribbon.bands().get(1), 2400.0, 3800.0))
+                .isTrue();
+            assertThat(hasCorner(ribbon.bands().get(0), 2800.0, 3800.0))
+                .isFalse();
         }
 
         @Test
@@ -480,6 +525,43 @@ final class CellRibbonBuilderTest {
                     assertThat(hasCorner(band, 2000.0, 3800.0)).isTrue();
                     assertThat(hasCorner(band, 2400.0, 3800.0)).isTrue();
                 });
+        }
+
+        @Test
+        void keepsAForcedBandClearOfNamesThatLeaveItRoom() {
+            // Forcing answers a ring with no room at all; it is not a way of switching the
+            // clearance off. This name leaves most of the ring, so the band is laid exactly where
+            // it is without the forcing - backed up to (1600,3800) and stopping where the name
+            // begins - rather than running from the top centre at 2000 straight over the name, as
+            // it would were the boxes simply dropped whenever the forcing is on.
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                CELL_SITE,
+                new RibbonPlan(List.of(
+                    new RibbonSegment(BRIGHT, ONE_WIDTH),
+                    new RibbonSegment(DARK, ONE_WIDTH))),
+                STYLE_FORCING_A_BAND,
+                List.of(NAME_ACROSS_THE_TOP_EDGE));
+
+            assertThat(hasCorner(ribbon.bands().get(0), 1600.0, 3800.0))
+                .isTrue();
+            assertThat(hasCorner(ribbon.bands().get(1), 2800.0, 3800.0))
+                .isFalse();
+        }
+
+        @Test
+        void drawsNoForcedBandOnACellNarrowerThanTheBandItself() {
+            // Where the fallback stops. The pad is what a narrow cell gives up, and this cell is
+            // narrower than the band even with the whole pad gone, so there is no shallower trace
+            // left to take. A band laid here would hang outside the very cell it reports on, which
+            // is worse than the blank the forcing exists to remove.
+            assertThat(CellRibbonBuilder.buildCellRibbon(
+                    CELL_NARROWER_THAN_THE_BAND,
+                    NARROW_CELL_SITE,
+                    new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
+                    STYLE_FORCING_A_BAND,
+                    NO_NAMES))
+                .isEqualTo(CellRibbon.NONE);
         }
 
         @Test

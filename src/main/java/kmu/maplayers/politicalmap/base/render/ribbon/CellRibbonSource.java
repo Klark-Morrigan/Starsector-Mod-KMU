@@ -44,11 +44,11 @@ import java.util.Map;
  */
 public final class CellRibbonSource {
 
-    // The sizes a pass with the bands switched off carries. Zeroes rather than the player's knobs
-    // because no band is ever laid out to be sized: such a pass answers every cell at its gate,
-    // well before a ring is traced, so reading the real sizes for it would be a settings read
-    // taken to settle nothing.
-    private static final RibbonStyle BANDLESS_SIZES =
+    // What a pass with the bands switched off is laid out by. Zeroes and refusals rather than the
+    // player's knobs because no band is ever laid out at all: such a pass answers every cell at
+    // its gate, well before a ring is traced, so reading the real answers for it would be a
+    // settings read taken to settle nothing.
+    private static final RibbonStyle BANDLESS_STYLE =
         new RibbonStyle(0, 0, 0, new RibbonSegmentLengths(0, 0), false);
 
     private final SystemRibbonPlanner planner;
@@ -167,7 +167,7 @@ public final class CellRibbonSource {
     private static CellRibbonSource createBandlessPass() {
         return new CellRibbonSource(
             system -> RibbonPlan.NONE,
-            BANDLESS_SIZES,
+            BANDLESS_STYLE,
             Map.of(),
             Map.of(),
             Map.of(),

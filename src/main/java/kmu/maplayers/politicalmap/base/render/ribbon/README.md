@@ -14,6 +14,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 - [When the ring has no room](#when-the-ring-has-no-room)
 - [Keeping clear of the names](#keeping-clear-of-the-names)
 - [One band, one stretch](#one-band-one-stretch)
+- [Where a band sits](#where-a-band-sits)
 - [One stroke, many colours](#one-stroke-many-colours)
 - [Sizes and drawing](#sizes-and-drawing)
 - [What is not here](#what-is-not-here)
@@ -54,6 +55,8 @@ is cells nobody paints, and the claim mechanic's count walks a system's whole ma
    bloc off the end.
 4. Below `Limits.MIN_EDGE_LENGTH` the cell says nothing at all. That covers a cell smaller than the
    pad and width together, one narrowed to a neck, and one whose ring the names have eaten.
+5. `RibbonBandPlacement` settles where along the stretch the band sits - see [where a band
+   sits](#where-a-band-sits).
 
 ## When the ring has no room
 
@@ -113,6 +116,25 @@ intervals, one at each end, since that carve deliberately does not wrap. They ar
 without the fuse, every cell whose name sits anywhere but its top centre would be judged on
 whichever half of its longest stretch happened to be bigger.
 
+## Where a band sits
+
+A band shorter than its stretch can sit anywhere along it, so `RibbonBandPlacement` decides where
+rather than letting the surviving ring decide: **a band sits as near the cell's top centre as its
+stretch allows**. That landmark is the path's own origin and where the dominant bloc's run begins,
+so every cell is read from the same place.
+
+Near is measured on the band's **start**, since the start is where the reading begins - a band
+pulled toward the anchor by its middle would straddle it and put the middle of the readout where
+its opening belongs.
+
+One clamp states it: the band starts at the top centre, pulled into `[stretchStart, stretchEnd -
+bandLength]` by the shortest way round the ring. The range is never empty, because the clamp above
+has already sized the band to fit the stretch, so placement is never a refusal. Four behaviours
+fall out of it rather than being written as cases - the band opening on the anchor, backing up to
+reach it where a name begins too soon after, opening where a name over the anchor lets the ring
+resume, and taking whichever end of a far-off stretch puts its start nearer, with a tie taking the
+stretch's start.
+
 ## One stroke, many colours
 
 A band is one shape whatever it is coloured in. It is stroked **once** through
@@ -124,11 +146,12 @@ with names across it as much as of a cell without.
 
 ## Sizes and drawing
 
-`RibbonStyle` is the sizes one bake is laid out at, read through `RibbonStyleReader` from the
-player's Visuals tab: the width, the clearance from the border, and the two run lengths those are
-multiples of. All world sizes, so nothing about a band is asked of the camera. The mitre spike limit
-is authored rather than exposed - it is the angle past which a corner's mitre becomes a spike, a
-property of stroking a polyline rather than of how the readout looks.
+`RibbonStyle` is how one bake is laid out, read through `RibbonStyleReader` from the
+player's Visuals tab: the width, the clearance from the border, the two run lengths those are
+multiples of, and whether a cell short of room draws a band anyway. The sizes are all world sizes,
+so nothing about a band is asked of the camera. The mitre spike limit is authored rather than
+exposed - it is the angle past which a corner's mitre becomes a spike, a property of stroking a
+polyline rather than of how the readout looks.
 
 `CellRibbon` is one cell's baked result, a list of `RibbonBand` (a colour plus flattened triangle
 vertices). `CellPresenceRibbonRenderer` draws them in the `ABOVE_STARSCAPE_NEBULAE` band, so a band
