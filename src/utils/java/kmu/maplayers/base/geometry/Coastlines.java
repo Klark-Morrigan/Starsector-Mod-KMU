@@ -129,12 +129,18 @@ final class Coastlines {
      *                    anything in. Handed back rather than worked out afterwards because
      *                    only the walk knows which stretches a reach bypassed, and because a
      *                    pocket's edge and the coast are two sides of one line
+     * @param onBorders   the same coasts on the cells' TRUE borders rather than their fills.
+     *                    What a reach of coast shut in is decided by intersecting it with the
+     *                    cell borders and the bridges, and those meet at the true reach - a
+     *                    reach taken off the drawn line passes a channel inside the borders
+     *                    it is meant to touch
      * @param union       the discs it is DRAWN against, which is not the wider set the walk
      *                    was decided on - the crossing checks have to ask about the line that
      *                    actually got drawn
      */
     record TracedCoasts(
         List<List<CoastVertex>> coasts,
+        List<List<CoastVertex>> onBorders,
         List<List<DiscUnionBoundary.CoastMark>> silhouettes,
         List<TrappedStretch> trapped,
         DiscUnion union) {
@@ -187,17 +193,28 @@ final class Coastlines {
         var silhouettes = DiscUnionBoundary.traceSilhouetteCoasts(
             bounding, walls, parameters.measureArcSegments());
 
-        var smoothed = smoothSilhouettes(
-            silhouettes,
-            drawn,
-            findBridgedCircles(bounding, walls),
-            new SmoothingRules(
-                rules.skipMultiple() * parameters.cellRadius(),
-                rules.maxSkips(),
-                parameters.measureArcSegments()));
+        var bridged = findBridgedCircles(bounding, walls);
+
+        var smoothing = new SmoothingRules(
+            rules.skipMultiple() * parameters.cellRadius(),
+            rules.maxSkips(),
+            parameters.measureArcSegments());
+
+        var smoothed = smoothSilhouettes(silhouettes, drawn, bridged, smoothing);
+
+        // The same coast a second time, on the cells' true borders instead of their fills.
+        // Only the radius differs - same stretches, same skips, same reaches - so the two are
+        // the same line at two distances, not two answers about where the coast is.
+        //
+        // Wanted because a reach of coast is boundary as well as decoration. Anything that
+        // has to work out what a reach shut in must intersect it with the cell borders and
+        // the bridges, and those meet at the true reach; taken from the drawn line instead it
+        // passes a channel INSIDE the borders it is supposed to touch, and every shape built
+        // on the intersection is wrong by that channel.
+        var onBorders = smoothSilhouettes(silhouettes, bounding, bridged, smoothing);
 
         return new TracedCoasts(
-            smoothed.coasts(), silhouettes, smoothed.trapped(), drawn);
+            smoothed.coasts(), onBorders.coasts(), silhouettes, smoothed.trapped(), drawn);
     }
 
     /**

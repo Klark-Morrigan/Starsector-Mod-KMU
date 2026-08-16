@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.DirectedLine;
+import kmlib.math.geometry.Limits;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +62,7 @@ final class CoastPockets {
             SectorGeometryParameters parameters,
             VoidSections.SectionRules sectionRules) {
 
-        var reaches = buildCoastWalls(traced);
+        var reaches = buildCoastWalls(traced, parameters.borderInset());
 
         if (reaches.isEmpty()) {
             return List.of();
@@ -72,6 +73,7 @@ final class CoastPockets {
         // runs a coast pocket straight across it and paints the same emptiness twice.
         var laid = new ArrayList<>(DiscUnionBoundary.buildChordsFrom(bridges));
         laid.addAll(reaches);
+
 
         var walls = new DiscUnionBoundary.Walls(laid, parameters.borderInset());
         var arcSegments = parameters.measureArcSegments();
@@ -91,7 +93,7 @@ final class CoastPockets {
         var pockets = new ArrayList<VoidPockets.VoidPocket>();
 
         for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
-                new DiscUnion(sites, parameters.cellRadius()), walls, arcSegments)) {
+                new DiscUnion(sites, parameters.measureDrawnReach()), walls, arcSegments)) {
 
             // Only what a COAST reach shut in. Void the cells closed unaided, and void a
             // bridge holds, are both the other construction's to report; drawing them here
@@ -111,15 +113,21 @@ final class CoastPockets {
     // cell's border to a point on another's, so the line through those two points is the line
     // it lies on - and that is all a wall needs to be found again at any reach.
     //
+    // Taken from the coast on the cells' TRUE borders, not the drawn one. The drawn coast
+    // hugs the fills, a channel inside those borders, so its reaches cut into both cells they
+    // run between rather than touching them - and a wall laid on that line closes the wrong
+    // shape by a channel everywhere.
+    //
     // Fillets are not reaches. A fillet runs along one cell's own border from where the coast
     // arrived to where it leaves, so both its ends sit on the same circle and there is no
     // second circle for a wall to run to; it also shuts nothing in, being boundary already.
     private static List<DiscUnionBoundary.Chord> buildCoastWalls(
-            Coastlines.TracedCoasts traced) {
+            Coastlines.TracedCoasts traced,
+            double inset) {
 
         var walls = new ArrayList<DiscUnionBoundary.Chord>();
 
-        for (var coast : traced.coasts()) {
+        for (var coast : traced.onBorders()) {
             for (var index = 0; index < coast.size(); index++) {
 
                 var from = coast.get(index);
@@ -128,14 +136,33 @@ final class CoastPockets {
                 if (from.circle() == to.circle()) {
                     continue;
                 }
+                var alongX = to.point()[0] - from.point()[0];
+                var alongY = to.point()[1] - from.point()[1];
+                var length = Math.hypot(alongX, alongY);
+
+                if (length < Limits.MIN_EDGE_LENGTH) {
+                    continue;
+                }
+
+                // Pulled in by the channel, towards the cells the reach runs between. The
+                // reach is bedrock - it is where the coast IS - and a fill has to hold back
+                // from bedrock the same way it holds back from a cell. The cells' own side of
+                // that is the reach this is traced at; this is the line's side of it.
+                var inX = alongY / length * inset;
+                var inY = -alongX / length * inset;
+
+                var centre = traced.union().sites().get(from.circle());
+                var side = (centre[0] - from.point()[0]) * inX
+                    + (centre[1] - from.point()[1]) * inY < 0 ? -1 : 1;
+
                 walls.add(new DiscUnionBoundary.Chord(
                     from.circle(),
                     to.circle(),
                     new DirectedLine(
-                        from.point()[0],
-                        from.point()[1],
-                        to.point()[0] - from.point()[0],
-                        to.point()[1] - from.point()[1])));
+                        from.point()[0] + inX * side,
+                        from.point()[1] + inY * side,
+                        alongX,
+                        alongY)));
             }
         }
         return walls;
