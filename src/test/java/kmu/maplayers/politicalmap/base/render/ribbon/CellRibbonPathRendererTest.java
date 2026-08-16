@@ -47,7 +47,11 @@ final class CellRibbonPathRendererTest {
 
             // A cell that does carry a path, so only the fade can be what stops it.
             var ribbonPathsFake = new RibbonPathsFake(List.of(
-                new CellRibbonPath(new float[] {0f, 0f}, RibbonPathVerdict.LAID_AT_PAD)));
+                new CellRibbonPath(
+                    List.of(new float[] {0f, 0f, 1f, 1f}),
+                    List.of(),
+                    new float[] {0f, 0f},
+                    RibbonPathVerdict.LAID_AT_PAD)));
 
             CellRibbonPathRenderer.renderOnMap(
                 ribbonPathsFake,

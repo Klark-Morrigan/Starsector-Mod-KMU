@@ -13,17 +13,24 @@ import org.lwjgl.opengl.GL11;
 
 import java.awt.Color;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Paints the debug band-path overlay on the sector (M) map: the ring each cell's presence band
- * would run along, in the shade of what that cell's room lets a band do with it, plus a dot at the
- * point every band starts from.
+ * would run along, in the shade of what that cell's room lets a band do with it, the ring the
+ * cell's own shape denied it in the discarded shade, plus a dot at the point every band starts
+ * from.
  *
  * <p>The overlay answers the one question the bands themselves cannot. A cell drawing nothing is
  * the sector's normal state and also every one of its failures - nothing present to report, a ring
  * with no room, a name lying across it - and all of them look identical on the map. The path is
  * what was there underneath: where a band would have run, and by
  * {@link DiagnosticPalette}'s ramp whether the ring ever offered it room.
+ *
+ * <p>The ramp is read twice, at two scales. Per cell it says what the ring as a whole let a band
+ * do; per stretch it separates the ring a band may lie on from the ring too narrow to hold one.
+ * Both readings are the same three shades, so a stretch drawn in the discarded colour means what
+ * a cell drawn in it means - outline no band is laid on.
  *
  * <p>Its own layer over the bands rather than a mode replacing them, so a band and the path it was
  * laid on can be read against each other - a path drawn over its own band is how a run that leaves
@@ -46,8 +53,8 @@ public final class CellRibbonPathRenderer {
     // own band does not hide the band it is drawn to be compared with.
     private static final float PATH_ALPHA = 0.9f;
 
-    // The path's first vertex in the packed [x, y, x, y, ...] run, which is the start a band opens
-    // at - named so the dot pass reads by what it marks rather than by bare index.
+    // The packed [x, y] the path is walked from, which is the point a band opens at - named so
+    // the dot pass reads by what it marks rather than by bare index.
     private static final int START_X = 0;
     private static final int START_Y = 1;
 
@@ -85,8 +92,10 @@ public final class CellRibbonPathRenderer {
                 () -> drawRibbonPaths(ribbonPaths, factor, alphaMult)));
     }
 
-    // The rings first, then the start dots over them in one batch, so a dot is never buried under
-    // the path of the cell next door and the point size is bound once for all of them.
+    // The carved ring first, then the ring a band may lie on over it, then the start dots over
+    // both. Carved underneath so that where the two meet the usable reading wins the pixel, and
+    // the dots last so one is never buried under the path of the cell next door - which is also
+    // what lets the point size be bound once for all of them.
     private static void drawRibbonPaths(
             Collection<CellRibbonPath> ribbonPaths,
             float factor,
@@ -96,26 +105,42 @@ public final class CellRibbonPathRenderer {
 
         GL11.glLineWidth(PATH_LINE_WIDTH);
         for (var ribbonPath : ribbonPaths) {
-            GlColour.set(resolveVerdictColour(ribbonPath.verdict()), pathAlpha);
 
-            // Closed by the emission rather than by the traced points, which do not repeat the
-            // first vertex: a band runs the ring as a loop, and drawing it as an open line would
-            // leave a gap at the very point every band starts from.
-            GlRuns.drawScaled(GL11.GL_LINE_LOOP, ribbonPath.centreline(), factor);
+            // The ring the cell's own shape denied a band, in the ramp's discarded shade whatever
+            // the cell's verdict is: a stretch too narrow for the band is refused outline, and on a
+            // cell narrow enough to fold its ring that stretch runs outside the cell's own border.
+            // Read as part of the path it would say the geometry escaped the cell; read as its own
+            // shade it says how much of the outline the band never had.
+            GlColour.set(DiagnosticPalette.DISCARDED_COLOUR, pathAlpha);
+            drawStretches(ribbonPath.carvedStretches(), factor);
+
+            GlColour.set(resolveVerdictColour(ribbonPath.verdict()), pathAlpha);
+            drawStretches(ribbonPath.heldStretches(), factor);
         }
 
         // The path's own start - the cell's top centre, where a band begins and runs clockwise
         // from. Marked because it is a convention rather than a feature of the ring: nothing about
-        // a traced loop says which point of it a band would open at.
+        // a traced ring says which point of it a band would open at, and the carve can take the
+        // very stretch that opens there.
         GL11.glPointSize(PATH_START_DOT_SIZE);
         GL11.glBegin(GL11.GL_POINTS);
         for (var ribbonPath : ribbonPaths) {
             GlColour.set(resolveVerdictColour(ribbonPath.verdict()), pathAlpha);
             GL11.glVertex2f(
-                ribbonPath.centreline()[START_X] * factor,
-                ribbonPath.centreline()[START_Y] * factor);
+                ribbonPath.startPoint()[START_X] * factor,
+                ribbonPath.startPoint()[START_Y] * factor);
         }
         GL11.glEnd();
+    }
+
+    // One open strip per stretch. Open rather than closed because a carved ring is no longer a
+    // loop: closing each stretch would draw a chord straight across the gap the carve made, which
+    // is precisely the ring being reported as unusable.
+    private static void drawStretches(List<float[]> stretches, float factor) {
+
+        for (var stretch : stretches) {
+            GlRuns.drawScaled(GL11.GL_LINE_STRIP, stretch, factor);
+        }
     }
 
     // The shared diagnostic ramp read as this overlay's own outcomes: green for the path that

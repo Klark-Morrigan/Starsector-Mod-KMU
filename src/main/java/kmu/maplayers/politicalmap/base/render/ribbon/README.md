@@ -193,11 +193,21 @@ and on the map they are the same picture. **Show presence band paths** (Map - De
 draws what is underneath that silence: the ring each cell's band would have run along, a dot at the
 point every band starts from, and the shared diagnostic ramp for what the cell's own room allowed.
 
+The ring is drawn as the two things it is - the stretches a band may lie on in the cell's verdict
+shade, the stretches its own shape denied it in the discarded shade - as open strips rather than
+one closed loop. A carved ring is not a loop, and on a cell narrow over most of its length the
+carved part runs *outside* the cell's own border, since a ring inset past the shape's own width
+folds through itself. Drawn whole, that reads as geometry escaping the cell it reports on; drawn in
+two shades it reads as what it is - how much of the outline the band never had.
+
 | Shade | `RibbonPathVerdict` | What the cell is |
 | --- | --- | --- |
 | green | `LAID_AT_PAD` | the ring held the authored inset |
-| yellow | `LAID_UNPADDED` | too narrow for the pad, and drawn anyway |
-| red | `REFUSED` | too narrow for the pad with **Always draw a planned band** off |
+| yellow | `LAID_UNPADDED` | too narrow for the pad everywhere, and drawn anyway |
+| red | `REFUSED` | too narrow for the pad everywhere with **Always draw a planned band** off |
+
+The same ramp is read again per stretch: a carved stretch draws red whatever the cell's own verdict
+is, so red means one thing on this overlay - outline no band is laid on.
 
 A cell narrower than the band is wide has no path at all and so draws none, which is the one
 refusal the overlay cannot show. Nor does a shade promise a band: green says the ring offered room,

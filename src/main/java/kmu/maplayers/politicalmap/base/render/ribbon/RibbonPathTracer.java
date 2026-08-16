@@ -1,8 +1,10 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
 import kmlib.math.geometry.RingPath;
+import kmlib.math.geometry.RingStretch;
 import kmlib.opengl.GlVertexRuns;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,6 +23,10 @@ import java.util.List;
  * everywhere, and one narrower than the band itself are all posed directly.
  */
 public final class RibbonPathTracer {
+
+    // Where a ring is walked from, which is zero by the path's own definition. Named because the
+    // overlay marks that point and a bare 0 there reads as an index rather than as a distance.
+    private static final double PATH_START = 0.0;
 
     // Traces only; never instantiated.
     private RibbonPathTracer() {
@@ -114,8 +120,35 @@ public final class RibbonPathTracer {
         return RingPath.traceInsetRing(ring, insetDistance, style.miterSpikeLimit(), topAnchor);
     }
 
-    // The traced vertices packed for emission, paired with what the ring let a band do.
+    // The traced ring packed for emission as the two things it is - the stretches a band may lie
+    // on and the stretches its own shape denied it - paired with what the ring let a band do.
+    //
+    // Cut here rather than drawn as the one loop it was traced as, because the two are read
+    // differently and one of them is the answer to "why is this cell's band shorter than its
+    // outline". A ring folded outside the cell is the sharpest case: drawn whole it shows a line
+    // leaving the shape it reports on, where cut it shows that ring as outline no band was ever
+    // going to use.
     private static CellRibbonPath flattenTracedPath(RingPath path, RibbonPathVerdict verdict) {
-        return new CellRibbonPath(GlVertexRuns.flattenVertices(path.getPoints()), verdict);
+
+        return new CellRibbonPath(
+            collectStretchPolylines(path, path.findStretchesHoldingItsInset()),
+            collectStretchPolylines(path, path.findStretchesFailingItsInset()),
+            GlVertexRuns.flattenVertices(List.of(path.computePointAt(PATH_START))),
+            verdict);
+    }
+
+    // One polyline per stretch, each carrying the corners the ring turns at within it so a stretch
+    // spanning a corner bends with the cell rather than cutting across it.
+    private static List<float[]> collectStretchPolylines(
+            RingPath path,
+            List<RingStretch> stretches) {
+
+        var polylines = new ArrayList<float[]>(stretches.size());
+
+        for (var stretch : stretches) {
+            polylines.add(GlVertexRuns.flattenVertices(
+                path.collectPointsBetween(stretch.startArcLength(), stretch.endArcLength())));
+        }
+        return polylines;
     }
 }

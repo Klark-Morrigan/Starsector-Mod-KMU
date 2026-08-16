@@ -741,9 +741,13 @@ final class PoliticalMapTerritoriesTest {
             new RibbonBand(Color.WHITE, new float[] {0, 0, 1, 0, 1, 1})));
     }
 
+    // A path that draws something, which is all these cases ask of it: what distinguishes it from
+    // CellRibbonPath.NONE is that it has a stretch at all, not where that stretch runs.
     private static CellRibbonPath buildAnyRibbonPath() {
         return new CellRibbonPath(
-            new float[] {0, 0, 1, 0, 1, 1},
+            List.of(new float[] {0, 0, 1, 0, 1, 1}),
+            List.of(),
+            new float[] {0, 0},
             RibbonPathVerdict.LAID_AT_PAD);
     }
 

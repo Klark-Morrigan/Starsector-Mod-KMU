@@ -24,6 +24,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * otherwise - the cell simply draws nothing, exactly like a cell with nothing to report - so a
  * trace that came back empty here would leave the two indistinguishable and the overlay pointless.
  *
+ * <p>And on what it hands that path back as: the ring a band may lie on and the ring the cell's own
+ * shape denied it, kept apart. A cell with room the whole way round carves nothing; a cell with a
+ * neck reports the neck as its own stretch, and what is left of its ring as the two stretches the
+ * path's start divides them into.
+ *
  * <p>Both are stated in literal coordinates, because the start is a convention rather than a
  * derivation: a path traced at the right inset but opened at the wrong point of the ring is no
  * less correct as geometry and completely wrong as the mark of where a band begins.
@@ -165,8 +170,46 @@ final class RibbonPathTracerTest {
 
             assertThat(ribbonPath.verdict())
                 .isEqualTo(RibbonPathVerdict.LAID_AT_PAD);
-            assertThat(ribbonPath.centreline())
+
+            // A cell with room the whole way round carves nothing, so its ring comes back as the
+            // one stretch it is, opening at the point a band opens at.
+            assertThat(ribbonPath.carvedStretches())
+                .isEmpty();
+            assertThat(ribbonPath.heldStretches())
+                .singleElement()
+                .satisfies(stretch -> assertThat(stretch).startsWith(2000f, 3600f));
+            assertThat(ribbonPath.startPoint())
+                .containsExactly(2000f, 3600f);
+        }
+
+        @Test
+        void traceInspectedRibbonPathKeepsTheRingANeckDeniedOutOfTheStretchesABandMayUse() {
+
+            var ribbonPath = RibbonPathTracer.traceInspectedRibbonPath(
+                NECKED_CELL,
+                SQUARE_CELL_SITE,
+                STYLE);
+
+            // The overlay's whole job on this cell. Drawn as one ring it would show a path
+            // running through a neck no band may enter - and on a cell narrow enough to fold its
+            // ring, running outside the cell's own border - with nothing to say which part of it
+            // a band could use. Split, the neck is reported as the ring the band never had.
+            assertThat(ribbonPath.verdict())
+                .isEqualTo(RibbonPathVerdict.LAID_AT_PAD);
+            assertThat(ribbonPath.carvedStretches())
+                .singleElement()
+                .satisfies(stretch -> assertThat(stretch).startsWith(3600f, 2200f));
+
+            // Two stretches rather than one, because the ring the neck leaves runs through the
+            // path's own start: the carve states it as the piece closing the ring and the piece
+            // opening it. Reading them as the one stretch they are is the layout's business, not
+            // the overlay's - drawn, the two meet at the start dot and read as continuous.
+            assertThat(ribbonPath.heldStretches())
+                .hasSize(2);
+            assertThat(ribbonPath.heldStretches().get(0))
                 .startsWith(2000f, 3600f);
+            assertThat(ribbonPath.heldStretches().get(1))
+                .startsWith(3600f, 1800f);
         }
 
         @Test
@@ -179,8 +222,8 @@ final class RibbonPathTracerTest {
 
             assertThat(ribbonPath.verdict())
                 .isEqualTo(RibbonPathVerdict.LAID_UNPADDED);
-            assertThat(ribbonPath.centreline())
-                .startsWith(250f, 300f);
+            assertThat(ribbonPath.startPoint())
+                .containsExactly(250f, 300f);
         }
 
         @Test
@@ -195,8 +238,8 @@ final class RibbonPathTracerTest {
             // on for this very cell, which is the state the overlay is looked at to explain.
             assertThat(ribbonPath.verdict())
                 .isEqualTo(RibbonPathVerdict.REFUSED);
-            assertThat(ribbonPath.centreline())
-                .startsWith(250f, 300f);
+            assertThat(ribbonPath.startPoint())
+                .containsExactly(250f, 300f);
         }
 
         @Test
