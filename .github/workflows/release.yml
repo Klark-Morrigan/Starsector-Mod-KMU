@@ -8,12 +8,17 @@
 # the latest git tag, so an ordinary push (no version bump) costs one cheap
 # config job and stops. On a bump it re-runs the PR gates against the exact
 # commit being released, packages the mod zip, tags, and publishes a GitHub
-# release whose body is this repo's CHANGELOG.md section for that version.
+# release whose body is this repo's CHANGELOG.md section for that version,
+# followed by a line naming the KMLib release it requires.
 #
 # Pinned to a KMLib tag rather than a branch so an unrelated KMLib commit
 # cannot change how KMU releases after the fact. This pin and the kmlib
 # dependency version in mod_info.json move together, in the same commit -
 # see KMLib's docs/dev/versioning.md.
+#
+# The pipeline refuses to release when that kmlib pin names a KMLib version
+# with no published release, so KMLib is released before KMU is - see the
+# same document.
 name: Release
 
 on:

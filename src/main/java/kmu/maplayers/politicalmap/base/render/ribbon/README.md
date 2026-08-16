@@ -12,6 +12,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 - [The three classes that build one](#the-three-classes-that-build-one)
 - [Laying a band inside a ring](#laying-a-band-inside-a-ring)
 - [When the ring has no room](#when-the-ring-has-no-room)
+- [A neck costs its own stretch](#a-neck-costs-its-own-stretch)
 - [Keeping clear of the names](#keeping-clear-of-the-names)
 - [One band, one stretch](#one-band-one-stretch)
 - [Where a band sits](#where-a-band-sits)
@@ -51,13 +52,18 @@ is cells nobody paints, and the claim mechanic's count walks a system's whole ma
 1. `RibbonPathTracer` insets the cell's ring by the pad plus half the width through
    `RingPath.traceInsetRing`, which normalises the winding and parameterises the ring by arc
    length from the cell's top centre, clockwise.
-2. The name boxes are carved off that path, and the longest stretch left is the one the whole band
-   goes on - see [one band, one stretch](#one-band-one-stretch).
+2. The name boxes are carved off that path - as are the stretches of it the cell's own outline
+   leaves no room on - and the longest stretch left is the one the whole band goes on; see
+   [one band, one stretch](#one-band-one-stretch).
 3. One width's worth of ring is clamped to that stretch: `min(width, stretchLength / totalUnits)`,
    so a crowded cell - or one much of whose ring is under a name - compresses rather than losing a
    bloc off the end.
-4. Below `Limits.MIN_EDGE_LENGTH` the cell says nothing at all. That covers a cell smaller than the
-   pad and width together, one narrowed to a neck, and one whose ring the names have eaten.
+4. Below `Limits.MIN_EDGE_LENGTH` the cell says nothing at all - too little ring left to state the
+   plan at any size, whether because the cell is small or because the names have eaten most of it.
+   A cell whose ring holds the band's inset nowhere - smaller than the pad and width together, or
+   too narrow for them the whole way round - is refused a step earlier, by the trace. A cell
+   merely narrowed in one place is not that cell; see
+   [a neck costs its own stretch](#a-neck-costs-its-own-stretch).
 5. `RingPath.placeSpanNearestStart` settles where along that stretch the band sits - see
    [where a band sits](#where-a-band-sits).
 
@@ -69,8 +75,8 @@ band** (on by default) turns each into a fallback:
 
 | Refusal | Fallback |
 | --- | --- |
-| the names cover the whole ring | the band takes the whole ring, clearance given up |
-| the cell cannot hold the pad and the half width | traced at `computeUnpaddedCentrelineInset()` |
+| the names cover the whole ring | the band takes the ring the cell's own shape leaves, clearance given up |
+| the cell holds the pad and the half width nowhere | traced at `computeUnpaddedCentrelineInset()` |
 
 The pad is what gives way to a narrow cell, never the half width: the pad is a look, while the half
 width is what puts the band's near edge on the border instead of over it. A cell narrower than the
@@ -78,10 +84,30 @@ band is wide has no band to draw rather than a tighter one, and comes back bare 
 
 Off, a cell short of room simply draws nothing - tidier, and no way to tell a system with nothing
 to say from one refused the room to say it. That difference is the knob's other use: with it on,
-a bare cell means the plan was empty.
+those two refusals are gone, so a bare cell is one the plan was empty for, one narrower than the
+band, or one with too little ring left to state its plan - a narrower question than the seven a
+bare cell asks with the knob off, and the reason the two refusals it cannot answer are named above
+rather than left to be discovered.
 
 Compressing the *length* while leaving the width alone is deliberate: the band says its piece
 through the proportions between its runs, so shortening every run by one factor keeps all of them.
+
+## A neck costs its own stretch
+
+A cell's outline can have no room for the band in one place and room several times over
+everywhere else - a tab, a spur, the gap where two neighbours nearly meet. `RingPath.traceInsetRing`
+states that as ring rather than as a verdict: the stretches where the traced path stands nearer the
+cell's border than the inset it was built from are carved off it, exactly as a name's box is, and
+the band goes on the longest of what is left. A neck costs its own arc and nothing more.
+
+The refusal above is what that carve leaves rather than a rule beside it. A cell too narrow the
+whole way round fails at every corner of its path, so every stretch goes and there is nothing left
+to lay a band on - the same answer as before, reached by the rule that spares the cell with one
+narrow place.
+
+Forcing does not give a neck back. The names give up the ring they cover because which of two
+readouts wins the room is the player's to settle; a neck is the cell's own shape, and a band run
+through one hangs over the border the half width exists to keep it inside.
 
 ## Keeping clear of the names
 
@@ -175,7 +201,9 @@ point every band starts from, and the shared diagnostic ramp for what the cell's
 
 A cell narrower than the band is wide has no path at all and so draws none, which is the one
 refusal the overlay cannot show. Nor does a shade promise a band: green says the ring offered room,
-while whether anything was laid on it is the plan's business and the names'.
+while whether anything was laid on it is the plan's business and the names'. A shade is about the
+inset the ring was traced at rather than about every stretch of it, so a cell narrowed in one place
+is green and simply carries a band shorter than its outline.
 
 `RibbonPathTracer` is what makes the overlay worth looking at. Both the band pass and the overlay
 walk the same ladder there - the authored inset, then the pad given up - so the path drawn is the

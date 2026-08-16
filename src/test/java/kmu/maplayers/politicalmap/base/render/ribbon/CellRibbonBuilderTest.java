@@ -45,6 +45,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * where that answer stops: the clearance gives way only where it left nothing, the pad gives way
  * only as far as the half width, and a cell narrower than the band still draws none.
  *
+ * <p>A neck is the same question asked of the cell's own shape rather than of the names, and the
+ * two cases are the two halves of its answer: a cell pinched in one place lays its band on the
+ * ring the neck leaves instead of refusing the whole cell, and forcing does not give that neck
+ * back - a band run through it would hang outside the cell it reports on, which is the one thing
+ * neither the clearance nor the pad is ever allowed to cost.
+ *
  * <p>Three of them are the same rule about the path's own start, which the carve states as two
  * ends rather than as the one point it is. A stretch reaching both ends is one stretch and is
  * read as one; a stretch reaching only one of them is not, whichever end it reaches. The
@@ -57,6 +63,20 @@ final class CellRibbonBuilderTest {
     private static final List<double[]> SQUARE_CELL = List.of(
         new double[] {0.0, 0.0},
         new double[] {4000.0, 0.0},
+        new double[] {4000.0, 4000.0},
+        new double[] {0.0, 4000.0});
+
+    // The same cell with a tab hanging off its right side, too narrow to hold the band. The tab
+    // is 400 across against a centreline inset of 400, so its two offset walls cross and what is
+    // left of the mouth stands 283 off the cell's own border rather than 400 - a neck the band
+    // may not run through, on a cell whose four sides have room several times over.
+    private static final List<double[]> NECKED_CELL = List.of(
+        new double[] {0.0, 0.0},
+        new double[] {4000.0, 0.0},
+        new double[] {4000.0, 1800.0},
+        new double[] {4600.0, 1800.0},
+        new double[] {4600.0, 2200.0},
+        new double[] {4000.0, 2200.0},
         new double[] {4000.0, 4000.0},
         new double[] {0.0, 4000.0});
 
@@ -624,6 +644,51 @@ final class CellRibbonBuilderTest {
         }
 
         @Test
+        void laysTheBandOnTheRingANeckLeavesRatherThanRefusingTheWholeCell() {
+            // A neck is a stretch of ring, not a verdict on the cell. This one costs the 566
+            // units of outline that reach it, leaving 12400 of the cell's 12966 - so a plan of
+            // 12000 fits on what is left at full size, opening at (3600,1400) and closing at
+            // (3600,2200) where the neck begins again. Refused as a whole, the cell would draw
+            // nothing at all and read as a system with nothing to report.
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                NECKED_CELL,
+                CELL_SITE,
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
+                STYLE,
+                NO_NAMES);
+
+            assertThat(ribbon.bands())
+                .singleElement()
+                .satisfies(band -> {
+                    assertThat(hasCorner(band, 3800.0, 1400.0)).isTrue();
+                    assertThat(hasCorner(band, 3800.0, 2200.0)).isTrue();
+                    assertThat(computeRightmostReach(band)).isLessThan(3800.0 + CORNER_SLACK);
+                });
+        }
+
+        @Test
+        void keepsAForcedBandOffTheNeckTheNamesCannotGiveBack() {
+            // Forcing is the names giving up the ring they cover, and a neck is not a name. The
+            // same cell under a name across the whole of it draws the same band as above rather
+            // than one running from its top centre straight through the neck - which is what a
+            // fallback to the cell's whole outline would lay, hanging the band over the border
+            // the half width exists to keep it inside.
+            var ribbon = CellRibbonBuilder.buildCellRibbon(
+                NECKED_CELL,
+                CELL_SITE,
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
+                STYLE_FORCING_A_BAND,
+                NAME_ACROSS_THE_WHOLE_CELL);
+
+            assertThat(ribbon.bands())
+                .singleElement()
+                .satisfies(band -> {
+                    assertThat(hasCorner(band, 3800.0, 1400.0)).isTrue();
+                    assertThat(computeRightmostReach(band)).isLessThan(3800.0 + CORNER_SLACK);
+                });
+        }
+
+        @Test
         void drawsNoBandOnACellWithNoRoomToHoldOne() {
             // The cell smaller than the pad and width together. The inset of such a ring comes
             // back tidy and correctly wound while being no inset at all, so the answer here is
@@ -636,6 +701,21 @@ final class CellRibbonBuilderTest {
                     NO_NAMES))
                 .isEqualTo(CellRibbon.NONE);
         }
+    }
+
+    // How far right a run's triangles reach. A band on the necked cell's right side stands at
+    // most half a width out at x=3800; a band that ran through the neck would take the mouth's
+    // own mitre and reach past 4000, outside the very cell it reports on. Asserted as a reach
+    // rather than as a corner, since where such a band would put its corners is the stroker's
+    // arithmetic and what is wrong with it is that it is out there at all.
+    private static double computeRightmostReach(RibbonBand band) {
+
+        var rightmost = -Double.MAX_VALUE;
+
+        for (var vertex = 0; vertex + 1 < band.triangles().length; vertex += 2) {
+            rightmost = Math.max(rightmost, band.triangles()[vertex]);
+        }
+        return rightmost;
     }
 
     // Whether a run turns on the given world point - whether any of its triangles has a corner

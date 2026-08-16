@@ -17,8 +17,8 @@ import java.util.List;
  * draws nothing.
  *
  * <p>Pure over a ring, an anchor and the sizes - no sector, no settings read, no GL - so a cell
- * roomy enough for the pad, one too narrow for it, and one narrower than the band itself are all
- * posed directly.
+ * roomy enough for the pad, one narrowed to a neck in one place, one too narrow for the pad
+ * everywhere, and one narrower than the band itself are all posed directly.
  */
 public final class RibbonPathTracer {
 
@@ -27,18 +27,24 @@ public final class RibbonPathTracer {
     }
 
     /**
-     * The path a band is laid on, or an empty path where the cell has no room for one.
+     * The path a band is laid on, or one holding no stretch a band could go on where the cell has
+     * no room for it.
      *
      * <p>The pad is what gives way on a narrow cell, never the half width: the pad is a look,
      * while the half width is what puts the band's near edge on the border rather than over it. A
-     * cell narrower than the band is wide comes back empty however the setting stands - there is
-     * no tighter band to fall back to, only a thinner one, and thinning is a different design.
+     * cell narrower than the band is wide holds nothing however the setting stands - there is no
+     * tighter band to fall back to, only a thinner one, and thinning is a different design.
+     *
+     * <p>The fall is taken on a cell whose ring held the inset <em>nowhere</em>, not on one pinched
+     * somewhere along it: a pinch costs its own stretch and the rest of the ring is untouched, so
+     * dropping the pad there would move the whole band onto the border to rescue a stretch that was
+     * never the problem.
      *
      * @param ring      the cell's painted outline, the shape the path runs inside
      * @param topAnchor the {x, y} the path's start is found above
      * @param style     the sizes the band is drawn at, which settle both insets and whether the
      *                  shallower one may be fallen to at all
-     * @return the traced path, empty where the cell holds none
+     * @return the traced path, holding no stretch where the cell holds no band
      */
     public static RingPath traceLaidRibbonPath(
             List<double[]> ring,
@@ -47,7 +53,7 @@ public final class RibbonPathTracer {
 
         var paddedPath = traceRingAtInset(ring, topAnchor, style, style.computeCentrelineInset());
 
-        if (!paddedPath.isEmpty() || !style.isBandAlwaysDrawn()) {
+        if (paddedPath.hasStretchHoldingItsInset() || !style.isBandAlwaysDrawn()) {
             return paddedPath;
         }
         return traceRingAtInset(ring, topAnchor, style, style.computeUnpaddedCentrelineInset());
@@ -66,7 +72,7 @@ public final class RibbonPathTracer {
      * @param topAnchor the {x, y} the path's start is found above
      * @param style     the sizes the band is drawn at
      * @return the path flattened for the overlay, or {@link CellRibbonPath#NONE} where the cell
-     *         could hold no path at all
+     *         held no stretch of path at either inset
      */
     public static CellRibbonPath traceInspectedRibbonPath(
             List<double[]> ring,
@@ -75,7 +81,7 @@ public final class RibbonPathTracer {
 
         var paddedPath = traceRingAtInset(ring, topAnchor, style, style.computeCentrelineInset());
 
-        if (!paddedPath.isEmpty()) {
+        if (paddedPath.hasStretchHoldingItsInset()) {
             return flattenTracedPath(paddedPath, RibbonPathVerdict.LAID_AT_PAD);
         }
         var unpaddedPath = traceRingAtInset(
@@ -84,7 +90,7 @@ public final class RibbonPathTracer {
             style,
             style.computeUnpaddedCentrelineInset());
 
-        if (unpaddedPath.isEmpty()) {
+        if (!unpaddedPath.hasStretchHoldingItsInset()) {
             return CellRibbonPath.NONE;
         }
         // The path stands either way; what the player's answer decides is whether a band goes on

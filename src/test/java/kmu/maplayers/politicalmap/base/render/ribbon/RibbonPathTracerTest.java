@@ -14,8 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * thing they do differently with it.
  *
  * <p>The band pass is pinned at its two ends, since between them sits the whole of what a cell
- * short of room draws: a ring that holds the pad is traced at it, and a ring that does not comes
- * back traced or empty depending on the player's answer alone.
+ * short of room draws: a ring that holds the pad is traced at it, and a ring that holds it nowhere
+ * is traced at the shallower inset or holds nothing, depending on the player's answer alone.
  *
  * <p>The overlay is pinned on the case that is its entire reason for existing: a cell refused for
  * want of the pad still hands back the path it was refused on. Nothing on the map says so
@@ -37,8 +37,9 @@ final class RibbonPathTracerTest {
 
     private static final double[] SQUARE_CELL_SITE = new double[] {2000.0, 2000.0};
 
-    // A cell with no room for the pad and the half width together, but room to spare for the half
-    // width on its own - the narrow neck the fallback exists for.
+    // A cell with no room for the pad and the half width together anywhere along it, but room to
+    // spare for the half width on its own - the cell the fallback to the shallower inset exists
+    // for. A cell merely pinched in one place is not this cell and never takes that fall.
     private static final List<double[]> CELL_TOO_NARROW_FOR_THE_PAD = List.of(
         new double[] {0.0, 0.0},
         new double[] {500.0, 0.0},
@@ -92,15 +93,18 @@ final class RibbonPathTracerTest {
         }
 
         @Test
-        void traceLaidRibbonPathTracesNothingOnACellTooNarrowForThePadWhileForcingIsOff() {
+        void traceLaidRibbonPathHoldsNoStretchOnACellTooNarrowForThePadWhileForcingIsOff() {
 
             var path = RibbonPathTracer.traceLaidRibbonPath(
                 CELL_TOO_NARROW_FOR_THE_PAD,
                 NARROW_CELL_SITE,
                 STYLE);
 
-            assertThat(path.isEmpty())
-                .isTrue();
+            // Traced, and holding nothing: a ring with no room for the pad anywhere fails the
+            // inset at every corner, so every stretch of it is carved and there is none left for
+            // a band. The refusal is what the carve leaves rather than a verdict of its own.
+            assertThat(path.hasStretchHoldingItsInset())
+                .isFalse();
         }
 
         @Test
@@ -156,8 +160,8 @@ final class RibbonPathTracerTest {
                 NARROW_CELL_SITE,
                 STYLE);
 
-            // Refused a band, and drawn all the same: the band pass came back empty on this very
-            // cell, which is the state the overlay is looked at to explain.
+            // Refused a band, and drawn all the same: the band pass found no stretch to lay one
+            // on for this very cell, which is the state the overlay is looked at to explain.
             assertThat(ribbonPath.verdict())
                 .isEqualTo(RibbonPathVerdict.REFUSED);
             assertThat(ribbonPath.centreline())

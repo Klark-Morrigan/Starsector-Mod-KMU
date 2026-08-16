@@ -13,8 +13,9 @@ import java.util.List;
 
 /**
  * Lays one cell's planned band around that cell's own ring: the path it runs along, the longest
- * stretch of that path the cluster names leave it, how long a width is worth on that stretch,
- * where along it the band sits, and the triangles each run comes out as.
+ * stretch of that path the cluster names and the cell's own narrow places leave it, how long a
+ * width is worth on that stretch, where along it the band sits, and the triangles each run comes
+ * out as.
  *
  * <p>Everything the plan states is proportional - a run is so many widths long - and everything
  * this settles is the cell's own: where the ring lets a band run, and how much of that ring one
@@ -23,10 +24,14 @@ import java.util.List;
  * with neither needing the other's inputs.
  *
  * <p>Pure over a ring, a plan and the names' boxes - no sector, no settings read, no GL - so a
- * corner split, a compressed band, a name lying across the ring, and a cell too small to hold a
- * band at all are all posed directly.
+ * corner split, a compressed band, a name lying across the ring, a ring narrowed to a neck in one
+ * place, and a cell too small to hold a band at all are all posed directly.
  */
 public final class CellRibbonBuilder {
+
+    // The ring read against no name at all, which is what a forced band falls back to: the cell's
+    // own outline less the stretches its shape leaves no room on.
+    private static final List<List<double[]>> NOTHING_KEPT_OUT = List.of();
 
     private CellRibbonBuilder() {
     }
@@ -37,8 +42,10 @@ public final class CellRibbonBuilder {
      * <p>A cell drops out for either of two reasons, and both are the design's answer rather
      * than a failure: it plans no band at all (nothing but the bloc it is painted for is present
      * in it), or its ring has no room to hold one - a cell smaller than the pad and width
-     * together, one narrowed to a neck somewhere along it, or one whose ring the names cover so
-     * far round that what is left could not state the plan at any size.
+     * together, or one whose ring the names and its own narrow places leave so little of that
+     * what remains could not state the plan at any size. A cell narrowed to a neck in one place
+     * is not that cell: the neck costs its own stretch of ring and the band goes on the longest
+     * of what is left.
      *
      * @param ring         the cell's painted outline, the shape the band runs inside
      * @param topAnchor    the {x, y} the path's start is found above - the cell's own site, so
@@ -64,7 +71,10 @@ public final class CellRibbonBuilder {
         }
         var path = RibbonPathTracer.traceLaidRibbonPath(ring, topAnchor, style);
 
-        if (path.isEmpty()) {
+        // A cell whose ring held the band's inset nowhere: smaller than the pad and width
+        // together, or too narrow for them along the whole of it. A cell pinched in one place
+        // is not this cell - it keeps every stretch the pinch does not cost.
+        if (!path.hasStretchHoldingItsInset()) {
             return CellRibbon.NONE;
         }
 
@@ -82,9 +92,12 @@ public final class CellRibbonBuilder {
         if (clearArcs.isEmpty() && !style.isBandAlwaysDrawn()) {
             return CellRibbon.NONE;
         }
-        var stretch = clearArcs.isEmpty()
-            ? new RingStretch(0.0, path.getPerimeter())
-            : selectLongestClearStretch(path.fuseStretchAcrossStart(clearArcs));
+
+        // Forced, it is the names that give way and only the names: the path's own overrun
+        // stretches stay carved, since a band laid across one hangs over the border of the very
+        // cell it reports on - which is what the half width exists to prevent.
+        var stretch = selectLongestClearStretch(path.fuseStretchAcrossStart(
+            clearArcs.isEmpty() ? path.findClearArcs(NOTHING_KEPT_OUT) : clearArcs));
 
         var lengthUnitWorld = computeLengthUnit(stretch.computeLength(), totalLengthUnits, style);
 
@@ -103,8 +116,8 @@ public final class CellRibbonBuilder {
         return new CellRibbon(strokeSegments(path, plan, ribbonStart, lengthUnitWorld, style));
     }
 
-    // The one stretch of ring the whole band is laid on: the longest the names left, with the
-    // rest of the ring staying bare.
+    // The one stretch of ring the whole band is laid on: the longest left clear, with the rest of
+    // the ring staying bare.
     //
     // A band scattered round the ring in pieces is not the readout it looks like: a reader
     // cannot tell one run interrupted by a name from two runs of one colour, so a band split
