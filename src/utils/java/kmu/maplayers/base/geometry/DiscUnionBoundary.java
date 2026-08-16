@@ -367,9 +367,21 @@ final class DiscUnionBoundary {
         var inner = Math.acos(Math.min(1, nearest));
         var outer = Math.acos(Math.max(-1, furthest));
 
-        // Of the two arcs the line cuts, the one facing the wall's far end.
-        var towards = measureAngleTowards(
-            union, circle, circle == chord.fromCircle() ? chord.toCircle() : chord.fromCircle());
+        // Of the two arcs the line cuts, the one where the wall actually meets this circle.
+        //
+        // Asked of the wall's own end rather than of the direction to the cell at its far
+        // end. Those agree for a bridge, whose line runs through both sites, and they are
+        // most of a right angle apart for a reach of coast, which leaves a cell along its
+        // tangent. Taking the far cell's direction opened half the coast's mouths on the
+        // wrong side of the cell, which walled off pockets inland of it and left the void it
+        // had actually shut in open to the sea.
+        var anchor = circle == chord.fromCircle()
+            ? new double[] {line.originX(), line.originY()}
+            : new double[] {
+                line.originX() + chord.line().directionX(),
+                line.originY() + chord.line().directionY()};
+
+        var towards = Math.atan2(anchor[1] - centre[1], anchor[0] - centre[0]);
 
         var ahead = normalAngle + inner;
         var behind = normalAngle - outer;

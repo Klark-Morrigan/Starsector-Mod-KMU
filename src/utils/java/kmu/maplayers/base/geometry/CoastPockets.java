@@ -76,25 +76,22 @@ final class CoastPockets {
         var walls = new DiscUnionBoundary.Walls(laid, parameters.borderInset());
         var arcSegments = parameters.measureArcSegments();
 
-        // Both traces sit at or below the reach the COAST is drawn at, which is the cells'
-        // filled border. A wall has to be on the boundary to be laid at all, and the coast
-        // line runs along the fills - at any wider reach the discs have swallowed it, the
-        // walls are dropped as buried, and the pockets either side merge into one.
+        // ONE trace, and what it hands back is what gets drawn - the same thing
+        // VoidBridgePockets does with its own walls. A pocket found among the cells can
+        // afford to be traced twice and the two matched up by containment, because a bridge
+        // spans a real gap and is still on the boundary at a wider reach. A reach of coast is
+        // tangent to the fills and is not, so the two traces lay different walls, their holes
+        // do not correspond, and the match silently drops the ones that fail - which is what
+        // left pockets on the map with nothing drawn in them.
         //
-        // So the pocket's own extent is what the coast shut in against the fills, and what it
-        // comes to once the channel is out is that retraced a channel further out. Its gap
-        // against a cell is one channel rather than the two a pocket between cells shows,
-        // for the same reason the coast hugs the fill in the first place: the fill has
-        // already given up its own channel, and the coast is drawn on what that left.
-        var extent = DiscUnionBoundary.traceHolesAcrossWalls(
-            new DiscUnion(sites, parameters.measureFilledReach()), walls, arcSegments);
-
-        var withChannel = DiscUnionBoundary.traceHolesAcrossWalls(
-            new DiscUnion(sites, parameters.cellRadius()), walls, arcSegments);
-
+        // At the reach that DEFINES void, which is as wide as a coast wall survives: the
+        // coast is drawn on the cells' fills, so a channel further out the discs have
+        // swallowed it and the wall is dropped as buried. The channel comes out at the
+        // mouths, where every wall keeps one, and off the cells by the reach itself.
         var pockets = new ArrayList<VoidPockets.VoidPocket>();
 
-        for (var hole : extent) {
+        for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
+                new DiscUnion(sites, parameters.cellRadius()), walls, arcSegments)) {
 
             // Only what a COAST reach shut in. Void the cells closed unaided, and void a
             // bridge holds, are both the other construction's to report; drawing them here
@@ -102,12 +99,10 @@ final class CoastPockets {
             if (java.util.Collections.disjoint(hole.walledBy(), reaches)) {
                 continue;
             }
+            // Its own outline, because this trace already IS the shaped one - the channel
+            // came out of it at the mouths and out of the reach against the cells.
             pockets.add(VoidPockets.shapeVoidPocket(
-                hole,
-                DiscUnionBoundary.findHolesInside(withChannel, hole),
-                ownerBySite,
-                sites,
-                sectionRules));
+                hole, List.of(hole.boundary()), ownerBySite, sites, sectionRules));
         }
         return pockets;
     }
