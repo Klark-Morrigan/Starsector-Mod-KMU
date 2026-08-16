@@ -2,7 +2,6 @@ package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
-import kmlib.math.geometry.Segments;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -76,6 +75,9 @@ final class Coastlines {
     // than crossing it. A run begins and ends ON two borders, so without a hair of slack
     // every one of them would count itself as crossing the two cells it runs between.
     static final double TOUCHING_TOLERANCE = 1;
+
+    // No stretch stands between two kept ones, or none of those that do is in anything's way.
+    private static final int NOTHING_BLOCKING = -1;
 
     private Coastlines() {
     }
@@ -186,8 +188,9 @@ final class Coastlines {
                 drawn,
                 findBridgedCircles(bounding, walls),
                 new SmoothingRules(
-                    rules.skipMultiple() * parameters.cellRadius(), rules.maxSkips()),
-                parameters.measureArcSegments()),
+                    rules.skipMultiple() * parameters.cellRadius(),
+                    rules.maxSkips(),
+                    parameters.measureArcSegments())),
             silhouettes,
             drawn);
     }
@@ -202,10 +205,14 @@ final class Coastlines {
      * @param skipDistance        how near the last kept point a cell must be to be dropped
      * @param maxConsecutiveSkips how many may be dropped in a row before one is kept whatever
      *                            its distance, so a dense stretch still contributes a point
+     * @param arcSegments         how finely a half-turn of arc is sampled, which is how
+     *                            smooth the fillets come out and so the third thing deciding
+     *                            what a smoothed coast looks like
      */
     private record SmoothingRules(
         double skipDistance,
-        int maxConsecutiveSkips) {
+        int maxConsecutiveSkips,
+        int arcSegments) {
     }
 
     /**
@@ -237,28 +244,22 @@ final class Coastlines {
      * @param silhouettes the stretches of coast the cells make, in walk order
      * @param union       the discs to draw against
      * @param bridged     the cells a laid wall attaches to, which are never skipped
-     * @param rules       how aggressively to smooth
-     * @param arcSegments how finely a half-turn of arc is sampled
+     * @param rules       how aggressively to smooth, and how finely
      * @return one closed run of points per run of connected cells
      */
     private static List<List<CoastVertex>> smoothSilhouettes(
             List<List<DiscUnionBoundary.CoastMark>> silhouettes,
             DiscUnion union,
             Set<Integer> bridged,
-            SmoothingRules rules,
-            int arcSegments) {
+            SmoothingRules rules) {
 
         var smoothed = new ArrayList<List<CoastVertex>>();
 
         for (var coast : silhouettes) {
 
             var outline = buildClearedOutline(
-                coast, keepSmoothedMarks(coast, union, bridged, rules), union, arcSegments);
+                coast, keepSmoothedMarks(coast, union, bridged, rules), union, rules);
 
-            // Judged on the points drawn rather than on the cells kept, because a cell
-            // contributes a whole run of border rather than one point. One cell alone in the
-            // void encloses an area perfectly well - its own - and two that touch enclose the
-            // pair; only a run that came out too small to be a shape at all is dropped.
             if (outline.size() >= Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                 smoothed.add(outline);
             }
@@ -396,16 +397,22 @@ final class Coastlines {
         return restored;
     }
 
-    // Which of the stretches skipped between two kept ones to put back, or -1 when the jump
-    // is clear. The first one found rather than the worst: putting any of them back shortens
-    // the jump, and the next pass asks again about what is left.
+    // Which of the stretches skipped between two kept ones to put back, or NOTHING_BLOCKING
+    // when the jump is clear.
     //
-    // A jump can also cut into one of the two cells it runs BETWEEN, which no skipped stretch
-    // can be blamed for. It happens where the two ends both block and the common tangent has
-    // to be clamped back onto a frontage that does not reach it, leaving a run that is tangent
-    // to nothing. Putting a skipped stretch back is still the remedy: the one long jump
-    // becomes two short ones, and two neighbouring stretches can always fall back on the
-    // boundary's own join between them, which cuts nothing by construction.
+    // The jump is judged first, by the one clearance test the drawing itself uses, and only a
+    // jump that failed goes looking for something to blame. That ordering is what keeps one
+    // definition of "in the way" in play: an inline scan with its own threshold answered the
+    // same question a hair differently, and a method holding two definitions of one question
+    // is how the next reader picks the wrong one.
+    //
+    // The blame falls on the skipped stretch actually across the jump where there is one, and
+    // otherwise simply on the first skipped. A jump can cut into one of the two cells it runs
+    // BETWEEN, which no skipped stretch can be blamed for - it happens where both ends block
+    // and the common tangent has to be clamped back onto a frontage that does not reach it,
+    // leaving a run tangent to nothing. Putting any skipped stretch back is still the remedy:
+    // the one long jump becomes two short ones, and two neighbouring stretches can always fall
+    // back on the boundary's own join between them, which cuts nothing by construction.
     private static int findBlockedStretch(
             List<DiscUnionBoundary.CoastMark> coast,
             DiscUnion union,
@@ -413,11 +420,14 @@ final class Coastlines {
             int from,
             int to) {
 
-        var edge = resolveEdge(union, coast.get(from), coast.get(to));
+        var jump = new StraightRun(union, coast.get(from), coast.get(to));
+        var edge = resolveEdge(jump);
 
-        var departure = findPointAt(union, coast.get(from), edge.departAngle());
-        var arrival = findPointAt(union, coast.get(to), edge.arriveAngle());
-        var firstSkipped = -1;
+        if (isRunClearOfEveryCell(jump, edge)) {
+            return NOTHING_BLOCKING;
+        }
+
+        var firstSkipped = NOTHING_BLOCKING;
 
         for (var step = 1; step < coast.size() && !isKept[(from + step) % coast.size()]; step++) {
 
@@ -426,22 +436,14 @@ final class Coastlines {
             if (firstSkipped < 0) {
                 firstSkipped = index;
             }
-
-            var mark = coast.get(index);
-
-            if (mark.circle() == coast.get(from).circle()
-                    || mark.circle() == coast.get(to).circle()) {
+            if (jump.isRunBetween(coast.get(index).circle())) {
                 continue;
             }
-            if (Segments.computeDistanceToPoint(
-                    departure, arrival, union.sites().get(mark.circle())) < union.reach()) {
-
+            if (jump.measureIncursion(edge, coast.get(index).circle()) > TOUCHING_TOLERANCE) {
                 return index;
             }
         }
-        return isRunClearOfEveryCell(union, coast.get(from), coast.get(to), edge)
-            ? -1
-            : firstSkipped;
+        return firstSkipped;
     }
 
     // The kept stretches turned into a closed run of points: a fillet along each cell's own
@@ -451,7 +453,7 @@ final class Coastlines {
             List<DiscUnionBoundary.CoastMark> coast,
             List<Integer> kept,
             DiscUnion union,
-            int arcSegments) {
+            SmoothingRules rules) {
 
         // A run of one has no reach to any other cell, so there is nothing to clamp against
         // and its whole frontage is the coast. That is a cell alone in the void, whose coast
@@ -461,7 +463,7 @@ final class Coastlines {
             var only = coast.get(kept.get(0));
             return buildVertices(
                 only,
-                sampleFillet(union, only, only.fromAngle(), only.toAngle(), arcSegments));
+                sampleFillet(union, only, only.fromAngle(), only.toAngle(), rules));
         }
 
         var arriveAngles = new double[kept.size()];
@@ -472,9 +474,8 @@ final class Coastlines {
             var next = (index + 1) % kept.size();
 
             var edge = findClearEdge(
-                union,
-                coast.get(kept.get(index)),
-                coast.get(kept.get(next)),
+                new StraightRun(
+                    union, coast.get(kept.get(index)), coast.get(kept.get(next))),
                 kept.get(next) == (kept.get(index) + 1) % coast.size());
 
             departAngles[index] = edge.departAngle();
@@ -490,7 +491,7 @@ final class Coastlines {
             outline.addAll(buildVertices(
                 mark,
                 sampleFillet(
-                    union, mark, arriveAngles[index], departAngles[index], arcSegments)));
+                    union, mark, arriveAngles[index], departAngles[index], rules)));
         }
         return outline;
     }
@@ -526,7 +527,7 @@ final class Coastlines {
             DiscUnionBoundary.CoastMark mark,
             double arriveAngle,
             double departAngle,
-            int arcSegments) {
+            SmoothingRules rules) {
 
         var sweep = departAngle - arriveAngle;
 
@@ -534,7 +535,8 @@ final class Coastlines {
             return List.of(findPointAt(union, mark, (arriveAngle + departAngle) / 2));
         }
 
-        var steps = Math.max(1, (int) Math.ceil(arcSegments * sweep / Angles.HALF_TURN));
+        var steps = Math.max(
+            1, (int) Math.ceil(rules.arcSegments() * sweep / Angles.HALF_TURN));
         var points = new ArrayList<double[]>(steps + 1);
 
         for (var step = 0; step <= steps; step++) {
@@ -565,38 +567,25 @@ final class Coastlines {
     // Only where the reach fails, though. Taking this join for every adjacent pair - which an
     // earlier version did - hugs the whole coast and gives up every pocket the smoothing was
     // for.
-    private static EdgeAngles findClearEdge(
-            DiscUnion union,
-            DiscUnionBoundary.CoastMark from,
-            DiscUnionBoundary.CoastMark to,
-            boolean isAdjacent) {
+    private static EdgeAngles findClearEdge(StraightRun run, boolean isAdjacent) {
 
-        var reach = resolveEdge(union, from, to);
+        var reach = resolveEdge(run);
 
-        if (!isAdjacent || isRunClearOfEveryCell(union, from, to, reach)) {
+        if (!isAdjacent || isRunClearOfEveryCell(run, reach)) {
 
             return reach;
         }
-        return new EdgeAngles(from.toAngle(), to.fromAngle());
+        return new EdgeAngles(run.from().toAngle(), run.to().fromAngle());
     }
 
     // Whether a straight reach passes outside every cell on the map. Every cell, including
     // the two it runs between - those it touches rather than enters, so a hair of slack is
     // what tells the two apart.
-    private static boolean isRunClearOfEveryCell(
-            DiscUnion union,
-            DiscUnionBoundary.CoastMark from,
-            DiscUnionBoundary.CoastMark to,
-            EdgeAngles edge) {
+    private static boolean isRunClearOfEveryCell(StraightRun run, EdgeAngles edge) {
 
-        var departure = findPointAt(union, from, edge.departAngle());
-        var arrival = findPointAt(union, to, edge.arriveAngle());
+        for (var circle = 0; circle < run.union().sites().size(); circle++) {
 
-        for (var site : union.sites()) {
-
-            if (Segments.computeDistanceToPoint(departure, arrival, site)
-                    < union.reach() - TOUCHING_TOLERANCE) {
-
+            if (run.measureIncursion(edge, circle) > TOUCHING_TOLERANCE) {
                 return false;
             }
         }
@@ -612,21 +601,17 @@ final class Coastlines {
     // departure BEFORE the departure last moved. Where that still clears both cells it is the
     // answer, and where it does not the two are put straight onto the tangent, which is the
     // configuration they were converging on and is exact rather than approached.
-    private static EdgeAngles resolveEdge(
-            DiscUnion union,
-            DiscUnionBoundary.CoastMark from,
-            DiscUnionBoundary.CoastMark to) {
+    private static EdgeAngles resolveEdge(StraightRun run) {
 
-        var clamped = clampEdgeEnds(union, from, to);
+        var clamped = clampEdgeEnds(run);
 
         // Clear is asked of EVERY cell rather than only the two the run joins. The two are
         // what the clamp was working against, so a run can satisfy both and still shave a
         // third cell that neither end knows about - and that run was then accepted, which is
         // where the shallow crossings came from.
-        return isKeepingCellsLeft(union, from, to, clamped)
-                && isRunClearOfEveryCell(union, from, to, clamped)
+        return isKeepingCellsLeft(run, clamped) && isRunClearOfEveryCell(run, clamped)
             ? clamped
-            : findTangentEdge(union, from, to);
+            : findTangentEdge(run);
     }
 
     // Whether a straight run keeps the cells it joins on its left, which is the side the walk
@@ -641,17 +626,13 @@ final class Coastlines {
     //
     // On a long coast that costs one cell. On a two-cell island it costs both, and an outline
     // of two points is not a shape, so the island vanished off the map entirely.
-    private static boolean isKeepingCellsLeft(
-            DiscUnion union,
-            DiscUnionBoundary.CoastMark from,
-            DiscUnionBoundary.CoastMark to,
-            EdgeAngles edge) {
+    private static boolean isKeepingCellsLeft(StraightRun run, EdgeAngles edge) {
 
-        var departure = findPointAt(union, from, edge.departAngle());
-        var arrival = findPointAt(union, to, edge.arriveAngle());
+        var departure = run.findDeparture(edge);
+        var arrival = run.findArrival(edge);
 
-        return isLeftOfRun(departure, arrival, union.sites().get(from.circle()))
-            && isLeftOfRun(departure, arrival, union.sites().get(to.circle()));
+        return isLeftOfRun(departure, arrival, run.findCentre(run.from()))
+            && isLeftOfRun(departure, arrival, run.findCentre(run.to()));
     }
 
     // On the line counts as left: a run that departs straight along a diameter has its own
@@ -665,18 +646,18 @@ final class Coastlines {
     // Each end slid to the nearest place to its own middle that the other end can see, over
     // and over, so two ends that both block settle towards the common tangent instead of one
     // of them winning outright.
-    private static EdgeAngles clampEdgeEnds(
-            DiscUnion union,
-            DiscUnionBoundary.CoastMark from,
-            DiscUnionBoundary.CoastMark to) {
+    private static EdgeAngles clampEdgeEnds(StraightRun run) {
 
-        var departAngle = from.midAngle();
-        var arriveAngle = to.midAngle();
+        var union = run.union();
+        var departAngle = run.from().midAngle();
+        var arriveAngle = run.to().midAngle();
 
         for (var pass = 0; pass < CLAMP_PASSES; pass++) {
 
-            arriveAngle = findReachableAngle(union, to, findPointAt(union, from, departAngle));
-            departAngle = findReachableAngle(union, from, findPointAt(union, to, arriveAngle));
+            arriveAngle = findReachableAngle(
+                union, run.to(), findPointAt(union, run.from(), departAngle));
+            departAngle = findReachableAngle(
+                union, run.from(), findPointAt(union, run.to(), arriveAngle));
         }
         return new EdgeAngles(departAngle, arriveAngle);
     }
@@ -685,26 +666,20 @@ final class Coastlines {
     // the tangent point - a third cell covering that direction - this clamp moves it, and the
     // run stops being tangent to anything; that is the case the boundary's own join exists
     // for, and it is why the clamp is named rather than buried.
-    private static EdgeAngles findTangentEdge(
-            DiscUnion union,
-            DiscUnionBoundary.CoastMark from,
-            DiscUnionBoundary.CoastMark to) {
+    private static EdgeAngles findTangentEdge(StraightRun run) {
 
-        var tangent = measureTangentAngle(union, from, to);
+        var tangent = measureTangentAngle(run);
 
         return new EdgeAngles(
-            clampIntoFrontage(from, tangent), clampIntoFrontage(to, tangent));
+            clampIntoFrontage(run.from(), tangent), clampIntoFrontage(run.to(), tangent));
     }
 
     // Equal reaches, so the outer tangent runs parallel to the line joining the two sites and
     // meets both circles square to it - one angle, the same on each.
-    private static double measureTangentAngle(
-            DiscUnion union,
-            DiscUnionBoundary.CoastMark from,
-            DiscUnionBoundary.CoastMark to) {
+    private static double measureTangentAngle(StraightRun run) {
 
-        var fromCentre = union.sites().get(from.circle());
-        var toCentre = union.sites().get(to.circle());
+        var fromCentre = run.findCentre(run.from());
+        var toCentre = run.findCentre(run.to());
 
         return Math.atan2(
             -(toCentre[0] - fromCentre[0]),
@@ -771,5 +746,64 @@ final class Coastlines {
     private record EdgeAngles(
         double departAngle,
         double arriveAngle) {
+    }
+
+    /**
+     * One straight reach of coast still being decided - the two stretches it joins, and the
+     * discs it is drawn against.
+     *
+     * <p>Everything that works out where a reach should go needs all three, so seven
+     * signatures carried the same trio and four of them opened by turning it into the same
+     * pair of points. The trio is not three arguments that happen to travel together: the
+     * marks name circles by INDEX, so they mean nothing except against the union they were
+     * indexed in, and a caller free to pair one construction's marks with another's discs can
+     * do it and still compile.
+     *
+     * <p>Deliberately not the answer, only the question. Where the reach ends up is an
+     * {@link EdgeAngles}, worked out several ways and chosen between, so it is passed in
+     * rather than held - one run, several candidate edges.
+     *
+     * @param union the discs the reach is drawn against
+     * @param from  the stretch it leaves
+     * @param to    the stretch it lands on
+     */
+    private record StraightRun(
+        DiscUnion union,
+        DiscUnionBoundary.CoastMark from,
+        DiscUnionBoundary.CoastMark to) {
+
+        double[] findDeparture(EdgeAngles edge) {
+            return findPointAt(union, from, edge.departAngle());
+        }
+
+        double[] findArrival(EdgeAngles edge) {
+            return findPointAt(union, to, edge.arriveAngle());
+        }
+
+        double[] findCentre(DiscUnionBoundary.CoastMark mark) {
+            return union.sites().get(mark.circle());
+        }
+
+        /**
+         * How far this reach goes inside one cell, at one candidate edge.
+         *
+         * @param edge   where the reach leaves and lands
+         * @param circle whose cell to measure against
+         * @return how far past that cell's border it goes, negative when it stays outside
+         */
+        double measureIncursion(EdgeAngles edge, int circle) {
+
+            return union.measureIncursionInto(findDeparture(edge), findArrival(edge), circle);
+        }
+
+        /**
+         * Whether a cell is one of the two this reach runs between.
+         *
+         * @param circle whose cell to ask about
+         * @return true when the reach starts or ends on it
+         */
+        boolean isRunBetween(int circle) {
+            return circle == from.circle() || circle == to.circle();
+        }
     }
 }

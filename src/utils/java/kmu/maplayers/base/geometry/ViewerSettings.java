@@ -45,14 +45,13 @@ final class ViewerSettings {
     // shapes underneath is the one mistake that would make it look right when it is not.
     static final Color COASTLINE_DEFAULT = new Color(0x70, 0xe0, 0x90);
 
-    // One cell across. Two cells whose frontages are nearer than that are one stretch of
-    // coast as far as the eye is concerned, so joining both only redraws the scallop smaller.
-    static final double COAST_SKIP_DEFAULT = 1;
+    // Read off the coast's own defaults rather than restated here. What each of them means is
+    // documented where it is declared; restating the NUMBER is how the sliders come to open
+    // on a different map from the one the report describes, with neither of them saying so.
+    static final double COAST_SKIP_DEFAULT = Coastlines.DEFAULT_RULES.skipMultiple();
     static final double COAST_SKIP_STEP_SCALE = 100.0;
 
-    // Enough that a tightly packed run reads as a line rather than as a row of bites, few
-    // enough that a whole coast cannot be swallowed and reduced to a triangle.
-    static final double COAST_MAX_SKIPS_DEFAULT = 5;
+    static final double COAST_MAX_SKIPS_DEFAULT = Coastlines.DEFAULT_RULES.maxSkips();
 
     // The two halves of a coast crossing a cell, in colours nothing else on the map uses: the
     // run that goes where it should not, and the cell it goes into. Diagnostic rather than
@@ -67,7 +66,8 @@ final class ViewerSettings {
     static final double VOID_SPAN_DEFAULT = 2;
     static final double VOID_SPAN_STEP_SCALE = 100.0;
 
-    static final double BRIDGE_REACH_DEFAULT = 4;
+    static final double BRIDGE_REACH_DEFAULT =
+        Coastlines.DEFAULT_RULES.bridgeReachMultiple();
     static final double BRIDGE_REACH_STEP_SCALE = 100.0;
 
     // Settled by eye against the sweep at the end of the void regions dump. Above it the

@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Segments;
+
 import java.util.List;
 
 /**
@@ -21,4 +23,24 @@ import java.util.List;
 record DiscUnion(
     List<double[]> sites,
     double reach) {
+
+    /**
+     * How far a straight segment reaches inside one disc.
+     *
+     * <p>Here rather than at either place that asks, because both ask the same thing and one
+     * of them decides whether a line may be drawn while the other decides whether a line that
+     * WAS drawn is a fault. Written out twice they are one sign flip apart, and a flip makes
+     * the second certify exactly what the first rejected - a disagreement neither of them can
+     * detect, because each is consistent with itself.
+     *
+     * @param from  where the segment starts
+     * @param to    where it ends
+     * @param site  which disc to measure against
+     * @return how far past the disc's edge the segment reaches, negative when it stays
+     *         outside and zero when it grazes
+     */
+    double measureIncursionInto(double[] from, double[] to, int site) {
+
+        return reach - Segments.computeDistanceToPoint(from, to, sites.get(site));
+    }
 }

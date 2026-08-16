@@ -1,7 +1,5 @@
 package kmu.maplayers.base.geometry;
 
-import kmlib.math.geometry.Segments;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -145,8 +143,7 @@ final class CoastCrossings {
 
         for (var site = 0; site < union.sites().size(); site++) {
 
-            var depth = union.reach() - Segments.computeDistanceToPoint(
-                from.point(), to.point(), union.sites().get(site));
+            var depth = union.measureIncursionInto(from.point(), to.point(), site);
 
             if (depth > Coastlines.TOUCHING_TOLERANCE) {
                 pierced.add(new Pierce(site, depth));

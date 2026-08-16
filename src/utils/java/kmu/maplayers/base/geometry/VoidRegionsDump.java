@@ -38,9 +38,10 @@ final class VoidRegionsDump {
     private static final VoidSections.SectionRules SECTION_RULES =
         new VoidSections.SectionRules(SECTION_LENGTH, MIN_SECTION_SHARE);
 
-    // Four cell radii centre to centre, which leaves a gap of two - a whole cell's width.
-    // What the viewer opens on, so this report describes what a reader would see there.
-    private static final double BRIDGE_REACH_MULTIPLE = 4;
+    // What the viewer opens on, so this report describes what a reader would see there -
+    // read off that setting rather than restated, which is the only way the two stay equal.
+    private static final double BRIDGE_REACH_MULTIPLE =
+        Coastlines.DEFAULT_RULES.bridgeReachMultiple();
 
     // Shares to sweep the division across, so the knob has a starting range instead of being
     // a bare slider. Spread over the whole span rather than clustered near the default,
