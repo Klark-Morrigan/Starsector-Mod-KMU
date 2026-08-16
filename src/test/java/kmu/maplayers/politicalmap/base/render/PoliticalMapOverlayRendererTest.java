@@ -67,7 +67,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDrawOrders(layerSettingsMock);
+                NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -102,7 +102,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDrawOrders(layerSettingsMock);
+                NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -135,7 +135,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDrawOrders(layerSettingsMock);
+                NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -171,7 +171,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDrawOrders(layerSettingsMock);
+                NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(layerSettingsMock);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 // Built inside the construction mock, since the highlight renderer is a field this
@@ -200,7 +200,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDrawOrders(layerSettingsMock);
+                NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(layerSettingsMock);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 new PoliticalMapOverlayRenderer().renderOnMap(
@@ -231,7 +231,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDrawOrders(layerSettingsMock);
+                NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -261,7 +261,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDrawOrders(layerSettingsMock);
+                NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -288,7 +288,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDrawOrders(
+                NebulaDrawOrderFixtures.stubChosenDrawOrders(
                     layerSettingsMock,
                     NebulaDrawOrderChoice.ABOVE,
                     NebulaDrawOrderChoice.BELOW,
@@ -318,7 +318,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDrawOrders(
+                NebulaDrawOrderFixtures.stubChosenDrawOrders(
                     layerSettingsMock,
                     NebulaDrawOrderChoice.ABOVE,
                     NebulaDrawOrderChoice.BELOW,
@@ -346,7 +346,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDrawOrders(
+                NebulaDrawOrderFixtures.stubChosenDrawOrders(
                     layerSettingsMock,
                     NebulaDrawOrderChoice.BELOW,
                     NebulaDrawOrderChoice.ABOVE,
@@ -380,7 +380,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDrawOrders(
+                NebulaDrawOrderFixtures.stubChosenDrawOrders(
                     layerSettingsMock,
                     NebulaDrawOrderChoice.BELOW,
                     NebulaDrawOrderChoice.BELOW,
@@ -414,7 +414,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDrawOrders(
+                NebulaDrawOrderFixtures.stubChosenDrawOrders(
                     layerSettingsMock,
                     NebulaDrawOrderChoice.ABOVE,
                     NebulaDrawOrderChoice.ABOVE,
@@ -448,7 +448,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDrawOrders(
+                NebulaDrawOrderFixtures.stubChosenDrawOrders(
                     layerSettingsMock,
                     NebulaDrawOrderChoice.ABOVE,
                     NebulaDrawOrderChoice.ABOVE,
@@ -481,7 +481,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDrawOrders(
+                NebulaDrawOrderFixtures.stubChosenDrawOrders(
                     layerSettingsMock,
                     NebulaDrawOrderChoice.ABOVE,
                     NebulaDrawOrderChoice.ABOVE,
@@ -517,7 +517,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDrawOrders(
+                NebulaDrawOrderFixtures.stubChosenDrawOrders(
                     layerSettingsMock,
                     NebulaDrawOrderChoice.BELOW,
                     NebulaDrawOrderChoice.BELOW,
@@ -571,44 +571,6 @@ final class PoliticalMapOverlayRendererTest {
         layerSettingsMock
             .when(KmuPoliticalMapSettings::getPoliticalMapShowClusterAnchors)
             .thenReturn(false);
-    }
-
-    // The split the settings ship with: the cell geometry beneath the map's nebulae, the two
-    // readouts laid over cells above them. Stated rather than left to the settings class, whose
-    // reads are stood in for here - and stating it is what makes the swapped-layout tests below a
-    // comparison rather than each a picture of its own.
-    private static void chooseTheShippedDrawOrders(
-            MockedStatic<KmuPoliticalMapSettings> layerSettingsMock) {
-
-        chooseTheDrawOrders(
-            layerSettingsMock,
-            NebulaDrawOrderChoice.BELOW,
-            NebulaDrawOrderChoice.BELOW,
-            NebulaDrawOrderChoice.ABOVE,
-            NebulaDrawOrderChoice.ABOVE);
-    }
-
-    // The four draw-order choices the layout for a pass is read from, in the order the layout states
-    // them: fills, borders, presence bands, names.
-    private static void chooseTheDrawOrders(
-            MockedStatic<KmuPoliticalMapSettings> layerSettingsMock,
-            NebulaDrawOrderChoice fillDrawOrder,
-            NebulaDrawOrderChoice borderDrawOrder,
-            NebulaDrawOrderChoice ribbonDrawOrder,
-            NebulaDrawOrderChoice labelDrawOrder) {
-
-        layerSettingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapFillNebulaDrawOrder)
-            .thenReturn(fillDrawOrder);
-        layerSettingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapBorderNebulaDrawOrder)
-            .thenReturn(borderDrawOrder);
-        layerSettingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonNebulaDrawOrder)
-            .thenReturn(ribbonDrawOrder);
-        layerSettingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapLabelNebulaDrawOrder)
-            .thenReturn(labelDrawOrder);
     }
 
     // A cache holding a built, non-debug frame with nothing in it. The bands are decided on the band

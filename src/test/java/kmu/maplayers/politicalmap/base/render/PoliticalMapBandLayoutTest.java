@@ -6,7 +6,6 @@ import kmu.settings.NebulaDrawOrderChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
@@ -36,7 +35,7 @@ final class PoliticalMapBandLayoutTest {
             // it is the group below that holds it to the rule.
             try (var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                stubChosenDrawOrders(
+                NebulaDrawOrderFixtures.stubChosenDrawOrders(
                     settingsMock,
                     NebulaDrawOrderChoice.ABOVE,
                     NebulaDrawOrderChoice.ABOVE,
@@ -63,7 +62,7 @@ final class PoliticalMapBandLayoutTest {
             // the group is meant to see no change at all, and this is where that is settled.
             try (var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                stubChosenDrawOrders(
+                NebulaDrawOrderFixtures.stubChosenDrawOrders(
                     settingsMock,
                     NebulaDrawOrderChoice.BELOW,
                     NebulaDrawOrderChoice.BELOW,
@@ -124,27 +123,5 @@ final class PoliticalMapBandLayoutTest {
             assertThat(layout.labelBand())
                 .isEqualTo(BENEATH);
         }
-    }
-
-    // The four reads a layout is resolved from, in the order the record states them.
-    private static void stubChosenDrawOrders(
-            MockedStatic<KmuPoliticalMapSettings> settingsMock,
-            NebulaDrawOrderChoice fillDrawOrder,
-            NebulaDrawOrderChoice borderDrawOrder,
-            NebulaDrawOrderChoice ribbonDrawOrder,
-            NebulaDrawOrderChoice labelDrawOrder) {
-
-        settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapFillNebulaDrawOrder)
-            .thenReturn(fillDrawOrder);
-        settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapBorderNebulaDrawOrder)
-            .thenReturn(borderDrawOrder);
-        settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonNebulaDrawOrder)
-            .thenReturn(ribbonDrawOrder);
-        settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapLabelNebulaDrawOrder)
-            .thenReturn(labelDrawOrder);
     }
 }
