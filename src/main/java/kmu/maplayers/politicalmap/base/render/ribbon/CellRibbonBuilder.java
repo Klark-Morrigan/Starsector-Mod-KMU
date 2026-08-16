@@ -29,10 +29,6 @@ import java.util.List;
  */
 public final class CellRibbonBuilder {
 
-    // The ring read against no name at all, which is what a forced band falls back to: the cell's
-    // own outline less the stretches its shape leaves no room on.
-    private static final List<List<double[]>> NOTHING_KEPT_OUT = List.of();
-
     private CellRibbonBuilder() {
     }
 
@@ -97,7 +93,7 @@ public final class CellRibbonBuilder {
         // stretches stay carved, since a band laid across one hangs over the border of the very
         // cell it reports on - which is what the half width exists to prevent.
         var stretch = selectLongestClearStretch(path.fuseStretchAcrossStart(
-            clearArcs.isEmpty() ? path.findClearArcs(NOTHING_KEPT_OUT) : clearArcs));
+            clearArcs.isEmpty() ? path.findStretchesHoldingItsInset() : clearArcs));
 
         var lengthUnitWorld = computeLengthUnit(stretch.computeLength(), totalLengthUnits, style);
 

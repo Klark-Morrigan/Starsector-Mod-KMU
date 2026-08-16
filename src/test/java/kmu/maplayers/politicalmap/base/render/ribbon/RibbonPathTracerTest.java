@@ -15,7 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>The band pass is pinned at its two ends, since between them sits the whole of what a cell
  * short of room draws: a ring that holds the pad is traced at it, and a ring that holds it nowhere
- * is traced at the shallower inset or holds nothing, depending on the player's answer alone.
+ * is traced at the shallower inset or holds nothing, depending on the player's answer alone. The
+ * third case is what separates those two - a ring holding the pad everywhere but one neck takes
+ * no step down, since the fall is for a cell with no room anywhere.
  *
  * <p>The overlay is pinned on the case that is its entire reason for existing: a cell refused for
  * want of the pad still hands back the path it was refused on. Nothing on the map says so
@@ -47,6 +49,19 @@ final class RibbonPathTracerTest {
         new double[] {0.0, 500.0});
 
     private static final double[] NARROW_CELL_SITE = new double[] {250.0, 250.0};
+
+    // The square cell with a tab too narrow to hold the band hanging off its right side: room for
+    // the pad everywhere but the tab's mouth, which is the cell the ladder must not take a step
+    // down for.
+    private static final List<double[]> NECKED_CELL = List.of(
+        new double[] {0.0, 0.0},
+        new double[] {4000.0, 0.0},
+        new double[] {4000.0, 1800.0},
+        new double[] {4600.0, 1800.0},
+        new double[] {4600.0, 2200.0},
+        new double[] {4000.0, 2200.0},
+        new double[] {4000.0, 4000.0},
+        new double[] {0.0, 4000.0});
 
     // A cell narrower than the band is wide. The pad given up entirely still leaves the half width
     // nowhere to go, so there is no shallower trace to fall back to.
@@ -105,6 +120,22 @@ final class RibbonPathTracerTest {
             // a band. The refusal is what the carve leaves rather than a verdict of its own.
             assertThat(path.hasStretchHoldingItsInset())
                 .isFalse();
+        }
+
+        @Test
+        void traceLaidRibbonPathKeepsThePadOnACellNarrowedInOnePlaceOnly() {
+
+            var path = RibbonPathTracer.traceLaidRibbonPath(
+                NECKED_CELL,
+                SQUARE_CELL_SITE,
+                STYLE_FORCING_A_BAND);
+
+            // Traced at the authored inset even with the fall available, because the fall
+            // answers a cell with no room anywhere and this one has room everywhere but its
+            // neck. Taken here, it would move the whole band onto the border to rescue a
+            // stretch the carve had already given up.
+            assertThat(path.getPoints().get(0))
+                .containsExactly(2000.0, 3600.0);
         }
 
         @Test
