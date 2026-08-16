@@ -2,7 +2,6 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
-import kmlib.starsector.ui.input.ParkedPointerEvent;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
@@ -219,75 +218,17 @@ final class SidebarInputTest {
     }
 
     @Nested
-    class ParkedMoves {
+    class ClaimedMoves {
 
         @Test
-        void processCampaignInputPreCoreParksAMoveThePanelClaimed() {
-            // The screen underneath has to hear the pointer moved or a control it lit a moment ago stays
-            // lit under the panel, and it must not hear where the pointer really is or whatever sits behind
-            // the panel lights up instead. So the claimed move is replaced rather than swallowed, by a
-            // stand-in reporting a position no widget contains.
-            var events = new ArrayList<InputEventAPI>(List.of(mockClaimedMove()));
-
-            input.processCampaignInputPreCore(events);
-
-            assertThat(events.get(0))
-                .isInstanceOf(ParkedPointerEvent.class);
-            assertThat(events.get(0).getX())
-                .isNegative();
-            assertThat(events.get(0).isConsumed())
-                .isFalse();
-        }
-
-        @Test
-        void processCampaignInputPreCoreLeavesAMoveThePanelDidNotClaimWhereItIs() {
-            // A move the panel let past is already the screen's to read as it stands, and its real position
-            // is what the screen needs: parking it would blind the screen to a pointer that never touched
-            // this panel.
-            var moveMock = mock(InputEventAPI.class);
-
-            when(moveMock.isMouseEvent())
-                .thenReturn(true);
-            when(moveMock.isMouseMoveEvent())
-                .thenReturn(true);
-
-            var events = new ArrayList<InputEventAPI>(List.of(moveMock));
-
-            input.processCampaignInputPreCore(events);
-
-            assertThat(events.get(0))
-                .isSameAs(moveMock);
-        }
-
-        @Test
-        void processCampaignInputPreCoreLeavesAClaimedPressWhereItIs() {
-            // A press or a wheel the panel took is an act it claimed outright - the screen must not act on
-            // it at all, which is what claiming is for. Only the pointer's position is shared.
-            var pressMock = mock(InputEventAPI.class);
-
-            when(pressMock.isMouseEvent())
-                .thenReturn(true);
-            when(pressMock.isLMBDownEvent())
-                .thenReturn(true);
-            when(pressMock.isConsumed())
-                .thenReturn(false, true);
-
-            var events = new ArrayList<InputEventAPI>(List.of(pressMock));
-
-            input.processCampaignInputPreCore(events);
-
-            assertThat(events.get(0))
-                .isSameAs(pressMock);
-        }
-
-        @Test
-        void processCampaignInputPreCoreRoutesOnWhereTheFramesListRefusesAReplacement() {
-            // Nothing in the API promises the list may be written to. A refusal has to leave the sidebar
-            // working exactly as it did - claims made, keys answered - rather than throwing out of an input
-            // pass every frame the pointer rests on the panel.
+        void processCampaignInputPreCoreHandsTheControllerTheMoveItself() {
+            // KMU's whole claim here. How a claim is made - a press consumed, a move parking the pointer -
+            // belongs to the controller, and re-pinning it from this side would only break this suite
+            // whenever that is reworked. What has to hold is that the move arrives at the controller
+            // unaltered, since the panel hit-tests it where the player actually put the pointer.
             var claimedMove = mockClaimedMove();
 
-            input.processCampaignInputPreCore(List.of(claimedMove));
+            input.processCampaignInputPreCore(new ArrayList<InputEventAPI>(List.of(claimedMove)));
 
             verify(controllerMock)
                 .handlePointer(claimedMove, placementMock);

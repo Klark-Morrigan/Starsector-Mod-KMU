@@ -198,6 +198,16 @@ panel claims from the surface behind it is the drawn row plus the framed body pl
 row stands outside the box, so an event over it is swallowed there rather than falling through to the
 map - which is the whole of what a bodyless tab blocks.
 
+A pointer *move* is claimed differently, and the difference is the screen's to notice. A vanilla
+control lets go of its hover only on hearing a move that is not on it, and a consumed event is
+invisible to the screen, so consuming a move leaves whatever was lit when the pointer crossed onto the
+sidebar lit for as long as the pointer rests there. The controller therefore claims a move by parking
+the pointer - leaving the event unconsumed and moving it far off every widget - so the map and its
+chrome alike conclude the pointer is on nothing of theirs. That claim belongs to KMLib's
+`PointerParking` rather than to this listener, which only decides which events reach the controller at
+all; presses and the wheel are still consumed outright, an act the sidebar answers being exactly what
+the screen must not answer too.
+
 `BaseSidebarHost.handleKeyPress` matches the press to a layer through `TabPanelHotkeys`, selects it,
 and blinks that layer's tab. The blink is what tells the player the key landed: a keypress puts
 nothing on screen at all, so an unblinked tab would read as a key the panel ignored. Both it and a
