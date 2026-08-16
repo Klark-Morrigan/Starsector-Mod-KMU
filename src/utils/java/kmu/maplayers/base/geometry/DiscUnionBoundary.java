@@ -273,10 +273,14 @@ final class DiscUnionBoundary {
      * being looked for on an outline, and one that was laid has to be on one.
      *
      * <p>Two things stop a chord. Its mouth can be buried inside another disc, which is what
-     * becomes of a bridge whose cells have closed over. Or it can land on a mouth already
-     * taken by an earlier chord on the same circle, two bridges leaving a cell within a
-     * channel's width of each other - and one mouth cannot serve two walls, because the
-     * merged cover would swallow the arc that one of them needs to start from.
+     * becomes of a bridge whose cells have closed over. Or it can be swallowed whole by a
+     * mouth an earlier chord on the same circle already took, leaving it no terminal of its
+     * own to leave from or land on once the sweep merges the two.
+     *
+     * <p>Sharing part of a mouth is allowed, and is how a coast turning on a cell's border
+     * gets laid at all: the two reaches either side of the turn meet at one point, so their
+     * mouths overlap by whatever the channel adds to each. Both keep an outer terminal, and
+     * the sweep hands one wall straight on to the next.
      *
      * <p>Offered in order and taken greedily, so the caller's own ordering decides which of
      * two crowding chords survives.
@@ -649,6 +653,22 @@ final class DiscUnionBoundary {
 
                 arcs.add(new Arc(
                     circle, coveredTo, cover.start(), departingFrom, cover.arrival()));
+
+            } else if (isChordTerminal(departingFrom) && isChordTerminal(cover.arrival())) {
+
+                // Two walls meeting at one point on this circle. Each mouth is as wide as
+                // the channel makes it, so a pair that meet overlap, and the stretch between
+                // them is empty rather than absent: the boundary comes back along one wall
+                // and leaves along the next without running anywhere in between. Given as an
+                // arc of no width, since what the walk wants of it is that its two terminals
+                // name each other rather than any length.
+                //
+                // Only where walls are what overlap. A stretch a neighbouring disc swallows
+                // really is off the boundary, and joining its ends would run a cycle through
+                // space the union covers - which is why a mouth overlapping a DISC is
+                // refused outright, leaving this the only kind of overlap that reaches here.
+                arcs.add(new Arc(
+                    circle, coveredTo, coveredTo, departingFrom, cover.arrival()));
             }
 
             if (cover.start() + cover.width() > coveredTo) {
@@ -770,6 +790,12 @@ final class DiscUnionBoundary {
             int arcSegments) {
 
         var sweep = toAngle - fromAngle;
+
+        // A stretch of no width is still a join - it is where two walls meet at a point on
+        // this circle - and the single point they share is the whole of it.
+        if (sweep <= 0) {
+            return List.of(findPointOnCircle(centre, reach, fromAngle));
+        }
         var steps = Math.max(
             MIN_ARC_SAMPLES,
             (int) Math.ceil(arcSegments * sweep / Angles.HALF_TURN));
@@ -812,6 +838,16 @@ final class DiscUnionBoundary {
         return true;
     }
 
+    // A mouth is taken when an earlier wall's mouth swallows it whole, or is swallowed by it.
+    // The sweep merges what overlaps and the merged cover keeps only the outer pair of
+    // terminals, so a mouth wholly inside another loses both of its own: the wall it belongs
+    // to then has nowhere to leave from and nowhere to land, which breaks the walk rather than
+    // spoiling a shape.
+    //
+    // Overlapping in part is not that. Two walls meeting at a point on a circle overlap by
+    // whatever the channel adds to each of their mouths, and each keeps the outer terminal the
+    // walk needs; the sweep hands one straight on to the other. Refused, the void behind one
+    // of the two is left open to the sea with nothing to close it.
     private static boolean isMouthTaken(
             Map<Integer, List<double[]>> takenByCircle,
             int circle,
@@ -820,7 +856,7 @@ final class DiscUnionBoundary {
         for (var taken : takenByCircle.getOrDefault(circle, List.<double[]>of())) {
 
             if (Angles.measureGap(taken[0] + taken[1] / 2, mouth[0] + mouth[1] / 2)
-                    < (taken[1] + mouth[1]) / 2) {
+                    <= Math.abs(taken[1] - mouth[1]) / 2) {
 
                 return true;
             }
