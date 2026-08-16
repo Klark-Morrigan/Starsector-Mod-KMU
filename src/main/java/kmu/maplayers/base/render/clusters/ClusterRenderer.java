@@ -55,15 +55,13 @@ public final class ClusterRenderer {
             float factor,
             float alphaMult) {
 
-        if (isNothingToPaint(drawLists, alphaMult)) {
-            return;
-        }
-        var frame = new ClusterMapFrame(drawLists, factor, alphaMult);
-
-        GlPasses.runBlendedPass(
-            GlBlendMode.ALPHA,
+        renderMeasuredPassOnMap(
+            drawLists,
+            factor,
+            alphaMult,
             GlLineQuality.ALIASED,
-            () -> measureEmission("mapLayer.render.clusters.fills", () -> drawFills(frame)));
+            "mapLayer.render.clusters.fills",
+            ClusterRenderer::drawFills);
     }
 
     // Draws the overlay's border strokes for one map frame, in the same below-UI map pass the fills
@@ -76,33 +74,47 @@ public final class ClusterRenderer {
             float factor,
             float alphaMult) {
 
-        if (isNothingToPaint(drawLists, alphaMult)) {
+        renderMeasuredPassOnMap(
+            drawLists,
+            factor,
+            alphaMult,
+            GlLineQuality.SMOOTHED,
+            "mapLayer.render.clusters.borders",
+            ClusterRenderer::strokeBorderRuns);
+    }
+
+    // The scaffold both entry points are: skip a frame with nothing on it, bundle the ambient three,
+    // and emit under a measured blended pass. Written once because the two halves differ only in the
+    // three values named at the call sites - a second copy is where a guard gets tightened on one
+    // entry and not the other, which shows up as an overlay half-drawn at the ends of the map's fade
+    // and nothing in the frame to say why.
+    //
+    // A fully faded-out overlay (alphaMult 0, at the ends of the map's fade) would emit every run at
+    // zero effective alpha - all cost, nothing on screen - so the whole GL pass is skipped rather
+    // than left to blend away, and the frame is not built for it either.
+    //
+    // The measure times only the per-frame GL emission; the surrounding state push/pop is
+    // negligible. It is per entry point so the profiler shows which half costs, but never logged -
+    // this runs every frame the map is open, so only the profiler's accumulated view is affordable.
+    private static void renderMeasuredPassOnMap(
+            ClusterDrawLists drawLists,
+            float factor,
+            float alphaMult,
+            GlLineQuality lineQuality,
+            String measureName,
+            Consumer<ClusterMapFrame> emitRuns) {
+
+        if (drawLists.isEmpty() || alphaMult <= 0f) {
             return;
         }
         var frame = new ClusterMapFrame(drawLists, factor, alphaMult);
 
         GlPasses.runBlendedPass(
             GlBlendMode.ALPHA,
-            GlLineQuality.SMOOTHED,
-            () -> measureEmission(
-                "mapLayer.render.clusters.borders",
-                () -> strokeBorderRuns(frame)));
-    }
-
-    // The one condition under which an entry point emits nothing at all. A fully faded-out overlay
-    // (alphaMult 0, at the ends of the map's fade) would emit every run at zero effective alpha -
-    // all cost, nothing on screen - so the whole GL pass is skipped, not just left to blend away.
-    // Written once and asked by both entries, so neither can be given a run the other guards.
-    private static boolean isNothingToPaint(ClusterDrawLists drawLists, float alphaMult) {
-        return drawLists.isEmpty() || alphaMult <= 0f;
-    }
-
-    // Times only the per-frame GL emission; the surrounding state push/pop is negligible. Measured
-    // per entry point so the profiler shows which half costs, but not logged - this runs every
-    // frame the map is open, so only the profiler's accumulated view is affordable here, never a
-    // per-frame log line.
-    private static void measureEmission(String measureName, Runnable emitPass) {
-        KmuProfiling.getProfiler().measure(measureName, emitPass);
+            lineQuality,
+            () -> KmuProfiling.getProfiler().measure(
+                measureName,
+                () -> emitRuns.accept(frame)));
     }
 
     // All the solid fills first, then the hatch over them. A cluster whose fill does

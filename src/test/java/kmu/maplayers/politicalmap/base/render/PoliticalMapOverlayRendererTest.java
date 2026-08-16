@@ -23,6 +23,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
@@ -80,6 +81,35 @@ final class PoliticalMapOverlayRendererTest {
                     .verifyNoInteractions();
                 ribbonRendererMock
                     .verifyNoInteractions();
+            }
+        }
+
+        @Test
+        void renderOnMapEmitsTheFillsBeforeTheBordersInTheBandBeneathTheNebulae() {
+            // The order is the whole reason the framework's two entries can be reached separately,
+            // and it is not recoverable from the frame: a fill drawn over its own border leaves a
+            // blank cell, and every other assertion in this class passes with the two swapped.
+            try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
+
+                overlayRenderer.renderOnMap(
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
+                    MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+
+                // The ordering context is opened on the mocked class rather than on the handle:
+                // a static mock registers the class itself as the thing interactions are recorded
+                // against, and the handle is only how they are asked for.
+                var clusterCallOrder = inOrder(ClusterRenderer.class);
+
+                clusterCallOrder.verify(clusterRendererMock, () ->
+                    ClusterRenderer.renderFillsOnMap(any(), anyFloat(), anyFloat()));
+                clusterCallOrder.verify(clusterRendererMock, () ->
+                    ClusterRenderer.renderBordersOnMap(any(), anyFloat(), anyFloat()));
             }
         }
 
