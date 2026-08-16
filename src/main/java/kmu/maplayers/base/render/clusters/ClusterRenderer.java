@@ -18,12 +18,18 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Paints pre-built cluster draw lists on the sector (M) map: every solid fill first - the
- * clusters' and then the lone cells' - then the contested hatch over them, and over that the
- * interior seams, the lone cells' outlines, and the cluster boundaries. The debug cluster anchors
- * are not drawn here: they are an
- * independent overlay ({@link kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer}) the
+ * Paints pre-built cluster draw lists on the sector (M) map, through two entry points a caller
+ * invokes in order: the fills - every solid fill first, the clusters' and then the lone cells',
+ * then the contested hatch over them - and the borders, which are the interior seams, the lone
+ * cells' outlines, and the cluster boundaries. The debug cluster anchors are not drawn here: they
+ * are an independent overlay ({@link kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer}) the
  * terrain plugin layers over whichever base view is live.
+ *
+ * <p>The two are separate entries rather than one because a caller may need to put its own drawing
+ * between them - the sector map lays its nebulae over the overlay mid-frame, and which side of that
+ * each half lands on is the caller's call. Nothing here orders them: emitted back to back they
+ * produce the single pass they used to be, and the fills-under-borders order that reads correctly
+ * is the caller's to keep.
  *
  * <p>This is pure GL emission over an already-baked {@link ClusterDrawLists} - it scales each
  * world coordinate into map space and strokes/fills the flattened vertex runs, with no knowledge
@@ -31,56 +37,72 @@ import java.util.function.Function;
  * pan and centering to the GL matrix, so only the scale is applied here.
  */
 public final class ClusterRenderer {
-    
+
     // Emits only; never instantiated.
     private ClusterRenderer() {
     }
 
-    // Draws the whole overlay for one map frame. Drawn in the below-UI map pass so
-    // system and constellation names stay on top; a state push/pop isolates the blend
-    // and line settings from the rest of the map render. An empty overlay skips the
-    // push entirely.
-    public static void renderOnMap(
+    // Draws the overlay's fills - solid then hatched - for one map frame. Drawn in the below-UI map
+    // pass so system and constellation names stay on top; a state push/pop isolates the blend and
+    // line settings from the rest of the map render. An empty overlay skips the push entirely.
+    //
+    // Aliased is the baseline this pass leaves in force, so a run added here later lands hard-edged
+    // instead of quietly picking up the smoothing of the pass that happened to run last. The hatch
+    // inside opens its own pass regardless, since the quality a line wants is the pass's own
+    // decision rather than something to inherit from whatever wraps it.
+    public static void renderFillsOnMap(
             ClusterDrawLists drawLists,
             float factor,
             float alphaMult) {
 
-        // A fully faded-out overlay (alphaMult 0, at the ends of the map's fade) would
-        // emit every run at zero effective alpha - all cost, nothing on screen - so the
-        // whole GL pass is skipped, not just left to blend away.
-        if (drawLists.isEmpty() || alphaMult <= 0f) {
+        if (isNothingToPaint(drawLists, alphaMult)) {
             return;
         }
-        // The three ambient values bundled once, here, so the passes below carry only what each of
-        // them varies. The public seam keeps the signature the terrain adapter hands it, so nothing
-        // outside this package learns the type.
         var frame = new ClusterMapFrame(drawLists, factor, alphaMult);
 
-        // The outer pass blends the solid triangle fills, which are the only thing drawn directly
-        // under it - both line passes inside open their own, since the quality a line wants is the
-        // pass's own decision rather than something to inherit from whatever wraps it. Aliased is
-        // the baseline it leaves in force, so a run added here later lands hard-edged instead of
-        // quietly picking up the smoothing of the pass that happened to run last.
         GlPasses.runBlendedPass(
             GlBlendMode.ALPHA,
             GlLineQuality.ALIASED,
-            () -> {
-                // Time only the per-frame GL emission; the surrounding state push/pop is
-                // negligible. Broken into the two passes so the profiler shows which one costs,
-                // but not logged - this runs every frame the map is open, so only the profiler's
-                // accumulated view is affordable here, never a per-frame log line.
-                var profiler = KmuProfiling.getProfiler();
-                profiler.measure(
-                    "mapLayer.render.clusters",
-                    () -> {
-                        profiler.measure(
-                            "mapLayer.render.clusters.fills",
-                            () -> drawFills(frame));
-                        profiler.measure(
-                            "mapLayer.render.clusters.borders",
-                            () -> drawBorders(frame));
-                    });
-            });
+            () -> measureEmission("mapLayer.render.clusters.fills", () -> drawFills(frame)));
+    }
+
+    // Draws the overlay's border strokes for one map frame, in the same below-UI map pass the fills
+    // go down in. Smoothed because borders are long continuous runs a player follows across the
+    // sector - the case antialiasing is worth its blend per covered pixel, unlike the dense short
+    // strokes of the hatch - and saying so as the pass's quality is what keeps the choice one the
+    // library applies rather than a pair of GL calls restated here.
+    public static void renderBordersOnMap(
+            ClusterDrawLists drawLists,
+            float factor,
+            float alphaMult) {
+
+        if (isNothingToPaint(drawLists, alphaMult)) {
+            return;
+        }
+        var frame = new ClusterMapFrame(drawLists, factor, alphaMult);
+
+        GlPasses.runBlendedPass(
+            GlBlendMode.ALPHA,
+            GlLineQuality.SMOOTHED,
+            () -> measureEmission(
+                "mapLayer.render.clusters.borders",
+                () -> strokeBorderRuns(frame)));
+    }
+
+    // The one condition under which an entry point emits nothing at all. A fully faded-out overlay
+    // (alphaMult 0, at the ends of the map's fade) would emit every run at zero effective alpha -
+    // all cost, nothing on screen - so the whole GL pass is skipped, not just left to blend away.
+    // Written once and asked by both entries, so neither can be given a run the other guards.
+    private static boolean isNothingToPaint(ClusterDrawLists drawLists, float alphaMult) {
+        return drawLists.isEmpty() || alphaMult <= 0f;
+    }
+
+    // Times only the per-frame GL emission; the surrounding state push/pop is negligible. Measured
+    // per entry point so the profiler shows which half costs, but not logged - this runs every
+    // frame the map is open, so only the profiler's accumulated view is affordable here, never a
+    // per-frame log line.
+    private static void measureEmission(String measureName, Runnable emitPass) {
+        KmuProfiling.getProfiler().measure(measureName, emitPass);
     }
 
     // All the solid fills first, then the hatch over them. A cluster whose fill does
@@ -214,18 +236,6 @@ public final class ClusterRenderer {
         }
         GlColour.set(paint.colour(), alphaMult * paint.alpha());
         emitRuns.run();
-    }
-
-    // Every border stroke, in a smoothed pass of its own. Borders are long continuous runs a
-    // player follows across the sector - the case antialiasing is worth its blend per covered
-    // pixel, unlike the dense short strokes of the hatch - and saying so as the pass's quality is
-    // what keeps the choice one the library applies rather than a pair of GL calls restated here.
-    private static void drawBorders(ClusterMapFrame frame) {
-
-        GlPasses.runBlendedPass(
-            GlBlendMode.ALPHA,
-            GlLineQuality.SMOOTHED,
-            () -> strokeBorderRuns(frame));
     }
 
     // Strokes the interior seams first, then the lone cells' outlines, then the cluster boundaries

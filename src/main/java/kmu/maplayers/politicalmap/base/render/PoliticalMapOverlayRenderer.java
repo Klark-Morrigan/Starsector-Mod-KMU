@@ -81,7 +81,15 @@ final class PoliticalMapOverlayRenderer {
                 factor,
                 alphaMult);
         } else {
-            ClusterRenderer.renderOnMap(
+            // Back to back, fills under borders: the framework hands the two out separately so a
+            // caller can put its own drawing between them, and this band puts nothing between them
+            // - a fill drawn over its own border would leave a blank cell.
+            ClusterRenderer.renderFillsOnMap(
+                cache.getTerritories(),
+                factor,
+                alphaMult);
+
+            ClusterRenderer.renderBordersOnMap(
                 cache.getTerritories(),
                 factor,
                 alphaMult);

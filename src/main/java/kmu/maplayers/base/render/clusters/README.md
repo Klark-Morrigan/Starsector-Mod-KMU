@@ -142,10 +142,16 @@ tessellated at all: it holds its place for the border and the name and paints no
 fills the flattened runs, with the fills below the seams below the borders. It knows nothing of
 settings, caches, or how any run was shaped, and the ids it walks are opaque to it.
 
-Each family of lines opens a blended pass of its own rather than sharing one line state: the hatch
-at whatever quality the theme's stroke names, the borders smoothed because they are long continuous
-runs a player follows. The outer pass blends the solid triangle fills and leaves aliased in force
-as the baseline nothing inherits by accident.
+It hands that out as two entry points - `renderFillsOnMap` and `renderBordersOnMap` - because a
+caller may need to put its own drawing between the two halves, as the sector map does when it lays
+its nebulae over the overlay mid-frame. Called back to back they are the single pass they used to
+be; nothing here orders them, so keeping fills under borders is the caller's. Each carries the same
+guard - an empty or fully faded-out overlay is skipped rather than emitted at zero alpha - so one
+reached without the other still pays nothing for a frame with nothing on it.
+
+Each pass opens its own blended pass rather than sharing one line state: the fills aliased, which
+is also the baseline nothing inherits by accident; the hatch inside them at whatever quality the
+theme's stroke names; the borders smoothed, because they are long continuous runs a player follows.
 
 The fills go down in two sweeps, all the solid triangle soups and then every hatch run, rather than
 both runs per owner. Hoisting the hatch above every solid fill covers nothing that was visible

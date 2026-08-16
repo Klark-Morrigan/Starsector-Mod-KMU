@@ -66,8 +66,13 @@ final class PoliticalMapOverlayRendererTest {
                     ALPHA_MULT,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
+                // Both halves, since the framework hands the territories out as two entries and
+                // this band is what puts them back together - a compositor that emitted only one
+                // would draw fills with no borders, or borders round nothing.
                 clusterRendererMock.verify(() ->
-                    ClusterRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+                    ClusterRenderer.renderFillsOnMap(any(), anyFloat(), anyFloat()));
+                clusterRendererMock.verify(() ->
+                    ClusterRenderer.renderBordersOnMap(any(), anyFloat(), anyFloat()));
 
                 anchorRendererMock
                     .verifyNoInteractions();
