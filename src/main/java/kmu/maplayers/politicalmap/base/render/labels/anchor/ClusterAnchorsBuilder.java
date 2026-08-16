@@ -13,6 +13,7 @@ import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorPlacement;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;
 import kmu.maplayers.base.labels.anchor.ClusterLabelResolvers;
+import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.base.labels.anchor.ClusterPartition;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
@@ -104,7 +105,13 @@ public final class ClusterAnchorsBuilder {
     // searched again. The cells the fit clips and trims against are the caller's, and they arrive
     // carrying the revision that names them, so no path can fit against one reading of the
     // geometry and label its placements with another.
-    public static void rebuildClusterAnchors(
+    //
+    // What it reports back is which of the names this pass moved. The list it leaves says where
+    // every name ended up and nothing about which of them are new, so anything laid around the
+    // previous list has no choice but to be redone whole; the comparison is made here because
+    // this is where both lists exist at once - after that, the standing one is gone. Reported
+    // even by the gated-off path, where every standing name vanishing is the disturbance.
+    public static ClusterNameDisturbance rebuildClusterAnchors(
             StandingClusterAnchors standingAnchors,
             RevisedCellGeometry cellGeometry,
             SectorAPI sector,
@@ -120,10 +127,16 @@ public final class ClusterAnchorsBuilder {
         // ahead of the fit that fills it.
         var reusableAnchors = indexReusableAnchors(standingAnchors, fitFingerprint);
 
+        // Copied for the same reason, and copied rather than held: the caller's list is a live
+        // view of the placements this pass is about to replace, so a reference to it would report
+        // this pass's own output as what stood before it.
+        var standingNames = List.copyOf(standingAnchors.getAnchors());
+
         if (!NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
                 && !KmuPoliticalMapSettings.getPoliticalMapShowClusterAnchors()) {
             standingAnchors.replaceAnchors(List.of(), fitFingerprint);
-            return;
+
+            return ClusterNameDisturbance.compareFittedNames(standingNames, List.of());
         }
         // Timed from here, past the gate: the skipped path does no work worth reporting, and the
         // fit is the rebuild's dominant cost, so it needs a duration of its own beside the
@@ -213,6 +226,8 @@ public final class ClusterAnchorsBuilder {
             + " bandFits=" + fit.bandFitCount()
             + " keepOuts=" + partition.siteBySystemId().size()
             + " took=" + Timings.formatMillis(System.nanoTime() - fitStart));
+
+        return ClusterNameDisturbance.compareFittedNames(standingNames, fit.anchors());
     }
 
     // The rebuild for a path with no holder map at hand - the debug border-tracing view,
@@ -250,7 +265,10 @@ public final class ClusterAnchorsBuilder {
             RenderStyleReader.readGlobalStyle().desaturationDarkening());
                 
         // The debug border-tracing path never filters - it resolves real dominant holders from the
-        // sector - so it recedes nothing and names no synthetic spotlight key.
+        // sector - so it recedes nothing and names no synthetic spotlight key. What the shared
+        // rebuild reports about the names it moved is dropped here rather than passed on: this
+        // view replaces the production draw lists outright, so there is nothing laid around the
+        // names for a moved one to oblige.
         rebuildClusterAnchors(
             standingAnchors,
             cellGeometry,

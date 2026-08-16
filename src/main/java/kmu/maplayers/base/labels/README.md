@@ -18,6 +18,7 @@ Part of [the map-layer framework](../../README.md); see the
 - [Layout](#layout)
 - [Placement: where a name sits](#placement-where-a-name-sits)
 - [The room a name takes](#the-room-a-name-takes)
+- [Which names a re-fit moved](#which-names-a-re-fit-moved)
 - [Rendering: the name and its overlay](#rendering-the-name-and-its-overlay)
 - [What is not here](#what-is-not-here)
 
@@ -115,6 +116,26 @@ roomiest, and that can be over a neighbour's cells entirely, so whoever a box be
 nothing about whose way it is in. The political map's presence bands are what read them today -
 under a player setting picking which reading they take - which is also why those bands are baked
 after the placements are fitted rather than as their cells are shaped.
+
+## Which names a re-fit moved
+
+A rebuild leaves a list of placements and says nothing about which of them are new, so anything
+laid around the previous list has no way to tell a name that moved from one carried over untouched -
+and has to redo all of it. [`ClusterNameDisturbance`](anchor/ClusterNameDisturbance.java) is that
+comparison: the boxes that appeared, the boxes that vanished and both ends of every box that moved,
+and the cells they reach.
+
+Both ends of a move, because the ring a name gave up is as much a change to what may be laid there
+as the ring it took. A placement counts as moved unless it is *identical* to the one that stood
+under the same cluster - the whole placement, not its box alone, since the two readings above are
+read off different components of it, and a restyled name costing a re-lay that changes nothing is
+the safe direction to be wrong in. What is recorded per moved name is its fitted box, which encloses
+the drawn words, so the answer is conservative whichever reading the consumer keeps clear of.
+
+Cells are tested by their **bounding box** rather than their outline, for the same reason: a box
+that meets no cell can be dropped without asking what its name would have covered, while a box that
+meets one costs only work. The two errors are not worth trading evenly - a cell wrongly skipped
+keeps whatever it was carrying until something unrelated rebuilds the map.
 
 ## Rendering: the name and its overlay
 

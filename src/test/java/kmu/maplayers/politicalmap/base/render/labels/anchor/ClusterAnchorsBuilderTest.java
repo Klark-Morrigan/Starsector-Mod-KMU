@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.math.geometry.Segment;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.NameFitSpecification;
@@ -494,6 +495,55 @@ final class ClusterAnchorsBuilderTest {
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
         }
+
+        @Test
+        void rebuildClusterAnchorsReportsNothingDisturbedWhenEveryPlacementCarriedOver() {
+            // The rebuild that changes nothing, which is most of them: every cluster still names
+            // the same members and keeps the placement it had, so anything laid around those
+            // names may stand. Reported off the same pass that decided the carry-over, so the two
+            // cannot disagree about which names moved.
+            var styling = buildUnfilteredStyling(Map.of(
+                HELD_SYSTEM,
+                HEGEMONY_HOLDER,
+                NEIGHBOUR_SYSTEM,
+                HEGEMONY_HOLDER));
+
+            ClusterAnchorsBuilder.rebuildClusterAnchors(
+                standingAnchors,
+                cellGeometry,
+                sectorMock,
+                styling);
+
+            // Guarded, because a pass that fitted nothing would leave two empty lists to compare
+            // and report nothing disturbed without having carried anything over.
+            assertThat(standingAnchors.getAnchors())
+                .isNotEmpty();
+
+            assertThat(ClusterAnchorsBuilder
+                    .rebuildClusterAnchors(standingAnchors, cellGeometry, sectorMock, styling)
+                    .isDisturbingNothing())
+                .isTrue();
+        }
+
+        @Test
+        void rebuildClusterAnchorsReportsTheRoomGivenUpByTheFitItSkipped() {
+            // Switching the names off empties the standing list, which is as much a change to
+            // what a map has room for as a re-fit is: the ring those words covered is free now,
+            // and whatever kept clear of them has to be told.
+            stubNameFormat(FactionNameFormatChoice.NONE);
+            standingAnchors.replaceAnchors(
+                List.of(buildStandingAnchorOccupyingRoom()),
+                FITTED_UNDER_MOVED_RULES);
+
+            assertThat(ClusterAnchorsBuilder
+                    .rebuildClusterAnchors(
+                        standingAnchors,
+                        cellGeometry,
+                        sectorMock,
+                        buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)))
+                    .isDisturbingNothing())
+                .isFalse();
+        }
     }
 
     @Nested
@@ -670,6 +720,24 @@ final class ClusterAnchorsBuilderTest {
             null,
             0f,
             0);
+    }
+
+    // A placement left over from an earlier pass that does occupy room on the map, for the cases
+    // asking what a rebuild reports having disturbed - the stale placement above accepted no line,
+    // so it takes up nothing and its going disturbs nobody.
+    private static ClusterAnchor buildStandingAnchorOccupyingRoom() {
+        return new ClusterAnchor(
+            new ClusterIdentity("stale", Set.of("stale")),
+            0f,
+            0f,
+            Color.WHITE,
+            List.of(),
+            0f,
+            new Segment(0, 1000, 2000, 1000),
+            null,
+            null,
+            200f,
+            1);
     }
 
     // The three fixture cells in first-seen order, so which cluster a case reads back at index 0 is

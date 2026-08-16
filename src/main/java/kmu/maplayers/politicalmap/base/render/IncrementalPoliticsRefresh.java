@@ -13,6 +13,7 @@ import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
+import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
@@ -48,8 +49,8 @@ import java.util.Set;
  * <p>The presence bands are baked last here for the reason they are baked last in a full
  * rebuild: they are laid around the cluster names, so they follow the re-fit rather than the
  * re-shape. What that costs differs between the two paths, and only because a re-fit does: a
- * batch that flipped nothing moved no name, so only the marked systems' bands are re-baked,
- * while a flip can place a re-fitted name over any cell at all and so re-bakes every band.
+ * batch that flipped nothing moved no name, so only the marked systems' bands are re-baked, while
+ * a flip re-fits and so owes a band to every cell one of the moved names reaches as well.
  */
 final class IncrementalPoliticsRefresh {
     private static final Logger LOG = Global.getLogger(IncrementalPoliticsRefresh.class);
@@ -161,7 +162,7 @@ final class IncrementalPoliticsRefresh {
             // consumers are off. Runs only on a real flip - the early return above already left.
             // The name labels then rebuild from the placements so a renamed or relocated
             // cluster's name follows.
-            ClusterAnchorsBuilder.rebuildClusterAnchors(
+            var nameDisturbance = ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
                 sector,
@@ -172,24 +173,54 @@ final class IncrementalPoliticsRefresh {
                 standingAnchors.getAnchors(),
                 NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
 
-            // Every band, not only the disturbed cells', and after the re-fit above rather than
-            // beside the re-shape. A flip can re-partition clusters, and a re-fitted name is
-            // placed wherever its new cluster is roomiest - which can be a cell this batch never
-            // touched. A band that kept clear of where that name used to sit is no longer clear
-            // of it, so the only cells this could safely skip are the ones it cannot identify.
+            var cellIdsToBake = collectCellIdsToBake(
+                territories,
+                staleSystemIds,
+                disturbance,
+                nameDisturbance);
+
             CellRibbonsBaker
                 .createForPass(
                     territories,
                     geometryCache,
                     sector,
                     standingAnchors.getAnchors())
-                .bakeAllCellRibbons();
+                .bakeCellRibbonsOf(cellIdsToBake);
 
             LOG.debug("Political map politics updated incrementally; stale="
                 + staleSystemIds.size()
                 + " reshapedCells=" + disturbance.getCellIdsToReshape().size()
-                + " rebuiltFactions=" + disturbance.getAffectedFactionIds().size());
+                + " rebuiltFactions=" + disturbance.getAffectedFactionIds().size()
+                + " rebakedBands=" + cellIdsToBake.size());
         });
+    }
+
+    // Which cells owe a fresh band after a flip, from the three separate reasons one can.
+    //
+    // A marked system's own count may have moved, whether or not its holder did - what marks a
+    // system is a colony appearing, growing or changing hands, which is exactly what a band
+    // counts. A re-shaped cell has a new ring and lost the band that was laid in the old one, so
+    // it owes a band even where nothing it holds changed. And a cell a moved name reaches has the
+    // same ring and the same holdings but different room to lay them in: the name may have taken
+    // ring the band was using, or given back ring it was keeping clear of.
+    //
+    // The third is the one that reaches beyond what the flip touched. A re-fit places a name
+    // wherever its new cluster is roomiest, which can be a cell this batch never went near - so
+    // the alternative to naming those cells is re-baking the whole sector, which is what this did
+    // before the fit reported what it moved.
+    private static Set<String> collectCellIdsToBake(
+            PoliticalMapTerritories territories,
+            Set<String> staleSystemIds,
+            HolderFlipDisturbance disturbance,
+            ClusterNameDisturbance nameDisturbance) {
+
+        var cellIdsToBake = new LinkedHashSet<>(staleSystemIds);
+
+        cellIdsToBake.addAll(disturbance.getCellIdsToReshape());
+        cellIdsToBake.addAll(
+            nameDisturbance.selectDisturbedCellIds(territories.getFillPolygonByCellId()));
+
+        return cellIdsToBake;
     }
 
     // Re-derives one system's holder and, when it actually changed, records the flip against

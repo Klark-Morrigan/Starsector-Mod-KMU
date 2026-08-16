@@ -17,6 +17,7 @@ import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
+import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
@@ -90,6 +91,10 @@ final class IncrementalPoliticsRefreshTest {
     private static final String NEIGHBOUR_SYSTEM = "neighbour";
     private static final String CELL_LESS_SYSTEM = "cellless";
 
+    // A system nothing about the flip reaches: not marked, and sharing no edge with what flipped,
+    // so the only thing that can oblige its band is a re-fitted name landing on it.
+    private static final String DISTANT_SYSTEM = "distant";
+
     // The revision the caller's cells stand at. This path re-shapes cells but never recuts
     // them, so it fits against the geometry it was handed and reports that same revision back.
     private static final int GEOMETRY_REVISION = 7;
@@ -148,7 +153,10 @@ final class IncrementalPoliticsRefreshTest {
             // Built before the stubbing rather than inside it: each system is itself a mock,
             // and building one while another stubbing is open reads to Mockito as an
             // unfinished stub.
-            var systems = List.of(buildSystem(FLIPPED_SYSTEM), buildSystem(NEIGHBOUR_SYSTEM));
+            var systems = List.of(
+                buildSystem(FLIPPED_SYSTEM),
+                buildSystem(NEIGHBOUR_SYSTEM),
+                buildSystem(DISTANT_SYSTEM));
 
             sectorMock = mock(SectorAPI.class);
 
@@ -183,6 +191,17 @@ final class IncrementalPoliticsRefreshTest {
             // re-fit writes the pair it is handed, which is exactly what a neutralised seam does
             // not do - so a case reads whether the fold called it, not what it left behind.
             anchorsMock = openSeam(ClusterAnchorsBuilder.class);
+
+            // What the re-fit reports about the names it moved decides which bands are re-baked,
+            // so the neutralised seam has to answer something: no name moved, which is the
+            // reading every case starts from and the one about a moved name replaces.
+            anchorsMock
+                .when(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    any(),
+                    any(),
+                    any(),
+                    any()))
+                .thenReturn(ClusterNameDisturbance.NONE);
 
             openSeam(LabelsBuilder.class);
 
@@ -551,6 +570,89 @@ final class IncrementalPoliticsRefreshTest {
         }
 
         @Test
+        void applyStalePoliticsUpdatesLeavesTheBandOfACellNoMovedNameReaches() {
+            // The flip re-fits the names, and the re-fit moved none of them - so a cell the flip
+            // never touched is laid out against exactly the names it was laid out against before,
+            // and re-baking it would spend a carve, a count and a stroke to arrive at what it is
+            // already carrying. Read as a pair with the case below, which is the same flip over
+            // the same cell with one name moved onto it.
+            var territories = buildOwnedBy(Map.of(
+                FLIPPED_SYSTEM,
+                HEGEMONY,
+                DISTANT_SYSTEM,
+                HEGEMONY));
+
+            seedDistantCell(territories);
+
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(TRITACHYON));
+
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            applyTo(territories);
+
+            assertThat(territories.getRibbonByCellId())
+                .doesNotContainKey(DISTANT_SYSTEM);
+        }
+
+        @Test
+        void applyStalePoliticsUpdatesRebakesTheBandOfACellAMovedNameReaches() {
+            // The reason the whole map used to re-bake after a flip: a re-fitted name is placed
+            // wherever its new cluster is roomiest, which can be a cell the flip never went near,
+            // and a band laid around where that name used to be is no longer laid around it. Now
+            // that the fit says which names it moved, that cell is named rather than reached by
+            // re-baking every band in the sector.
+            var territories = buildOwnedBy(Map.of(
+                FLIPPED_SYSTEM,
+                HEGEMONY,
+                DISTANT_SYSTEM,
+                HEGEMONY));
+
+            seedDistantCell(territories);
+
+            anchorsMock
+                .when(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    any(),
+                    any(),
+                    any(),
+                    any()))
+                .thenReturn(ClusterNameDisturbance.compareFittedNames(
+                    List.of(),
+                    List.of(buildNameOverTheDistantCell())));
+
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(TRITACHYON));
+
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            applyTo(territories);
+
+            assertThat(territories.getRibbonByCellId())
+                .containsOnlyKeys(DISTANT_SYSTEM);
+        }
+
+        // Seeds a drawn cell far from the flip, with the geometry a band needs to be laid in it:
+        // the system it draws as, its own site, and a ring wide enough to hold the authored band.
+        private void seedDistantCell(PoliticalMapTerritories territories) {
+
+            territories.putStyledCell(
+                DISTANT_SYSTEM,
+                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
+                buildDistantBandSizedCell());
+
+            when(cellGeometry.cells().getSystemIdByCellId())
+                .thenReturn(Map.of(
+                    FLIPPED_SYSTEM,
+                    FLIPPED_SYSTEM,
+                    NEIGHBOUR_SYSTEM,
+                    NEIGHBOUR_SYSTEM,
+                    DISTANT_SYSTEM,
+                    DISTANT_SYSTEM));
+
+            when(cellGeometry.cells().getSiteBySystemId())
+                .thenReturn(Map.of(DISTANT_SYSTEM, new double[] {12000.0, 12000.0}));
+
+            when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
+                .thenReturn(system -> BAND_OF_ONE_RUN);
+        }
+
+        @Test
         void applyStalePoliticsUpdatesRefitsAgainstTheCallersGeometry() {
             // The caller's own cells-and-revision pair goes out as it came in, because this path
             // re-shapes cells within a partition it never recut - so the fit ran against the very
@@ -692,6 +794,33 @@ final class IncrementalPoliticsRefreshTest {
             new double[] {-9000.0, -10000.0},
             new double[] {-9000.0, -9000.0},
             new double[] {-10000.0, -9000.0});
+    }
+
+    // A placement whose name lies over the distant cell and nowhere near the flip: what a re-fit
+    // that moved a name onto an untouched cell leaves behind.
+    private static ClusterAnchor buildNameOverTheDistantCell() {
+        return new ClusterAnchor(
+            new ClusterIdentity(HEGEMONY, Set.of(DISTANT_SYSTEM)),
+            0f,
+            0f,
+            Color.WHITE,
+            List.of(),
+            0f,
+            new Segment(10500.0, 12000.0, 13500.0, 12000.0),
+            null,
+            null,
+            200f,
+            1);
+    }
+
+    // The distant cell's own ring: the band-sized square above, moved clear of every other
+    // fixture so nothing can reach it by accident.
+    private static List<double[]> buildDistantBandSizedCell() {
+        return List.of(
+            new double[] {10000.0, 10000.0},
+            new double[] {14000.0, 10000.0},
+            new double[] {14000.0, 14000.0},
+            new double[] {10000.0, 14000.0});
     }
 
     // A cell large enough to hold the authored band clear of its own border, so a re-bake that

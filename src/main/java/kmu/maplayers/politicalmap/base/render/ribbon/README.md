@@ -11,6 +11,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 
 - [The classes that build one](#the-classes-that-build-one)
 - [Laying a band inside a ring](#laying-a-band-inside-a-ring)
+- [Which cells a bake covers](#which-cells-a-bake-covers)
 - [A ring that outlives the bake that walked it](#a-ring-that-outlives-the-bake-that-walked-it)
 - [When the ring has no room](#when-the-ring-has-no-room)
 - [A neck costs its own stretch](#a-neck-costs-its-own-stretch)
@@ -77,13 +78,36 @@ and the pass's timings written to but never read:
 5. `RingPath.placeSpanNearestStart` settles where along that stretch the band sits - see
    [where a band sits](#where-a-band-sits).
 
+## Which cells a bake covers
+
+A full rebuild bakes every cell, having just built them all from nothing. An incremental refresh
+names its cells instead, from the three separate reasons one can owe a band:
+
+| Reason | Which cells |
+| --- | --- |
+| the count moved | the systems a colony event marked, whether or not their holder changed |
+| the ring moved | the cells the flip re-shaped, each of which lost the band laid in its old shape |
+| the room moved | the cells a re-fitted name reaches, which the flip need never have touched |
+
+The third is the one that reaches beyond the flip, and it used to be answered by re-baking the
+whole map: a re-fit places a name wherever its new cluster is roomiest, which can be a cell nothing
+else about the batch went near, and the pass had no way to tell which. `ClusterAnchorsBuilder`
+reports it now - it already indexes the standing placements to decide which clusters it may carry
+over, so which names moved is that same index read from the other side. `ClusterNameDisturbance`
+turns the boxes that appeared, vanished and moved into the cells they reach, against each cell's
+**bounding box** rather than its outline: over-inclusion costs a re-bake that changes nothing,
+while under-inclusion leaves a band drawn under a word until something unrelated rebuilds the map.
+
+A batch that flipped nothing re-fits nothing, so the third reason cannot arise on it and only the
+marked systems' bands are re-baked.
+
 ## A ring that outlives the bake that walked it
 
-A bake runs whenever a cluster name may have moved, and that is every colony flip: a re-fit can
-place a name on a cell the flip never touched, so the whole map re-bakes for it. A cell's ring is
-not moved by a name at all - it is decided by which of the cell's edges are same-owner seams - so
-every cell in the sector would otherwise pay a full walk, an inset and a fold splice and a
-clearance walk and an arc-length walk apiece, to arrive at the path it discarded a moment earlier.
+A bake runs whenever a cluster name may have moved, which is far more often than a cell is
+re-shaped. A cell's ring is not moved by a name at all - it is decided by which of the cell's edges
+are same-owner seams - so a cell re-baked for a name that landed on it would otherwise pay a full
+walk, an inset and a fold splice and a clearance walk and an arc-length walk, to arrive at the path
+it discarded a moment earlier.
 
 So the walked path is kept beside the shape it was walked inside. `PoliticalMapTerritories` holds a
 `CellRingPathCache` next to its fill polygons, the write that records a cell's shape drops that

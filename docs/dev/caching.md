@@ -329,10 +329,12 @@ Per frame, in increasing cost:
    territories rebuilt. The marked systems' presence bands are re-baked whether or not
    anything flipped: the colonisation and transfer events that mark a system are exactly
    the events that change how many colonies are in it, and a band counts colonies where
-   the fills only weigh them. A flip widens that to every band on the map, because it
+   the fills only weigh them. A flip widens that beyond the cells it re-shaped, because it
    re-fits the names: a re-fitted name is placed wherever its new cluster is roomiest,
    which can be over a cell this batch never touched, and a band that kept clear of where
-   that name used to sit is no longer clear of it. The widening is unconditional rather
+   that name used to sit is no longer clear of it. Those cells are named rather than
+   guessed at - the re-fit reports which names it moved, and the cells their boxes reach
+   are re-baked with the marked and re-shaped ones. The widening is unconditional rather
    than asked of the name-clearing setting, since a band that keeps clear of nothing is
    re-baked to the same triangles either way - and a gate here would trade a rebuild the
    flip already pays for against a wrong map the moment the setting is switched back on.

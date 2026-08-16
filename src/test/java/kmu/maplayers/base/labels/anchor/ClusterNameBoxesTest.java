@@ -75,6 +75,32 @@ final class ClusterNameBoxesTest {
         }
     }
 
+    @Nested
+    class ComputeNameBox {
+
+        @Test
+        void computeNameBoxTurnsOnePlacementIntoTheBoxItsWordsFill() {
+            // The single-placement reading, so a reader asking whether one name's room moved gets
+            // the same answer the whole-map list would have given for it.
+            assertThat(ClusterNameBoxes.computeNameBox(
+                    buildAnchor("hegemony", EASTWARD_NAME, NAME_THICKNESS)))
+                .containsExactly(
+                    new double[] {0, 12},
+                    new double[] {20, 12},
+                    new double[] {20, 8},
+                    new double[] {0, 8});
+        }
+
+        @Test
+        void computeNameBoxReportsNoRoomForAPlacementThatAcceptedNoLine() {
+            // Empty rather than absent: a collapsed fit occupies nothing, and a caller asking
+            // about one placement has no list for it to be left out of.
+            assertThat(ClusterNameBoxes.computeNameBox(
+                    buildAnchor("hegemony", null, NAME_THICKNESS)))
+                .isEmpty();
+        }
+    }
+
     // One placement carrying just what a box is read off - the accepted line and the girth of the
     // block filling it. Every other fitted component is inert here.
     private static ClusterAnchor buildAnchor(

@@ -286,7 +286,9 @@ final class PoliticalMapCache {
 
                 // The bands come last, after the names have places, because they are laid around
                 // them: a band is cut by the room the names take, so baking one before the fit
-                // would leave it running under a word rather than clear of it.
+                // would leave it running under a word rather than clear of it. What the fit
+                // reports about the names it moved is dropped here: every cell was just rebuilt
+                // from nothing, so all of them owe a band whatever the names did.
                 CellRibbonsBaker
                     .createForPass(
                         territories,

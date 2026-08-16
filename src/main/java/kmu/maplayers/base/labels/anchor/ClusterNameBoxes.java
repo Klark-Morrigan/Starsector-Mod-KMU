@@ -43,15 +43,31 @@ public final class ClusterNameBoxes {
 
         for (var anchor : anchors) {
 
-            if (anchor.acceptedAxis() == null) {
-                continue;
-            }
-            var corners = anchor.acceptedAxis().computeBandCorners(anchor.thickness());
+            var box = computeNameBox(anchor);
 
-            if (!corners.isEmpty()) {
-                boxes.add(corners);
+            if (!box.isEmpty()) {
+                boxes.add(box);
             }
         }
         return boxes;
+    }
+
+    /**
+     * The box one placement's name occupies.
+     *
+     * <p>Apart from the list walk above because a reader asking about one name is a real question -
+     * whether the room a single placement holds moved between two fits, say - and answering it by
+     * walking a one-element list would leave the "what is a name's extent" rule stated in two
+     * places, free to drift apart.
+     *
+     * @param anchor the placement to read
+     * @return a closed ring of {x, y} corners, or an empty list where the placement occupies no
+     *         room at all - a fit that accepted no line, or one whose block has no girth
+     */
+    static List<double[]> computeNameBox(ClusterAnchor anchor) {
+
+        return anchor.acceptedAxis() == null
+            ? List.of()
+            : anchor.acceptedAxis().computeBandCorners(anchor.thickness());
     }
 }
