@@ -1,8 +1,11 @@
 package kmu.maplayers.base.render;
 
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignEngineLayers;
 import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
+
+import kmlib.starsector.ui.map.presence.MapPresence;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
 
@@ -43,6 +46,17 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
     private static final EnumSet<CampaignEngineLayers> ACTIVE_LAYERS =
         EnumSet.noneOf(CampaignEngineLayers.class);
 
+    // Reports a pass that drew these layers without a map being on screen. Shared by all three
+    // surfaces rather than one each: they would report a single foreign pass three times over, and
+    // the stack in the line is what tells one caller from another anyway.
+    //
+    // Static, and wired here rather than injected, because the engine constructs these plugins from
+    // the save and there is no seam to hand one in through. Static also keeps it out of the save,
+    // which an instance field on a serialised plugin would not.
+    private static final ForeignMapPassWarning FOREIGN_PASS_WARNING = new ForeignMapPassWarning(
+        new MapPresence()::isAnyMapShowing,
+        Global.getLogger(SectorMapLayerTerrainPlugin.class));
+
     // Both bands in one pass, bottom first. This surface owns one terrain icon, so it has no way to
     // put anything above the nebulae the map appends after it - they are drawn on the schematic map
     // too, just as ordinary nebula terrain rather than as the Starscape sprite. Splitting the pass
@@ -74,6 +88,11 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
 
     @Override
     public void renderOnMap(float factor, float alphaMult) {
+
+        // First thing in the pass, so the stack it reports is the one that actually reached here,
+        // and so a foreign pass is named even when the active pick draws nothing.
+        FOREIGN_PASS_WARNING.warnOnceIfNoMapIsShowing();
+
         // Draws through the pick of whichever screen is showing this frame, so switching a tab
         // switches what paints with no per-layer branch here. Null when nothing draws at all - no
         // registered pick yet, or a pick that paints nothing.

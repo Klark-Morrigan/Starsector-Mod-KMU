@@ -31,6 +31,19 @@ switch-only tab - reads as nothing to draw, which is the same answer the surface
 layer is active at all. `base.tooltip`'s dispatcher resolves its box the same way, off the same two
 reads, so neither pass names a layer.
 
+`renderOnMap` is the sector map's hook by contract, and everything downstream rests on that - the
+cursor read inverts whichever transform the running pass bound and divides by the `factor` it
+supplied, both meaningless if the pass is not a map's. Nothing enforces it: the hook is a plain
+method on a terrain plugin, and any mod walking the sector's terrain can call it with a transform
+and a zoom of its own. The failure is quiet rather than loud, because a cursor pixel inverted
+against a foreign transform still yields a world point, and in hyperspace - where campaign
+coordinates *are* sector map coordinates - that point lands inside real cells, lighting and
+announcing systems the pointer is nowhere near with no map open. `ForeignMapPassWarning` says that
+once per session at WARN, carrying the caller's stack on a throwable that was never thrown, since
+the caller is precisely what cannot be worked out from inside the pass. It never throws: it reports
+on a frame rather than drawing one, so a presence read that fails costs the report and nothing
+else.
+
 ## Bands
 
 `MapOverlayBand` splits an overlay in two at the one place the map draws something of its own
