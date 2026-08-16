@@ -63,6 +63,16 @@ final class SectorMapLayerTerrainPluginTest {
         MapLayerRosters.restoreNonEmptyRoster();
     }
 
+    // The claim is a process-lifetime instance the surfaces reach through its singleton, so a frame
+    // opened by one case would otherwise be the frame the next case's surface finds already
+    // prepared. Cleared at both ends so neither the order within this class nor the order between
+    // classes can decide whether a preparation happens.
+    @BeforeEach
+    @AfterEach
+    void discardFramePreparationClaim() {
+        MapFramePreparationClaim.getInstance().discardFrameTrackingFromPreviousSave();
+    }
+
     @Nested
     class GetActiveLayers {
 
@@ -131,6 +141,54 @@ final class SectorMapLayerTerrainPluginTest {
 
                 verify(layerRendererMock, times(1))
                     .prepareFrame(anyFloat());
+            }
+        }
+
+        @Test
+        void renderOnMapPreparesOnceAcrossTwoSurfacesPaintingOneFrame() {
+            // The band pinning alone cannot settle this: whether a surface draws is that surface's
+            // own answer, so two can paint the lower band of one frame. Both must still draw their
+            // bands - the frame is genuinely painted twice over - while the preparation behind them,
+            // which steps the cursor's arrival latch, happens once.
+            try (var globalMock = mockStatic(Global.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                MapFramePreparationClaim.getInstance().renderInUICoordsBelowUI(null);
+
+                new SectorMapLayerTerrainPlugin().renderOnMap(1.5f, 0.25f);
+                new SectorMapLayerTerrainPlugin().renderOnMap(1.5f, 0.25f);
+
+                verify(layerRendererMock, times(1))
+                    .prepareFrame(anyFloat());
+                verify(layerRendererMock, times(2))
+                    .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+            }
+        }
+
+        @Test
+        void renderOnMapPreparesAgainOnceTheNextFrameOpens() {
+            // A claim spent for good would leave the map painting the draw lists of whichever frame
+            // happened to prepare first, which is the opposite fault and the worse one.
+            try (var globalMock = mockStatic(Global.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                var claim = MapFramePreparationClaim.getInstance();
+                var plugin = new SectorMapLayerTerrainPlugin();
+
+                claim.renderInUICoordsBelowUI(null);
+                plugin.renderOnMap(1.5f, 0.25f);
+
+                claim.renderInUICoordsBelowUI(null);
+                plugin.renderOnMap(1.5f, 0.25f);
+
+                verify(layerRendererMock, times(2))
+                    .prepareFrame(1.5f);
             }
         }
 

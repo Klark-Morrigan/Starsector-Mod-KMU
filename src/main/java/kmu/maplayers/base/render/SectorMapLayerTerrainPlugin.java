@@ -84,11 +84,14 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
 
         var paintedBands = resolvePaintedBands();
 
-        // Preparation belongs to whichever surface paints the lower band. That band is the one
-        // every mode paints and the one the map always reaches first, so pinning the frame's single
-        // preparation to it is what stops the split surfaces preparing twice - or, in the mode where
-        // they are split, neither of them preparing at all.
-        if (paintedBands.contains(MapOverlayBand.BENEATH_STARSCAPE_NEBULAE)) {
+        // Preparation belongs to whichever surface paints the lower band, and then only to the first
+        // of them to reach the frame. The band is what makes preparation land before anything is
+        // drawn - it is painted in every mode and reached first - while the claim is what makes it
+        // happen once, which the band alone cannot: whether a surface draws at all is settled by
+        // that surface for itself, so two can paint the lower band in one frame and would otherwise
+        // each prepare it.
+        if (paintedBands.contains(MapOverlayBand.BENEATH_STARSCAPE_NEBULAE)
+                && MapFramePreparationClaim.getInstance().claimPreparation()) {
             layerRenderer.prepareFrame(factor);
         }
 

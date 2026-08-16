@@ -11,6 +11,7 @@ Part of [the map layers](../../README.md), in Klark Morrigan's Utilities; see th
 
 - [Who gets the frame](#who-gets-the-frame)
 - [Bands](#bands)
+- [One preparation per frame](#one-preparation-per-frame)
 - [Three terrains, one draw](#three-terrains-one-draw)
 - [Where the Starscape surfaces sit in the draw order](#where-the-starscape-surfaces-sit-in-the-draw-order)
 - [What is not here](#what-is-not-here)
@@ -36,14 +37,29 @@ reads, so neither pass names a layer.
 between the parts: its own synthetic per-system nebula icons. `resolvePaintedBands()` on the surface says
 which side it emits, and the renderer is handed that band per pass.
 
-Preparation is separate from drawing because a frame can be painted by more than one surface. It
-runs once, on whichever surface paints `BENEATH_STARSCAPE_NEBULAE` - that band is painted in every
-mode and is always reached first, so pinning the single preparation to it is what keeps a cursor
-read from resolving against a half-drawn frame and a staleness check from running twice.
-
 The bands are named for their positions, not their contents. Which sub-layers ride above is a
 question about how the picture reads, and moving one is a change of which band a pass is emitted
 for - not a rename here. Today what is merely seen is beneath and what is read is above.
+
+## One preparation per frame
+
+Preparation is separate from drawing because a frame can be painted by more than one surface. It
+runs on whichever surface paints `BENEATH_STARSCAPE_NEBULAE`, that band being painted in every mode
+and reached first, which is what keeps a cursor read from resolving against a half-drawn frame.
+
+That pinning says *when* preparation lands but cannot say *how often*, and preparation is not
+something a frame can absorb twice: it steps the cursor's arrival latch, and a latch stepped twice
+for one frame reports the cursor leaving and reaching the cell it is resting on - once per frame,
+for as long as it rests there. Whether a surface draws at all is settled by that surface alone, so
+two can paint the lower band of one frame and there is nothing on that side to count them.
+
+`MapFramePreparationClaim` is what counts: a `CampaignUIRenderingListener` reading the below-UI pass
+as the frame boundary the surfaces cannot see from where they stand, and granting the preparation to
+the first to ask after it. It fails open - until that pass has been seen, every claim is granted -
+because a duplicated preparation costs work while a denied one costs the overlay, nothing else
+bringing the draw lists up to date. The mod's entry point clears it per load before re-registering
+it, so a load that never re-registers falls back to that open state rather than to a claim armed by
+a session whose boundary pass is gone.
 
 ## Three terrains, one draw
 

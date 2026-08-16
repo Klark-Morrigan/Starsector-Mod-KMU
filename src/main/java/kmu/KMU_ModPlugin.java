@@ -14,6 +14,7 @@ import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
+import kmu.maplayers.base.render.MapFramePreparationClaim;
 import kmu.maplayers.base.render.MapLayerTerrainInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarHosts;
 import kmu.maplayers.base.sidebar.runtime.SidebarInput;
@@ -142,6 +143,12 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // can be dropped.
         runGuardedStep("Failed to discard KMU hover tooltip detail mode from the previous save",
             HoverTooltipDetailModeState.getInstance()::discardModeFromPreviousSave);
+
+        // Before the tooltip and the surfaces that ask it: the claim is what keeps a frame's
+        // preparation to one, and until it is registered the surfaces fall back to preparing per
+        // pass, so a late registration costs duplicated work rather than a wrong picture.
+        runGuardedStep("Failed to install KMU map layer frame preparation claim",
+            () -> installMapFramePreparationClaim(Global.getSector()));
 
         runGuardedStep("Failed to install KMU map layer hover tooltip",
             () -> installMapLayerHoverTooltip(Global.getSector()));
@@ -313,6 +320,27 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // draws only, holds no save-relevant state, and its cached GL text must never enter a save, so it
     // is re-added fresh each load and never duplicates. Mirrors the sidebar's contract so exactly one
     // renders.
+    // Registers the render listener the map surfaces read their frame boundary from, and clears what
+    // the previous session left on it first. Transient, remove-then-add, for the dispatcher's
+    // reasons: it holds live view state and none of it belongs in a save.
+    //
+    // The clear comes first and is not conditional on the registration going ahead, because the two
+    // failures it covers are the ones where no registration happens at all: a sector without a
+    // listener manager, and a guarded step that throws. Either would otherwise leave the claim armed
+    // by a session whose boundary pass is gone, which denies every preparation and freezes the
+    // overlay - where an unarmed claim merely prepares once per pass.
+    static void installMapFramePreparationClaim(SectorAPI sector) {
+
+        MapFramePreparationClaim.getInstance().discardFrameTrackingFromPreviousSave();
+
+        // The shared instance rather than a fresh one: the surfaces that ask reach it through the
+        // singleton, so a listener built beside it would be a second claim nothing consults.
+        installTransientListener(
+            sector,
+            MapFramePreparationClaim.class,
+            MapFramePreparationClaim::getInstance);
+    }
+
     static void installMapLayerHoverTooltip(SectorAPI sector) {
         // Both live reads are supplied rather than built by the dispatcher, so a test can stand
         // stand-ins in their place and pin the step-aside and the on-screen gate. The map read is
