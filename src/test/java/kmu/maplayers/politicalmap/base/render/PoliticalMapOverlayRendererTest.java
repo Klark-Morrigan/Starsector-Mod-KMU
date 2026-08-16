@@ -12,7 +12,7 @@ import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellPresenceRibbonRenderer;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.settings.KmuPoliticalMapSettings;
-import kmu.settings.NebulaDepthChoice;
+import kmu.settings.NebulaDrawOrderChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -67,7 +67,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDepths(layerSettingsMock);
+                chooseTheShippedDrawOrders(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -102,7 +102,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDepths(layerSettingsMock);
+                chooseTheShippedDrawOrders(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -135,7 +135,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDepths(layerSettingsMock);
+                chooseTheShippedDrawOrders(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -171,7 +171,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDepths(layerSettingsMock);
+                chooseTheShippedDrawOrders(layerSettingsMock);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 // Built inside the construction mock, since the highlight renderer is a field this
@@ -200,7 +200,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDepths(layerSettingsMock);
+                chooseTheShippedDrawOrders(layerSettingsMock);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 new PoliticalMapOverlayRenderer().renderOnMap(
@@ -231,7 +231,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDepths(layerSettingsMock);
+                chooseTheShippedDrawOrders(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -261,7 +261,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheShippedDepths(layerSettingsMock);
+                chooseTheShippedDrawOrders(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -288,12 +288,12 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDepths(
+                chooseTheDrawOrders(
                     layerSettingsMock,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.BELOW,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.ABOVE);
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.BELOW,
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -318,12 +318,12 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDepths(
+                chooseTheDrawOrders(
                     layerSettingsMock,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.BELOW,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.ABOVE);
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.BELOW,
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -346,12 +346,12 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDepths(
+                chooseTheDrawOrders(
                     layerSettingsMock,
-                    NebulaDepthChoice.BELOW,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.ABOVE);
+                    NebulaDrawOrderChoice.BELOW,
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -380,12 +380,12 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDepths(
+                chooseTheDrawOrders(
                     layerSettingsMock,
-                    NebulaDepthChoice.BELOW,
-                    NebulaDepthChoice.BELOW,
-                    NebulaDepthChoice.BELOW,
-                    NebulaDepthChoice.BELOW);
+                    NebulaDrawOrderChoice.BELOW,
+                    NebulaDrawOrderChoice.BELOW,
+                    NebulaDrawOrderChoice.BELOW,
+                    NebulaDrawOrderChoice.BELOW);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -414,12 +414,12 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDepths(
+                chooseTheDrawOrders(
                     layerSettingsMock,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.ABOVE);
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 new PoliticalMapOverlayRenderer().renderOnMap(
@@ -448,12 +448,12 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                chooseTheDepths(
+                chooseTheDrawOrders(
                     layerSettingsMock,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.ABOVE);
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -465,6 +465,76 @@ final class PoliticalMapOverlayRendererTest {
                 borderStageRendererMock.verify(() ->
                     ClusterBorderStageRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
 
+                clusterRendererMock
+                    .verifyNoInteractions();
+            }
+        }
+
+        @Test
+        void renderOnMapLeavesTheHoverHighlightAndTheAnchorsOutOfTheBandTheRaisedFillsLeft() {
+            // A rider gated on its own band as well as on the fills' would emit in both, which the
+            // test above cannot see: it observes the band the pair arrived in and says nothing about
+            // the one they came from. Twice-drawn hover feedback is a wash at twice its opacity.
+            try (var hoverRendererConstructionMock = mockConstruction(HoverHighlightRenderer.class);
+                    var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
+                    var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                chooseTheDrawOrders(
+                    layerSettingsMock,
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE);
+                openTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
+
+                new PoliticalMapOverlayRenderer().renderOnMap(
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
+                    MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+
+                anchorRendererMock
+                    .verifyNoInteractions();
+
+                // Held to exactly one stand-in first, so "none of them drew" cannot pass on there
+                // having been no highlight renderer at all.
+                assertThat(hoverRendererConstructionMock.constructed())
+                    .singleElement()
+                    .satisfies(hoverRenderer -> verifyNoInteractions(hoverRenderer));
+            }
+        }
+
+        @Test
+        void renderOnMapLeavesThePresenceBandsAndTheFactionNamesOutOfTheBandTheyWereLoweredFrom() {
+            // The same absence for the two readouts, which the shipped split pins only the other way
+            // round. A band left emitting on its old side as well as its new one is drawn twice over
+            // the same cell, and the presence bands are translucent.
+            try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var labelRendererMock = mockStatic(LabelRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
+                    var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                chooseTheDrawOrders(
+                    layerSettingsMock,
+                    NebulaDrawOrderChoice.BELOW,
+                    NebulaDrawOrderChoice.BELOW,
+                    NebulaDrawOrderChoice.BELOW,
+                    NebulaDrawOrderChoice.BELOW);
+                silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
+
+                overlayRenderer.renderOnMap(
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
+                    MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
+
+                ribbonRendererMock
+                    .verifyNoInteractions();
+                labelRendererMock
+                    .verifyNoInteractions();
                 clusterRendererMock
                     .verifyNoInteractions();
             }
@@ -507,38 +577,38 @@ final class PoliticalMapOverlayRendererTest {
     // readouts laid over cells above them. Stated rather than left to the settings class, whose
     // reads are stood in for here - and stating it is what makes the swapped-layout tests below a
     // comparison rather than each a picture of its own.
-    private static void chooseTheShippedDepths(
+    private static void chooseTheShippedDrawOrders(
             MockedStatic<KmuPoliticalMapSettings> layerSettingsMock) {
 
-        chooseTheDepths(
+        chooseTheDrawOrders(
             layerSettingsMock,
-            NebulaDepthChoice.BELOW,
-            NebulaDepthChoice.BELOW,
-            NebulaDepthChoice.ABOVE,
-            NebulaDepthChoice.ABOVE);
+            NebulaDrawOrderChoice.BELOW,
+            NebulaDrawOrderChoice.BELOW,
+            NebulaDrawOrderChoice.ABOVE,
+            NebulaDrawOrderChoice.ABOVE);
     }
 
-    // The four depth choices the layout for a pass is read from, in the order the layout states
+    // The four draw-order choices the layout for a pass is read from, in the order the layout states
     // them: fills, borders, presence bands, names.
-    private static void chooseTheDepths(
+    private static void chooseTheDrawOrders(
             MockedStatic<KmuPoliticalMapSettings> layerSettingsMock,
-            NebulaDepthChoice fillDepth,
-            NebulaDepthChoice borderDepth,
-            NebulaDepthChoice ribbonDepth,
-            NebulaDepthChoice labelDepth) {
+            NebulaDrawOrderChoice fillDrawOrder,
+            NebulaDrawOrderChoice borderDrawOrder,
+            NebulaDrawOrderChoice ribbonDrawOrder,
+            NebulaDrawOrderChoice labelDrawOrder) {
 
         layerSettingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapFillNebulaDepth)
-            .thenReturn(fillDepth);
+            .when(KmuPoliticalMapSettings::getPoliticalMapFillNebulaDrawOrder)
+            .thenReturn(fillDrawOrder);
         layerSettingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapBorderNebulaDepth)
-            .thenReturn(borderDepth);
+            .when(KmuPoliticalMapSettings::getPoliticalMapBorderNebulaDrawOrder)
+            .thenReturn(borderDrawOrder);
         layerSettingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonNebulaDepth)
-            .thenReturn(ribbonDepth);
+            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonNebulaDrawOrder)
+            .thenReturn(ribbonDrawOrder);
         layerSettingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapLabelNebulaDepth)
-            .thenReturn(labelDepth);
+            .when(KmuPoliticalMapSettings::getPoliticalMapLabelNebulaDrawOrder)
+            .thenReturn(labelDrawOrder);
     }
 
     // A cache holding a built, non-debug frame with nothing in it. The bands are decided on the band

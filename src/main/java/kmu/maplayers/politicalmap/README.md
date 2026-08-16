@@ -179,9 +179,10 @@ as a change the engine fired no event for, answered into the framework's poll - 
 alliance membership being the one),
 `render` (`PoliticalMapOverlayRenderer` - the order the sub-layers are stacked in, bottom to top,
 and the only place it is written down; plus `PoliticalMapBandLayout` - which side of the map's own
-nebulae each of them paints on, read per pass from the player's four **Nebula depth** settings. The
-order is the layer's and the depths are the player's, which is the whole division: what makes a
-sub-layer legible against the ones under it is fixed, and what a haze over it costs is taste. Three
+nebulae each of them paints on, read per pass from the player's four **Nebula draw order**
+settings. The order among the sub-layers is the layer's and the side of the nebulae is the player's,
+which is the whole division: what makes a sub-layer legible against the ones under it is fixed, and
+what a haze over it costs is taste. Three
 sub-layers ride with a chosen one rather than being chosen themselves - the contested hatch inside
 the fill it is half of, and the hover feedback and the debug overlays with the base view they
 brighten, annotate, or replace),

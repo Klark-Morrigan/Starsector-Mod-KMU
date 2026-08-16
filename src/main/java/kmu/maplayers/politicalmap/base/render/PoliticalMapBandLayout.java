@@ -2,11 +2,11 @@ package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.settings.KmuPoliticalMapSettings;
-import kmu.settings.NebulaDepthChoice;
+import kmu.settings.NebulaDrawOrderChoice;
 
 /**
  * Which side of the map's own nebulae each of the political overlay's choosable sub-layers paints
- * on, for one frame. The player picks a depth per sub-layer and this is that pick expressed as
+ * on, for one frame. The player picks a side per sub-layer and this is that pick expressed as
  * bands, so the compositor asks what it is painting rather than matching a stored choice.
  *
  * <p>The mapping from a choice to a band lives here, on the layer's side of the render seam, which
@@ -45,7 +45,7 @@ record PoliticalMapBandLayout(
     }
 
     /**
-     * Reads the player's four depth choices as one layout.
+     * Reads the player's four draw-order choices as one layout.
      *
      * <p>Read per band pass rather than held: four map lookups against LunaLib, the same order of
      * cost as the band style the presence pass already reads every frame, where a cached copy would
@@ -55,18 +55,18 @@ record PoliticalMapBandLayout(
      */
     static PoliticalMapBandLayout readChosenLayout() {
         return new PoliticalMapBandLayout(
-            resolveBand(KmuPoliticalMapSettings.getPoliticalMapFillNebulaDepth()),
-            resolveBand(KmuPoliticalMapSettings.getPoliticalMapBorderNebulaDepth()),
-            resolveBand(KmuPoliticalMapSettings.getPoliticalMapRibbonNebulaDepth()),
-            resolveBand(KmuPoliticalMapSettings.getPoliticalMapLabelNebulaDepth()));
+            resolveBand(KmuPoliticalMapSettings.getPoliticalMapFillNebulaDrawOrder()),
+            resolveBand(KmuPoliticalMapSettings.getPoliticalMapBorderNebulaDrawOrder()),
+            resolveBand(KmuPoliticalMapSettings.getPoliticalMapRibbonNebulaDrawOrder()),
+            resolveBand(KmuPoliticalMapSettings.getPoliticalMapLabelNebulaDrawOrder()));
     }
 
     // The whole of the translation: the map draws its nebulae between two of its terrain passes, so
-    // a depth the player picked is a band and there is no third answer either could have. A switch
+    // a draw order the player picked is a band and there is no third answer either could have. A switch
     // expression rather than a comparison, so a choice added later fails to compile here instead of
     // quietly resolving to whichever band the else branch named.
-    private static MapOverlayBand resolveBand(NebulaDepthChoice depth) {
-        return switch (depth) {
+    private static MapOverlayBand resolveBand(NebulaDrawOrderChoice drawOrder) {
+        return switch (drawOrder) {
             case BELOW -> MapOverlayBand.BENEATH_STARSCAPE_NEBULAE;
             case ABOVE -> MapOverlayBand.ABOVE_STARSCAPE_NEBULAE;
         };

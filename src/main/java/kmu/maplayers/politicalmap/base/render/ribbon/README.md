@@ -241,7 +241,7 @@ exposed - it is the angle past which a corner's mitre becomes a spike, a propert
 polyline rather than of how the readout looks.
 
 `CellRibbon` is one cell's baked result, a list of `RibbonBand` (a colour plus flattened triangle
-vertices). `CellPresenceRibbonRenderer` draws them in whichever band the player's **Nebula depth**
+vertices). `CellPresenceRibbonRenderer` draws them in whichever band the player's **Nebula draw order**
 setting for the presence bands placed them, which ships as `ABOVE_STARSCAPE_NEBULAE`: a band reads
 over the map's nebula sprites rather than being fogged by them, and being fogged would cost it the
 very thing it is for. The setting exists because how much that costs depends on the palette it is

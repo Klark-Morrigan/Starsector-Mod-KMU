@@ -159,20 +159,20 @@ final class LunaSettingsCsvIntegrationTest {
             RibbonNameClearanceChoice.values()),
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_starscape_positionRelativeToNebulae_fills",
-            "DEFAULT_NEBULA_DEPTH_FILLS",
-            NebulaDepthChoice.values()),
+            "DEFAULT_NEBULA_DRAW_ORDER_FILLS",
+            NebulaDrawOrderChoice.values()),
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_starscape_positionRelativeToNebulae_borders",
-            "DEFAULT_NEBULA_DEPTH_BORDERS",
-            NebulaDepthChoice.values()),
+            "DEFAULT_NEBULA_DRAW_ORDER_BORDERS",
+            NebulaDrawOrderChoice.values()),
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_starscape_positionRelativeToNebulae_presenceRibbons",
-            "DEFAULT_NEBULA_DEPTH_RIBBONS",
-            NebulaDepthChoice.values()),
+            "DEFAULT_NEBULA_DRAW_ORDER_RIBBONS",
+            NebulaDrawOrderChoice.values()),
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_starscape_positionRelativeToNebulae_labels",
-            "DEFAULT_NEBULA_DEPTH_LABELS",
-            NebulaDepthChoice.values()),
+            "DEFAULT_NEBULA_DRAW_ORDER_LABELS",
+            NebulaDrawOrderChoice.values()),
         new ChoiceBackedRadio(
             "kmu_politicalMapFactionOuterBorderColor",
             "DEFAULT_FACTION_OUTER_BORDER_COLOUR",

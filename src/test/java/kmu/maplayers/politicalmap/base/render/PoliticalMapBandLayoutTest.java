@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.settings.KmuPoliticalMapSettings;
-import kmu.settings.NebulaDepthChoice;
+import kmu.settings.NebulaDrawOrderChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -36,12 +36,12 @@ final class PoliticalMapBandLayoutTest {
             // it is the group below that holds it to the rule.
             try (var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                stubChosenDepths(
+                stubChosenDrawOrders(
                     settingsMock,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.BELOW,
-                    NebulaDepthChoice.ABOVE);
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.BELOW,
+                    NebulaDrawOrderChoice.ABOVE);
 
                 var layout = PoliticalMapBandLayout.readChosenLayout();
 
@@ -58,17 +58,17 @@ final class PoliticalMapBandLayoutTest {
 
         @Test
         void readChosenLayoutReproducesTheShippedSplitWhereEveryChoiceIsTheDefault() {
-            // The picture the overlay painted before the depths became a choice: the cell geometry
+            // The picture the overlay painted before the draw order became a choice: the cell geometry
             // fogged, the two readouts laid over cells clear of the fog. A player who never opens
             // the group is meant to see no change at all, and this is where that is settled.
             try (var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                stubChosenDepths(
+                stubChosenDrawOrders(
                     settingsMock,
-                    NebulaDepthChoice.BELOW,
-                    NebulaDepthChoice.BELOW,
-                    NebulaDepthChoice.ABOVE,
-                    NebulaDepthChoice.ABOVE);
+                    NebulaDrawOrderChoice.BELOW,
+                    NebulaDrawOrderChoice.BELOW,
+                    NebulaDrawOrderChoice.ABOVE,
+                    NebulaDrawOrderChoice.ABOVE);
 
                 var layout = PoliticalMapBandLayout.readChosenLayout();
 
@@ -127,24 +127,24 @@ final class PoliticalMapBandLayoutTest {
     }
 
     // The four reads a layout is resolved from, in the order the record states them.
-    private static void stubChosenDepths(
+    private static void stubChosenDrawOrders(
             MockedStatic<KmuPoliticalMapSettings> settingsMock,
-            NebulaDepthChoice fillDepth,
-            NebulaDepthChoice borderDepth,
-            NebulaDepthChoice ribbonDepth,
-            NebulaDepthChoice labelDepth) {
+            NebulaDrawOrderChoice fillDrawOrder,
+            NebulaDrawOrderChoice borderDrawOrder,
+            NebulaDrawOrderChoice ribbonDrawOrder,
+            NebulaDrawOrderChoice labelDrawOrder) {
 
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapFillNebulaDepth)
-            .thenReturn(fillDepth);
+            .when(KmuPoliticalMapSettings::getPoliticalMapFillNebulaDrawOrder)
+            .thenReturn(fillDrawOrder);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapBorderNebulaDepth)
-            .thenReturn(borderDepth);
+            .when(KmuPoliticalMapSettings::getPoliticalMapBorderNebulaDrawOrder)
+            .thenReturn(borderDrawOrder);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonNebulaDepth)
-            .thenReturn(ribbonDepth);
+            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonNebulaDrawOrder)
+            .thenReturn(ribbonDrawOrder);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapLabelNebulaDepth)
-            .thenReturn(labelDepth);
+            .when(KmuPoliticalMapSettings::getPoliticalMapLabelNebulaDrawOrder)
+            .thenReturn(labelDrawOrder);
     }
 }

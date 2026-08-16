@@ -4,7 +4,9 @@ import kmlib.settings.LabeledChoice;
 
 /**
  * Which side of the map's own nebulae one of the political overlay's sub-layers paints on - the
- * player's choice behind the "Nebula depth" Radio settings.
+ * player's choice behind the "Nebula draw order" Radio settings. Named for the nebulae rather than
+ * for drawing at large, because that is the whole of what it moves a sub-layer past: the order
+ * between the sub-layers themselves is the overlay's own and is not on offer.
  *
  * <p>The map draws its nebulae between two of its terrain passes, so an overlay sub-layer is
  * either painted before them or after them, and there is no third answer to give. {@link #BELOW}
@@ -16,18 +18,18 @@ import kmlib.settings.LabeledChoice;
  * only reorders the overlay against itself.
  *
  * <p>This names the two options, and the settings reader maps LunaLib's stored Radio label back
- * to one, so the render layer resolves a depth without matching raw strings. The labels here must
+ * to one, so the render layer resolves a side without matching raw strings. The labels here must
  * match the {@code secondaryValue} options in data/config/LunaSettings.csv exactly, and both are
  * frozen once shipped - see {@link LabeledChoice} for what a reworded label costs.
  */
-public enum NebulaDepthChoice implements LabeledChoice {
+public enum NebulaDrawOrderChoice implements LabeledChoice {
 
     BELOW("Below"),
     ABOVE("Above");
 
     private final String label;
 
-    NebulaDepthChoice(String label) {
+    NebulaDrawOrderChoice(String label) {
         this.label = label;
     }
 
