@@ -18,6 +18,14 @@ import java.util.Set;
  * a coast. What the eye wants is the shape those cells collectively occupy, which is the line
  * joining the middle of each cell's frontage - so that is what is drawn.
  *
+ * <p><b>Two reaches, and they are not interchangeable.</b> Which cells face the open void, and
+ * which void the cells have closed around, is a fact about the map: void is what is further
+ * than a cell radius from every site, so that radius is where the walk is decided. Where the
+ * line goes is a fact about the drawing, and it goes on the cells' own filled border, a channel
+ * inside that. Deciding the walk at the drawing's reach instead makes rings of cells that
+ * close in fact come apart, so the coast wanders down into a pocket that every other shape on
+ * the map draws as enclosed.
+ *
  * <p><b>Nothing is searched for.</b> The silhouettes come out of {@link DiscUnionBoundary} as
  * stretches of coast in walk order, so "the next cell along the coast" is the next element of
  * the run. There is no nearest-neighbour matching and no ordering to get wrong, and a cell
@@ -115,7 +123,9 @@ final class Coastlines {
      *                    smoothing. Carried rather than walked again by whatever wants them:
      *                    the walk is not cheap, and a second one is a second answer that can
      *                    disagree with the coast it is supposed to describe
-     * @param union       the discs it was traced against
+     * @param union       the discs it is DRAWN against, which is not the wider set the walk
+     *                    was decided on - the crossing checks have to ask about the line that
+     *                    actually got drawn
      */
     record TracedCoasts(
         List<List<CoastVertex>> coasts,
@@ -127,10 +137,10 @@ final class Coastlines {
      * Traces a whole sector's coast: the one place that knows how a coast is built.
      *
      * <p>The recipe is six steps - find the bridges, turn them into chords, wall the void
-     * with them, take the discs at the reach the cells are FILLED to, convert the knobs from
-     * cell radii to distances, and trace. Spelled out at each of the three places that wanted
-     * a coast, it had to be kept in step by hand, and changing the reach meant remembering
-     * all of them.
+     * with them, take the discs at both reaches a coast needs, convert the knobs from cell
+     * radii to distances, and trace. Spelled out at each of the three places that wanted a
+     * coast, it had to be kept in step by hand, and changing a reach meant remembering all
+     * of them.
      *
      * @param sites      the sites
      * @param parameters the knobs the cells are built under
@@ -149,24 +159,37 @@ final class Coastlines {
                 parameters.cellRadius() * rules.bridgeReachMultiple())),
             parameters.borderInset());
 
-        // At the reach the CELLS are filled to, not the one the void shapes are drawn at.
-        // Where a coast runs along a cell it should be the cell's own border and nothing
-        // else; traced a channel further out it sits a channel outside every cell it hugs.
-        var union = new DiscUnion(sites, parameters.measureFilledReach());
+        // Which void the cells bind is a fact about the map rather than about any one
+        // drawing of it, and it is settled at the reach that DEFINES void: a point is void
+        // when its nearest site is further than the cell radius. Walked a channel short of
+        // that, rings of cells that close in fact come apart, the void they held joins the
+        // open sea, and the silhouette runs down into a pocket every other shape on the map
+        // draws as enclosed - which is what put a coastline across the middle of one.
+        var bounding = new DiscUnion(sites, parameters.cellRadius());
+
+        // Drawn at the reach the CELLS are filled to, though. Where a coast runs along a
+        // cell it should be the cell's own border and nothing else; drawn a channel further
+        // out it sits a channel outside every cell it hugs.
+        //
+        // Taking the stretches from the wider walk and drawing them here costs nothing,
+        // because a cell's frontage only GROWS as the reach comes in - a neighbour covers
+        // less of a smaller circle - so every stretch the walk found is still a stretch of
+        // border here, with room to spare at both ends.
+        var drawn = new DiscUnion(sites, parameters.measureFilledReach());
 
         var silhouettes = DiscUnionBoundary.traceSilhouetteCoasts(
-            union, walls, parameters.measureArcSegments());
+            bounding, walls, parameters.measureArcSegments());
 
         return new TracedCoasts(
             smoothSilhouettes(
                 silhouettes,
-                union,
-                findBridgedCircles(union, walls),
+                drawn,
+                findBridgedCircles(bounding, walls),
                 new SmoothingRules(
                     rules.skipMultiple() * parameters.cellRadius(), rules.maxSkips()),
                 parameters.measureArcSegments()),
             silhouettes,
-            union);
+            drawn);
     }
 
     /**
@@ -205,14 +228,15 @@ final class Coastlines {
     /**
      * Traces the smoothed outer edge of every run of connected cells.
      *
-     * <p>A run has to reach three points to be worth anything: one cell alone in the void
-     * makes a circle with a single stretch of coast, and two that touch make two, neither of
-     * which is a shape. Those drop out rather than being drawn as a dot or a line, which is
-     * also exactly the "only cells touching or bridged to another" rule - a cell connected to
-     * nothing cannot reach three.
+     * <p>Judged on the points that came out rather than on the cells that went in. A cell
+     * contributes a whole run of border rather than a single point, so one cell alone in the
+     * void encloses an area perfectly well - its own - and two that touch enclose the pair.
+     * Only a run that came out too small to be a shape at all is dropped, which after the
+     * winding is settled means one that could not be built.
      *
-     * @param union       the discs to trace, at whatever reach the coast is drawn at
-     * @param walls       the walls laid across the void, whose cells are never skipped
+     * @param silhouettes the stretches of coast the cells make, in walk order
+     * @param union       the discs to draw against
+     * @param bridged     the cells a laid wall attaches to, which are never skipped
      * @param rules       how aggressively to smooth
      * @param arcSegments how finely a half-turn of arc is sampled
      * @return one closed run of points per run of connected cells
@@ -372,9 +396,16 @@ final class Coastlines {
         return restored;
     }
 
-    // Which of the stretches skipped between two kept ones has a cell across the jump, or -1
-    // when nothing does. The first one found rather than the worst: putting any of them back
-    // shortens the jump, and the next pass asks again about what is left.
+    // Which of the stretches skipped between two kept ones to put back, or -1 when the jump
+    // is clear. The first one found rather than the worst: putting any of them back shortens
+    // the jump, and the next pass asks again about what is left.
+    //
+    // A jump can also cut into one of the two cells it runs BETWEEN, which no skipped stretch
+    // can be blamed for. It happens where the two ends both block and the common tangent has
+    // to be clamped back onto a frontage that does not reach it, leaving a run that is tangent
+    // to nothing. Putting a skipped stretch back is still the remedy: the one long jump
+    // becomes two short ones, and two neighbouring stretches can always fall back on the
+    // boundary's own join between them, which cuts nothing by construction.
     private static int findBlockedStretch(
             List<DiscUnionBoundary.CoastMark> coast,
             DiscUnion union,
@@ -386,13 +417,14 @@ final class Coastlines {
 
         var departure = findPointAt(union, coast.get(from), edge.departAngle());
         var arrival = findPointAt(union, coast.get(to), edge.arriveAngle());
+        var firstSkipped = -1;
 
-        for (var step = 1; step < coast.size(); step++) {
+        for (var step = 1; step < coast.size() && !isKept[(from + step) % coast.size()]; step++) {
 
             var index = (from + step) % coast.size();
 
-            if (isKept[index]) {
-                return -1;
+            if (firstSkipped < 0) {
+                firstSkipped = index;
             }
 
             var mark = coast.get(index);
@@ -407,7 +439,9 @@ final class Coastlines {
                 return index;
             }
         }
-        return -1;
+        return isRunClearOfEveryCell(union, coast.get(from), coast.get(to), edge)
+            ? -1
+            : firstSkipped;
     }
 
     // The kept stretches turned into a closed run of points: a fillet along each cell's own
@@ -585,13 +619,47 @@ final class Coastlines {
 
         var clamped = clampEdgeEnds(union, from, to);
 
-        // Asked of EVERY cell rather than only the two the run joins. The two are what the
-        // clamp was working against, so a run can satisfy both and still shave a third cell
-        // that neither end knows about - and that run was then accepted, which is where the
-        // shallow crossings came from.
-        return isRunClearOfEveryCell(union, from, to, clamped)
+        // Clear is asked of EVERY cell rather than only the two the run joins. The two are
+        // what the clamp was working against, so a run can satisfy both and still shave a
+        // third cell that neither end knows about - and that run was then accepted, which is
+        // where the shallow crossings came from.
+        return isKeepingCellsLeft(union, from, to, clamped)
+                && isRunClearOfEveryCell(union, from, to, clamped)
             ? clamped
             : findTangentEdge(union, from, to);
+    }
+
+    // Whether a straight run keeps the cells it joins on its left, which is the side the walk
+    // puts them on and so the only side a coast may pass them.
+    //
+    // The clamp cannot tell this for itself. It slides each end towards that cell's own
+    // middle, and the two outer tangents sit the same distance either side of that middle, so
+    // it settles on whichever one it happened to drift towards. The wrong one clears every
+    // cell perfectly well - it is a tangent - and is still wrong: it leaves a cell where the
+    // coast ought to arrive and arrives where it ought to leave, so the border between the two
+    // sweeps backwards, collapses to a point, and the cell contributes nothing.
+    //
+    // On a long coast that costs one cell. On a two-cell island it costs both, and an outline
+    // of two points is not a shape, so the island vanished off the map entirely.
+    private static boolean isKeepingCellsLeft(
+            DiscUnion union,
+            DiscUnionBoundary.CoastMark from,
+            DiscUnionBoundary.CoastMark to,
+            EdgeAngles edge) {
+
+        var departure = findPointAt(union, from, edge.departAngle());
+        var arrival = findPointAt(union, to, edge.arriveAngle());
+
+        return isLeftOfRun(departure, arrival, union.sites().get(from.circle()))
+            && isLeftOfRun(departure, arrival, union.sites().get(to.circle()));
+    }
+
+    // On the line counts as left: a run that departs straight along a diameter has its own
+    // cell's centre exactly on it, and that is the ordinary case rather than a failure.
+    private static boolean isLeftOfRun(double[] from, double[] to, double[] point) {
+
+        return (to[0] - from[0]) * (point[1] - from[1])
+            - (to[1] - from[1]) * (point[0] - from[0]) >= 0;
     }
 
     // Each end slid to the nearest place to its own middle that the other end can see, over
@@ -641,35 +709,6 @@ final class Coastlines {
         return Math.atan2(
             -(toCentre[0] - fromCentre[0]),
             toCentre[1] - fromCentre[1]);
-    }
-
-    // Whether a straight reach leaves both cells without cutting into either. Asked of the
-    // direction rather than of the distance: the run begins and ends ON the two borders, so
-    // what decides it is whether it sets off outwards from each - which is the sign of the
-    // turn between the run and the outward direction at the point it starts from.
-    private static boolean isRunClear(
-            DiscUnion union,
-            DiscUnionBoundary.CoastMark from,
-            DiscUnionBoundary.CoastMark to,
-            EdgeAngles edge) {
-
-        var departure = findPointAt(union, from, edge.departAngle());
-        var arrival = findPointAt(union, to, edge.arriveAngle());
-
-        return isLeavingOutwards(union, from.circle(), departure, arrival)
-            && isLeavingOutwards(union, to.circle(), arrival, departure);
-    }
-
-    private static boolean isLeavingOutwards(
-            DiscUnion union,
-            int circle,
-            double[] leaving,
-            double[] towards) {
-
-        var centre = union.sites().get(circle);
-
-        return (towards[0] - leaving[0]) * (leaving[0] - centre[0])
-            + (towards[1] - leaving[1]) * (leaving[1] - centre[1]) >= 0;
     }
 
     private static double clampIntoFrontage(DiscUnionBoundary.CoastMark mark, double angle) {

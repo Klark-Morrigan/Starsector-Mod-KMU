@@ -29,29 +29,6 @@ final class CoastCrossings {
     private static final double DRAWN_EITHER_SIDE = 2;
 
     /**
-     * How far the worst straight run of coast reaches inside a cell.
-     *
-     * <p>The check that governs this. A smoothed edge can look plausible and still cut a cell
-     * in half - that is the failure it was built to fix - and the only way to say it has not
-     * is to ask every straight reach how near it comes to every site.
-     *
-     * <p><b>Every site, including the two the run departs from and lands on.</b> Leaving
-     * those out looks reasonable - a run touches both by construction, so they read as false
-     * positives - but they are exactly the cells a run cuts through when the sliding fails,
-     * and excluding them made this report zero while chain ends were being crossed end to
-     * end. A run that leaves both borders outwards touches them and no more, so a real
-     * incursion there is as real as any other.
-     *
-     * <p>Fillets are left out, because a fillet is drawn ON a cell's border and its chord
-     * dips inside that cell by the sagitta of its own sampling, which is not the same thing
-     * as a coast crossing one.
-     *
-     * @param coasts what {@link #traceSmoothedCoasts} handed back
-     * @param union  the discs it was traced against
-     * @return the deepest any straight run of coast reaches inside a cell, which is zero when
-     *         none of them enters one
-     */
-    /**
      * The crossings deep enough to be seen, which are the only ones worth marking.
      *
      * <p>{@link #findPenetrations} answers a question about the geometry and answers it down
@@ -92,8 +69,18 @@ final class CoastCrossings {
      * marked, is a thing to look at - and looking is how the last several of these were
      * actually found.
      *
-     * @param coasts what {@link #traceSmoothedCoasts} handed back
-     * @param union  the discs it was traced against
+     * <p><b>Every site, including the two the run departs from and lands on.</b> Leaving
+     * those out looks reasonable - a run touches both by construction, so they read as false
+     * positives - but they are exactly the cells a run cuts through when the sliding fails,
+     * and excluding them made this report zero while chain ends were being crossed end to
+     * end. A run that leaves both borders outwards touches them and no more, so a real
+     * incursion there is as real as any other.
+     *
+     * <p>Fillets are left out, because a fillet is drawn ON a cell's border and its chord
+     * dips inside that cell by the sagitta of its own sampling, which is not the same thing
+     * as a coast crossing one.
+     *
+     * @param traced what {@link Coastlines#traceSectorCoasts} handed back
      * @return one entry per offending run, in the order they are drawn
      */
     static List<Penetration> findPenetrations(Coastlines.TracedCoasts traced) {
@@ -181,6 +168,17 @@ final class CoastCrossings {
         double depth) {
     }
 
+    /**
+     * How far the worst straight run of coast reaches inside a cell.
+     *
+     * <p>The check that governs this. A smoothed edge can look plausible and still cut a cell
+     * in half - that is the failure it was built to fix - and the only way to say it has not
+     * is to ask every straight reach how near it comes to every site.
+     *
+     * @param traced what {@link Coastlines#traceSectorCoasts} handed back
+     * @return the deepest any straight run of coast reaches inside a cell, which is zero when
+     *         none of them enters one
+     */
     static double measureDeepestIncursion(Coastlines.TracedCoasts traced) {
 
         var deepest = 0.0;
