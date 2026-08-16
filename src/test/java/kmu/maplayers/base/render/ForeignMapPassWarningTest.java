@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -29,6 +30,16 @@ import static org.mockito.Mockito.verifyNoInteractions;
  */
 final class ForeignMapPassWarningTest {
 
+    // What the tree walk answers when it found no embedded map, which is what most of these cases
+    // want: they are about when the line is written, not what it carries.
+    private static final String NO_HOSTS_FOUND = "mapHosts=[]";
+
+    // A walk that found one, naming a class no engine package could account for - the finding the
+    // whole line exists to deliver.
+    private static final String MOD_OWNED_HOST_FOUND =
+        "mapHosts=[[map=com.fs.starfarer.coreui.A$G host=com.fs.starfarer.ui.impl.StandardTooltipV2"
+            + " modOwned=[org.example.mod.NavTooltipPlugin]]]";
+
     @Nested
     class WarnOnceIfNoMapIsShowing {
 
@@ -37,7 +48,7 @@ final class ForeignMapPassWarningTest {
 
             var loggerMock = mock(Logger.class);
 
-            new ForeignMapPassWarning(() -> false, loggerMock)
+            new ForeignMapPassWarning(() -> false, () -> NO_HOSTS_FOUND, loggerMock)
                 .warnOnceIfNoMapIsShowing();
 
             // The throwable is the caller's stack, which is the only thing in the line that answers
@@ -52,7 +63,7 @@ final class ForeignMapPassWarningTest {
             // paints, so a line here would be written sixty times a second on a working setup.
             var loggerMock = mock(Logger.class);
 
-            new ForeignMapPassWarning(() -> true, loggerMock)
+            new ForeignMapPassWarning(() -> true, () -> NO_HOSTS_FOUND, loggerMock)
                 .warnOnceIfNoMapIsShowing();
 
             verifyNoInteractions(loggerMock);
@@ -63,7 +74,8 @@ final class ForeignMapPassWarningTest {
             // It sits in a per-frame path, and a foreign pass is foreign on every frame it runs, so
             // an unlatched report would bury the log rather than inform it.
             var loggerMock = mock(Logger.class);
-            var warning = new ForeignMapPassWarning(() -> false, loggerMock);
+            var warning = new ForeignMapPassWarning(
+                () -> false, () -> NO_HOSTS_FOUND, loggerMock);
 
             warning.warnOnceIfNoMapIsShowing();
             warning.warnOnceIfNoMapIsShowing();
@@ -80,7 +92,8 @@ final class ForeignMapPassWarningTest {
             // switch back and forth would add another copy of it.
             var loggerMock = mock(Logger.class);
             var isMapShowing = new boolean[] {false};
-            var warning = new ForeignMapPassWarning(() -> isMapShowing[0], loggerMock);
+            var warning = new ForeignMapPassWarning(
+                () -> isMapShowing[0], () -> NO_HOSTS_FOUND, loggerMock);
 
             warning.warnOnceIfNoMapIsShowing();
             isMapShowing[0] = true;
@@ -93,6 +106,50 @@ final class ForeignMapPassWarningTest {
         }
 
         @Test
+        void warnOnceIfNoMapIsShowingCarriesTheModOwnedClassesIntoTheLine() {
+            // The point of the whole line. The stack cannot name an owner - the mod builds its
+            // widget once and the engine renders it every frame after - so if the tree read does
+            // not reach the message, the warning costs a walk and answers nothing.
+            var loggerMock = mock(Logger.class);
+
+            new ForeignMapPassWarning(() -> false, () -> MOD_OWNED_HOST_FOUND, loggerMock)
+                .warnOnceIfNoMapIsShowing();
+
+            verify(loggerMock)
+                .warn(contains("org.example.mod.NavTooltipPlugin"), any(Throwable.class));
+        }
+
+        @Test
+        void warnOnceIfNoMapIsShowingSaysSoWhenTheTreeCouldNotBeWalked() {
+            // A null read must not read as "walked the tree and found nobody", which would send a
+            // reader looking for a mod that the walk never had a chance to see.
+            var loggerMock = mock(Logger.class);
+
+            new ForeignMapPassWarning(() -> false, () -> null, loggerMock)
+                .warnOnceIfNoMapIsShowing();
+
+            verify(loggerMock)
+                .warn(contains("could not be walked"), any(Throwable.class));
+        }
+
+        @Test
+        void warnOnceIfNoMapIsShowingDoesNotWalkTheTreeWhileAMapIsShowing() {
+            // The walk is a full sweep of the core UI, and this runs on every frame the map paints.
+            // Asking for it before knowing a line is owed would pay for it sixty times a second on
+            // a working setup.
+            var loggerMock = mock(Logger.class);
+            var treeWalkOnShowingMap = new ForeignMapPassWarning(
+                () -> true,
+                () -> {
+                    throw new AssertionError("walked the tree with a map on screen");
+                },
+                loggerMock);
+
+            assertThatCode(treeWalkOnShowingMap::warnOnceIfNoMapIsShowing)
+                .doesNotThrowAnyException();
+        }
+
+        @Test
         void warnOnceIfNoMapIsShowingSwallowsAPresenceReadThatThrows() {
             // The read reaches into the live widget tree and into core classes. This is a report
             // about the frame and not part of drawing one, so a read that cannot be made must cost
@@ -102,6 +159,7 @@ final class ForeignMapPassWarningTest {
                 () -> {
                     throw new IllegalStateException("no widget tree");
                 },
+                () -> NO_HOSTS_FOUND,
                 loggerMock);
 
             assertThatCode(warningOnBrokenRead::warnOnceIfNoMapIsShowing)
@@ -119,6 +177,7 @@ final class ForeignMapPassWarningTest {
                 () -> {
                     throw readFailure;
                 },
+                () -> NO_HOSTS_FOUND,
                 loggerMock);
 
             warningOnBrokenRead.warnOnceIfNoMapIsShowing();

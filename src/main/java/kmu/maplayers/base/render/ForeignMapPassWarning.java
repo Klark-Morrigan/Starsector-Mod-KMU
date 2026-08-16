@@ -5,6 +5,7 @@ import kmlib.logging.SessionWarning;
 import org.apache.log4j.Logger;
 
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 /**
  * Says once a session that the map layers were drawn by something that is not a map.
@@ -37,6 +38,12 @@ import java.util.function.BooleanSupplier;
  */
 public final class ForeignMapPassWarning {
 
+    // What the live tree holds around any embedded map, or null when it could not be read. Supplied
+    // rather than called for here, for the reason the presence read is: both walk a widget tree
+    // that only exists in a running game, and a class that reached for either directly could not be
+    // exercised at all.
+    private final Supplier<String> describeEmbeddedMapHosts;
+
     // Whether a map is on screen at all, as a supplied read rather than one composed here: the
     // hosts a map can be showing on are not this class's knowledge, and a supplied read is one a
     // test can answer either way without a live widget tree to walk.
@@ -45,13 +52,22 @@ public final class ForeignMapPassWarning {
     private final SessionWarning warning;
 
     /**
-     * @param isAnyMapShowing whether either host is showing a map, from
-     *                        {@code MapPresence#isAnyMapShowing}
-     * @param logger          the calling surface's own logger, so the line is attributed to the
-     *                        surface that was drawn rather than to this reporter
+     * @param isAnyMapShowing          whether either host is showing a map, from
+     *                                 {@code MapPresence#isAnyMapShowing}
+     * @param describeEmbeddedMapHosts what the live tree holds around any map embedded outside
+     *                                 those hosts, from
+     *                                 {@code EmbeddedMapHostTrace#describeEmbeddedMapHosts} -
+     *                                 asked only when a line is owed, being a full tree walk
+     * @param logger                   the calling surface's own logger, so the line is attributed
+     *                                 to the surface that was drawn rather than to this reporter
      */
-    public ForeignMapPassWarning(BooleanSupplier isAnyMapShowing, Logger logger) {
+    public ForeignMapPassWarning(
+            BooleanSupplier isAnyMapShowing,
+            Supplier<String> describeEmbeddedMapHosts,
+            Logger logger) {
+
         this.isAnyMapShowing = isAnyMapShowing;
+        this.describeEmbeddedMapHosts = describeEmbeddedMapHosts;
         this.warning = new SessionWarning(logger);
     }
 
@@ -72,10 +88,16 @@ public final class ForeignMapPassWarning {
             if (isAnyMapShowing.getAsBoolean()) {
                 return;
             }
+            // The tree read, not the stack, is what can name an owner: a mod builds its widget once
+            // and the engine renders it forever after, so the frames below are all the engine's.
+            // Null when the tree could not be walked, which the line says rather than hides.
+            var embeddedMapHosts = describeEmbeddedMapHosts.get();
+
             warning.warnOnce(
-                "KMU map layers rendered on a pass with no map on screen. Whatever sits above this"
-                    + " surface in the stack below drove that pass; the map layers cannot trust its"
-                    + " transform, so hover may resolve cells the pointer is not over.",
+                "KMU map layers rendered on a pass with no map on screen. The map layers cannot"
+                    + " trust that pass's transform, so hover may resolve cells the pointer is not"
+                    + " over. Any mod-owned class named below owns the widget that drove it; "
+                    + (embeddedMapHosts == null ? "the tree could not be walked" : embeddedMapHosts),
                 new Throwable("Stack of the pass that drew the map layers"));
 
         } catch (Throwable presenceReadFailed) {

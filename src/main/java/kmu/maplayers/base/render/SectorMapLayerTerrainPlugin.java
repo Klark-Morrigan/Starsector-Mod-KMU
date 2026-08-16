@@ -6,6 +6,7 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 
 import kmlib.starsector.ui.map.presence.MapPresence;
+import kmlib.starsector.ui.map.probes.EmbeddedMapHostTrace;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
 
@@ -55,6 +56,7 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
     // which an instance field on a serialised plugin would not.
     private static final ForeignMapPassWarning FOREIGN_PASS_WARNING = new ForeignMapPassWarning(
         new MapPresence()::isAnyMapShowing,
+        EmbeddedMapHostTrace::describeEmbeddedMapHosts,
         Global.getLogger(SectorMapLayerTerrainPlugin.class));
 
     // Both bands in one pass, bottom first. This surface owns one terrain icon, so it has no way to
