@@ -16,8 +16,11 @@ final class NotchChevronColourChoiceTest {
 
         @Test
         void getLabelReturnsTheLunaLibOptionLabel() {
-            assertThat(NotchChevronColourChoice.GOLD.getLabel()).isEqualTo("Gold");
-            assertThat(NotchChevronColourChoice.PANEL_ACCENT.getLabel()).isEqualTo("Panel accent");
+
+            assertThat(NotchChevronColourChoice.GOLD.getLabel())
+                .isEqualTo("Gold");
+            assertThat(NotchChevronColourChoice.PANEL_ACCENT.getLabel())
+                .isEqualTo("Panel accent");
         }
     }
 }

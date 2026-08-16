@@ -37,6 +37,13 @@ package kmu.settings;
  * it sits the name-clearing switch: whether a band breaks around the room the cluster names take,
  * or runs its whole ring and lets a name draw across it.
  *
+ * <p>The nebula-depth group on that same tab is the one set there that styles nothing: four Radios
+ * saying, per visible sub-layer, whether it paints below the map's own nebulae or above them. What
+ * they move is paint order rather than a shade, and they are the player's rather than a constant
+ * because which side reads better turns on their palette, their other mods, and how loudly they run
+ * the overlay. Their defaults name the split the overlay painted before the group existed, so a
+ * player who never opens it sees the map it always drew.
+ *
  * <p>The "Map - Politics - Domination" tab holds the dominance rules - fields that change the
  * map's political verdicts rather than its styling, which is why they do not sit under
  * "Map - Politics - Visuals". They set how heavily a colony's raw size weighs on its
@@ -214,6 +221,24 @@ public final class KmuPoliticalMapSettings {
         "kmu_politicalMapHoverWashOutlineOpacity";
     private static final String HOVER_WASH_OUTLINE_WIDTH_FIELD =
         "kmu_politicalMapHoverWashOutlineWidth";
+
+    // Nebula depth (Map - Politics - Visuals tab): which side of the map's own nebulae each of the
+    // overlay's four visible sub-layers paints on. The map draws its nebulae between two of its
+    // terrain passes, so a sub-layer either paints before them and is dimmed by them or paints
+    // after them and reads at full strength - a taste call that turns on the player's palette and
+    // on how loudly they run the overlay, which is why it is theirs to make rather than a constant.
+    // Four fields rather than one because the sub-layers are what a player sees as separate things;
+    // the treatments that cannot stand apart from one of them - the contested hatch, the hover
+    // highlight, the diagnostics - follow the choice their own picture depends on rather than
+    // carrying a knob nobody could answer independently.
+    private static final String NEBULA_DEPTH_FILLS_FIELD =
+        "kmu_map_politics_visuals_starscape_positionRelativeToNebulae_fills";
+    private static final String NEBULA_DEPTH_BORDERS_FIELD =
+        "kmu_map_politics_visuals_starscape_positionRelativeToNebulae_borders";
+    private static final String NEBULA_DEPTH_RIBBONS_FIELD =
+        "kmu_map_politics_visuals_starscape_positionRelativeToNebulae_presenceRibbons";
+    private static final String NEBULA_DEPTH_LABELS_FIELD =
+        "kmu_map_politics_visuals_starscape_positionRelativeToNebulae_labels";
 
     // Dominance rules (Map - Politics - Domination tab): how the map decides a system's
     // dominant faction. Not styling fields - they change the political verdicts
@@ -480,6 +505,15 @@ public final class KmuPoliticalMapSettings {
     private static final double DEFAULT_HOVER_WASH_OPACITY = 0.35;
     private static final double DEFAULT_HOVER_WASH_OUTLINE_OPACITY = 0.8;
     private static final double DEFAULT_HOVER_WASH_OUTLINE_WIDTH = 2.0;
+
+    // The picture the overlay painted before the depths became a choice: the cell geometry beneath
+    // the nebulae, the two readouts laid over cells - the bands and the names - above them. Shipping
+    // the defaults as that split is what lets a player who never opens this group see no change at
+    // all, which is the whole of what makes the group free to ignore.
+    private static final NebulaDepthChoice DEFAULT_NEBULA_DEPTH_FILLS = NebulaDepthChoice.BELOW;
+    private static final NebulaDepthChoice DEFAULT_NEBULA_DEPTH_BORDERS = NebulaDepthChoice.BELOW;
+    private static final NebulaDepthChoice DEFAULT_NEBULA_DEPTH_RIBBONS = NebulaDepthChoice.ABOVE;
+    private static final NebulaDepthChoice DEFAULT_NEBULA_DEPTH_LABELS = NebulaDepthChoice.ABOVE;
 
     // The identity weight by default: raw colony size counts toward dominance as it
     // does without the rule. Below 1 flattens the gap between large and small
@@ -1352,6 +1386,46 @@ public final class KmuPoliticalMapSettings {
         return KmuLunaSettings.readDouble(
             HOVER_WASH_OUTLINE_WIDTH_FIELD,
             DEFAULT_HOVER_WASH_OUTLINE_WIDTH);
+    }
+
+    /**
+     * @return which side of the map's nebulae the territory fills paint on: BELOW dimmed by them
+     *         (the default), ABOVE clear of them. The contested hatch is part of a cluster's fill
+     *         and paints with it, and the hover highlight brightens a fill so it follows this too.
+     *         Lifting the fills lifts the borders with them, since a fill painted over its own
+     *         borders leaves a blank cell - a constraint resolved where the choices become a
+     *         paint order, so this answers only what the player picked
+     */
+    public static NebulaDepthChoice getPoliticalMapFillNebulaDepth() {
+        return KmuLunaSettings.readChoice(NEBULA_DEPTH_FILLS_FIELD, DEFAULT_NEBULA_DEPTH_FILLS);
+    }
+
+    /**
+     * @return which side of the map's nebulae the cluster boundaries, province seams, and
+     *         factionless outlines paint on: BELOW dimmed by them (the default), ABOVE clear of
+     *         them. Borders may be lifted alone but never sink below the fills, so a BELOW here
+     *         is honoured only while the fills are BELOW as well
+     */
+    public static NebulaDepthChoice getPoliticalMapBorderNebulaDepth() {
+        return KmuLunaSettings.readChoice(NEBULA_DEPTH_BORDERS_FIELD, DEFAULT_NEBULA_DEPTH_BORDERS);
+    }
+
+    /**
+     * @return which side of the map's nebulae the presence bands paint on: BELOW dimmed by them,
+     *         ABOVE clear of them (the default, the bands being a readout laid over the cells
+     *         rather than part of their body)
+     */
+    public static NebulaDepthChoice getPoliticalMapRibbonNebulaDepth() {
+        return KmuLunaSettings.readChoice(NEBULA_DEPTH_RIBBONS_FIELD, DEFAULT_NEBULA_DEPTH_RIBBONS);
+    }
+
+    /**
+     * @return which side of the map's nebulae the cluster names paint on: BELOW dimmed by them,
+     *         ABOVE clear of them (the default, a haze over words costing legibility rather than
+     *         strength of colour)
+     */
+    public static NebulaDepthChoice getPoliticalMapLabelNebulaDepth() {
+        return KmuLunaSettings.readChoice(NEBULA_DEPTH_LABELS_FIELD, DEFAULT_NEBULA_DEPTH_LABELS);
     }
 
     /**

@@ -16,8 +16,11 @@ final class HiddenMarketScalingChoiceTest {
 
         @Test
         void getLabelReturnsTheLunaLibOptionLabel() {
-            assertThat(HiddenMarketScalingChoice.NORMAL.getLabel()).isEqualTo("Normal");
-            assertThat(HiddenMarketScalingChoice.FIXED.getLabel()).isEqualTo("Fixed");
+
+            assertThat(HiddenMarketScalingChoice.NORMAL.getLabel())
+                .isEqualTo("Normal");
+            assertThat(HiddenMarketScalingChoice.FIXED.getLabel())
+                .isEqualTo("Fixed");
         }
     }
 }

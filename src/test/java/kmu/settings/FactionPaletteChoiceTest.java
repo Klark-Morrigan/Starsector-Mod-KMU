@@ -16,10 +16,13 @@ final class FactionPaletteChoiceTest {
 
         @Test
         void getLabelReturnsTheLunaLibOptionLabel() {
-            assertThat(FactionPaletteChoice.PRIMARY.getLabel()).isEqualTo("Primary faction color");
+
+            assertThat(FactionPaletteChoice.PRIMARY.getLabel())
+                .isEqualTo("Primary faction color");
             assertThat(FactionPaletteChoice.SECONDARY.getLabel())
-                    .isEqualTo("Secondary faction color");
-            assertThat(FactionPaletteChoice.NONE.getLabel()).isEqualTo("No color");
+                .isEqualTo("Secondary faction color");
+            assertThat(FactionPaletteChoice.NONE.getLabel())
+                .isEqualTo("No color");
         }
     }
 }
