@@ -9,7 +9,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 
 ## Index
 
-- [The three classes that build one](#the-three-classes-that-build-one)
+- [The four classes that build one](#the-four-classes-that-build-one)
 - [Laying a band inside a ring](#laying-a-band-inside-a-ring)
 - [When the ring has no room](#when-the-ring-has-no-room)
 - [A neck costs its own stretch](#a-neck-costs-its-own-stretch)
@@ -21,9 +21,9 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 - [Seeing the path a cell did not use](#seeing-the-path-a-cell-did-not-use)
 - [What is not here](#what-is-not-here)
 
-## The three classes that build one
+## The four classes that build one
 
-Three collaborators with deliberately different jobs, since the names are close enough to be worth
+Four collaborators with deliberately different jobs, since the names are close enough to be worth
 stating apart:
 
 | Class | Scope | Job |

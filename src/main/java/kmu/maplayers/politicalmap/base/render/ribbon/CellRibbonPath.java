@@ -44,8 +44,8 @@ public record CellRibbonPath(
      * The cell no path could be traced on: narrower than the band is wide, or one the overlay was
      * not asked about at all.
      *
-     * <p>Refused rather than carrying an outcome of its own, since a ring with nowhere to put a
-     * centreline is the plainest refusal there is - and an empty path emits nothing, so the
+     * <p>Refused rather than carrying an outcome of its own, since a ring with no stretch of
+     * either kind is the plainest refusal there is - and an empty path emits nothing, so the
      * verdict is never drawn.
      */
     public static final CellRibbonPath NONE =
