@@ -175,9 +175,8 @@ about what the overlay means.
   both ask the same question and two would be two chances to disagree about when the cursor got
   somewhere. The latch is stepped only by a hit-test that actually ran: a frame with no draw lists
   or no readable transform clears the hover like any other park but leaves the last cell the cursor
-  was *seen* on standing, since a missing input says nothing about where the cursor went. Forgetting
-  it there would read as leaving and reaching one cell over and over on a pass that can run more than
-  once for a frame, which is a tick per frame under a motionless cursor. What that tick sounds like is `MapHoverCues` beside it - the map's own sample and the
+  was *seen* on standing, since a missing input says nothing about where the cursor went - a park is
+  a claim about the hover, and only sometimes a claim about the cursor. What that tick sounds like is `MapHoverCues` beside it - the map's own sample and the
   player's own level, read live like the switches are, and no cue at all once that level reaches the
   bottom of its slider. The cell rather than the cluster is what the tick is keyed by, so it answers
   the same change the hover box does. `HoverHighlightGeometry` resolves the highlight geometry and

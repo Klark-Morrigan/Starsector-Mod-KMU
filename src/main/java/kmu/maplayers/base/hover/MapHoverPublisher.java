@@ -130,7 +130,7 @@ public final class MapHoverPublisher {
     // nothing under the cursor. Forgetting is what makes stepping off a cell and back onto it
     // reached again rather than swallowed as unchanged.
     private void parkHoverAndForgetCell() {
-        MapHoverState.getInstance().clearHover();
+        parkHoverKeepingLastCell();
         cellArrival.resetArrival();
     }
 
