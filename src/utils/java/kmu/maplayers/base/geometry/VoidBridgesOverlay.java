@@ -21,10 +21,6 @@ import java.util.List;
  */
 final class VoidBridgesOverlay {
 
-    // A fill's outline is read against the fill rather than against the black, so it wants a
-    // fraction of the weight a span crossing open void needs.
-    private static final float SPAN_STROKES_PER_EDGE = 4f;
-
     private final ViewerSettings settings;
 
     private List<CellGaps.CellGap> bridges = List.of();
@@ -67,7 +63,7 @@ final class VoidBridgesOverlay {
      */
     void paintFills(Graphics2D g2) {
 
-        g2.setStroke(new BasicStroke(ViewerPainting.SPAN_STROKE / SPAN_STROKES_PER_EDGE));
+        g2.setStroke(new BasicStroke(ViewerPainting.FILL_EDGE_STROKE));
 
         for (var outline : captured) {
 

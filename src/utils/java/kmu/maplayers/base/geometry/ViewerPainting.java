@@ -35,6 +35,12 @@ final class ViewerPainting {
     // How wide a cell's own border is drawn. Shared because both drawings of this map use it
     // and because it is not only a look: it is how far either side of the true edge the drawn
     // edge reaches, which decides what a reader can see being on the wrong side of it.
+    // A fill's own outline is read against the fill rather than against the black, so it
+    // wants a fraction of the weight a line crossing open void needs. Here rather than on
+    // each overlay that draws one: two copies of a stroke width is how two shapes come to be
+    // drawn at weights that were meant to match and quietly do not.
+    static final float FILL_EDGE_STROKE = SPAN_STROKE / 4f;
+
     static final float RING_STROKE = 90f;
 
     static final int OPAQUE_ALPHA = 255;

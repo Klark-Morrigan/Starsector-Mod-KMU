@@ -20,14 +20,10 @@ import java.util.List;
  */
 final class CoastlinesOverlay {
 
-    // A fill's outline is read against the fill rather than against the black, so it wants a
-    // fraction of the weight a line crossing open void needs.
-    private static final float SPAN_STROKES_PER_EDGE = 4f;
-
     private final ViewerSettings settings;
 
     private List<CoastCrossings.Penetration> penetrations = List.of();
-    private List<CoastPocketFaults.WalledPocket> trapped = List.of();
+    private List<CoastPocketFaults.WalledPocket> pockets = List.of();
     private List<CoastPocketFaults.Spill> spills = List.of();
 
     // Held from the last trace so the marks are drawn against the same discs the coast was
@@ -41,12 +37,8 @@ final class CoastlinesOverlay {
     /**
      * Traces the smoothed edges again, or drops them when the overlay is switched off.
      *
-     * <p>Traced at the reach the CELLS are filled to, not the one the void shapes are drawn
-     * at. Where a coast runs along a cell it should be the cell's own border and nothing
-     * else: traced a channel further out it sits a channel outside every cell it hugs, and
-     * the part that was only ever meant to join one cell to the next is buried in a line
-     * running all the way round each of them. At the fill's own reach the hugging half lands
-     * under the border already drawn there and only the reaches between cells show.
+     * <p>The pockets the coast shut in come off the same trace, so the line and the fills
+     * inset from it cannot be built under two different settings within one frame.
      *
      * @param fixture the sector to trace in
      */
@@ -56,7 +48,7 @@ final class CoastlinesOverlay {
 
             traced = null;
             penetrations = List.of();
-            trapped = List.of();
+            pockets = List.of();
             spills = List.of();
             return;
         }
@@ -67,7 +59,7 @@ final class CoastlinesOverlay {
         penetrations = CoastCrossings.findVisibleCrossings(
             traced, ViewerPainting.RING_STROKE);
 
-        trapped = CoastPockets.findCoastPockets(
+        pockets = CoastPockets.findCoastPockets(
             traced,
             fixture.getOwnerBySite(),
             settings.parameters,
@@ -76,7 +68,7 @@ final class CoastlinesOverlay {
                 settings.voidSpanMultiple * settings.parameters.cellRadius(),
                 settings.minSectionShare));
 
-        spills = CoastPocketFaults.findSpills(trapped, traced.union());
+        spills = CoastPocketFaults.findSpills(pockets, traced.union());
     }
 
     // The knobs as the sliders currently stand. Read once per refresh rather than rebuilt at
@@ -98,11 +90,11 @@ final class CoastlinesOverlay {
      *
      * @param g2 what to draw with
      */
-    void paintTrappedFills(Graphics2D g2) {
+    void paintPocketFills(Graphics2D g2) {
 
-        g2.setStroke(new BasicStroke(ViewerPainting.SPAN_STROKE / SPAN_STROKES_PER_EDGE));
+        g2.setStroke(new BasicStroke(ViewerPainting.FILL_EDGE_STROKE));
 
-        for (var walled : trapped) {
+        for (var walled : pockets) {
             for (var outline : walled.pocket().outlines()) {
 
                 ViewerPainting.paintFilledShape(
