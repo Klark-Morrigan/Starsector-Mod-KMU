@@ -31,6 +31,10 @@ import java.util.Map;
  */
 final class SectorSvgWriter {
 
+    // A trapped pocket's outline is read against its own fill rather than against the
+    // black, so it wants a fraction of the weight the coast line itself needs.
+    private static final float TRAPPED_EDGE_STROKES = 4f;
+
     private static final double MARGIN = 4000.0;
     private static final int VIEW_WIDTH = 1600;
 
@@ -190,8 +194,12 @@ final class SectorSvgWriter {
     // cell is the failure worth seeing, which a cell drawn over the top would hide.
     private static void appendCoastlines(StringBuilder svg, List<double[]> sites) {
 
+        var parameters = SectorGeometryParameters.createDefaults();
+
         var traced = Coastlines.traceSectorCoasts(
-            sites, SectorGeometryParameters.createDefaults(), Coastlines.DEFAULT_RULES);
+            sites, parameters, Coastlines.DEFAULT_RULES);
+
+        appendTrappedVoid(svg, traced, sites, parameters);
 
         for (var coast : traced.coasts()) {
 
@@ -206,6 +214,49 @@ final class SectorSvgWriter {
             svg,
             traced.union(),
             CoastCrossings.findVisibleCrossings(traced, ViewerPainting.RING_STROKE));
+    }
+
+    // The void the coast shut in, filled, under the line that shut it in. Drawn together
+    // because the question either one answers is about the other: a pocket is right only if
+    // it stops a channel short of the coast, and no number reads as an answer to that.
+    //
+    // Every site taken as unowned, so no pocket is absorbed into an owner's area and pushed
+    // out to meet its fills. Who holds the cells behind a coast is a question about how the
+    // map is coloured; this drawing is about the shapes.
+    private static void appendTrappedVoid(
+            StringBuilder svg,
+            Coastlines.TracedCoasts traced,
+            List<double[]> sites,
+            SectorGeometryParameters parameters) {
+
+        var unowned = new ArrayList<String>(sites.size());
+
+        for (var site = 0; site < sites.size(); site++) {
+            unowned.add(null);
+        }
+
+        var sectionRules = new VoidSections.SectionRules(
+            ViewerSettings.VOID_SPAN_DEFAULT * parameters.cellRadius(),
+            ViewerSettings.MIN_SECTION_DEFAULT / ViewerSettings.MIN_SECTION_SCALE);
+
+        var bridges = VoidBridges.findVoidBridges(
+            sites,
+            parameters.cellRadius(),
+            parameters.cellRadius() * Coastlines.DEFAULT_RULES.bridgeReachMultiple());
+
+        for (var pocket : CoastPockets.findCoastPockets(
+                traced, sites, bridges, unowned, parameters, sectionRules)) {
+
+            for (var outline : pocket.outlines()) {
+
+                appendPolygon(
+                    svg,
+                    outline,
+                    formatColour(ViewerSettings.COASTLINE_DEFAULT),
+                    formatColour(ViewerSettings.COASTLINE_DEFAULT),
+                    ViewerPainting.RING_STROKE / TRAPPED_EDGE_STROKES);
+            }
+        }
     }
 
     // The runs that go inside a cell, and the cells they go inside, both called out in their

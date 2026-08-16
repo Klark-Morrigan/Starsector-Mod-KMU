@@ -27,10 +27,16 @@ import java.util.List;
  * @param reach    how far the cells were taken to reach when it was traced, which is what
  *                 makes the space inside it void and what any width measured across it is
  *                 measured against
+ * @param walledBy the walls laid across the void that this hole closes on, empty when the
+ *                 cells closed around it unaided. What tells apart two holes that are
+ *                 otherwise the same kind of thing: void a bridge shut in and void a coast
+ *                 shut in come out of one walk, and the wall is the only thing that says
+ *                 which is which
  */
 record VoidHole(
     List<double[]> boundary,
     List<double[]> corners,
     List<Integer> ringing,
-    double reach) {
+    double reach,
+    List<DiscUnionBoundary.Chord> walledBy) {
 }

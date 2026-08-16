@@ -125,6 +125,10 @@ final class Coastlines {
      *                    smoothing. Carried rather than walked again by whatever wants them:
      *                    the walk is not cheap, and a second one is a second answer that can
      *                    disagree with the coast it is supposed to describe
+     * @param trapped     the void the coast closed off, one per straight reach that shut
+     *                    anything in. Handed back rather than worked out afterwards because
+     *                    only the walk knows which stretches a reach bypassed, and because a
+     *                    pocket's edge and the coast are two sides of one line
      * @param union       the discs it is DRAWN against, which is not the wider set the walk
      *                    was decided on - the crossing checks have to ask about the line that
      *                    actually got drawn
@@ -132,6 +136,7 @@ final class Coastlines {
     record TracedCoasts(
         List<List<CoastVertex>> coasts,
         List<List<DiscUnionBoundary.CoastMark>> silhouettes,
+        List<TrappedStretch> trapped,
         DiscUnion union) {
     }
 
@@ -182,17 +187,17 @@ final class Coastlines {
         var silhouettes = DiscUnionBoundary.traceSilhouetteCoasts(
             bounding, walls, parameters.measureArcSegments());
 
-        return new TracedCoasts(
-            smoothSilhouettes(
-                silhouettes,
-                drawn,
-                findBridgedCircles(bounding, walls),
-                new SmoothingRules(
-                    rules.skipMultiple() * parameters.cellRadius(),
-                    rules.maxSkips(),
-                    parameters.measureArcSegments())),
+        var smoothed = smoothSilhouettes(
             silhouettes,
-            drawn);
+            drawn,
+            findBridgedCircles(bounding, walls),
+            new SmoothingRules(
+                rules.skipMultiple() * parameters.cellRadius(),
+                rules.maxSkips(),
+                parameters.measureArcSegments()));
+
+        return new TracedCoasts(
+            smoothed.coasts(), silhouettes, smoothed.trapped(), drawn);
     }
 
     /**
@@ -245,26 +250,44 @@ final class Coastlines {
      * @param union       the discs to draw against
      * @param bridged     the cells a laid wall attaches to, which are never skipped
      * @param rules       how aggressively to smooth, and how finely
-     * @return one closed run of points per run of connected cells
+     * @return one closed run of points per run of connected cells, and the void they shut in
      */
-    private static List<List<CoastVertex>> smoothSilhouettes(
+    private static SmoothedSector smoothSilhouettes(
             List<List<DiscUnionBoundary.CoastMark>> silhouettes,
             DiscUnion union,
             Set<Integer> bridged,
             SmoothingRules rules) {
 
         var smoothed = new ArrayList<List<CoastVertex>>();
+        var trapped = new ArrayList<TrappedStretch>();
 
         for (var coast : silhouettes) {
 
-            var outline = buildClearedOutline(
+            var built = buildClearedOutline(
                 coast, keepSmoothedMarks(coast, union, bridged, rules), union, rules);
 
-            if (outline.size() >= Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
-                smoothed.add(outline);
+            // A coast too small to be a shape takes its trapped void with it. The two are
+            // the two sides of one line, so keeping the pockets of a coast nobody draws
+            // would fill space against an edge that is not on the map.
+            if (built.outline().size() >= Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
+
+                smoothed.add(built.outline());
+                trapped.addAll(built.trapped());
             }
         }
-        return smoothed;
+        return new SmoothedSector(smoothed, trapped);
+    }
+
+    /**
+     * Every smoothed coast in a sector, and all the void they closed off between them.
+     *
+     * @param coasts  one closed run of points per run of connected cells
+     * @param trapped the void they shut in, pooled - which silhouette a pocket came off is
+     *                not something anything asks, and the pockets are shaped as one set
+     */
+    private record SmoothedSector(
+        List<List<CoastVertex>> coasts,
+        List<TrappedStretch> trapped) {
     }
 
     /**
@@ -448,8 +471,8 @@ final class Coastlines {
 
     // The kept stretches turned into a closed run of points: a fillet along each cell's own
     // border from where the coast arrives to where it leaves, and a straight reach from there
-    // to the next cell.
-    private static List<CoastVertex> buildClearedOutline(
+    // to the next cell. The void each of those reaches closes off comes out of the same walk.
+    private static SmoothedCoast buildClearedOutline(
             List<DiscUnionBoundary.CoastMark> coast,
             List<Integer> kept,
             DiscUnion union,
@@ -457,13 +480,17 @@ final class Coastlines {
 
         // A run of one has no reach to any other cell, so there is nothing to clamp against
         // and its whole frontage is the coast. That is a cell alone in the void, whose coast
-        // is its own border - drawn over the top of it and so invisible, which is right.
+        // is its own border - drawn over the top of it and so invisible, which is right, and
+        // a coast lying along a border traps nothing between the two.
         if (kept.size() == 1) {
 
             var only = coast.get(kept.get(0));
-            return buildVertices(
-                only,
-                sampleFillet(union, only, only.fromAngle(), only.toAngle(), rules));
+
+            return new SmoothedCoast(
+                buildVertices(
+                    only,
+                    sampleFillet(union, only, only.fromAngle(), only.toAngle(), rules)),
+                List.of());
         }
 
         var arriveAngles = new double[kept.size()];
@@ -483,6 +510,7 @@ final class Coastlines {
         }
 
         var outline = new ArrayList<CoastVertex>();
+        var trapped = new ArrayList<TrappedStretch>();
 
         for (var index = 0; index < kept.size(); index++) {
 
@@ -492,8 +520,108 @@ final class Coastlines {
                 mark,
                 sampleFillet(
                     union, mark, arriveAngles[index], departAngles[index], rules)));
+
+            var closed = describeTrappedVoid(
+                coast, kept, index, arriveAngles, departAngles);
+
+            if (closed != null) {
+                trapped.add(closed);
+            }
         }
-        return outline;
+        return new SmoothedCoast(outline, trapped);
+    }
+
+    /**
+     * Which stretch of border one straight reach of coast closed off behind it.
+     *
+     * <p>A reach cuts the corner off a notch, and what it cuts off is bound: open sea on the
+     * far side of the line, cells on the near side, no way between. That is a pocket in the
+     * same sense an enclosed one is - closed by a line the smoothing drew rather than by
+     * cells that happened to meet.
+     *
+     * <p>Described rather than drawn. What comes back is which stretches the reach passed
+     * over and where on the two ends it left and landed, because a pocket has to be built at
+     * more than one reach - its own extent and the reach it is drawn at - and only the
+     * description is common to both. Handing back a finished ring would fix the reach here,
+     * where nothing knows what a channel is.
+     *
+     * <p>Worked out here rather than read back off the drawn coast, though, because it needs
+     * the stretches the reach BYPASSED and this walk is the only place that still knows which
+     * those were. Recovered from the line it would be a search - which sampled point belongs
+     * to which cell, and which cells fell between two that survived - and searching is what
+     * this construction exists to avoid.
+     *
+     * @return what the reach at {@code index} shut in, or null when it shut in nothing, which
+     *         is what a reach that fell back on the boundary's own join does
+     */
+    private static TrappedStretch describeTrappedVoid(
+            List<DiscUnionBoundary.CoastMark> coast,
+            List<Integer> kept,
+            int index,
+            double[] arriveAngles,
+            double[] departAngles) {
+
+        var next = (index + 1) % kept.size();
+        var bypassed = new ArrayList<DiscUnionBoundary.CoastMark>();
+
+        bypassed.add(coast.get(kept.get(index)));
+
+        for (var step = 1; step <= coast.size(); step++) {
+
+            var at = (kept.get(index) + step) % coast.size();
+
+            if (at == kept.get(next)) {
+                break;
+            }
+            bypassed.add(coast.get(at));
+        }
+        bypassed.add(coast.get(kept.get(next)));
+
+        // A reach that leaves the near cell at the very end of its frontage and lands on the
+        // far cell at the very start of its own has passed over no border at all. That is the
+        // boundary's own join, taken where no straight run could be drawn, and it shuts in
+        // nothing because it IS the boundary.
+        if (bypassed.size() == 2
+                && departAngles[index] >= coast.get(kept.get(index)).toAngle()
+                && arriveAngles[next] <= coast.get(kept.get(next)).fromAngle()) {
+
+            return null;
+        }
+        return new TrappedStretch(bypassed, departAngles[index], arriveAngles[next]);
+    }
+
+    /**
+     * One stretch of border a reach of coast closed off, and where the reach met its ends.
+     *
+     * <p>Angles rather than points, so the same stretch can be built at any reach. A pocket
+     * needs two of them - its own extent, and the reach it is drawn at once it has given up
+     * the channel - and a pair of points would only ever describe one.
+     *
+     * @param bypassed  the stretches the reach passed over, in walk order. The first and last
+     *                  are the cells it runs between and are used in part; everything between
+     *                  them is a cell the smoothing dropped, used whole
+     * @param fromAngle where on the first the reach left it
+     * @param toAngle   where on the last the reach landed
+     */
+    record TrappedStretch(
+        List<DiscUnionBoundary.CoastMark> bypassed,
+        double fromAngle,
+        double toAngle) {
+    }
+
+    /**
+     * One smoothed coast and the void its reaches closed off.
+     *
+     * <p>Paired because they come out of one walk and describe the two sides of one line.
+     * Asked for separately they would be two walks, and two walks over one coast can disagree
+     * about where the line went - which would put a pocket's edge somewhere the coast is not.
+     *
+     * @param outline the line to draw
+     * @param trapped the void it shut in, one ring per reach that closed anything off
+     */
+    private record SmoothedCoast(
+        List<CoastVertex> outline,
+        List<TrappedStretch> trapped) {
     }
 
     private static List<CoastVertex> buildVertices(

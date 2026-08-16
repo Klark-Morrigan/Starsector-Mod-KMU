@@ -20,9 +20,14 @@ import java.util.List;
  */
 final class CoastlinesOverlay {
 
+    // A fill's outline is read against the fill rather than against the black, so it wants a
+    // fraction of the weight a line crossing open void needs.
+    private static final float SPAN_STROKES_PER_EDGE = 4f;
+
     private final ViewerSettings settings;
 
     private List<CoastCrossings.Penetration> penetrations = List.of();
+    private List<VoidPockets.VoidPocket> trapped = List.of();
 
     // Held from the last trace so the marks are drawn against the same discs the coast was
     // measured against, rather than against whatever the sliders have been moved to since.
@@ -50,6 +55,7 @@ final class CoastlinesOverlay {
 
             traced = null;
             penetrations = List.of();
+            trapped = List.of();
             return;
         }
 
@@ -63,6 +69,46 @@ final class CoastlinesOverlay {
 
         penetrations = CoastCrossings.findVisibleCrossings(
             traced, ViewerPainting.RING_STROKE);
+
+        trapped = CoastPockets.findCoastPockets(
+            traced,
+            fixture.getSites(),
+            VoidBridges.findVoidBridges(
+                fixture.getSites(),
+                settings.parameters.cellRadius(),
+                settings.parameters.cellRadius() * settings.bridgeReachMultiple),
+            fixture.getOwnerBySite(),
+            settings.parameters,
+            new VoidSections.SectionRules(
+                settings.voidSpanMultiple * settings.parameters.cellRadius(),
+                settings.minSectionShare));
+    }
+
+    /**
+     * Draws the void the coast shut in, beneath the cells.
+     *
+     * <p>Under them like every other void fill, so a stray edge reads as the mistake it is
+     * rather than painting over the shape it got wrong. Unlike the coast LINE, which goes over
+     * everything: the line is a proposal to be judged against the arcs underneath it, and a
+     * fill of the space it closed off hides none of them.
+     *
+     * @param g2 what to draw with
+     */
+    void paintTrappedFills(Graphics2D g2) {
+
+        g2.setStroke(new BasicStroke(ViewerPainting.SPAN_STROKE / SPAN_STROKES_PER_EDGE));
+
+        for (var pocket : trapped) {
+            for (var outline : pocket.outlines()) {
+
+                ViewerPainting.paintFilledShape(
+                    g2,
+                    ViewerPainting.buildPath(outline),
+                    settings.coastlineColour,
+                    settings.voidCellOpacity,
+                    settings.coastlineColour);
+            }
+        }
     }
 
     /**

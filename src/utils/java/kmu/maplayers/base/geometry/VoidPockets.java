@@ -138,19 +138,58 @@ final class VoidPockets {
 
             var absorbingOwner = resolveAbsorbingOwner(hole.ringing(), ownerBySite);
 
-            var span = VoidSections.measureWidestSpan(hole.corners());
-
-            pockets.add(new VoidPocket(
+            pockets.add(shapeVoidPocket(
+                hole,
                 absorbingOwner == null
                     ? DiscUnionBoundary.findHolesInside(withChannel, hole)
                     : findHoleAround(atFills, hole),
-                Points.computeMean(hole.boundary()),
-                hole.ringing(),
-                span,
-                absorbingOwner,
-                VoidSections.divideVoidPocket(hole, sites, span, sectionRules)));
+                ownerBySite,
+                sites,
+                sectionRules));
         }
         return pockets;
+    }
+
+    /**
+     * Turns one piece of bound void into a pocket, given what it comes to once shaped.
+     *
+     * <p>Everything a pocket is beyond its own extent - who rings it, whether one owner has it
+     * to itself, how wide it is, where it divides - follows from the hole and not from what
+     * closed the hole. So this is shared with {@link CoastPockets}, which arrives at bound
+     * void a different way entirely: cells that happened to meet in one case, a line the
+     * coast smoothing drew in the other.
+     *
+     * <p>What is NOT shared is the shaping itself, which is the one part that turns on how the
+     * void was closed. Void ringed by cells gives up the channel by being retraced at a reach
+     * one channel further out; void closed by a drawn line has to give it up against the line
+     * as well, which is not a reach and cannot be moved by changing one. The caller that knows
+     * which kind it has does that part and hands the answer in.
+     *
+     * @param hole         the void's own extent
+     * @param outlines     what to draw for it once it has given up the channel - empty when
+     *                     the channel closes it over, more than one when it pinches in two
+     * @param ownerBySite  each site's owner, index-aligned with the sites and null where the
+     *                     site is unowned
+     * @param sites        the sites
+     * @param sectionRules how long a piece should be before it is cut into more than one
+     * @return the pocket
+     */
+    static VoidPocket shapeVoidPocket(
+            VoidHole hole,
+            List<List<double[]>> outlines,
+            List<String> ownerBySite,
+            List<double[]> sites,
+            VoidSections.SectionRules sectionRules) {
+
+        var span = VoidSections.measureWidestSpan(hole.corners());
+
+        return new VoidPocket(
+            outlines,
+            Points.computeMean(hole.boundary()),
+            hole.ringing(),
+            span,
+            resolveAbsorbingOwner(hole.ringing(), ownerBySite),
+            VoidSections.divideVoidPocket(hole, sites, span, sectionRules));
     }
 
     // The widened hole a pocket opens into, if it stays closed at all. The other way round

@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.DirectedLine;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
@@ -74,24 +75,35 @@ final class DiscUnionBoundary {
     /**
      * A straight run of boundary between two circles, walling void off from the rest.
      *
-     * <p>Named by its two circles rather than by two points, for the same reason the arcs
-     * are: it meets each circle where that circle faces the other, so naming the pair fixes
-     * both ends exactly and leaves nothing to be matched up by position afterwards.
+     * <p>Two circles and the line it lies on. The circles say which arcs it joins and are what
+     * its terminals are named by; the line says where it actually runs, which for a bridge is
+     * the line joining the two sites and for a wall the coast smoothing laid down is nowhere
+     * near it.
+     *
+     * <p>The line rather than an angle on each circle, because a wall has to be found again at
+     * more than one reach - once at the reach the void is defined at and once at the reach it
+     * is drawn at - and a pair of angles only means anything at the reach it was measured at.
+     * A line is the same line at any reach, so the sweep recomputes where it meets each circle
+     * instead of being handed a stale answer.
      *
      * @param fromCircle one of the circles it runs between
      * @param toCircle   the other
+     * @param line       the line it lies on, unbounded; only the stretch between the two
+     *                   circles is boundary, and the sweep works that out for itself
      */
     record Chord(
         int fromCircle,
-        int toCircle) {
+        int toCircle,
+        DirectedLine line) {
     }
 
     /**
      * The bridges as the chords they become on the boundary.
      *
-     * <p>A chord is the pair of cells and nothing else, because where it meets each of them
-     * is fixed by which circles it runs between - so a bridge converts to one without any
-     * geometry being carried across.
+     * <p>A bridge already knows the line it lies on: its two ends are where the gap it spans
+     * meets the two cells, so the line through them is the line joining the sites. Taken from
+     * the gap rather than recomputed from the sites, so the wall lands on the run the bridge
+     * was chosen for rather than on a line that merely ought to be the same.
      *
      * @param bridges the bridges, as {@link VoidBridges} found them
      * @return one chord per bridge, in the order they were offered
@@ -101,7 +113,15 @@ final class DiscUnionBoundary {
         var chords = new ArrayList<Chord>(bridges.size());
 
         for (var bridge : bridges) {
-            chords.add(new Chord(bridge.fromSite(), bridge.toSite()));
+
+            chords.add(new Chord(
+                bridge.fromSite(),
+                bridge.toSite(),
+                new DirectedLine(
+                    bridge.start()[0],
+                    bridge.start()[1],
+                    bridge.end()[0] - bridge.start()[0],
+                    bridge.end()[1] - bridge.start()[1])));
         }
         return chords;
     }
@@ -193,7 +213,11 @@ final class DiscUnionBoundary {
                 java.util.Collections.reverse(boundary);
 
                 holes.add(new VoidHole(
-                    boundary, shape.corners(), shape.ringing(), shape.reach()));
+                    boundary,
+                    shape.corners(),
+                    shape.ringing(),
+                    shape.reach(),
+                    shape.walledBy()));
             }
         }
         return holes;
@@ -263,28 +287,97 @@ final class DiscUnionBoundary {
      */
     static List<Chord> findAttachableChords(DiscUnion union, Walls walls) {
 
-        var mouth = measureMouthHalfWidth(union.reach(), walls.channel());
-        var takenByCircle = new LinkedHashMap<Integer, List<Double>>();
+        var takenByCircle = new LinkedHashMap<Integer, List<double[]>>();
         var attachable = new ArrayList<Chord>();
 
         for (var chord : walls.chords()) {
 
-            var facingFrom = measureAngleTowards(union, chord.fromCircle(), chord.toCircle());
-            var facingTo = measureAngleTowards(union, chord.toCircle(), chord.fromCircle());
+            var fromMouth = measureMouth(union, chord, chord.fromCircle(), walls.channel());
+            var toMouth = measureMouth(union, chord, chord.toCircle(), walls.channel());
 
-            if (!isMouthOnBoundary(union, mouth, chord.fromCircle(), facingFrom)
-                    || !isMouthOnBoundary(union, mouth, chord.toCircle(), facingTo)
-                    || isMouthTaken(takenByCircle, chord.fromCircle(), facingFrom, mouth)
-                    || isMouthTaken(takenByCircle, chord.toCircle(), facingTo, mouth)) {
+            if (fromMouth == null
+                    || toMouth == null
+                    || !isMouthOnBoundary(union, chord.fromCircle(), fromMouth)
+                    || !isMouthOnBoundary(union, chord.toCircle(), toMouth)
+                    || isMouthTaken(takenByCircle, chord.fromCircle(), fromMouth)
+                    || isMouthTaken(takenByCircle, chord.toCircle(), toMouth)) {
 
                 continue;
             }
-            recordMouth(takenByCircle, chord.fromCircle(), facingFrom);
-            recordMouth(takenByCircle, chord.toCircle(), facingTo);
+            recordMouth(takenByCircle, chord.fromCircle(), fromMouth);
+            recordMouth(takenByCircle, chord.toCircle(), toMouth);
 
             attachable.add(chord);
         }
         return attachable;
+    }
+
+    /**
+     * The stretch of one circle a wall's mouth takes out of the boundary.
+     *
+     * <p>The one place a wall's position is turned into angles, and the reason a coast's
+     * reaches and a bridge can be the same kind of thing. A mouth is the arc of a circle
+     * lying within a channel of the wall's line - which for a bridge, whose line runs through
+     * both sites, works out to the arc facing the other cell, half a turn wide less
+     * {@code acos(channel / reach)}. That was the closed form this used before, written for
+     * the one line it then had to handle.
+     *
+     * <p>A line crosses a circle twice, so the condition is met on two opposite arcs. The one
+     * taken is the one facing the circle at the wall's far end, because that is the side the
+     * wall actually runs off towards; the other is where the same line leaves the circle
+     * again, on a stretch the wall never covers.
+     *
+     * @param union   the discs the wall is laid across
+     * @param chord   the wall
+     * @param circle  which of its circles to measure the mouth on
+     * @param channel how far each side of the wall holds back from it
+     * @return the mouth as {@code {start, width}}, or null when the wall passes too far from
+     *         this circle to open one at all
+     */
+    private static double[] measureMouth(
+            DiscUnion union,
+            Chord chord,
+            int circle,
+            double channel) {
+
+        var line = chord.line().toUnitLine();
+
+        if (line == null) {
+            return null;
+        }
+        var centre = union.sites().get(circle);
+
+        // The normal, and how far off the line this circle sits along it. A point at angle
+        // t on the circle is then offset + reach * cos(t - normalAngle) from the line, so
+        // the mouth is the run of t over which that stays inside the channel.
+        var normalX = -line.directionY();
+        var normalY = line.directionX();
+        var normalAngle = Math.atan2(normalY, normalX);
+
+        var offset = (centre[0] - line.originX()) * normalX
+            + (centre[1] - line.originY()) * normalY;
+
+        var nearest = (channel - offset) / union.reach();
+        var furthest = (-channel - offset) / union.reach();
+
+        if (furthest >= 1 || nearest <= -1) {
+            return null;
+        }
+
+        var inner = Math.acos(Math.min(1, nearest));
+        var outer = Math.acos(Math.max(-1, furthest));
+
+        // Of the two arcs the line cuts, the one facing the wall's far end.
+        var towards = measureAngleTowards(
+            union, circle, circle == chord.fromCircle() ? chord.toCircle() : chord.fromCircle());
+
+        var ahead = normalAngle + inner;
+        var behind = normalAngle - outer;
+
+        return Angles.measureGap(towards, ahead + (outer - inner) / 2)
+                <= Angles.measureGap(towards, behind + (outer - inner) / 2)
+            ? new double[] {Angles.normalise(ahead), outer - inner}
+            : new double[] {Angles.normalise(behind), outer - inner};
     }
 
     /**
@@ -310,20 +403,22 @@ final class DiscUnionBoundary {
             Chord chord,
             double channel) {
 
-        var mouth = measureMouthHalfWidth(union.reach(), channel);
+        var fromMouth = measureMouth(union, chord, chord.fromCircle(), channel);
+        var toMouth = measureMouth(union, chord, chord.toCircle(), channel);
+
+        if (fromMouth == null || toMouth == null) {
+            return List.of();
+        }
         var from = union.sites().get(chord.fromCircle());
         var to = union.sites().get(chord.toCircle());
 
-        var facingFrom = measureAngleTowards(union, chord.fromCircle(), chord.toCircle());
-        var facingTo = measureAngleTowards(union, chord.toCircle(), chord.fromCircle());
-
         return List.of(
             List.of(
-                findPointOnCircle(from, union.reach(), facingFrom - mouth),
-                findPointOnCircle(to, union.reach(), facingTo + mouth)),
+                findPointOnCircle(from, union.reach(), fromMouth[0]),
+                findPointOnCircle(to, union.reach(), toMouth[0] + toMouth[1])),
             List.of(
-                findPointOnCircle(to, union.reach(), facingTo - mouth),
-                findPointOnCircle(from, union.reach(), facingFrom + mouth)));
+                findPointOnCircle(to, union.reach(), toMouth[0]),
+                findPointOnCircle(from, union.reach(), fromMouth[0] + fromMouth[1])));
     }
 
     // The holes the channel leaves inside one pocket - none when it closes over, more than
@@ -362,7 +457,7 @@ final class DiscUnionBoundary {
                 continue;
             }
 
-            var built = buildHole(cycle, arcs, union, arcSegments);
+            var built = buildHole(cycle, arcs, union, laid.chords(), arcSegments);
             if (built != null) {
                 cycles.add(new TracedCycle(collectArcs(cycle, arcs), built));
             }
@@ -460,7 +555,6 @@ final class DiscUnionBoundary {
             DiscUnion union,
             Walls walls) {
 
-        var mouth = measureMouthHalfWidth(union.reach(), walls.channel());
         var covers = new ArrayList<Cover>();
 
         for (var index = 0; index < walls.chords().size(); index++) {
@@ -471,11 +565,15 @@ final class DiscUnionBoundary {
             if (!isFromSide && chord.toCircle() != circle) {
                 continue;
             }
-            var other = isFromSide ? chord.toCircle() : chord.fromCircle();
+            var mouth = measureMouth(union, chord, circle, walls.channel());
+
+            if (mouth == null) {
+                continue;
+            }
 
             covers.add(new Cover(
-                Angles.normalise(measureAngleTowards(union, circle, other) - mouth),
-                2 * mouth,
+                mouth[0],
+                mouth[1],
                 formatChordTerminal(index, isFromSide ? TO_SIDE : FROM_SIDE),
                 formatChordTerminal(index, isFromSide ? FROM_SIDE : TO_SIDE)));
         }
@@ -581,11 +679,13 @@ final class DiscUnionBoundary {
             List<Integer> cycle,
             List<Arc> arcs,
             DiscUnion union,
+            List<Chord> laid,
             int arcSegments) {
 
         var boundary = new ArrayList<double[]>();
         var corners = new ArrayList<double[]>(cycle.size());
         var ringing = new LinkedHashSet<Integer>();
+        var walledBy = new LinkedHashSet<Chord>();
 
         for (var index : cycle) {
 
@@ -610,6 +710,8 @@ final class DiscUnionBoundary {
             // exists to avoid.
             if (isChordTerminal(arc.endsAt())) {
 
+                walledBy.add(laid.get(readChordFrom(arc.endsAt())));
+
                 boundary.add(findPointOnCircle(
                     union.sites().get(arc.circle()), union.reach(), arc.toAngle()));
             }
@@ -618,7 +720,8 @@ final class DiscUnionBoundary {
         if (boundary.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
             return null;
         }
-        return new VoidHole(boundary, corners, List.copyOf(ringing), union.reach());
+        return new VoidHole(
+            boundary, corners, List.copyOf(ringing), union.reach(), List.copyOf(walledBy));
     }
 
     // Sampled in proportion to how much of the circle the arc covers, so a long arc is not
@@ -652,13 +755,12 @@ final class DiscUnionBoundary {
     // the mouth's, so the merged sweep still opens the arcs at the mouth's own edges.
     private static boolean isMouthOnBoundary(
             DiscUnion union,
-            double mouth,
             int circle,
-            double facing) {
+            double[] mouth) {
 
         var sites = union.sites();
 
-        for (var edge : List.of(facing - mouth, facing + mouth)) {
+        for (var edge : List.of(mouth[0], mouth[0] + mouth[1])) {
 
             var point = findPointOnCircle(sites.get(circle), union.reach(), edge);
 
@@ -675,14 +777,15 @@ final class DiscUnionBoundary {
     }
 
     private static boolean isMouthTaken(
-            Map<Integer, List<Double>> takenByCircle,
+            Map<Integer, List<double[]>> takenByCircle,
             int circle,
-            double facing,
-            double mouth) {
+            double[] mouth) {
 
-        for (var taken : takenByCircle.getOrDefault(circle, List.of())) {
+        for (var taken : takenByCircle.getOrDefault(circle, List.<double[]>of())) {
 
-            if (Angles.measureGap(taken, facing) < 2 * mouth) {
+            if (Angles.measureGap(taken[0] + taken[1] / 2, mouth[0] + mouth[1] / 2)
+                    < (taken[1] + mouth[1]) / 2) {
+
                 return true;
             }
         }
@@ -690,11 +793,11 @@ final class DiscUnionBoundary {
     }
 
     private static void recordMouth(
-            Map<Integer, List<Double>> takenByCircle,
+            Map<Integer, List<double[]>> takenByCircle,
             int circle,
-            double facing) {
+            double[] mouth) {
 
-        takenByCircle.computeIfAbsent(circle, held -> new ArrayList<>()).add(facing);
+        takenByCircle.computeIfAbsent(circle, held -> new ArrayList<>()).add(mouth);
     }
 
     // Half the angle a channel takes up on a circle: the wall runs half a channel either side
@@ -748,6 +851,12 @@ final class DiscUnionBoundary {
 
     private static boolean isChordTerminal(long terminal) {
         return terminal < 0 && terminal != NO_TERMINAL;
+    }
+
+    // Which wall a chord terminal names, undoing formatChordTerminal. The side marker is the
+    // low bit, so the wall is what is left once it is taken off.
+    private static int readChordFrom(long terminal) {
+        return (int) ((-terminal - 1) / 2);
     }
 
     /**
