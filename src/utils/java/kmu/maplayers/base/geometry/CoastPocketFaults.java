@@ -38,6 +38,46 @@ final class CoastPocketFaults {
     }
 
     /**
+     * How far a point lies on the cells' side of one reach of coast.
+     *
+     * <p>The one reading of which side is which. A reach has cells on one side and open sea on
+     * the other, and three things need to know which: the check that finds outline over the
+     * line, the cut that removes it, and the wall placement that tries not to produce it. Read
+     * three times it is three chances to disagree about one line - and the check and the cut
+     * agreeing is the whole reason the cut can be trusted to remove exactly what the check
+     * would otherwise report.
+     *
+     * <p>Which side the cells are on is read off the reach's own cell rather than assumed, so
+     * a reach running the other way round the coast is judged like any other.
+     *
+     * @param point the point to place
+     * @param reach the reach to place it against
+     * @param union the discs the reach was laid across
+     * @return how far landward the point is - negative out to sea, zero on the line
+     */
+    static double measureLandwardOffset(
+            double[] point,
+            DiscUnionBoundary.Chord reach,
+            DiscUnion union) {
+
+        var line = reach.line().toUnitLine();
+
+        if (line == null) {
+            return 0;
+        }
+        var normalX = -line.directionY();
+        var normalY = line.directionX();
+
+        var centre = union.sites().get(reach.fromCircle());
+
+        var landward = Math.signum(
+            (centre[0] - line.originX()) * normalX + (centre[1] - line.originY()) * normalY);
+
+        return landward
+            * ((point[0] - line.originX()) * normalX + (point[1] - line.originY()) * normalY);
+    }
+
+    /**
      * One run of a pocket's outline that has crossed to the seaward side of a coast reach.
      *
      * @param run   the offending stretch, in the order the outline is drawn
@@ -139,18 +179,9 @@ final class CoastPocketFaults {
             DiscUnion union,
             double channel) {
 
-        var line = reach.line().toUnitLine();
-
-        if (line == null || outline.isEmpty()) {
+        if (outline.isEmpty()) {
             return outline;
         }
-        var normalX = -line.directionY();
-        var normalY = line.directionX();
-
-        var centre = union.sites().get(reach.fromCircle());
-        var landward = Math.signum(
-            (centre[0] - line.originX()) * normalX + (centre[1] - line.originY()) * normalY);
-
         var kept = new ArrayList<double[]>(outline.size());
 
         for (var index = 0; index < outline.size(); index++) {
@@ -158,8 +189,8 @@ final class CoastPocketFaults {
             var here = outline.get(index);
             var next = outline.get((index + 1) % outline.size());
 
-            var hereIn = measureInside(here, line, normalX, normalY, landward) - channel;
-            var nextIn = measureInside(next, line, normalX, normalY, landward) - channel;
+            var hereIn = measureLandwardOffset(here, reach, union) - channel;
+            var nextIn = measureLandwardOffset(next, reach, union) - channel;
 
             if (hereIn >= 0) {
                 kept.add(here);
@@ -176,17 +207,6 @@ final class CoastPocketFaults {
         return kept.size() < MIN_RUN_VERTICES ? List.of() : kept;
     }
 
-    private static double measureInside(
-            double[] point,
-            kmlib.math.geometry.DirectedLine line,
-            double normalX,
-            double normalY,
-            double landward) {
-
-        return landward
-            * ((point[0] - line.originX()) * normalX + (point[1] - line.originY()) * normalY);
-    }
-
     // Every maximal stretch of one outline lying seaward of one reach. Walked as runs rather
     // than reported per vertex, because a spike is one fault however many samples it took.
     private static void collectSpillsAlong(
@@ -195,28 +215,12 @@ final class CoastPocketFaults {
             DiscUnionBoundary.Chord reach,
             DiscUnion union) {
 
-        var line = reach.line().toUnitLine();
-
-        if (line == null) {
-            return;
-        }
-        var normalX = -line.directionY();
-        var normalY = line.directionX();
-
-        // The cells are on one side and the sea on the other. Read off the reach's own cell
-        // rather than assumed, so a reach that happens to run the other way round the coast
-        // is judged the same as any other.
-        var centre = union.sites().get(reach.fromCircle());
-        var landward = Math.signum(
-            (centre[0] - line.originX()) * normalX + (centre[1] - line.originY()) * normalY);
-
         var run = new ArrayList<double[]>();
         var deepest = 0.0;
 
         for (var point : outline) {
 
-            var past = -landward
-                * ((point[0] - line.originX()) * normalX + (point[1] - line.originY()) * normalY);
+            var past = -measureLandwardOffset(point, reach, union);
 
             if (past > OVER_THE_LINE) {
 

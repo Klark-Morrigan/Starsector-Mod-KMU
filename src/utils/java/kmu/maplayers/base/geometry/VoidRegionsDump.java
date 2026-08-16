@@ -665,7 +665,7 @@ final class VoidRegionsDump {
             "each crossing as depth/stretches skipped across it (0 = neighbours): %s%n",
             formatAgainstDepth(CoastMeasures.measureCrossingGaps(traced)));
 
-        reportTrappedVoid(sites, bridges, traced, shipped);
+        reportTrappedVoid(sites, traced, shipped);
     }
 
     // What the smoothing shut in behind it, as the pockets it becomes. A coast that traps
@@ -674,12 +674,15 @@ final class VoidRegionsDump {
     // and how many of them survive the channel is the number that says they can be drawn.
     private static void reportTrappedVoid(
             List<double[]> sites,
-            List<CellGaps.CellGap> bridges,
             Coastlines.TracedCoasts traced,
             SectorGeometryParameters shipped) {
 
         var pockets = CoastPockets.findCoastPockets(
-            traced, sites, bridges, buildUnownedSites(sites), shipped, SECTION_RULES);
+            traced,
+            CoastPockets.markEverySiteUnowned(sites),
+            shipped,
+            Coastlines.DEFAULT_RULES,
+            SECTION_RULES);
 
         if (pockets.isEmpty()) {
             System.out.println("the coast traps no void at all");
@@ -717,20 +720,6 @@ final class VoidRegionsDump {
             findPercentile(spans, REPORTED_PERCENTILES[0]),
             findPercentile(spans, REPORTED_PERCENTILES[1]),
             findPercentile(spans, REPORTED_PERCENTILES[2]));
-    }
-
-    // Every site unowned, so a coast pocket is never absorbed into one owner's area. Which
-    // owner holds the cells behind a coast is a question about how the map is painted, and
-    // this report is about the shapes; reading the fixture's owners here would make the
-    // count of drawn pockets move with a colouring that has nothing to do with the geometry.
-    private static List<String> buildUnownedSites(List<double[]> sites) {
-
-        var unowned = new ArrayList<String>(sites.size());
-
-        for (var site = 0; site < sites.size(); site++) {
-            unowned.add(null);
-        }
-        return unowned;
     }
 
     // Each crossing as its depth beside one other number about it. Shared by every such

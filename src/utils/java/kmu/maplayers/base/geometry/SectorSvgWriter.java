@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Limits;
 
 import java.io.IOException;
@@ -69,7 +70,7 @@ final class SectorSvgWriter {
      */
     static void writeSectorSvg(Path target, SectorFixture fixture, SectorGeometry geometry) {
 
-        var bounds = SiteBounds.measureAround(fixture.getSites()).expandBy(MARGIN);
+        var bounds = expandBy(Bounds.computeEnclosingBounds(fixture.getSites()), MARGIN);
         var svg = new StringBuilder();
 
         openSvg(svg, bounds);
@@ -97,7 +98,7 @@ final class SectorSvgWriter {
     // World y grows upward and SVG y grows downward, so the whole drawing is flipped once
     // here rather than at every vertex - a map drawn upside down would read as a geometry
     // bug that is not there.
-    private static void openSvg(StringBuilder svg, SiteBounds bounds) {
+    private static void openSvg(StringBuilder svg, Bounds bounds) {
 
         var width = bounds.maxX() - bounds.minX();
         var height = bounds.maxY() - bounds.minY();
@@ -117,6 +118,18 @@ final class SectorSvgWriter {
             .append(' ')
             .append(fmt(bounds.maxY()))
             .append(") scale(1 -1)\">\n");
+    }
+
+    // The same box with room left around it, which kmlib's own box does not offer:
+    // that is a measurement of where points are, and padding one is a decision about
+    // a drawing.
+    private static Bounds expandBy(Bounds bounds, double margin) {
+
+        return new Bounds(
+            bounds.minX() - margin,
+            bounds.minY() - margin,
+            bounds.maxX() + margin,
+            bounds.maxY() + margin);
     }
 
     private static void appendRawCells(StringBuilder svg, Map<String, List<CellEdge>> cellEdges) {
@@ -220,32 +233,25 @@ final class SectorSvgWriter {
     // because the question either one answers is about the other: a pocket is right only if
     // it stops a channel short of the coast, and no number reads as an answer to that.
     //
-    // Every site taken as unowned, so no pocket is absorbed into an owner's area and pushed
-    // out to meet its fills. Who holds the cells behind a coast is a question about how the
-    // map is coloured; this drawing is about the shapes.
+    // The void the coast shut in, filled, under the line that shut it in. Drawn together
+    // because the question either one answers is about the other: a pocket is right only if
+    // it stops a channel short of the coast, and no number reads as an answer to that.
     private static void appendTrappedVoid(
             StringBuilder svg,
             Coastlines.TracedCoasts traced,
             List<double[]> sites,
             SectorGeometryParameters parameters) {
 
-        var unowned = new ArrayList<String>(sites.size());
-
-        for (var site = 0; site < sites.size(); site++) {
-            unowned.add(null);
-        }
-
         var sectionRules = new VoidSections.SectionRules(
             ViewerSettings.VOID_SPAN_DEFAULT * parameters.cellRadius(),
             ViewerSettings.MIN_SECTION_DEFAULT / ViewerSettings.MIN_SECTION_SCALE);
 
-        var bridges = VoidBridges.findVoidBridges(
-            sites,
-            parameters.cellRadius(),
-            parameters.cellRadius() * Coastlines.DEFAULT_RULES.bridgeReachMultiple());
-
         for (var pocket : CoastPockets.findCoastPockets(
-                traced, sites, bridges, unowned, parameters, sectionRules)) {
+                traced,
+                CoastPockets.markEverySiteUnowned(sites),
+                parameters,
+                Coastlines.DEFAULT_RULES,
+                sectionRules)) {
 
             for (var outline : pocket.pocket().outlines()) {
 

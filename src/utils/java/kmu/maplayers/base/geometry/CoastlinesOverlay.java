@@ -62,30 +62,30 @@ final class CoastlinesOverlay {
         }
 
         traced = Coastlines.traceSectorCoasts(
-            fixture.getSites(),
-            settings.parameters,
-            new Coastlines.CoastRules(
-                settings.bridgeReachMultiple,
-                settings.coastSkipMultiple,
-                settings.coastMaxSkips));
+            fixture.getSites(), settings.parameters, coastRules());
 
         penetrations = CoastCrossings.findVisibleCrossings(
             traced, ViewerPainting.RING_STROKE);
 
         trapped = CoastPockets.findCoastPockets(
             traced,
-            fixture.getSites(),
-            VoidBridges.findVoidBridges(
-                fixture.getSites(),
-                settings.parameters.cellRadius(),
-                settings.parameters.cellRadius() * settings.bridgeReachMultiple),
             fixture.getOwnerBySite(),
             settings.parameters,
+            coastRules(),
             new VoidSections.SectionRules(
                 settings.voidSpanMultiple * settings.parameters.cellRadius(),
                 settings.minSectionShare));
 
         spills = CoastPocketFaults.findSpills(trapped, traced.union());
+    }
+
+    // The knobs as the sliders currently stand. Read once per refresh rather than rebuilt at
+    // each place that wants them, so the coast and the pockets it shut in cannot be traced
+    // under two different settings within one frame.
+    private Coastlines.CoastRules coastRules() {
+
+        return new Coastlines.CoastRules(
+            settings.bridgeReachMultiple, settings.coastSkipMultiple, settings.coastMaxSkips);
     }
 
     /**

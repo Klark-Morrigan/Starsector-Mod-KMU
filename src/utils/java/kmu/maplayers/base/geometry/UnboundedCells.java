@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.VoronoiCellBuilder;
 
 import java.util.ArrayList;
@@ -40,8 +41,12 @@ final class UnboundedCells {
      */
     static List<List<double[]>> buildUnboundedCells(List<double[]> sites, int boundSegments) {
 
-        var radius = SiteBounds.measureAround(sites).measureLongerSide()
+        var bounds = Bounds.computeEnclosingBounds(sites);
+        var radius = Math.max(
+                bounds.maxX() - bounds.minX(),
+                bounds.maxY() - bounds.minY())
             * BOUND_EXTENT_MULTIPLIER;
+
         var cells = new ArrayList<List<double[]>>(sites.size());
 
         for (var index = 0; index < sites.size(); index++) {

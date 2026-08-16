@@ -41,10 +41,10 @@ final class CoastPockets {
     /**
      * Finds every pocket the coast's straight reaches shut in.
      *
-     * @param traced       the coast, as {@link Coastlines#traceSectorCoasts} handed it back
-     * @param sites        the sites
-     * @param bridges      the bridges, laid alongside the coast's own reaches so a pocket
-     *                     here cannot claim void a bridge already holds
+     * @param traced       the coast, as {@link Coastlines#traceSectorCoasts} handed it back,
+     *                     which carries the sites everything here is measured against
+     * @param rules        the knobs the coast was traced under, so the bridges laid alongside
+     *                     its reaches are the same ones the coast itself was walled by
      * @param ownerBySite  each site's owner, index-aligned with {@code sites} and null where
      *                     the site is unowned, to decide which pockets sit inside one owner's
      *                     area rather than between owners
@@ -56,11 +56,20 @@ final class CoastPockets {
      */
     static List<CoastPocketFaults.WalledPocket> findCoastPockets(
             Coastlines.TracedCoasts traced,
-            List<double[]> sites,
-            List<CellGaps.CellGap> bridges,
             List<String> ownerBySite,
             SectorGeometryParameters parameters,
+            Coastlines.CoastRules rules,
             VoidSections.SectionRules sectionRules) {
+
+        // The sites come off the coast rather than beside it. Handed in separately, a caller
+        // can pair one construction's sites with another's coast and still compile, and every
+        // shape built here would then be measured against discs the coast never saw.
+        var sites = traced.union().sites();
+
+        var bridges = VoidBridges.findVoidBridges(
+            sites,
+            parameters.cellRadius(),
+            parameters.cellRadius() * rules.bridgeReachMultiple());
 
         var reaches = buildCoastWalls(traced, parameters.borderInset());
 
@@ -127,6 +136,26 @@ final class CoastPockets {
         return pockets;
     }
 
+    /**
+     * Every site taken as unowned, for a caller asking about the shapes rather than the map.
+     *
+     * <p>Whether one owner rings a pocket decides if it is pushed out to meet that owner's
+     * fills instead of holding back a channel, so a report or a drawing meant to show the
+     * GEOMETRY has to say no-one owns anything or its shapes move with a colouring.
+     *
+     * @param sites the sites
+     * @return one null per site
+     */
+    static List<String> markEverySiteUnowned(List<double[]> sites) {
+
+        var unowned = new ArrayList<String>(sites.size());
+
+        for (var site = 0; site < sites.size(); site++) {
+            unowned.add(null);
+        }
+        return unowned;
+    }
+
     // Every straight reach of coast, as the wall it is. A reach runs from a point on one
     // cell's border to a point on another's, so the line through those two points is the line
     // it lies on - and that is all a wall needs to be found again at any reach.
@@ -162,16 +191,27 @@ final class CoastPockets {
                     continue;
                 }
 
-                // Pulled in by the channel, towards the cells the reach runs between. The
-                // reach is bedrock - it is where the coast IS - and a fill has to hold back
-                // from bedrock the same way it holds back from a cell. The cells' own side of
-                // that is the reach this is traced at; this is the line's side of it.
+                // Pulled in by the channel, towards the cells. The reach is bedrock - it is
+                // where the coast IS - and a fill holds back from bedrock the same way it
+                // holds back from a cell; the reach this is traced at is the cells' side of
+                // that, and this is the line's side.
+                //
+                // Which way is "in" is asked of the one reading of it, so the shift, the
+                // check that finds outline over the line, and the cut that removes it cannot
+                // come to three different answers about the same reach.
+                var bare = new DiscUnionBoundary.Chord(
+                    from.circle(),
+                    to.circle(),
+                    new DirectedLine(
+                        from.point()[0], from.point()[1], alongX, alongY));
+
                 var inX = alongY / length * inset;
                 var inY = -alongX / length * inset;
 
-                var centre = traced.union().sites().get(from.circle());
-                var side = (centre[0] - from.point()[0]) * inX
-                    + (centre[1] - from.point()[1]) * inY < 0 ? -1 : 1;
+                var side = CoastPocketFaults.measureLandwardOffset(
+                    new double[] {from.point()[0] + inX, from.point()[1] + inY},
+                    bare,
+                    traced.union()) < 0 ? -1 : 1;
 
                 walls.add(new DiscUnionBoundary.Chord(
                     from.circle(),

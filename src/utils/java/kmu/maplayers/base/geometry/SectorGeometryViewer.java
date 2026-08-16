@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Limits;
 
 import java.awt.BasicStroke;
@@ -717,13 +718,15 @@ final class SectorGeometryViewer implements ViewerRefreshes {
 
         private void fitToSector() {
 
-            var bounds = SiteBounds.measureAround(fixture.getSites());
+            var bounds = Bounds.computeEnclosingBounds(fixture.getSites());
 
-            var span = bounds.measureLongerSide() * INITIAL_MARGIN;
+            var span = Math.max(
+                bounds.maxX() - bounds.minX(),
+                bounds.maxY() - bounds.minY()) * INITIAL_MARGIN;
 
             scale = Math.min(getWidth(), getHeight()) / span;
-            offsetX = getWidth() / 2.0 - bounds.findCentreX() * scale;
-            offsetY = getHeight() / 2.0 + bounds.findCentreY() * scale;
+            offsetX = getWidth() / 2.0 - (bounds.minX() + bounds.maxX()) / 2 * scale;
+            offsetY = getHeight() / 2.0 + (bounds.minY() + bounds.maxY()) / 2 * scale;
         }
 
         private List<double[]> convertEdgesToRing(List<CellEdge> edges) {
