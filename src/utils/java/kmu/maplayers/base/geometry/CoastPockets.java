@@ -20,7 +20,9 @@ import java.util.List;
  * cycles, tells a hole from a silhouette by its winding, and gives a hole at any reach asked
  * for; a coast reach is another line to hand it. Every vertex that comes back is a crossing
  * worked out in closed form - circle against circle, or circle against the wall - and the
- * inset is a fresh walk at a moved reach rather than a shape edited afterwards.
+ * inset against the cells is a fresh walk at a moved reach rather than a shape edited
+ * afterwards. Against the COAST it is a cut, because a reach is a line and a line does
+ * not move when a reach does - see {@link CoastPocketFaults}.
  *
  * <p>An earlier attempt built the ring here instead, by sampling the border the reach bypassed
  * and dropping the samples the channel had eaten. Dropping points from a ring does not shrink
@@ -71,7 +73,7 @@ final class CoastPockets {
             parameters.cellRadius(),
             parameters.cellRadius() * rules.bridgeReachMultiple());
 
-        var reaches = buildCoastWalls(traced, parameters.borderInset());
+        var reaches = buildCoastWalls(traced);
 
         if (reaches.isEmpty()) {
             return List.of();
@@ -174,8 +176,7 @@ final class CoastPockets {
     // arrived to where it leaves, so both its ends sit on the same circle and there is no
     // second circle for a wall to run to; it also shuts nothing in, being boundary already.
     private static List<DiscUnionBoundary.Chord> buildCoastWalls(
-            Coastlines.TracedCoasts traced,
-            double inset) {
+            Coastlines.TracedCoasts traced) {
 
         var walls = new ArrayList<DiscUnionBoundary.Chord>();
 
@@ -196,40 +197,21 @@ final class CoastPockets {
                     continue;
                 }
 
-                // Pulled in by the channel, towards the cells. The reach is bedrock - it is
-                // where the coast IS - and a fill holds back from bedrock the same way it
-                // holds back from a cell; the reach this is traced at is the cells' side of
-                // that, and this is the line's side.
+                // The reach's own line, unshifted. A wall already holds each side back by
+                // the channel it keeps - that IS the inset against the coast - so nudging the
+                // line over as well insets twice, and getting the direction of that nudge
+                // wrong cancels the channel instead: the pocket lands exactly on the coast,
+                // which is a fill touching the border that defines it.
                 //
-                // Which way is "in" is asked of the one reading of it, so the shift, the
-                // check that finds outline over the line, and the cut that removes it cannot
-                // come to three different answers about the same reach. The offered point is
-                // the one moved AGAINST the shift, so the branch that finds it seaward is the
-                // branch that wanted the shift the other way - which is what this direction
-                // being wrong looked like on the map: every pocket two channels out to sea,
-                // and the narrow ones entirely so.
-                var bare = new DiscUnionBoundary.Chord(
-                    from.circle(),
-                    to.circle(),
-                    new DirectedLine(
-                        from.point()[0], from.point()[1], alongX, alongY));
-
-                var inX = alongY / length * inset;
-                var inY = -alongX / length * inset;
-
-                var side = CoastPocketFaults.measureLandwardOffset(
-                    new double[] {from.point()[0] + inX, from.point()[1] + inY},
-                    bare,
-                    traced.union()) < 0 ? 1 : -1;
-
+                // Leaving it out also makes the wall line the COAST line, so anything asking
+                // how far a pocket sits off its reach is asking how far it sits off the coast.
+                // Shifted, that question had a different answer from the one worth knowing,
+                // and reported a healthy channel while the fill sat on the line.
                 walls.add(new DiscUnionBoundary.Chord(
                     from.circle(),
                     to.circle(),
                     new DirectedLine(
-                        from.point()[0] + inX * side,
-                        from.point()[1] + inY * side,
-                        alongX,
-                        alongY)));
+                        from.point()[0], from.point()[1], alongX, alongY)));
             }
         }
         return walls;

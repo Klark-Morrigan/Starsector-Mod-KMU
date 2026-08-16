@@ -706,6 +706,12 @@ final class VoidRegionsDump {
 
         System.out.printf(
             Locale.ROOT,
+            "closest a pocket comes to the reach that closed it: %.0f (the channel, %.0f)%n",
+            CoastPocketFaults.measureClosestApproach(pockets, traced.union()),
+            shipped.borderInset());
+
+        System.out.printf(
+            Locale.ROOT,
             "%d runs of pocket outline sit seaward of the reach that closed them, worst by "
                 + "%.0f (has to be 0)%n",
             spills.size(),

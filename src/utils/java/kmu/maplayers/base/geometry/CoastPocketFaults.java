@@ -78,6 +78,40 @@ final class CoastPocketFaults {
     }
 
     /**
+     * How close the pockets come to the reaches that closed them.
+     *
+     * <p>The number that says whether the inset against the COAST is there at all. A gap
+     * against the cells is visible on its own - the cells are drawn - but the coast is one
+     * line, and a fill stopping exactly on it looks the same as a fill stopping a channel
+     * short of it until they are measured apart.
+     *
+     * @param pockets the pockets, each paired with the reaches that walled it
+     * @param union   the discs the pockets were traced against
+     * @return the closest any outline comes to a reach it closes on, or zero when there are
+     *         no pockets - which should be the channel, and is nothing when the inset is
+     *         missing
+     */
+    static double measureClosestApproach(List<WalledPocket> pockets, DiscUnion union) {
+
+        var closest = Double.MAX_VALUE;
+
+        for (var walled : pockets) {
+            for (var outline : walled.pocket().outlines()) {
+                for (var point : outline) {
+                    for (var reach : walled.reaches()) {
+
+                        if (measureExcursion(point, reach, union, 0) <= 0) {
+                            closest = Math.min(
+                                closest, measureLandwardOffset(point, reach, union));
+                        }
+                    }
+                }
+            }
+        }
+        return closest == Double.MAX_VALUE ? 0 : closest;
+    }
+
+    /**
      * One run of a pocket's outline that has crossed to the seaward side of a coast reach.
      *
      * @param run   the offending stretch, in the order the outline is drawn
@@ -165,60 +199,39 @@ final class CoastPocketFaults {
         var kept = outline;
 
         for (var reach : reaches) {
-
-            kept = cutAlong(kept, reach, union, channel);
-
-            // And to the reach's own two ends. A reach is a SEGMENT, and clipping only to the
-            // side of its line leaves the pocket free to run off along that line past where
-            // the coast actually turned the corner - which is the overhang at the tip of a
-            // wedge, on the correct side of every line and outside the coast all the same.
-            // Two near-parallel reaches bound a slab, and a slab is not a shape.
-            kept = cutBeyondEnd(kept, reach, true);
-            kept = cutBeyondEnd(kept, reach, false);
+            kept = clipTo(kept, point -> -measureExcursion(point, reach, union, channel));
         }
         return kept;
-    }
-
-    // One outline held to one end of one reach, by the same clip walk: the half-plane whose
-    // edge crosses the reach square-on at that end, keeping the side the reach runs towards.
-    private static List<double[]> cutBeyondEnd(
-            List<double[]> outline,
-            DiscUnionBoundary.Chord reach,
-            boolean atStart) {
-
-        var line = reach.line().toUnitLine();
-
-        if (line == null || outline.isEmpty()) {
-            return outline;
-        }
-        var span = Math.hypot(reach.line().directionX(), reach.line().directionY());
-
-        var facing = atStart ? 1 : -1;
-        var edge = atStart ? 0 : span;
-
-        return clipTo(outline, point -> facing * (measureAlong(point, line) - edge));
     }
 
     /**
      * How far outside the stretch one reach bounds a point lies.
      *
-     * <p>The same three half-planes the cut holds an outline to, read as one number: seaward
-     * of the line, or past either of the reach's two ends. Read the same way by the check and
-     * by the cut on purpose - a detector that measured a different region from the one the cut
-     * removes would either report faults the cut had already dealt with or, worse, stay silent
-     * about the ones it leaves behind. That silence is what let an overhang past a reach's end
-     * sit on the map unmarked: side-of-the-line alone cannot bound a slab, and two
-     * near-parallel reaches are a slab.
+     * <p>The one statement of what a reach bounds, read by both things that need it: the check
+     * that reports outline over the line, and the cut that removes it. Written twice they can
+     * disagree, and the two ways of disagreeing are a detector that condemns what the cut has
+     * already dealt with, or one that stays silent about what it leaves behind. The second is
+     * what let an overhang past a reach's end sit on the map unmarked.
      *
-     * @param point the point to place
-     * @param reach the reach to place it against
-     * @param union the discs the reach was laid across
+     * <p>Three half-planes, because a reach is a SEGMENT. Seaward of its line is the obvious
+     * one; past either of its two ends is the one that was missing, and missing it is why two
+     * near-parallel reaches passed - a pair of those bounds a slab, and a slab is not a shape.
+     *
+     * <p>The channel holds off the line only, not the ends. A pocket stops a channel short of
+     * the coast because the coast is a border it must not touch; at a reach's ends it meets
+     * the cells' own arcs, which the reach it was traced at already holds it off.
+     *
+     * @param point   the point to place
+     * @param reach   the reach to place it against
+     * @param union   the discs the reach was laid across
+     * @param channel how far the pocket holds back from the reach's line
      * @return how far outside it is, at most zero when it is within the reach's bounds
      */
     private static double measureExcursion(
             double[] point,
             DiscUnionBoundary.Chord reach,
-            DiscUnion union) {
+            DiscUnion union,
+            double channel) {
 
         var line = reach.line().toUnitLine();
 
@@ -229,7 +242,7 @@ final class CoastPocketFaults {
         var along = measureAlong(point, line);
 
         return Math.max(
-            -measureLandwardOffset(point, reach, union),
+            channel - measureLandwardOffset(point, reach, union),
             Math.max(-along, along - span));
     }
 
@@ -272,21 +285,6 @@ final class CoastPocketFaults {
         return kept.size() < MIN_RUN_VERTICES ? List.of() : kept;
     }
 
-    // One outline held to one reach's landward side, by the single-plane clip walk. A vertex
-    // inside survives; an edge crossing the line contributes the crossing point, so the cut
-    // edge lands exactly on the line rather than on the nearest sample to it.
-    private static List<double[]> cutAlong(
-            List<double[]> outline,
-            DiscUnionBoundary.Chord reach,
-            DiscUnion union,
-            double channel) {
-
-        if (outline.isEmpty()) {
-            return outline;
-        }
-        return clipTo(outline, point -> measureLandwardOffset(point, reach, union) - channel);
-    }
-
     // Every maximal stretch of one outline lying seaward of one reach. Walked as runs rather
     // than reported per vertex, because a spike is one fault however many samples it took.
     private static void collectSpillsAlong(
@@ -300,7 +298,7 @@ final class CoastPocketFaults {
 
         for (var point : outline) {
 
-            var past = measureExcursion(point, reach, union);
+            var past = measureExcursion(point, reach, union, 0);
 
             if (past > OVER_THE_LINE) {
 

@@ -32,9 +32,9 @@ import java.util.Map;
  *
  * <p>{@link Walls} join that walk as covering intervals of their own. Where a neighbouring
  * disc takes a stretch of circle out of the boundary, a chord takes out the mouth it comes
- * through: the stretch facing the circle at its far end, as wide as the channel it keeps. The
- * arcs either side of that mouth are then the two sides of the chord, one bounding the void
- * on each side of it, and the channel between them is the gap the two never claim.
+ * through: the stretch holding the end where the wall meets it, as wide as the channel it
+ * keeps. The arcs either side of that mouth are then the two sides of the chord, one bounding
+ * the void on each side of it, and the channel between them is the gap the two never claim.
  *
  * <p>So a chord is exactly a cover whose ends are named by the chord rather than by a
  * neighbouring circle, and one sweep merges both kinds. Nothing is offset and nothing is cut:
@@ -834,19 +834,6 @@ final class DiscUnionBoundary {
             double[] mouth) {
 
         takenByCircle.computeIfAbsent(circle, held -> new ArrayList<>()).add(mouth);
-    }
-
-    // Half the angle a channel takes up on a circle: the wall runs half a channel either side
-    // of the line joining the sites, and a line that far off centre meets a circle of this
-    // reach at the angle whose sine is the one over the other.
-    private static double measureMouthHalfWidth(double reach, double channel) {
-
-        // A channel that wide leaves no wall at all, and asin would hand back NaN and let it
-        // spread silently through every angle downstream.
-        if (channel >= reach) {
-            throw new IllegalArgumentException("channel " + channel + " swallows reach " + reach);
-        }
-        return channel <= 0 ? 0 : Math.asin(channel / reach);
     }
 
     private static double measureAngleTowards(

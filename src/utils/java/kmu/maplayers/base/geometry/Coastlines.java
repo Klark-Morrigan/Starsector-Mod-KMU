@@ -17,13 +17,17 @@ import java.util.Set;
  * a coast. What the eye wants is the shape those cells collectively occupy, which is the line
  * joining the middle of each cell's frontage - so that is what is drawn.
  *
- * <p><b>Two reaches, and they are not interchangeable.</b> Which cells face the open void, and
+ * <p><b>One reach, for the walk and the line alike.</b> Which cells face the open void, and
  * which void the cells have closed around, is a fact about the map: void is what is further
- * than a cell radius from every site, so that radius is where the walk is decided. Where the
- * line goes is a fact about the drawing, and it goes on the cells' own filled border, a channel
- * inside that. Deciding the walk at the drawing's reach instead makes rings of cells that
- * close in fact come apart, so the coast wanders down into a pocket that every other shape on
- * the map draws as enclosed.
+ * than a cell radius from every site, so that radius is where the walk is decided. Walked a
+ * channel short of it, rings of cells that close in fact come apart and the coast wanders down
+ * into a pocket every other shape on the map draws as enclosed.
+ *
+ * <p>And DRAWN at that same radius, because a coast is a border. Everything that stops short
+ * of one has to inset from the line the map actually draws, so a second reach here is a
+ * licence for a fill to sit outside the edge that defines it - which is exactly what happened
+ * while there were two: pockets measured from the true border, a line drawn a channel inside
+ * it, and the gap between them showing as fill spilling past the coast.
  *
  * <p><b>Nothing is searched for.</b> The silhouettes come out of {@link DiscUnionBoundary} as
  * stretches of coast in walk order, so "the next cell along the coast" is the next element of
@@ -520,7 +524,11 @@ final class Coastlines {
                     union, mark, arriveAngles[index], departAngles[index], rules)));
 
             var closed = describeTrappedVoid(
-                coast, kept, index, arriveAngles, departAngles);
+                coast,
+                kept,
+                index,
+                new EdgeAngles(
+                    departAngles[index], arriveAngles[(index + 1) % kept.size()]));
 
             if (closed != null) {
                 trapped.add(closed);
@@ -556,8 +564,7 @@ final class Coastlines {
             List<DiscUnionBoundary.CoastMark> coast,
             List<Integer> kept,
             int index,
-            double[] arriveAngles,
-            double[] departAngles) {
+            EdgeAngles edge) {
 
         var next = (index + 1) % kept.size();
         var bypassed = new ArrayList<DiscUnionBoundary.CoastMark>();
@@ -580,12 +587,12 @@ final class Coastlines {
         // boundary's own join, taken where no straight run could be drawn, and it shuts in
         // nothing because it IS the boundary.
         if (bypassed.size() == 2
-                && departAngles[index] >= coast.get(kept.get(index)).toAngle()
-                && arriveAngles[next] <= coast.get(kept.get(next)).fromAngle()) {
+                && edge.departAngle() >= coast.get(kept.get(index)).toAngle()
+                && edge.arriveAngle() <= coast.get(kept.get(next)).fromAngle()) {
 
             return null;
         }
-        return new TrappedStretch(bypassed, departAngles[index], arriveAngles[next]);
+        return new TrappedStretch(bypassed, edge.departAngle(), edge.arriveAngle());
     }
 
     /**
