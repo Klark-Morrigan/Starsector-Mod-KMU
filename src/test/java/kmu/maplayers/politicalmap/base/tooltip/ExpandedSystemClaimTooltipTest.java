@@ -5,9 +5,9 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
-import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
@@ -144,7 +144,7 @@ final class ExpandedSystemClaimTooltipTest {
         void resolveAccountEntriesAccountsForAFactionWithTheMarketsItHolds() {
             // The point of the mode, and the one thing the faction's line cannot state: its number is
             // one market's score, so the markets it was read from are what its account lists.
-            var standing = new FactionClaimScore(
+            var standing = new WeighedClaimStanding(
                 HEGEMONY,
                 IS_TERRITORIAL,
                 buildMarket("Chicomoztoc", TOP_SCORE),

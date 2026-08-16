@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.text.KmlibNumbers;
 import kmlib.text.KmlibStrings;
 
@@ -135,7 +135,7 @@ public final class ClaimScoreRowResolver {
      */
     public static List<CellTooltipEntry> resolveMarketRows(
             SystemClaimBreakdown breakdown,
-            FactionClaimScore standing,
+            WeighedClaimStanding standing,
             boolean isListingUnfoundMarkets) {
 
         // Whether this faction is the one the contest handed the system to, and so whose strongest
@@ -183,7 +183,7 @@ public final class ClaimScoreRowResolver {
     // does not include it, and the term would read as short by exactly that market.
     private static boolean isEveryListedMarketCounted(
             List<MarketClaimBreakdown> listedMarkets,
-            FactionClaimScore standing) {
+            WeighedClaimStanding standing) {
 
         return listedMarkets.size() == standing.otherMarkets().size() + THE_MARKET_BEING_SCORED
             && listedMarkets
@@ -198,7 +198,7 @@ public final class ClaimScoreRowResolver {
     // reader check the count against the list it follows.
     //
     // Absent for a faction holding the system with one market, where the term never arose.
-    private static Optional<CellTooltipEntry> resolveSiblingEntry(FactionClaimScore standing) {
+    private static Optional<CellTooltipEntry> resolveSiblingEntry(WeighedClaimStanding standing) {
 
         var siblingMarketCount = standing.standingMarket().siblingMarketCount();
 

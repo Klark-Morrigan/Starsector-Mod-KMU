@@ -311,10 +311,17 @@ of what the contest has to say about it, and either word would raise a question 
 the box would then owe an answer to.
 The unlisted colony is vanilla's own doing: Galatia Academy is built as a real market on a real
 station and deliberately never registered, so the mechanic's economy walk never sees it and a box
-reading the economy alone reports that station as nobody's. `StarSystems.readMarketsUnlistedByEconomy`
-widens the read for the account only; the sibling count and every other term stay on the economy's
-own listing, since admitting an unregistered colony there would raise a real one's score above what
-the game scores it at and could hand the system to a different faction.
+reading the economy alone reports that station as nobody's. The contest is read over
+`SystemColonies` - KMLib's shared colony set, which covers both listings and which is also what
+keeps the condition-only market every surveyed rock carries out of the account - and the sibling
+count and every other term stay on the economy's own half of it, since admitting an unregistered
+colony there would raise a real one's score above what the game scores it at and could hand the
+system to a different faction.
+A faction holding nothing but unweighed colonies takes a `PresenceOnlyClaimStanding` at nought
+rather than dropping out of the contest. Both rival blocks, the claimant's own line and the `F1`
+hint select from weighed standings alone (`streamWeighedStandings`), so such a faction is named
+nowhere here: `Contested by:` would say it contested something it did not, and `Non-territorial:`
+states why a presence could not win rather than that it never competed at all.
 A market the player has not found is left off the list, since
 vanilla settles a claim over colonies nobody has found and repeating what it learned there would
 name something the player has no way of knowing about; the rule is

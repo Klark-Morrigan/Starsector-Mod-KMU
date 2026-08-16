@@ -1,8 +1,9 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmlib.starsector.systems.claims.FactionClaimScore;
+import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
@@ -50,7 +51,7 @@ public final class ClaimTieOutcomes {
      */
     public static CellTooltipIndexOutcome resolveOutcome(
             SystemClaimBreakdown breakdown,
-            FactionClaimScore standing,
+            WeighedClaimStanding standing,
             MarketClaimBreakdown market) {
 
         if (!market.isScoredOnItsOwnAccount()) {
@@ -72,7 +73,7 @@ public final class ClaimTieOutcomes {
     // lead at all.
     private static CellTooltipIndexOutcome resolveClaimantContestOutcome(
             SystemClaimBreakdown breakdown,
-            FactionClaimScore standing) {
+            WeighedClaimStanding standing) {
 
         if (KmlibStrings.hasText(breakdown.overrideFactionId())
                 || !KmlibStrings.hasText(breakdown.claimantFactionId())
@@ -98,7 +99,7 @@ public final class ClaimTieOutcomes {
     // Only ties at the faction's own top score are marked - the standing selection is the one
     // outcome that order decided, and two lesser markets tied below it won and lost nothing.
     private static CellTooltipIndexOutcome resolveStandingSelectionOutcome(
-            FactionClaimScore standing,
+            WeighedClaimStanding standing,
             MarketClaimBreakdown market) {
 
         if (market.computeTotalScore() != standing.score()) {
@@ -123,13 +124,18 @@ public final class ClaimTieOutcomes {
 
     // One faction's score in the ranked standings, or null where it took none - a decreed claimant
     // holding no colony here, say, which the caller reads as no tie to judge.
+    //
+    // Read across both kinds of standing, because the caller only ever reaches it for the claimant
+    // of a contest no decree settled, and such a claimant scored strictly greater than nought -
+    // which a presence-only standing cannot. Narrowing to the weighed kind would therefore rule
+    // out nothing this call can meet.
     private static Integer findStandingScore(SystemClaimBreakdown breakdown, String factionId) {
         return breakdown
             .scores()
             .stream()
             .filter(score -> score.factionId().equals(factionId))
             .findFirst()
-            .map(FactionClaimScore::score)
+            .map(FactionClaimStanding::score)
             .orElse(null);
     }
 
@@ -137,7 +143,7 @@ public final class ClaimTieOutcomes {
     // parts a claimant that won a tie from one that simply had no equal.
     private static boolean hasTiedTerritorialRival(
             SystemClaimBreakdown breakdown,
-            FactionClaimScore standing) {
+            WeighedClaimStanding standing) {
 
         return breakdown
             .scores()

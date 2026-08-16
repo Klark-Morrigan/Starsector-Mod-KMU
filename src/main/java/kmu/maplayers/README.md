@@ -140,7 +140,9 @@ about what the overlay means.
 - **[The render surface](base/render/README.md)** - `MapLayerRenderer`, the seam a layer draws
   through - its overlay and the hover box over one cell of it - and the terrain that owns the map's
   render pass. It asks the active layer for a renderer and hands it the frame, so it names no layer;
-  a layer that only switches (No Layer) supplies none, which is read as nothing to draw.
+  a layer that only switches (No Layer) supplies none, which is read as nothing to draw. More than
+  one terrain surface can paint one frame, so the per-frame work behind a layer is claimed rather
+  than assumed: `MapFramePreparationClaim` grants it to the first surface to reach each frame.
 - **[Clusters](base/render/clusters/README.md)** - the shape work under that surface: turning shaped
   cells and opaque owner ids into borders, fills, and GL-ready runs. The cluster-border trace,
   the smoothing passes, the vertex packing, and the split fill that puts several fills inside one

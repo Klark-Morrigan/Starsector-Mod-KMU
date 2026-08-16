@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
-import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.text.KmlibNumbers;
 import kmlib.text.KmlibStrings;
@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * The shape every box built on a hovered system's claim contest takes: what the system is, then who
@@ -87,7 +88,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             buildFactionEntries(
                 sector,
                 breakdown,
-                selectRivalScores(breakdown, claimantFactionId, FactionClaimScore::isTerritorial)));
+                selectRivalScores(breakdown, claimantFactionId, WeighedClaimStanding::isTerritorial)));
 
         CellTooltipSections.appendSection(
             sections,
@@ -113,11 +114,11 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             SectorAPI sector,
             StarSystemAPI system) {
 
-        // The counterpart accounts for the colonies behind a standing, so a system nobody scored in has
-        // nothing for it to account for: both boxes would state the same claim line and the key would
-        // do nothing the player could see. Asked of the very read the box is built from, so it can
-        // never offer to expand a contest it is about to draw as empty.
-        if (claimBreakdownReader.readBreakdown(system).scores().isEmpty()) {
+        // The counterpart accounts for the colonies behind a scored standing, so a system nobody was
+        // weighed in has nothing for it to account for: both boxes would state the same claim line and
+        // the key would do nothing the player could see. Asked of the very read the box is built from,
+        // so it can never offer to expand a contest it is about to draw as empty.
+        if (streamWeighedStandings(claimBreakdownReader.readBreakdown(system)).findAny().isEmpty()) {
             return Optional.empty();
         }
         // Answered for the pair at once rather than by each box, because it is the one thing they agree
@@ -149,7 +150,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      */
     protected List<CellTooltipEntry> resolveAccountEntries(
             SystemClaimBreakdown breakdown,
-            FactionClaimScore standing) {
+            WeighedClaimStanding standing) {
 
         return List.of();
     }
@@ -210,20 +211,32 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                 .orElseGet(List::of));
     }
 
-    // The standings shown under a section other than the claim: everyone present but the claimant,
-    // narrowed to the kind of presence that section is about. The claimant is dropped from both, since
-    // a faction named twice would read as holding two separate presences in the system.
-    private static List<FactionClaimScore> selectRivalScores(
+    // The standings shown under a section other than the claim: everyone the contest weighed but the
+    // claimant, narrowed to the kind of presence that section is about. The claimant is dropped from
+    // both, since a faction named twice would read as holding two separate presences in the system.
+    private static List<WeighedClaimStanding> selectRivalScores(
             SystemClaimBreakdown breakdown,
             String claimantFactionId,
-            Predicate<FactionClaimScore> isWantedKind) {
+            Predicate<WeighedClaimStanding> isWantedKind) {
+
+        return streamWeighedStandings(breakdown)
+            .filter(score -> !score.factionId().equals(claimantFactionId))
+            .filter(isWantedKind)
+            .toList();
+    }
+
+    // The standings the contest actually weighed, which is what every section of this box is built
+    // from. A faction the mechanic never scored belongs under neither heading: `Contested by:` would
+    // say it contested something it did not, and `Non-territorial:` states why a presence could not
+    // win rather than that it never competed at all.
+    private static Stream<WeighedClaimStanding> streamWeighedStandings(
+            SystemClaimBreakdown breakdown) {
 
         return breakdown
             .scores()
             .stream()
-            .filter(score -> !score.factionId().equals(claimantFactionId))
-            .filter(isWantedKind)
-            .toList();
+            .filter(WeighedClaimStanding.class::isInstance)
+            .map(WeighedClaimStanding.class::cast);
     }
 
     // Whether the claim was imposed rather than won. Read off the claimant matching the override
@@ -241,7 +254,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     private List<CellTooltipEntry> buildFactionEntries(
             SectorAPI sector,
             SystemClaimBreakdown breakdown,
-            List<FactionClaimScore> scores) {
+            List<WeighedClaimStanding> scores) {
 
         var entries = new ArrayList<CellTooltipEntry>(scores.size());
 
@@ -256,14 +269,12 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         return entries;
     }
 
-    // One faction's place in the contest, or none where it took no standing of its own.
-    private static Optional<FactionClaimScore> findStanding(
+    // One faction's weighed place in the contest, or none where the mechanic scored nothing for it.
+    private static Optional<WeighedClaimStanding> findStanding(
             SystemClaimBreakdown breakdown,
             String factionId) {
 
-        return breakdown
-            .scores()
-            .stream()
+        return streamWeighedStandings(breakdown)
             .filter(score -> score.factionId().equals(factionId))
             .findFirst();
     }

@@ -3,9 +3,9 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import kmlib.starsector.entities.EntityMapIcon;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
-import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.starsector.systems.claims.WeighedClaimStanding;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
@@ -286,7 +286,7 @@ final class ClaimScoreRowResolverTest {
             // out-list it - there was no rival in that tie to out-list. Marking the pair would
             // invent a contest the mechanic skipped.
             var claimant = buildStanding(buildStrongestMarket(NO_SIBLING_MARKETS), List.of());
-            var outsider = new FactionClaimScore(
+            var outsider = new WeighedClaimStanding(
                 TRITACHYON,
                 !IS_TERRITORIAL,
                 buildRivalMarket(SECOND_LISTED, STRONGEST_MARKET_SIZE),
@@ -735,7 +735,7 @@ final class ClaimScoreRowResolverTest {
     // The account over a system this faction won outright and whose markets the player has all
     // found - the ordinary state, and what every case but the rivalled, decreed and withheld ones
     // is posed over.
-    private static List<CellTooltipEntry> resolveContestedRows(FactionClaimScore standing) {
+    private static List<CellTooltipEntry> resolveContestedRows(WeighedClaimStanding standing) {
         return ClaimScoreRowResolver.resolveMarketRows(
             buildBreakdownClaimedBy(HEGEMONY, standing),
             standing,
@@ -747,15 +747,15 @@ final class ClaimScoreRowResolverTest {
     // states it here.
     private static SystemClaimBreakdown buildBreakdownClaimedBy(
             String claimantFactionId,
-            FactionClaimScore standing) {
+            WeighedClaimStanding standing) {
 
         return new SystemClaimBreakdown(null, claimantFactionId, List.of(standing));
     }
 
     // A rival faction standing on one market of the given size, listed after the standing every case
     // poses first - the shape a cross-faction tie is posed with.
-    private static FactionClaimScore buildRivalStanding(int listingPosition, int marketSize) {
-        return new FactionClaimScore(
+    private static WeighedClaimStanding buildRivalStanding(int listingPosition, int marketSize) {
+        return new WeighedClaimStanding(
             TRITACHYON,
             IS_TERRITORIAL,
             buildRivalMarket(listingPosition, marketSize),
@@ -770,7 +770,7 @@ final class ClaimScoreRowResolverTest {
     // The faction most cases here are posed on: its strongest market, and one weaker market listed
     // after it. Named rather than restated per case so a case states only what it varies - which is
     // the tie, the withholding or the call-out it is actually about.
-    private static FactionClaimScore buildStandingOverOneSibling() {
+    private static WeighedClaimStanding buildStandingOverOneSibling() {
         return buildStanding(
             buildStrongestMarket(ONE_SIBLING_MARKET),
             List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED)));
@@ -779,11 +779,11 @@ final class ClaimScoreRowResolverTest {
     // A faction standing on the given market and holding the given others in the system. Territorial
     // throughout: which block a standing is listed under is the box's to decide, and no case here is
     // about it.
-    private static FactionClaimScore buildStanding(
+    private static WeighedClaimStanding buildStanding(
             MarketClaimBreakdown standingMarket,
             List<MarketClaimBreakdown> otherMarkets) {
 
-        return new FactionClaimScore(HEGEMONY, IS_TERRITORIAL, standingMarket, otherMarkets);
+        return new WeighedClaimStanding(HEGEMONY, IS_TERRITORIAL, standingMarket, otherMarkets);
     }
 
     // The market a faction's standing rests on, holding the stated number of others in the system and

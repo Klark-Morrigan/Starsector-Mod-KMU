@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
-import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.starsector.systems.claims.WeighedClaimStanding;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
@@ -37,7 +37,7 @@ public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip 
     @Override
     protected List<CellTooltipEntry> resolveAccountEntries(
             SystemClaimBreakdown breakdown,
-            FactionClaimScore standing) {
+            WeighedClaimStanding standing) {
 
         // The mechanic settles a claim over colonies nobody has found, and the box declines to
         // repeat what it learned there. Read live off the same toggle the status line and the

@@ -6,9 +6,9 @@ import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.ContestAdmission;
-import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.starsector.systems.claims.WeighedClaimStanding;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
@@ -161,8 +161,8 @@ final class ClaimedSystemRibbonPlannerTest {
 
     // One faction standing on a single colony, which is all these cases need: what a standing is
     // made of is the counting rule's business, not this one's.
-    private static FactionClaimScore buildStandingOn(String factionId, int listedPosition) {
-        return new FactionClaimScore(
+    private static WeighedClaimStanding buildStandingOn(String factionId, int listedPosition) {
+        return new WeighedClaimStanding(
             factionId,
             true, // Every faction posed here may claim; the rule reads presence, not candidacy.
             new MarketClaimBreakdown(

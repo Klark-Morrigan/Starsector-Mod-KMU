@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.claims.ribbon;
 
-import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.starsector.systems.claims.WeighedClaimStanding;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.ribbon.BlocPresence;
@@ -40,8 +40,9 @@ import java.util.Map;
  * </ul>
  *
  * <p>A faction present in a system through unweighed markets alone therefore never reaches the
- * ribbon at all - the contest gives it no standing, so it contributes no run and does not open the
- * presence gate on a cell that is otherwise a lone claimant's.
+ * ribbon at all. The contest lists it, at a nought, but it has no market the count above can start
+ * from - so it contributes no run and does not open the presence gate on a cell that is otherwise
+ * a lone claimant's.
  *
  * <p>Allied factions fold into one run, since a bloc is what the cell was painted for and two
  * allies' colonies are one bloc's presence. The fold is by count rather than by score, so the
@@ -101,18 +102,24 @@ public final class ClaimCellRibbons {
 
         var marketCountByBlocId = new LinkedHashMap<String, Integer>();
 
+        // Only the standings the contest weighed reach the fold. A presence-only one has no market
+        // that carried a score, so there is nothing for the count below to start from - it would
+        // have to invent a rule of its own about which colonies of a faction the mechanic passed
+        // over are worth a segment, which is the second opinion this whole read exists to avoid.
         for (var standing : contest.scores()) {
-            marketCountByBlocId.merge(
-                grouping.resolveBlocId(standing.factionId()),
-                countKnownScoringMarkets(standing),
-                Integer::sum);
+            if (standing instanceof WeighedClaimStanding weighedStanding) {
+                marketCountByBlocId.merge(
+                    grouping.resolveBlocId(weighedStanding.factionId()),
+                    countKnownScoringMarkets(weighedStanding),
+                    Integer::sum);
+            }
         }
         return marketCountByBlocId;
     }
 
     // How many markets of one faction the ribbon has to report: the market its standing rests on,
     // plus every sibling that both told on the score and is a colony the player knows about.
-    private static int countKnownScoringMarkets(FactionClaimScore standing) {
+    private static int countKnownScoringMarkets(WeighedClaimStanding standing) {
 
         var marketCount = THE_STANDING_MARKET;
 

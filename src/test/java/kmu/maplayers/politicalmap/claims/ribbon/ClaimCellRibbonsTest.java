@@ -3,9 +3,10 @@ package kmu.maplayers.politicalmap.claims.ribbon;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.claims.ContestAdmission;
-import kmlib.starsector.systems.claims.FactionClaimScore;
+import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.starsector.systems.claims.WeighedClaimStanding;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
@@ -379,7 +380,7 @@ final class ClaimCellRibbonsTest {
     private static SystemClaimBreakdown buildContest(
             String decreeFactionId,
             String claimantFactionId,
-            List<FactionClaimScore> standings) {
+            List<FactionClaimStanding> standings) {
 
         return new SystemClaimBreakdown(decreeFactionId, claimantFactionId, standings);
     }
@@ -388,12 +389,12 @@ final class ClaimCellRibbonsTest {
     // beside the one it stands on. The standing market is the one thing no case varies: only a
     // market the mechanic weighed can take a standing, and such a market is held in the open and
     // so is one the player knows of - which is why the counting rule reads no flag of it.
-    private static FactionClaimScore buildStandingOn(
+    private static WeighedClaimStanding buildStandingOn(
             String factionId,
             int listingPosition,
             MarketClaimBreakdown... otherMarkets) {
 
-        return new FactionClaimScore(
+        return new WeighedClaimStanding(
             factionId,
             IS_TERRITORIAL,
             buildMarket(listingPosition, ContestAdmission.WEIGHED, IS_KNOWN_TO_PLAYER),

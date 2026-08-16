@@ -2,9 +2,9 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
-import kmlib.starsector.systems.claims.FactionClaimScore;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.starsector.systems.claims.WeighedClaimStanding;
 
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
 
@@ -222,7 +222,7 @@ final class ClaimTieOutcomesTest {
     // cross-faction comparison is posed on.
     private static CellTooltipIndexOutcome resolveStandingOutcome(
             SystemClaimBreakdown breakdown,
-            FactionClaimScore standing) {
+            WeighedClaimStanding standing) {
 
         return ClaimTieOutcomes.resolveOutcome(breakdown, standing, standing.standingMarket());
     }
@@ -230,19 +230,19 @@ final class ClaimTieOutcomesTest {
     // A contest the given faction won on the scores, holding the standings posed against it.
     private static SystemClaimBreakdown buildContest(
             String claimantFactionId,
-            FactionClaimScore... standings) {
+            WeighedClaimStanding... standings) {
 
         return new SystemClaimBreakdown(null, claimantFactionId, List.of(standings));
     }
 
     // A faction standing on one market of the given score, holding nothing else in the system.
-    private static FactionClaimScore buildStanding(
+    private static WeighedClaimStanding buildStanding(
             String factionId,
             boolean isTerritorial,
             int listingPosition,
             int marketScore) {
 
-        return new FactionClaimScore(
+        return new WeighedClaimStanding(
             factionId,
             isTerritorial,
             buildMarket(listingPosition, marketScore, IS_NOT_HIDDEN),
@@ -251,13 +251,13 @@ final class ClaimTieOutcomesTest {
 
     // A faction standing on the given market and holding the given others - the shape a case about the
     // within-faction comparison is posed with.
-    private static FactionClaimScore buildStandingOver(
+    private static WeighedClaimStanding buildStandingOver(
             String factionId,
             boolean isTerritorial,
             MarketClaimBreakdown standingMarket,
             MarketClaimBreakdown... otherMarkets) {
 
-        return new FactionClaimScore(
+        return new WeighedClaimStanding(
             factionId,
             isTerritorial,
             standingMarket,
