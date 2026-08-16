@@ -5,8 +5,13 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND;
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND_SITE;
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.CELL_TOO_NARROW_FOR_THE_PAD;
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.CELL_TOO_NARROW_FOR_THE_PAD_SITE;
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.NECKED_CELL;
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -34,49 +39,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * less correct as geometry and completely wrong as the mark of where a band begins.
  */
 final class RibbonPathTracerTest {
-
-    // A cell four thousand units across, the scale a real cell is cut at, and its own site.
-    private static final List<double[]> SQUARE_CELL = List.of(
-        new double[] {0.0, 0.0},
-        new double[] {4000.0, 0.0},
-        new double[] {4000.0, 4000.0},
-        new double[] {0.0, 4000.0});
-
-    private static final double[] SQUARE_CELL_SITE = new double[] {2000.0, 2000.0};
-
-    // A cell with no room for the pad and the half width together anywhere along it, but room to
-    // spare for the half width on its own - the cell the fallback to the shallower inset exists
-    // for. A cell merely pinched in one place is not this cell and never takes that fall.
-    private static final List<double[]> CELL_TOO_NARROW_FOR_THE_PAD = List.of(
-        new double[] {0.0, 0.0},
-        new double[] {500.0, 0.0},
-        new double[] {500.0, 500.0},
-        new double[] {0.0, 500.0});
-
-    private static final double[] NARROW_CELL_SITE = new double[] {250.0, 250.0};
-
-    // The square cell with a tab too narrow to hold the band hanging off its right side: room for
-    // the pad everywhere but the tab's mouth, which is the cell the ladder must not take a step
-    // down for.
-    private static final List<double[]> NECKED_CELL = List.of(
-        new double[] {0.0, 0.0},
-        new double[] {4000.0, 0.0},
-        new double[] {4000.0, 1800.0},
-        new double[] {4600.0, 1800.0},
-        new double[] {4600.0, 2200.0},
-        new double[] {4000.0, 2200.0},
-        new double[] {4000.0, 4000.0},
-        new double[] {0.0, 4000.0});
-
-    // A cell narrower than the band is wide. The pad given up entirely still leaves the half width
-    // nowhere to go, so there is no shallower trace to fall back to.
-    private static final List<double[]> CELL_NARROWER_THAN_THE_BAND = List.of(
-        new double[] {0.0, 0.0},
-        new double[] {300.0, 0.0},
-        new double[] {300.0, 300.0},
-        new double[] {0.0, 300.0});
-
-    private static final double[] NARROWEST_CELL_SITE = new double[] {150.0, 150.0};
 
     // Round numbers rather than the shipped sizes, so the coordinates below pin the conventions
     // and not whatever the defaults happen to be: a 400-wide band 200 clear of the border runs its
@@ -117,7 +79,7 @@ final class RibbonPathTracerTest {
 
             var path = RibbonPathTracer.traceLaidRibbonPath(
                 CELL_TOO_NARROW_FOR_THE_PAD,
-                NARROW_CELL_SITE,
+                CELL_TOO_NARROW_FOR_THE_PAD_SITE,
                 STYLE);
 
             // Traced, and holding nothing: a ring with no room for the pad anywhere fails the
@@ -148,7 +110,7 @@ final class RibbonPathTracerTest {
 
             var path = RibbonPathTracer.traceLaidRibbonPath(
                 CELL_TOO_NARROW_FOR_THE_PAD,
-                NARROW_CELL_SITE,
+                CELL_TOO_NARROW_FOR_THE_PAD_SITE,
                 STYLE_FORCING_A_BAND);
 
             // The half width alone in from the top edge - the pad given up, the half width kept.
@@ -217,7 +179,7 @@ final class RibbonPathTracerTest {
 
             var ribbonPath = RibbonPathTracer.traceInspectedRibbonPath(
                 CELL_TOO_NARROW_FOR_THE_PAD,
-                NARROW_CELL_SITE,
+                CELL_TOO_NARROW_FOR_THE_PAD_SITE,
                 STYLE_FORCING_A_BAND);
 
             assertThat(ribbonPath.verdict())
@@ -231,7 +193,7 @@ final class RibbonPathTracerTest {
 
             var ribbonPath = RibbonPathTracer.traceInspectedRibbonPath(
                 CELL_TOO_NARROW_FOR_THE_PAD,
-                NARROW_CELL_SITE,
+                CELL_TOO_NARROW_FOR_THE_PAD_SITE,
                 STYLE);
 
             // Refused a band, and drawn all the same: the band pass found no stretch to lay one
@@ -247,7 +209,7 @@ final class RibbonPathTracerTest {
 
             var ribbonPath = RibbonPathTracer.traceInspectedRibbonPath(
                 CELL_NARROWER_THAN_THE_BAND,
-                NARROWEST_CELL_SITE,
+                CELL_NARROWER_THAN_THE_BAND_SITE,
                 STYLE_FORCING_A_BAND);
 
             assertThat(ribbonPath.isEmpty())

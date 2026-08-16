@@ -11,6 +11,13 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND;
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.CELL_NARROWER_THAN_THE_BAND_SITE;
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.CELL_TOO_NARROW_FOR_THE_PAD;
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.CELL_TOO_NARROW_FOR_THE_PAD_SITE;
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.NECKED_CELL;
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
+import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -58,54 +65,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * on every cell with one, so all three are posed rather than the first alone.
  */
 final class CellRibbonBuilderTest {
-
-    // A cell four thousand units across, the scale a real cell is cut at.
-    private static final List<double[]> SQUARE_CELL = List.of(
-        new double[] {0.0, 0.0},
-        new double[] {4000.0, 0.0},
-        new double[] {4000.0, 4000.0},
-        new double[] {0.0, 4000.0});
-
-    // The same cell with a tab hanging off its right side, too narrow to hold the band. The tab
-    // is 400 across against a centreline inset of 400, so its two offset walls cross and what is
-    // left of the mouth stands 283 off the cell's own border rather than 400 - a neck the band
-    // may not run through, on a cell whose four sides have room several times over.
-    private static final List<double[]> NECKED_CELL = List.of(
-        new double[] {0.0, 0.0},
-        new double[] {4000.0, 0.0},
-        new double[] {4000.0, 1800.0},
-        new double[] {4600.0, 1800.0},
-        new double[] {4600.0, 2200.0},
-        new double[] {4000.0, 2200.0},
-        new double[] {4000.0, 4000.0},
-        new double[] {0.0, 4000.0});
-
-    // A cell far too small for the band asked of it: the pad and half width together reach
-    // further in than the cell's own half width, so there is no inside left to run along.
-    private static final List<double[]> TINY_CELL = List.of(
-        new double[] {0.0, 0.0},
-        new double[] {500.0, 0.0},
-        new double[] {500.0, 500.0},
-        new double[] {0.0, 500.0});
-
-    // A cell narrower than the band is wide. The pad given up entirely still leaves the half width
-    // the band needs on each side with nowhere to go, so there is no shallower trace to fall back
-    // to - which is where forcing a band onto a cell stops.
-    private static final List<double[]> CELL_NARROWER_THAN_THE_BAND = List.of(
-        new double[] {0.0, 0.0},
-        new double[] {300.0, 0.0},
-        new double[] {300.0, 300.0},
-        new double[] {0.0, 300.0});
-
-    // The cell's own site, the point the band's start is found above.
-    private static final double[] CELL_SITE = new double[] {2000.0, 2000.0};
-
-    // That cell's own site, so what it draws is not decided by an anchor lying outside it.
-    private static final double[] NARROW_CELL_SITE = new double[] {150.0, 150.0};
-
-    // The tiny cell's own site, so the band it is forced to carry starts above the middle of it
-    // rather than over the corner an anchor outside the shape would fall back to.
-    private static final double[] TINY_CELL_SITE = new double[] {250.0, 250.0};
 
     // A map whose names are all somewhere else, which is the state most cells are in: the band
     // has its cell's whole ring to itself.
@@ -257,7 +216,7 @@ final class CellRibbonBuilderTest {
             // traced for it either.
             assertThat(CellRibbonBuilder.buildCellRibbon(
                     SQUARE_CELL,
-                    CELL_SITE,
+                    SQUARE_CELL_SITE,
                     RibbonPlan.NONE,
                     STYLE,
                     NO_NAMES))
@@ -272,7 +231,7 @@ final class CellRibbonBuilderTest {
             // x=2400, which is clockwise on a screen where y points up.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
                 NO_NAMES);
@@ -297,7 +256,7 @@ final class CellRibbonBuilderTest {
             // paints a band's colours without re-reading the plan they came from.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, ONE_WIDTH),
@@ -322,7 +281,7 @@ final class CellRibbonBuilderTest {
 
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(crowdedRuns),
                 STYLE,
                 NO_NAMES);
@@ -340,7 +299,7 @@ final class CellRibbonBuilderTest {
             // rather than both shifting together.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, NO_WIDTHS),
@@ -368,7 +327,7 @@ final class CellRibbonBuilderTest {
             // from there to the inner one at (3400,3400).
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(
                     new RibbonSegment(BRIGHT, RUN_REACHING_THE_CORNER),
                     new RibbonSegment(DARK, RUN_REACHING_THE_CORNER))),
@@ -397,7 +356,7 @@ final class CellRibbonBuilderTest {
             // tell such a piece from a run of its own.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, ONE_WIDTH))),
@@ -428,7 +387,7 @@ final class CellRibbonBuilderTest {
             // 400 earlier - reaching the top centre from (1600,3800) rather than leaving it.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
                 List.of(NAME_ACROSS_THE_BOTTOM_EDGE));
@@ -452,7 +411,7 @@ final class CellRibbonBuilderTest {
             // opening at (2800,3800).
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, ONE_WIDTH))),
@@ -477,7 +436,7 @@ final class CellRibbonBuilderTest {
             // straight through both names, reaching the bottom edge at 2800.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
                 NAMES_OVER_THE_START_AND_THE_BOTTOM_EDGE);
@@ -499,7 +458,7 @@ final class CellRibbonBuilderTest {
             // draw over the name and finish on the start itself at 2000.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
                 NAMES_UP_TO_THE_START_AND_THE_TOP_EDGE);
@@ -521,7 +480,7 @@ final class CellRibbonBuilderTest {
             // begins. The ring the band is not laid on is ring the band does not get to spend.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
                 NAMES_EITHER_SIDE_OF_THE_START);
@@ -541,7 +500,7 @@ final class CellRibbonBuilderTest {
             // colour into whatever slivers remain.
             assertThat(CellRibbonBuilder.buildCellRibbon(
                     SQUARE_CELL,
-                    CELL_SITE,
+                    SQUARE_CELL_SITE,
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                     STYLE,
                     NAME_ACROSS_THE_WHOLE_CELL))
@@ -558,7 +517,7 @@ final class CellRibbonBuilderTest {
             // system with a great deal in it.
             assertThat(CellRibbonBuilder.buildCellRibbon(
                     SQUARE_CELL,
-                    CELL_SITE,
+                    SQUARE_CELL_SITE,
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_NO_HAIRLINE_CAN_STATE))),
                     STYLE,
                     NAMES_LEAVING_ONLY_A_HAIRLINE))
@@ -574,7 +533,7 @@ final class CellRibbonBuilderTest {
             // there.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE_FORCING_A_BAND,
                 NAME_ACROSS_THE_WHOLE_CELL);
@@ -596,7 +555,7 @@ final class CellRibbonBuilderTest {
             // it would were the boxes simply dropped whenever the forcing is on.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 SQUARE_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, ONE_WIDTH))),
@@ -617,7 +576,7 @@ final class CellRibbonBuilderTest {
             // is worse than the blank the forcing exists to remove.
             assertThat(CellRibbonBuilder.buildCellRibbon(
                     CELL_NARROWER_THAN_THE_BAND,
-                    NARROW_CELL_SITE,
+                    CELL_NARROWER_THAN_THE_BAND_SITE,
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                     STYLE_FORCING_A_BAND,
                     NO_NAMES))
@@ -632,8 +591,8 @@ final class CellRibbonBuilderTest {
             // for. The half width is kept whatever happens, since giving up any of that would hang
             // the band outside the cell it reports on.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                TINY_CELL,
-                TINY_CELL_SITE,
+                CELL_TOO_NARROW_FOR_THE_PAD,
+                CELL_TOO_NARROW_FOR_THE_PAD_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE_FORCING_A_BAND,
                 NO_NAMES);
@@ -652,7 +611,7 @@ final class CellRibbonBuilderTest {
             // nothing at all and read as a system with nothing to report.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 NECKED_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
                 NO_NAMES);
@@ -675,7 +634,7 @@ final class CellRibbonBuilderTest {
             // the half width exists to keep it inside.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
                 NECKED_CELL,
-                CELL_SITE,
+                SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE_FORCING_A_BAND,
                 NAME_ACROSS_THE_WHOLE_CELL);
@@ -694,8 +653,8 @@ final class CellRibbonBuilderTest {
             // back tidy and correctly wound while being no inset at all, so the answer here is
             // the one the trace measures rather than the one its shape suggests.
             assertThat(CellRibbonBuilder.buildCellRibbon(
-                    TINY_CELL,
-                    CELL_SITE,
+                    CELL_TOO_NARROW_FOR_THE_PAD,
+                    SQUARE_CELL_SITE,
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                     STYLE,
                     NO_NAMES))
