@@ -12,6 +12,7 @@ import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
+import kmu.maplayers.base.render.MapFramePreparationClaim;
 import kmu.maplayers.base.render.MapLayerTerrainInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInput;
 import kmu.maplayers.base.sidebar.runtime.SidebarRenderer;
@@ -140,6 +141,55 @@ class KMU_ModPluginTest {
                 KMU_ModPlugin.installPoliticalMapSidebar(buildSector(null));
 
             assertThatCode(sidebarInstallOnNullManager::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class InstallMapFramePreparationClaim {
+
+        @Test
+        void reinstallsTheFramePreparationClaimFreshAsTransient() {
+            // Remove-then-add, transient: it holds where the current frame stands, which is live view
+            // state that enters no save, and two registered would open the frame twice - releasing a
+            // second preparation into the frame the first already handed out.
+            var listenerManager = new RecordingListenerManager(false);
+
+            KMU_ModPlugin.installMapFramePreparationClaim(buildSector(listenerManager));
+
+            assertThat(listenerManager.removedListenerClasses)
+                .containsExactly(MapFramePreparationClaim.class);
+
+            assertThat(listenerManager.addedListeners)
+                .singleElement()
+                .isSameAs(MapFramePreparationClaim.getInstance());
+
+            assertThat(listenerManager.addedTransientFlags)
+                .containsExactly(true);
+        }
+
+        @Test
+        void clearsTheClaimEvenWhenNoListenerCanBeRegistered() {
+            // The failure this ordering is for. With no listener manager nothing will ever open
+            // another frame, so a claim left taken by the previous session would refuse every
+            // preparation for the rest of this one and freeze the overlay on stale draw lists.
+            // Clearing first is what turns that into preparing per pass instead.
+            MapFramePreparationClaim.getInstance().renderInUICoordsBelowUI(null);
+            MapFramePreparationClaim.getInstance().claimPreparation();
+
+            KMU_ModPlugin.installMapFramePreparationClaim(buildSector(null));
+
+            assertThat(MapFramePreparationClaim.getInstance().claimPreparation())
+                .isTrue();
+        }
+
+        @Test
+        void toleratesAMissingListenerManager() {
+
+            var claimInstallOnNullManager = (Runnable) () ->
+                KMU_ModPlugin.installMapFramePreparationClaim(buildSector(null));
+
+            assertThatCode(claimInstallOnNullManager::run)
                 .doesNotThrowAnyException();
         }
     }

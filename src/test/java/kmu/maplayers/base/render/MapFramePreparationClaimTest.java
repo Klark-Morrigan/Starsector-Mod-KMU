@@ -42,6 +42,7 @@ final class MapFramePreparationClaimTest {
         void claimPreparationGrantsTheFirstSurfaceToReachAFrame() {
 
             var claim = new MapFramePreparationClaim();
+
             claim.renderInUICoordsBelowUI(null);
 
             assertThat(claim.claimPreparation())
@@ -53,6 +54,7 @@ final class MapFramePreparationClaimTest {
             // The whole point: two surfaces painting the lower band of one frame prepare it once
             // between them, rather than each stepping the cursor's arrival latch for the same frame.
             var claim = new MapFramePreparationClaim();
+
             claim.renderInUICoordsBelowUI(null);
             claim.claimPreparation();
 
@@ -63,13 +65,30 @@ final class MapFramePreparationClaimTest {
         }
 
         @Test
+        void claimPreparationStaysRefusedThroughTheRenderPassesAboveTheUi() {
+            // Which pass is read as the boundary is the whole of what makes this land before the map
+            // rather than after it. Both passes above the UI run once the map has already drawn, so
+            // releasing the preparation from either would hand it to the next frame's surfaces - the
+            // ordering assumption this class exists to stop being made.
+            var claim = new MapFramePreparationClaim();
+
+            claim.renderInUICoordsBelowUI(null);
+            claim.claimPreparation();
+            claim.renderInUICoordsAboveUIBelowTooltips(null);
+            claim.renderInUICoordsAboveUIAndTooltips(null);
+
+            assertThat(claim.claimPreparation())
+                .isFalse();
+        }
+
+        @Test
         void claimPreparationGrantsAgainOnceTheNextFrameOpens() {
             // A claim is spent by the frame it was taken for and no longer, or the overlay would be
             // prepared once and then never again.
             var claim = new MapFramePreparationClaim();
+
             claim.renderInUICoordsBelowUI(null);
             claim.claimPreparation();
-
             claim.renderInUICoordsBelowUI(null);
 
             assertThat(claim.claimPreparation())
@@ -86,9 +105,9 @@ final class MapFramePreparationClaimTest {
             // claim has to forget that boundaries were ever seen - otherwise the frame it was left
             // mid-way through denies every preparation for the rest of the session.
             var claim = new MapFramePreparationClaim();
+            
             claim.renderInUICoordsBelowUI(null);
             claim.claimPreparation();
-
             claim.discardFrameTrackingFromPreviousSave();
 
             assertThat(claim.claimPreparation())

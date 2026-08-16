@@ -36,13 +36,10 @@ public final class MapFramePreparationClaim implements CampaignUIRenderingListen
     // The one shared claim the render surfaces ask and the frame boundary resets.
     private static final MapFramePreparationClaim INSTANCE = new MapFramePreparationClaim();
 
-    // Whether the boundary pass has been seen at all. Until it has, no claim can be denied without
-    // risking a frozen overlay, so this is what separates "not yet claimed this frame" from "no idea
-    // where this frame began".
-    private boolean isFrameStartKnown;
-
-    // Whether this frame's preparation has already been handed out.
-    private boolean isPreparationClaimed;
+    // Where this claim stands. One field rather than a pair of flags, because the three states are
+    // exactly three: a fourth combination of "boundary not seen" with "preparation taken" has no
+    // meaning here, and holding two flags is what would let one be written.
+    private FramePreparationState state = FramePreparationState.BOUNDARY_UNKNOWN;
 
     // Reached through getInstance(); the claim stands on its own instance, so the constructor is
     // package-visible rather than sealed to the singleton.
@@ -65,15 +62,16 @@ public final class MapFramePreparationClaim implements CampaignUIRenderingListen
      */
     public boolean claimPreparation() {
 
-        // No boundary seen means no frame to be second in, so every asker prepares. That is what the
-        // surfaces do with no claim at all, which is the state this degrades to rather than past.
-        if (!isFrameStartKnown) {
+        // No boundary seen means no frame to be second in, so every asker prepares and the state is
+        // left where it is. That is what the surfaces do with no claim at all, which is what this
+        // degrades to rather than past.
+        if (state == FramePreparationState.BOUNDARY_UNKNOWN) {
             return true;
         }
-        if (isPreparationClaimed) {
+        if (state == FramePreparationState.PREPARATION_TAKEN) {
             return false;
         }
-        isPreparationClaimed = true;
+        state = FramePreparationState.PREPARATION_TAKEN;
         return true;
     }
 
@@ -86,8 +84,7 @@ public final class MapFramePreparationClaim implements CampaignUIRenderingListen
      * claim armed by the previous session with nothing left to reset it.
      */
     public void discardFrameTrackingFromPreviousSave() {
-        isFrameStartKnown = false;
-        isPreparationClaimed = false;
+        state = FramePreparationState.BOUNDARY_UNKNOWN;
     }
 
     /**
@@ -99,17 +96,34 @@ public final class MapFramePreparationClaim implements CampaignUIRenderingListen
      */
     @Override
     public void renderInUICoordsBelowUI(ViewportAPI viewport) {
-        isFrameStartKnown = true;
-        isPreparationClaimed = false;
+        state = FramePreparationState.PREPARATION_OPEN;
     }
 
     @Override
     public void renderInUICoordsAboveUIBelowTooltips(ViewportAPI viewport) {
-        // Lands after the map has already drawn, so it bounds nothing this claim is about.
+        // Lands after the map has already drawn, so it bounds nothing this claim is about. Opening a
+        // frame here would release the preparation to the surfaces of the frame after it.
     }
 
     @Override
     public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
         // Later still, for the same reason.
+    }
+
+    // Where a claim stands, as the three states it can actually be in. An enum rather than flags so
+    // the fourth combination two booleans would offer - a preparation taken on a frame nobody saw
+    // begin - cannot be written at all, and so that each transition below is one assignment.
+    private enum FramePreparationState {
+
+        // No boundary pass seen yet, so nothing knows where a frame begins and every claim is
+        // granted. The state the surfaces run in before the listener is registered, and the one a
+        // load falls back to.
+        BOUNDARY_UNKNOWN,
+
+        // A frame has begun and its preparation is still going.
+        PREPARATION_OPEN,
+
+        // This frame's preparation has been taken; every later asker is refused until the next.
+        PREPARATION_TAKEN,
     }
 }
