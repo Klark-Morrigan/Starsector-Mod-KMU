@@ -19,6 +19,7 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonPath;
+import kmu.maplayers.politicalmap.base.render.ribbon.CellRingPathCache;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyling;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
@@ -99,6 +100,12 @@ public final class PoliticalMapTerritories implements
     // because its lifetime is a cell's shape, which is what this holds and what the map's other
     // diagnostics are built without.
     private final Map<String, CellRibbonPath> ribbonPathByCellId = new LinkedHashMap<>();
+
+    // The ring each cell's band is laid along, traced inside the very shape above and kept here so
+    // a re-bake walks a ring only where a cell was actually re-shaped. Dropped by the same writes
+    // as the two maps above, which is what ties a path's lifetime to the shape it describes; see
+    // CellRingPathCache for why that tie is the whole of the cache's safety.
+    private final CellRingPathCache ringPathCache = new CellRingPathCache();
 
     // Retained derivation inputs. The holder map is mutated in place as systems flip; the
     // rest are set once at build and only read after.
@@ -183,10 +190,11 @@ public final class PoliticalMapTerritories implements
      * writes here is what makes that true by construction instead of by two call sites
      * remembering to agree.
      *
-     * <p>Any band the cell was carrying goes with the shape it was laid inside. A band is
-     * triangles fitted to one particular ring, so a cell re-shaped and left holding its old band
-     * would draw the last shape's band inside this shape's cell; dropping it here means a cell
-     * only ever carries a band the band pass laid in the shape it holds now.
+     * <p>Any band the cell was carrying goes with the shape it was laid inside, and so does the
+     * ring that band was laid along. A band is triangles fitted to one particular ring, so a cell
+     * re-shaped and left holding its old band would draw the last shape's band inside this shape's
+     * cell; dropping both here means a cell only ever carries a band the band pass laid in the
+     * shape it holds now, traced inside that same shape.
      *
      * @param cellId      the cell this record is for
      * @param styledCell  its draw record
@@ -202,6 +210,7 @@ public final class PoliticalMapTerritories implements
         fillPolygonByCellId.put(cellId, fillPolygon);
         ribbonByCellId.remove(cellId);
         ribbonPathByCellId.remove(cellId);
+        ringPathCache.dropRingPathOf(cellId);
     }
 
     /**
@@ -262,6 +271,7 @@ public final class PoliticalMapTerritories implements
         fillPolygonByCellId.remove(cellId);
         ribbonByCellId.remove(cellId);
         ribbonPathByCellId.remove(cellId);
+        ringPathCache.dropRingPathOf(cellId);
     }
 
     /**
@@ -278,6 +288,15 @@ public final class PoliticalMapTerritories implements
      */
     public Map<String, CellRibbonPath> getRibbonPathByCellId() {
         return ribbonPathByCellId;
+    }
+
+    /**
+     * @return the rings this build's bands are laid along, the store the band pass asks before it
+     *         traces a cell and writes whatever it does trace into; live rather than a copy, since
+     *         a pass reading a snapshot of it would trace every cell afresh
+     */
+    public CellRingPathCache getRingPathCache() {
+        return ringPathCache;
     }
 
     /**

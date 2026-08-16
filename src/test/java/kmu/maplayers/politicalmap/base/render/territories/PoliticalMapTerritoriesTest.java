@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
+import kmlib.math.geometry.RingPath;
 import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -463,6 +464,23 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getRibbonPathByCellId())
                 .isEmpty();
         }
+
+        @Test
+        void putStyledCellDropsTheRingTracedInsideTheShapeItReplaces() {
+            // The whole of what makes the traced ring safe to keep. It is held under no key and no
+            // revision, so a cell served a ring traced inside the shape it used to have would lay
+            // its band round a cell that is no longer there - and this write is what rules that
+            // out, by construction rather than by the band pass remembering to ask.
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+
+            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
+            territories.getRingPathCache().putRingPath("system", RingPath.nothingLeftToTrace());
+
+            territories.putStyledCell("system", buildAnyStyledCell(), buildTrianglePolygon());
+
+            assertThat(territories.getRingPathCache().findRingPathOf("system"))
+                .isNull();
+        }
     }
 
     @Nested
@@ -524,6 +542,20 @@ final class PoliticalMapTerritoriesTest {
 
             assertThat(territories.getRibbonPathByCellId())
                 .isEmpty();
+        }
+
+        @Test
+        void removeStyledCellDropsTheTracedRingWithTheCell() {
+            // A cell that stops drawing has no shape for a ring to have been traced inside, so the
+            // ring goes with it - a cell drawn again later is cut afresh and is owed a fresh walk.
+            var territories = buildDrawablesWith(Map.of(), Map.of());
+
+            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
+            territories.getRingPathCache().putRingPath("system", RingPath.nothingLeftToTrace());
+            territories.removeStyledCell("system");
+
+            assertThat(territories.getRingPathCache().findRingPathOf("system"))
+                .isNull();
         }
     }
 

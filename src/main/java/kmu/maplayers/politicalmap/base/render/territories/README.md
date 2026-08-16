@@ -172,6 +172,14 @@ overlay's staleness as this cell's geometry. It is held only while the player ha
 diagnostic on - the bake hands over nothing per cell while it is off, which is how switching it off
 clears what an earlier pass left - so on an ordinary frame this map is empty.
 
+Third beside those two is the ring each band is laid along (`CellRingPathCache`), and it is a cache
+rather than a draw list - nothing paints it. A bake happens whenever a cluster name may have moved,
+which is every colony flip, while a cell's ring changes only when the cell is cut again, so without
+it every cell in the sector re-walks its own outline on every flip to arrive at the path it just
+discarded. It is dropped by the same two writes as the band, and that is the whole of why it needs
+no key: a cache living inside the object whose lifetime it must match is correct by construction,
+where a keyed one is a rule somebody has to keep true.
+
 ## The split fill: solid, hatched, unfilled
 
 A bloc's footprint is traced as one border whatever its members' fills; the fill is what varies per

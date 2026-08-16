@@ -37,6 +37,11 @@ import java.util.Map;
  * rebuild bakes all of them through - which is what keeps an incrementally-updated band identical
  * to the one a full rebuild would lay.
  *
+ * <p>The rings those bands run along are read back from the cells too, and for the reason the pass
+ * runs as often as it does: a bake happens whenever a name may have moved, while a ring moves only
+ * when its cell is re-shaped. So the store the cells keep their traced rings in is handed to the
+ * source, which walks a ring only where none stands.
+ *
  * <p>The diagnostic overlay's paths are traced in the same loop, under a toggle read once per pass
  * like everything else a pass is settled by. Beside the bands rather than as a pass of its own
  * because a path is traced inside the very shape the band beside it was laid in, and two passes
@@ -101,7 +106,11 @@ public final class CellRibbonsBaker {
                 territories.getViewGrouping(),
                 territories.getHolderBySystemId(),
                 geometryCache.getSiteBySystemId(),
-                resolveNameBoxes(clusterAnchors)),
+                resolveNameBoxes(clusterAnchors),
+                // The cells' own store, so a ring walked by one bake is the ring the next reads
+                // back - and so that a cell re-shaped between the two drops its path with its
+                // shape rather than through anything this pass has to remember to do.
+                territories.getRingPathCache()),
             KmuPoliticalMapSettings.shouldShowPoliticalMapRibbonPaths());
     }
 
@@ -184,6 +193,7 @@ public final class CellRibbonsBaker {
                 continue;
             }
             var ribbon = ribbonSource.buildCellRibbon(
+                cellId,
                 systemIdByCellId.get(cellId),
                 fillPolygon,
                 timings);

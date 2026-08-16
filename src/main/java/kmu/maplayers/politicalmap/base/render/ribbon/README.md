@@ -11,6 +11,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 
 - [The four classes that build one](#the-four-classes-that-build-one)
 - [Laying a band inside a ring](#laying-a-band-inside-a-ring)
+- [A ring that outlives the bake that walked it](#a-ring-that-outlives-the-bake-that-walked-it)
 - [When the ring has no room](#when-the-ring-has-no-room)
 - [A neck costs its own stretch](#a-neck-costs-its-own-stretch)
 - [Keeping clear of the names](#keeping-clear-of-the-names)
@@ -31,8 +32,9 @@ stating apart, plus the accumulator they charge what they spend to:
 | --- | --- | --- |
 | `CellRibbonsBaker` | the pass | drives the loop over cells and writes each band back |
 | `CellRibbonSource` | the pass | holds what a pass is settled from; answers one cell at a time |
-| `CellRibbonBuilder` | one cell | pure geometry: ring plus plan in, `CellRibbon` out |
+| `CellRibbonBuilder` | one cell | pure geometry: path plus plan in, `CellRibbon` out |
 | `RibbonPathTracer` | one cell | pure geometry: the ring a band runs along, at whichever inset fits |
+| `CellRingPathCache` | one build | the rings already walked, so a re-bake walks only what was re-shaped |
 | `RibbonBakeTimings` | the pass | what the pass spent, split four ways; see [what a bake spends its time on](#what-a-bake-spends-its-time-on) |
 
 `CellRibbonsBaker` runs as its own pass **after** the rest of a rebuild, because a band needs two
@@ -44,17 +46,22 @@ them through.
 `CellRibbonSource` is a source rather than a builder because the per-cell work is
 `CellRibbonBuilder`'s; what it adds is the pass that work is done under - the planner the view
 resolved, the player's sizes, the holder gate, and the names' boxes, each sampled once so no two
-cells of one pass are settled differently. Its holder map is also the cost gate: most of the sector
-is cells nobody paints, and the claim mechanic's count walks a system's whole market list.
+cells of one pass are settled differently. It also settles which cells get a band at all, in three
+refusals read in one place: a cell nothing paints or with nowhere to start from, a system the
+sector no longer lists, and a cell whose plan came back empty. Each is a cost gate as much as an
+answer - the claim mechanic's count walks a system's whole market list, and the empty plan is what
+spares the single-holder cell a ring walk.
 
 ## Laying a band inside a ring
 
-`CellRibbonBuilder` is pure over a ring, a plan and the name boxes - no sector, no settings, no GL,
+`CellRibbonBuilder` is pure over a path, a plan and the name boxes - no sector, no settings, no GL,
 and the pass's timings written to but never read:
 
 1. `RibbonPathTracer` insets the cell's ring by the pad plus half the width through
    `RingPath.traceInsetRing`, which normalises the winding and parameterises the ring by arc
-   length from the cell's top centre, clockwise.
+   length from the cell's top centre, clockwise. Done by the pass rather than by the builder, since
+   the result outlives one bake; see
+   [a ring that outlives the bake that walked it](#a-ring-that-outlives-the-bake-that-walked-it).
 2. The name boxes are carved off that path - as are the stretches of it the cell's own outline
    leaves no room on - and the longest stretch left is the one the whole band goes on; see
    [one band, one stretch](#one-band-one-stretch).
@@ -69,6 +76,31 @@ and the pass's timings written to but never read:
    [a neck costs its own stretch](#a-neck-costs-its-own-stretch).
 5. `RingPath.placeSpanNearestStart` settles where along that stretch the band sits - see
    [where a band sits](#where-a-band-sits).
+
+## A ring that outlives the bake that walked it
+
+A bake runs whenever a cluster name may have moved, and that is every colony flip: a re-fit can
+place a name on a cell the flip never touched, so the whole map re-bakes for it. A cell's ring is
+not moved by a name at all - it is decided by which of the cell's edges are same-owner seams - so
+every cell in the sector would otherwise pay a full walk, an inset and a fold splice and a
+clearance walk and an arc-length walk apiece, to arrive at the path it discarded a moment earlier.
+
+So the walked path is kept beside the shape it was walked inside. `PoliticalMapTerritories` holds a
+`CellRingPathCache` next to its fill polygons, the write that records a cell's shape drops that
+cell's path exactly as it drops that cell's band, and `CellRibbonSource` asks for the standing path
+before walking one. What is left per bake is the part that genuinely changed: the carve, the
+placement and the stroke.
+
+Held under no key and no revision, and that is the whole of why it is safe. A key is a rule
+somebody has to keep true; a cache living inside the object whose lifetime it must match is correct
+by construction - a rebuild mints fresh territories and the paths go with them, and a slider bumps
+the settings revision, which rebuilds them, so a path can never be served at an inset it was not
+walked at.
+
+It cannot change what is drawn: the served path is the same function of the same ring, so a cell's
+band is identical with the cache and without it. What it does change is the `.trace` row of the
+readout below, which is now what walking rings cost this bake rather than what walking them all
+would have.
 
 ## When the ring has no room
 
@@ -222,7 +254,9 @@ is green and simply carries a band shorter than its outline.
 walk the same ladder there - the authored inset, then the pad given up - so the path drawn is the
 path a band would use, rather than a second reading that agrees with it by coincidence. They differ
 in one thing: the overlay traces the shallower inset even where the player has the fall switched
-off, since that cell is exactly the one it is looked at to explain.
+off, since that cell is exactly the one it is looked at to explain. That is also why it walks the
+ring afresh rather than reading the kept path above - the cells it exists for are the ones the band
+pass has no path for - and the cost of that walk is paid only while a dev toggle is on.
 
 `CellRibbonsBaker` traces in the same loop as the bake, under a toggle read once per pass, and
 hands over nothing for every cell while it is off - which is also what clears the paths a pass
@@ -237,7 +271,7 @@ profiling readout (`kmu_profiling`) beneath the whole-pass `politicalMap.bakeRib
 | Section | What it covers | What it grows with |
 | --- | --- | --- |
 | `.plan` | counting what a system holds | the systems' colonies - the claim mechanic walks a system's whole market list |
-| `.trace` | `RibbonPathTracer` insetting and walking the ring | the cells, each paying its own inset, splice, clearance walk and arc-length walk |
+| `.trace` | `RibbonPathTracer` insetting and walking the ring | the cells this bake had to walk - every cell on a fresh build, only the re-shaped ones after |
 | `.carve` | the names and the pinches taken off that ring, and the band placed on what is left | the cells times the names, since every name on the map is tested against every cell |
 | `.stroke` | the runs laid end to end and stroked into triangles | the cells that drew something, and how much each planned |
 

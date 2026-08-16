@@ -12,27 +12,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Lays one cell's planned band around that cell's own ring: the path it runs along, the longest
- * stretch of that path the cluster names and the cell's own narrow places leave it, how long a
- * width is worth on that stretch, where along it the band sits, and the triangles each run comes
- * out as.
+ * Lays one cell's planned band along the path traced round that cell: the longest stretch of that
+ * path the cluster names and the cell's own narrow places leave it, how long a width is worth on
+ * that stretch, where along it the band sits, and the triangles each run comes out as.
  *
  * <p>Everything the plan states is proportional - a run is so many widths long - and everything
- * this settles is the cell's own: where the ring lets a band run, and how much of that ring one
- * width may take before the band would outrun it. Splitting the two is what lets the counting
- * rule be stated over hand-built standings while the geometry is stated over hand-built rings,
- * with neither needing the other's inputs.
+ * this settles is the cell's own: where the path lets a band run, and how much of it one width may
+ * take before the band would outrun it. Splitting the two is what lets the counting rule be stated
+ * over hand-built standings while the geometry is stated over hand-built rings, with neither
+ * needing the other's inputs.
  *
- * <p>Pure over a ring, a plan and the names' boxes - no sector, no settings read, no GL - so a
+ * <p>Handed the path rather than tracing one, because a path outlives the bake that traced it -
+ * a ring moves when its cell is re-shaped, while a bake runs whenever a cluster name may have
+ * moved - so which cells pay for a walk is the pass's business and not one cell's. What is left
+ * here is the part that genuinely differs per bake: the names have moved, so the carve and
+ * everything after it is done again.
+ *
+ * <p>Pure over a path, a plan and the names' boxes - no sector, no settings read, no GL - so a
  * corner split, a compressed band, a name lying across the ring, a ring narrowed to a neck in one
  * place, and a cell too small to hold a band at all are all posed directly. The pass's timings are
- * written to and never read, so a hand-built ring is still posed with nothing but a fresh
+ * written to and never read, so a hand-traced path is still posed with nothing but a fresh
  * accumulator beside it.
  *
- * <p>Three of a bake's four phases are here, and each is charged separately: what a cell spends
- * tracing its ring, what it spends carving the names off it, and what it spends stroking the
- * result grow on different axes, so a bake that slowed down is answered here rather than guessed
- * at.
+ * <p>Two of a bake's four phases are here, and each is charged separately: what a cell spends
+ * carving the names off its path and what it spends stroking the result grow on different axes, so
+ * a bake that slowed down is answered here rather than guessed at.
  */
 public final class CellRibbonBuilder {
 
@@ -40,44 +44,35 @@ public final class CellRibbonBuilder {
     }
 
     /**
-     * Builds one cell's band, or nothing where the cell cannot carry one.
+     * Builds one cell's band, or nothing where the cell's own ring cannot carry one.
      *
-     * <p>A cell drops out for either of two reasons, and both are the design's answer rather
-     * than a failure: it plans no band at all (nothing but the bloc it is painted for is present
-     * in it), or its ring has no room to hold one - a cell smaller than the pad and width
-     * together, or one whose ring the names and its own narrow places leave so little of that
-     * what remains could not state the plan at any size. A cell narrowed to a neck in one place
-     * is not that cell: the neck costs its own stretch of ring and the band goes on the longest
-     * of what is left.
+     * <p>A cell drops out where its ring has no room to hold the band - a cell smaller than the
+     * pad and width together, or one whose ring the names and its own narrow places leave so
+     * little of that what remains could not state the plan at any size - and that is the design's
+     * answer rather than a failure. A cell narrowed to a neck in one place is not that cell: the
+     * neck costs its own stretch of ring and the band goes on the longest of what is left.
      *
-     * @param ring         the cell's painted outline, the shape the band runs inside
-     * @param topAnchor    the {x, y} the path's start is found above - the cell's own site, so
-     *                     every cell begins its band as near its top centre as the names leave
-     *                     room for, and runs clockwise from there
-     * @param plan         the cell's runs in draw order
-     * @param style        the sizes the band is drawn at
+     * <p>The other way a cell comes back bare - it planned no band at all, nothing but the bloc it
+     * is painted for being present in it - is answered before this, by whatever traced the path:
+     * such a cell must not pay for a ring walk nothing would be laid on. So the plan handed over
+     * here is one with runs in it.
+     *
+     * @param path         the ring traced round the cell, at whichever inset it had room for
+     * @param plan         the cell's runs in draw order, at least one of them with length
+     * @param style        the sizes the band is drawn at, the same ones the path was traced at
      * @param nameBoxes    the room the drawn cluster names take up, as world rings the band
      *                     keeps out of; the whole map's, since a name sits where its own
      *                     cluster is roomiest and that can be over this cell
-     * @param timings      the pass's running totals, which this cell's trace, carve and stroke
-     *                     are charged to
+     * @param timings      the pass's running totals, which this cell's carve and stroke are
+     *                     charged to
      * @return the baked band, or {@link CellRibbon#NONE} where the cell draws none
      */
     public static CellRibbon buildCellRibbon(
-            List<double[]> ring,
-            double[] topAnchor,
+            RingPath path,
             RibbonPlan plan,
             RibbonStyle style,
             List<List<double[]>> nameBoxes,
             RibbonBakeTimings timings) {
-
-        var totalLengthUnits = plan.sumLengthUnits();
-        if (totalLengthUnits <= 0) {
-            return CellRibbon.NONE;
-        }
-        var traceStart = System.nanoTime();
-        var path = RibbonPathTracer.traceLaidRibbonPath(ring, topAnchor, style);
-        timings.addTraceNanos(System.nanoTime() - traceStart);
 
         // A cell whose ring held the band's inset nowhere: smaller than the pad and width
         // together, or too narrow for them along the whole of it. A cell pinched in one place
@@ -85,6 +80,8 @@ public final class CellRibbonBuilder {
         if (!path.hasStretchHoldingItsInset()) {
             return CellRibbon.NONE;
         }
+        var totalLengthUnits = plan.sumLengthUnits();
+
         var carveStart = System.nanoTime();
         var layout = layOutBand(path, nameBoxes, totalLengthUnits, style);
         timings.addCarveNanos(System.nanoTime() - carveStart);

@@ -204,12 +204,24 @@ nothing rather than making it wrong: the pass still runs last, and simply carves
 whatever band that cell was carrying, which is what keeps a band from outliving the ring it
 was laid in; the band pass then fills it back in.
 
+The ring a band is laid along is kept beside the shape it was walked inside, in a
+[`CellRingPathCache`](../../src/main/java/kmu/maplayers/politicalmap/base/render/ribbon/CellRingPathCache.java)
+the territories hold and the band pass asks before it walks anything. A bake runs whenever a
+cluster name may have moved - every colony flip, since a re-fit can place a name on a cell the flip
+never touched - while a cell's ring changes only when the cell is cut again, so without it every
+cell in the sector re-walks its own outline on every flip. It is dropped by the same two writes as
+the band, which is what lets it carry no key of its own: a cache living inside the object whose
+lifetime it must match is correct by construction, where a keyed one is a rule someone has to keep
+true. A slider bumps the settings revision, which rebuilds the territories, which takes the paths
+with them.
+
 That pass also traces each cell's band *path* when the band-path diagnostic is on - the ring a
 band would run along, held per cell and dropped by the same writes as the band. A cell drawing no
 band is the sector's ordinary state and also every one of the band's refusals, and the two are the
 same picture without it. Held only while the toggle is on: the bake hands over nothing per cell
 while it is off, and a settings change rebuilds every cell, so switching it off is what clears
-what an earlier pass left behind.
+what an earlier pass left behind. That trace walks its own ring rather than reading the cache
+above, deliberately: the cells it exists to explain are the ones the band pass has no path for.
 
 A frame measures nothing about a band at all: every size in one is a world size, so how
 large it lands on screen is the map's own scaling of the triangle list and no question
@@ -324,6 +336,9 @@ Per frame, in increasing cost:
    than asked of the name-clearing setting, since a band that keeps clear of nothing is
    re-baked to the same triangles either way - and a gate here would trade a rebuild the
    flip already pays for against a wrong map the moment the setting is switched back on.
+   What that widening costs is the carve, the count and the stroke rather than the ring
+   walk: the cells the flip re-shaped drop their kept paths with their shapes, and every
+   other cell's band is laid along the ring it was already laid along.
 3. **Content changed** (a setting, a sidebar toggle, a view's own live input) - the
    territories are rebuilt in full over the standing geometry. The cells are
    untouched, since ownership and styling do not move a border. The label placements

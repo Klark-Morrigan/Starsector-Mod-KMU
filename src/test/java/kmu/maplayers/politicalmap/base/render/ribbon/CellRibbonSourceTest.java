@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.math.geometry.RingPath;
+
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -32,6 +34,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -49,6 +52,12 @@ import static org.mockito.Mockito.when;
  * elsewhere and a switched-off feature that still walks the sector's markets is a cost with
  * nothing to show for it.
  *
+ * <p>The ring cases are the same question asked once more, of the work rather than of the count: a
+ * cell is walked when its path is not already standing, once however often it is baked, and never
+ * at all where its plan came back empty. That last one is where the gate has to sit to be worth
+ * anything - a cell answered after its ring was walked has already paid the cost the gate exists
+ * to save.
+ *
  * <p>The diagnostic trace is pinned against the same gate rather than against its own, because
  * what makes the overlay worth looking at is that it answers for exactly the cells the band pass
  * considered. A trace reaching wider would ring cells no band was ever going to be laid on;
@@ -59,6 +68,19 @@ final class CellRibbonSourceTest {
     private static final String PAINTED_SYSTEM = "corvus";
     private static final String UNPAINTED_SYSTEM = "empty";
     private static final String SITELESS_SYSTEM = "unplaced";
+
+    // The cell a case bakes, which is the key its traced ring is kept under. One cell is enough
+    // for every case here: what is pinned is whether a given cell is walked at all, never how two
+    // of them are told apart.
+    private static final String CELL = "cell";
+
+    // A second cell, for the one case that is about the ring being kept per cell rather than per
+    // pass: a path standing for one cell is no answer for another's.
+    private static final String OTHER_CELL = "other";
+
+    // A plan with nothing in it, which is what the single-holder cell comes back with - most of
+    // the sector, and the gate that has to be answered before the ring is walked.
+    private static final RibbonPlan EMPTY_PLAN = RibbonPlan.NONE;
 
     private static final Color BAND_COLOUR = new Color(140, 160, 220);
 
@@ -112,7 +134,8 @@ final class CellRibbonSourceTest {
             // system, and most of the sector is cells nobody paints.
             var plannerMock = mock(SystemRibbonPlanner.class);
 
-            buildWith(plannerMock).buildCellRibbon(UNPAINTED_SYSTEM, SQUARE_CELL, passTimings);
+            buildWith(plannerMock)
+                .buildCellRibbon(CELL, UNPAINTED_SYSTEM, SQUARE_CELL, passTimings);
 
             verify(plannerMock, never())
                 .planSystemRibbon(any());
@@ -126,7 +149,8 @@ final class CellRibbonSourceTest {
             // ring work that follows it.
             var timingsMock = mock(RibbonBakeTimings.class);
 
-            buildWith(system -> ANY_PLAN).buildCellRibbon(PAINTED_SYSTEM, SQUARE_CELL, timingsMock);
+            buildWith(system -> ANY_PLAN)
+                .buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, timingsMock);
 
             verify(timingsMock).addPlanNanos(anyLong());
         }
@@ -138,7 +162,7 @@ final class CellRibbonSourceTest {
             var timingsMock = mock(RibbonBakeTimings.class);
 
             buildWith(system -> ANY_PLAN)
-                .buildCellRibbon(UNPAINTED_SYSTEM, SQUARE_CELL, timingsMock);
+                .buildCellRibbon(CELL, UNPAINTED_SYSTEM, SQUARE_CELL, timingsMock);
 
             verifyNoInteractions(timingsMock);
         }
@@ -183,7 +207,7 @@ final class CellRibbonSourceTest {
 
             var viewMock = buildViewMock(system -> ANY_PLAN);
 
-            buildThrough(viewMock);
+            buildThrough(viewMock, new CellRingPathCache());
 
             var inputsCaptor = ArgumentCaptor.forClass(RibbonPlanInputs.class);
 
@@ -202,10 +226,69 @@ final class CellRibbonSourceTest {
 
             var plannerMock = mock(SystemRibbonPlanner.class);
 
-            buildWith(plannerMock).buildCellRibbon(PAINTED_SYSTEM, SQUARE_CELL, passTimings);
+            buildWith(plannerMock)
+                .buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, passTimings);
 
             verify(plannerMock, never())
                 .planSystemRibbon(any());
+        }
+
+        @Test
+        void drawsNoBandForACellWhosePlanIsEmpty() {
+            // The single-holder cell: the bloc that painted it is the only one present, so there
+            // is nothing a band could report that the fill beneath it has not said already.
+            assertThat(buildWith(system -> EMPTY_PLAN)
+                    .buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, passTimings))
+                .isEqualTo(CellRibbon.NONE);
+        }
+
+        @Test
+        void walksNoRingForACellWhosePlanIsEmpty() {
+            // The cost half of that gate, and why it is answered here rather than by the geometry.
+            // Most of the sector is single-holder cells, and each of them walking a ring for a
+            // band nothing would be laid on is a rebuild's worth of inset and arc-length work
+            // spent on nothing - so no ring is walked and none is kept.
+            var ringPathCache = new CellRingPathCache();
+            var timingsMock = mock(RibbonBakeTimings.class);
+
+            buildCachingInto(system -> EMPTY_PLAN, ringPathCache)
+                .buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, timingsMock);
+
+            verify(timingsMock, never())
+                .addTraceNanos(anyLong());
+            assertThat(ringPathCache.findRingPathOf(CELL))
+                .isNull();
+        }
+
+        @Test
+        void walksACellsRingOnceHoweverOftenItIsBaked() {
+            // What the kept ring is for. A bake runs whenever a cluster name may have moved, which
+            // is every colony flip, while the ring a band runs along moves only when its cell is
+            // re-shaped - so the second bake of an untouched cell must walk nothing.
+            var ringPathCache = new CellRingPathCache();
+            var timingsMock = mock(RibbonBakeTimings.class);
+            var ribbonSource = buildCachingInto(system -> ANY_PLAN, ringPathCache);
+
+            ribbonSource.buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, timingsMock);
+            ribbonSource.buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, timingsMock);
+
+            verify(timingsMock, times(1))
+                .addTraceNanos(anyLong());
+        }
+
+        @Test
+        void walksTheRingOfACellWithNoPathStandingOfItsOwn() {
+            // A path describes one cell's shape, so it is kept per cell and not per pass: a cell
+            // reached while another's path stands is walked, and comes back with the band its own
+            // ring holds rather than with whatever the neighbour's said.
+            var ringPathCache = new CellRingPathCache();
+
+            ringPathCache.putRingPath(OTHER_CELL, RingPath.nothingLeftToTrace());
+
+            assertThat(buildCachingInto(system -> ANY_PLAN, ringPathCache)
+                    .buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, passTimings)
+                    .bands())
+                .isNotEmpty();
         }
     }
 
@@ -250,7 +333,7 @@ final class CellRibbonSourceTest {
 
     private CellRibbon buildFor(String drawnSystemId) {
         return buildWith(system -> ANY_PLAN)
-            .buildCellRibbon(drawnSystemId, SQUARE_CELL, passTimings);
+            .buildCellRibbon(CELL, drawnSystemId, SQUARE_CELL, passTimings);
     }
 
     private CellRibbonPath traceFor(String drawnSystemId) {
@@ -264,9 +347,18 @@ final class CellRibbonSourceTest {
     }
 
     // A pass over two painted systems - one placed, one with no site recorded - and one system no
-    // bloc paints, counted through the given planner.
+    // bloc paints, counted through the given planner and keeping its traced rings to itself.
     private static CellRibbonSource buildWith(SystemRibbonPlanner planner) {
-        return buildThrough(buildViewMock(planner));
+        return buildCachingInto(planner, new CellRingPathCache());
+    }
+
+    // The same pass writing its traced rings into a store the case holds, for the cases about
+    // which cells are walked at all.
+    private static CellRibbonSource buildCachingInto(
+            SystemRibbonPlanner planner,
+            CellRingPathCache ringPathCache) {
+
+        return buildThrough(buildViewMock(planner), ringPathCache);
     }
 
     // The view the pass asks for its mechanic, answering with the given planner. Built apart from
@@ -281,7 +373,9 @@ final class CellRibbonSourceTest {
         return viewMock;
     }
 
-    private static CellRibbonSource buildThrough(PoliticalMapView viewMock) {
+    private static CellRibbonSource buildThrough(
+            PoliticalMapView viewMock,
+            CellRingPathCache ringPathCache) {
 
         // The systems are built before the stubbing rather than inside it: each is itself a mock,
         // and building one while another stubbing is open reads to Mockito as an unfinished stub.
@@ -306,7 +400,8 @@ final class CellRibbonSourceTest {
             Map.of(PAINTED_SYSTEM, new double[] {2000.0, 2000.0}),
             // No names anywhere near these cells: where a name falls is pinned by the builder
             // that lays a band inside one cell, not by which cells are offered a band at all.
-            List.of());
+            List.of(),
+            ringPathCache);
     }
 
     private static StarSystemAPI buildSystem(String systemId) {

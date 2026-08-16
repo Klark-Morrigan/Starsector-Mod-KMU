@@ -9,10 +9,12 @@ import kmlib.profiling.Timings;
  * cell's own narrow places off that ring, and stroking what is left into triangles.
  *
  * <p>Four numbers rather than one because they grow on different axes, and one total cannot say
- * which of them moved. The trace grows with the cells - a miter inset, a fold splice, a clearance
- * walk, a winding normalisation and an arc-length walk, each cell paying its own - while the carve
- * grows with the cells times the names, since every name on the map is tested against every cell,
- * and the count grows with what the systems hold rather than with either. A sector that doubles its
+ * which of them moved. The trace grows with the cells whose ring this bake had to walk - a miter
+ * inset, a fold splice, a clearance walk, a winding normalisation and an arc-length walk apiece -
+ * which is every cell on a fresh build and only the re-shaped ones on a bake that follows, since a
+ * traced ring is kept for as long as the shape it was traced inside stands. The carve grows with
+ * the cells times the names, since every name on the map is tested against every cell, and the
+ * count grows with what the systems hold rather than with either. A sector that doubles its
  * colonies moves them by different factors, so "the bake got slower" is a different question in
  * each case.
  *
@@ -56,6 +58,10 @@ public final class RibbonBakeTimings {
 
     /**
      * Adds what tracing one cell's ring cost.
+     *
+     * <p>Charged only where a ring was actually walked, so a bake over cells whose rings already
+     * stood reports the near-zero it truly spent rather than what it would have spent tracing them
+     * again.
      *
      * @param elapsedNanos the duration to add
      */

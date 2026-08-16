@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
+import kmlib.math.geometry.RingPath;
+
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
@@ -23,7 +25,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
  * Pins where a cell's band is laid and how far round it reaches: the inset it runs at, the corner
@@ -34,6 +35,11 @@ import static org.mockito.Mockito.verifyNoInteractions;
  * anticlockwise, or sat on the border instead of inside it would be no less "correct" as
  * geometry and completely wrong as a readout. Pinning the four together is what makes the
  * convention a fact about the code rather than about whichever cell was looked at in play.
+ *
+ * <p>Each case traces its own cell's path through the very class a pass traces through, rather
+ * than hand-building one. What is under test here is what a band does with the room a path
+ * offers it, and a path assembled for a case would be room the cases agreed among themselves to
+ * have - which is exactly the agreement a cell in play is not party to.
  *
  * <p>Two cases are about the band being one shape rather than a row of them. Where two runs meet
  * on a corner of the cell, the band turns through that corner instead of stopping square either
@@ -220,53 +226,23 @@ final class CellRibbonBuilderTest {
     class BuildCellRibbon {
 
         @Test
-        void drawsNoBandWhereTheCellPlannedNone() {
-            // The single-holder cell: nothing was planned, so nothing is laid out - and no ring is
-            // traced for it either.
-            assertThat(CellRibbonBuilder.buildCellRibbon(
-                    SQUARE_CELL,
-                    SQUARE_CELL_SITE,
-                    RibbonPlan.NONE,
-                    STYLE,
-                    NO_NAMES,
-                    passTimings))
-                .isEqualTo(CellRibbon.NONE);
-        }
-
-        @Test
-        void chargesTheCellsTraceCarveAndStrokeToThePass() {
+        void chargesTheCellsCarveAndStrokeToThePass() {
             // What a bake is measured by, and it only means anything if the phases are actually
-            // charged: three numbers nothing writes to would read as a bake that costs nothing.
+            // charged: two numbers nothing writes to would read as a bake that costs nothing. The
+            // trace is not among them - the path arrives already walked, and what walking it cost
+            // is charged where that happened.
             var timingsMock = mock(RibbonBakeTimings.class);
 
             CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
                 NO_NAMES,
                 timingsMock);
 
-            verify(timingsMock).addTraceNanos(anyLong());
             verify(timingsMock).addCarveNanos(anyLong());
             verify(timingsMock).addStrokeNanos(anyLong());
-        }
-
-        @Test
-        void chargesNothingForACellThatPlannedNoBand() {
-            // The gate is what keeps most of the sector cheap: a cell with nothing to say is
-            // answered before its ring is traced, so it costs the bake nothing at all.
-            var timingsMock = mock(RibbonBakeTimings.class);
-
-            CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
-                RibbonPlan.NONE,
-                STYLE,
-                NO_NAMES,
-                timingsMock);
-
-            verifyNoInteractions(timingsMock);
+            verify(timingsMock, never()).addTraceNanos(anyLong());
         }
 
         @Test
@@ -277,8 +253,7 @@ final class CellRibbonBuilderTest {
             var timingsMock = mock(RibbonBakeTimings.class);
 
             CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
                 NAME_ACROSS_THE_WHOLE_CELL,
@@ -295,8 +270,7 @@ final class CellRibbonBuilderTest {
             // 200 clear of the border. It starts above the cell's site at x=2000 and runs to
             // x=2400, which is clockwise on a screen where y points up.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
                 NO_NAMES,
@@ -321,8 +295,7 @@ final class CellRibbonBuilderTest {
             // Runs are baked one patch of triangles each, in the order planned, so the renderer
             // paints a band's colours without re-reading the plan they came from.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(List.of(
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, ONE_WIDTH),
@@ -347,8 +320,7 @@ final class CellRibbonBuilderTest {
             }
 
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(crowdedRuns),
                 STYLE,
                 NO_NAMES,
@@ -366,8 +338,7 @@ final class CellRibbonBuilderTest {
             // The last band's far end at x=2800 is what says the geometry stayed with its colour
             // rather than both shifting together.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(List.of(
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, NO_WIDTHS),
@@ -395,8 +366,7 @@ final class CellRibbonBuilderTest {
             // first run reaches the outer mitre at (3800,3800) and both runs meet along the line
             // from there to the inner one at (3400,3400).
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(List.of(
                     new RibbonSegment(BRIGHT, RUN_REACHING_THE_CORNER),
                     new RibbonSegment(DARK, RUN_REACHING_THE_CORNER))),
@@ -425,8 +395,7 @@ final class CellRibbonBuilderTest {
             // scattered over both stretches would have put a piece there, and a reader cannot
             // tell such a piece from a run of its own.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(List.of(
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, ONE_WIDTH))),
@@ -457,8 +426,7 @@ final class CellRibbonBuilderTest {
             // the longer would be the interval closing the path, whose latest start puts the band
             // 400 earlier - reaching the top centre from (1600,3800) rather than leaving it.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
                 List.of(NAME_ACROSS_THE_BOTTOM_EDGE),
@@ -482,8 +450,7 @@ final class CellRibbonBuilderTest {
             // centre on the band rather than throwing the whole thing round to the stretch's own
             // opening at (2800,3800).
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(List.of(
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, ONE_WIDTH))),
@@ -508,8 +475,7 @@ final class CellRibbonBuilderTest {
             // regardless, the two would read as 12400 of room and the band would run at full size
             // straight through both names, reaching the bottom edge at 2800.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
                 NAMES_OVER_THE_START_AND_THE_BOTTOM_EDGE,
@@ -531,8 +497,7 @@ final class CellRibbonBuilderTest {
             // begins. Fused on the strength of the other stretch starting at the origin, it would
             // draw over the name and finish on the start itself at 2000.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
                 NAMES_UP_TO_THE_START_AND_THE_TOP_EDGE,
@@ -554,8 +519,7 @@ final class CellRibbonBuilderTest {
             // compresses to fit, ending at 1000 along the cell's top edge where the second name
             // begins. The ring the band is not laid on is ring the band does not get to spend.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
                 NAMES_EITHER_SIDE_OF_THE_START,
@@ -575,8 +539,7 @@ final class CellRibbonBuilderTest {
             // plan on at any size, so the cell says nothing rather than squeezing a smear of
             // colour into whatever slivers remain.
             assertThat(CellRibbonBuilder.buildCellRibbon(
-                    SQUARE_CELL,
-                    SQUARE_CELL_SITE,
+                    traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                     STYLE,
                     NAME_ACROSS_THE_WHOLE_CELL,
@@ -593,8 +556,7 @@ final class CellRibbonBuilderTest {
             // which says less than the bare cell does and reads as a fault rather than as a
             // system with a great deal in it.
             assertThat(CellRibbonBuilder.buildCellRibbon(
-                    SQUARE_CELL,
-                    SQUARE_CELL_SITE,
+                    traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE),
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_NO_HAIRLINE_CAN_STATE))),
                     STYLE,
                     NAMES_LEAVING_ONLY_A_HAIRLINE,
@@ -610,8 +572,7 @@ final class CellRibbonBuilderTest {
             // gives way, and the band runs from the cell's top centre as though no name were
             // there.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE_FORCING_A_BAND),
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE_FORCING_A_BAND,
                 NAME_ACROSS_THE_WHOLE_CELL,
@@ -633,8 +594,7 @@ final class CellRibbonBuilderTest {
             // begins - rather than running from the top centre at 2000 straight over the name, as
             // it would were the boxes simply dropped whenever the forcing is on.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                SQUARE_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(SQUARE_CELL, SQUARE_CELL_SITE, STYLE_FORCING_A_BAND),
                 new RibbonPlan(List.of(
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, ONE_WIDTH))),
@@ -655,8 +615,10 @@ final class CellRibbonBuilderTest {
             // left to take. A band laid here would hang outside the very cell it reports on, which
             // is worse than the blank the forcing exists to remove.
             assertThat(CellRibbonBuilder.buildCellRibbon(
-                    CELL_NARROWER_THAN_THE_BAND,
-                    CELL_NARROWER_THAN_THE_BAND_SITE,
+                    traceRingIn(
+                        CELL_NARROWER_THAN_THE_BAND,
+                        CELL_NARROWER_THAN_THE_BAND_SITE,
+                        STYLE_FORCING_A_BAND),
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                     STYLE_FORCING_A_BAND,
                     NO_NAMES,
@@ -672,8 +634,10 @@ final class CellRibbonBuilderTest {
             // for. The half width is kept whatever happens, since giving up any of that would hang
             // the band outside the cell it reports on.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                CELL_TOO_NARROW_FOR_THE_PAD,
-                CELL_TOO_NARROW_FOR_THE_PAD_SITE,
+                traceRingIn(
+                    CELL_TOO_NARROW_FOR_THE_PAD,
+                    CELL_TOO_NARROW_FOR_THE_PAD_SITE,
+                    STYLE_FORCING_A_BAND),
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE_FORCING_A_BAND,
                 NO_NAMES,
@@ -692,8 +656,7 @@ final class CellRibbonBuilderTest {
             // (3600,2200) where the neck begins again. Refused as a whole, the cell would draw
             // nothing at all and read as a system with nothing to report.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                NECKED_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(NECKED_CELL, SQUARE_CELL_SITE, STYLE),
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
                 NO_NAMES,
@@ -716,8 +679,7 @@ final class CellRibbonBuilderTest {
             // fallback to the cell's whole outline would lay, hanging the band over the border
             // the half width exists to keep it inside.
             var ribbon = CellRibbonBuilder.buildCellRibbon(
-                NECKED_CELL,
-                SQUARE_CELL_SITE,
+                traceRingIn(NECKED_CELL, SQUARE_CELL_SITE, STYLE_FORCING_A_BAND),
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE_FORCING_A_BAND,
                 NAME_ACROSS_THE_WHOLE_CELL,
@@ -737,14 +699,25 @@ final class CellRibbonBuilderTest {
             // back tidy and correctly wound while being no inset at all, so the answer here is
             // the one the trace measures rather than the one its shape suggests.
             assertThat(CellRibbonBuilder.buildCellRibbon(
-                    CELL_TOO_NARROW_FOR_THE_PAD,
-                    SQUARE_CELL_SITE,
+                    traceRingIn(CELL_TOO_NARROW_FOR_THE_PAD, SQUARE_CELL_SITE, STYLE),
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                     STYLE,
                     NO_NAMES,
                     passTimings))
                 .isEqualTo(CellRibbon.NONE);
         }
+    }
+
+    // A cell's ring walked at the sizes the case bakes at, which is what a pass hands over rather
+    // than the ring itself: a traced path outlives the bake that traced it, so which cells pay for
+    // a walk is the pass's business. Traced through the very class the pass traces through, so a
+    // case is posed on the path a cell would really be given rather than on one built for it.
+    private static RingPath traceRingIn(
+            List<double[]> ring,
+            double[] topAnchor,
+            RibbonStyle style) {
+
+        return RibbonPathTracer.traceLaidRibbonPath(ring, topAnchor, style);
     }
 
     // How far right a run's triangles reach. A band on the necked cell's right side stands at
