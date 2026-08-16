@@ -42,6 +42,11 @@ import java.util.Map;
  * because a path is traced inside the very shape the band beside it was laid in, and two passes
  * over the same cells could only ever agree about that by both being run.
  *
+ * <p>What a pass spent is reported as four numbers rather than one, since a bake does four
+ * separable things - counts, traces, carves and strokes - that grow on different axes. See
+ * {@link RibbonBakeTimings}, which the loop charges each cell to and which is recorded once at
+ * the end of it.
+ *
  * <p>Sampled once per pass and then asked, like the band source it holds: what a pass bakes from -
  * the cells, their geometry, and the room the names took - must not vary between the cells of one
  * pass, and holding it is what makes baking every cell and baking a handful the same operation
@@ -118,13 +123,19 @@ public final class CellRibbonsBaker {
     public void bakeCellRibbonsOf(Collection<String> cellIds) {
 
         var bakeStart = System.nanoTime();
+        var timings = new RibbonBakeTimings();
 
         // A band's count walks a system's markets - the claim mechanic's walks all of them - so
         // this is the one part of a rebuild that could rival the known label-fit stall, and it is
         // profiled and timed on its own so a rebuild that slows down says which half slowed.
         var bakedCells = KmuProfiling
             .getProfiler()
-            .measure("politicalMap.bakeRibbons", () -> bakeCellRibbons(cellIds));
+            .measure(RibbonBakeTimings.BAKE_SECTION, () -> bakeCellRibbons(cellIds, timings));
+
+        // The four phases beside the whole-pass measure rather than instead of it: what they
+        // leave unaccounted - the loop itself, and the overlay's second trace while a player has
+        // it on - shows only as the gap between their sum and the total.
+        timings.recordPhaseTotals(KmuProfiling.getProfiler());
 
         LOG.debug("Political map presence bands baked; cells="
             + cellIds.size()
@@ -159,8 +170,9 @@ public final class CellRibbonsBaker {
     }
 
     // Bakes each named cell's band inside the shape that cell already records, reporting how many
-    // of them came back with anything to draw.
-    private int bakeCellRibbons(Collection<String> cellIds) {
+    // of them came back with anything to draw and charging what each cell cost to the pass's
+    // running totals.
+    private int bakeCellRibbons(Collection<String> cellIds, RibbonBakeTimings timings) {
 
         var bakedCells = 0;
 
@@ -172,7 +184,8 @@ public final class CellRibbonsBaker {
             }
             var ribbon = ribbonSource.buildCellRibbon(
                 systemIdByCellId.get(cellId),
-                fillPolygon);
+                fillPolygon,
+                timings);
 
             territories.putCellRibbon(cellId, ribbon);
             territories.putCellRibbonPath(cellId, traceCellRibbonPath(cellId, fillPolygon));

@@ -19,6 +19,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 - [One stroke, many colours](#one-stroke-many-colours)
 - [Sizes and drawing](#sizes-and-drawing)
 - [Seeing the path a cell did not use](#seeing-the-path-a-cell-did-not-use)
+- [What a bake spends its time on](#what-a-bake-spends-its-time-on)
 - [What is not here](#what-is-not-here)
 
 ## The four classes that build one
@@ -225,6 +226,28 @@ off, since that cell is exactly the one it is looked at to explain.
 hands over nothing for every cell while it is off - which is also what clears the paths a pass
 taken while it was on left behind. `CellRibbonPathRenderer` draws them over the bands, so a band
 and the path it was laid on can be read against each other.
+
+## What a bake spends its time on
+
+A bake does four separable things, and `RibbonBakeTimings` reports each on its own row of the
+profiling readout (`kmu_profiling`) beneath the whole-pass `politicalMap.bakeRibbons`:
+
+| Section | What it covers | What it grows with |
+| --- | --- | --- |
+| `.plan` | counting what a system holds | the systems' colonies - the claim mechanic walks a system's whole market list |
+| `.trace` | `RibbonPathTracer` insetting and walking the ring | the cells, each paying its own inset, splice, clearance walk and arc-length walk |
+| `.carve` | the names and the pinches taken off that ring, and the band placed on what is left | the cells times the names, since every name on the map is tested against every cell |
+| `.stroke` | the runs laid end to end and stroked into triangles | the cells that drew something, and how much each planned |
+
+Four numbers because they grow on different axes: a sector that doubles its colonies does not move
+them by one factor, so one total can say a bake got slower without saying which of them did.
+
+Summed per pass and recorded once at the end of the loop rather than measured per cell -
+`Profiler.record` takes an elapsed count, so the loop adds into four longs. A profiler call per
+cell over the whole sector would time itself as much as the work. One pass is therefore one run of
+each section, so the readout's average is what a bake costs, and the four are read against the
+whole-pass row rather than instead of it: the gap between their sum and the total is the loop
+itself, plus the overlay's second trace while a player has it on.
 
 ## What is not here
 

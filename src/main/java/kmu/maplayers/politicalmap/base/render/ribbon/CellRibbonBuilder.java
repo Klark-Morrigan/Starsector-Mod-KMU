@@ -25,7 +25,14 @@ import java.util.List;
  *
  * <p>Pure over a ring, a plan and the names' boxes - no sector, no settings read, no GL - so a
  * corner split, a compressed band, a name lying across the ring, a ring narrowed to a neck in one
- * place, and a cell too small to hold a band at all are all posed directly.
+ * place, and a cell too small to hold a band at all are all posed directly. The pass's timings are
+ * written to and never read, so a hand-built ring is still posed with nothing but a fresh
+ * accumulator beside it.
+ *
+ * <p>Three of a bake's four phases are here, and each is charged separately: what a cell spends
+ * tracing its ring, what it spends carving the names off it, and what it spends stroking the
+ * result grow on different axes, so a bake that slowed down is answered here rather than guessed
+ * at.
  */
 public final class CellRibbonBuilder {
 
@@ -52,6 +59,8 @@ public final class CellRibbonBuilder {
      * @param nameBoxes    the room the drawn cluster names take up, as world rings the band
      *                     keeps out of; the whole map's, since a name sits where its own
      *                     cluster is roomiest and that can be over this cell
+     * @param timings      the pass's running totals, which this cell's trace, carve and stroke
+     *                     are charged to
      * @return the baked band, or {@link CellRibbon#NONE} where the cell draws none
      */
     public static CellRibbon buildCellRibbon(
@@ -59,13 +68,16 @@ public final class CellRibbonBuilder {
             double[] topAnchor,
             RibbonPlan plan,
             RibbonStyle style,
-            List<List<double[]>> nameBoxes) {
+            List<List<double[]>> nameBoxes,
+            RibbonBakeTimings timings) {
 
         var totalLengthUnits = plan.sumLengthUnits();
         if (totalLengthUnits <= 0) {
             return CellRibbon.NONE;
         }
+        var traceStart = System.nanoTime();
         var path = RibbonPathTracer.traceLaidRibbonPath(ring, topAnchor, style);
+        timings.addTraceNanos(System.nanoTime() - traceStart);
 
         // A cell whose ring held the band's inset nowhere: smaller than the pad and width
         // together, or too narrow for them along the whole of it. A cell pinched in one place
@@ -73,6 +85,40 @@ public final class CellRibbonBuilder {
         if (!path.hasStretchHoldingItsInset()) {
             return CellRibbon.NONE;
         }
+        var carveStart = System.nanoTime();
+        var layout = layOutBand(path, nameBoxes, totalLengthUnits, style);
+        timings.addCarveNanos(System.nanoTime() - carveStart);
+
+        // A cell the carve left nothing to lay a band on - charged for the carve all the same,
+        // since what it cost is what the pass spent finding that out.
+        if (layout == null) {
+            return CellRibbon.NONE;
+        }
+        var strokeStart = System.nanoTime();
+        var bands = strokeSegments(
+            path,
+            plan,
+            layout.startArcLength(),
+            layout.lengthUnitWorld(),
+            style);
+        timings.addStrokeNanos(System.nanoTime() - strokeStart);
+
+        return new CellRibbon(bands);
+    }
+
+    // Where along the cell's ring the band goes and how much of that ring one width is worth
+    // there, or nothing at all where what the names and the cell's own shape leave could not
+    // state the plan at any size.
+    //
+    // One block because it is one question - how much room is left, and where - and because it is
+    // the span a bake charges its carve over: split across the caller, the phase would be timed
+    // in pieces with the refusals falling outside it, which are the cells whose carve is most
+    // worth knowing the cost of.
+    private static RibbonBandLayout layOutBand(
+            RingPath path,
+            List<List<double[]>> nameBoxes,
+            int totalLengthUnits,
+            RibbonStyle style) {
 
         // The names are carved off the path rather than off the plan, and that is the whole of
         // why a band and a name no longer share room. Cutting the plan instead would leave a run
@@ -86,7 +132,7 @@ public final class CellRibbonBuilder {
         // player's answer. By default the clearance does: a cell reporting nothing and a cell
         // refused the room to report look identical to a reader, and only one of them is true.
         if (clearArcs.isEmpty() && !style.isBandAlwaysDrawn()) {
-            return CellRibbon.NONE;
+            return null;
         }
 
         // Forced, it is the names that give way and only the names: the path's own overrun
@@ -101,15 +147,15 @@ public final class CellRibbonBuilder {
         // contents at any size - too small to begin with, or too much of it under a name - so it
         // says nothing rather than drawing a smear of colour where the runs would have been.
         if (lengthUnitWorld < Limits.MIN_EDGE_LENGTH) {
-            return CellRibbon.NONE;
+            return null;
         }
         // As near the cell's top centre as the stretch allows, rather than wherever the ring
         // the names left happens to open. Every cell's band is read from that landmark - the
         // dominant bloc first, running clockwise - so a band that could begin there and does
         // not costs the reader the one thing every cell's band has in common.
-        var ribbonStart = path.placeSpanNearestStart(stretch, totalLengthUnits * lengthUnitWorld);
-
-        return new CellRibbon(strokeSegments(path, plan, ribbonStart, lengthUnitWorld, style));
+        return new RibbonBandLayout(
+            path.placeSpanNearestStart(stretch, totalLengthUnits * lengthUnitWorld),
+            lengthUnitWorld);
     }
 
     // The one stretch of ring the whole band is laid on: the longest left clear, with the rest of
@@ -211,5 +257,11 @@ public final class CellRibbonBuilder {
                 GlVertexRuns.flattenVertices(strokedSpans.get(segment))));
         }
         return bands;
+    }
+
+    // Where one cell's band sits on its own ring and what a width is worth there - the two the
+    // carve settles and the stroke then spends. Private because it is how the two halves of this
+    // class talk to each other; a band's own shape is what leaves it.
+    private record RibbonBandLayout(double startArcLength, double lengthUnitWorld) {
     }
 }

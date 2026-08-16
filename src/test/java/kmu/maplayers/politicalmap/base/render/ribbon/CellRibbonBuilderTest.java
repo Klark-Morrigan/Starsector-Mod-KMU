@@ -207,6 +207,10 @@ final class CellRibbonBuilderTest {
     // rail intersections, so they carry a rounding whisker rather than being stated arithmetic.
     private static final double CORNER_SLACK = 0.01;
 
+    // Where a bake charges what a cell cost it. Handed in and never read back here: a band's
+    // phases are summed per pass, while what these cases pin is the band one cell comes out with.
+    private final RibbonBakeTimings passTimings = new RibbonBakeTimings();
+
     @Nested
     class BuildCellRibbon {
 
@@ -219,7 +223,8 @@ final class CellRibbonBuilderTest {
                     SQUARE_CELL_SITE,
                     RibbonPlan.NONE,
                     STYLE,
-                    NO_NAMES))
+                    NO_NAMES,
+                    passTimings))
                 .isEqualTo(CellRibbon.NONE);
         }
 
@@ -234,7 +239,8 @@ final class CellRibbonBuilderTest {
                 SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
-                NO_NAMES);
+                NO_NAMES,
+                passTimings);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -262,7 +268,8 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(DARK, ONE_WIDTH),
                     new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
-                NO_NAMES);
+                NO_NAMES,
+                passTimings);
 
             assertThat(ribbon.bands())
                 .extracting(RibbonBand::colour)
@@ -284,7 +291,8 @@ final class CellRibbonBuilderTest {
                 SQUARE_CELL_SITE,
                 new RibbonPlan(crowdedRuns),
                 STYLE,
-                NO_NAMES);
+                NO_NAMES,
+                passTimings);
 
             assertThat(ribbon.bands())
                 .hasSize(CROWDED_RUN_COUNT)
@@ -305,7 +313,8 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(DARK, NO_WIDTHS),
                     new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
-                NO_NAMES);
+                NO_NAMES,
+                passTimings);
 
             assertThat(ribbon.bands())
                 .extracting(RibbonBand::colour)
@@ -332,7 +341,8 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(BRIGHT, RUN_REACHING_THE_CORNER),
                     new RibbonSegment(DARK, RUN_REACHING_THE_CORNER))),
                 STYLE,
-                NO_NAMES);
+                NO_NAMES,
+                passTimings);
 
             assertThat(hasCorner(ribbon.bands().get(0), 3800.0, 3800.0))
                 .isTrue();
@@ -361,7 +371,8 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, ONE_WIDTH))),
                 STYLE,
-                NAMES_EITHER_SIDE_OF_THE_START);
+                NAMES_EITHER_SIDE_OF_THE_START,
+                passTimings);
 
             assertThat(ribbon.bands())
                 .extracting(RibbonBand::colour)
@@ -390,7 +401,8 @@ final class CellRibbonBuilderTest {
                 SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
-                List.of(NAME_ACROSS_THE_BOTTOM_EDGE));
+                List.of(NAME_ACROSS_THE_BOTTOM_EDGE),
+                passTimings);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -416,7 +428,8 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, ONE_WIDTH))),
                 STYLE,
-                List.of(NAME_ACROSS_THE_TOP_EDGE));
+                List.of(NAME_ACROSS_THE_TOP_EDGE),
+                passTimings);
 
             assertThat(hasCorner(ribbon.bands().get(0), 1600.0, 3800.0))
                 .isTrue();
@@ -439,7 +452,8 @@ final class CellRibbonBuilderTest {
                 SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
-                NAMES_OVER_THE_START_AND_THE_BOTTOM_EDGE);
+                NAMES_OVER_THE_START_AND_THE_BOTTOM_EDGE,
+                passTimings);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -461,7 +475,8 @@ final class CellRibbonBuilderTest {
                 SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
-                NAMES_UP_TO_THE_START_AND_THE_TOP_EDGE);
+                NAMES_UP_TO_THE_START_AND_THE_TOP_EDGE,
+                passTimings);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -483,7 +498,8 @@ final class CellRibbonBuilderTest {
                 SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
-                NAMES_EITHER_SIDE_OF_THE_START);
+                NAMES_EITHER_SIDE_OF_THE_START,
+                passTimings);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -503,7 +519,8 @@ final class CellRibbonBuilderTest {
                     SQUARE_CELL_SITE,
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                     STYLE,
-                    NAME_ACROSS_THE_WHOLE_CELL))
+                    NAME_ACROSS_THE_WHOLE_CELL,
+                    passTimings))
                 .isEqualTo(CellRibbon.NONE);
         }
 
@@ -520,7 +537,8 @@ final class CellRibbonBuilderTest {
                     SQUARE_CELL_SITE,
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_NO_HAIRLINE_CAN_STATE))),
                     STYLE,
-                    NAMES_LEAVING_ONLY_A_HAIRLINE))
+                    NAMES_LEAVING_ONLY_A_HAIRLINE,
+                    passTimings))
                 .isEqualTo(CellRibbon.NONE);
         }
 
@@ -536,7 +554,8 @@ final class CellRibbonBuilderTest {
                 SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE_FORCING_A_BAND,
-                NAME_ACROSS_THE_WHOLE_CELL);
+                NAME_ACROSS_THE_WHOLE_CELL,
+                passTimings);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -560,7 +579,8 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(BRIGHT, ONE_WIDTH),
                     new RibbonSegment(DARK, ONE_WIDTH))),
                 STYLE_FORCING_A_BAND,
-                List.of(NAME_ACROSS_THE_TOP_EDGE));
+                List.of(NAME_ACROSS_THE_TOP_EDGE),
+                passTimings);
 
             assertThat(hasCorner(ribbon.bands().get(0), 1600.0, 3800.0))
                 .isTrue();
@@ -579,7 +599,8 @@ final class CellRibbonBuilderTest {
                     CELL_NARROWER_THAN_THE_BAND_SITE,
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                     STYLE_FORCING_A_BAND,
-                    NO_NAMES))
+                    NO_NAMES,
+                    passTimings))
                 .isEqualTo(CellRibbon.NONE);
         }
 
@@ -595,7 +616,8 @@ final class CellRibbonBuilderTest {
                 CELL_TOO_NARROW_FOR_THE_PAD_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE_FORCING_A_BAND,
-                NO_NAMES);
+                NO_NAMES,
+                passTimings);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -614,7 +636,8 @@ final class CellRibbonBuilderTest {
                 SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
-                NO_NAMES);
+                NO_NAMES,
+                passTimings);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -637,7 +660,8 @@ final class CellRibbonBuilderTest {
                 SQUARE_CELL_SITE,
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE_FORCING_A_BAND,
-                NAME_ACROSS_THE_WHOLE_CELL);
+                NAME_ACROSS_THE_WHOLE_CELL,
+                passTimings);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -657,7 +681,8 @@ final class CellRibbonBuilderTest {
                     SQUARE_CELL_SITE,
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                     STYLE,
-                    NO_NAMES))
+                    NO_NAMES,
+                    passTimings))
                 .isEqualTo(CellRibbon.NONE);
         }
     }

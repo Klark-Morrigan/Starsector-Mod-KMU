@@ -137,9 +137,14 @@ public final class CellRibbonSource {
      * @param drawnSystemId the system the cell draws as, or null for a cell with no star of its
      *                      own - which nothing paints, so it carries no band
      * @param fillPolygon   the cell's painted outline, the ring the band runs inside
+     * @param timings       the pass's running totals, which this cell's count and the geometry
+     *                      that follows it are charged to
      * @return the cell's baked band, or {@link CellRibbon#NONE} where it draws none
      */
-    public CellRibbon buildCellRibbon(String drawnSystemId, List<double[]> fillPolygon) {
+    public CellRibbon buildCellRibbon(
+            String drawnSystemId,
+            List<double[]> fillPolygon,
+            RibbonBakeTimings timings) {
 
         var site = resolveBandLayoutSite(drawnSystemId);
         var system = site == null ? null : systemById.get(drawnSystemId);
@@ -149,12 +154,22 @@ public final class CellRibbonSource {
         if (system == null) {
             return CellRibbon.NONE;
         }
+
+        // Charged apart from the geometry that follows it because it is the one phase of a bake
+        // that grows with what the systems hold rather than with the cells: the claim mechanic's
+        // count walks a system's whole market list, so a sector's colonies move this and the
+        // cells' own ring work by different factors.
+        var planStart = System.nanoTime();
+        var plan = planner.planSystemRibbon(system);
+        timings.addPlanNanos(System.nanoTime() - planStart);
+
         return CellRibbonBuilder.buildCellRibbon(
             fillPolygon,
             site,
-            planner.planSystemRibbon(system),
+            plan,
             style,
-            nameBoxes);
+            nameBoxes,
+            timings);
     }
 
     /**

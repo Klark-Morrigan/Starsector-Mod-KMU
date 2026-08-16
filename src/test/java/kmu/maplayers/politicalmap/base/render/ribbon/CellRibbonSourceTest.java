@@ -65,6 +65,10 @@ final class CellRibbonSourceTest {
     private static final RibbonPlan ANY_PLAN =
         new RibbonPlan(List.of(new RibbonSegment(BAND_COLOUR, 1)));
 
+    // Where a pass charges what its cells cost it. Handed in and never read back here: which
+    // cells are offered a band at all is what these cases pin, not what one takes to bake.
+    private final RibbonBakeTimings passTimings = new RibbonBakeTimings();
+
     // The player's knobs stand in for the whole settings class here, so the switch under test is
     // read from a stub rather than from a LunaLib the test JVM has no game to load.
     private MockedStatic<KmuPoliticalMapSettings> settingsMock;
@@ -106,7 +110,7 @@ final class CellRibbonSourceTest {
             // system, and most of the sector is cells nobody paints.
             var plannerMock = mock(SystemRibbonPlanner.class);
 
-            buildWith(plannerMock).buildCellRibbon(UNPAINTED_SYSTEM, SQUARE_CELL);
+            buildWith(plannerMock).buildCellRibbon(UNPAINTED_SYSTEM, SQUARE_CELL, passTimings);
 
             verify(plannerMock, never())
                 .planSystemRibbon(any());
@@ -171,7 +175,7 @@ final class CellRibbonSourceTest {
 
             var plannerMock = mock(SystemRibbonPlanner.class);
 
-            buildWith(plannerMock).buildCellRibbon(PAINTED_SYSTEM, SQUARE_CELL);
+            buildWith(plannerMock).buildCellRibbon(PAINTED_SYSTEM, SQUARE_CELL, passTimings);
 
             verify(plannerMock, never())
                 .planSystemRibbon(any());
@@ -218,7 +222,8 @@ final class CellRibbonSourceTest {
     }
 
     private CellRibbon buildFor(String drawnSystemId) {
-        return buildWith(system -> ANY_PLAN).buildCellRibbon(drawnSystemId, SQUARE_CELL);
+        return buildWith(system -> ANY_PLAN)
+            .buildCellRibbon(drawnSystemId, SQUARE_CELL, passTimings);
     }
 
     private CellRibbonPath traceFor(String drawnSystemId) {
