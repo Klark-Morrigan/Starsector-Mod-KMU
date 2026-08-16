@@ -19,18 +19,27 @@ import org.apache.log4j.Logger;
 
 /**
  * Composes the political map's map-overlay layers over the {@link PoliticalMapCache}'s current
- * draw lists, bottom to top: the base view (the normal territories, or the debug border-tracing
- * overlay when it has replaced them), then the hover highlight, then the cluster-anchor debug
- * overlay, then the per-cell presence bands, then the debug band-path overlay across them, then
- * the faction names. The debug facilities compose rather than one hiding the other - the anchor
- * overlay layers over whichever base view drew - and each layer draws only under its own toggle.
+ * draw lists, in one canonical order, bottom to top: the fills (or the debug border-tracing overlay
+ * where it has replaced the base view), then the borders, then the hover highlight, then the
+ * cluster-anchor debug overlay, then the per-cell presence bands, then the debug band-path overlay
+ * across them, then the faction names. That order is fixed here and is not the player's - it is
+ * what makes each sub-layer legible against the ones under it - and each layer still draws only
+ * under its own toggle, the debug facilities composing rather than one hiding the other.
  *
- * <p>That stack is emitted one band at a time, because the map can put its own drawing between two
- * of the layers: the map holds its own nebula icons, drawn over the sector as a large sprite under
- * Starscape, and the presence bands and the faction names are the sub-layers that have to clear
- * them - both being read rather than merely seen. Which band a sub-layer belongs to is decided here
- * and nowhere else - the surfaces above only say which band they are painting, and the geometry
- * below is emitted the same way whichever band asks for it.
+ * <p>The stack is emitted one band at a time, because the map can put its own drawing between two
+ * of the layers: the map holds its own nebula icons, drawn over the sector as a large blended
+ * sprite under Starscape, so a sub-layer is either dimmed by that haze or clear of it. Which side
+ * each lands on is the player's, read per pass as a {@link PoliticalMapBandLayout} and asked of it
+ * per sub-layer; the surfaces above only say which band they are painting, and the geometry below
+ * is emitted the same way whichever band asks for it.
+ *
+ * <p>Three sub-layers have no choice of their own and ride with one that does, because each is only
+ * a picture in the company of what it is drawn against. The contested hatch is half of a cluster's
+ * fill and travels inside it. The hover halo and cell wash brighten the fill under the cursor, so
+ * they follow the fills - left beneath while the fills went above, they would be painted over and
+ * light nothing. The cluster anchors and the border-tracing overlay annotate or replace the base
+ * view, so they follow it, the tracing overlay having no split of its own to honour: it replaces
+ * fills and borders together in one pass.
  */
 final class PoliticalMapOverlayRenderer {
     private static final Logger LOG = Global.getLogger(PoliticalMapOverlayRenderer.class);
@@ -54,103 +63,107 @@ final class PoliticalMapOverlayRenderer {
 
         logFirstRenderOnce(cache, factor, alphaMult);
 
-        switch (band) {
-            case BENEATH_STARSCAPE_NEBULAE -> renderTerritoryBand(cache, factor, alphaMult);
-            case ABOVE_STARSCAPE_NEBULAE -> renderClearOfNebulaeBand(cache, factor, alphaMult);
+        var layout = PoliticalMapBandLayout.readChosenLayout();
 
-            // A switch statement over an enum is not checked for exhaustiveness, so a band added
-            // later would compile clean here and simply paint nothing - an overlay silently missing
-            // a layer, which is the one failure this class can produce that nothing else reports.
-            // Throwing turns that into a crash on the first frame the new band is asked for.
-            default -> throw new IllegalStateException("Unhandled map overlay band: " + band);
-        }
-    }
-
-    // Everything that reads as an area, and so survives the nebula fog being drawn over it: the
-    // territories themselves, the hover feedback that traces them, and the debug overlays that
-    // replace or annotate them. They travel together because they are one picture - a highlight
-    // lifted clear of the fill it brightens would light nothing, and a border trace read against a
-    // fill it no longer sits on top of.
-    private void renderTerritoryBand(PoliticalMapCache cache, float factor, float alphaMult) {
+        // The canonical stack, bottom to top, each entry gated on whether the band it was placed in
+        // is the one being painted. Written out in order in one pass rather than one method per
+        // band, because the order between the sub-layers is what this class settles and the split
+        // between the bands is no longer settled here at all - a pair of band methods would have to
+        // state the order twice and could state it two ways.
+        var isPaintingFills = layout.fillBand() == band;
+        var isPaintingBorders = layout.borderBand() == band;
 
         // Swap production and debug base render on which view the cache built: the debug overlay
         // replaces the normal render, and the cache built exactly one of the two.
         if (cache.isDebug()) {
-            ClusterBorderStageRenderer.renderOnMap(
-                cache.getBorderStageOverlay(),
-                factor,
-                alphaMult);
+            if (isPaintingFills) {
+                ClusterBorderStageRenderer.renderOnMap(
+                    cache.getBorderStageOverlay(),
+                    factor,
+                    alphaMult);
+            }
         } else {
-            // Back to back, fills under borders: the framework hands the two out separately so a
-            // caller can put its own drawing between them, and this band puts nothing between them
-            // - a fill drawn over its own border would leave a blank cell.
-            ClusterRenderer.renderFillsOnMap(
-                cache.getTerritories(),
-                factor,
-                alphaMult);
+            if (isPaintingFills) {
+                ClusterRenderer.renderFillsOnMap(
+                    cache.getTerritories(),
+                    factor,
+                    alphaMult);
+            }
 
-            ClusterRenderer.renderBordersOnMap(
-                cache.getTerritories(),
-                factor,
-                alphaMult);
+            // After the fills wherever the two meet, which the layout guarantees: the borders can
+            // be lifted clear of a fogged fill, but never sunk under their own fill.
+            if (isPaintingBorders) {
+                ClusterRenderer.renderBordersOnMap(
+                    cache.getTerritories(),
+                    factor,
+                    alphaMult);
+            }
 
-            // Over the territories it lights up, so the halo reads off the frontier it traces
-            // and the wash brightens the fill beneath it rather than being painted over. Only
-            // under the production view: the debug overlay replaced the draw lists the highlight
-            // would trace, and the hover has nothing to resolve against. The frame's draw lists
-            // are wrapped as the highlight's source, so the framework's pass asks this layer what
-            // the cursor is on rather than reading the political model itself.
+            // Only under the production view: the debug overlay replaced the draw lists the
+            // highlight would trace, and the hover has nothing to resolve against.
             //
             // Gated on the effects switches alone, though the hover it reads may have been
             // published for the box's sake: with only the tooltip on, the cursor is still resolved
             // every frame and nothing may be painted over the map for it.
-            if (PoliticalMapHoverGates.isHoverEffectsEnabled()) {
-                hoverHighlightRenderer.renderOnMap(
-                    new PoliticalMapHoverHighlightSource(cache.getTerritories()),
-                    cache.getTerritories().getGlobalStyle().hoverHighlight(),
-                    MapHoverState.getInstance().getHover(),
-                    factor,
-                    alphaMult);
+            if (isPaintingFills && PoliticalMapHoverGates.isHoverEffectsEnabled()) {
+                renderHoverHighlight(cache, factor, alphaMult);
             }
         }
+
         // The anchor overlay layers over whichever base view just drew - independent of the swap
         // above, so the two debug toggles compose. Gated on its own toggle here (not by the list
         // being empty): the placements are also built for the faction names, so the list can be
         // non-empty while the debug overlay is off.
-        if (KmuPoliticalMapSettings.getPoliticalMapShowClusterAnchors()) {
+        if (isPaintingFills && KmuPoliticalMapSettings.getPoliticalMapShowClusterAnchors()) {
             ClusterAnchorRenderer.renderOnMap(cache.getClusterAnchors(), factor, alphaMult);
+        }
+
+        // The debug overlay replaced the draw lists the bands were baked into, so there is nothing
+        // to paint them from - the same reason the hover feedback stands down under it.
+        if (layout.ribbonBand() == band && !cache.isDebug()) {
+            renderPresenceBands(cache, factor, alphaMult);
+        }
+
+        // Last of the stack, so a name wins where it meets a band: a name says which bloc a whole
+        // territory belongs to, which is the coarser statement of the two and the one a player is
+        // reading the map for. An empty-list check when the name choice draws none.
+        if (layout.labelBand() == band) {
+            LabelRenderer.renderOnMap(cache.getFactionLabels(), factor, alphaMult);
         }
     }
 
-    // Everything that has to be read rather than merely seen, and so cannot afford to sit under the
-    // map's nebula fog: the per-cell presence bands, and the faction names over them. Both draw
-    // - where a surface exists to put them there - over the map's nebulae, while still staying
-    // beneath the vanilla star and constellation names the map draws after every terrain pass.
-    //
-    // The names go last of the map passes, so a name wins where it meets a band: a name says which
-    // bloc a whole territory belongs to, which is the coarser statement of the two and the one a
-    // player is reading the map for. Each is an empty-list check when its own feature is off - the
-    // names when the name choice draws none, the bands on the cells where no rival is present.
-    private void renderClearOfNebulaeBand(PoliticalMapCache cache, float factor, float alphaMult) {
-        // The debug overlay replaced the draw lists the bands were baked into, so there is nothing
-        // to paint them from - the same reason the hover feedback stands down under it.
-        if (!cache.isDebug()) {
+    // Over the territories it lights up, so the halo reads off the frontier it traces and the wash
+    // brightens the fill beneath it rather than being painted over. The frame's draw lists are
+    // wrapped as the highlight's source, so the framework's pass asks this layer what the cursor is
+    // on rather than reading the political model itself.
+    private void renderHoverHighlight(PoliticalMapCache cache, float factor, float alphaMult) {
+        hoverHighlightRenderer.renderOnMap(
+            new PoliticalMapHoverHighlightSource(cache.getTerritories()),
+            cache.getTerritories().getGlobalStyle().hoverHighlight(),
+            MapHoverState.getInstance().getHover(),
+            factor,
+            alphaMult);
+    }
 
-            CellPresenceRibbonRenderer.renderOnMap(
-                cache.getTerritories().getRibbonByCellId().values(),
-                factor,
-                alphaMult);
+    // The per-cell presence bands, and the debug overlay explaining them straight after: the path
+    // draws over the band it explains, so a band and the ring it was laid on read against each
+    // other. The overlay is gated by the paths themselves rather than by a settings read: the bake
+    // holds a path only while the player has it on, so an off toggle arrives as an empty map. The
+    // bands are gated the same way - a cell where no rival is present bakes none.
+    private static void renderPresenceBands(
+            PoliticalMapCache cache,
+            float factor,
+            float alphaMult) {
 
-            // Over the bands it explains, so a band and the path it was laid on read against each
-            // other. Gated by the paths themselves rather than by a settings read here: the bake
-            // holds a path only while the player has the overlay on, so an off toggle arrives as
-            // an empty map.
-            CellRibbonPathRenderer.renderOnMap(
-                cache.getTerritories().getRibbonPathByCellId().values(),
-                factor,
-                alphaMult);
-        }
-        LabelRenderer.renderOnMap(cache.getFactionLabels(), factor, alphaMult);
+        CellPresenceRibbonRenderer.renderOnMap(
+            cache.getTerritories().getRibbonByCellId().values(),
+            factor,
+            alphaMult);
+
+        CellRibbonPathRenderer.renderOnMap(
+            cache.getTerritories().getRibbonPathByCellId().values(),
+            factor,
+            alphaMult);
     }
 
     // One-shot diagnostic for the no-draw investigation. Guarded on isDebugEnabled so the once-flag

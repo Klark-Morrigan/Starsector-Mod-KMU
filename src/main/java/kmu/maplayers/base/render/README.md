@@ -39,7 +39,8 @@ which side it emits, and the renderer is handed that band per pass.
 
 The bands are named for their positions, not their contents. Which sub-layers ride above is a
 question about how the picture reads, and moving one is a change of which band a pass is emitted
-for - not a rename here. Today what is merely seen is beneath and what is read is above.
+for - not a rename here. A layer is free to hand that question to the player and emit each
+sub-layer for the band its own setting picked, which is what the political map does.
 
 ## One preparation per frame
 
@@ -124,8 +125,8 @@ would flatten the split back into a single pass beneath the fog.
 
 The move takes that terrain out of hyperspace for one advance, which is among the reasons
 `installAboveStarscapeNebulaeTerrain` stays a per-load sweep; its Javadoc has what that costs a save
-written inside the window. Losing the surface entirely costs the upper band alone - the geometry
-still paints, and the text stops appearing.
+written inside the window. Losing the surface entirely costs the upper band alone - the lower
+band still paints, and whatever the layer placed above it stops appearing.
 
 ## What is not here
 

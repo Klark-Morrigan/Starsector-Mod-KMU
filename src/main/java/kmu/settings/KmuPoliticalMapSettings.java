@@ -507,9 +507,9 @@ public final class KmuPoliticalMapSettings {
     private static final double DEFAULT_HOVER_WASH_OUTLINE_WIDTH = 2.0;
 
     // The picture the overlay painted before the depths became a choice: the cell geometry beneath
-    // the nebulae, the two readouts laid over cells - the bands and the names - above them. Shipping
-    // the defaults as that split is what lets a player who never opens this group see no change at
-    // all, which is the whole of what makes the group free to ignore.
+    // the nebulae, and the two readouts laid over cells - the bands and the names - above them.
+    // Shipping the defaults as that split is what lets a player who never opens this group see no
+    // change at all, which is the whole of what makes the group free to ignore.
     private static final NebulaDepthChoice DEFAULT_NEBULA_DEPTH_FILLS = NebulaDepthChoice.BELOW;
     private static final NebulaDepthChoice DEFAULT_NEBULA_DEPTH_BORDERS = NebulaDepthChoice.BELOW;
     private static final NebulaDepthChoice DEFAULT_NEBULA_DEPTH_RIBBONS = NebulaDepthChoice.ABOVE;

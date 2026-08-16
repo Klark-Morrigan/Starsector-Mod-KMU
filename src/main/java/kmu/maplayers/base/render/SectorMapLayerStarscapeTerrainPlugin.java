@@ -27,9 +27,10 @@ import java.util.function.BooleanSupplier;
  *
  * <p>It paints the lower band alone. Starscape is the mode that draws the map's nebula icons as a
  * large sprite laid over the sector, and they fall between this surface's pass and
- * {@link SectorMapLayerAboveStarscapeNebulaeTerrainPlugin}'s, so the parts of the overlay that read
- * through fog are emitted here and the parts that do not are emitted there. Painting the lower band
- * also makes this the surface that prepares the frame, the inherited pass tying the two together.
+ * {@link SectorMapLayerAboveStarscapeNebulaeTerrainPlugin}'s - which is the whole of what the split
+ * is for, and the whole of what either surface knows about it. Which parts of an overlay are emitted
+ * on which side is the drawing layer's answer, not a surface's. Painting the lower band also makes
+ * this the surface that prepares the frame, the inherited pass tying the two together.
  *
  * <p>Subclassing is what keeps the surfaces one renderer: the dispatch to the active layer's
  * renderer is inherited, so a change to what any layer draws reaches all of them without any surface
@@ -39,7 +40,7 @@ import java.util.function.BooleanSupplier;
  */
 public class SectorMapLayerStarscapeTerrainPlugin extends SectorMapLayerTerrainPlugin {
 
-    // Everything that reads as an area, which is what survives having fog drawn over it.
+    // The band the fog is laid over, whatever the drawing layer chose to emit into it.
     private static final List<MapOverlayBand> BENEATH_BAND =
         List.of(MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 

@@ -12,23 +12,24 @@ package kmu.maplayers.base.render;
  * because Starscape is the only look with a surface above the nebulae at all - the schematic map
  * owns one icon and so paints both bands in one pass, below them, exactly as it always has.
  *
- * <p>The bands are named for their positions, not their contents. What rides above is a question
- * about how the picture reads, and the answer is expected to move: naming them for their contents
- * would make every such move a rename of the seam that carries them.
+ * <p>The bands are named for their positions, not their contents, and no inventory of what rides
+ * where belongs here: what a fogged sub-layer costs is a question about how the picture reads, and
+ * a layer may well hand the answer to the player. What each band is remains fixed however its
+ * contents move, which is exactly what naming them for their contents would have given up.
  */
 public enum MapOverlayBand {
 
     /**
-     * Under the nebulae: everything that reads as an area - the fills, the contested hatch, the
-     * cluster borders, and the hover feedback that traces them. Fog over a fill dims it without
-     * costing it its meaning, which is what makes this the band with room for the geometry.
+     * Under the nebulae, so whatever is emitted here is dimmed by them - one large blended sprite
+     * across the sector under Starscape, ordinary nebula terrain otherwise. Painted first, and in
+     * every map look.
      */
     BENEATH_STARSCAPE_NEBULAE,
 
     /**
-     * Over the nebulae, and still under the vanilla star and constellation names: the text. A name
-     * stops being readable well before a fill stops reading as an area, which is what earns the
-     * labels the clearer band.
+     * Over the nebulae, and still under the vanilla star and constellation names: whatever is
+     * emitted here reads at full strength. Painted last, and only where a surface exists to put it
+     * there - the schematic map owns one terrain icon and so paints both bands back to back.
      */
     ABOVE_STARSCAPE_NEBULAE
 }

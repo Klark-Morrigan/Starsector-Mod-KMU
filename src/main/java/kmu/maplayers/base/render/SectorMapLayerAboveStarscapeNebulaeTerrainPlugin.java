@@ -19,7 +19,7 @@ import java.util.function.BooleanSupplier;
  * that surface is always reached first - it is present in every save the map is drawn from, and its
  * icon is always seeded ahead of this one, which is the same ordering that puts this pass above the
  * nebulae. Should this one ever paint first regardless, it paints the previous frame's geometry: one
- * frame of lag in the names, and no double preparation.
+ * frame of lag in whatever the layer put above, and no double preparation.
  *
  * <p>Being drawn above the nebulae is not something this class arranges. Its icon is seeded with
  * every other hyperspace entity, ahead of the nebulae the widget appends per map open, and it is
@@ -30,8 +30,7 @@ import java.util.function.BooleanSupplier;
 public class SectorMapLayerAboveStarscapeNebulaeTerrainPlugin
         extends SectorMapLayerStarscapeTerrainPlugin {
 
-    // The text alone: the sub-layer that stops being readable under fog well before a fill stops
-    // reading as an area.
+    // The band clear of the fog, whatever the drawing layer chose to emit into it.
     private static final List<MapOverlayBand> ABOVE_BAND =
         List.of(MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 

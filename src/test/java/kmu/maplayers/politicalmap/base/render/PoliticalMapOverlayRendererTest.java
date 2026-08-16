@@ -12,6 +12,7 @@ import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellPresenceRibbonRenderer;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.NebulaDepthChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,15 +28,22 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins which sub-layer belongs to which band, the one thing this compositor decides that the map can
- * see. Under Starscape the two bands are painted from separate terrain surfaces with the map's own
- * nebulae drawn between them, so a sub-layer emitted for the wrong band is drawn on the wrong side of
- * the fog - and there is nothing in the frame's own output to say so.
+ * Pins that each sub-layer is emitted in the band its own setting placed it in, which is the one
+ * thing this compositor decides that the map can see. Under Starscape the two bands are painted from
+ * separate terrain surfaces with the map's own nebulae drawn between them, so a sub-layer emitted for
+ * the wrong band is drawn on the wrong side of the fog - and there is nothing in the frame's own
+ * output to say so.
+ *
+ * <p>Every test states the layout it drives with, including the one that states the shipped split:
+ * with the placement now the player's, a routing fault and a taste change look alike from inside a
+ * single frame, and only a layout asked for up front tells them apart. Where the layout is settled
+ * and which pairings it refuses is {@code PoliticalMapBandLayoutTest}'s.
  *
  * <p>The emitting passes are mocked out: each is a static GL call that runs only in-engine, and what
  * they draw is their own to cover. What is asserted here is which of them is reached.
@@ -59,6 +67,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
+                chooseTheShippedDepths(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -93,6 +102,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
+                chooseTheShippedDepths(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -125,6 +135,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
+                chooseTheShippedDepths(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -160,6 +171,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
+                chooseTheShippedDepths(layerSettingsMock);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 // Built inside the construction mock, since the highlight renderer is a field this
@@ -188,6 +200,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
+                chooseTheShippedDepths(layerSettingsMock);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 new PoliticalMapOverlayRenderer().renderOnMap(
@@ -218,6 +231,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
+                chooseTheShippedDepths(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -247,6 +261,7 @@ final class PoliticalMapOverlayRendererTest {
                     var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
+                chooseTheShippedDepths(layerSettingsMock);
                 silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
 
                 overlayRenderer.renderOnMap(
@@ -260,6 +275,198 @@ final class PoliticalMapOverlayRendererTest {
 
                 labelRendererMock.verify(() ->
                     LabelRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+            }
+        }
+
+        @Test
+        void renderOnMapEmitsTheTerritoriesAboveTheNebulaeWhereTheFillsWereRaised() {
+            // The whole of what the setting buys, and the half that cannot be read off the shipped
+            // split: the geometry drawn clear of the fog rather than through it. The borders come
+            // with the fills whatever the borders row says, which is the layout's rule showing here
+            // as the picture it exists to protect.
+            try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                chooseTheDepths(
+                    layerSettingsMock,
+                    NebulaDepthChoice.ABOVE,
+                    NebulaDepthChoice.BELOW,
+                    NebulaDepthChoice.ABOVE,
+                    NebulaDepthChoice.ABOVE);
+                silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
+
+                overlayRenderer.renderOnMap(
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
+                    MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
+
+                clusterRendererMock.verify(() ->
+                    ClusterRenderer.renderFillsOnMap(any(), anyFloat(), anyFloat()));
+                clusterRendererMock.verify(() ->
+                    ClusterRenderer.renderBordersOnMap(any(), anyFloat(), anyFloat()));
+            }
+        }
+
+        @Test
+        void renderOnMapLeavesTheTerritoriesOutOfTheBandBeneathTheNebulaeWhereTheFillsWereRaised() {
+            // The other half of a move: a sub-layer that arrived in its new band while still being
+            // emitted in the old one is drawn twice, which on a translucent fill reads as one
+            // painted at twice the opacity the player set.
+            try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                chooseTheDepths(
+                    layerSettingsMock,
+                    NebulaDepthChoice.ABOVE,
+                    NebulaDepthChoice.BELOW,
+                    NebulaDepthChoice.ABOVE,
+                    NebulaDepthChoice.ABOVE);
+                silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
+
+                overlayRenderer.renderOnMap(
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
+                    MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+
+                clusterRendererMock
+                    .verifyNoInteractions();
+            }
+        }
+
+        @Test
+        void renderOnMapEmitsTheBordersAloneInTheBandTheyWereRaisedTo() {
+            // The pairing the layout does offer, and the one the compositor could most easily fail
+            // to honour by treating the geometry as a single sub-layer: borders lifted clear of a
+            // fill left in the fog.
+            try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                chooseTheDepths(
+                    layerSettingsMock,
+                    NebulaDepthChoice.BELOW,
+                    NebulaDepthChoice.ABOVE,
+                    NebulaDepthChoice.ABOVE,
+                    NebulaDepthChoice.ABOVE);
+                silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
+
+                overlayRenderer.renderOnMap(
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
+                    MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
+
+                clusterRendererMock.verify(() ->
+                    ClusterRenderer.renderBordersOnMap(any(), anyFloat(), anyFloat()));
+
+                clusterRendererMock.verify(
+                    () -> ClusterRenderer.renderFillsOnMap(any(), anyFloat(), anyFloat()),
+                    never());
+            }
+        }
+
+        @Test
+        void renderOnMapEmitsThePresenceBandsAndTheFactionNamesBeneathTheNebulaeWhereLowered() {
+            // The two readouts moved the other way. They are the sub-layers a player is most likely
+            // to move - the fog is the reason they were placed above in the first place - so a
+            // routing fault here is one the shipped split would never show.
+            try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var labelRendererMock = mockStatic(LabelRenderer.class);
+                    var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
+                    var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                chooseTheDepths(
+                    layerSettingsMock,
+                    NebulaDepthChoice.BELOW,
+                    NebulaDepthChoice.BELOW,
+                    NebulaDepthChoice.BELOW,
+                    NebulaDepthChoice.BELOW);
+                silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
+
+                overlayRenderer.renderOnMap(
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
+                    MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+
+                ribbonRendererMock.verify(() ->
+                    CellPresenceRibbonRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+
+                labelRendererMock.verify(() ->
+                    LabelRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+            }
+        }
+
+        @Test
+        void renderOnMapCarriesTheHoverHighlightAndTheAnchorsWithTheRaisedFills() {
+            // Neither has a setting of its own, and neither survives being left behind: a halo under
+            // the fill it brightens lights nothing, and anchors mark placements on a base view that
+            // is no longer beneath them. Both switches are open, so what is observed is the band
+            // they were carried to rather than the toggles.
+            try (var hoverRendererConstructionMock = mockConstruction(HoverHighlightRenderer.class);
+                    var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
+                    var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                chooseTheDepths(
+                    layerSettingsMock,
+                    NebulaDepthChoice.ABOVE,
+                    NebulaDepthChoice.ABOVE,
+                    NebulaDepthChoice.ABOVE,
+                    NebulaDepthChoice.ABOVE);
+                openTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
+
+                new PoliticalMapOverlayRenderer().renderOnMap(
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
+                    MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
+
+                anchorRendererMock.verify(() ->
+                    ClusterAnchorRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+
+                verify(hoverRendererConstructionMock.constructed().get(0))
+                    .renderOnMap(any(), any(), any(), anyFloat(), anyFloat());
+            }
+        }
+
+        @Test
+        void renderOnMapCarriesTheDebugBorderStageWithTheRaisedFills() {
+            // The tracing overlay replaces fills and borders in one pass, so it has no split of its
+            // own to honour and follows the view it stands in for. Left on the fills' shipped band
+            // while the fills rose, a debug frame would paint on the far side of the fog from every
+            // production one it is compared against.
+            try (var borderStageRendererMock = mockStatic(ClusterBorderStageRenderer.class);
+                    var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var labelRendererMock = mockStatic(LabelRenderer.class);
+                    var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                chooseTheDepths(
+                    layerSettingsMock,
+                    NebulaDepthChoice.ABOVE,
+                    NebulaDepthChoice.ABOVE,
+                    NebulaDepthChoice.ABOVE,
+                    NebulaDepthChoice.ABOVE);
+                silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, layerSettingsMock);
+
+                overlayRenderer.renderOnMap(
+                    buildDebugCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
+                    MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
+
+                borderStageRendererMock.verify(() ->
+                    ClusterBorderStageRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+
+                clusterRendererMock
+                    .verifyNoInteractions();
             }
         }
     }
@@ -294,6 +501,44 @@ final class PoliticalMapOverlayRendererTest {
         layerSettingsMock
             .when(KmuPoliticalMapSettings::getPoliticalMapShowClusterAnchors)
             .thenReturn(false);
+    }
+
+    // The split the settings ship with: the cell geometry beneath the map's nebulae, the two
+    // readouts laid over cells above them. Stated rather than left to the settings class, whose
+    // reads are stood in for here - and stating it is what makes the swapped-layout tests below a
+    // comparison rather than each a picture of its own.
+    private static void chooseTheShippedDepths(
+            MockedStatic<KmuPoliticalMapSettings> layerSettingsMock) {
+
+        chooseTheDepths(
+            layerSettingsMock,
+            NebulaDepthChoice.BELOW,
+            NebulaDepthChoice.BELOW,
+            NebulaDepthChoice.ABOVE,
+            NebulaDepthChoice.ABOVE);
+    }
+
+    // The four depth choices the layout for a pass is read from, in the order the layout states
+    // them: fills, borders, presence bands, names.
+    private static void chooseTheDepths(
+            MockedStatic<KmuPoliticalMapSettings> layerSettingsMock,
+            NebulaDepthChoice fillDepth,
+            NebulaDepthChoice borderDepth,
+            NebulaDepthChoice ribbonDepth,
+            NebulaDepthChoice labelDepth) {
+
+        layerSettingsMock
+            .when(KmuPoliticalMapSettings::getPoliticalMapFillNebulaDepth)
+            .thenReturn(fillDepth);
+        layerSettingsMock
+            .when(KmuPoliticalMapSettings::getPoliticalMapBorderNebulaDepth)
+            .thenReturn(borderDepth);
+        layerSettingsMock
+            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonNebulaDepth)
+            .thenReturn(ribbonDepth);
+        layerSettingsMock
+            .when(KmuPoliticalMapSettings::getPoliticalMapLabelNebulaDepth)
+            .thenReturn(labelDepth);
     }
 
     // A cache holding a built, non-debug frame with nothing in it. The bands are decided on the band
