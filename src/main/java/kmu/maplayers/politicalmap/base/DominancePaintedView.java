@@ -85,7 +85,7 @@ public interface DominancePaintedView extends PoliticalMapView {
         // the gate all read against the one snapshot rather than three live samples of a set that
         // moves (the alliances view samples Nexerelin).
         var grouping = resolveGrouping();
-        var pass = new DominancePass(rules, shouldIncludeUndiscoveredMarkets, grouping);
+        var pass = DominancePass.over(sector, rules, shouldIncludeUndiscoveredMarkets, grouping);
 
         return new ListPicker<>(
             buildSelectableBlocs(

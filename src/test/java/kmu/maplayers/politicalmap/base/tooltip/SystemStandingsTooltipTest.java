@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
@@ -81,8 +82,10 @@ final class SystemStandingsTooltipTest {
         new StationWeighting(false, 1.0, 0.5, 0.5),
         new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
 
+    // Opened over no sector: the shared shape reads no colonies of its own, so the set behind the
+    // pass is nothing any case here has an opinion about.
     private static final DominancePass ANY_PASS =
-        new DominancePass(ANY_RULES, false, VIEW_GROUPING);
+        DominancePass.over(null, ANY_RULES, false, VIEW_GROUPING);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final SystemStandingsTooltip tooltip =
@@ -149,7 +152,7 @@ final class SystemStandingsTooltipTest {
             // The shared default, and what the glance box relies on: a box with nothing further to say
             // overrides nothing and every faction it lists reads as its line alone.
             assertThat(tooltip
-                    .createFactionAccountResolver(sectorMock, systemMock, ANY_PASS)
+                    .createFactionAccountResolver(systemMock, ANY_PASS)
                     .resolveAccountEntries(new FactionStanding("hegemony", 900)))
                 .isEmpty();
         }
@@ -314,10 +317,14 @@ final class SystemStandingsTooltipTest {
             // The status has to admit exactly the colonies the standings were ranked through: judged
             // under the narrower filter, a system revealed only by the dev knob would be called
             // unpopulated directly above the rows scoring the faction holding it.
+            // Built through the constructor rather than the static entry: the seams fixture stands
+            // in for this class's statics, so a pass assembled through one of them here would be
+            // answered by the stand-in rather than built.
             StandingsTooltipSeamsFake.stubPass(new DominancePass(
                 ANY_RULES,
                 true,
-                HolderGrouping.identity()));
+                HolderGrouping.identity(),
+                new SystemColoniesIndex(null)));
 
             tooltip.buildBodySections(sectorMock, systemMock);
 
@@ -394,7 +401,6 @@ final class SystemStandingsTooltipTest {
 
         @Override
         protected FactionAccountResolver createFactionAccountResolver(
-                SectorAPI sector,
                 StarSystemAPI system,
                 DominancePass pass) {
 

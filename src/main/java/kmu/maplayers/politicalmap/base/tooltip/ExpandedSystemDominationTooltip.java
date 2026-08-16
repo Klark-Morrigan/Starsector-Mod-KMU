@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
@@ -48,26 +47,24 @@ public final class ExpandedSystemDominationTooltip extends SystemStandingsToolti
 
     @Override
     protected FactionAccountResolver createFactionAccountResolver(
-            SectorAPI sector,
             StarSystemAPI system,
             DominancePass pass) {
 
         // Read once for the whole box rather than per faction: every colony in the system comes out of
-        // the one walk of its economy, which is what guarantees no two factions are explained from
+        // the pass's one walk of it, which is what guarantees no two factions are explained from
         // different reads of it - and the walk is the most expensive thing a hover does.
+        var colonies = pass.readColoniesIn(system);
         var breakdownsByFactionId = KnownMarketFootprints.readBreakdownByFaction(
-            sector,
-            system,
+            colonies,
             pass.rules(),
             pass.shouldIncludeUndiscoveredMarkets());
 
-        // The colonies the pass could not weigh, read beside the ones it did. They are a second read
-        // rather than a second kind of breakdown because the pass must go on seeing exactly the
-        // markets it sees today: a colony the economy does not list has nothing to weigh, and one
-        // admitted here would hand its owner weight nobody worked out.
+        // The colonies the pass could not weigh, selected beside the ones it did. They stay a
+        // separate read rather than becoming a second kind of breakdown because the pass must go on
+        // seeing exactly the markets it sees today: a colony the economy does not list has nothing
+        // to weigh, and one admitted there would hand its owner weight nobody worked out.
         var unweighedColoniesByFactionId = KnownMarketFootprints.readUnweighedColoniesByFaction(
-            sector,
-            system,
+            colonies,
             pass.shouldIncludeUndiscoveredMarkets());
 
         // A faction the reads found nothing for is listed as its line alone rather than as a heading

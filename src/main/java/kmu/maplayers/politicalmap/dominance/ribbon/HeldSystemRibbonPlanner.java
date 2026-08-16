@@ -63,7 +63,7 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
 
         return new HeldSystemRibbonPlanner(
             sector,
-            DominancePass.readFromLunaSettings(grouping),
+            DominancePass.readFromLunaSettings(sector, grouping),
             inputs);
     }
 
@@ -87,7 +87,7 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
         if (sector == null || system == null || sector.getEconomy() == null) {
             return Optional.empty();
         }
-        var footprintByBlocId = pass.readBlocFootprints(sector, system);
+        var footprintByBlocId = pass.readBlocFootprints(system);
         if (footprintByBlocId.isEmpty()) {
             return Optional.empty();
         }

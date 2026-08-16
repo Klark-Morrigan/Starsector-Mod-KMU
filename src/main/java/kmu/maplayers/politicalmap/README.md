@@ -259,7 +259,8 @@ reads in the line's own colour rather than the qualifier's gold: the parentheses
 is an aside, and the gold is reserved for findings - the `hidden` flag, the claims box's `(core)` -
 which a disambiguation is not.
 That box lists one kind of colony no score above it accounts for: one the economy does not list,
-which the weight read has nothing to weigh. It comes from a second walk over the same colony filter
+which the weight read has nothing to weigh. It is the other half of the one colony set the weighed
+read selects from - the colonies the economy does not list
 (`KnownMarketFootprints.readUnweighedColoniesByFaction`), carried as an `EntityNameplate` alone rather
 than as a zeroed `MarketWeightBreakdown` - zero weight is not absence on this side, a weightless
 colony still marking presence and painting its system unopposed, so a value that could be summed into

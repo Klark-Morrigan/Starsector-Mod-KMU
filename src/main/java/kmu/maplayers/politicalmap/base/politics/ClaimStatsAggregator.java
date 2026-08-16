@@ -71,7 +71,7 @@ public final class ClaimStatsAggregator {
         for (var system : sector.getStarSystems()) {
             accumulateSystemClaim(statsByBlocId, system, pass, claimReader);
             if (hasEconomy) {
-                accumulateSystemMarketSizes(statsByBlocId, sector, system, pass);
+                accumulateSystemMarketSizes(statsByBlocId, system, pass);
             }
         }
         return statsByBlocId;
@@ -101,11 +101,10 @@ public final class ClaimStatsAggregator {
     // weight the read also carries means nothing to a layer painted by the claim mechanic.
     private static void accumulateSystemMarketSizes(
             Map<String, ClaimStats> statsByBlocId,
-            SectorAPI sector,
             StarSystemAPI system,
             DominancePass pass) {
 
-        for (var entry : pass.readBlocContributions(sector, system).entrySet()) {
+        for (var entry : pass.readBlocContributions(system).entrySet()) {
             var blocId = entry.getKey();
             statsByBlocId.put(
                 blocId,

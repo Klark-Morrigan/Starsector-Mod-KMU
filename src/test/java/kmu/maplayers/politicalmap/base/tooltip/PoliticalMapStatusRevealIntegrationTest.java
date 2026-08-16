@@ -15,6 +15,7 @@ import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
+import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
@@ -111,7 +112,9 @@ final class PoliticalMapStatusRevealIntegrationTest {
         // their own; stood in as empty, the status line is what both bodies are compared on.
         standingsMock = Mockito.mockStatic(SystemStandings.class);
         standingsMock
-            .when(() -> SystemStandings.rankByDominationScore(any(), any(), any()))
+            .when(() -> SystemStandings.rankByDominationScore(
+                any(StarSystemAPI.class),
+                any(DominancePass.class)))
             .thenReturn(List.of());
 
         when(systemMock.getPlanets())

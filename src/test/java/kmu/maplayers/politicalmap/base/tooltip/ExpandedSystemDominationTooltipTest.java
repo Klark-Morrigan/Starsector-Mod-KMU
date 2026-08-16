@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.entities.EntityNameplate;
+import kmlib.starsector.systems.SystemColonies;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
@@ -79,13 +80,15 @@ final class ExpandedSystemDominationTooltipTest {
         new StationWeighting(false, 3.0, 0.5, 0.5),
         new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
 
+    // Opened over no sector, so every pass here answers the empty colony set: what these cases are
+    // about is which set the box hands on and under which knobs, not what a walk would have found.
     private static final DominancePass ANY_PASS =
-        new DominancePass(ANY_RULES, false, VIEW_GROUPING);
+        DominancePass.over(null, ANY_RULES, false, VIEW_GROUPING);
 
     // The same pass with the dev reveal on, so a case can tell a read that carries the pass's own
     // reveal from one that hardcodes the ordinary answer - which every other case would agree with.
     private static final DominancePass REVEALED_PASS =
-        new DominancePass(ANY_RULES, true, VIEW_GROUPING);
+        DominancePass.over(null, ANY_RULES, true, VIEW_GROUPING);
 
     // Two factions of one bloc, so a case can tell "the faction's own colonies" from "the bloc's".
     private static final FactionStanding LEAD_MEMBER = new FactionStanding("hegemony", 6000);
@@ -135,7 +138,7 @@ final class ExpandedSystemDominationTooltipTest {
                 "tritachyon", List.of(buildBreakdown("Eventide", 5.0))));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
+                tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
 
             assertThat(readLabelTexts(accountResolver.resolveAccountEntries(LEAD_MEMBER)))
                 .containsExactly("Culann");
@@ -150,7 +153,7 @@ final class ExpandedSystemDominationTooltipTest {
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
 
             var colonyEntries = tooltip
-                .createFactionAccountResolver(sectorMock, systemMock, ANY_PASS)
+                .createFactionAccountResolver(systemMock, ANY_PASS)
                 .resolveAccountEntries(LEAD_MEMBER);
 
             assertThat(readLabelTexts(colonyEntries.get(0).children()))
@@ -164,7 +167,7 @@ final class ExpandedSystemDominationTooltipTest {
             stubBreakdowns(Map.of("tritachyon", List.of(buildBreakdown("Eventide", 5.0))));
 
             assertThat(tooltip
-                    .createFactionAccountResolver(sectorMock, systemMock, ANY_PASS)
+                    .createFactionAccountResolver(systemMock, ANY_PASS)
                     .resolveAccountEntries(LEAD_MEMBER))
                 .isEmpty();
         }
@@ -180,7 +183,7 @@ final class ExpandedSystemDominationTooltipTest {
                 List.of(UNLISTED_COLONY)));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
+                tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
 
             assertThat(readLabelTexts(accountResolver.resolveAccountEntries(LEAD_MEMBER)))
                 .containsExactly("Culann", "Galatia Academy");
@@ -196,7 +199,7 @@ final class ExpandedSystemDominationTooltipTest {
                 List.of(UNLISTED_COLONY)));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
+                tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
 
             assertThat(accountResolver.resolveAccountEntries(LEAD_MEMBER))
                 .isEmpty();
@@ -210,25 +213,24 @@ final class ExpandedSystemDominationTooltipTest {
             // through, or the box would explain a number with arithmetic that did not produce it.
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
 
-            tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
+            tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
 
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readBreakdownByFaction(
-                    sectorMock,
-                    systemMock,
+                    SystemColonies.NONE,
                     ANY_RULES,
                     false));
         }
 
         @Test
-        void createFactionAccountResolverWalksTheEconomyOnceHoweverManyFactionsHoldTheSystem() {
-            // Every faction's colonies come out of one walk: read per faction, two of them could be
-            // explained from different reads of the same economy, and the walk itself is the most
-            // expensive thing a hover does.
+        void createFactionAccountResolverReadsTheWeighedColoniesOnceForTheWholeBox() {
+            // Every faction's colonies come out of one read of the pass's colony set: read per
+            // faction, two of them could be explained from different selections over it, and the
+            // walk behind that set is the most expensive thing a hover does.
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
+                tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
 
             accountResolver.resolveAccountEntries(LEAD_MEMBER);
             accountResolver.resolveAccountEntries(OTHER_MEMBER);
@@ -237,8 +239,7 @@ final class ExpandedSystemDominationTooltipTest {
             // itself an invocation and an any()-matched count would take it for a second read.
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readBreakdownByFaction(
-                    sectorMock,
-                    systemMock,
+                    SystemColonies.NONE,
                     ANY_RULES,
                     false),
                 Mockito.times(1));
@@ -252,27 +253,26 @@ final class ExpandedSystemDominationTooltipTest {
             stubBreakdowns(Map.of());
             stubUnweighedColonies(Map.of());
 
-            tooltip.createFactionAccountResolver(sectorMock, systemMock, REVEALED_PASS);
+            tooltip.createFactionAccountResolver(systemMock, REVEALED_PASS);
 
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
-                    sectorMock,
-                    systemMock,
+                    SystemColonies.NONE,
                     true));
         }
 
         @Test
-        void createFactionAccountResolverWalksTheUnlistedColoniesOnceForTheWholeBox() {
-            // The second walk is a second economy read and costs what the first does, so it is paid
-            // for once per paint rather than once per faction listed - the same rule the weighed
-            // read is held to.
+        void createFactionAccountResolverReadsTheUnlistedColoniesOnceForTheWholeBox() {
+            // The unlisted colonies are a second selection over the same set, made once per paint
+            // rather than once per faction listed - the same rule the weighed read is held to, so
+            // neither can end up describing a system the other did not.
             stubBreakdowns(Map.of());
             stubUnweighedColonies(Map.of(
                 "hegemony",
                 List.of(UNLISTED_COLONY)));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(sectorMock, systemMock, ANY_PASS);
+                tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
 
             accountResolver.resolveAccountEntries(LEAD_MEMBER);
             accountResolver.resolveAccountEntries(OTHER_MEMBER);
@@ -281,8 +281,7 @@ final class ExpandedSystemDominationTooltipTest {
             // itself an invocation and an any()-matched count would take it for a second read.
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
-                    sectorMock,
-                    systemMock,
+                    SystemColonies.NONE,
                     false),
                 Mockito.times(1));
         }
@@ -316,18 +315,16 @@ final class ExpandedSystemDominationTooltipTest {
             .when(() -> KnownMarketFootprints.readBreakdownByFaction(
                 any(),
                 any(),
-                any(),
                 anyBoolean()))
             .thenReturn(breakdownsByFactionId);
     }
 
     // Stands in the second read, the colonies present that the economy does not list. Stubbed apart
-    // from the weighed ones because that is how the box reads them: two walks, so nothing an unlisted
-    // colony says can reach the pass.
+    // from the weighed ones because that is how the box reads them: two selections over the one set,
+    // so nothing an unlisted colony says can reach the pass.
     private void stubUnweighedColonies(Map<String, List<EntityNameplate>> coloniesByFactionId) {
         footprintsMock
             .when(() -> KnownMarketFootprints.readUnweighedColoniesByFaction(
-                any(),
                 any(),
                 anyBoolean()))
             .thenReturn(coloniesByFactionId);

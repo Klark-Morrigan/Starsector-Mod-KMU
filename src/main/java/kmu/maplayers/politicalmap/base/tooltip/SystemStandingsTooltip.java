@@ -65,8 +65,8 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
 
         // Ranks the hovered system under the active view's grouping and dominance rule - the same the
         // map paints under - so the tooltip's numbers and its bloc grouping match the fills exactly.
-        var pass = DominancePass.readFromLunaSettings(activeView.resolveGrouping());
-        var standings = SystemStandings.rankByDominationScore(sector, system, pass);
+        var pass = DominancePass.readFromLunaSettings(sector, activeView.resolveGrouping());
+        var standings = SystemStandings.rankByDominationScore(system, pass);
         var sections = new ArrayList<TooltipSection>();
 
         // What the system is comes before who holds it, so the standings below read as a contest over
@@ -84,7 +84,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             sector,
             standings,
             pass.grouping(),
-            createFactionAccountResolver(sector, system, pass)));
+            createFactionAccountResolver(system, pass)));
 
         return sections;
     }
@@ -103,7 +103,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         // nothing the player could see. Asked of the very line the box says that emptiness with,
         // under the same pass, so it can never offer to expand a system it has just called
         // unpopulated - which reading the economy a second way here would eventually allow.
-        var pass = DominancePass.readFromLunaSettings(activeView.resolveGrouping());
+        var pass = DominancePass.readFromLunaSettings(sector, activeView.resolveGrouping());
         if (SystemStatusRow
                 .resolveStatusRow(sector, system, pass.shouldIncludeUndiscoveredMarkets())
                 .isPresent()) {
@@ -128,15 +128,14 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
      * <p>Listing a faction as the line naming it is the ordinary answer and the default, so a box
      * with nothing further to say overrides nothing.
      *
-     * @param sector the live sector, whose economy and factions the account may read
      * @param system the star system under the cursor
-     * @param pass   the weighting rule, dev reveal, and grouping the ranking resolved under, so a box
-     *               reading further into the economy reads it under the same knobs
+     * @param pass   the weighting rule, dev reveal, grouping and colony walk the ranking resolved
+     *               under, so a box reading further into the system reads it under the same knobs
+     *               and off the same walk rather than repeating it
      * @return what to hang beneath each listed faction; {@link FactionAccountResolver#NO_ACCOUNT}
      *         leaves every one of them listed as its line alone
      */
     protected FactionAccountResolver createFactionAccountResolver(
-            SectorAPI sector,
             StarSystemAPI system,
             DominancePass pass) {
 

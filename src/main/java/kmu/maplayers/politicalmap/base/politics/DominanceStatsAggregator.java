@@ -69,7 +69,7 @@ public final class DominanceStatsAggregator {
         // The pass's own grouped read folds the footprint and the raw market size together (a bloc
         // holding markets in several systems, or an alliance's members, accumulates rather than
         // overwrites); the dominance rule then reads the footprint half of each folded contribution.
-        var contributionByBlocId = pass.readBlocContributions(sector, system);
+        var contributionByBlocId = pass.readBlocContributions(system);
 
         // The one winner among the system's present blocs; null only when no bloc is present here,
         // in which case the loop below has nothing to fold and the system contributes no stats.

@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
+
 import kmlib.testfixtures.starsector.systems.claims.ClaimReaderFake;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -38,8 +40,17 @@ final class ClaimStatsAggregatorIntegrationTest {
 
     // The claims view's own pass: identity grouping, since claims carry no alliance rollup. The
     // alliance test builds its own pass to prove the fold is still the pass's to decide.
-    private static final DominancePass CLAIMS_PASS =
-        new DominancePass(STABILITY_WEIGHTED, false, HolderGrouping.identity());
+    //
+    // Built per sector rather than shared as a constant, because a pass carries the walk of the
+    // sector it was opened over: one held across cases would answer a later case's system off an
+    // earlier case's sector, and the two commonly name their systems alike.
+    private static DominancePass buildClaimsPassOver(SectorAPI sector) {
+        return DominancePass.over(
+            sector,
+            STABILITY_WEIGHTED,
+            false, // Undiscovered markets are not included.
+            HolderGrouping.identity());
+    }
 
     @Nested
     class AggregateClaimStats {
@@ -59,7 +70,8 @@ final class ClaimStatsAggregatorIntegrationTest {
             claimReaderFake.setClaim("system-a", "hegemony");
             claimReaderFake.setClaim("system-b", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(sectorMock, CLAIMS_PASS, claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                    sectorMock, buildClaimsPassOver(sectorMock), claimReaderFake))
                 .containsExactly(entry("hegemony", new ClaimStats(2, 0)));
         }
 
@@ -78,7 +90,8 @@ final class ClaimStatsAggregatorIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(sectorMock, CLAIMS_PASS, claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                    sectorMock, buildClaimsPassOver(sectorMock), claimReaderFake))
                 .containsExactly(entry("hegemony", new ClaimStats(1, 8)));
         }
 
@@ -95,7 +108,8 @@ final class ClaimStatsAggregatorIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(sectorMock, CLAIMS_PASS, claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                    sectorMock, buildClaimsPassOver(sectorMock), claimReaderFake))
                 .containsExactly(entry("hegemony", new ClaimStats(1, 0)));
         }
 
@@ -113,7 +127,8 @@ final class ClaimStatsAggregatorIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("shared-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(sectorMock, CLAIMS_PASS, claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                    sectorMock, buildClaimsPassOver(sectorMock), claimReaderFake))
                 .containsExactly(
                     entry("hegemony", new ClaimStats(1, 0)),
                     entry("tritachyon", new ClaimStats(0, 4)));
@@ -140,7 +155,7 @@ final class ClaimStatsAggregatorIntegrationTest {
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                     sectorMock,
-                    new DominancePass(STABILITY_WEIGHTED, false, grouping),
+                    DominancePass.over(sectorMock, STABILITY_WEIGHTED, false, grouping),
                     claimReaderFake))
                 .containsExactly(entry("alliance-1", new ClaimStats(1, 3)));
         }
@@ -152,7 +167,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             var sectorMock = buildSectorWithSystems(List.of(), listSystemMarkets("empty-system"));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    sectorMock, CLAIMS_PASS, new ClaimReaderFake()))
+                    sectorMock, buildClaimsPassOver(sectorMock), new ClaimReaderFake()))
                 .isEmpty();
         }
 
@@ -165,14 +180,15 @@ final class ClaimStatsAggregatorIntegrationTest {
 
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(sectorMock, CLAIMS_PASS, claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                    sectorMock, buildClaimsPassOver(sectorMock), claimReaderFake))
                 .containsExactly(entry("hegemony", new ClaimStats(1, 0)));
         }
 
         @Test
         void aggregateClaimStatsIsEmptyForNullSector() {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    null, CLAIMS_PASS, new ClaimReaderFake()))
+                    null, buildClaimsPassOver(null), new ClaimReaderFake()))
                 .isEmpty();
         }
     }

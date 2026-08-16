@@ -15,8 +15,8 @@ import java.util.Map;
  * Resolves which faction owns each star system and in which colours that holder
  * paints.
  *
- * <p>The dominance-and-palette half of the holder pipeline: it takes the known
- * market footprints {@link KnownMarketFootprints} reads from the economy, asks
+ * <p>The dominance-and-palette half of the holder pipeline: it takes the footprints
+ * {@link KnownMarketFootprints} weighs out of the pass's colony set, asks
  * {@link SystemDominance} which faction holds the system, and resolves that
  * winner's authored UI shades into a {@link DominantHolder} the render layer draws.
  * Confining the winning holder's {@code FactionAPI} palette lookup here keeps the
@@ -77,7 +77,7 @@ public final class SectorPolitics {
             HolderGrouping grouping) {
         return resolveDominantHolderBySystemId(
             sector,
-            DominancePass.readFromLunaSettings(grouping));
+            DominancePass.readFromLunaSettings(sector, grouping));
     }
 
     /**
@@ -155,7 +155,7 @@ public final class SectorPolitics {
         return resolveDominantHolder(
             sector,
             system,
-            DominancePass.readFromLunaSettings(grouping));
+            DominancePass.readFromLunaSettings(sector, grouping));
     }
 
     /**
@@ -181,7 +181,7 @@ public final class SectorPolitics {
         if (sector == null || system == null || sector.getEconomy() == null) {
             return null;
         }
-        var footprintByBlocId = pass.readBlocFootprints(sector, system);
+        var footprintByBlocId = pass.readBlocFootprints(system);
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
             footprintByBlocId,
             pass.tieBreakFor(sector, system));

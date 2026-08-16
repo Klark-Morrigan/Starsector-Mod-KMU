@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
+import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.base.visibility.MapVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
@@ -105,16 +106,21 @@ public record PoliticalMapSectorSnapshot(
         var visibility = 0;
         var ownerBySystemId = new LinkedHashMap<String, String>();
 
+        // The scan's own colony walk, opened here and discarded with the scan: a snapshot has to
+        // read the sector as it stands at this moment, and an index outliving one would answer the
+        // next scan off the sector this one saw - which is precisely the change a scan exists to
+        // notice.
+        var colonies = new SystemColoniesIndex(sector);
+
         for (var system : sector.getStarSystems()) {
 
-            // One economy read per system, shared by both concerns: its emptiness
+            // One colony read per system, shared by both concerns: its emptiness
             // is the inhabitation flag membership needs, and its footprints are
             // what the dominance rule ranks. A null economy (early load) reads as
             // no markets rather than faulting.
             Map<String, MarketFootprint> footprintByFactionId = hasEconomy
                 ? KnownMarketFootprints.readByFaction(
-                    sector,
-                    system,
+                    colonies.readColoniesIn(system),
                     rules,
                     devToggles.isShowingAllFactions())
                 : Map.of();

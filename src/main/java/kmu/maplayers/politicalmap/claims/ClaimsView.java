@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.claims;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.hashing.Fingerprints;
-import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.VanillaClaimReader;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
@@ -50,10 +49,6 @@ public final class ClaimsView implements PoliticalMapView {
 
     /** The one shared instance; stateless, so every pass reuses it. */
     public static final ClaimsView INSTANCE = new ClaimsView();
-
-    // The claim source the picker's counts are read through - the same port the view's holder provider
-    // resolves its territory from, so the list and the map can never disagree on who claims what.
-    private final ClaimReader claimReader = new VanillaClaimReader();
 
     private ClaimsView() {
     }
@@ -182,13 +177,20 @@ public final class ClaimsView implements PoliticalMapView {
         // The grouping is resolved once and handed to both halves, so the numbers, the crest, and the
         // name all read against one snapshot rather than three live samples.
         var grouping = resolveGrouping();
-        var pass = new DominancePass(rules, shouldIncludeUndiscoveredMarkets, grouping);
+        var pass = DominancePass.over(sector, rules, shouldIncludeUndiscoveredMarkets, grouping);
 
+        // The claim half reads through the pass's own colony walk, so the two metrics cost one
+        // traversal of each system between them rather than one apiece - and are answered off the
+        // same reading of the sector, which is what keeps a claim count and a market size from
+        // describing a system at two different moments.
         return new ListPicker<>(
             buildSelectableBlocs(
                 sector,
                 grouping,
-                ClaimStatsAggregator.aggregateClaimStats(sector, pass, claimReader),
+                ClaimStatsAggregator.aggregateClaimStats(
+                    sector,
+                    pass,
+                    new VanillaClaimReader(pass.colonies())),
                 blocId -> true),
             ClaimSortMode.MODES);
     }

@@ -17,6 +17,7 @@ import com.fs.starfarer.api.util.DynamicStatsAPI;
 
 import kmlib.starsector.entities.EntityMapIcon;
 import kmlib.starsector.entities.EntityNameplate;
+import kmlib.starsector.systems.SystemColonies;
 
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Set;
 
@@ -179,6 +181,14 @@ class KnownMarketFootprintsIntegrationTest {
         return new RulesBuilder();
     }
 
+    // The sector's one system read as the shared colony set, which is what a pass hands the reads
+    // below. Posed through the real selection rather than a hand-built set, since what these cases
+    // exercise is the weighing of what that rule admits - a set assembled here could admit markets
+    // the rule never would and pin arithmetic over colonies no pass could produce.
+    private static SystemColonies readColoniesIn(SectorAPI sector) {
+        return SystemColonies.readColoniesIn(sector, buildOnlySystem(sector));
+    }
+
     @Nested
     class ReadByFaction {
 
@@ -188,8 +198,7 @@ class KnownMarketFootprintsIntegrationTest {
             // size 5 -> 5 grid units.
             var sector = buildSectorWith("owned-system", buildVisibleMarket(buildFaction("hegemony"), 5));
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build());
 
             assertThat(footprints)
@@ -211,8 +220,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildVisibleMarket(hegemony, 3));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -234,8 +242,7 @@ class KnownMarketFootprintsIntegrationTest {
 
             var sector = buildSectorWith("academy-system", supersededMarket, supersedingMarket);
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build());
 
             assertThat(footprints.get("independent").totalWeight())
@@ -258,8 +265,7 @@ class KnownMarketFootprintsIntegrationTest {
 
             var sector = buildSectorWith("contested-station-system", hegemonyMarket, pirateMarket);
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build());
 
             assertThat(footprints)
@@ -279,8 +285,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildMarketAtStability(buildFaction("hegemony"), 4, HALF_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -297,8 +302,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildMarketAtStability(buildFaction("hegemony"), 4, HALF_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withStabilityMaster(false).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -315,8 +319,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildMarketAtStability(buildFaction("hegemony"), 5, NO_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build());
 
             assertThat(footprints)
@@ -334,8 +337,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildMarketAtStability(buildFaction("hegemony"), 4, NO_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withNormalPenalty(0.5).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -351,8 +353,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildMarketAtStability(buildFaction("hegemony"), 3, 12.0f));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -368,8 +369,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildMarket(buildFaction("hegemony"), 6, true, false, false, FULL_STABILITY));
 
             assertThat(KnownMarketFootprints.readByFaction(
-                    sector,
-                    buildOnlySystem(sector),
+                    readColoniesIn(sector),
                     buildRules().build()))
                 .isEmpty();
         }
@@ -380,8 +380,7 @@ class KnownMarketFootprintsIntegrationTest {
             // real size 5, so it flags presence without skewing dominance.
             var sector = buildSectorWith("hidden-system", buildHiddenMarket(buildFaction("hegemony"), 5));
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -397,8 +396,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildHiddenMarketAtStability(buildFaction("hegemony"), 5, HALF_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -411,8 +409,7 @@ class KnownMarketFootprintsIntegrationTest {
             // colony: size 5 -> 5 grid units.
             var sector = buildSectorWith("hidden-system", buildHiddenMarket(buildFaction("hegemony"), 5));
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withHiddenMarketScaling(HiddenMarketScalingChoice.NORMAL).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -425,8 +422,7 @@ class KnownMarketFootprintsIntegrationTest {
             // at: at weight 2 a hidden market of any real size -> 2 grid units.
             var sector = buildSectorWith("hidden-system", buildHiddenMarket(buildFaction("hegemony"), 5));
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withHiddenMarketFixedWeight(2.0).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -442,8 +438,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildHiddenMarket(buildFaction("hegemony"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withColonyWeight(2.0).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -459,8 +454,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildUndiscoveredHiddenMarket(buildFaction("knights_of_selkie"), 5));
 
             assertThat(KnownMarketFootprints.readByFaction(
-                    sector,
-                    buildOnlySystem(sector),
+                    readColoniesIn(sector),
                     buildRules().build()))
                 .isEmpty();
         }
@@ -475,8 +469,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildUndiscoveredHiddenMarket(buildFaction("knights_of_selkie"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build(),
                 true);
 
@@ -499,8 +492,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildUndiscoveredHiddenMarket(selkie, 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build());
 
             assertThat(footprints.get("knights_of_selkie").totalWeight())
@@ -521,8 +513,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildUndiscoveredHiddenMarket(selkie, 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build(),
                 true);
 
@@ -538,8 +529,7 @@ class KnownMarketFootprintsIntegrationTest {
             // more than its size alone: (5 + 1) grid units.
             var sector = buildSectorWith("stationed-system", buildStationedMarket(buildFaction("hegemony"), 5));
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withStationWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -556,8 +546,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildStationedMarketAtStability(buildFaction("hegemony"), 5, NO_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withColonyWeight(0.0).withStationWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -570,8 +559,7 @@ class KnownMarketFootprintsIntegrationTest {
             // at its full size plus the flat station weight: (4 + 1) grid units.
             var sector = buildSectorWith("stationed-system", buildStationedMarket(buildFaction("hegemony"), 4));
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withStabilityMaster(false).withStationWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -584,8 +572,7 @@ class KnownMarketFootprintsIntegrationTest {
             // size, matching an unstationed colony - the bonus is gone.
             var sector = buildSectorWith("stationed-system", buildStationedMarket(buildFaction("hegemony"), 5));
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -601,8 +588,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildHiddenStationedMarket(buildFaction("hegemony"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withStationWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -618,8 +604,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildMarketWithOptedOutStation(buildFaction("hegemony"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withStationWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -637,8 +622,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildStationSitedMarket(buildFaction("hegemony"), 5));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withStationWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -652,8 +636,7 @@ class KnownMarketFootprintsIntegrationTest {
             var market = buildStationedMarket(buildFaction("hegemony"), 5);
             var sector = buildSectorWith("zero-weight-station-system", market);
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules()
                 .withStabilityMaster(false)
                     .withStationWeighting()
@@ -676,8 +659,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildStationedMarket(buildFaction("hegemony"), 4));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules()
                     .withStabilityMaster(false)
                     .withStationWeighting()
@@ -694,8 +676,7 @@ class KnownMarketFootprintsIntegrationTest {
             // station and patrol bonuses: size 4 at weight 2 -> 8 grid units.
             var sector = buildSectorWith("weighted-system", buildVisibleMarket(buildFaction("hegemony"), 4));
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withColonyWeight(2.0).build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -711,8 +692,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildStationedMarket(buildFaction("hegemony"), 4));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules()
                     .withStabilityMaster(false)
                     .withColonyWeight(2.0)
@@ -732,8 +712,7 @@ class KnownMarketFootprintsIntegrationTest {
             var market = buildVisibleMarket(buildFaction("hegemony"), 5);
             var sector = buildSectorWith("weightless-system", market);
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withColonyWeight(0.0).build());
 
             assertThat(footprints)
@@ -755,8 +734,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildPatrolMarket(buildFaction("hegemony"), 3, 2, 1, 0));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withPatrolWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -772,8 +750,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildPatrolMarket(buildFaction("hegemony"), 5, 0, 0, 2));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules()
                     .withColonyWeight(0.0)
                     .withStabilityMaster(false)
@@ -794,8 +771,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildPatrolMarketAtStability(buildFaction("hegemony"), 5, 0, 2, 0, NO_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withColonyWeight(0.0).withPatrolWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -811,8 +787,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildPatrolMarketAtStability(buildFaction("hegemony"), 5, 0, 2, 0, NO_STABILITY));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules()
                     .withColonyWeight(0.0)
                     .withStabilityMaster(false)
@@ -830,8 +805,7 @@ class KnownMarketFootprintsIntegrationTest {
             var market = buildVisibleMarket(buildFaction("hegemony"), 5);
             var sector = buildSectorWith("no-patrol-system", market);
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -851,8 +825,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildPatrolStatOnlyMarket(buildFaction("hegemony"), 3, 2, 1, 0));
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().withPatrolWeighting().build());
 
             assertThat(footprints.get("hegemony").totalWeight())
@@ -885,8 +858,7 @@ class KnownMarketFootprintsIntegrationTest {
 
             var sector = buildSectorWith("academy-system", supersededMarket, supersedingMarket);
             var breakdowns = KnownMarketFootprints.readBreakdownByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build(),
                 false);
 
@@ -904,14 +876,12 @@ class KnownMarketFootprintsIntegrationTest {
             var rules = buildFortifiedColonyRules();
 
             var breakdowns = KnownMarketFootprints.readBreakdownByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 rules,
                 false);
 
             var footprints = KnownMarketFootprints.readByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 rules);
 
             assertThat(breakdowns)
@@ -1129,8 +1099,7 @@ class KnownMarketFootprintsIntegrationTest {
                 withName(buildVisibleMarket(buildFaction("tritachyon"), 5), "Eventide"));
 
             var breakdowns = KnownMarketFootprints.readBreakdownByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build(),
                 false);
 
@@ -1153,8 +1122,7 @@ class KnownMarketFootprintsIntegrationTest {
                 buildMarket(buildFaction("hegemony"), 6, true, false, false, FULL_STABILITY));
 
             assertThat(KnownMarketFootprints.readBreakdownByFaction(
-                    sector,
-                    buildOnlySystem(sector),
+                    readColoniesIn(sector),
                     buildRules().build(),
                     false))
                 .isEmpty();
@@ -1171,8 +1139,7 @@ class KnownMarketFootprintsIntegrationTest {
                     "Selkie Station"));
 
             var breakdowns = KnownMarketFootprints.readBreakdownByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build(),
                 true);
 
@@ -1365,8 +1332,7 @@ class KnownMarketFootprintsIntegrationTest {
         // The sole market's breakdown, for the assertions that read one colony's parts.
         private MarketWeightBreakdown readOnlyBreakdown(SectorAPI sector, DominanceRules rules) {
             return KnownMarketFootprints.readBreakdownByFaction(
-                    sector,
-                    buildOnlySystem(sector),
+                    readColoniesIn(sector),
                     rules,
                     false)
                 .values()
@@ -1392,8 +1358,7 @@ class KnownMarketFootprintsIntegrationTest {
             placeMarketsOnSystemEntities(buildOnlySystem(sector), listedColony, academy);
 
             var colonies = KnownMarketFootprints.readUnweighedColoniesByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 false);
 
             assertThat(colonies)
@@ -1416,8 +1381,7 @@ class KnownMarketFootprintsIntegrationTest {
             placeMarketsOnSystemEntities(buildOnlySystem(sector), academy);
 
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
-                    sector,
-                    buildOnlySystem(sector),
+                    readColoniesIn(sector),
                     false)
                 .get("independent"))
                 .containsExactly(new EntityNameplate(
@@ -1442,8 +1406,7 @@ class KnownMarketFootprintsIntegrationTest {
                 withName(buildVisibleMarket(independent, 4), "Galatia Academy"));
 
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
-                    sector,
-                    buildOnlySystem(sector),
+                    readColoniesIn(sector),
                     false)
                 .get("independent"))
                 .containsExactly(
@@ -1464,8 +1427,7 @@ class KnownMarketFootprintsIntegrationTest {
                     "Barren Placeholder"));
 
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
-                    sector,
-                    buildOnlySystem(sector),
+                    readColoniesIn(sector),
                     false))
                 .isEmpty();
         }
@@ -1483,13 +1445,11 @@ class KnownMarketFootprintsIntegrationTest {
                     "Selkie Station"));
 
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
-                    sector,
-                    buildOnlySystem(sector),
+                    readColoniesIn(sector),
                     false))
                 .isEmpty();
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
-                    sector,
-                    buildOnlySystem(sector),
+                    readColoniesIn(sector),
                     true))
                 .containsOnlyKeys("pirates");
         }
@@ -1513,8 +1473,7 @@ class KnownMarketFootprintsIntegrationTest {
                 supersedingMarket);
 
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
-                    sector,
-                    buildOnlySystem(sector),
+                    readColoniesIn(sector),
                     false)
                 .get("independent"))
                 .containsExactly(UNLISTED_ACADEMY);
@@ -1536,8 +1495,7 @@ class KnownMarketFootprintsIntegrationTest {
                 withName(buildVisibleMarket(hegemony, 4), "Galatia Academy"));
 
             var contributions = KnownMarketFootprints.readContributionsByFaction(
-                sector,
-                buildOnlySystem(sector),
+                readColoniesIn(sector),
                 buildRules().build(),
                 false);
 
@@ -1566,8 +1524,7 @@ class KnownMarketFootprintsIntegrationTest {
                 withName(buildVisibleMarket(buildFaction("independent"), 3), "Galatia Academy"));
 
             assertThat(KnownMarketFootprints.readByFaction(
-                    sector,
-                    buildOnlySystem(sector),
+                    readColoniesIn(sector),
                     buildRules().build()))
                 .containsOnlyKeys("hegemony");
         }
@@ -1584,10 +1541,45 @@ class KnownMarketFootprintsIntegrationTest {
             placeMarketsOnSystemEntities(buildOnlySystem(sector), listedColony);
 
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
-                    sector,
-                    buildOnlySystem(sector),
+                    readColoniesIn(sector),
                     false))
                 .isEmpty();
+        }
+
+        @Test
+        void readUnweighedColoniesByFactionTakesExactlyWhatTheWeighedReadLeaves() {
+            // The two reads divide one set on one fact rather than seeking their markets by two
+            // walks of their own. Stated head-on because it is what the division buys: a colony
+            // cannot be admitted by both and counted twice, nor refused by both and vanish from a
+            // box that is meant to account for the whole system.
+            var hegemony = buildFaction("hegemony");
+            var listedColony = withName(buildVisibleMarket(hegemony, 5), "Chicomoztoc");
+            var colonies = new ArrayList<String>();
+            var sector = buildSectorWith("galatia", listedColony);
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                listedColony,
+                withName(buildVisibleMarket(hegemony, 4), "Galatia Academy"));
+
+            var systemColonies = readColoniesIn(sector);
+
+            for (var breakdown : KnownMarketFootprints
+                    .readBreakdownByFaction(systemColonies, buildRules().build(), false)
+                    .get("hegemony")) {
+
+                colonies.add(breakdown.marketNameplate().displayName());
+            }
+            for (var nameplate : KnownMarketFootprints
+                    .readUnweighedColoniesByFaction(systemColonies, false)
+                    .get("hegemony")) {
+
+                colonies.add(nameplate.displayName());
+            }
+
+            // Every colony the projection holds, named once between the two reads.
+            assertThat(colonies)
+                .containsExactlyInAnyOrder("Chicomoztoc", "Galatia Academy");
         }
     }
 

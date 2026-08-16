@@ -123,7 +123,7 @@ public final class StandingsTooltipSeamsFake {
      */
     public static void stubPass(DominancePass pass) {
         dominancePassMock
-            .when(() -> DominancePass.readFromLunaSettings(any()))
+            .when(() -> DominancePass.readFromLunaSettings(any(), any()))
             .thenReturn(pass);
     }
 
@@ -144,7 +144,6 @@ public final class StandingsTooltipSeamsFake {
 
         standingsMock
             .when(() -> SystemStandings.rankByDominationScore(
-                any(SectorAPI.class),
                 any(StarSystemAPI.class),
                 any(DominancePass.class)))
             .thenReturn(Collections.nCopies(
@@ -177,7 +176,7 @@ public final class StandingsTooltipSeamsFake {
     /** Asserts the pass was read under the grouping the active view answered with. */
     public static void verifyPassReadUnderTheViewsGrouping() {
         dominancePassMock.verify(
-            () -> DominancePass.readFromLunaSettings(same(VIEW_GROUPING)));
+            () -> DominancePass.readFromLunaSettings(any(), same(VIEW_GROUPING)));
     }
 
     /** Asserts the ranked groups were named under that same grouping. */

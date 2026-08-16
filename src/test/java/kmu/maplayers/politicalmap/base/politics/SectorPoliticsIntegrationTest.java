@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.politics;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.PlanetAPI;
+import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
@@ -43,45 +44,66 @@ import static org.mockito.Mockito.when;
  * dominance rule, colour lookup), which mocking either collaborator would hide.
  */
 class SectorPoliticsIntegrationTest {
+
     // The stability-only weighting rule the palette-resolving suites share; the parameterless
     // entry points instead read the live LunaLib settings only the running game provides.
     private static final DominanceRules STABILITY_WEIGHTED = buildStabilityWeightedRules();
 
     // The pass most suites resolve under: the stability-only rule, the normal known-to-player
     // filter, and the faction (identity) grouping. The grouping-varying suites build their own.
-    private static final DominancePass STABILITY_PASS =
-            new DominancePass(STABILITY_WEIGHTED, false, HolderGrouping.identity());
+    //
+    // Built per sector rather than shared as a constant, because a pass carries the walk of the
+    // sector it was opened over: one held across cases would answer a later case's system off an
+    // earlier case's sector, and the two commonly name their systems alike.
+    private static DominancePass buildPassOver(SectorAPI sector) {
+
+        return DominancePass.over(
+            sector,
+            STABILITY_WEIGHTED,
+            false, // Undiscovered markets are not included.
+            HolderGrouping.identity());
+    }
 
     @Nested
     class ResolveDominantHolderBySystemId {
 
         @Test
         void resolveDominantHolderNamesHolderAndColourByDominantFaction() {
+
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
-            var sector = buildSectorWith("owned-system", List.of(hegemony, tritachyon),
-                    buildVisibleMarket(hegemony, 5), buildVisibleMarket(tritachyon, 3));
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony, tritachyon),
+                buildVisibleMarket(hegemony, 5),
+                buildVisibleMarket(tritachyon, 3));
 
-            var holders = SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS);
+            var holders = SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector));
 
             // The holder carries the id the renderer styles by, the bright UI colour
             // the cell is filled and outlined in, and the dark UI colour its
             // interior seams are stroked in.
-            assertThat(holders).containsEntry("owned-system",
+            assertThat(holders)
+                .containsEntry(
+                    "owned-system",
                     new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
         @Test
         void resolveDominantHolderNamesIndependentWhenItHolds() {
+
             var independent = buildFaction("independent", NEUTRAL_BASE);
-            var sector = buildSectorWith("frontier-system", List.of(independent),
-                    buildVisibleMarket(independent, 4));
+            var sector = buildSectorWith(
+                "frontier-system",
+                List.of(independent),
+                buildVisibleMarket(independent, 4));
 
             // An independent-held system resolves to the "independent" id, the one
             // the renderer's fill-alpha rule dims on.
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS))
-                    .containsEntry("frontier-system",
-                            new DominantHolder("independent", NEUTRAL_BASE, buildDarkTheme(NEUTRAL_BASE)));
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector)))
+                .containsEntry(
+                    "frontier-system",
+                    new DominantHolder("independent", NEUTRAL_BASE, buildDarkTheme(NEUTRAL_BASE)));
         }
 
         @Test
@@ -91,12 +113,16 @@ class SectorPoliticsIntegrationTest {
             // fully stable size-3 colony (weight 3) takes the system.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
-            var sector = buildSectorWith("unrest-system", List.of(hegemony, tritachyon),
-                    buildMarketAtStability(hegemony, 5, 4.0f), buildVisibleMarket(tritachyon, 3));
+            var sector = buildSectorWith(
+                "unrest-system",
+                List.of(hegemony, tritachyon),
+                buildMarketAtStability(hegemony, 5, 4.0f),
+                buildVisibleMarket(tritachyon, 3));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS))
-                    .containsEntry("unrest-system",
-                            new DominantHolder("tritachyon", TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT)));
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector)))
+                .containsEntry(
+                    "unrest-system",
+                    new DominantHolder("tritachyon", TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT)));
         }
 
         @Test
@@ -104,18 +130,22 @@ class SectorPoliticsIntegrationTest {
             // A bare rock's condition-only market must not make its faction the
             // holder; the system has no real colony, so it gets no holder.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var sector = buildSectorWith("bare-system", List.of(hegemony),
-                    buildMarket(hegemony, 6, true, false, false));
+            var sector = buildSectorWith(
+                "bare-system",
+                List.of(hegemony),
+                buildMarket(hegemony, 6, true, false, false));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS))
-                    .doesNotContainKey("bare-system");
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector)))
+                .doesNotContainKey("bare-system");
         }
 
         @Test
         void resolveDominantHolderSkipsUninhabitedSystems() {
+
             var sector = buildSectorWith("empty-system", List.of());
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS)).isEmpty();
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector)))
+                .isEmpty();
         }
 
         @Test
@@ -123,12 +153,15 @@ class SectorPoliticsIntegrationTest {
             // A hidden market (vanilla hidden market) still marks its system as
             // owned once its entity is on the map - it is no longer disqualified.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var sector = buildSectorWith("hidden-system", List.of(hegemony),
-                    buildHiddenMarket(hegemony, 5));
+            var sector = buildSectorWith(
+                "hidden-system",
+                List.of(hegemony),
+                buildHiddenMarket(hegemony, 5));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS))
-                    .containsEntry("hidden-system",
-                            new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector)))
+                .containsEntry(
+                    "hidden-system",
+                    new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
         @Test
@@ -138,12 +171,16 @@ class SectorPoliticsIntegrationTest {
             // wins the combined-weight comparison and claims the cell.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
-            var sector = buildSectorWith("mixed-system", List.of(hegemony, tritachyon),
-                    buildHiddenMarket(hegemony, 5), buildVisibleMarket(tritachyon, 2));
+            var sector = buildSectorWith(
+                "mixed-system",
+                List.of(hegemony, tritachyon),
+                buildHiddenMarket(hegemony, 5),
+                buildVisibleMarket(tritachyon, 2));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS))
-                    .containsEntry("mixed-system",
-                            new DominantHolder("tritachyon", TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT)));
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector)))
+                .containsEntry(
+                    "mixed-system",
+                    new DominantHolder("tritachyon", TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT)));
         }
 
         @Test
@@ -152,12 +189,15 @@ class SectorPoliticsIntegrationTest {
             // what matters is the market being discovered. Its discovered, visible
             // market claims its system like any other.
             var hiddenFaction = buildFaction("zea_dusk", HEGEMONY_BRIGHT);
-            var sector = buildSectorWith("hidden-faction-system", List.of(hiddenFaction),
-                    buildMarket(hiddenFaction, 5, false, false, false));
+            var sector = buildSectorWith(
+                "hidden-faction-system",
+                List.of(hiddenFaction),
+                buildMarket(hiddenFaction, 5, false, false, false));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS))
-                    .containsEntry("hidden-faction-system",
-                            new DominantHolder("zea_dusk", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector)))
+                .containsEntry(
+                    "hidden-faction-system",
+                    new DominantHolder("zea_dusk", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
         @Test
@@ -166,11 +206,13 @@ class SectorPoliticsIntegrationTest {
             // e.g. Knights of Ludd's Battlestar Libra - is absent from the map
             // until found, so it claims no territory.
             var knights = buildFaction("knights_of_selkie", HEGEMONY_BRIGHT);
-            var sector = buildSectorWith("undiscovered-system", List.of(knights),
-                    buildUndiscoveredHiddenMarket(knights, 5));
+            var sector = buildSectorWith(
+                "undiscovered-system",
+                List.of(knights),
+                buildUndiscoveredHiddenMarket(knights, 5));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS))
-                    .doesNotContainKey("undiscovered-system");
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector)))
+                .doesNotContainKey("undiscovered-system");
         }
 
         @Test
@@ -180,12 +222,15 @@ class SectorPoliticsIntegrationTest {
             // colonies sit between first entry and the fleet closing in. It is
             // public knowledge, so it claims its system at once.
             var fsf = buildFaction("aEP_FSF", HEGEMONY_BRIGHT);
-            var sector = buildSectorWith("revealed-system", List.of(fsf),
-                    buildRevealedColonyAwaitingApproach(fsf, 5));
+            var sector = buildSectorWith(
+                "revealed-system",
+                List.of(fsf),
+                buildRevealedColonyAwaitingApproach(fsf, 5));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS))
-                    .containsEntry("revealed-system",
-                            new DominantHolder("aEP_FSF", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector)))
+                .containsEntry(
+                    "revealed-system",
+                    new DominantHolder("aEP_FSF", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
         @Test
@@ -195,12 +240,15 @@ class SectorPoliticsIntegrationTest {
             // otherwise hand the cell to hegemony.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
-            var sector = buildSectorWith("tie-system", List.of(hegemony, tritachyon),
-                    buildVisibleMarket(hegemony, 5), buildPlanetMarket(tritachyon, 5));
+            var sector = buildSectorWith(
+                "tie-system",
+                List.of(hegemony, tritachyon),
+                buildVisibleMarket(hegemony, 5), buildPlanetMarket(tritachyon, 5));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS))
-                    .containsEntry("tie-system",
-                            new DominantHolder("tritachyon", TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT)));
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector)))
+                .containsEntry(
+                    "tie-system",
+                    new DominantHolder("tritachyon", TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT)));
         }
 
         @Test
@@ -212,16 +260,23 @@ class SectorPoliticsIntegrationTest {
             var blackrock = buildFaction("blackrock", TRITACHYON_BRIGHT);
             var hegemonyMarket = buildVisibleMarket(hegemony, 5);
             var blackrockMarket = buildVisibleMarket(blackrock, 5);
-            var sector = buildSectorWith("rama", List.of(hegemony, blackrock),
-                    hegemonyMarket, blackrockMarket);
+            var sector = buildSectorWith(
+                "rama",
+                List.of(hegemony, blackrock),
+                hegemonyMarket,
+                blackrockMarket);
+
             var star = buildStarAt(0.0f, 0.0f);
+
             centreSystemOn(buildOnlySystem(sector), star);
+
             placeMarketOnOrbit(hegemonyMarket, 100.0f, star);
             placeMarketOnOrbit(blackrockMarket, 200.0f, star);
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS))
-                    .containsEntry("rama",
-                            new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector)))
+                .containsEntry(
+                    "rama",
+                    new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
         @Test
@@ -233,26 +288,40 @@ class SectorPoliticsIntegrationTest {
             var blackrock = buildFaction("blackrock", TRITACHYON_BRIGHT);
             var hegemonyMarket = buildVisibleMarket(hegemony, 5);
             var blackrockMarket = buildVisibleMarket(blackrock, 5);
-            var sector = buildSectorWith("rama", List.of(hegemony, blackrock),
-                    hegemonyMarket, blackrockMarket);
+            var sector = buildSectorWith(
+                "rama",
+                List.of(hegemony, blackrock),
+                hegemonyMarket,
+                blackrockMarket);
+
             var star = buildStarAt(0.0f, 0.0f);
+
             centreSystemOn(buildOnlySystem(sector), star);
+
             placeMarketOnOrbit(hegemonyMarket, 100.0f, star);
             placeMarketOnOrbit(blackrockMarket, 200.0f, star);
+
             var grouping = new HolderGrouping(
-                    Map.of("hegemony", "greater_hegemony"),
-                    Map.of("greater_hegemony", "hegemony"),
-                    Map.of("greater_hegemony", "Greater Hegemony"));
+                Map.of("hegemony", "greater_hegemony"),
+                Map.of("greater_hegemony", "hegemony"),
+                Map.of("greater_hegemony", "Greater Hegemony"));
 
             // Faction view: hegemony wins. Alliance view: the hegemony-led alliance wins the
             // same system, painted in hegemony's palette under the alliance bloc id.
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS))
-                    .containsEntry("rama",
-                            new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector)))
+                .containsEntry(
+                    "rama",
+                    new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
+
             assertThat(SectorPolitics.resolveDominantHolderBySystemId(
-                    sector, new DominancePass(STABILITY_WEIGHTED, false, grouping)))
-                    .containsEntry("rama", new DominantHolder(
-                            "greater_hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
+                    sector,
+                    DominancePass.over(sector, STABILITY_WEIGHTED, false, grouping)))
+                .containsEntry(
+                    "rama",
+                    new DominantHolder(
+                        "greater_hegemony",
+                        HEGEMONY_BRIGHT,
+                        buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
         @Test
@@ -260,12 +329,15 @@ class SectorPoliticsIntegrationTest {
             // Once the entity is discovered (no longer discoverable), the station's
             // faction claims its system.
             var knights = buildFaction("knights_of_selkie", HEGEMONY_BRIGHT);
-            var sector = buildSectorWith("discovered-system", List.of(knights),
-                    buildMarket(knights, 5, false, false, false));
+            var sector = buildSectorWith(
+                "discovered-system",
+                List.of(knights),
+                buildMarket(knights, 5, false, false, false));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, STABILITY_PASS))
-                    .containsEntry("discovered-system",
-                            new DominantHolder("knights_of_selkie", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(sector, buildPassOver(sector)))
+                .containsEntry(
+                    "discovered-system",
+                    new DominantHolder("knights_of_selkie", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
         @Test
@@ -274,13 +346,17 @@ class SectorPoliticsIntegrationTest {
             // and palette are the plain faction holder - byte-for-byte the faction view.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
-            var sector = buildSectorWith("owned-system", List.of(hegemony, tritachyon),
-                    buildVisibleMarket(hegemony, 5), buildVisibleMarket(tritachyon, 3));
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony, tritachyon),
+                buildVisibleMarket(hegemony, 5), buildVisibleMarket(tritachyon, 3));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemId(
-                    sector, STABILITY_PASS))
-                    .containsEntry("owned-system",
-                            new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
+                    sector,
+                    buildPassOver(sector)))
+                .containsEntry(
+                    "owned-system",
+                    new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
         @Test
@@ -292,18 +368,23 @@ class SectorPoliticsIntegrationTest {
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
             var persean = buildFaction("persean", NEUTRAL_BASE);
-            var sector = buildSectorWith("contested-system", List.of(hegemony, tritachyon, persean),
-                    buildVisibleMarket(hegemony, 2), buildVisibleMarket(tritachyon, 2),
-                    buildVisibleMarket(persean, 3));
+            var sector = buildSectorWith(
+                "contested-system",
+                List.of(hegemony, tritachyon, persean),
+                buildVisibleMarket(hegemony, 2), buildVisibleMarket(tritachyon, 2),
+                buildVisibleMarket(persean, 3));
+
             var grouping = new HolderGrouping(
-                    Map.of("hegemony", "alliance-1", "tritachyon", "alliance-1"),
-                    Map.of("alliance-1", "hegemony"),
-                    Map.of("alliance-1", "Allied Powers"));
+                Map.of("hegemony", "alliance-1", "tritachyon", "alliance-1"),
+                Map.of("alliance-1", "hegemony"),
+                Map.of("alliance-1", "Allied Powers"));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemId(
-                    sector, new DominancePass(STABILITY_WEIGHTED, false, grouping)))
-                    .containsEntry("contested-system",
-                            new DominantHolder("alliance-1", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
+                    sector,
+                    DominancePass.over(sector, STABILITY_WEIGHTED, false, grouping)))
+                .containsEntry(
+                    "contested-system",
+                    new DominantHolder("alliance-1", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
     }
 
@@ -312,22 +393,28 @@ class SectorPoliticsIntegrationTest {
 
         @Test
         void resolveDominantHolderNamesDominantFactionWithPalette() {
+
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
-            var sector = buildSectorWith("owned-system", List.of(hegemony, tritachyon),
-                    buildVisibleMarket(hegemony, 5), buildVisibleMarket(tritachyon, 3));
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony, tritachyon),
+                buildVisibleMarket(hegemony, 5),
+                buildVisibleMarket(tritachyon, 3));
 
             // The single-system resolve returns the same winner and palette the bulk
             // pass would put under this system's id.
-            assertThat(SectorPolitics.resolveDominantHolder(sector, buildOnlySystem(sector), STABILITY_PASS))
-                    .isEqualTo(new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
+            assertThat(SectorPolitics.resolveDominantHolder(sector, buildOnlySystem(sector), buildPassOver(sector)))
+                .isEqualTo(new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
         @Test
         void resolveDominantHolderReturnsNullForUninhabitedSystem() {
+
             var sector = buildSectorWith("empty-system", List.of());
 
-            assertThat(SectorPolitics.resolveDominantHolder(sector, buildOnlySystem(sector), STABILITY_PASS)).isNull();
+            assertThat(SectorPolitics.resolveDominantHolder(sector, buildOnlySystem(sector), buildPassOver(sector)))
+                .isNull();
         }
 
         @Test
@@ -335,23 +422,32 @@ class SectorPoliticsIntegrationTest {
             // A bare rock's condition-only market is no colony, so the system has no
             // holder - matching the bulk pass.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var sector = buildSectorWith("bare-system", List.of(hegemony),
-                    buildMarket(hegemony, 6, true, false, false));
+            var sector = buildSectorWith(
+                "bare-system",
+                List.of(hegemony),
+                buildMarket(hegemony, 6, true, false, false));
 
-            assertThat(SectorPolitics.resolveDominantHolder(sector, buildOnlySystem(sector), STABILITY_PASS)).isNull();
+            assertThat(SectorPolitics.resolveDominantHolder(sector, buildOnlySystem(sector), buildPassOver(sector)))
+                .isNull();
         }
 
         @Test
         void resolveDominantHolderReturnsNullForNullSystem() {
-            var sector = buildSectorWith("owned-system", List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)),
-                    buildVisibleMarket(buildFaction("hegemony", HEGEMONY_BRIGHT), 5));
 
-            assertThat(SectorPolitics.resolveDominantHolder(sector, null, STABILITY_PASS)).isNull();
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)),
+                buildVisibleMarket(buildFaction("hegemony", HEGEMONY_BRIGHT), 5));
+
+            assertThat(SectorPolitics.resolveDominantHolder(sector, null, buildPassOver(sector)))
+                .isNull();
         }
 
         @Test
         void resolveDominantHolderReturnsNullForNullSector() {
-            assertThat(SectorPolitics.resolveDominantHolder(null, mock(StarSystemAPI.class), STABILITY_PASS)).isNull();
+
+            assertThat(SectorPolitics.resolveDominantHolder(null, mock(StarSystemAPI.class), buildPassOver(null)))
+                .isNull();
         }
     }
 
@@ -359,8 +455,12 @@ class SectorPoliticsIntegrationTest {
     // rule prefers over a station at an otherwise exact weight tie. Local to this suite: only
     // the tie-break test reads a planet market.
     private static MarketAPI buildPlanetMarket(FactionAPI faction, int size) {
+
         var marketMock = buildVisibleMarket(faction, size);
-        when(marketMock.getPlanetEntity()).thenReturn(mock(PlanetAPI.class));
+
+        when(marketMock.getPlanetEntity())
+            .thenReturn(mock(PlanetAPI.class));
+
         return marketMock;
     }
 
@@ -374,9 +474,19 @@ class SectorPoliticsIntegrationTest {
     // The five-argument market shape this suite's condition-only and discovery tests read: a
     // visible-stability colony varying only its condition-only, hidden, and undiscovered flags.
     // Delegates to the shared builder, which takes stability as its sixth argument.
-    private static MarketAPI buildMarket(FactionAPI faction, int size, boolean isConditionOnly,
-            boolean isHidden, boolean isUndiscovered) {
-        return SectorPoliticsFixtures.buildMarket(faction, size, isConditionOnly, isHidden,
-                isUndiscovered, FULL_STABILITY);
+    private static MarketAPI buildMarket(
+            FactionAPI faction,
+            int size,
+            boolean isConditionOnly,
+            boolean isHidden,
+            boolean isUndiscovered) {
+
+        return SectorPoliticsFixtures.buildMarket(
+            faction,
+            size,
+            isConditionOnly,
+            isHidden,
+            isUndiscovered,
+            FULL_STABILITY);
     }
 }

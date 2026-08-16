@@ -44,8 +44,17 @@ class FilteredPoliticsIntegrationTest {
 
     // The faction-view pass most tests filter under: the stability rule, the normal filter, and the
     // identity grouping. The alliance-grouping test builds its own pass.
-    private static final DominancePass STABILITY_PASS =
-        new DominancePass(STABILITY_WEIGHTED, false, HolderGrouping.identity());
+    //
+    // Built per sector rather than shared as a constant, because a pass carries the walk of the
+    // sector it was opened over: one held across cases would answer a later case's system off an
+    // earlier case's sector, and the two commonly name their systems alike.
+    private static DominancePass buildPassOver(SectorAPI sector) {
+        return DominancePass.over(
+            sector,
+            STABILITY_WEIGHTED,
+            false, // Undiscovered markets are not included.
+            HolderGrouping.identity());
+    }
 
     @Nested
     class ResolveFilteredHolder {
@@ -190,7 +199,7 @@ class FilteredPoliticsIntegrationTest {
 
             var holder = FilteredPolitics.resolveFilteredHolder(
                     sector,
-                    new DominancePass(STABILITY_WEIGHTED, false, grouping),
+                    DominancePass.over(sector, STABILITY_WEIGHTED, false, grouping),
                     "alliance-1")
                 .ownerBySystemId()
                 .get("contested-system");
@@ -206,7 +215,8 @@ class FilteredPoliticsIntegrationTest {
 
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var sector = buildSectorWith("owned-system", List.of(hegemony), buildVisibleMarket(hegemony, 5));
-            var filtered = FilteredPolitics.resolveFilteredHolder(sector, STABILITY_PASS, null);
+            var filtered =
+                FilteredPolitics.resolveFilteredHolder(sector, buildPassOver(sector), null);
 
             assertThat(filtered.ownerBySystemId())
                 .isEmpty();
@@ -217,7 +227,7 @@ class FilteredPoliticsIntegrationTest {
         @Test
         void isEmptyForNullSector() {
             var filtered =
-                FilteredPolitics.resolveFilteredHolder(null, STABILITY_PASS, "hegemony");
+                FilteredPolitics.resolveFilteredHolder(null, buildPassOver(null), "hegemony");
 
             assertThat(filtered.ownerBySystemId())
                 .isEmpty();
@@ -239,7 +249,7 @@ class FilteredPoliticsIntegrationTest {
 
             assertThat(FilteredPolitics.findPresentSystemIds(
                     sector,
-                    STABILITY_PASS,
+                    buildPassOver(sector),
                     "pirates",
                     Set.of("haven")))
                 .containsExactly("haven");
@@ -259,7 +269,7 @@ class FilteredPoliticsIntegrationTest {
 
             assertThat(FilteredPolitics.findPresentSystemIds(
                     sector,
-                    STABILITY_PASS,
+                    buildPassOver(sector),
                     "pirates",
                     Set.of("haven")))
                 .containsExactly("haven");
@@ -277,7 +287,7 @@ class FilteredPoliticsIntegrationTest {
 
             assertThat(FilteredPolitics.findPresentSystemIds(
                     sector,
-                    STABILITY_PASS,
+                    buildPassOver(sector),
                     "pirates",
                     Set.of("haven")))
                 .isEmpty();
@@ -296,7 +306,7 @@ class FilteredPoliticsIntegrationTest {
 
             assertThat(FilteredPolitics.findPresentSystemIds(
                     sector,
-                    STABILITY_PASS,
+                    buildPassOver(sector),
                     "pirates",
                     Set.of("haven")))
                 .containsExactly("haven");
@@ -310,7 +320,7 @@ class FilteredPoliticsIntegrationTest {
 
             assertThat(FilteredPolitics.findPresentSystemIds(
                     sector,
-                    STABILITY_PASS,
+                    buildPassOver(sector),
                     null,
                     Set.of("haven")))
                 .isEmpty();
@@ -320,7 +330,7 @@ class FilteredPoliticsIntegrationTest {
         void isEmptyForNullSector() {
             assertThat(FilteredPolitics.findPresentSystemIds(
                     null,
-                    STABILITY_PASS,
+                    buildPassOver(null),
                     "pirates",
                     Set.of("haven")))
                 .isEmpty();
@@ -333,6 +343,9 @@ class FilteredPoliticsIntegrationTest {
             SectorAPI sector,
             String selectedBlocId) {
                 
-        return FilteredPolitics.resolveFilteredHolder(sector, STABILITY_PASS, selectedBlocId);
+        return FilteredPolitics.resolveFilteredHolder(
+            sector,
+            buildPassOver(sector),
+            selectedBlocId);
     }
 }

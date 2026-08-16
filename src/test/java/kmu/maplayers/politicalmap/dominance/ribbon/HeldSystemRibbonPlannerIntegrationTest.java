@@ -182,7 +182,8 @@ final class HeldSystemRibbonPlannerIntegrationTest {
     private static HeldSystemRibbonPlanner buildPlanner(SectorAPI sector) {
         return new HeldSystemRibbonPlanner(
             sector,
-            new DominancePass(
+            DominancePass.over(
+                sector,
                 SectorPoliticsFixtures.buildStabilityWeightedRules(),
                 WITHOUT_DEV_REVEAL,
                 HolderGrouping.identity()),

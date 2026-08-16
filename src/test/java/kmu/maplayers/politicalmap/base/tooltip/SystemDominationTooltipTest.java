@@ -91,8 +91,10 @@ final class SystemDominationTooltipTest {
         new StationWeighting(false, 1.0, 0.5, 0.5),
         new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
 
+    // Opened over no sector: this box reads no colonies of its own, so the set behind the pass is
+    // nothing any case here has an opinion about.
     private static final DominancePass ANY_PASS =
-        new DominancePass(ANY_RULES, false, VIEW_GROUPING);
+        DominancePass.over(null, ANY_RULES, false, VIEW_GROUPING);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final SystemDominationTooltip tooltip =
@@ -193,7 +195,7 @@ final class SystemDominationTooltipTest {
             // alone, so it asks for no account and every faction it lists reads as its line alone.
             // The account behind those scores is the counterpart's, an F1 away.
             assertThat(tooltip
-                    .createFactionAccountResolver(sectorMock, systemMock, ANY_PASS)
+                    .createFactionAccountResolver(systemMock, ANY_PASS)
                     .resolveAccountEntries(new FactionStanding(CORE_FACTION, 900)))
                 .isEmpty();
         }

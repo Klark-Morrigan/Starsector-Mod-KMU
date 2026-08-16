@@ -173,7 +173,7 @@ public final class FilteredPolitics {
         }
         return findPresentSystemIds(
             sector,
-            DominancePass.readFromLunaSettings(grouping),
+            DominancePass.readFromLunaSettings(sector, grouping),
             selectedBlocId,
             candidateSystemIds);
     }
@@ -211,7 +211,7 @@ public final class FilteredPolitics {
             if (!candidateSystemIds.contains(system.getId())) {
                 continue;
             }
-            if (pass.readBlocFootprints(sector, system).containsKey(selectedBlocId)) {
+            if (pass.readBlocFootprints(system).containsKey(selectedBlocId)) {
                 presentSystemIds.add(system.getId());
             }
         }
@@ -247,7 +247,7 @@ public final class FilteredPolitics {
             String selectedBlocId) {
         return resolveFilteredHolder(
             sector,
-            DominancePass.readFromLunaSettings(grouping),
+            DominancePass.readFromLunaSettings(sector, grouping),
             selectedBlocId);
     }
 
@@ -332,7 +332,7 @@ public final class FilteredPolitics {
             String selectedBlocId,
             Set<String> contestedSystemIds) {
 
-        var footprintByBlocId = pass.readBlocFootprints(sector, system);
+        var footprintByBlocId = pass.readBlocFootprints(system);
 
         // The proximity tie-break the normal pass uses, so both the "does the selected bloc
         // dominate" call and the receded real-holder fallback settle a tie the same way the base

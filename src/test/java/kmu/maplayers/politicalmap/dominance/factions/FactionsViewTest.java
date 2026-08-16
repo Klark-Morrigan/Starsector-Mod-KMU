@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.starsector.systems.SystemColoniesIndex;
+
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.DominanceSortMode;
@@ -89,11 +91,16 @@ final class FactionsViewTest {
             // from.
             try (var passMock = mockStatic(DominancePass.class)) {
                 passMock
-                    .when(() -> DominancePass.readFromLunaSettings(any(HolderGrouping.class)))
+                    .when(() -> DominancePass.readFromLunaSettings(
+                        any(SectorAPI.class),
+                        any(HolderGrouping.class)))
+                    // Built through the constructor rather than the static entry, which is stood
+                    // in for here and would answer with the stand-in rather than build a pass.
                     .thenReturn(new DominancePass(
                         mock(DominanceRules.class),
                         false, // Undiscovered colonies do not count, as on the live map.
-                        HolderGrouping.identity()));
+                        HolderGrouping.identity(),
+                        new SystemColoniesIndex(null)));
 
                 var planner = FactionsView.INSTANCE.resolveRibbonPlanner(
                     mock(SectorAPI.class),

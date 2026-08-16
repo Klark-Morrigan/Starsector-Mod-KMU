@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import java.util.ArrayList;
@@ -54,20 +53,17 @@ public final class SystemStandings {
      * reveal, and grouping: reads each faction's footprint in the system, then folds and ranks it
      * through the pure rule below. The live entry the tooltip resolves a hover through.
      *
-     * @param sector the sector whose economy is read; assumed non-null with a non-null economy,
-     *               which the caller guards before delegating
      * @param system the hovered system whose markets are ranked
-     * @param pass   the weighting rule, dev reveal, and grouping this ranking resolves under, sampled
-     *               once by the caller so the whole ranking uses one set of knobs
+     * @param pass   the weighting rule, dev reveal, grouping and colony walk this ranking resolves
+     *               under, sampled once by the caller so the whole ranking uses one set of knobs
      * @return the system's groups ranked descending by summed score, each with its members ranked
      *         within; empty when the system holds no known owned market
      */
     public static List<GroupStanding> rankByDominationScore(
-            SectorAPI sector,
             StarSystemAPI system,
             DominancePass pass) {
         return rankByDominationScore(
-            pass.readFootprintsByFaction(sector, system),
+            pass.readFootprintsByFaction(system),
             pass.grouping());
     }
 
