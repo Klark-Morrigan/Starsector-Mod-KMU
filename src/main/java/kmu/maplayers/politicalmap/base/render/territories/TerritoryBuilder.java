@@ -19,6 +19,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
@@ -69,6 +70,12 @@ public final class TerritoryBuilder {
             // incremental re-shape reads matches the holding this build resolved.
             var grouping = view.resolveGrouping();
 
+            // The rebuild's own reading of the sector, opened here because this is where the
+            // rebuild begins: the dev reveal is sampled once, and every reader below shares one
+            // walk of each system rather than taking a walk apiece. Discarded with this build, so
+            // nothing goes on answering off a sector that has since moved on.
+            var pass = HolderPass.readFromLunaSettings(sector, grouping);
+
             // The spotlighted bloc, read once so the whole pass keys off one snapshot - the
             // holding provider (which keeps a spotlit bloc drawn wherever it is present), the
             // recede the rest of the sector takes, and the retained filter snapshot all resolve
@@ -86,7 +93,7 @@ public final class TerritoryBuilder {
                 "politicalMap.resolvePolitics",
                 () -> view
                         .resolveHolderProvider()
-                        .resolveHolder(sector, grouping, selectedBlocId));
+                        .resolveHolder(pass, selectedBlocId));
 
             var ownerBySystemId = resolution.ownerBySystemId();
             var contestedSystemIds = resolution.contestedSystemIds();
@@ -127,8 +134,7 @@ public final class TerritoryBuilder {
                 "politicalMap.findSpotlitPresence",
                 "spotlit presence scan",
                 () -> FilteredPolitics.findPresentSystemIds(
-                    sector,
-                    grouping,
+                    pass,
                     selectedBlocId,
                     selectUnheldSystemIds(inhabitedSystemIds, ownerBySystemId)));
 

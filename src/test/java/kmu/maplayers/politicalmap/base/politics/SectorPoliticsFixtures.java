@@ -8,6 +8,9 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmu.maplayers.politicalmap.base.dominance.DominancePass;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -25,11 +28,12 @@ import static org.mockito.Mockito.when;
 
 /**
  * Shared Mockito wiring for the {@code base.politics} integration tests: the stubbed factions,
- * markets, and sectors the holder pipeline reads. One home for these builders so the three
- * integration suites - {@link KnownMarketFootprintsIntegrationTest} (the footprint read),
- * {@link SectorPoliticsIntegrationTest} (the dominance-and-palette resolve), and
- * {@link FilteredPoliticsIntegrationTest} (the presence-aware filter resolve) - wire an economy
- * the same way rather than each carrying its own near-identical copy.
+ * markets, and sectors the holder pipeline reads, and the pass it reads them through. One home
+ * for these builders so the integration suites - {@link KnownMarketFootprintsIntegrationTest}
+ * (the footprint read), {@link SectorPoliticsIntegrationTest} (the dominance-and-palette
+ * resolve), {@link FilteredPoliticsIntegrationTest} (the presence-aware filter resolve), and the
+ * two picker aggregations - wire an economy the same way rather than each carrying its own
+ * near-identical copy.
  *
  * <p>Every builder returns the live Mockito mock, so a suite with a specialised need (an attached
  * station, patrol counts, a planet market) adds its own stubs on top and keeps that variant local
@@ -77,6 +81,37 @@ public final class SectorPoliticsFixtures {
             new BaseSizeWeighting(1.0, HiddenMarketScalingChoice.FIXED, 1.0, 1.0),
             new StationWeighting(false, 1.0, 0.5, 0.5),
             new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
+    }
+
+    /**
+     * The rebuild's reading of a stubbed sector these suites pose their cases against: the
+     * identity grouping, no dev reveal, and one walk of each system.
+     *
+     * <p>Built per sector rather than shared as a constant, because a pass carries the walk of the
+     * sector it was opened over: one held across cases would answer a later case's system off an
+     * earlier case's sector, and the two commonly name their systems alike.
+     *
+     * @param sector the stubbed sector the pass reads
+     * @return a pass over that sector
+     */
+    public static HolderPass buildHolderPassOver(SectorAPI sector) {
+        return HolderPass.over(
+            sector,
+            false, // Undiscovered markets are not included.
+            HolderGrouping.identity());
+    }
+
+    /**
+     * That same reading under the shared stability-only weighting rule - what a suite exercising a
+     * resolve that weighs markets poses its cases against.
+     *
+     * @param sector the stubbed sector the pass reads
+     * @return a dominance pass over that sector
+     */
+    public static DominancePass buildPassOver(SectorAPI sector) {
+        return DominancePass.over(
+            buildHolderPassOver(sector),
+            buildStabilityWeightedRules());
     }
 
     /**

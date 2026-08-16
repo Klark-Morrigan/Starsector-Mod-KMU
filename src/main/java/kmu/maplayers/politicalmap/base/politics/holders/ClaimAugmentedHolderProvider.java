@@ -1,11 +1,9 @@
 package kmu.maplayers.politicalmap.base.politics.holders;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
-import kmlib.starsector.systems.claims.ClaimReader;
+import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimReader;
 
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredClaims;
 
@@ -32,43 +30,48 @@ import java.util.Map;
  * unfilled - beside its solid and hatched held systems; every other bloc's claims keep their plain
  * bloc holder, which the style layer mutes into the receded background exactly as it mutes that
  * bloc's held cells. So a claim always shares the fate of the territory it belongs to.
+ *
+ * <p>Both halves answer off the one pass, which is what makes this the cheaper of the two
+ * arrangements rather than the dearer one: the held resolve and the claim resolve each read every
+ * system, and sharing the pass's walk means the sector is traversed once between them instead of
+ * once apiece. It also means both halves describe the sector as it stood at one moment, so the
+ * fill and the claim extending it into the same territory cannot disagree about what is there.
  */
 public final class ClaimAugmentedHolderProvider implements HolderProvider {
 
     /**
      * The shared instance: the held-dominance default extended with vanilla claims. Stateless
-     * once built - the base provider and the claim reader it wraps are both stateless - so every
-     * pass reuses it, and it is the default {@code PoliticalMapView} resolves holding through.
+     * once built - the base provider is stateless, and what stands in for the claim reader is
+     * the means of opening one rather than a reader - so every pass reuses it, and it is the
+     * default {@code PoliticalMapView} resolves holding through.
      */
     public static final ClaimAugmentedHolderProvider INSTANCE =
         new ClaimAugmentedHolderProvider(
             DefaultHolderProvider.INSTANCE,
-            new VanillaClaimReader());
+            VanillaClaimReader::new);
 
     private final HolderProvider heldHolderProvider;
-    private final ClaimReader claimReader;
+    private final ClaimReaderSource claimReaderSource;
 
     ClaimAugmentedHolderProvider(
             HolderProvider heldHolderProvider,
-            ClaimReader claimReader) {
+            ClaimReaderSource claimReaderSource) {
         this.heldHolderProvider = heldHolderProvider;
-        this.claimReader = claimReader;
+        this.claimReaderSource = claimReaderSource;
     }
 
     @Override
-    public HolderResolution resolveHolder(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            String selectedBlocId) {
+    public HolderResolution resolveHolder(HolderPass pass, String selectedBlocId) {
 
-        var held = heldHolderProvider.resolveHolder(sector, grouping, selectedBlocId);
+        var held = heldHolderProvider.resolveHolder(pass, selectedBlocId);
 
         // The claims arrive already under whatever spotlight is active, so the fold only has to
         // answer which claimed systems join the holder map, never which key each one carries.
+        // The reader is opened over this pass rather than held across passes, so it reads the
+        // colonies the held half just read rather than walking every system a second time.
         var claimingHolderBySystemId = FilteredClaims.resolveFilteredClaims(
-            sector,
-            grouping,
-            claimReader,
+            pass,
+            claimReaderSource.openReaderOver(pass.colonies()),
             selectedBlocId);
 
         return foldClaimsIntoHeld(held, claimingHolderBySystemId);

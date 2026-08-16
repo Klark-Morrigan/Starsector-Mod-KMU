@@ -6,7 +6,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.SystemColonies;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
-import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 
 import java.util.Comparator;
@@ -14,47 +13,44 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * One dominance pass over the sector: the three settings-derived knobs it resolves under, and
- * the one walk of each system it resolves them from.
+ * One dominance pass over the sector: a rebuild's reading of it, plus the weighting rule that
+ * scores each market.
  *
- * <p>The dominance pipeline resolves holders under three knobs that always travel together:
- * the weighting rule that scores each market, the dev reveal that decides whether undiscovered
- * colonies count, and the grouping that folds factions into blocs. Threading them as three loose
- * parameters bred a ladder of overloads and a seven-argument inner resolve; bundling them here
- * lets a caller read the player's settings once ({@link #readFromLunaSettings}) and hand the whole
- * pass down, so no system in the walk can drift onto a different rule mid-pass.
+ * <p>The rule is the whole of what dominance adds to {@link HolderPass}. What the two halves have
+ * in common - the sector, the grouping, the dev reveal, and the one walk of each system - is what
+ * any owner-painted layer needs, and it is carried apart so the holder seam can take it without
+ * naming this mechanic. What is here is what only a layer painted by market weights needs.
  *
- * <p>The colony index is here for the same reason and one more. A pass reads each system for
- * several things at once - who holds it, what its blocs contribute, what a hover has to account
- * for - and each of those used to walk the system itself, so a rebuild paid the walk two or three
- * times over per system. Held on the pass, the walk is paid once and shared by everything the pass
- * reads, which is why the per-system reads below take a system rather than a sector: a read that
- * could reach the sector is a read that could walk it again.
+ * <p>Bundled rather than threaded loose because the knobs always travel together: read once by
+ * whoever opens the pass and handed down, so no system in the walk can drift onto a different rule
+ * or a different reading of the sector mid-pass. The per-system reads below take a system rather
+ * than a sector for the same reason the pass holds an index rather than one: a read that could
+ * reach the sector is a read that could walk it again.
  *
- * <p>That also fixes a pass to the sector it was opened over and to the moment it was opened.
- * A pass is built for one rebuild and discarded with it, and one kept past that would go on
- * answering off a sector that has since moved on.
- *
- * @param rules                            the weighting rule scoring each market's dominance worth
- * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward dominance (the
- *                                         "show all factions" dev reveal); false applies the normal
- *                                         known-to-player filter
- * @param grouping                         the grouping that folds factions into blocs before
- *                                         dominance is compared; the identity grouping resolves the
- *                                         plain faction view
- * @param colonies                         the pass's one walk of each system, shared by every read
- *                                         below
+ * @param rules   the weighting rule scoring each market's dominance worth
+ * @param holding the rebuild's reading of the sector every layer shares - which sector, the
+ *                grouping, the dev reveal, and the one walk of each system
  */
 public record DominancePass(
     DominanceRules rules,
-    boolean shouldIncludeUndiscoveredMarkets,
-    HolderGrouping grouping,
-    SystemColoniesIndex colonies) {
+    HolderPass holding) {
 
     public DominancePass {
         Objects.requireNonNull(rules, "rules");
-        Objects.requireNonNull(grouping, "grouping");
-        Objects.requireNonNull(colonies, "colonies");
+        Objects.requireNonNull(holding, "holding");
+    }
+
+    /**
+     * The dominance pass a layer-generic one becomes once the weighting rule is named - what a
+     * caller handed a {@link HolderPass} builds when it has to weigh markets with it, keeping the
+     * one walk of each system the handed pass already holds.
+     *
+     * @param holding the rebuild's reading of the sector
+     * @param rules   the weighting rule scoring each market's worth
+     * @return that reading under that rule
+     */
+    public static DominancePass over(HolderPass holding, DominanceRules rules) {
+        return new DominancePass(rules, holding);
     }
 
     /**
@@ -75,11 +71,21 @@ public record DominancePass(
             boolean shouldIncludeUndiscoveredMarkets,
             HolderGrouping grouping) {
 
-        return new DominancePass(
-            rules,
-            shouldIncludeUndiscoveredMarkets,
-            grouping,
-            new SystemColoniesIndex(sector));
+        return over(
+            HolderPass.over(sector, shouldIncludeUndiscoveredMarkets, grouping),
+            rules);
+    }
+
+    /**
+     * The weighting rule read from the player's live settings, applied to a reading of the sector
+     * a caller already holds - what a dominance-painted resolve does with the pass the holder seam
+     * handed it, the rule being the one knob that seam does not carry.
+     *
+     * @param holding the rebuild's reading of the sector
+     * @return that reading under the live weighting rule
+     */
+    public static DominancePass readRulesFromLunaSettings(HolderPass holding) {
+        return over(holding, DominanceRules.readFromLunaSettings());
     }
 
     /**
@@ -92,11 +98,7 @@ public record DominancePass(
      * @return a pass carrying the live rule and reveal paired with the grouping
      */
     public static DominancePass readFromLunaSettings(SectorAPI sector, HolderGrouping grouping) {
-        return over(
-            sector,
-            DominanceRules.readFromLunaSettings(),
-            PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions(),
-            grouping);
+        return readRulesFromLunaSettings(HolderPass.readFromLunaSettings(sector, grouping));
     }
 
     /**
@@ -111,6 +113,43 @@ public record DominancePass(
     }
 
     /**
+     * The sector this pass reads.
+     *
+     * @return the sector; null when the pass was opened over none
+     */
+    public SectorAPI sector() {
+        return holding.sector();
+    }
+
+    /**
+     * The grouping this pass folds factions into blocs under.
+     *
+     * @return the grouping
+     */
+    public HolderGrouping grouping() {
+        return holding.grouping();
+    }
+
+    /**
+     * Whether undiscovered colonies count toward this pass's reads.
+     *
+     * @return true while the "show all factions" dev reveal is lifting the fog
+     */
+    public boolean shouldIncludeUndiscoveredMarkets() {
+        return holding.shouldIncludeUndiscoveredMarkets();
+    }
+
+    /**
+     * This pass's one walk of each system, for a reader that has to be handed the walk itself
+     * rather than a read made through it.
+     *
+     * @return the colony index, discarded with this pass
+     */
+    public SystemColoniesIndex colonies() {
+        return holding.colonies();
+    }
+
+    /**
      * The colonies in one system, off this pass's single walk of it - what a reader needing the
      * colonies themselves rather than their weights takes, so it shares the walk with the reads
      * below instead of adding one.
@@ -119,7 +158,7 @@ public record DominancePass(
      * @return the system's colony set
      */
     public SystemColonies readColoniesIn(StarSystemAPI system) {
-        return colonies.readColoniesIn(system);
+        return holding.readColoniesIn(system);
     }
 
     /**
@@ -137,7 +176,7 @@ public record DominancePass(
         return KnownMarketFootprints.readByFaction(
             readColoniesIn(system),
             rules,
-            shouldIncludeUndiscoveredMarkets);
+            shouldIncludeUndiscoveredMarkets());
     }
 
     /**
@@ -150,7 +189,7 @@ public record DominancePass(
      * @return each present bloc's footprint in the system; empty when no bloc holds a folded market
      */
     public Map<String, MarketFootprint> readBlocFootprints(StarSystemAPI system) {
-        return grouping.regroupByBloc(
+        return grouping().regroupByBloc(
             readFootprintsByFaction(system),
             MarketFootprint.EMPTY,
             MarketFootprint::merge);
@@ -173,11 +212,11 @@ public record DominancePass(
      */
     public Map<String, FactionMarketContribution> readBlocContributions(StarSystemAPI system) {
 
-        return grouping.regroupByBloc(
+        return grouping().regroupByBloc(
             KnownMarketFootprints.readContributionsByFaction(
                 readColoniesIn(system),
                 rules,
-                shouldIncludeUndiscoveredMarkets),
+                shouldIncludeUndiscoveredMarkets()),
             FactionMarketContribution.EMPTY,
             FactionMarketContribution::merge);
     }
@@ -188,15 +227,10 @@ public record DominancePass(
      * the market nearest the system centre. Lazy - it reads no geometry unless a tie forces it - so
      * every pass shares one on-demand tie-break rather than each resolver building its own.
      *
-     * @param sector the sector whose economy and geometry the tie-break reads
      * @param system the system the tie-break ranks blocs within
      * @return the comparator that orders tied bloc ids for this system
      */
-    public Comparator<String> tieBreakFor(SectorAPI sector, StarSystemAPI system) {
-        return MarketProximityTieBreak.forSystem(
-            sector,
-            system,
-            shouldIncludeUndiscoveredMarkets,
-            grouping);
+    public Comparator<String> tieBreakFor(StarSystemAPI system) {
+        return holding.tieBreakFor(system);
     }
 }

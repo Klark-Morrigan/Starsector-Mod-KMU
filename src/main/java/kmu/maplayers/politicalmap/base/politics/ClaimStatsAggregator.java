@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimReader;
@@ -45,20 +44,20 @@ public final class ClaimStatsAggregator {
      * anything - so a caller listing every entry lists everyone who paints or holds something rather
      * than every faction in the sector.
      *
-     * @param sector      the sector whose systems are walked and whose economy is read; null yields
-     *                    an empty map
-     * @param pass        the rule, dev reveal, and grouping this read resolves under, sampled once by
-     *                    the caller so the whole read resolves under one set of knobs
+     * @param pass        the sector walk, rule, dev reveal, and grouping this read resolves under,
+     *                    sampled once by the caller so the whole read resolves under one set of
+     *                    knobs; a pass over no sector yields an empty map
      * @param claimReader the claim source, read once per system
      * @return each claiming or colony-holding bloc's stats, keyed by bloc id in star-system walk
      *         order; empty when the sector holds neither
      */
     public static Map<String, ClaimStats> aggregateClaimStats(
-            SectorAPI sector,
             DominancePass pass,
             ClaimReader claimReader) {
 
         var statsByBlocId = new LinkedHashMap<String, ClaimStats>();
+        var sector = pass.sector();
+
         if (sector == null) {
             return statsByBlocId;
         }

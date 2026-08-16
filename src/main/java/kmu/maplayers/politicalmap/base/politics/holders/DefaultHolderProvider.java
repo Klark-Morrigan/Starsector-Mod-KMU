@@ -1,8 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics.holders;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 
@@ -26,10 +24,7 @@ public final class DefaultHolderProvider implements HolderProvider {
     }
 
     @Override
-    public HolderResolution resolveHolder(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            String selectedBlocId) {
+    public HolderResolution resolveHolder(HolderPass pass, String selectedBlocId) {
 
         // A spotlighted bloc switches to the presence-aware resolver, which keeps the selected
         // bloc drawn everywhere it owns a market - solid where it wins, contested where a rival
@@ -37,10 +32,7 @@ public final class DefaultHolderProvider implements HolderProvider {
         // resolves to its single dominant holder and nothing is contested.
         if (selectedBlocId != null) {
 
-            var filtered = FilteredPolitics.resolveFilteredHolder(
-                sector,
-                grouping,
-                selectedBlocId);
+            var filtered = FilteredPolitics.resolveFilteredHolder(pass, selectedBlocId);
 
             return new HolderResolution(
                 filtered.ownerBySystemId(),
@@ -48,7 +40,7 @@ public final class DefaultHolderProvider implements HolderProvider {
                 Set.of());
         }
         return new HolderResolution(
-            SectorPolitics.resolveDominantHolderBySystemId(sector, grouping),
+            SectorPolitics.resolveDominantHolderBySystemId(pass),
             Set.of(),
             Set.of());
     }

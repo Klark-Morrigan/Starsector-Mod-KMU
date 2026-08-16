@@ -1,10 +1,8 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.starsector.systems.claims.ClaimReader;
 
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,6 +21,10 @@ import java.util.Map;
  *
  * <p>The claimant comes from the port, not the {@code Misc} static behind it, so the resolve
  * runs against a known set of claimants with no running game.
+ *
+ * <p>The sector walked is the pass's, which is also the sector the reader behind the port was
+ * opened over. One naming of it rather than two is what keeps this from walking the systems of
+ * one sector while the reader prices them against another.
  */
 public final class SectorClaims {
 
@@ -39,21 +41,22 @@ public final class SectorClaims {
      * a claim whose colour faction does not resolve is dropped, exactly as an unresolved held
      * holder is, so it does not paint a colourless cluster.
      *
-     * @param sector      the sector whose systems are walked and whose faction palette is read;
-     *                    null yields an empty map
-     * @param grouping    the holder grouping that collapses the claimant faction into its
-     *                    bloc before the palette is resolved - identity for the faction view,
-     *                    alliance blocs for the alliances view
+     * @param pass        the rebuild's reading of the sector - the systems walked, and the
+     *                    grouping that collapses the claimant faction into its bloc before the
+     *                    palette is resolved (identity for the faction view, alliance blocs for
+     *                    the alliances view); a pass over no sector yields an empty map
      * @param claimReader the claim source, read once per system
      * @return the claiming holder keyed by system id, in star-system walk order; a system with
      *         no resolvable claim is absent from the map
      */
     public static Map<String, DominantHolder> resolveClaimingHolderBySystemId(
-            SectorAPI sector,
-            HolderGrouping grouping,
+            HolderPass pass,
             ClaimReader claimReader) {
 
         var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
+        var sector = pass.sector();
+        var grouping = pass.grouping();
+
         if (sector == null) {
             return ownerBySystemId;
         }

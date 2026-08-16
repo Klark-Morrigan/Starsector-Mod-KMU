@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.politics;
 import kmlib.testfixtures.starsector.systems.claims.ClaimReaderFake;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import java.util.Map;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildDarkTheme;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHolderPassOver;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWithSystems;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,11 +33,11 @@ final class SectorClaimsIntegrationTest {
     class ResolveClaimingHolderBySystemId {
 
         @Test
-        void resolveClaimingHolderBySystemIdReturnsEmptyWhenSectorIsNull() {
+        void resolveClaimingHolderBySystemIdReturnsEmptyWhenThePassHasNoSector() {
             var claimReaderFake = new ClaimReaderFake();
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemId(
-                    null, HolderGrouping.identity(), claimReaderFake)).isEmpty();
+                    buildHolderPassOver(null), claimReaderFake)).isEmpty();
         }
 
         @Test
@@ -47,7 +49,7 @@ final class SectorClaimsIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemId(
-                    sectorMock, HolderGrouping.identity(), claimReaderFake)).isEmpty();
+                    buildHolderPassOver(sectorMock), claimReaderFake)).isEmpty();
         }
 
         @Test
@@ -61,7 +63,7 @@ final class SectorClaimsIntegrationTest {
             claimReaderFake.setClaim("claimed", "hegemony");
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemId(
-                    sectorMock, HolderGrouping.identity(), claimReaderFake))
+                    buildHolderPassOver(sectorMock), claimReaderFake))
                     .containsExactly(Map.entry("claimed",
                             new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
@@ -81,7 +83,7 @@ final class SectorClaimsIntegrationTest {
             claimReaderFake.setClaim("claimed", "hegemony");
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemId(
-                    sectorMock, grouping, claimReaderFake))
+                    HolderPass.over(sectorMock, false, grouping), claimReaderFake))
                     .containsExactly(Map.entry("claimed",
                             new DominantHolder("alliance-1", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
@@ -96,7 +98,7 @@ final class SectorClaimsIntegrationTest {
             claimReaderFake.setClaim("claimed", "ghost-faction");
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemId(
-                    sectorMock, HolderGrouping.identity(), claimReaderFake)).isEmpty();
+                    buildHolderPassOver(sectorMock), claimReaderFake)).isEmpty();
         }
     }
 }

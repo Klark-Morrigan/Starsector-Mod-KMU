@@ -15,6 +15,7 @@ import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -98,9 +99,10 @@ final class FactionsViewTest {
                     // in for here and would answer with the stand-in rather than build a pass.
                     .thenReturn(new DominancePass(
                         mock(DominanceRules.class),
-                        false, // Undiscovered colonies do not count, as on the live map.
-                        HolderGrouping.identity(),
-                        new SystemColoniesIndex(null)));
+                        new HolderPass(
+                            HolderGrouping.identity(),
+                            false, // Undiscovered colonies do not count, as on the live map.
+                            new SystemColoniesIndex(null))));
 
                 var planner = FactionsView.INSTANCE.resolveRibbonPlanner(
                     mock(SectorAPI.class),
@@ -291,7 +293,7 @@ final class FactionsViewTest {
 
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(Map.of("hegemony", ANY_STATS));
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
@@ -321,7 +323,7 @@ final class FactionsViewTest {
 
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(Map.of("luddic_path", ANY_STATS));
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
@@ -339,7 +341,7 @@ final class FactionsViewTest {
 
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(Map.of());
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
@@ -356,7 +358,7 @@ final class FactionsViewTest {
 
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(Map.of());
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false)

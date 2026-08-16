@@ -295,7 +295,7 @@ final class ClaimsViewTest {
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(Map.of("hegemony", ANY_CLAIMANT_STATS));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
@@ -319,7 +319,7 @@ final class ClaimsViewTest {
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(Map.of("luddic_path", new ClaimStats(1, 0)));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
@@ -341,7 +341,7 @@ final class ClaimsViewTest {
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(Map.of(
                         "hegemony", new ClaimStats(1, 0),
                         "tritachyon", new ClaimStats(0, 40)));
@@ -369,7 +369,7 @@ final class ClaimsViewTest {
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(statsByBlocId);
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
@@ -400,7 +400,7 @@ final class ClaimsViewTest {
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(statsByBlocId);
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
@@ -418,7 +418,7 @@ final class ClaimsViewTest {
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(Map.of());
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
@@ -435,7 +435,7 @@ final class ClaimsViewTest {
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any(), any()))
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(Map.of());
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, false)

@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
 
@@ -76,29 +77,42 @@ public final class SectorPolitics {
             SectorAPI sector,
             HolderGrouping grouping) {
         return resolveDominantHolderBySystemId(
-            sector,
-            DominancePass.readFromLunaSettings(sector, grouping));
+            HolderPass.readFromLunaSettings(sector, grouping));
+    }
+
+    /**
+     * Builds the dominant holder for every inhabited star system over a rebuild's own reading of
+     * the sector, reading the weighting rule live - the entry a holding provider calls, the rule
+     * being the one knob the pass it was handed does not carry.
+     *
+     * @param pass the rebuild's reading of the sector, whose walk of each system this resolve
+     *             shares; a pass over no sector yields an empty map
+     * @return the dominant holder keyed by system id; a system with no owned
+     *         markets is absent from the map (uninhabited)
+     */
+    public static Map<String, DominantHolder> resolveDominantHolderBySystemId(HolderPass pass) {
+        return resolveDominantHolderBySystemId(
+            DominancePass.readRulesFromLunaSettings(pass));
     }
 
     /**
      * Builds the dominant holder for every inhabited star system under an explicit
      * dominance pass, for a caller that has already sampled the player's settings.
      *
-     * @param sector the sector whose economy is read; null yields an empty map
-     * @param pass   the rule, dev reveal, and grouping this pass resolves under
+     * @param pass the rule, dev reveal, grouping, and sector walk this pass resolves under
      * @return the dominant holder keyed by system id; a system with no folded
      *         markets is absent from the map (uninhabited)
      */
-    public static Map<String, DominantHolder> resolveDominantHolderBySystemId(
-            SectorAPI sector,
-            DominancePass pass) {
+    public static Map<String, DominantHolder> resolveDominantHolderBySystemId(DominancePass pass) {
 
         var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
+        var sector = pass.sector();
+
         if (sector == null) {
             return ownerBySystemId;
         }
         for (var system : sector.getStarSystems()) {
-            var holder = resolveDominantHolder(sector, system, pass);
+            var holder = resolveDominantHolder(system, pass);
             if (holder != null) {
                 ownerBySystemId.put(system.getId(), holder);
             }
@@ -153,7 +167,6 @@ public final class SectorPolitics {
             StarSystemAPI system,
             HolderGrouping grouping) {
         return resolveDominantHolder(
-            sector,
             system,
             DominancePass.readFromLunaSettings(sector, grouping));
     }
@@ -167,16 +180,17 @@ public final class SectorPolitics {
      * the faction the grouping names for its palette. Under identity the bloc id is the
      * faction id and its colour faction is itself, so the result is the plain faction holder.
      *
-     * @param sector the sector whose economy is read; null (or a null economy) yields null
      * @param system the system to resolve; null yields null
-     * @param pass   the rule, dev reveal, and grouping this pass resolves under
+     * @param pass   the rule, dev reveal, grouping, and sector walk this pass resolves under; a
+     *               pass over no sector (or one whose sector has no economy) yields null
      * @return the dominant holder, or null when the system holds no folded market
      *         (uninhabited)
      */
     public static DominantHolder resolveDominantHolder(
-            SectorAPI sector,
             StarSystemAPI system,
             DominancePass pass) {
+
+        var sector = pass.sector();
 
         if (sector == null || system == null || sector.getEconomy() == null) {
             return null;
@@ -184,7 +198,7 @@ public final class SectorPolitics {
         var footprintByBlocId = pass.readBlocFootprints(system);
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
             footprintByBlocId,
-            pass.tieBreakFor(sector, system));
+            pass.tieBreakFor(system));
 
         if (dominantBlocId == null) {
             return null;

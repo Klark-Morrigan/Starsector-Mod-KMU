@@ -1,11 +1,9 @@
 package kmu.maplayers.politicalmap.base.politics.holders;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
-import kmlib.starsector.systems.claims.ClaimReader;
+import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimReader;
 
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.FilteredClaims;
 
 import java.util.Set;
@@ -42,33 +40,29 @@ import java.util.Set;
 public final class ClaimsHolderProvider implements HolderProvider {
 
     /**
-     * The one shared instance, reading vanilla claims. Stateless once built - the claim reader it
-     * wraps is stateless - so every pass reuses it, and the Claims view resolves holding through
-     * it.
+     * The one shared instance, reading vanilla claims. Stateless once built - what it holds is
+     * the means of opening a reader rather than a reader - so every pass reuses it, and the
+     * Claims view resolves holding through it.
      */
     public static final ClaimsHolderProvider INSTANCE =
-        new ClaimsHolderProvider(new VanillaClaimReader());
+        new ClaimsHolderProvider(VanillaClaimReader::new);
 
-    private final ClaimReader claimReader;
+    private final ClaimReaderSource claimReaderSource;
 
-    ClaimsHolderProvider(ClaimReader claimReader) {
-        this.claimReader = claimReader;
+    ClaimsHolderProvider(ClaimReaderSource claimReaderSource) {
+        this.claimReaderSource = claimReaderSource;
     }
 
     @Override
-    public HolderResolution resolveHolder(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            String selectedBlocId) {
-                
+    public HolderResolution resolveHolder(HolderPass pass, String selectedBlocId) {
+
         // A claim covers the whole territory here, so every claimed system paints solid: no
         // contested and no unfilled systems, which the fill split reads as its whole-cluster-solid
         // fast path. The spotlight only changes which key a claim carries, never its fill.
         return new HolderResolution(
                 FilteredClaims.resolveFilteredClaims(
-                        sector,
-                        grouping,
-                        claimReader,
+                        pass,
+                        claimReaderSource.openReaderOver(pass.colonies()),
                         selectedBlocId),
                 Set.of(),
                 Set.of());

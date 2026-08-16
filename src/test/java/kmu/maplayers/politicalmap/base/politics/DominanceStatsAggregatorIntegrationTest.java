@@ -1,7 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -19,6 +18,7 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HE
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildEconomylessSectorWithSystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildPassOver;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWithSystems;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStabilityWeightedRules;
@@ -41,20 +41,6 @@ class DominanceStatsAggregatorIntegrationTest {
     private static final DominanceRules STABILITY_WEIGHTED
         = buildStabilityWeightedRules();
 
-    // The faction-view pass most tests aggregate under: the stability rule, the normal filter, and
-    // the identity grouping. The alliance-grouping test builds its own pass.
-    //
-    // Built per sector rather than shared as a constant, because a pass carries the walk of the
-    // sector it was opened over: one held across cases would answer a later case's system off an
-    // earlier case's sector, and the two commonly name their systems alike.
-    private static DominancePass buildPassOver(SectorAPI sector) {
-        return DominancePass.over(
-            sector,
-            STABILITY_WEIGHTED,
-            false, // Undiscovered markets are not included.
-            HolderGrouping.identity());
-    }
-
     @Nested
     class AggregateDominanceStats {
 
@@ -71,7 +57,7 @@ class DominanceStatsAggregatorIntegrationTest {
 
             // At full stability each size point is worth DOMINANCE_WEIGHT_SCALE (1000), so score sums
             // to (5 + 3) * 1000 and market size to the raw 5 + 3.
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(sector, buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
                 .containsExactly(entry("hegemony", new DominanceStats(2, 2, 8000, 8)));
         }
 
@@ -86,7 +72,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 buildVisibleMarket(hegemony, 5),
                 buildVisibleMarket(tritachyon, 3));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(sector, buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
                 .containsExactly(
                     entry("hegemony", new DominanceStats(1, 1, 5000, 5)),
                     entry("tritachyon", new DominanceStats(0, 1, 3000, 3)));
@@ -110,7 +96,6 @@ class DominanceStatsAggregatorIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(
-                    sector,
                     DominancePass.over(sector, STABILITY_WEIGHTED, false, grouping)))
                 .containsExactly(entry("alliance-1", new DominanceStats(2, 2, 5000, 5)));
         }
@@ -126,7 +111,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 List.of(hegemony),
                 listSystemMarkets("weightless-system", buildVisibleMarket(hegemony, 0)));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(sector, buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
                 .containsExactly(entry("hegemony", new DominanceStats(1, 1, 0, 0)));
         }
 
@@ -139,7 +124,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 List.of(hegemony),
                 listSystemMarkets("bare-system", buildConditionOnlyMarket(hegemony, 6)));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(sector, buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
                 .isEmpty();
         }
 
@@ -151,14 +136,13 @@ class DominanceStatsAggregatorIntegrationTest {
             // it goes on counting claims without an economy and leaves only market size at zero.
             var sector = buildEconomylessSectorWithSystem("system-a");
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(
-                    sector, buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
                 .isEmpty();
         }
 
         @Test
         void aggregateDominanceStatsIsEmptyForNullSector() {
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(null, buildPassOver(null)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(null)))
                 .isEmpty();
         }
     }

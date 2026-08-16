@@ -181,7 +181,6 @@ final class HeldSystemRibbonPlannerIntegrationTest {
     // grouping, which is the pass a faction-view rebuild resolves.
     private static HeldSystemRibbonPlanner buildPlanner(SectorAPI sector) {
         return new HeldSystemRibbonPlanner(
-            sector,
             DominancePass.over(
                 sector,
                 SectorPoliticsFixtures.buildStabilityWeightedRules(),

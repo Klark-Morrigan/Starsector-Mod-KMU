@@ -1,10 +1,8 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.starsector.systems.claims.ClaimReader;
 
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -45,24 +43,23 @@ public final class FilteredClaims {
      * unchanged. A claim of the selected bloc whose spotlight holder does not resolve is dropped,
      * matching how the presence pass drops a spotlit system whose colour faction has gone.
      *
-     * @param sector         the sector whose systems are walked and whose faction palette is read;
-     *                       null yields an empty map
-     * @param grouping       the grouping that folds a claimant into its bloc before the palette is
-     *                       resolved, and that names the selected bloc's colour faction
+     * @param pass           the rebuild's reading of the sector - the systems walked, and the
+     *                       grouping that folds a claimant into its bloc before the palette is
+     *                       resolved and that names the selected bloc's colour faction; a pass
+     *                       over no sector yields an empty map
      * @param claimReader    the claim source, read once per system
      * @param selectedBlocId the spotlighted bloc's id, or null off filter
      * @return the claiming holder keyed by system id, in star-system walk order
      */
     public static Map<String, DominantHolder> resolveFilteredClaims(
-            SectorAPI sector,
-            HolderGrouping grouping,
+            HolderPass pass,
             ClaimReader claimReader,
             String selectedBlocId) {
 
         var claimingHolderBySystemId = SectorClaims.resolveClaimingHolderBySystemId(
-            sector,
-            grouping,
+            pass,
             claimReader);
+        var sector = pass.sector();
 
         if (sector == null || selectedBlocId == null) {
             return claimingHolderBySystemId;
@@ -70,7 +67,10 @@ public final class FilteredClaims {
 
         // Resolved once for the whole walk: every system the bloc claims joins the same spotlight
         // territory, so they all carry the identical holder.
-        var spotlitHolder = FilteredPolitics.resolveSpotlitHolder(sector, grouping, selectedBlocId);
+        var spotlitHolder = FilteredPolitics.resolveSpotlitHolder(
+            sector,
+            pass.grouping(),
+            selectedBlocId);
         var spotlitClaims = new LinkedHashMap<String, DominantHolder>();
 
         for (var claim : claimingHolderBySystemId.entrySet()) {

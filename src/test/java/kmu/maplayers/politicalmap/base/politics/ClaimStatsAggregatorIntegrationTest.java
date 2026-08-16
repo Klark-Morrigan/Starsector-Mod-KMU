@@ -1,7 +1,5 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.testfixtures.starsector.systems.claims.ClaimReaderFake;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -18,6 +16,7 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HE
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildEconomylessSectorWithSystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildPassOver;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWithSystems;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStabilityWeightedRules;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
@@ -38,20 +37,6 @@ final class ClaimStatsAggregatorIntegrationTest {
     // LunaLib settings only the running game provides.
     private static final DominanceRules STABILITY_WEIGHTED = buildStabilityWeightedRules();
 
-    // The claims view's own pass: identity grouping, since claims carry no alliance rollup. The
-    // alliance test builds its own pass to prove the fold is still the pass's to decide.
-    //
-    // Built per sector rather than shared as a constant, because a pass carries the walk of the
-    // sector it was opened over: one held across cases would answer a later case's system off an
-    // earlier case's sector, and the two commonly name their systems alike.
-    private static DominancePass buildClaimsPassOver(SectorAPI sector) {
-        return DominancePass.over(
-            sector,
-            STABILITY_WEIGHTED,
-            false, // Undiscovered markets are not included.
-            HolderGrouping.identity());
-    }
-
     @Nested
     class AggregateClaimStats {
 
@@ -70,8 +55,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             claimReaderFake.setClaim("system-a", "hegemony");
             claimReaderFake.setClaim("system-b", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    sectorMock, buildClaimsPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(sectorMock), claimReaderFake))
                 .containsExactly(entry("hegemony", new ClaimStats(2, 0)));
         }
 
@@ -90,8 +74,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    sectorMock, buildClaimsPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(sectorMock), claimReaderFake))
                 .containsExactly(entry("hegemony", new ClaimStats(1, 8)));
         }
 
@@ -108,8 +91,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    sectorMock, buildClaimsPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(sectorMock), claimReaderFake))
                 .containsExactly(entry("hegemony", new ClaimStats(1, 0)));
         }
 
@@ -127,8 +109,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("shared-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    sectorMock, buildClaimsPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(sectorMock), claimReaderFake))
                 .containsExactly(
                     entry("hegemony", new ClaimStats(1, 0)),
                     entry("tritachyon", new ClaimStats(0, 4)));
@@ -154,7 +135,6 @@ final class ClaimStatsAggregatorIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    sectorMock,
                     DominancePass.over(sectorMock, STABILITY_WEIGHTED, false, grouping),
                     claimReaderFake))
                 .containsExactly(entry("alliance-1", new ClaimStats(1, 3)));
@@ -166,8 +146,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             // so a bloc absent from the map is absent from the picker rather than listed at nothing.
             var sectorMock = buildSectorWithSystems(List.of(), listSystemMarkets("empty-system"));
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    sectorMock, buildClaimsPassOver(sectorMock), new ClaimReaderFake()))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(sectorMock), new ClaimReaderFake()))
                 .isEmpty();
         }
 
@@ -180,15 +159,13 @@ final class ClaimStatsAggregatorIntegrationTest {
 
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    sectorMock, buildClaimsPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(sectorMock), claimReaderFake))
                 .containsExactly(entry("hegemony", new ClaimStats(1, 0)));
         }
 
         @Test
         void aggregateClaimStatsIsEmptyForNullSector() {
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    null, buildClaimsPassOver(null), new ClaimReaderFake()))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(null), new ClaimReaderFake()))
                 .isEmpty();
         }
     }

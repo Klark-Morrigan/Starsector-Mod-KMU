@@ -392,7 +392,7 @@ final class AlliancesViewTest {
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
                 aggregatorMock
-                    .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
+                    .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY));
 
                 assertThat(view.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
@@ -420,7 +420,7 @@ final class AlliancesViewTest {
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
                 aggregatorMock
-                    .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any(), any()))
+                    .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(Map.of());
 
                 assertThat(view.resolveBlocPicker(mock(SectorAPI.class), ANY_RULES, false)

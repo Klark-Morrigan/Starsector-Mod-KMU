@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.politics.holders;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
@@ -38,7 +39,7 @@ final class DefaultHolderProviderTest {
         void resolveHolderReturnsTheDominantHoldersAndNothingContestedOffFilter() {
 
             var sectorMock = mock(SectorAPI.class);
-            var grouping = HolderGrouping.identity();
+            var pass = HolderPass.over(sectorMock, false, HolderGrouping.identity());
             var holders = Map.of(
                 "owned-system",
                 new DominantHolder("hegemony", PRIMARY, SECONDARY));
@@ -46,12 +47,10 @@ final class DefaultHolderProviderTest {
             try (var sectorPoliticsMock = mockStatic(SectorPolitics.class)) {
 
                 sectorPoliticsMock
-                    .when(() -> SectorPolitics
-                        .resolveDominantHolderBySystemId(sectorMock, grouping))
+                    .when(() -> SectorPolitics.resolveDominantHolderBySystemId(pass))
                     .thenReturn(holders);
 
-                var resolution = DefaultHolderProvider.INSTANCE
-                    .resolveHolder(sectorMock, grouping, null);
+                var resolution = DefaultHolderProvider.INSTANCE.resolveHolder(pass, null);
 
                 assertThat(resolution.ownerBySystemId())
                     .isEqualTo(holders);
@@ -66,7 +65,7 @@ final class DefaultHolderProviderTest {
         void resolveHolderPassesThroughThePresenceAwareResolverWhenABlocIsSpotlighted() {
 
             var sectorMock = mock(SectorAPI.class);
-            var grouping = HolderGrouping.identity();
+            var pass = HolderPass.over(sectorMock, false, HolderGrouping.identity());
             var holders = Map.of(
                 "owned-system",
                 new DominantHolder("$spotlit", PRIMARY, SECONDARY));
@@ -77,12 +76,10 @@ final class DefaultHolderProviderTest {
             try (var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
 
                 filteredPoliticsMock
-                    .when(() -> FilteredPolitics
-                        .resolveFilteredHolder(sectorMock, grouping, "hegemony"))
+                    .when(() -> FilteredPolitics.resolveFilteredHolder(pass, "hegemony"))
                     .thenReturn(filtered);
 
-                var resolution = DefaultHolderProvider.INSTANCE
-                    .resolveHolder(sectorMock, grouping, "hegemony");
+                var resolution = DefaultHolderProvider.INSTANCE.resolveHolder(pass, "hegemony");
 
                 assertThat(resolution.ownerBySystemId())
                     .isEqualTo(holders);

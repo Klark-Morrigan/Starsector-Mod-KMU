@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
 
@@ -152,28 +153,25 @@ public final class FilteredPolitics {
      * every system would re-read the economy the holding resolve just walked, for an answer
      * discarded at all but a few of them.
      *
-     * @param sector            the sector whose economy is read; null yields an empty set
-     * @param grouping          the active view's grouping, so presence is judged for the same
-     *                          bloc the spotlight names
+     * @param pass              the rebuild's reading of the sector, whose walk of each system this
+     *                          read shares; a pass over no sector yields an empty set
      * @param selectedBlocId    the spotlighted bloc's id; null yields an empty set (no filter)
      * @param candidateSystemIds the systems to test - those this pass resolved no holder for
      * @return the candidates the spotlighted bloc owns a counted colony in
      */
     public static Set<String> findPresentSystemIds(
-            SectorAPI sector,
-            HolderGrouping grouping,
+            HolderPass pass,
             String selectedBlocId,
             Set<String> candidateSystemIds) {
 
-        // Nothing to answer for, so the settings read behind the pass is skipped rather than paid
+        // Nothing to answer for, so the weighting rule's settings read is skipped rather than paid
         // to reach an overload that would return empty anyway. Only the two conditions this can
         // decide cheaply are tested here; the null-sector contract is stated once, below.
         if (selectedBlocId == null || candidateSystemIds.isEmpty()) {
             return Set.of();
         }
         return findPresentSystemIds(
-            sector,
-            DominancePass.readFromLunaSettings(sector, grouping),
+            DominancePass.readRulesFromLunaSettings(pass),
             selectedBlocId,
             candidateSystemIds);
     }
@@ -187,19 +185,19 @@ public final class FilteredPolitics {
      * whether it is present is asked: a holderless system has no contest for it to win or lose,
      * so the dominant/contested split those cells are classified by means nothing here.
      *
-     * @param sector            the sector whose economy is read; null yields an empty set
-     * @param pass              the rule, dev reveal, and grouping this pass resolves under
+     * @param pass              the rule, dev reveal, grouping, and sector walk this read resolves
+     *                          under; a pass over no sector yields an empty set
      * @param selectedBlocId    the spotlighted bloc's id; null yields an empty set
      * @param candidateSystemIds the systems to test - those this pass resolved no holder for
      * @return the candidates the spotlighted bloc owns a counted colony in
      */
     public static Set<String> findPresentSystemIds(
-            SectorAPI sector,
             DominancePass pass,
             String selectedBlocId,
             Set<String> candidateSystemIds) {
 
         var presentSystemIds = new LinkedHashSet<String>();
+        var sector = pass.sector();
 
         if (sector == null || sector.getEconomy() == null || selectedBlocId == null) {
             return presentSystemIds;
@@ -232,22 +230,21 @@ public final class FilteredPolitics {
     }
 
     /**
-     * Builds the presence-aware holders for every inhabited system under the player's live
-     * settings - the entry the filter branch of the render pipeline calls in place of
-     * {@link SectorPolitics#resolveDominantHolderBySystemId} while a bloc is spotlighted.
+     * Builds the presence-aware holders for every inhabited system over a rebuild's own reading
+     * of the sector, reading the weighting rule live - the entry a holding provider calls in
+     * place of {@link SectorPolitics#resolveDominantHolderBySystemId} while a bloc is
+     * spotlighted, the rule being the one knob the pass it was handed does not carry.
      *
-     * @param sector         the sector whose economy is read; null yields empty holding
-     * @param grouping       the active view's grouping, sampled once for the whole pass
+     * @param pass           the rebuild's reading of the sector, whose walk of each system this
+     *                       resolve shares; a pass over no sector yields empty holding
      * @param selectedBlocId the spotlighted bloc's id; null yields empty holding (no filter)
      * @return the presence-aware holders: the holder per system and the contested spotlit systems
      */
     public static FilteredHolder resolveFilteredHolder(
-            SectorAPI sector,
-            HolderGrouping grouping,
+            HolderPass pass,
             String selectedBlocId) {
         return resolveFilteredHolder(
-            sector,
-            DominancePass.readFromLunaSettings(sector, grouping),
+            DominancePass.readRulesFromLunaSettings(pass),
             selectedBlocId);
     }
 
@@ -263,24 +260,24 @@ public final class FilteredPolitics {
      * returned contested set, the only place the dominant/contested split lives now that both
      * share a key. A system with no owned markets is absent, exactly as in the normal pass.
      *
-     * @param sector         the sector whose economy is read; null yields empty holding
-     * @param pass           the rule, dev reveal, and grouping this pass resolves under
+     * @param pass           the rule, dev reveal, grouping, and sector walk this pass resolves
+     *                       under; a pass over no sector yields empty holding
      * @param selectedBlocId the spotlighted bloc's id; null yields empty holding
      * @return the presence-aware holders: the holder per system and the contested spotlit systems
      */
     public static FilteredHolder resolveFilteredHolder(
-            SectorAPI sector,
             DominancePass pass,
             String selectedBlocId) {
 
         var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
         var contestedSystemIds = new LinkedHashSet<String>();
+        var sector = pass.sector();
 
         if (sector == null || sector.getEconomy() == null || selectedBlocId == null) {
             return new FilteredHolder(ownerBySystemId, contestedSystemIds);
         }
         for (var system : sector.getStarSystems()) {
-            var holder = resolveHolder(sector, system, pass, selectedBlocId, contestedSystemIds);
+            var holder = resolveHolder(system, pass, selectedBlocId, contestedSystemIds);
             if (holder != null) {
                 ownerBySystemId.put(system.getId(), holder);
             }
@@ -326,7 +323,6 @@ public final class FilteredPolitics {
     // which sees a key isSpotlitBloc rejects). Reads and regroups the footprints once and shares
     // them with both the classification and the real-holder fallback.
     private static DominantHolder resolveHolder(
-            SectorAPI sector,
             StarSystemAPI system,
             DominancePass pass,
             String selectedBlocId,
@@ -337,7 +333,8 @@ public final class FilteredPolitics {
         // The proximity tie-break the normal pass uses, so both the "does the selected bloc
         // dominate" call and the receded real-holder fallback settle a tie the same way the base
         // layers do; lazy, so it reads no geometry unless this system actually ties.
-        var tieBreak = pass.tieBreakFor(sector, system);
+        var tieBreak = pass.tieBreakFor(system);
+        var sector = pass.sector();
         var grouping = pass.grouping();
         var presence = classifySelectedBlocPresence(footprintByBlocId, selectedBlocId, tieBreak);
 

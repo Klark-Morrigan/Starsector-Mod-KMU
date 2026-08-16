@@ -18,6 +18,7 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.PE
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildDarkTheme;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildPassOver;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWithSystems;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStabilityWeightedRules;
@@ -41,20 +42,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FilteredPoliticsIntegrationTest {
 
     private static final DominanceRules STABILITY_WEIGHTED = buildStabilityWeightedRules();
-
-    // The faction-view pass most tests filter under: the stability rule, the normal filter, and the
-    // identity grouping. The alliance-grouping test builds its own pass.
-    //
-    // Built per sector rather than shared as a constant, because a pass carries the walk of the
-    // sector it was opened over: one held across cases would answer a later case's system off an
-    // earlier case's sector, and the two commonly name their systems alike.
-    private static DominancePass buildPassOver(SectorAPI sector) {
-        return DominancePass.over(
-            sector,
-            STABILITY_WEIGHTED,
-            false, // Undiscovered markets are not included.
-            HolderGrouping.identity());
-    }
 
     @Nested
     class ResolveFilteredHolder {
@@ -198,7 +185,6 @@ class FilteredPoliticsIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             var holder = FilteredPolitics.resolveFilteredHolder(
-                    sector,
                     DominancePass.over(sector, STABILITY_WEIGHTED, false, grouping),
                     "alliance-1")
                 .ownerBySystemId()
@@ -216,7 +202,7 @@ class FilteredPoliticsIntegrationTest {
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var sector = buildSectorWith("owned-system", List.of(hegemony), buildVisibleMarket(hegemony, 5));
             var filtered =
-                FilteredPolitics.resolveFilteredHolder(sector, buildPassOver(sector), null);
+                FilteredPolitics.resolveFilteredHolder(buildPassOver(sector), null);
 
             assertThat(filtered.ownerBySystemId())
                 .isEmpty();
@@ -227,7 +213,7 @@ class FilteredPoliticsIntegrationTest {
         @Test
         void isEmptyForNullSector() {
             var filtered =
-                FilteredPolitics.resolveFilteredHolder(null, buildPassOver(null), "hegemony");
+                FilteredPolitics.resolveFilteredHolder(buildPassOver(null), "hegemony");
 
             assertThat(filtered.ownerBySystemId())
                 .isEmpty();
@@ -248,7 +234,6 @@ class FilteredPoliticsIntegrationTest {
             var sector = buildSectorWith("haven", List.of(pirates), buildVisibleMarket(pirates, 4));
 
             assertThat(FilteredPolitics.findPresentSystemIds(
-                    sector,
                     buildPassOver(sector),
                     "pirates",
                     Set.of("haven")))
@@ -268,7 +253,6 @@ class FilteredPoliticsIntegrationTest {
                 buildVisibleMarket(independent, 6));
 
             assertThat(FilteredPolitics.findPresentSystemIds(
-                    sector,
                     buildPassOver(sector),
                     "pirates",
                     Set.of("haven")))
@@ -286,7 +270,6 @@ class FilteredPoliticsIntegrationTest {
                 buildVisibleMarket(independent, 6));
 
             assertThat(FilteredPolitics.findPresentSystemIds(
-                    sector,
                     buildPassOver(sector),
                     "pirates",
                     Set.of("haven")))
@@ -305,7 +288,6 @@ class FilteredPoliticsIntegrationTest {
                 listSystemMarkets("haven", buildVisibleMarket(pirates, 4)));
 
             assertThat(FilteredPolitics.findPresentSystemIds(
-                    sector,
                     buildPassOver(sector),
                     "pirates",
                     Set.of("haven")))
@@ -319,7 +301,6 @@ class FilteredPoliticsIntegrationTest {
             var sector = buildSectorWith("haven", List.of(pirates), buildVisibleMarket(pirates, 4));
 
             assertThat(FilteredPolitics.findPresentSystemIds(
-                    sector,
                     buildPassOver(sector),
                     null,
                     Set.of("haven")))
@@ -329,7 +310,6 @@ class FilteredPoliticsIntegrationTest {
         @Test
         void isEmptyForNullSector() {
             assertThat(FilteredPolitics.findPresentSystemIds(
-                    null,
                     buildPassOver(null),
                     "pirates",
                     Set.of("haven")))
@@ -344,7 +324,6 @@ class FilteredPoliticsIntegrationTest {
             String selectedBlocId) {
                 
         return FilteredPolitics.resolveFilteredHolder(
-            sector,
             buildPassOver(sector),
             selectedBlocId);
     }

@@ -27,22 +27,15 @@ import java.util.Optional;
  */
 public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldSystemRibbonSource {
 
-    private final SectorAPI sector;
     private final DominancePass pass;
     private final RibbonPlanInputs inputs;
 
     /**
-     * @param sector   the sector whose economy each system's footprints are read from
-     * @param pass     the weighting rule, dev reveal, and grouping this build resolves under,
-     *                 sampled once so every band is counted under the settings the fills were
-     * @param inputs   where a bloc's shades are read from, and how far its runs go
+     * @param pass   the sector walk, weighting rule, dev reveal, and grouping this build resolves
+     *               under, sampled once so every band is counted under the settings the fills were
+     * @param inputs where a bloc's shades are read from, and how far its runs go
      */
-    public HeldSystemRibbonPlanner(
-            SectorAPI sector,
-            DominancePass pass,
-            RibbonPlanInputs inputs) {
-
-        this.sector = sector;
+    public HeldSystemRibbonPlanner(DominancePass pass, RibbonPlanInputs inputs) {
         this.pass = pass;
         this.inputs = inputs;
     }
@@ -62,7 +55,6 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
             RibbonPlanInputs inputs) {
 
         return new HeldSystemRibbonPlanner(
-            sector,
             DominancePass.readFromLunaSettings(sector, grouping),
             inputs);
     }
@@ -84,6 +76,8 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
     @Override
     public Optional<RibbonPlan> planHeldSystemRibbon(StarSystemAPI system) {
 
+        var sector = pass.sector();
+
         if (sector == null || system == null || sector.getEconomy() == null) {
             return Optional.empty();
         }
@@ -96,7 +90,7 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
         // opens on is the bloc the cell is painted for even where the weights alone do not say so.
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
             footprintByBlocId,
-            pass.tieBreakFor(sector, system));
+            pass.tieBreakFor(system));
 
         return Optional.of(HeldCellRibbons.planHeldCellRibbon(
             dominantBlocId,

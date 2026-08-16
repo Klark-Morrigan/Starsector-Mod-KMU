@@ -21,6 +21,7 @@ import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -322,9 +323,10 @@ final class SystemStandingsTooltipTest {
             // answered by the stand-in rather than built.
             StandingsTooltipSeamsFake.stubPass(new DominancePass(
                 ANY_RULES,
-                true,
-                HolderGrouping.identity(),
-                new SystemColoniesIndex(null)));
+                new HolderPass(
+                    HolderGrouping.identity(),
+                    true,
+                    new SystemColoniesIndex(null))));
 
             tooltip.buildBodySections(sectorMock, systemMock);
 

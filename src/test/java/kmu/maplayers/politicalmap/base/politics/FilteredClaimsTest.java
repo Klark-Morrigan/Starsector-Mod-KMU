@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -50,20 +51,19 @@ final class FilteredClaimsTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
+            var pass = HolderPass.over(sectorMock, false, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
-                        sectorMock,
-                        grouping,
+                        pass,
                         claimReaderMock))
                     .thenReturn(claims);
 
                 var resolved = FilteredClaims.resolveFilteredClaims(
-                    sectorMock,
-                    grouping,
+                    pass,
                     claimReaderMock,
                     null);
 
@@ -80,6 +80,7 @@ final class FilteredClaimsTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
+            var pass = HolderPass.over(sectorMock, false, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
@@ -87,8 +88,7 @@ final class FilteredClaimsTest {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
-                        sectorMock,
-                        grouping,
+                        pass,
                         claimReaderMock))
                     .thenReturn(claims);
 
@@ -98,8 +98,7 @@ final class FilteredClaimsTest {
                     .thenReturn(SPOTLIT_HOLDER);
 
                 var resolved = FilteredClaims.resolveFilteredClaims(
-                    sectorMock,
-                    grouping,
+                    pass,
                     claimReaderMock,
                     "hegemony");
 
@@ -119,6 +118,7 @@ final class FilteredClaimsTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
+            var pass = HolderPass.over(sectorMock, false, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
@@ -126,8 +126,7 @@ final class FilteredClaimsTest {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
-                        sectorMock,
-                        grouping,
+                        pass,
                         claimReaderMock))
                     .thenReturn(claims);
 
@@ -137,8 +136,7 @@ final class FilteredClaimsTest {
                     .thenReturn(null);
 
                 var resolved = FilteredClaims.resolveFilteredClaims(
-                    sectorMock,
-                    grouping,
+                    pass,
                     claimReaderMock,
                     "hegemony");
 
@@ -153,20 +151,18 @@ final class FilteredClaimsTest {
         void resolveFilteredClaimsPassesThePlainClaimResolveThroughWithNoSector() {
 
             var claimReaderMock = mock(ClaimReader.class);
-            var grouping = HolderGrouping.identity();
+            var pass = HolderPass.over(null, false, HolderGrouping.identity());
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
-                        null,
-                        grouping,
+                        pass,
                         claimReaderMock))
                     .thenReturn(Map.of());
 
                 var resolved = FilteredClaims.resolveFilteredClaims(
-                    null,
-                    grouping,
+                    pass,
                     claimReaderMock,
                     "hegemony");
 

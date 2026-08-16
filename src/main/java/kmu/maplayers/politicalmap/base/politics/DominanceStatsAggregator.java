@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -38,19 +37,21 @@ public final class DominanceStatsAggregator {
      * one also a domination count). The order follows the economy walk, which each view then maps into
      * its own picker options.
      *
-     * @param sector the sector whose economy is read; null (or a null economy) yields an empty map
-     * @param pass   the rule, dev reveal, and grouping this read resolves under, sampled once by the
-     *               caller so the whole read resolves under one set of knobs
+     * @param pass the sector walk, rule, dev reveal, and grouping this read resolves under, sampled
+     *             once by the caller so the whole read resolves under one set of knobs; a pass over
+     *             no sector (or one whose sector has no economy) yields an empty map
      * @return each present bloc's stats, keyed by bloc id in economy-walk order; empty when no bloc
      *         holds a visible market
      */
-    public static Map<String, DominanceStats> aggregateDominanceStats(SectorAPI sector, DominancePass pass) {
+    public static Map<String, DominanceStats> aggregateDominanceStats(DominancePass pass) {
         var statsByBlocId = new LinkedHashMap<String, DominanceStats>();
+        var sector = pass.sector();
+
         if (sector == null || sector.getEconomy() == null) {
             return statsByBlocId;
         }
         for (var system : sector.getStarSystems()) {
-            accumulateSystemStats(statsByBlocId, sector, system, pass);
+            accumulateSystemStats(statsByBlocId, system, pass);
         }
         return statsByBlocId;
     }
@@ -62,7 +63,6 @@ public final class DominanceStatsAggregator {
     // overwrites, and under an alliance grouping the members fold into the alliance's one bloc.
     private static void accumulateSystemStats(
             Map<String, DominanceStats> statsByBlocId,
-            SectorAPI sector,
             StarSystemAPI system,
             DominancePass pass) {
 
@@ -77,7 +77,7 @@ public final class DominanceStatsAggregator {
         // count matches the territory that actually paints.
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
             extractFootprints(contributionByBlocId),
-            pass.tieBreakFor(sector, system));
+            pass.tieBreakFor(system));
 
         for (var entry : contributionByBlocId.entrySet()) {
             var blocId = entry.getKey();

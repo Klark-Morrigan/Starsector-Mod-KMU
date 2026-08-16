@@ -2,9 +2,11 @@ package kmu.maplayers.politicalmap.base.politics.holders;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.SectorClaims;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,25 +46,25 @@ final class ClaimAugmentedHolderProviderTest {
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
+            var pass = HolderPass.over(sectorMock, false, grouping);
             var heldHolder = new DominantHolder("hegemony", PRIMARY, SECONDARY);
             var claimedHolder = new DominantHolder("tritachyon", PRIMARY, SECONDARY);
 
-            when(baseProviderMock.resolveHolder(sectorMock, grouping, null))
+            when(baseProviderMock.resolveHolder(pass, null))
                 .thenReturn(
                     new HolderResolution(Map.of("held", heldHolder), Set.of(), Set.of()));
 
-            var provider = new ClaimAugmentedHolderProvider(baseProviderMock, claimReaderMock);
+            var provider = new ClaimAugmentedHolderProvider(baseProviderMock, colonies -> claimReaderMock);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
-                        sectorMock,
-                        grouping,
+                        pass,
                         claimReaderMock))
                     .thenReturn(Map.of("claimed", claimedHolder));
 
-                var resolution = provider.resolveHolder(sectorMock, grouping, null);
+                var resolution = provider.resolveHolder(pass, null);
 
                 // The held system keeps its solid holder; the claimed system joins the holder map
                 // under its own claimant colours and is the only unfilled entry.
@@ -84,25 +87,25 @@ final class ClaimAugmentedHolderProviderTest {
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
+            var pass = HolderPass.over(sectorMock, false, grouping);
             var heldHolder = new DominantHolder("hegemony", PRIMARY, SECONDARY);
             var claimOverHeld = new DominantHolder("tritachyon", PRIMARY, SECONDARY);
 
-            when(baseProviderMock.resolveHolder(sectorMock, grouping, null))
+            when(baseProviderMock.resolveHolder(pass, null))
                 .thenReturn(
                     new HolderResolution(Map.of("shared", heldHolder), Set.of(), Set.of()));
                     
-            var provider = new ClaimAugmentedHolderProvider(baseProviderMock, claimReaderMock);
+            var provider = new ClaimAugmentedHolderProvider(baseProviderMock, colonies -> claimReaderMock);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
-                        sectorMock,
-                        grouping,
+                        pass,
                         claimReaderMock))
                     .thenReturn(Map.of("shared", claimOverHeld));
 
-                var resolution = provider.resolveHolder(sectorMock, grouping, null);
+                var resolution = provider.resolveHolder(pass, null);
 
                 // The stronger held signal wins: the system keeps its held holder and draws solid,
                 // so the claim over it adds no unfilled entry.
@@ -120,27 +123,27 @@ final class ClaimAugmentedHolderProviderTest {
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
+            var pass = HolderPass.over(sectorMock, false, grouping);
             var spotlightHolder = new DominantHolder("$spotlit", PRIMARY, SECONDARY);
             var plainClaimHolder = new DominantHolder("hegemony", PRIMARY, SECONDARY);
 
             // The spotlit bloc holds a contested (hatched) system as well, so this pins that adding
             // its claim leaves that existing fill split untouched.
-            when(baseProviderMock.resolveHolder(sectorMock, grouping, "hegemony"))
+            when(baseProviderMock.resolveHolder(pass, "hegemony"))
                 .thenReturn(
                     new HolderResolution(
                         Map.of("held", spotlightHolder),
                         Set.of("held"),
                         Set.of()));
 
-            var provider = new ClaimAugmentedHolderProvider(baseProviderMock, claimReaderMock);
+            var provider = new ClaimAugmentedHolderProvider(baseProviderMock, colonies -> claimReaderMock);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
                     var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
-                        sectorMock,
-                        grouping,
+                        pass,
                         claimReaderMock))
                     .thenReturn(Map.of("claimed", plainClaimHolder));
 
@@ -149,7 +152,7 @@ final class ClaimAugmentedHolderProviderTest {
                         .resolveSpotlitHolder(sectorMock, grouping, "hegemony"))
                     .thenReturn(spotlightHolder);
 
-                var resolution = provider.resolveHolder(sectorMock, grouping, "hegemony");
+                var resolution = provider.resolveHolder(pass, "hegemony");
 
                 // The spotlit faction's own claim carries the spotlight holder, so it fuses into the
                 // spotlight territory at full strength - drawn unfilled - rather than its plain
@@ -172,26 +175,26 @@ final class ClaimAugmentedHolderProviderTest {
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
+            var pass = HolderPass.over(sectorMock, false, grouping);
             var spotlightHolder = new DominantHolder("$spotlit", PRIMARY, SECONDARY);
             var rivalClaimHolder = new DominantHolder("tritachyon", PRIMARY, SECONDARY);
 
-            when(baseProviderMock.resolveHolder(sectorMock, grouping, "hegemony"))
+            when(baseProviderMock.resolveHolder(pass, "hegemony"))
                 .thenReturn(
                     new HolderResolution(Map.of("held", spotlightHolder), Set.of(), Set.of()));
 
-            var provider = new ClaimAugmentedHolderProvider(baseProviderMock, claimReaderMock);
+            var provider = new ClaimAugmentedHolderProvider(baseProviderMock, colonies -> claimReaderMock);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
                     var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
-                        sectorMock,
-                        grouping,
+                        pass,
                         claimReaderMock))
                     .thenReturn(Map.of("rival-claimed", rivalClaimHolder));
 
-                var resolution = provider.resolveHolder(sectorMock, grouping, "hegemony");
+                var resolution = provider.resolveHolder(pass, "hegemony");
 
                 // A bloc other than the spotlighted one keeps its plain bloc holder, so the style
                 // layer recedes its claim into the muted background just as it recedes that bloc's
@@ -200,6 +203,40 @@ final class ClaimAugmentedHolderProviderTest {
                     .isSameAs(rivalClaimHolder);
                 assertThat(resolution.unfilledSystemIds())
                     .containsExactly("rival-claimed");
+            }
+        }
+
+        @Test
+        void resolveHolderOpensItsClaimReaderOverTheSameWalkTheHeldHalfRead() {
+            // The two halves each read every system, so a claim reader with a walk of its own
+            // would traverse the sector a second time for colonies the held half has just been
+            // handed. Opening it over the pass is what makes one rebuild cost one walk.
+            var sectorMock = mock(SectorAPI.class);
+            var claimReaderMock = mock(ClaimReader.class);
+            var baseProviderMock = mock(HolderProvider.class);
+            var pass = HolderPass.over(sectorMock, false, HolderGrouping.identity());
+            var openedOver = new ArrayList<SystemColoniesIndex>();
+
+            when(baseProviderMock.resolveHolder(pass, null))
+                .thenReturn(new HolderResolution(Map.of(), Set.of(), Set.of()));
+
+            var provider = new ClaimAugmentedHolderProvider(
+                baseProviderMock,
+                colonies -> {
+                    openedOver.add(colonies);
+                    return claimReaderMock;
+                });
+
+            try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
+
+                sectorClaimsMock
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(pass, claimReaderMock))
+                    .thenReturn(Map.of());
+
+                provider.resolveHolder(pass, null);
+
+                assertThat(openedOver)
+                    .containsExactly(pass.colonies());
             }
         }
     }

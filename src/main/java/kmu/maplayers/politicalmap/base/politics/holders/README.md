@@ -47,12 +47,19 @@ the code that actually draws the map should not have to care which mode is runni
 keeps the two apart.
 
 Each view hands the drawing code one object: a `HolderProvider`. Think of it as the answer to a
-single question - *who owns each star system?* To let it answer, the drawing code passes three
+single question - *who owns each star system?* To let it answer, the drawing code passes two
 inputs:
 
-- the sector (the galaxy being drawn),
-- the grouping (whether factions stand alone or merge into alliances),
+- the rebuild's own reading of the sector - a `HolderPass`, carrying which sector is being drawn,
+  the grouping (whether factions stand alone or merge into alliances), how far the dev reveal
+  lifts the fog, and the one walk of each system every reader shares,
 - which faction or alliance, if any, the filter is currently highlighting.
+
+The pass is opened where the rebuild begins and handed down, so a provider that answers through
+two mechanics - held territory *and* claims - reads each system once between them rather than
+once apiece. It carries only what any owner-painted layer needs; the rule that picks a winner from
+what it read (market weights, a claim, later a diplomatic relation) is each provider's own, which
+is what lets this one seam be implemented by layers that have no dominance behind them at all.
 
 The provider hands back one bundle: an `HolderResolution`. It lists the owner of every owned
 system, and marks the few systems that are drawn as exceptions (the fill states below). A system's
@@ -105,7 +112,11 @@ of `SectorPolitics`. Where `SectorPolitics` reads who *holds* a system, `SectorC
 and a held one of the same bloc end up equal, and fuse downstream.
 
 The claimant comes from KMLib's `ClaimReader` port - the usual way KM code inverts a third-party
-read that only answers inside a running game. Its vanilla binding mirrors `Misc.getClaimingFaction`
+read that only answers inside a running game. What the two claim-reading sources hold is not a
+reader but a `ClaimReaderSource`: a reader answers off the colonies behind it, so one is opened
+over the pass being resolved and discarded with it. A reader kept for the life of the game would
+go on answering off a sector that has since moved on, and would walk every system again for
+colonies the pass has already read. Its vanilla binding mirrors `Misc.getClaimingFaction`
 step for step rather than calling it, because one computation has to answer *who* claims a system
 for the fills here and *why* for the claims layer's hover box. Sharing it is what stops the fill
 and the box over it naming different claimants - on the memory-flag override, and on the

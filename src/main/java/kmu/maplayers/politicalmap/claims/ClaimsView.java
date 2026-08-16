@@ -188,7 +188,6 @@ public final class ClaimsView implements PoliticalMapView {
                 sector,
                 grouping,
                 ClaimStatsAggregator.aggregateClaimStats(
-                    sector,
                     pass,
                     new VanillaClaimReader(pass.colonies())),
                 blocId -> true),
