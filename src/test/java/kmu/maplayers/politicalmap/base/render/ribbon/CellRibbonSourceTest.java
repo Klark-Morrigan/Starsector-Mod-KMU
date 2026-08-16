@@ -78,10 +78,6 @@ final class CellRibbonSourceTest {
     // pass: a path standing for one cell is no answer for another's.
     private static final String OTHER_CELL = "other";
 
-    // A plan with nothing in it, which is what the single-holder cell comes back with - most of
-    // the sector, and the gate that has to be answered before the ring is walked.
-    private static final RibbonPlan EMPTY_PLAN = RibbonPlan.NONE;
-
     private static final Color BAND_COLOUR = new Color(140, 160, 220);
 
     // A plan with a run in it, so a cell that reaches the geometry comes back carrying a band and
@@ -237,7 +233,7 @@ final class CellRibbonSourceTest {
         void drawsNoBandForACellWhosePlanIsEmpty() {
             // The single-holder cell: the bloc that painted it is the only one present, so there
             // is nothing a band could report that the fill beneath it has not said already.
-            assertThat(buildWith(system -> EMPTY_PLAN)
+            assertThat(buildWith(system -> RibbonPlan.NONE)
                     .buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, passTimings))
                 .isEqualTo(CellRibbon.NONE);
         }
@@ -251,7 +247,7 @@ final class CellRibbonSourceTest {
             var ringPathCache = new CellRingPathCache();
             var timingsMock = mock(RibbonBakeTimings.class);
 
-            buildCachingInto(system -> EMPTY_PLAN, ringPathCache)
+            buildCachingInto(system -> RibbonPlan.NONE, ringPathCache)
                 .buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, timingsMock);
 
             verify(timingsMock, never())

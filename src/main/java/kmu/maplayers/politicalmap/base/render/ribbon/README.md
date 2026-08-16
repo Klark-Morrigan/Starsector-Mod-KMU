@@ -9,7 +9,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 
 ## Index
 
-- [The four classes that build one](#the-four-classes-that-build-one)
+- [The classes that build one](#the-classes-that-build-one)
 - [Laying a band inside a ring](#laying-a-band-inside-a-ring)
 - [A ring that outlives the bake that walked it](#a-ring-that-outlives-the-bake-that-walked-it)
 - [When the ring has no room](#when-the-ring-has-no-room)
@@ -23,9 +23,9 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 - [What a bake spends its time on](#what-a-bake-spends-its-time-on)
 - [What is not here](#what-is-not-here)
 
-## The four classes that build one
+## The classes that build one
 
-Four collaborators with deliberately different jobs, since the names are close enough to be worth
+Five collaborators with deliberately different jobs, since the names are close enough to be worth
 stating apart, plus the accumulator they charge what they spend to:
 
 | Class | Scope | Job |
