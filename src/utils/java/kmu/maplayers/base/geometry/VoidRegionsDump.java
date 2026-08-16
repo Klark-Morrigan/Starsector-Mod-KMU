@@ -691,13 +691,22 @@ final class VoidRegionsDump {
 
         for (var pocket : pockets) {
 
-            spans.add(pocket.span());
+            spans.add(pocket.pocket().span());
 
-            if (pocket.outlines().isEmpty()) {
+            if (pocket.pocket().outlines().isEmpty()) {
                 closedOver++;
             }
         }
         spans.sort(Double::compare);
+
+        var spills = CoastPocketFaults.findSpills(pockets, traced.union());
+
+        System.out.printf(
+            Locale.ROOT,
+            "%d runs of pocket outline sit seaward of the reach that closed them, worst by "
+                + "%.0f (has to be 0)%n",
+            spills.size(),
+            spills.isEmpty() ? 0 : spills.get(0).depth());
 
         System.out.printf(
             Locale.ROOT,

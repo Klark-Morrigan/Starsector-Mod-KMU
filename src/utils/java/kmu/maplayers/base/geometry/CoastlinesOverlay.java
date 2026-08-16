@@ -27,7 +27,8 @@ final class CoastlinesOverlay {
     private final ViewerSettings settings;
 
     private List<CoastCrossings.Penetration> penetrations = List.of();
-    private List<VoidPockets.VoidPocket> trapped = List.of();
+    private List<CoastPocketFaults.WalledPocket> trapped = List.of();
+    private List<CoastPocketFaults.Spill> spills = List.of();
 
     // Held from the last trace so the marks are drawn against the same discs the coast was
     // measured against, rather than against whatever the sliders have been moved to since.
@@ -56,6 +57,7 @@ final class CoastlinesOverlay {
             traced = null;
             penetrations = List.of();
             trapped = List.of();
+            spills = List.of();
             return;
         }
 
@@ -82,6 +84,8 @@ final class CoastlinesOverlay {
             new VoidSections.SectionRules(
                 settings.voidSpanMultiple * settings.parameters.cellRadius(),
                 settings.minSectionShare));
+
+        spills = CoastPocketFaults.findSpills(trapped, traced.union());
     }
 
     /**
@@ -98,8 +102,8 @@ final class CoastlinesOverlay {
 
         g2.setStroke(new BasicStroke(ViewerPainting.SPAN_STROKE / SPAN_STROKES_PER_EDGE));
 
-        for (var pocket : trapped) {
-            for (var outline : pocket.outlines()) {
+        for (var walled : trapped) {
+            for (var outline : walled.pocket().outlines()) {
 
                 ViewerPainting.paintFilledShape(
                     g2,
@@ -130,6 +134,21 @@ final class CoastlinesOverlay {
             g2.draw(ViewerPainting.buildPath(Coastlines.collectPoints(coast)));
         }
         paintPenetrations(g2);
+        paintSpills(g2);
+    }
+
+    // Only the stretch of a pocket outline that is over the line, not the pocket it belongs
+    // to. A pocket with a sliver off one corner is almost all correct, and marking the whole
+    // shape points at the right part as loudly as at the wrong one.
+    private void paintSpills(Graphics2D g2) {
+
+        g2.setStroke(new BasicStroke(ViewerPainting.CROSSING_STROKE));
+        g2.setColor(ViewerPainting.applyAlpha(
+            settings.coastCrossingColour, ViewerPainting.OPAQUE_ALPHA));
+
+        for (var spill : spills) {
+            g2.draw(ViewerPainting.buildPath(spill.run()));
+        }
     }
 
     // The runs that go inside a cell, and the cells they go inside. Last of everything and in

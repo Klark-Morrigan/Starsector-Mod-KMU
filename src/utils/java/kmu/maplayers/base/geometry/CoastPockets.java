@@ -52,9 +52,9 @@ final class CoastPockets {
      * @param sectionRules how long a piece of a pocket should be before it is cut into more
      *                     than one, and how narrow a crossing has to be to count as a place
      *                     to cut it
-     * @return the pockets, each with a closed outline
+     * @return the pockets, each with a closed outline and the reaches that walled it
      */
-    static List<VoidPockets.VoidPocket> findCoastPockets(
+    static List<CoastPocketFaults.WalledPocket> findCoastPockets(
             Coastlines.TracedCoasts traced,
             List<double[]> sites,
             List<CellGaps.CellGap> bridges,
@@ -90,7 +90,7 @@ final class CoastPockets {
         // coast is drawn on the cells' fills, so a channel further out the discs have
         // swallowed it and the wall is dropped as buried. The channel comes out at the
         // mouths, where every wall keeps one, and off the cells by the reach itself.
-        var pockets = new ArrayList<VoidPockets.VoidPocket>();
+        var pockets = new ArrayList<CoastPocketFaults.WalledPocket>();
 
         for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
                 new DiscUnion(sites, parameters.measureDrawnReach()), walls, arcSegments)) {
@@ -103,8 +103,13 @@ final class CoastPockets {
             }
             // Its own outline, because this trace already IS the shaped one - the channel
             // came out of it at the mouths and out of the reach against the cells.
-            pockets.add(VoidPockets.shapeVoidPocket(
-                hole, List.of(hole.boundary()), ownerBySite, sites, sectionRules));
+            var walling = new ArrayList<>(hole.walledBy());
+            walling.retainAll(reaches);
+
+            pockets.add(new CoastPocketFaults.WalledPocket(
+                VoidPockets.shapeVoidPocket(
+                    hole, List.of(hole.boundary()), ownerBySite, sites, sectionRules),
+                List.copyOf(walling)));
         }
         return pockets;
     }

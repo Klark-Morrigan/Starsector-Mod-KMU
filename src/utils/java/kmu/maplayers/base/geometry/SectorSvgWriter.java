@@ -247,7 +247,7 @@ final class SectorSvgWriter {
         for (var pocket : CoastPockets.findCoastPockets(
                 traced, sites, bridges, unowned, parameters, sectionRules)) {
 
-            for (var outline : pocket.outlines()) {
+            for (var outline : pocket.pocket().outlines()) {
 
                 appendPolygon(
                     svg,
