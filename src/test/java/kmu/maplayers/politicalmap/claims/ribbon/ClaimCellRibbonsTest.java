@@ -7,6 +7,7 @@ import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
+import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
@@ -130,15 +131,27 @@ final class ClaimCellRibbonsTest {
         void drawsNoRibbonWhereTheClaimantIsTheOnlyFactionStanding() {
             // The lone-claimant row of the gate table: the fill already says whose system it is,
             // and a band of the painter alone would only repeat it.
-            //
-            // This is also the shape a system takes where another faction is present through
-            // unweighed markets alone - a concealed base, say. The contest gives such a faction no
-            // standing at all, so it never reaches the input and the cell stays bare; there is no
-            // second walk of the system for a band to find it on.
             var contest = buildContest(
                 NO_DECREE,
                 HEGEMONY,
                 List.of(buildStandingOn(HEGEMONY, FIRST_LISTED)));
+
+            assertThat(planFor(HEGEMONY, contest))
+                .isEqualTo(RibbonPlan.NONE);
+        }
+
+        @Test
+        void drawsNoRibbonForAFactionTheContestNeverWeighed() {
+            // Tri-Tachyon is in the system through unweighed colonies alone - a concealed base,
+            // say - so the contest lists it at a nought with no market that carried a score. The
+            // count above has nothing to start from there, so the cell reads as the claimant's
+            // alone and stays bare rather than sprouting a rival's run of an invented length.
+            var contest = buildContest(
+                NO_DECREE,
+                HEGEMONY,
+                List.of(
+                    buildStandingOn(HEGEMONY, FIRST_LISTED),
+                    ClaimStandingFixture.buildPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL)));
 
             assertThat(planFor(HEGEMONY, contest))
                 .isEqualTo(RibbonPlan.NONE);

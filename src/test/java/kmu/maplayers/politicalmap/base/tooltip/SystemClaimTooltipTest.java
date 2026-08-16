@@ -11,6 +11,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipLabelPlacement;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
+import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
@@ -185,6 +186,26 @@ final class SystemClaimTooltipTest {
                     "Tri-Tachyon",
                     "Non-territorial:",
                     "Pirates");
+        }
+
+        @Test
+        void buildBodySectionsLeavesAFactionTheContestNeverWeighedOutOfBothRivalBlocks() {
+            // A presence-only standing is a faction the mechanic reached nothing of - a concealed
+            // base, or a station the economy does not list. Neither heading can carry it: "Contested
+            // by:" would say it contested something it did not, and "Non-territorial:" states why a
+            // presence could not win rather than that it never competed. Its territoriality is real
+            // and is deliberately not what routes it, so the case poses a territorial one.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
+                    ClaimStandingFixture.buildPresenceOnlyStanding(TRITACHYON, true))));
+
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly("Claim:", "The Hegemony");
         }
 
         @Test
@@ -493,6 +514,38 @@ final class SystemClaimTooltipTest {
             assertThat(tooltip.resolveAccountEntries(
                     new SystemClaimBreakdown(null, HEGEMONY, List.of()),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true)))
+                .isEmpty();
+        }
+    }
+
+    @Nested
+    class ResolveExpandedDetailName {
+
+        @Test
+        void resolveExpandedDetailNameOffersTheAccountBehindAScoredStanding() {
+            // What the key at the foot of the box offers the player, in their words. Answered for
+            // the pair at once because it is the one thing they agree on - the counterpart accounts
+            // for the very scores the ordinary box states.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
+
+            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
+                .contains("score contributions");
+        }
+
+        @Test
+        void resolveExpandedDetailNameOffersNothingWhereTheContestWeighedNobody() {
+            // The counterpart accounts for the colonies behind a scored standing, and a faction the
+            // mechanic never weighed has none. Both boxes would state the same claim line, so the
+            // key would do nothing the player could see - and a hint over it would advertise it.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                null,
+                List.of(ClaimStandingFixture.buildPresenceOnlyStanding(TRITACHYON, true))));
+
+            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
                 .isEmpty();
         }
     }

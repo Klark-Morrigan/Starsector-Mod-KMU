@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 /**
  * Resolves the arithmetic behind a faction's claim standing into the entries a block lists it as: every
@@ -148,8 +147,9 @@ public final class ClaimScoreRowResolver {
         // nothing the account needs, and a run of redacted lines would state the very count the
         // withholding is meant to keep. The strongest is never among them - a market takes a standing
         // only where it is not hidden, and one that is not hidden is one the player knows of.
-        var listedMarkets = Stream
-            .concat(Stream.of(standing.standingMarket()), standing.otherMarkets().stream())
+        var heldMarkets = standing.readHeldMarkets();
+        var listedMarkets = heldMarkets
+            .stream()
             .filter(market -> isListingUnfoundMarkets || market.isKnownToPlayer())
             .sorted(MARKET_ORDER)
             .toList();
@@ -169,7 +169,7 @@ public final class ClaimScoreRowResolver {
         // The presence term is stated only where the list above it is exactly the markets the count
         // counts. Its whole claim on the reader is that the number can be checked against the list it
         // follows, and it loses that either way the two can part company.
-        if (isEveryListedMarketCounted(listedMarkets, standing)) {
+        if (isEveryListedMarketCounted(listedMarkets, heldMarkets)) {
             resolveSiblingEntry(standing).ifPresent(entries::add);
         }
         return List.copyOf(entries);
@@ -183,9 +183,9 @@ public final class ClaimScoreRowResolver {
     // does not include it, and the term would read as short by exactly that market.
     private static boolean isEveryListedMarketCounted(
             List<MarketClaimBreakdown> listedMarkets,
-            WeighedClaimStanding standing) {
+            List<MarketClaimBreakdown> heldMarkets) {
 
-        return listedMarkets.size() == standing.otherMarkets().size() + THE_MARKET_BEING_SCORED
+        return listedMarkets.size() == heldMarkets.size()
             && listedMarkets
                 .stream()
                 .noneMatch(MarketClaimBreakdown::isOffEconomyMarket);
