@@ -95,6 +95,98 @@ final class CoastPocketFaults {
         List<DiscUnionBoundary.Chord> reaches) {
     }
 
+    /**
+     * The part of a pocket outline that is legal - everything landward of the reaches that
+     * closed it.
+     *
+     * <p>Cut rather than corrected. Where the wall a pocket closes on ends up is the result of
+     * a chain of angles, and chasing it into place has to be right for every configuration on
+     * the map at once; the half-plane the pocket must stay inside is one fact about one line,
+     * true whatever the wall did. So the shape is built as well as it can be and then held to
+     * the rule, instead of the rule being something the construction is trusted to have met.
+     *
+     * <p>Cut BEFORE the channel and the fill, so what the reader sees is inset from the legal
+     * edge rather than from an edge that was never allowed. Cutting afterwards would leave the
+     * fill correct and the outline it was measured against wrong.
+     *
+     * @param outline the pocket outline as traced
+     * @param reaches the coast reaches it closes on
+     * @param union   the discs it was traced against, to say which side the cells are on
+     * @param channel how far the pocket holds back from a reach, so the cut lands where the
+     *                fill should stop rather than on the line itself
+     * @return what is left, which is empty when the whole outline was over the line
+     */
+    static List<double[]> cutToLandward(
+            List<double[]> outline,
+            List<DiscUnionBoundary.Chord> reaches,
+            DiscUnion union,
+            double channel) {
+
+        var kept = outline;
+
+        for (var reach : reaches) {
+            kept = cutAlong(kept, reach, union, channel);
+        }
+        return kept;
+    }
+
+    // One outline held to one reach's landward side, by the single-plane clip walk. A vertex
+    // inside survives; an edge crossing the line contributes the crossing point, so the cut
+    // edge lands exactly on the line rather than on the nearest sample to it.
+    private static List<double[]> cutAlong(
+            List<double[]> outline,
+            DiscUnionBoundary.Chord reach,
+            DiscUnion union,
+            double channel) {
+
+        var line = reach.line().toUnitLine();
+
+        if (line == null || outline.isEmpty()) {
+            return outline;
+        }
+        var normalX = -line.directionY();
+        var normalY = line.directionX();
+
+        var centre = union.sites().get(reach.fromCircle());
+        var landward = Math.signum(
+            (centre[0] - line.originX()) * normalX + (centre[1] - line.originY()) * normalY);
+
+        var kept = new ArrayList<double[]>(outline.size());
+
+        for (var index = 0; index < outline.size(); index++) {
+
+            var here = outline.get(index);
+            var next = outline.get((index + 1) % outline.size());
+
+            var hereIn = measureInside(here, line, normalX, normalY, landward) - channel;
+            var nextIn = measureInside(next, line, normalX, normalY, landward) - channel;
+
+            if (hereIn >= 0) {
+                kept.add(here);
+            }
+            if ((hereIn >= 0) != (nextIn >= 0)) {
+
+                var share = hereIn / (hereIn - nextIn);
+
+                kept.add(new double[] {
+                    here[0] + (next[0] - here[0]) * share,
+                    here[1] + (next[1] - here[1]) * share});
+            }
+        }
+        return kept.size() < MIN_RUN_VERTICES ? List.of() : kept;
+    }
+
+    private static double measureInside(
+            double[] point,
+            kmlib.math.geometry.DirectedLine line,
+            double normalX,
+            double normalY,
+            double landward) {
+
+        return landward
+            * ((point[0] - line.originX()) * normalX + (point[1] - line.originY()) * normalY);
+    }
+
     // Every maximal stretch of one outline lying seaward of one reach. Walked as runs rather
     // than reported per vertex, because a spike is one fault however many samples it took.
     private static void collectSpillsAlong(

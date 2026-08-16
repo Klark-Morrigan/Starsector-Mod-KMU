@@ -92,8 +92,9 @@ final class CoastPockets {
         // mouths, where every wall keeps one, and off the cells by the reach itself.
         var pockets = new ArrayList<CoastPocketFaults.WalledPocket>();
 
-        for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
-                new DiscUnion(sites, parameters.measureDrawnReach()), walls, arcSegments)) {
+        var union = new DiscUnion(sites, parameters.measureDrawnReach());
+
+        for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(union, walls, arcSegments)) {
 
             // Only what a COAST reach shut in. Void the cells closed unaided, and void a
             // bridge holds, are both the other construction's to report; drawing them here
@@ -106,9 +107,21 @@ final class CoastPockets {
             var walling = new ArrayList<>(hole.walledBy());
             walling.retainAll(reaches);
 
+            // Held to the landward side of every reach that closed it, before the fill is
+            // measured from it. A reach has open sea beyond it, so an outline that has
+            // strayed there is claiming void that is not the pocket's - and where the wall
+            // ended up is the result of a chain of angles, while the side of the line it has
+            // to stay on is one fact that holds whatever the wall did.
+            var legal = CoastPocketFaults.cutToLandward(
+                hole.boundary(), walling, union, parameters.borderInset());
+
+            if (legal.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
+                continue;
+            }
+
             pockets.add(new CoastPocketFaults.WalledPocket(
                 VoidPockets.shapeVoidPocket(
-                    hole, List.of(hole.boundary()), ownerBySite, sites, sectionRules),
+                    hole, List.of(legal), ownerBySite, sites, sectionRules),
                 List.copyOf(walling)));
         }
         return pockets;
