@@ -627,14 +627,50 @@ final class IncrementalPoliticsRefreshTest {
                 .containsOnlyKeys(DISTANT_SYSTEM);
         }
 
+        @Test
+        void applyStalePoliticsUpdatesRebakesTheBandOfAMarkedSystemWhileAnotherFlips() {
+            // The third reason a cell owes a band, and the one the other two hide: a colony
+            // appeared somewhere that did not change hands, in the same batch as a flip
+            // elsewhere. That system is neither re-shaped nor reached by a name, so a bake taking
+            // only those two would leave its band counting a colony that is no longer there -
+            // exactly what the no-flip path re-bakes the marked systems for.
+            var territories = buildOwnedBy(Map.of(
+                FLIPPED_SYSTEM,
+                HEGEMONY,
+                DISTANT_SYSTEM,
+                HEGEMONY));
+
+            seedDistantCell(territories);
+
+            assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(TRITACHYON));
+            assertResolvesTo(DISTANT_SYSTEM, readOwnerOf(HEGEMONY));
+
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            MapLayerRefresh.markSystemGroupingStale(DISTANT_SYSTEM);
+            applyTo(territories);
+
+            assertThat(territories.getRibbonByCellId())
+                .containsOnlyKeys(DISTANT_SYSTEM);
+        }
+
         // Seeds a drawn cell far from the flip, with the geometry a band needs to be laid in it:
-        // the system it draws as, its own site, and a ring wide enough to hold the authored band.
+        // the system it draws as, its own site and edges, and a ring wide enough to hold the
+        // authored band. Its edges face open space alone, so nothing that flips can re-shape it.
         private void seedDistantCell(PoliticalMapTerritories territories) {
 
             territories.putStyledCell(
                 DISTANT_SYSTEM,
                 PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
                 buildDistantBandSizedCell());
+
+            when(cellGeometry.cells().getCellEdgesByCellId())
+                .thenReturn(Map.of(
+                    FLIPPED_SYSTEM,
+                    buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0),
+                    NEIGHBOUR_SYSTEM,
+                    buildSquareCellFacing(FLIPPED_SYSTEM, 100),
+                    DISTANT_SYSTEM,
+                    buildIsolatedSquareCell(10000)));
 
             when(cellGeometry.cells().getSystemIdByCellId())
                 .thenReturn(Map.of(
@@ -872,6 +908,19 @@ final class IncrementalPoliticsRefreshTest {
                 offsetX + 50,
                 0,
                 new EdgeTarget.AcrossSystem(neighbourSystemId)),
+            new CellEdge(offsetX + 50, 0, offsetX + 50, 50, frontier),
+            new CellEdge(offsetX + 50, 50, offsetX, 50, frontier),
+            new CellEdge(offsetX, 50, offsetX, 0, frontier));
+    }
+
+    // A closed four-edge cell whose every edge faces open space, so no flip anywhere can re-shape
+    // it - the cell a case needs when what it is about is the reasons other than a re-shape.
+    private static List<CellEdge> buildIsolatedSquareCell(double offsetX) {
+
+        var frontier = new EdgeTarget.NoSystem("frontier");
+
+        return List.of(
+            new CellEdge(offsetX, 0, offsetX + 50, 0, frontier),
             new CellEdge(offsetX + 50, 0, offsetX + 50, 50, frontier),
             new CellEdge(offsetX + 50, 50, offsetX, 50, frontier),
             new CellEdge(offsetX, 50, offsetX, 0, frontier));

@@ -53,21 +53,15 @@ public final class ClusterNameDisturbance {
             List<ClusterAnchor> standingAnchors,
             List<ClusterAnchor> fittedAnchors) {
 
-        // Indexed by the cluster each placement names, which is the only thing that survives a
-        // re-fit: a fit reports its placements in cluster order, and that order is the partition's
-        // rather than the previous pass's, so two lists cannot be walked side by side.
-        var standingByIdentity = new HashMap<ClusterIdentity, ClusterAnchor>();
-
-        for (var anchor : standingAnchors) {
-            standingByIdentity.put(anchor.identity(), anchor);
-        }
+        // Copied into a map this walk may consume, since what is left in it once every fitted
+        // placement has been matched off is exactly the clusters this fit no longer names - the
+        // vanished half, with no second walk to find it.
+        var unmatchedStanding = new HashMap<>(ClusterAnchor.mapAnchorsByIdentity(standingAnchors));
         var disturbedBounds = new ArrayList<Bounds>();
 
         for (var fitted : fittedAnchors) {
 
-            // Removed rather than read, so what is left in the index afterwards is exactly the
-            // clusters this fit no longer names - the vanished half, with no second walk to find it.
-            var standing = standingByIdentity.remove(fitted.identity());
+            var standing = unmatchedStanding.remove(fitted.identity());
 
             if (fitted.equals(standing)) {
                 continue;
@@ -75,7 +69,7 @@ public final class ClusterNameDisturbance {
             addNameBounds(disturbedBounds, standing);
             addNameBounds(disturbedBounds, fitted);
         }
-        for (var vanished : standingByIdentity.values()) {
+        for (var vanished : unmatchedStanding.values()) {
             addNameBounds(disturbedBounds, vanished);
         }
         return disturbedBounds.isEmpty()

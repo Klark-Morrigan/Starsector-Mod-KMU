@@ -29,7 +29,6 @@ import kmu.settings.KmuPoliticalMapSettings;
 
 import org.apache.log4j.Logger;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -70,6 +69,11 @@ import java.util.Map;
  * of are the whole sector's, so a system appearing anywhere moves fits no membership change would
  * touch - and neither shows up in any one cluster's identity. When the two do not match, nothing
  * is offered and the rebuild is total, which is what it was before the reuse existed.
+ *
+ * <p>That same comparison is what the rebuild reports back. The list it leaves says where every
+ * name ended up and nothing about which of them are new, so a caller holding work laid around the
+ * previous list would have to redo all of it; which names moved is the carry-over index read from
+ * the other side, and this is the only point where both lists exist at once.
  */
 public final class ClusterAnchorsBuilder {
     private static final Logger LOG = Global.getLogger(ClusterAnchorsBuilder.class);
@@ -291,14 +295,9 @@ public final class ClusterAnchorsBuilder {
             StandingClusterAnchors standingAnchors,
             AnchorFitFingerprint fitFingerprint) {
 
-        if (!fitFingerprint.equals(standingAnchors.getFitFingerprint())) {
-            return Map.of();
-        }
-        var anchorByIdentity = new HashMap<ClusterIdentity, ClusterAnchor>();
-        for (var anchor : standingAnchors.getAnchors()) {
-            anchorByIdentity.put(anchor.identity(), anchor);
-        }
-        return anchorByIdentity;
+        return fitFingerprint.equals(standingAnchors.getFitFingerprint())
+            ? ClusterAnchor.mapAnchorsByIdentity(standingAnchors.getAnchors())
+            : Map.of();
     }
 
     // Mints the fingerprint a fit made now would run under: the live tuning read off the

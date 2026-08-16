@@ -3,7 +3,9 @@ package kmu.maplayers.base.labels.anchor;
 import kmlib.math.geometry.Segment;
 
 import java.awt.Color;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * One system cluster's resolved label placement: where the owner's name sits, which way
@@ -109,5 +111,28 @@ public record ClusterAnchor(
             unbiasedAxis,
             thickness,
             lineCount);
+    }
+
+    /**
+     * Files placements under the cluster each of them names.
+     *
+     * <p>The one way a pass's placements can be looked up against another pass's: a fit reports
+     * them in its own partition's order, so two lists cannot be walked side by side, and the
+     * identity is the only thing that survives between them. Stated once because more than one
+     * question is asked of that filing - whether a placement may be carried over, and whether it
+     * moved - and the two must agree on what "the same cluster" means.
+     *
+     * @param anchors the placements to file, in any order
+     * @return each cluster's placement, filed under its identity
+     */
+    public static Map<ClusterIdentity, ClusterAnchor> mapAnchorsByIdentity(
+            List<ClusterAnchor> anchors) {
+
+        var anchorByIdentity = new HashMap<ClusterIdentity, ClusterAnchor>();
+
+        for (var anchor : anchors) {
+            anchorByIdentity.put(anchor.identity(), anchor);
+        }
+        return anchorByIdentity;
     }
 }

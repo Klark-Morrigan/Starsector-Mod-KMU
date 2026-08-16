@@ -207,9 +207,10 @@ was laid in; the band pass then fills it back in.
 The ring a band is laid along is kept beside the shape it was walked inside, in a
 [`CellRingPathCache`](../../src/main/java/kmu/maplayers/politicalmap/base/render/ribbon/CellRingPathCache.java)
 the territories hold and the band pass asks before it walks anything. A bake runs whenever a
-cluster name may have moved - every colony flip, since a re-fit can place a name on a cell the flip
-never touched - while a cell's ring changes only when the cell is cut again, so without it every
-cell in the sector re-walks its own outline on every flip. It is dropped by the same two writes as
+cluster name may have moved, while a cell's ring changes only when the cell is cut again, so
+without it a cell re-baked because a re-fitted name landed on it would re-walk the outline it just
+discarded. The cells the flip re-shaped walk again either way - their paths went with their shapes
+- so what the cache saves is every other cell in the bake. It is dropped by the same two writes as
 the band, which is what lets it carry no key of its own: a cache living inside the object whose
 lifetime it must match is correct by construction, where a keyed one is a rule someone has to keep
 true. A slider bumps the settings revision, which rebuilds the territories, which takes the paths

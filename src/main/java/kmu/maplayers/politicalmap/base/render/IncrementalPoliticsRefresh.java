@@ -174,7 +174,7 @@ final class IncrementalPoliticsRefresh {
                 NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
 
             var cellIdsToBake = collectCellIdsToBake(
-                territories,
+                territories.getFillPolygonByCellId(),
                 staleSystemIds,
                 disturbance,
                 nameDisturbance);
@@ -209,16 +209,15 @@ final class IncrementalPoliticsRefresh {
     // the alternative to naming those cells is re-baking the whole sector, which is what this did
     // before the fit reported what it moved.
     private static Set<String> collectCellIdsToBake(
-            PoliticalMapTerritories territories,
+            Map<String, List<double[]>> fillPolygonByCellId,
             Set<String> staleSystemIds,
-            HolderFlipDisturbance disturbance,
+            HolderFlipDisturbance flipDisturbance,
             ClusterNameDisturbance nameDisturbance) {
 
         var cellIdsToBake = new LinkedHashSet<>(staleSystemIds);
 
-        cellIdsToBake.addAll(disturbance.getCellIdsToReshape());
-        cellIdsToBake.addAll(
-            nameDisturbance.selectDisturbedCellIds(territories.getFillPolygonByCellId()));
+        cellIdsToBake.addAll(flipDisturbance.getCellIdsToReshape());
+        cellIdsToBake.addAll(nameDisturbance.selectDisturbedCellIds(fillPolygonByCellId));
 
         return cellIdsToBake;
     }
