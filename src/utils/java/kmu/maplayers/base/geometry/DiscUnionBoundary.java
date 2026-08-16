@@ -385,11 +385,35 @@ final class DiscUnionBoundary {
 
         var ahead = normalAngle + inner;
         var behind = normalAngle - outer;
+        var width = outer - inner;
 
-        return Angles.measureGap(towards, ahead + (outer - inner) / 2)
-                <= Angles.measureGap(towards, behind + (outer - inner) / 2)
-            ? new double[] {Angles.normalise(ahead), outer - inner}
-            : new double[] {Angles.normalise(behind), outer - inner};
+        // The arc that CONTAINS the wall's end, not the one whose middle is nearest it.
+        //
+        // Nearest is a tiebreak, and a tiebreak needs the two candidates to be far apart. On
+        // a cell facing void most of the way round - the end of a chain, or either half of a
+        // two-cell island - the two arcs a line cuts close up on each other and the tiebreak
+        // stops meaning anything. Picked wrong there, the wall wraps the far side of the
+        // circle and the void it closes runs off along the line instead of stopping at the
+        // cells: the long wedges out to sea that no side-of-the-line check will complain
+        // about, because they lie between two near-parallel reaches and a pair of those
+        // bounds a slab rather than a shape.
+        //
+        // Containment cannot degenerate that way. The wall meets this circle at one known
+        // angle, and exactly one of the two arcs holds it.
+        if (Angles.placeAfter(towards, ahead) <= ahead + width) {
+            return new double[] {Angles.normalise(ahead), width};
+        }
+        if (Angles.placeAfter(towards, behind) <= behind + width) {
+            return new double[] {Angles.normalise(behind), width};
+        }
+
+        // Neither holds it, which the geometry says cannot happen: the wall meets the circle,
+        // so its end is on one of the two arcs the wall's own channel opens. Falling back to
+        // the nearer of the two keeps a rounding at an arc's edge from dropping the wall.
+        return Angles.measureGap(towards, ahead + width / 2)
+                <= Angles.measureGap(towards, behind + width / 2)
+            ? new double[] {Angles.normalise(ahead), width}
+            : new double[] {Angles.normalise(behind), width};
     }
 
     /**

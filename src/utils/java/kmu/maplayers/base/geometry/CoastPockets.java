@@ -124,13 +124,19 @@ final class CoastPockets {
             var legal = CoastPocketFaults.cutToLandward(
                 hole.boundary(), walling, union, parameters.borderInset());
 
-            if (legal.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
-                continue;
-            }
-
+            // A pocket the cut leaves nothing of is still a pocket - it keeps its extent,
+            // its span and the cells around it, and only loses what there was to draw. That
+            // is exactly what the primitive already says an empty outline means, and dropping
+            // it instead would hide the one thing worth knowing: that the cut emptied it.
             pockets.add(new CoastPocketFaults.WalledPocket(
                 VoidPockets.shapeVoidPocket(
-                    hole, List.of(legal), ownerBySite, sites, sectionRules),
+                    hole,
+                    legal.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA
+                        ? List.of()
+                        : List.of(legal),
+                    ownerBySite,
+                    sites,
+                    sectionRules),
                 List.copyOf(walling)));
         }
         return pockets;
@@ -160,10 +166,9 @@ final class CoastPockets {
     // cell's border to a point on another's, so the line through those two points is the line
     // it lies on - and that is all a wall needs to be found again at any reach.
     //
-    // Taken from the coast on the cells' TRUE borders, not the drawn one. The drawn coast
-    // hugs the fills, a channel inside those borders, so its reaches cut into both cells they
-    // run between rather than touching them - and a wall laid on that line closes the wrong
-    // shape by a channel everywhere.
+    // There is only one coast to take them from, and that is the point: the line the map
+    // draws and the line a pocket insets from are the same line, so a fill cannot come to sit
+    // outside the border that defines it.
     //
     // Fillets are not reaches. A fillet runs along one cell's own border from where the coast
     // arrived to where it leaves, so both its ends sit on the same circle and there is no
@@ -174,7 +179,7 @@ final class CoastPockets {
 
         var walls = new ArrayList<DiscUnionBoundary.Chord>();
 
-        for (var coast : traced.onBorders()) {
+        for (var coast : traced.coasts()) {
             for (var index = 0; index < coast.size(); index++) {
 
                 var from = coast.get(index);
@@ -198,7 +203,11 @@ final class CoastPockets {
                 //
                 // Which way is "in" is asked of the one reading of it, so the shift, the
                 // check that finds outline over the line, and the cut that removes it cannot
-                // come to three different answers about the same reach.
+                // come to three different answers about the same reach. The offered point is
+                // the one moved AGAINST the shift, so the branch that finds it seaward is the
+                // branch that wanted the shift the other way - which is what this direction
+                // being wrong looked like on the map: every pocket two channels out to sea,
+                // and the narrow ones entirely so.
                 var bare = new DiscUnionBoundary.Chord(
                     from.circle(),
                     to.circle(),
@@ -211,7 +220,7 @@ final class CoastPockets {
                 var side = CoastPocketFaults.measureLandwardOffset(
                     new double[] {from.point()[0] + inX, from.point()[1] + inY},
                     bare,
-                    traced.union()) < 0 ? -1 : 1;
+                    traced.union()) < 0 ? 1 : -1;
 
                 walls.add(new DiscUnionBoundary.Chord(
                     from.circle(),
