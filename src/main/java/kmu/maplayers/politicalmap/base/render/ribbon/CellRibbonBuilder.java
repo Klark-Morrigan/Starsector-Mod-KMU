@@ -95,12 +95,7 @@ public final class CellRibbonBuilder {
             return CellRibbon.NONE;
         }
         var strokeStart = System.nanoTime();
-        var bands = strokeSegments(
-            path,
-            plan,
-            layout.startArcLength(),
-            layout.lengthUnitWorld(),
-            style);
+        var bands = strokeSegments(path, plan, layout, style);
         timings.addStrokeNanos(System.nanoTime() - strokeStart);
 
         return new CellRibbon(bands);
@@ -216,18 +211,17 @@ public final class CellRibbonBuilder {
     private static List<RibbonBand> strokeSegments(
             RingPath path,
             RibbonPlan plan,
-            double startArcLength,
-            double lengthUnitWorld,
+            RibbonBandLayout layout,
             RibbonStyle style) {
 
         var spans = new ArrayList<List<double[]>>(plan.segments().size());
-        var cursor = startArcLength;
+        var cursor = layout.startArcLength();
 
         // A run's stretch carries the corners the path turns at within it, not just its two ends,
         // so a run spanning a corner of the cell turns with it rather than cutting across.
         for (var segment : plan.segments()) {
 
-            var runEnd = cursor + segment.lengthUnits() * lengthUnitWorld;
+            var runEnd = cursor + segment.lengthUnits() * layout.lengthUnitWorld();
 
             spans.add(path.collectPointsBetween(cursor, runEnd));
             cursor = runEnd;

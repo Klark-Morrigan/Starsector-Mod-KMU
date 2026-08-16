@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
 import kmlib.profiling.Profiler;
+import kmlib.profiling.Timings;
 
 /**
  * What one bake of the presence bands spent, split by the four separable things a bake does:
@@ -26,12 +27,18 @@ public final class RibbonBakeTimings {
     /** The section a whole bake is measured under, which the four phases below break down. */
     public static final String BAKE_SECTION = "politicalMap.bakeRibbons";
 
-    // Named off the whole-pass section so the five rows sort together in the readout, and so the
-    // family has one spelling rather than one per recording site.
-    private static final String PLAN_SECTION = BAKE_SECTION + ".plan";
-    private static final String TRACE_SECTION = BAKE_SECTION + ".trace";
-    private static final String CARVE_SECTION = BAKE_SECTION + ".carve";
-    private static final String STROKE_SECTION = BAKE_SECTION + ".stroke";
+    // One spelling per phase, since each is named twice - once as a profiler section and once in
+    // the log line a bake writes - and two spellings of one phase would read as two phases.
+    private static final String PLAN_PHASE = "plan";
+    private static final String TRACE_PHASE = "trace";
+    private static final String CARVE_PHASE = "carve";
+    private static final String STROKE_PHASE = "stroke";
+
+    // Named off the whole-pass section so the five rows sort together in the readout.
+    private static final String PLAN_SECTION = BAKE_SECTION + "." + PLAN_PHASE;
+    private static final String TRACE_SECTION = BAKE_SECTION + "." + TRACE_PHASE;
+    private static final String CARVE_SECTION = BAKE_SECTION + "." + CARVE_PHASE;
+    private static final String STROKE_SECTION = BAKE_SECTION + "." + STROKE_PHASE;
 
     private long planNanos;
     private long traceNanos;
@@ -72,6 +79,24 @@ public final class RibbonBakeTimings {
      */
     public void addStrokeNanos(long elapsedNanos) {
         strokeNanos += elapsedNanos;
+    }
+
+    /**
+     * @return the four totals as one log fragment, in the order a cell pays them
+     *
+     *     <p>Beside the whole-pass duration in the bake's own log line so the split is there for
+     *     a reader already watching a rebuild in the log, without the console command being
+     *     opened - and so a bake that stood out says in the same breath which phase stood out.
+     *     Milliseconds, matching the duration it sits beside and the profiler's own table; a bake
+     *     small enough to round every phase to zero is one whose total rounds to zero too, and
+     *     the accumulated rows are where such a bake shows.
+     */
+    public String describePhaseTotals() {
+
+        return PLAN_PHASE + "=" + Timings.formatMillis(planNanos)
+            + " " + TRACE_PHASE + "=" + Timings.formatMillis(traceNanos)
+            + " " + CARVE_PHASE + "=" + Timings.formatMillis(carveNanos)
+            + " " + STROKE_PHASE + "=" + Timings.formatMillis(strokeNanos);
     }
 
     /**

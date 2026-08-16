@@ -19,6 +19,11 @@ import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.N
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
  * Pins where a cell's band is laid and how far round it reaches: the inset it runs at, the corner
@@ -226,6 +231,61 @@ final class CellRibbonBuilderTest {
                     NO_NAMES,
                     passTimings))
                 .isEqualTo(CellRibbon.NONE);
+        }
+
+        @Test
+        void chargesTheCellsTraceCarveAndStrokeToThePass() {
+            // What a bake is measured by, and it only means anything if the phases are actually
+            // charged: three numbers nothing writes to would read as a bake that costs nothing.
+            var timingsMock = mock(RibbonBakeTimings.class);
+
+            CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                SQUARE_CELL_SITE,
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
+                STYLE,
+                NO_NAMES,
+                timingsMock);
+
+            verify(timingsMock).addTraceNanos(anyLong());
+            verify(timingsMock).addCarveNanos(anyLong());
+            verify(timingsMock).addStrokeNanos(anyLong());
+        }
+
+        @Test
+        void chargesNothingForACellThatPlannedNoBand() {
+            // The gate is what keeps most of the sector cheap: a cell with nothing to say is
+            // answered before its ring is traced, so it costs the bake nothing at all.
+            var timingsMock = mock(RibbonBakeTimings.class);
+
+            CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                SQUARE_CELL_SITE,
+                RibbonPlan.NONE,
+                STYLE,
+                NO_NAMES,
+                timingsMock);
+
+            verifyNoInteractions(timingsMock);
+        }
+
+        @Test
+        void chargesTheCarveOfACellItLeftNoRoomToLayABandOn() {
+            // A refusal is not free, and the cells the carve turns down are the ones whose carve
+            // is most worth knowing the cost of: charged for the ring it walked, and for no
+            // stroke it never reached.
+            var timingsMock = mock(RibbonBakeTimings.class);
+
+            CellRibbonBuilder.buildCellRibbon(
+                SQUARE_CELL,
+                SQUARE_CELL_SITE,
+                new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
+                STYLE,
+                NAME_ACROSS_THE_WHOLE_CELL,
+                timingsMock);
+
+            verify(timingsMock).addCarveNanos(anyLong());
+            verify(timingsMock, never()).addStrokeNanos(anyLong());
         }
 
         @Test

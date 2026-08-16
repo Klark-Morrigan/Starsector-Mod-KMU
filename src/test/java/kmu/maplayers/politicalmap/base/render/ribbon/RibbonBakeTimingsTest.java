@@ -118,6 +118,22 @@ final class RibbonBakeTimingsTest {
         }
     }
 
+    @Nested
+    class DescribePhaseTotals {
+
+        @Test
+        void namesEveryPhaseAndItsMillisecondsInTheOrderACellPaysThem() {
+            // The line a reader watching a rebuild in the log sees. Each phase is named where its
+            // number is, since four bare durations on one line say nothing about which is which.
+            timings.addPlanNanos(1_500_000L);
+            timings.addTraceNanos(250_000L);
+            timings.addCarveNanos(12_000_000L);
+
+            assertThat(timings.describePhaseTotals())
+                .isEqualTo("plan=1.50ms trace=0.25ms carve=12.00ms stroke=0.00ms");
+        }
+    }
+
     private SectionTiming readSection(String section) {
         return profiler
             .snapshot()

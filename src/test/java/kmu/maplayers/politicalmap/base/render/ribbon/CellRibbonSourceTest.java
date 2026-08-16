@@ -28,10 +28,12 @@ import java.util.Map;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -114,6 +116,31 @@ final class CellRibbonSourceTest {
 
             verify(plannerMock, never())
                 .planSystemRibbon(any());
+        }
+
+        @Test
+        void chargesTheCountToThePassApartFromTheGeometry() {
+            // The one phase of a bake that grows with what the systems hold rather than with the
+            // cells - the claim mechanic walks a system's whole market list - so it is worth its
+            // own number only if it is charged where the count happens rather than swept into the
+            // ring work that follows it.
+            var timingsMock = mock(RibbonBakeTimings.class);
+
+            buildWith(system -> ANY_PLAN).buildCellRibbon(PAINTED_SYSTEM, SQUARE_CELL, timingsMock);
+
+            verify(timingsMock).addPlanNanos(anyLong());
+        }
+
+        @Test
+        void chargesNothingForACellNothingPaints() {
+            // The gate's cost half, stated as what a gated-out cell adds to the bake: nothing was
+            // counted for it, so nothing is charged for it either.
+            var timingsMock = mock(RibbonBakeTimings.class);
+
+            buildWith(system -> ANY_PLAN)
+                .buildCellRibbon(UNPAINTED_SYSTEM, SQUARE_CELL, timingsMock);
+
+            verifyNoInteractions(timingsMock);
         }
 
         @Test

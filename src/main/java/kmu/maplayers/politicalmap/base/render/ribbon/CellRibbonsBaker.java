@@ -140,7 +140,8 @@ public final class CellRibbonsBaker {
         LOG.debug("Political map presence bands baked; cells="
             + cellIds.size()
             + " banded=" + bakedCells
-            + " took=" + Timings.formatMillis(System.nanoTime() - bakeStart));
+            + " took=" + Timings.formatMillis(System.nanoTime() - bakeStart)
+            + " " + timings.describePhaseTotals());
     }
 
     // The room the names take up, or none at all for either of two reasons, answered side by side

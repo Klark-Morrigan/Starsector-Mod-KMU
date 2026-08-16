@@ -25,7 +25,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 ## The four classes that build one
 
 Four collaborators with deliberately different jobs, since the names are close enough to be worth
-stating apart:
+stating apart, plus the accumulator they charge what they spend to:
 
 | Class | Scope | Job |
 | --- | --- | --- |
@@ -33,6 +33,7 @@ stating apart:
 | `CellRibbonSource` | the pass | holds what a pass is settled from; answers one cell at a time |
 | `CellRibbonBuilder` | one cell | pure geometry: ring plus plan in, `CellRibbon` out |
 | `RibbonPathTracer` | one cell | pure geometry: the ring a band runs along, at whichever inset fits |
+| `RibbonBakeTimings` | the pass | what the pass spent, split four ways; see [what a bake spends its time on](#what-a-bake-spends-its-time-on) |
 
 `CellRibbonsBaker` runs as its own pass **after** the rest of a rebuild, because a band needs two
 things no single cell knows: the shape it runs inside, and where every cluster name on the map ended
@@ -48,7 +49,8 @@ is cells nobody paints, and the claim mechanic's count walks a system's whole ma
 
 ## Laying a band inside a ring
 
-`CellRibbonBuilder` is pure over a ring, a plan and the name boxes - no sector, no settings, no GL:
+`CellRibbonBuilder` is pure over a ring, a plan and the name boxes - no sector, no settings, no GL,
+and the pass's timings written to but never read:
 
 1. `RibbonPathTracer` insets the cell's ring by the pad plus half the width through
    `RingPath.traceInsetRing`, which normalises the winding and parameterises the ring by arc
@@ -239,15 +241,18 @@ profiling readout (`kmu_profiling`) beneath the whole-pass `politicalMap.bakeRib
 | `.carve` | the names and the pinches taken off that ring, and the band placed on what is left | the cells times the names, since every name on the map is tested against every cell |
 | `.stroke` | the runs laid end to end and stroked into triangles | the cells that drew something, and how much each planned |
 
-Four numbers because they grow on different axes: a sector that doubles its colonies does not move
-them by one factor, so one total can say a bake got slower without saying which of them did.
+Four rather than one because those axes differ: a sector that doubles its colonies does not move
+them by one factor, so a single total can say a bake got slower without saying which of them did.
 
-Summed per pass and recorded once at the end of the loop rather than measured per cell -
-`Profiler.record` takes an elapsed count, so the loop adds into four longs. A profiler call per
-cell over the whole sector would time itself as much as the work. One pass is therefore one run of
-each section, so the readout's average is what a bake costs, and the four are read against the
-whole-pass row rather than instead of it: the gap between their sum and the total is the loop
-itself, plus the overlay's second trace while a player has it on.
+Summed per pass and recorded once at the end of the loop, since `Profiler.record` takes an elapsed
+count - so one pass is one run of each section, and the readout's average is what a bake costs
+rather than what a cell does. They are read against the whole-pass row rather than instead of it:
+the gap between their sum and the total is the loop itself, plus the overlay's second trace while a
+player has it on.
+
+The same four also close the bake's own `LOG.debug` line beside its total
+(`plan=1.50ms trace=0.25ms ...`), so a rebuild being watched in the log says which phase stood out
+without the console command being opened.
 
 ## What is not here
 
