@@ -291,6 +291,24 @@ final class MapHoverPublisherTest {
         }
 
         @Test
+        void publishHoverFromTicksForANewCellReachedAcrossAnUnresolvableFrame() {
+            // The other side of keeping the last cell: holding it must not go deaf to the cursor
+            // having genuinely moved while the read was down. A latch kept for the wrong reason
+            // would swallow the arrival on the cell the cursor actually crossed to.
+            var publisher = buildPublisher();
+            publisher.publishHoverFrom(buildTargetsWithTwoCells(), MAP_ZOOM);
+
+            stubCursorAt(null);
+            publisher.publishHoverFrom(buildTargetsWithTwoCells(), MAP_ZOOM);
+
+            stubCursorAt(POINT_ON_NEIGHBOUR_CELL);
+            publisher.publishHoverFrom(buildTargetsWithTwoCells(), MAP_ZOOM);
+
+            assertThat(soundPlayerFake.getPlayedCues())
+                .containsExactly(CELL_ARRIVAL_CUE, CELL_ARRIVAL_CUE);
+        }
+
+        @Test
         void publishHoverFromTicksOnceAcrossAFrameThatPaintsNothing() {
             // Absent draw lists are a missing input on the same terms as an unreadable cursor: there
             // are no cell shapes to hit-test, so the frame answers nothing about where the cursor is
