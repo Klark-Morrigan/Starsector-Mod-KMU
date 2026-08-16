@@ -1,5 +1,9 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.HalfPlane;
+import kmlib.math.geometry.LabelledPolygon;
+import kmlib.math.geometry.Limits;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,15 +44,10 @@ final class CoastPocketFaults {
     /**
      * How far a point lies on the cells' side of one reach of coast.
      *
-     * <p>The one reading of which side is which. A reach has cells on one side and open sea on
-     * the other, and three things need to know which: the check that finds outline over the
-     * line, the cut that removes it, and the wall placement that tries not to produce it. Read
-     * three times it is three chances to disagree about one line - and the check and the cut
-     * agreeing is the whole reason the cut can be trusted to remove exactly what the check
-     * would otherwise report.
-     *
-     * <p>Which side the cells are on is read off the reach's own cell rather than assumed, so
-     * a reach running the other way round the coast is judged like any other.
+     * <p>The signed distance itself, for anything wanting to know how far rather than whether
+     * - which is what says the inset against the coast is there at all. Whether a point is
+     * ALLOWED where it is comes from {@link #buildBounds}, since a reach bounds a pocket past
+     * its ends as well as across its line.
      *
      * @param point the point to place
      * @param reach the reach to place it against
@@ -60,21 +59,13 @@ final class CoastPocketFaults {
             DiscUnionBoundary.Chord reach,
             DiscUnion union) {
 
-        var line = reach.line().toUnitLine();
+        var landward = buildLandwardNormal(reach, union);
 
-        if (line == null) {
+        if (landward == null) {
             return 0;
         }
-        var normalX = -line.directionY();
-        var normalY = line.directionX();
-
-        var centre = union.sites().get(reach.fromCircle());
-
-        var landward = Math.signum(
-            (centre[0] - line.originX()) * normalX + (centre[1] - line.originY()) * normalY);
-
-        return landward
-            * ((point[0] - line.originX()) * normalX + (point[1] - line.originY()) * normalY);
+        return measureOffsetFrom(point, new HalfPlane(
+            reach.line().originX(), reach.line().originY(), landward[0], landward[1]));
     }
 
     /**
@@ -97,10 +88,13 @@ final class CoastPocketFaults {
 
         for (var walled : pockets) {
             for (var outline : walled.pocket().outlines()) {
-                for (var point : outline) {
-                    for (var reach : walled.reaches()) {
+                for (var reach : walled.reaches()) {
 
-                        if (measureExcursion(point, reach, union, 0) <= 0) {
+                    var bounds = buildBounds(reach, union, 0);
+
+                    for (var point : outline) {
+
+                        if (measureExcursionFrom(point, bounds) <= 0) {
                             closest = Math.min(
                                 closest, measureLandwardOffset(point, reach, union));
                         }
@@ -175,9 +169,15 @@ final class CoastPocketFaults {
      *
      * <p>Cut rather than corrected. Where the wall a pocket closes on ends up is the result of
      * a chain of angles, and chasing it into place has to be right for every configuration on
-     * the map at once; the half-plane the pocket must stay inside is one fact about one line,
-     * true whatever the wall did. So the shape is built as well as it can be and then held to
-     * the rule, instead of the rule being something the construction is trusted to have met.
+     * the map at once; the half-planes the pocket must stay inside are a few facts about one
+     * line, true whatever the wall did. So the shape is built as well as it can be and then
+     * held to the rule, instead of the rule being something the construction is trusted to
+     * have met.
+     *
+     * <p>One bound at a time, each an exact half-plane clip. Cutting against all three at
+     * once would mean interpolating a crossing from whichever of them is nearest, and the
+     * edge the outline actually leaves through changes partway along wherever two bounds
+     * take over from each other.
      *
      * <p>Cut BEFORE the channel and the fill, so what the reader sees is inset from the legal
      * edge rather than from an edge that was never allowed. Cutting afterwards would leave the
@@ -199,90 +199,114 @@ final class CoastPocketFaults {
         var kept = outline;
 
         for (var reach : reaches) {
-            kept = clipTo(kept, point -> -measureExcursion(point, reach, union, channel));
+            for (var bound : buildBounds(reach, union, channel)) {
+
+                if (kept.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
+                    return List.of();
+                }
+                // Driven with one throwaway label, as any clip wanting no per-edge
+                // distinction is: a label says which cut made an edge, and nothing here asks.
+                kept = LabelledPolygon
+                    .fromLabelledEdges(kept, new int[kept.size()])
+                    .clipToHalfPlane(bound, 0)
+                    .getVertices();
+            }
         }
-        return kept;
+        return kept.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA ? List.of() : kept;
     }
 
     /**
-     * How far outside the stretch one reach bounds a point lies.
+     * The three half-planes one reach of coast bounds a pocket with.
      *
-     * <p>The one statement of what a reach bounds, read by both things that need it: the check
-     * that reports outline over the line, and the cut that removes it. Written twice they can
-     * disagree, and the two ways of disagreeing are a detector that condemns what the cut has
-     * already dealt with, or one that stays silent about what it leaves behind. The second is
-     * what let an overhang past a reach's end sit on the map unmarked.
+     * <p>The one statement of what a reach bounds, and both things that need it read it from
+     * here: the cut, which clips the outline to each of them in turn, and the check, which
+     * reports how far outside them a point strayed. Written twice they can disagree, and the
+     * two ways of disagreeing are a detector that condemns what the cut has already dealt
+     * with, or one that stays silent about what it leaves behind.
      *
-     * <p>Three half-planes, because a reach is a SEGMENT. Seaward of its line is the obvious
-     * one; past either of its two ends is the one that was missing, and missing it is why two
-     * near-parallel reaches passed - a pair of those bounds a slab, and a slab is not a shape.
+     * <p>Three, because a reach is a SEGMENT. Landward of its line is the obvious one; past
+     * either of its two ends is the one a single side test misses - a pair of near-parallel
+     * reaches bounds a slab, and a slab is not a shape.
      *
      * <p>The channel holds off the line only, not the ends. A pocket stops a channel short of
      * the coast because the coast is a border it must not touch; at a reach's ends it meets
      * the cells' own arcs, which the reach it was traced at already holds it off.
      *
-     * @param point   the point to place
-     * @param reach   the reach to place it against
-     * @param union   the discs the reach was laid across
-     * @param channel how far the pocket holds back from the reach's line
-     * @return how far outside it is, at most zero when it is within the reach's bounds
+     * @param reach   the reach
+     * @param union   the discs it was laid across
+     * @param channel how far the pocket holds back from its line
+     * @return the three bounds, or none where the reach is too short to have a direction
      */
-    private static double measureExcursion(
-            double[] point,
+    private static List<HalfPlane> buildBounds(
             DiscUnionBoundary.Chord reach,
             DiscUnion union,
             double channel) {
 
+        var landward = buildLandwardNormal(reach, union);
+
+        if (landward == null) {
+            return List.of();
+        }
+        var line = reach.line();
+        var unit = line.toUnitLine();
+
+        return List.of(
+            new HalfPlane(
+                line.originX() + channel * landward[0],
+                line.originY() + channel * landward[1],
+                landward[0],
+                landward[1]),
+            new HalfPlane(
+                line.originX(), line.originY(), unit.directionX(), unit.directionY()),
+            new HalfPlane(
+                line.originX() + line.directionX(),
+                line.originY() + line.directionY(),
+                -unit.directionX(),
+                -unit.directionY()));
+    }
+
+    // Which way is landward from one reach, as a unit normal. The single reading of which
+    // side is which - taken from the reach's own cell rather than assumed, so a reach running
+    // the other way round the coast is judged like any other.
+    private static double[] buildLandwardNormal(
+            DiscUnionBoundary.Chord reach,
+            DiscUnion union) {
+
         var line = reach.line().toUnitLine();
 
         if (line == null) {
+            return null;
+        }
+        var normalX = -line.directionY();
+        var normalY = line.directionX();
+
+        var centre = union.sites().get(reach.fromCircle());
+
+        var towardsCells = Math.signum(
+            (centre[0] - line.originX()) * normalX + (centre[1] - line.originY()) * normalY);
+
+        return new double[] {towardsCells * normalX, towardsCells * normalY};
+    }
+
+    // How far outside the bounds a point lies, at most zero while it is within all of them.
+    private static double measureExcursionFrom(double[] point, List<HalfPlane> bounds) {
+
+        if (bounds.isEmpty()) {
             return 0;
         }
-        var span = Math.hypot(reach.line().directionX(), reach.line().directionY());
-        var along = measureAlong(point, line);
+        var worst = -Double.MAX_VALUE;
 
-        return Math.max(
-            channel - measureLandwardOffset(point, reach, union),
-            Math.max(-along, along - span));
-    }
-
-    // How far along a reach a point sits, from the end its line begins at.
-    private static double measureAlong(double[] point, kmlib.math.geometry.DirectedLine line) {
-
-        return (point[0] - line.originX()) * line.directionX()
-            + (point[1] - line.originY()) * line.directionY();
-    }
-
-    // The single-plane clip walk itself, told which side is in by a signed reading. A vertex
-    // inside survives; an edge crossing contributes the crossing point, so the cut lands on
-    // the line rather than on the nearest sample to it.
-    private static List<double[]> clipTo(
-            List<double[]> outline,
-            java.util.function.ToDoubleFunction<double[]> inside) {
-
-        var kept = new ArrayList<double[]>(outline.size());
-
-        for (var index = 0; index < outline.size(); index++) {
-
-            var here = outline.get(index);
-            var next = outline.get((index + 1) % outline.size());
-
-            var hereIn = inside.applyAsDouble(here);
-            var nextIn = inside.applyAsDouble(next);
-
-            if (hereIn >= 0) {
-                kept.add(here);
-            }
-            if ((hereIn >= 0) != (nextIn >= 0)) {
-
-                var share = hereIn / (hereIn - nextIn);
-
-                kept.add(new double[] {
-                    here[0] + (next[0] - here[0]) * share,
-                    here[1] + (next[1] - here[1]) * share});
-            }
+        for (var bound : bounds) {
+            worst = Math.max(worst, -measureOffsetFrom(point, bound));
         }
-        return kept.size() < MIN_RUN_VERTICES ? List.of() : kept;
+        return worst;
+    }
+
+    // How far a point sits on the kept side of one bound, negative out past it.
+    private static double measureOffsetFrom(double[] point, HalfPlane bound) {
+
+        return (point[0] - bound.pointX()) * bound.normalX()
+            + (point[1] - bound.pointY()) * bound.normalY();
     }
 
     // Every maximal stretch of one outline lying seaward of one reach. Walked as runs rather
@@ -293,12 +317,13 @@ final class CoastPocketFaults {
             DiscUnionBoundary.Chord reach,
             DiscUnion union) {
 
+        var bounds = buildBounds(reach, union, 0);
         var run = new ArrayList<double[]>();
         var deepest = 0.0;
 
         for (var point : outline) {
 
-            var past = measureExcursion(point, reach, union, 0);
+            var past = measureExcursionFrom(point, bounds);
 
             if (past > OVER_THE_LINE) {
 

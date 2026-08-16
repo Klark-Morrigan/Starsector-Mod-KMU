@@ -127,7 +127,7 @@ final class VoidPockets {
             new DiscUnion(sites, parameters.cellRadius()), arcSegments);
 
         var withChannel = DiscUnionBoundary.traceHoles(
-            new DiscUnion(sites, parameters.measureDrawnReach()), arcSegments);
+            buildDrawnUnion(sites, parameters), arcSegments);
 
         var atFills = DiscUnionBoundary.traceHoles(
             new DiscUnion(sites, parameters.measureFilledReach()), arcSegments);
@@ -143,7 +143,7 @@ final class VoidPockets {
                 absorbingOwner == null
                     ? DiscUnionBoundary.findHolesInside(withChannel, hole)
                     : findHoleAround(atFills, hole),
-                ownerBySite,
+                absorbingOwner,
                 sites,
                 sectionRules));
         }
@@ -165,19 +165,21 @@ final class VoidPockets {
      * as well, which is not a reach and cannot be moved by changing one. The caller that knows
      * which kind it has does that part and hands the answer in.
      *
-     * @param hole         the void's own extent
-     * @param outlines     what to draw for it once it has given up the channel - empty when
-     *                     the channel closes it over, more than one when it pinches in two
-     * @param ownerBySite  each site's owner, index-aligned with the sites and null where the
-     *                     site is unowned
-     * @param sites        the sites
-     * @param sectionRules how long a piece should be before it is cut into more than one
+     * @param hole           the void's own extent
+     * @param outlines       what to draw for it once it has given up the channel - empty when
+     *                       the channel closes it over, more than one when it pinches in two
+     * @param absorbingOwner the one owner that rings it, or null where more than one does.
+     *                       The answer rather than the owner table it comes out of, because
+     *                       a caller has to know it to shape the pocket at all and reading it
+     *                       here as well is one fact read twice
+     * @param sites          the sites
+     * @param sectionRules   how long a piece should be before it is cut into more than one
      * @return the pocket
      */
     static VoidPocket shapeVoidPocket(
             VoidHole hole,
             List<List<double[]>> outlines,
-            List<String> ownerBySite,
+            String absorbingOwner,
             List<double[]> sites,
             VoidSections.SectionRules sectionRules) {
 
@@ -188,31 +190,46 @@ final class VoidPockets {
             Points.computeMean(hole.boundary()),
             hole.ringing(),
             span,
-            resolveAbsorbingOwner(hole.ringing(), ownerBySite),
+            absorbingOwner,
             VoidSections.divideVoidPocket(hole, sites, span, sectionRules));
     }
 
-    // The widened hole a pocket opens into, if it stays closed at all. The other way round
-    // from the narrowed case: the pocket is inside the widened hole, so it is the pocket's
-    // own outline that is tested.
-    private static List<List<double[]>> findHoleAround(List<VoidHole> widened, VoidHole hole) {
+    /**
+     * The discs a pocket is drawn against: the cells at the reach that leaves the channel.
+     *
+     * <p>Traced one channel out from the cells' own border rather than inset afterwards, so a
+     * fill stops one channel short of every cell around it by construction. Shared with the
+     * other way of arriving at a pocket, because both give up the channel against the cells
+     * the same way and only differ in what closed the void.
+     *
+     * @param sites      the sites
+     * @param parameters the knobs the cells are built under
+     * @return the discs
+     */
+    static DiscUnion buildDrawnUnion(
+            List<double[]> sites,
+            SectorGeometryParameters parameters) {
 
-        var probe = hole.boundary().get(0);
-
-        for (var candidate : widened) {
-            if (PolygonRegions.isPointInsideRing(
-                    candidate.boundary(), probe[0], probe[1])) {
-                return List.of(candidate.boundary());
-            }
-        }
-        return List.of();
+        return new DiscUnion(sites, parameters.measureDrawnReach());
     }
 
-    // The owner that rings a pocket on every side, if one does. An unowned cell counts
-    // against it, exactly as a cell's own shaping counts unowned space: a cell facing an
-    // unowned neighbour keeps its border channel rather than fusing, and a pocket is shaped
-    // by the same rule or the two disagree about the same piece of map.
-    private static String resolveAbsorbingOwner(
+    /**
+     * The owner that rings a pocket on every side, if one does.
+     *
+     * <p>An unowned cell counts against it, exactly as a cell's own shaping counts unowned
+     * space: a cell facing an unowned neighbour keeps its border channel rather than fusing,
+     * and a pocket is shaped by the same rule or the two disagree about the same piece of map.
+     *
+     * <p>Shared with the other way of arriving at a pocket, because whether one owner has a
+     * pocket to itself follows from which cells ring it and not from what closed it.
+     *
+     * @param ringing     the sites whose circles the void runs on
+     * @param ownerBySite each site's owner, index-aligned with the sites and null where the
+     *                    site is unowned
+     * @return the one owner, or null where more than one rings it or any ringing cell is
+     *         unowned
+     */
+    static String resolveAbsorbingOwner(
             List<Integer> ringing,
             List<String> ownerBySite) {
 
@@ -231,4 +248,21 @@ final class VoidPockets {
         }
         return only;
     }
+
+    // The widened hole a pocket opens into, if it stays closed at all. The other way round
+    // from the narrowed case: the pocket is inside the widened hole, so it is the pocket's
+    // own outline that is tested.
+    private static List<List<double[]>> findHoleAround(List<VoidHole> widened, VoidHole hole) {
+
+        var probe = hole.boundary().get(0);
+
+        for (var candidate : widened) {
+            if (PolygonRegions.isPointInsideRing(
+                    candidate.boundary(), probe[0], probe[1])) {
+                return List.of(candidate.boundary());
+            }
+        }
+        return List.of();
+    }
+
 }

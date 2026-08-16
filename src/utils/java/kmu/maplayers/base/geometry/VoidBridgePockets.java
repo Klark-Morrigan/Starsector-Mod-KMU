@@ -144,7 +144,7 @@ final class VoidBridgePockets {
         var outlines = new ArrayList<List<double[]>>();
 
         for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
-                buildDrawnUnion(sites, parameters),
+                VoidPockets.buildDrawnUnion(sites, parameters),
                 buildWalls(bridges, parameters),
                 arcSegments)) {
 
@@ -173,7 +173,7 @@ final class VoidBridgePockets {
             SectorGeometryParameters parameters) {
 
         return DiscUnionBoundary.findAttachableChords(
-            buildDrawnUnion(sites, parameters),
+            VoidPockets.buildDrawnUnion(sites, parameters),
             buildWalls(bridges, parameters));
     }
 
@@ -214,7 +214,7 @@ final class VoidBridgePockets {
             List<CellGaps.CellGap> bridges,
             SectorGeometryParameters parameters) {
 
-        var union = buildDrawnUnion(sites, parameters);
+        var union = VoidPockets.buildDrawnUnion(sites, parameters);
         var capturing = Set.copyOf(
             DiscUnionBoundary.buildChordsFrom(findCapturingBridges(sites, bridges, parameters.cellRadius())));
 
@@ -250,15 +250,6 @@ final class VoidBridgePockets {
             worst = Math.max(worst, measureDistanceToNearestVertex(captured, end));
         }
         return worst;
-    }
-
-    // The union everything here traces against: the cells at the reach that leaves the
-    // channel, so a fill stops one channel short of the cells around it.
-    private static DiscUnion buildDrawnUnion(
-            List<double[]> sites,
-            SectorGeometryParameters parameters) {
-
-        return new DiscUnion(sites, parameters.measureDrawnReach());
     }
 
     // The walls the bridges become. The channel is the same border inset the cells keep, so

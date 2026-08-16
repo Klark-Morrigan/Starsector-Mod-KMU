@@ -681,7 +681,6 @@ final class VoidRegionsDump {
             traced,
             CoastPockets.markEverySiteUnowned(sites),
             shipped,
-            Coastlines.DEFAULT_RULES,
             SECTION_RULES);
 
         if (pockets.isEmpty()) {

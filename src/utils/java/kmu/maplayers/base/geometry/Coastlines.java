@@ -132,11 +132,16 @@ final class Coastlines {
      * @param union       the discs it was walked and drawn against, which are the same discs:
      *                     a coast is a border, and everything measured from a border has to
      *                     be measured from the one the map draws
+     * @param walls        the bridges it was walled by, and the channel they were laid at.
+     *                    Carried for whatever lays more walls alongside them: found again
+     *                    from the knobs, they are a second answer that can differ from the
+     *                    one the coast was actually walked against
      */
     record TracedCoasts(
         List<List<CoastVertex>> coasts,
         List<List<DiscUnionBoundary.CoastMark>> silhouettes,
-        DiscUnion union) {
+        DiscUnion union,
+        DiscUnionBoundary.Walls walls) {
     }
 
     /**
@@ -193,7 +198,7 @@ final class Coastlines {
                 rules.maxSkips(),
                 parameters.measureArcSegments()));
 
-        return new TracedCoasts(smoothed, silhouettes, union);
+        return new TracedCoasts(smoothed, silhouettes, union, walls);
     }
 
     /**
@@ -496,7 +501,6 @@ final class Coastlines {
         }
         return outline;
     }
-
 
     private static List<CoastVertex> buildVertices(
             DiscUnionBoundary.CoastMark mark,

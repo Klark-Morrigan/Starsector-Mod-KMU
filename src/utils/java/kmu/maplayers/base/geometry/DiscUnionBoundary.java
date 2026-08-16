@@ -338,7 +338,7 @@ final class DiscUnionBoundary {
      * @return the mouth as {@code {start, width}}, or null when the wall passes too far from
      *         this circle to open one at all
      */
-    private static double[] measureMouth(
+    static double[] measureMouth(
             DiscUnion union,
             Chord chord,
             int circle,
@@ -815,7 +815,7 @@ final class DiscUnionBoundary {
     // the boundary and needs no interval arithmetic to agree with. A third disc reaching into
     // the middle of a mouth without touching an edge changes nothing: its cover nests inside
     // the mouth's, so the merged sweep still opens the arcs at the mouth's own edges.
-    private static boolean isMouthOnBoundary(
+    static boolean isMouthOnBoundary(
             DiscUnion union,
             int circle,
             double[] mouth) {
@@ -848,7 +848,7 @@ final class DiscUnionBoundary {
     // whatever the channel adds to each of their mouths, and each keeps the outer terminal the
     // walk needs; the sweep hands one straight on to the other. Refused, the void behind one
     // of the two is left open to the sea with nothing to close it.
-    private static boolean isMouthTaken(
+    static boolean isMouthTaken(
             Map<Integer, List<double[]>> takenByCircle,
             int circle,
             double[] mouth) {

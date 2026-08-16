@@ -44,9 +44,8 @@ final class CoastPockets {
      * Finds every pocket the coast's straight reaches shut in.
      *
      * @param traced       the coast, as {@link Coastlines#traceSectorCoasts} handed it back,
-     *                     which carries the sites everything here is measured against
-     * @param rules        the knobs the coast was traced under, so the bridges laid alongside
-     *                     its reaches are the same ones the coast itself was walled by
+     *                     which carries the sites everything here is measured against and the
+     *                     bridges it was walled by
      * @param ownerBySite  each site's owner, index-aligned with {@code sites} and null where
      *                     the site is unowned, to decide which pockets sit inside one owner's
      *                     area rather than between owners
@@ -60,7 +59,6 @@ final class CoastPockets {
             Coastlines.TracedCoasts traced,
             List<String> ownerBySite,
             SectorGeometryParameters parameters,
-            Coastlines.CoastRules rules,
             VoidSections.SectionRules sectionRules) {
 
         // The sites come off the coast rather than beside it. Handed in separately, a caller
@@ -68,25 +66,26 @@ final class CoastPockets {
         // shape built here would then be measured against discs the coast never saw.
         var sites = traced.union().sites();
 
-        var bridges = VoidBridges.findVoidBridges(
-            sites,
-            parameters.cellRadius(),
-            parameters.cellRadius() * rules.bridgeReachMultiple());
-
         var reaches = buildCoastWalls(traced);
 
         if (reaches.isEmpty()) {
             return List.of();
         }
 
-        // The bridges are laid alongside, though nothing here reports what they close. Void a
-        // bridge already holds is that construction's, and a trace that cannot see the bridge
-        // runs a coast pocket straight across it and paints the same emptiness twice.
-        var laid = new ArrayList<>(DiscUnionBoundary.buildChordsFrom(bridges));
+        // The coast's own bridges are laid alongside its reaches, though nothing here reports
+        // what they close. Void a bridge already holds is that construction's, and a trace
+        // that cannot see the bridge runs a coast pocket straight across it and paints the
+        // same emptiness twice.
+        //
+        // Taken from the coast rather than found again. A second search is a second answer,
+        // and a reach was walked round bridges that the walk it is laid beside cannot see.
+        var laid = new ArrayList<>(traced.walls().chords());
         laid.addAll(reaches);
 
-
-        var walls = new DiscUnionBoundary.Walls(laid, parameters.borderInset());
+        // At the channel the coast was walled at, for the same reason: the pocket has to
+        // give up against a reach exactly what the coast gave up against a bridge.
+        var channel = traced.walls().channel();
+        var walls = new DiscUnionBoundary.Walls(laid, channel);
         var arcSegments = parameters.measureArcSegments();
 
         // ONE trace, and what it hands back is what gets drawn - the same thing
@@ -97,13 +96,13 @@ final class CoastPockets {
         // do not correspond, and the match silently drops the ones that fail - which is what
         // left pockets on the map with nothing drawn in them.
         //
-        // At the reach that DEFINES void, which is as wide as a coast wall survives: the
-        // coast is drawn on the cells' fills, so a channel further out the discs have
-        // swallowed it and the wall is dropped as buried. The channel comes out at the
-        // mouths, where every wall keeps one, and off the cells by the reach itself.
+        // A reach is drawn on the cells' own border while the trace runs a channel outside
+        // it, so a reach cuts into each of its cells rather than touching them. That is what
+        // opens its mouths at all, and also what buries the ones whose cells have grown over
+        // where the coast left them.
         var pockets = new ArrayList<CoastPocketFaults.WalledPocket>();
 
-        var union = new DiscUnion(sites, parameters.measureDrawnReach());
+        var union = VoidPockets.buildDrawnUnion(sites, parameters);
 
         for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(union, walls, arcSegments)) {
 
@@ -124,7 +123,7 @@ final class CoastPockets {
             // ended up is the result of a chain of angles, while the side of the line it has
             // to stay on is one fact that holds whatever the wall did.
             var legal = CoastPocketFaults.cutToLandward(
-                hole.boundary(), walling, union, parameters.borderInset());
+                hole.boundary(), walling, union, channel);
 
             // A pocket the cut leaves nothing of is still a pocket - it keeps its extent,
             // its span and the cells around it, and only loses what there was to draw. That
@@ -136,7 +135,7 @@ final class CoastPockets {
                     legal.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA
                         ? List.of()
                         : List.of(legal),
-                    ownerBySite,
+                    VoidPockets.resolveAbsorbingOwner(hole.ringing(), ownerBySite),
                     sites,
                     sectionRules),
                 List.copyOf(walling)));

@@ -63,7 +63,6 @@ final class CoastlinesOverlay {
             traced,
             fixture.getOwnerBySite(),
             settings.parameters,
-            coastRules(),
             new VoidSections.SectionRules(
                 settings.voidSpanMultiple * settings.parameters.cellRadius(),
                 settings.minSectionShare));
