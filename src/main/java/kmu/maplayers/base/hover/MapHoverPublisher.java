@@ -82,6 +82,12 @@ public final class MapHoverPublisher {
      * answer standing: a stale hover washes a cell the cursor has left and answers the tooltip
      * with the wrong system, which reads as a bug in the highlight rather than in the read.
      *
+     * <p>The guards part company over the arrival latch, though, because they answer two different
+     * questions. A completed hit-test that finds no cell is a sighting - the cursor is on nothing -
+     * and forgetting the cell is what makes stepping off one and back onto it a fresh arrival. A
+     * read that could not be made is not a sighting at all, so it leaves the latch holding the last
+     * cell the cursor was actually seen on.
+     *
      * @param targets the frame's drawn cells, or null when the layer painted nothing to hover
      *                over - a build that has yet to succeed, or a diagnostic overlay standing in
      *                for the production draw lists. Nullable so the park stays here, in the one
@@ -90,8 +96,10 @@ public final class MapHoverPublisher {
      */
     public void publishHoverFrom(MapHoverTargets targets, float factor) {
 
+        // Nothing painted, so there are no cell shapes to test the cursor against. That is a
+        // missing input rather than an answer about where the cursor is, so the latch stands.
         if (targets == null) {
-            parkHover();
+            parkHoverKeepingLastCell();
             return;
         }
         // No world point means the read could not be trusted - the cursor has left the window, the
@@ -99,7 +107,7 @@ public final class MapHoverPublisher {
         // change the answer here: a cell resolved from an untrustworthy point is worse than none.
         var worldPoint = MapCursor.resolveWorldPointDuringMapPass(factor, modelviewMatrixReader);
         if (worldPoint == null) {
-            parkHover();
+            parkHoverKeepingLastCell();
             return;
         }
         var hoveredSystemId = CellHitTest.resolveSystemIdAt(
@@ -108,7 +116,7 @@ public final class MapHoverPublisher {
             targets.getFillPolygonByCellId());
 
         if (hoveredSystemId == null) {
-            parkHover();
+            parkHoverAndForgetCell();
             return;
         }
         MapHoverState.getInstance().publishHover(new MapHover(
@@ -118,11 +126,25 @@ public final class MapHoverPublisher {
         announceArrivalAt(hoveredSystemId);
     }
 
-    // Parks the hover and forgets which cell the cursor was on, so stepping off a cell and back onto
-    // it is reached again rather than being swallowed as unchanged.
-    private void parkHover() {
+    // Parks the hover and forgets which cell the cursor was on, for a hit-test that ran and found
+    // nothing under the cursor. Forgetting is what makes stepping off a cell and back onto it
+    // reached again rather than swallowed as unchanged.
+    private void parkHoverAndForgetCell() {
         MapHoverState.getInstance().clearHover();
         cellArrival.resetArrival();
+    }
+
+    // Parks the hover but leaves the latch holding the last cell the cursor was seen on, for a
+    // frame whose inputs never arrived. Nothing was learned about where the cursor is, so nothing
+    // about where it was is worth discarding.
+    //
+    // The distinction is what keeps the tick honest on a pass that can run more than once a frame:
+    // one run failing its read while another resolves the cell the cursor is resting on would,
+    // under a latch that forgets, read as leaving and reaching that cell over and over - a tick
+    // every frame under a motionless cursor. The hover itself is still cleared, since a highlight
+    // left standing on an unverified cell is the fault every guard here exists to avoid.
+    private void parkHoverKeepingLastCell() {
+        MapHoverState.getInstance().clearHover();
     }
 
     // What is owed on the cursor reaching a cell, as opposed to resting on one: the tick the player

@@ -42,7 +42,9 @@ import static org.mockito.Mockito.when;
  * than resting on one. That half is asserted through a recording player, a sound being the one thing
  * this pass does that leaves no trace in the state a case could otherwise read back - and the cases
  * are about the rule that a frame is a moment, never about the sample or the level, both of which
- * arrive already composed from the host's own look.
+ * arrive already composed from the host's own look. The parks divide there where they do not divide
+ * over the hover: a hit-test that found nothing is the cursor having left a cell, while a frame
+ * whose inputs never arrived is no reading at all and leaves where the cursor was seen alone.
  */
 final class MapHoverPublisherTest {
 
@@ -266,6 +268,41 @@ final class MapHoverPublisherTest {
 
             assertThat(soundPlayerFake.getPlayedCues())
                 .containsExactly(CELL_ARRIVAL_CUE, CELL_ARRIVAL_CUE);
+        }
+
+        @Test
+        void publishHoverFromTicksOnceAcrossAFrameThatCannotResolveTheCursor() {
+            // A read that failed says nothing about where the cursor is, so the cell it was resting
+            // on is still the cell it is resting on. Treated as a departure instead, the frame after
+            // reads as a fresh arrival - and this pass can run more than once for one frame, so a
+            // single failing run beside a resolving one would tick on every frame the cursor is
+            // still.
+            var publisher = buildPublisher();
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            stubCursorAt(null);
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            stubCursorAt(POINT_ON_CELL);
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            assertThat(soundPlayerFake.getPlayedCues())
+                .containsExactly(CELL_ARRIVAL_CUE);
+        }
+
+        @Test
+        void publishHoverFromTicksOnceAcrossAFrameThatPaintsNothing() {
+            // Absent draw lists are a missing input on the same terms as an unreadable cursor: there
+            // are no cell shapes to hit-test, so the frame answers nothing about where the cursor is
+            // and the cell it was last seen on stands.
+            var publisher = buildPublisher();
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            publisher.publishHoverFrom(null, MAP_ZOOM);
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            assertThat(soundPlayerFake.getPlayedCues())
+                .containsExactly(CELL_ARRIVAL_CUE);
         }
 
         @Test
