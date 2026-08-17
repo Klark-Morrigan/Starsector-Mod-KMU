@@ -123,6 +123,10 @@ final class MapHoverPublisherTest {
         // What the host's look answers an arrival with, mutable so the case about a player who has
         // silenced the tick can state that the way a look does - by naming no cue at all.
         private UiSoundCue cellArrivalCue;
+
+        // Whether the pass under test is one the cursor can be located against, mutable so a case
+        // can put the publisher on a foreign map's pass the way a frame does.
+        private boolean isCursorLocatable;
         private MockedStatic<MapCursor> cursorMock;
         private MapHoverState hoverState;
         private ModelviewMatrixReader readerMock;
@@ -134,6 +138,7 @@ final class MapHoverPublisherTest {
             readerMock = mock(ModelviewMatrixReader.class);
             soundPlayerFake = new UiSoundPlayerFake();
             cellArrivalCue = CELL_ARRIVAL_CUE;
+            isCursorLocatable = true;
             cursorMock = mockStatic(MapCursor.class);
 
             stubCursorAt(POINT_ON_CELL);
@@ -210,6 +215,63 @@ final class MapHoverPublisherTest {
 
             assertThat(hoverState.getHover())
                 .isSameAs(MapHover.NONE);
+        }
+
+        @Test
+        void publishHoverFromParksTheHoverOnAPassTheCursorCannotBeLocatedAgainst() {
+            // A foreign map's pass. The cell shapes are there and the unproject would answer - the
+            // point simply is not where the pointer is - so nothing further down would catch this.
+            isCursorLocatable = false;
+
+            buildPublisher()
+                .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            assertThat(hoverState.getHover())
+                .isSameAs(MapHover.NONE);
+        }
+
+        @Test
+        void publishHoverFromStaysSilentOnAPassTheCursorCannotBeLocatedAgainst() {
+            // The half the player actually notices: a tick sounded for reaching a cell nobody
+            // pointed at, on every frame a foreign map redraws.
+            isCursorLocatable = false;
+
+            buildPublisher()
+                .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            assertThat(soundPlayerFake.getPlayedCues())
+                .isEmpty();
+        }
+
+        @Test
+        void publishHoverFromReadsNoCursorOnAPassItCannotBeLocatedAgainst() {
+            // Skipped rather than resolved and discarded: the read is a matrix readback and an
+            // unproject, and under Fast Rendering a hop to the render thread besides. A foreign map
+            // redraws every frame, so paying for that would be a per-frame cost for nothing.
+            isCursorLocatable = false;
+
+            buildPublisher()
+                .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            cursorMock.verifyNoInteractions();
+        }
+
+        @Test
+        void publishHoverFromTicksForTheCellHeldWhileAForeignPassInterrupted() {
+            // A foreign map redrawing between two of the real map's frames must not read as the
+            // cursor having left the cell it is resting on, or the tick would sound on every one of
+            // those frames - the fault that made this audible in the first place.
+            var publisher = buildPublisher();
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            isCursorLocatable = false;
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            isCursorLocatable = true;
+            publisher.publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            assertThat(soundPlayerFake.getPlayedCues())
+                .containsExactly(CELL_ARRIVAL_CUE);
         }
 
         @Test
@@ -359,7 +421,11 @@ final class MapHoverPublisherTest {
         // The publisher under test, reading the case's own cue field so a case can retune or silence
         // the look between frames the way the settings screen does between visits.
         private MapHoverPublisher buildPublisher() {
-            return new MapHoverPublisher(readerMock, soundPlayerFake, () -> cellArrivalCue);
+            return new MapHoverPublisher(
+                readerMock,
+                soundPlayerFake,
+                () -> cellArrivalCue,
+                () -> isCursorLocatable);
         }
 
         private void stubCursorAt(Vector2f worldPoint) {

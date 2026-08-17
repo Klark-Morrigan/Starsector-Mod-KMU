@@ -44,4 +44,29 @@ public final class MapHoverGates {
         return KmuMapLayerSettings.getMapHoveringEnabled()
             && KmuMapLayerSettings.getMapHoverTooltipEnabled();
     }
+
+    /**
+     * Whether the cursor can be located against the pass now running.
+     *
+     * <p>A different question from the switches above, and the reason it sits beside them: those
+     * ask what the player wants answered, this asks whether an answer is possible. The map hook the
+     * layers draw through belongs to the sector map by convention alone, and a map another mod
+     * builds drives it too - with its own position and zoom, and no way for this end to tell that
+     * transform from the vanilla one. A cursor unprojected against it still yields a world point,
+     * and in hyperspace, where campaign and sector map coordinates are one space, that point lands
+     * inside real cells. So the wrong answer here is not a missing one but a confident one.
+     *
+     * <p>The presence read is host-blind by design: it says a vanilla map is on screen somewhere,
+     * never that this pass is that map's. With one showing while a foreign map also draws, both
+     * passes answer true, and which of them the frame's single cursor read lands on is settled
+     * elsewhere. The render constraint is what closes that case, by keeping the foreign pass from
+     * running at all.
+     *
+     * @param isAnyMapShowing whether either vanilla map host is showing, from
+     *                        {@code MapPresence#isAnyMapShowing}
+     * @return whether the hover may be resolved on this pass
+     */
+    public static boolean isCursorLocatableOn(boolean isAnyMapShowing) {
+        return !KmuMapLayerSettings.getMapLayerMouseoverOnlyOnTheirHosts() || isAnyMapShowing;
+    }
 }

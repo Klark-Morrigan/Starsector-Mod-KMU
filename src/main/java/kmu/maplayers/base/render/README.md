@@ -42,7 +42,22 @@ announcing systems the pointer is nowhere near with no map open. `ForeignMapPass
 once per session at WARN, carrying the caller's stack on a throwable that was never thrown, since
 the caller is precisely what cannot be worked out from inside the pass. It never throws: it reports
 on a frame rather than drawing one, so a presence read that fails costs the report and nothing
-else.
+else. Naming the caller needs the widget tree rather than the stack, which is
+`EmbeddedMapHostTrace`'s job - a mod builds its map once and the engine renders it every frame
+after, so every frame between the hook and the game loop is the engine's.
+
+What to *do* about such a pass is the player's, on the `Map - Compatibility` settings tab. The
+render constraint stands the whole pass down when no vanilla map host is showing - checked here,
+before the preparation, so a foreign pass cannot take the frame's single preparation from the map
+entitled to it. It defaults off, because the layers drawn into a modded map are a working sight
+several installs have come to expect. The hover constraint is separate and defaults on, and is
+enforced where the cursor is read rather than here: a foreign pass may draw the layers and still
+have no business answering the pointer.
+
+Neither constraint can tell *which* host a pass belongs to. `MapPresence` is host-blind by design -
+it reports that a vanilla map is on screen somewhere, never that this pass is that map's - so while
+one is showing and a foreign map also draws, both passes satisfy the hover constraint. The render
+constraint is what closes that case, by keeping the foreign pass from running at all.
 
 ## Bands
 

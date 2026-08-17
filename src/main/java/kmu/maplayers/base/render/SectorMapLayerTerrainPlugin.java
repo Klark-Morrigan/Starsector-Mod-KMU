@@ -9,6 +9,7 @@ import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMapHostTrace;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.settings.KmuMapLayerSettings;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -54,8 +55,12 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
     // Static, and wired here rather than injected, because the engine constructs these plugins from
     // the save and there is no seam to hand one in through. Static also keeps it out of the save,
     // which an instance field on a serialised plugin would not.
+    // Whether a vanilla map host is on screen. One binding shared by the render constraint and the
+    // warning below, so the two cannot disagree about what counts as a map being up.
+    private static final MapPresence MAP_PRESENCE = new MapPresence();
+
     private static final ForeignMapPassWarning FOREIGN_PASS_WARNING = new ForeignMapPassWarning(
-        new MapPresence()::isAnyMapShowing,
+        MAP_PRESENCE::isAnyMapShowing,
         EmbeddedMapHostTrace::describeEmbeddedMapHosts,
         Global.getLogger(SectorMapLayerTerrainPlugin.class));
 
@@ -95,6 +100,13 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
         // and so a foreign pass is named even when the active pick draws nothing.
         FOREIGN_PASS_WARNING.warnOnceIfNoMapIsShowing();
 
+        // Stands the whole pass down when the player has asked the layers to keep to the vanilla
+        // maps and none is showing. Before the preparation rather than only the draw, so a foreign
+        // pass cannot take the frame's single preparation from the map that is entitled to it.
+        if (KmuMapLayerSettings.getMapLayersOnlyOnTheirHosts()
+                && !MAP_PRESENCE.isAnyMapShowing()) {
+            return;
+        }
         // Draws through the pick of whichever screen is showing this frame, so switching a tab
         // switches what paints with no per-layer branch here. Null when nothing draws at all - no
         // registered pick yet, or a pick that paints nothing.

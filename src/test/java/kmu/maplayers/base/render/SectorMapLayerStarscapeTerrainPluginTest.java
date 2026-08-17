@@ -1,9 +1,13 @@
 package kmu.maplayers.base.render;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.settings.KmuMapLayerSettings;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -22,6 +26,22 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
 
     private static final float FACTOR = 1f;
     private static final float ALPHA_MULT = 1f;
+
+    // The surface reads the compatibility constraint before it draws, and that read reaches LunaLib,
+    // which no test has. Stubbed for the class rather than per case because every case here is about
+    // the bands and the stand-aside; Mockito's own default answers the constraint off, which is both
+    // the shipped default and the state these cases mean to describe.
+    private MockedStatic<KmuMapLayerSettings> mapLayerSettingsMock;
+
+    @BeforeEach
+    void stubTheCompatibilityConstraint() {
+        mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
+    }
+
+    @AfterEach
+    void releaseTheCompatibilityConstraint() {
+        mapLayerSettingsMock.close();
+    }
 
     @Nested
     class RenderOnMap {

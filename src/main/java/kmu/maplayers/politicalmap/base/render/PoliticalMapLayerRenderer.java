@@ -2,12 +2,14 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconOrderTrace;
 import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
 import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
 
 import kmu.maplayers.base.hover.MapHoverCues;
+import kmu.maplayers.base.hover.MapHoverGates;
 import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
@@ -54,7 +56,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
      * This is where the live covers are chosen, the renderer itself naming only the reader.
      */
     public static final PoliticalMapLayerRenderer INSTANCE =
-        new PoliticalMapLayerRenderer(MapCoverReader.createForLiveScreen());
+        new PoliticalMapLayerRenderer(MapCoverReader.createForLiveScreen(), new MapPresence());
 
     private static final Logger LOG = Global.getLogger(PoliticalMapLayerRenderer.class);
 
@@ -71,6 +73,12 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // layer could be given differently.
     private final MapCoverReader mapCoverReader;
 
+    // Whether a vanilla map host is on screen, for the hover's own question of whether the pass now
+    // running is one the cursor can be located against. Held rather than resolved per frame, the
+    // binding behind it being fixed for the session; handed in for the cover reader's reason, so a
+    // test can answer it without a live widget tree.
+    private final MapPresence mapPresence;
+
     // The last widget-trace line logged, so a resting cursor reports once rather than every frame.
     // Held here rather than in the trace because the trace only describes; deciding how often this
     // layer repeats itself is this layer's business.
@@ -85,8 +93,9 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // running game - and because a player who leaves the hover off never needs one at all.
     private MapHoverPublisher hoverPublisher;
 
-    PoliticalMapLayerRenderer(MapCoverReader mapCoverReader) {
+    PoliticalMapLayerRenderer(MapCoverReader mapCoverReader, MapPresence mapPresence) {
         this.mapCoverReader = mapCoverReader;
+        this.mapPresence = mapPresence;
     }
 
     /**
@@ -187,7 +196,11 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             hoverPublisher = new MapHoverPublisher(
                 ModelviewMatrixReaders.selectForActiveRenderer(),
                 new VanillaUiSoundPlayer(),
-                MapHoverCues::composeCellArrivalCue);
+                MapHoverCues::composeCellArrivalCue,
+                // Composed here rather than inside the publisher because the two halves belong to
+                // different ends: the setting is the framework's to state, and what counts as a
+                // vanilla map on screen is the live read this renderer already holds a binding for.
+                () -> MapHoverGates.isCursorLocatableOn(mapPresence.isAnyMapShowing()));
         }
         // The cursor read sits between the refresh and the draw: after, so it tests against the
         // shapes this frame actually paints, and before, so the highlight layers already have the

@@ -12,6 +12,7 @@ import kmu.maplayers.base.geometry.CellHitTest;
 
 import org.apache.log4j.Logger;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 /**
@@ -48,6 +49,12 @@ public final class MapHoverPublisher {
     // is the one in force now: this publisher outlives any number of visits to the settings screen.
     private final Supplier<UiSoundCue> cellArrivalCueSource;
 
+    // Whether the pass now running is one the cursor can be located against at all. Asked per frame
+    // rather than settled once, because it turns on what is on screen and on a setting the player
+    // can move mid-session. Supplied rather than composed here: which surfaces count as locatable is
+    // the host's knowledge, and this end needs only the answer.
+    private final BooleanSupplier isCursorLocatableOnThisPass;
+
     // Where the map's modelview is read back from. Held rather than resolved per frame because the
     // renderer underneath cannot change while the game runs, so the binding is a fixed collaborator
     // of this publisher's session-long life.
@@ -56,22 +63,29 @@ public final class MapHoverPublisher {
     private final UiSoundPlayer soundPlayer;
 
     /**
-     * @param modelviewMatrixReader the binding the running renderer needs, from
-     *                              {@code ModelviewMatrixReaders#selectForActiveRenderer}
-     * @param soundPlayer           where the arrival tick goes
-     * @param cellArrivalCueSource  what that tick sounds like when one is owed, from the host's own
-     *                              look - {@code MapHoverCues#composeCellArrivalCue} for this mod's
-     *                              map. A source rather than a cue because the level behind it is the
-     *                              player's and may change under a publisher already built
+     * @param modelviewMatrixReader       the binding the running renderer needs, from
+     *                                    {@code ModelviewMatrixReaders#selectForActiveRenderer}
+     * @param soundPlayer                 where the arrival tick goes
+     * @param cellArrivalCueSource        what that tick sounds like when one is owed, from the
+     *                                    host's own look -
+     *                                    {@code MapHoverCues#composeCellArrivalCue} for this mod's
+     *                                    map. A source rather than a cue because the level behind
+     *                                    it is the player's and may change under a publisher
+     *                                    already built
+     * @param isCursorLocatableOnThisPass whether the pass now running is one the cursor can be
+     *                                    located against, from
+     *                                    {@code MapHoverGates#isCursorLocatableOn}
      */
     public MapHoverPublisher(
             ModelviewMatrixReader modelviewMatrixReader,
             UiSoundPlayer soundPlayer,
-            Supplier<UiSoundCue> cellArrivalCueSource) {
+            Supplier<UiSoundCue> cellArrivalCueSource,
+            BooleanSupplier isCursorLocatableOnThisPass) {
 
         this.modelviewMatrixReader = modelviewMatrixReader;
         this.soundPlayer = soundPlayer;
         this.cellArrivalCueSource = cellArrivalCueSource;
+        this.isCursorLocatableOnThisPass = isCursorLocatableOnThisPass;
     }
 
     /**
@@ -96,6 +110,14 @@ public final class MapHoverPublisher {
      */
     public void publishHoverFrom(MapHoverTargets targets, float factor) {
 
+        // A pass the cursor cannot be located against is not a reading at all. The unproject would
+        // still answer - a foreign map binds a real transform, just not the one the pointer is
+        // over - and the point it lands on is inside real cells, so this cannot be left to the
+        // guards below to catch: they only reject an answer that fails to arrive.
+        if (!isCursorLocatableOnThisPass.getAsBoolean()) {
+            parkHoverKeepingLastCell();
+            return;
+        }
         // Nothing painted, so there are no cell shapes to test the cursor against. That is a
         // missing input rather than an answer about where the cursor is, so the latch stands.
         if (targets == null) {

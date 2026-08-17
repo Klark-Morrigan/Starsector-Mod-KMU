@@ -7,11 +7,13 @@ import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
+import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.util.List;
 
@@ -42,6 +44,22 @@ final class SectorMapLayerTerrainPluginTest {
     private final MapLayer drawingLayerMock = mock(MapLayer.class);
     private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
     private final IntelScreenViewFake intelScreenFake = new IntelScreenViewFake();
+
+    // The surface reads the compatibility constraint before it draws anything, and that read reaches
+    // LunaLib, which no test has. Held for the class so every case runs against a stated constraint
+    // rather than a live settings file; Mockito's own default answers it off, which is the shipped
+    // default and what all but the constraint's own cases mean to describe.
+    private MockedStatic<KmuMapLayerSettings> mapLayerSettingsMock;
+
+    @BeforeEach
+    void stubTheCompatibilityConstraint() {
+        mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
+    }
+
+    @AfterEach
+    void releaseTheCompatibilityConstraint() {
+        mapLayerSettingsMock.close();
+    }
 
     @BeforeEach
     void registerADrawingLayer() {
@@ -189,6 +207,30 @@ final class SectorMapLayerTerrainPluginTest {
 
                 verify(layerRendererMock, times(2))
                     .prepareFrame(1.5f);
+            }
+        }
+
+        @Test
+        void renderOnMapDrawsNothingWhileConstrainedToItsHostsWithNoneShowing() {
+            // The compatibility constraint, and the pass it exists to stop: a map another mod built
+            // drives this same hook, and with the constraint on the layers are not that mod's to
+            // draw. Nothing at all happens - not the preparation either, so a foreign pass cannot
+            // take the frame's single preparation from the map that is entitled to it.
+            mapLayerSettingsMock
+                .when(KmuMapLayerSettings::getMapLayersOnlyOnTheirHosts)
+                .thenReturn(true);
+
+            try (var globalMock = mockStatic(Global.class)) {
+
+                // No sector, so the presence read behind the constraint fails closed to no map
+                // showing - which is the state a foreign pass runs in.
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                new SectorMapLayerTerrainPlugin().renderOnMap(1.5f, 0.25f);
+
+                verifyNoInteractions(layerRendererMock);
             }
         }
 

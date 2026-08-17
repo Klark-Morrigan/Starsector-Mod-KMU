@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render;
 
+import kmlib.starsector.ui.map.presence.MapPresence;
+
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCover;
@@ -197,7 +199,8 @@ final class PoliticalMapLayerRendererTest {
 
                 stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
 
-                new PoliticalMapLayerRenderer(new MapCoverReader(List.of(COVERING_THE_MAP)))
+                new PoliticalMapLayerRenderer(
+                    new MapCoverReader(List.of(COVERING_THE_MAP)), new MapPresence())
                     .publishHoverIfAnyFeedbackNeedsIt(FACTOR);
 
                 assertThat(MapHoverState.getInstance().getHover())
@@ -219,7 +222,8 @@ final class PoliticalMapLayerRendererTest {
                     .when(KmuMapLayerSettings::getMapHoveringEnabled)
                     .thenReturn(false);
 
-                new PoliticalMapLayerRenderer(new MapCoverReader(List.of(NOT_COVERING_THE_MAP)))
+                new PoliticalMapLayerRenderer(
+                    new MapCoverReader(List.of(NOT_COVERING_THE_MAP)), new MapPresence())
                     .publishHoverIfAnyFeedbackNeedsIt(FACTOR);
 
                 assertThat(MapHoverState.getInstance().getHover())

@@ -22,14 +22,17 @@ package kmu.settings;
  * the tab and section a player finds them under - rather than the layer that first wanted
  * them drawn.
  *
- * <p>The knobs lay out across four tabs. {@code Map - Visuals} carries the overlay
+ * <p>The knobs lay out across five tabs. {@code Map - Visuals} carries the overlay
  * sidebar, the map labels, the two upper hover tiers and how tightly a hover box is set -
  * what every layer shares. {@code Map - Sound} carries how loudly each moment the panel and
  * the map answer audibly plays, which is a component of the look for the same reason a fill
  * colour is but browsed by a player who has come looking for the volume rather than for the
  * shades.
  * {@code Map - Keybinds} carries the layer shortcuts, which are controls rather than
- * appearance. {@code Map - Dev} carries the tuning surfaces a player does not browse:
+ * appearance. {@code Map - Compatibility} carries what the layers may do on a map this mod
+ * does not own, which is neither a look nor a control but a boundary - the one tab whose
+ * knobs are reached for because another mod is installed rather than because of anything
+ * this one draws. {@code Map - Dev} carries the tuning surfaces a player does not browse:
  * the national border's tracing tolerances, the label-anchor search's modifiers, and the
  * band and axis diagnostics that draw the search's own workings on the map.
  */
@@ -100,6 +103,18 @@ public final class KmuMapLayerSettings {
         "kmu_politicalMapHoverEnabled";
     private static final String HOVER_TOOLTIP_ENABLED_FIELD =
         "kmu_politicalMapHoverTooltipEnabled";
+
+    // Compatibility with maps this mod does not own (Map - Compatibility tab). The hook the layers
+    // draw through is the sector map's by convention only, and a mod that builds a map of its own
+    // drives it with its own position and zoom. Two separate constraints because they answer
+    // different complaints: one is about a picture appearing where it was not expected, the other
+    // about the cursor being answered from a transform that is not the one under it. The render
+    // constraint is the stronger of the two and the rarer want, so it defaults off, while the hover
+    // constraint defaults on - a wrong hover is heard and acted on rather than merely seen.
+    private static final String MAP_LAYERS_ONLY_ON_THEIR_HOSTS_FIELD =
+        "kmu_map_compatibility_foreignMapSurfaces_mapLayersOnlyOnTheirHosts";
+    private static final String MAP_LAYER_MOUSEOVER_ONLY_ON_THEIR_HOSTS_FIELD =
+        "kmu_map_compatibility_foreignMapSurfaces_mapLayerMouseoverOnlyOnTheirHosts";
 
     // Hover tooltip density (Map - Visuals tab): how tightly a hover box is set, across every map
     // layer. The shrink is how much smaller each step of indent draws than the step above it; the
@@ -298,6 +313,16 @@ public final class KmuMapLayerSettings {
     private static final boolean DEFAULT_HOVER_EFFECTS_ENABLED = true;
     private static final boolean DEFAULT_HOVER_TOOLTIP_ENABLED = true;
 
+    // Off: a foreign map drawing the layers is a picture the player can see and judge, and one that
+    // several players will have come to expect. Taking it away by default would remove a working
+    // sight to pre-empt a complaint most installs never raise.
+    private static final boolean DEFAULT_MAP_LAYERS_ONLY_ON_THEIR_HOSTS = false;
+
+    // On: the same pass answering the cursor is not a sight but a claim, and a wrong one - a system
+    // named that the pointer is not on, a tick sounded for reaching it. That is heard with no map
+    // open at all, so it reads as the mod malfunctioning rather than as a compatibility nicety.
+    private static final boolean DEFAULT_MAP_LAYER_MOUSEOVER_ONLY_ON_THEIR_HOSTS = true;
+
     // No shrink by default: every line of a hover box draws at the body's own size, which is the
     // size its atlas is crisp at, and how deep a line sits is said by its indent alone. A box is
     // read at a glance while the cursor rests on a system, so the default trades height for the
@@ -394,6 +419,27 @@ public final class KmuMapLayerSettings {
         return KmuLunaSettings.readBoolean(
             HOVER_TOOLTIP_ENABLED_FIELD,
             DEFAULT_HOVER_TOOLTIP_ENABLED);
+    }
+
+    /**
+     * @return whether the layers may only draw while one of the two vanilla map hosts is showing,
+     *         so a map built by another mod does not paint them; off by default
+     */
+    public static boolean getMapLayersOnlyOnTheirHosts() {
+        return KmuLunaSettings.readBoolean(
+            MAP_LAYERS_ONLY_ON_THEIR_HOSTS_FIELD,
+            DEFAULT_MAP_LAYERS_ONLY_ON_THEIR_HOSTS);
+    }
+
+    /**
+     * @return whether the layers may only answer the cursor while one of the two vanilla map hosts
+     *         is showing, so a map built by another mod neither lights cells nor names systems
+     *         under a pointer it cannot locate; on by default
+     */
+    public static boolean getMapLayerMouseoverOnlyOnTheirHosts() {
+        return KmuLunaSettings.readBoolean(
+            MAP_LAYER_MOUSEOVER_ONLY_ON_THEIR_HOSTS_FIELD,
+            DEFAULT_MAP_LAYER_MOUSEOVER_ONLY_ON_THEIR_HOSTS);
     }
 
     /**
