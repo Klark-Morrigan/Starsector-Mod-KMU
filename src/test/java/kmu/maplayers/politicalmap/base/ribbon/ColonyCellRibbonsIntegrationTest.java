@@ -1,11 +1,9 @@
 package kmu.maplayers.politicalmap.base.ribbon;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.factions.FactionPalette;
-import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -18,15 +16,21 @@ import kmu.maplayers.politicalmap.dominance.ribbon.HeldSystemRibbonPlanner;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.awt.Color;
 import java.util.List;
-import java.util.Map;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.FOG_KEPT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsFor;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -50,30 +54,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class ColonyCellRibbonsIntegrationTest {
 
     private static final String SYSTEM_ID = "corvus";
-
-    private static final String HEGEMONY = "hegemony";
-    private static final String TRITACHYON = "tritachyon";
-
-    private static final Color HEGEMONY_BRIGHT = new Color(140, 160, 220);
-    private static final Color HEGEMONY_DARK = new Color(40, 60, 120);
-    private static final Color TRITACHYON_BRIGHT = new Color(120, 220, 200);
-    private static final Color TRITACHYON_DARK = new Color(20, 90, 80);
-
-    private static final BlocPaletteReader PALETTES = Map.of(
-            HEGEMONY,
-            new FactionPalette(HEGEMONY_BRIGHT, HEGEMONY_DARK),
-            TRITACHYON,
-            new FactionPalette(TRITACHYON_BRIGHT, TRITACHYON_DARK))
-        ::get;
-
-    private static final RibbonPlanRules STANDARD_RULES =
-        new RibbonPlanRules(
-            new RibbonSegmentLengths(3, 1),
-            new UncontestedCellBands(false, false));
-
-    // Undiscovered colonies left out, which is the shipped reveal; neither mechanic's case here
-    // turns on it.
-    private static final boolean WITHOUT_DEV_REVEAL = false;
 
     // No memory flag imposed a claimant, so the contest settled the system on its own.
     private static final String NO_DECREE = null;
@@ -102,8 +82,8 @@ final class ColonyCellRibbonsIntegrationTest {
             // depend on which layer they are looking at.
             var sector = buildContestedSector();
             var system = buildOnlySystem(sector);
-            var holding = HolderPass.over(sector, WITHOUT_DEV_REVEAL, HolderGrouping.identity());
-            var inputs = new RibbonPlanInputs(holding, PALETTES, STANDARD_RULES);
+            var holding = HolderPass.over(sector, FOG_KEPT, HolderGrouping.identity());
+            var inputs = buildInputsFor(holding);
 
             var heldPlan = new HeldSystemRibbonPlanner(
                     DominancePass.over(
@@ -113,7 +93,7 @@ final class ColonyCellRibbonsIntegrationTest {
                 .planSystemRibbon(system);
 
             var claimedPlan = new ClaimedSystemRibbonPlanner(
-                    new ClaimBreakdownReaderFake(buildContestWonBy(HEGEMONY, TRITACHYON)),
+                    buildReaderReporting(buildContestWonBy(HEGEMONY, TRITACHYON)),
                     inputs)
                 .planSystemRibbon(system);
 
@@ -151,7 +131,10 @@ final class ColonyCellRibbonsIntegrationTest {
 
     // The contest as its reader would report it for that system: the claimant ahead of the one
     // rival the mechanic weighed anything for.
-    private static SystemClaimBreakdown buildContestWonBy(String claimantFactionId, String rivalFactionId) {
+    private static SystemClaimBreakdown buildContestWonBy(
+            String claimantFactionId,
+            String rivalFactionId) {
+
         return new SystemClaimBreakdown(
             NO_DECREE,
             claimantFactionId,
@@ -166,19 +149,13 @@ final class ColonyCellRibbonsIntegrationTest {
                     IS_TERRITORIAL)));
     }
 
-    // The contest this planner is posed over, however it is asked for it. Its second read - the
-    // decree flag - is not what this case is about and is answered as unset.
-    private record ClaimBreakdownReaderFake(SystemClaimBreakdown contest)
-        implements ClaimBreakdownReader {
+    // The claim reader the planner is posed with, reporting that contest for the one system wired
+    // above and nothing for any other.
+    private static ClaimBreakdownReaderFake buildReaderReporting(SystemClaimBreakdown contest) {
 
-        @Override
-        public SystemClaimBreakdown readBreakdown(StarSystemAPI system) {
-            return contest;
-        }
+        var readerFake = new ClaimBreakdownReaderFake();
+        readerFake.setBreakdown(SYSTEM_ID, contest);
 
-        @Override
-        public String readCoreFactionId(StarSystemAPI system) {
-            return null;
-        }
+        return readerFake;
     }
 }

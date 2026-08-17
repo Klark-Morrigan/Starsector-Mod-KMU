@@ -15,11 +15,11 @@ import java.util.Map;
  * against the map; a summed weight is not, and no weight can be divided back into the count
  * that would be.
  *
- * <p>Which markets that count stands for is settled before this value is built. The rule on
- * {@link RibbonPlan} counts what it is handed and asks nothing about where the number came
- * from, which is what lets a held cell count the sample the dominance rule was decided on
- * and a claimed cell count the claim contest's own market list, through one rule rather than
- * two that could disagree about what a band means.
+ * <p>Which colonies that count stands for is settled before this value is built, by
+ * {@link ColonyCellRibbons} for every layer alike: the rule on {@link RibbonPlan} counts what
+ * it is handed and asks nothing about where the number came from. What reaches it per mechanic
+ * is the order, so a band cannot mean one thing on the claims layer and another on the
+ * dominance ones.
  *
  * <p>The palette is the bloc's own authored pair - bright into the market segments, dark
  * into every parting, both the ones between its markets and the divider closing its run
@@ -30,9 +30,9 @@ import java.util.Map;
  *                    alliance bloc id in the alliances view
  * @param palette     the bloc's bright and dark shades, the segment and parting colours of
  *                    its run
- * @param marketCount how many markets the bloc holds in the cell that affected the score
- *                    the cell was painted from; a bloc holding none is present in nothing
- *                    the ribbon reports, so it neither draws a run nor counts as presence
+ * @param marketCount how many colonies the bloc holds in the cell that the player may be
+ *                    shown; a bloc holding none is present in nothing the ribbon reports, so
+ *                    it neither draws a run nor counts as presence
  */
 public record BlocPresence(
     String blocId,

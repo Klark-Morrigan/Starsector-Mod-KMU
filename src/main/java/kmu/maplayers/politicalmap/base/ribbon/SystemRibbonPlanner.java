@@ -6,12 +6,13 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
  * Where one system's ribbon plan comes from, so the rebuild asks for a band without naming the
  * mechanic that knows what is in the system.
  *
- * <p>A view paints its cells by one mechanic and a band has to count by that same mechanic, or
- * the band contradicts the fill it sits inside: a claims fill explained by held markets would
- * lead on a bloc the cell is not painted for, and a held fill explained by a claim contest would
- * count a different set of colonies than the score it was painted from. So the choice of mechanic
- * belongs to the view, exactly as its holder source and its hover box do, and this is the seam it
- * supplies one through.
+ * <p>A view paints its cells by one mechanic, and a band has to be ordered around that same
+ * mechanic or it contradicts the fill it sits inside: a claims fill ordered by held weights would
+ * open on a bloc the cell is not painted for, and a held fill ordered by a claim contest would
+ * lead on whoever the contest ranked first rather than on the bloc that holds the system. So the
+ * choice of mechanic belongs to the view, exactly as its holder source and its hover box do, and
+ * this is the seam it supplies one through. The counts themselves are one shared rule's, since
+ * how a system splits is a fact about the system rather than about the mechanic reading it.
  *
  * <p>The plan is asked for per system rather than per cell because every count behind it is a
  * fact about the system; the cell only decides how far round its own ring those runs are drawn.

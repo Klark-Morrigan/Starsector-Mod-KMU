@@ -141,7 +141,7 @@ public record RibbonPlan(
     }
 
     // Whether any bloc but the painter holds something in the cell. A bloc counted at nothing
-    // is not presence: it holds no market the score was decided on, so there is nothing about
+    // is not presence: it holds no colony the player may be shown, so there is nothing about
     // it for a band to report, and admitting it would draw an empty ribbon on a cell that
     // deserves none.
     private static boolean hasRivalPresence(

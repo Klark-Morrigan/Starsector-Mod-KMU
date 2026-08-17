@@ -134,9 +134,10 @@ public final class CellRibbonsBaker {
         var bakeStart = System.nanoTime();
         var timings = new RibbonBakeTimings();
 
-        // A band's count walks a system's markets - the claim mechanic's walks all of them - so
-        // this is the one part of a rebuild that could rival the known label-fit stall, and it is
-        // profiled and timed on its own so a rebuild that slows down says which half slowed.
+        // A band's count walks a system's colonies once per bake, and on the claims layer settles a
+        // contest over them - so this is the one part of a rebuild that could rival the known
+        // label-fit stall, and it is profiled and timed on its own so a rebuild that slows down
+        // says which half slowed.
         var bakedCells = KmuProfiling
             .getProfiler()
             .measure(RibbonBakeTimings.BAKE_SECTION, () -> bakeCellRibbons(cellIds, timings));

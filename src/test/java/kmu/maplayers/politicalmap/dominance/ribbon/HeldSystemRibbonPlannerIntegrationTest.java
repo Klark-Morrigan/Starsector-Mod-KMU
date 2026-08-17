@@ -4,28 +4,25 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.starsector.factions.FactionPalette;
-
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
-import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
-import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.awt.Color;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsFor;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -49,28 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class HeldSystemRibbonPlannerIntegrationTest {
 
-    private static final String HEGEMONY = "hegemony";
-    private static final String TRITACHYON = "tritachyon";
     private static final String SYSTEM_ID = "corvus";
-
-    private static final Color HEGEMONY_BRIGHT = new Color(140, 160, 220);
-    private static final Color HEGEMONY_DARK = new Color(40, 60, 120);
-    private static final Color TRITACHYON_BRIGHT = new Color(120, 220, 200);
-    private static final Color TRITACHYON_DARK = new Color(20, 90, 80);
-
-    private static final BlocPaletteReader PALETTES = Map.of(
-            HEGEMONY,
-            new FactionPalette(HEGEMONY_BRIGHT, HEGEMONY_DARK),
-            TRITACHYON,
-            new FactionPalette(TRITACHYON_BRIGHT, TRITACHYON_DARK))
-        ::get;
-
-    // The uncontested arm off, so a lone holder's system declines to band and the cases below read
-    // the contest gate alone. What the other arm admits is UncontestedCellBandsTest's.
-    private static final RibbonPlanRules STANDARD_RULES =
-        new RibbonPlanRules(
-            new RibbonSegmentLengths(3, 1),
-            new UncontestedCellBands(false, false));
 
     // Undiscovered colonies left out, which is the shipped reveal; no case here turns on it.
     private static final boolean WITHOUT_DEV_REVEAL = false;
@@ -187,7 +163,7 @@ final class HeldSystemRibbonPlannerIntegrationTest {
 
         return new HeldSystemRibbonPlanner(
             DominancePass.over(holding, SectorPoliticsFixtures.buildStabilityWeightedRules()),
-            new RibbonPlanInputs(holding, PALETTES, STANDARD_RULES));
+            buildInputsFor(holding));
     }
 
     private static Optional<RibbonPlan> planFor(SectorAPI sector, StarSystemAPI system) {

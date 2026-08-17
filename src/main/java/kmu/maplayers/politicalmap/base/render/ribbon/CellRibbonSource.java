@@ -35,9 +35,9 @@ import java.util.Map;
  * band identical to the one the full rebuild would have.
  *
  * <p>The holder map is also the cost gate, and the reason it is held rather than looked up per
- * call site. Most of the sector is cells nobody paints, and the claim mechanic's count walks a
- * system's whole market list; without the gate, every empty cell in the sector would pay for a
- * contest nobody is contesting.
+ * call site. Most of the sector is cells nobody paints, and asking for a band walks the system's
+ * colonies - and on the claims layer settles a whole contest over them; without the gate, every
+ * empty cell in the sector would pay for a contest nobody is contesting.
  *
  * <p>Which cells get a band at all is settled here, in three refusals read in one place: a cell
  * nothing paints or with nowhere to start from, a system the sector no longer lists, and a cell
@@ -191,9 +191,9 @@ public final class CellRibbonSource {
         }
 
         // Charged apart from the geometry that follows it because it is the one phase of a bake
-        // that grows with what the systems hold rather than with the cells: the claim mechanic's
-        // count walks a system's whole market list, so a sector's colonies move this and the
-        // cells' own ring work by different factors.
+        // that grows with what the systems hold rather than with the cells: the first ask about a
+        // system walks its colonies, so a sector's colonies move this and the cells' own ring work
+        // by different factors.
         var planStart = System.nanoTime();
         var plan = planner.planSystemRibbon(system);
         timings.addPlanNanos(System.nanoTime() - planStart);

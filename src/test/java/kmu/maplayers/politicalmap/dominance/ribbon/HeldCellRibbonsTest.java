@@ -2,31 +2,33 @@ package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.factions.FactionPalette;
-
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
-import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
-import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.awt.Color;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.FOG_KEPT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN_BRIGHT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -48,35 +50,6 @@ final class HeldCellRibbonsTest {
 
     private static final String SYSTEM_ID = "corvus";
 
-    private static final String HEGEMONY = "hegemony";
-    private static final String TRITACHYON = "tritachyon";
-    private static final String PERSEAN = "persean";
-
-    private static final Color HEGEMONY_BRIGHT = new Color(140, 160, 220);
-    private static final Color HEGEMONY_DARK = new Color(40, 60, 120);
-    private static final Color TRITACHYON_BRIGHT = new Color(120, 220, 200);
-    private static final Color TRITACHYON_DARK = new Color(20, 90, 80);
-    private static final Color PERSEAN_BRIGHT = new Color(200, 180, 120);
-    private static final Color PERSEAN_DARK = new Color(90, 70, 30);
-
-    // The shades every bloc in these cases draws in, read by bloc id exactly as the live map reads
-    // them.
-    private static final BlocPaletteReader PALETTES = Map.of(
-            HEGEMONY,
-            new FactionPalette(HEGEMONY_BRIGHT, HEGEMONY_DARK),
-            TRITACHYON,
-            new FactionPalette(TRITACHYON_BRIGHT, TRITACHYON_DARK),
-            PERSEAN,
-            new FactionPalette(PERSEAN_BRIGHT, PERSEAN_DARK))
-        ::get;
-
-    // The design's own proportions - a colony three widths long, parted by one width - paired with
-    // the gate a player has left switched off.
-    private static final RibbonPlanRules STANDARD_RULES =
-        new RibbonPlanRules(
-            new RibbonSegmentLengths(3, 1),
-            new UncontestedCellBands(false, false));
-
     // The two weights below the combined one. Held constant across every case: the ordering reads
     // the combined weight alone, so a case varying either would vary nothing the rule can see.
     private static final int ANY_LARGEST_MARKET_WEIGHT = 4000;
@@ -92,8 +65,8 @@ final class HeldCellRibbonsTest {
     // alone.
     private static final int ONE_COLONY = 1;
 
-    // The size every posed colony carries. A band counts holdings rather than weighing them, so a
-    // case varying it would vary nothing the ordering can see.
+    // The size the off-economy station is posed at, that being the one colony these cases build
+    // themselves rather than taking from the shared sector helper.
     private static final int COLONY_SIZE = 5;
 
     @Nested
@@ -104,10 +77,7 @@ final class HeldCellRibbonsTest {
             // The dominance rule can hand a system to a bloc that leads on none of the weights -
             // a dead heat settled by the market nearest the system centre, or by id - and the band
             // has to open on the bloc the cell is actually painted for regardless.
-            var sector = buildSectorWith(
-                SYSTEM_ID,
-                buildVisibleMarket(buildFaction(TRITACHYON), COLONY_SIZE),
-                buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE));
+            var sector = buildSectorHolding(SYSTEM_ID, TRITACHYON, HEGEMONY);
 
             var footprints = new LinkedHashMap<String, MarketFootprint>();
             footprints.put(TRITACHYON, buildFootprint(LEADING_WEIGHT));
@@ -124,11 +94,7 @@ final class HeldCellRibbonsTest {
         void ranksTheRivalsBehindThePainterByDescendingWeight() {
             // Behind the leader the band reads as the standings box does, so the heavier rival is
             // the nearer one.
-            var sector = buildSectorWith(
-                SYSTEM_ID,
-                buildVisibleMarket(buildFaction(PERSEAN), COLONY_SIZE),
-                buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE),
-                buildVisibleMarket(buildFaction(TRITACHYON), COLONY_SIZE));
+            var sector = buildSectorHolding(SYSTEM_ID, PERSEAN, HEGEMONY, TRITACHYON);
 
             var footprints = new LinkedHashMap<String, MarketFootprint>();
             footprints.put(PERSEAN, buildFootprint(TRAILING_WEIGHT));
@@ -148,11 +114,7 @@ final class HeldCellRibbonsTest {
         void breaksAWeightTieBetweenRivalsByBlocId() {
             // Two rivals level on weight are separated by id and nothing else, so the order never
             // depends on which of them the economy walk reached first.
-            var sector = buildSectorWith(
-                SYSTEM_ID,
-                buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE),
-                buildVisibleMarket(buildFaction(TRITACHYON), COLONY_SIZE),
-                buildVisibleMarket(buildFaction(PERSEAN), COLONY_SIZE));
+            var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY, TRITACHYON, PERSEAN);
 
             var footprints = new LinkedHashMap<String, MarketFootprint>();
             footprints.put(HEGEMONY, buildFootprint(LEADING_WEIGHT));
@@ -174,10 +136,7 @@ final class HeldCellRibbonsTest {
             // industries or stability for a weight to be computed from - so it has no footprint and
             // no rank. It is present in the system all the same, and draws behind the blocs the
             // weights did reach rather than being given a place among them.
-            var sector = buildSectorWith(
-                SYSTEM_ID,
-                buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE),
-                buildVisibleMarket(buildFaction(PERSEAN), COLONY_SIZE));
+            var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY, PERSEAN);
 
             placeMarketsOnSystemEntities(
                 buildOnlySystem(sector),
@@ -208,13 +167,7 @@ final class HeldCellRibbonsTest {
             paintingBlocId,
             buildOnlySystem(sector),
             footprintByBlocId,
-            new RibbonPlanInputs(
-                HolderPass.over(
-                    sector,
-                    false, // Undiscovered colonies are not shown, as they are not on the live map.
-                    HolderGrouping.identity()),
-                PALETTES,
-                STANDARD_RULES));
+            buildInputsOver(sector, HolderGrouping.identity(), FOG_KEPT));
     }
 
     // One bloc's footprint as the dominance pass banked it, stated by the combined weight the

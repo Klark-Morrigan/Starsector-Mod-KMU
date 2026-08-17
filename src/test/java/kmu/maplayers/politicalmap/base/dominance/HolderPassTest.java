@@ -1,8 +1,11 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
+import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.systems.SystemColoniesIndex;
+
+import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,6 +28,16 @@ import static org.mockito.Mockito.mock;
  */
 final class HolderPassTest {
 
+    private static final String SYSTEM_ID = "corvus";
+
+    // The one owner the projection cases read a colony back for.
+    private static final FactionAPI HEGEMONY_FACTION = SectorPoliticsFixtures
+        .buildFaction("hegemony");
+
+    // The size every posed colony carries. The projection reads ownership and discovery, so a case
+    // varying size would vary nothing it can see.
+    private static final int COLONY_SIZE = 5;
+
     @Nested
     class Constructor {
 
@@ -44,6 +57,58 @@ final class HolderPassTest {
             assertThatThrownBy(() ->
                     new HolderPass(HolderGrouping.identity(), false, null))
                 .isInstanceOf(NullPointerException.class);
+        }
+    }
+
+    @Nested
+    class ReadKnownColoniesIn {
+
+        @Test
+        void withholdsAColonyThePlayerHasNotFound() {
+            // The projection every display reader below takes, stated where it is named: a pass with
+            // the fog in force reports the colonies the player may be shown and no others, so a
+            // band, a fill and a box over one cell cannot each withhold a different set.
+            var sector = SectorPoliticsFixtures.buildSectorWith(
+                SYSTEM_ID,
+                SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE),
+                SectorPoliticsFixtures.buildUndiscoveredHiddenMarket(
+                    SectorPoliticsFixtures.buildFaction("tritachyon"),
+                    COLONY_SIZE));
+
+            var knownColonies = HolderPass
+                .over(sector, false, HolderGrouping.identity())
+                .readKnownColoniesIn(SectorPoliticsFixtures.buildOnlySystem(sector));
+
+            assertThat(knownColonies)
+                .extracting(colony -> colony.market().getFaction().getId())
+                .containsExactly("hegemony");
+        }
+
+        @Test
+        void reportsAnUnfoundColonyWhereTheRevealLiftsTheFog() {
+            // The same pass with the dev reveal on, which is the one knob the projection reads.
+            var sector = SectorPoliticsFixtures.buildSectorWith(
+                SYSTEM_ID,
+                SectorPoliticsFixtures.buildUndiscoveredHiddenMarket(
+                    HEGEMONY_FACTION,
+                    COLONY_SIZE));
+
+            var knownColonies = HolderPass
+                .over(sector, true, HolderGrouping.identity())
+                .readKnownColoniesIn(SectorPoliticsFixtures.buildOnlySystem(sector));
+
+            assertThat(knownColonies)
+                .hasSize(1);
+        }
+
+        @Test
+        void reportsNoColoniesForASystemThatIsNotThere() {
+            // The null-system answer every read on the pass holds to, so a reader handed a system
+            // the sector no longer lists is not obliged to guard before asking.
+            assertThat(HolderPass
+                    .over(mock(SectorAPI.class), false, HolderGrouping.identity())
+                    .readKnownColoniesIn(null))
+                .isEmpty();
         }
     }
 

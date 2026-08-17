@@ -1,35 +1,30 @@
 package kmu.maplayers.politicalmap.claims.ribbon;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.factions.FactionPalette;
-import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.HolderPass;
-import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
-import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.awt.Color;
 import java.util.List;
-import java.util.Map;
 
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.FOG_KEPT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -47,28 +42,6 @@ final class ClaimedSystemRibbonPlannerTest {
 
     private static final String SYSTEM_ID = "corvus";
 
-    private static final String HEGEMONY = "hegemony";
-    private static final String TRITACHYON = "tritachyon";
-
-    private static final Color HEGEMONY_BRIGHT = new Color(140, 160, 220);
-    private static final Color TRITACHYON_BRIGHT = new Color(120, 220, 200);
-
-    // The dark shade a run is closed off in where another bloc's follows. Only Tri-Tachyon's is
-    // named, that being the one bloc a case here reads a divider back from.
-    private static final Color TRITACHYON_DARK = new Color(20, 90, 80);
-
-    private static final BlocPaletteReader PALETTES = Map.of(
-            HEGEMONY,
-            new FactionPalette(HEGEMONY_BRIGHT, new Color(40, 60, 120)),
-            TRITACHYON,
-            new FactionPalette(TRITACHYON_BRIGHT, TRITACHYON_DARK))
-        ::get;
-
-    private static final RibbonPlanRules STANDARD_RULES =
-        new RibbonPlanRules(
-            new RibbonSegmentLengths(3, 1),
-            new UncontestedCellBands(false, false));
-
     // No memory flag imposed a claimant, so the contest settled the system on its own.
     private static final String NO_DECREE = null;
 
@@ -79,10 +52,6 @@ final class ClaimedSystemRibbonPlannerTest {
     private static final int LEADING_SCORE = 30;
     private static final int TRAILING_SCORE = 10;
 
-    // The size every posed colony carries, held constant: this rule reads no size, so a case
-    // varying it would vary nothing it can see.
-    private static final int COLONY_SIZE = 5;
-
     @Nested
     class PlanSystemRibbon {
 
@@ -91,10 +60,7 @@ final class ClaimedSystemRibbonPlannerTest {
             // The Hegemony holds the claim while Tri-Tachyon stands ahead of it in the contest.
             // The rival is Tri-Tachyon, so a band is drawn - and it keeps the contest's own order,
             // which no part of this planner reaches in to change.
-            var sector = buildSectorWith(
-                SYSTEM_ID,
-                buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE),
-                buildVisibleMarket(buildFaction(TRITACHYON), COLONY_SIZE));
+            var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY, TRITACHYON);
 
             var contest = new SystemClaimBreakdown(
                 NO_DECREE,
@@ -115,9 +81,7 @@ final class ClaimedSystemRibbonPlannerTest {
             // The gate read off the claimant: the one bloc present is the one the fill already
             // names, so the cell stays bare. Taking the painter from the top standing instead
             // would agree here by accident and disagree wherever the two differ.
-            var sector = buildSectorWith(
-                SYSTEM_ID,
-                buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE));
+            var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY);
 
             var contest = new SystemClaimBreakdown(
                 NO_DECREE,
@@ -132,9 +96,7 @@ final class ClaimedSystemRibbonPlannerTest {
         void plansNoBandForASystemNobodyClaims() {
             // Nothing painted the cell, so there is no painter for the gate to be stated against -
             // a band drawn here would be one no fill asked for.
-            var sector = buildSectorWith(
-                SYSTEM_ID,
-                buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE));
+            var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY);
 
             var contest = new SystemClaimBreakdown(
                 NO_DECREE,
@@ -149,32 +111,13 @@ final class ClaimedSystemRibbonPlannerTest {
     // The planner over a posed contest, counting the colonies of the stubbed sector's one system.
     private static RibbonPlan planFrom(SystemClaimBreakdown contest, SectorAPI sector) {
 
+        var readerFake = new ClaimBreakdownReaderFake();
+        readerFake.setBreakdown(SYSTEM_ID, contest);
+
         return new ClaimedSystemRibbonPlanner(
-                new ClaimBreakdownReaderFake(contest),
-                new RibbonPlanInputs(
-                    HolderPass.over(
-                        sector,
-                        false, // Undiscovered colonies are not shown, as on the live map.
-                        HolderGrouping.identity()),
-                    PALETTES,
-                    STANDARD_RULES))
+                readerFake,
+                buildInputsOver(sector, HolderGrouping.identity(), FOG_KEPT))
             .planSystemRibbon(buildOnlySystem(sector));
-    }
-
-    // The contest this planner is posed over, however it is asked for it. Its second read - the
-    // decree flag - is not this rule's business and is answered as unset.
-    private record ClaimBreakdownReaderFake(SystemClaimBreakdown contest)
-        implements ClaimBreakdownReader {
-
-        @Override
-        public SystemClaimBreakdown readBreakdown(StarSystemAPI system) {
-            return contest;
-        }
-
-        @Override
-        public String readCoreFactionId(StarSystemAPI system) {
-            return null;
-        }
     }
 
     // One faction's weighed standing at the given score. What a standing is made of is the counting

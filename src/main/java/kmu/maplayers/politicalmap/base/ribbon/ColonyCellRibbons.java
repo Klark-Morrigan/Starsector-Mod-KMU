@@ -92,13 +92,19 @@ public final class ColonyCellRibbons {
         var countByBlocId = new HashMap<String, Integer>();
 
         for (var colony : knownColonies) {
-            var blocId = grouping.resolveBlocId(colony.market().getFaction().getId());
+            var factionId = colony.market().getFaction().getId();
 
             // A colony whose owner carries no id belongs to no bloc the map can name, so it is
             // left out rather than pooled under a nameless one - which would draw a run for
             // several factions' colonies at once the moment a mod shipped two such owners.
-            if (KmlibStrings.hasText(blocId)) {
-                countByBlocId.merge(blocId, ONE_COLONY, Integer::sum);
+            //
+            // Tested before the fold rather than after it, because the grouping holds an immutable
+            // map and asking one for a null key faults rather than answering nothing.
+            if (KmlibStrings.hasText(factionId)) {
+                countByBlocId.merge(
+                    grouping.resolveBlocId(factionId),
+                    ONE_COLONY,
+                    Integer::sum);
             }
         }
         return countByBlocId;
