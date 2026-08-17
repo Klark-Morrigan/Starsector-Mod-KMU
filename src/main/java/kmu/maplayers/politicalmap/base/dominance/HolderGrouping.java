@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
+import kmlib.text.KmlibStrings;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BinaryOperator;
@@ -71,11 +73,13 @@ public record HolderGrouping(
      * footprint through, so allied factions share a key and everyone else stays
      * separate.
      *
-     * @param factionId the faction to place
-     * @return the faction's bloc id, or the faction id itself when it is in no bloc
+     * @param factionId the faction to place; a faction with no id belongs to no bloc, since a bloc
+     *                  is named and there is nothing here to name one after
+     * @return the faction's bloc id, the faction id itself when it is in no bloc, or null when the
+     *         faction carries no id
      */
     public String resolveBlocId(String factionId) {
-        return blocIdByFactionId.getOrDefault(factionId, factionId);
+        return findGroupedId(blocIdByFactionId, factionId, factionId);
     }
 
     /**
@@ -89,7 +93,9 @@ public record HolderGrouping(
      * fuller footprint-plus-market-size regroup share one fold rather than two copies of the idiom.
      * First-seen bloc order is preserved, so the economy-walk ordering flows straight through.
      *
-     * @param valueByFactionId each faction's value to fold, in walk order
+     * @param valueByFactionId each faction's value to fold, in walk order; a faction with no id
+     *                         belongs to no bloc, so its value is left out rather than folded under
+     *                         a bloc the map cannot name
      * @param identity         the merge identity a bloc's first value combines with
      * @param merge            combines two same-bloc values into one
      * @param <T>              the folded value type
@@ -103,11 +109,18 @@ public record HolderGrouping(
         var valueByBlocId = new LinkedHashMap<String, T>();
         for (var entry : valueByFactionId.entrySet()) {
             var blocId = resolveBlocId(entry.getKey());
-            valueByBlocId.put(
-                blocId,
-                merge.apply(
-                    valueByBlocId.getOrDefault(blocId, identity),
-                    entry.getValue()));
+
+            // A faction this grouping can name no bloc for is left out, which is the one thing the
+            // fold decides that the lookup cannot: a nameless key here would travel on as a bloc,
+            // and every reader downstream - the ranking, the palette, the picker row - would then
+            // be asked about a bloc the map has no name to show for.
+            if (blocId != null) {
+                valueByBlocId.put(
+                    blocId,
+                    merge.apply(
+                        valueByBlocId.getOrDefault(blocId, identity),
+                        entry.getValue()));
+            }
         }
         return valueByBlocId;
     }
@@ -118,11 +131,11 @@ public record HolderGrouping(
      * colour an alliance cluster in a real faction's shades without the bloc id
      * needing to be a faction id.
      *
-     * @param blocId the bloc to colour
-     * @return the faction id supplying the bloc's palette
+     * @param blocId the bloc to colour; a bloc with no id has no palette to name
+     * @return the faction id supplying the bloc's palette, or null for a bloc with no id
      */
     public String resolveColourFactionId(String blocId) {
-        return colourFactionIdByBlocId.getOrDefault(blocId, blocId);
+        return findGroupedId(colourFactionIdByBlocId, blocId, blocId);
     }
 
     /**
@@ -130,11 +143,12 @@ public record HolderGrouping(
      * rather than an alliance. Null both supplies the alliance label and, via
      * {@link #isAlliance}, tells a lone-faction bloc from an alliance one.
      *
-     * @param blocId the bloc to name
+     * @param blocId the bloc to name; a bloc with no id is no alliance, there being nothing to have
+     *               named it one
      * @return the alliance's name, or null when the bloc is not an alliance
      */
     public String resolveAllianceName(String blocId) {
-        return allianceNameByBlocId.get(blocId);
+        return findGroupedId(allianceNameByBlocId, blocId, null);
     }
 
     /**
@@ -158,5 +172,28 @@ public record HolderGrouping(
      */
     public boolean hasAnyAlliance() {
         return !allianceNameByBlocId.isEmpty();
+    }
+
+    // One of this grouping's lookups, answered for an id the sector never named rather than faulting
+    // on it.
+    //
+    // The guard is what the immutable maps oblige: an immutable map asked for a null key throws
+    // instead of reporting the key absent, even when the map is empty - which the identity
+    // grouping's three are. So a colony whose owning faction carries no id (a mod's, the game
+    // itself always naming its factions) would take down whatever walk reached it: the ribbon
+    // count, the dominance regroup, or a render rule asking whether its bloc is an alliance.
+    //
+    // Answered as "no bloc" rather than as some stand-in id, because a nameless bloc pooled under
+    // one is worse than one left out: two such owners would merge into a single run, a single
+    // fill, and a single row naming neither of them.
+    private static String findGroupedId(
+            Map<String, String> groupedIdById,
+            String id,
+            String fallbackId) {
+
+        if (!KmlibStrings.hasText(id)) {
+            return null;
+        }
+        return groupedIdById.getOrDefault(id, fallbackId);
     }
 }

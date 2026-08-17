@@ -34,6 +34,7 @@ class HolderGroupingTest {
 
         @Test
         void treatsNoBlocAsAnAlliance() {
+
             assertThat(HolderGrouping.identity().isAlliance("hegemony"))
                 .isFalse();
             assertThat(HolderGrouping.identity().resolveAllianceName("hegemony"))
@@ -54,6 +55,42 @@ class HolderGroupingTest {
         void leavesAnOutsiderAsItsOwnBloc() {
             assertThat(buildAllianceGrouping().resolveBlocId("tritachyon"))
                 .isEqualTo("tritachyon");
+        }
+    }
+
+    @Nested
+    class UnnamedIds {
+
+        // A faction the game itself would always have named, and a mod may not. Every lookup here
+        // reads an immutable map, which faults on a null key rather than reporting it absent - even
+        // the identity grouping's empty ones - so an owner with no id would otherwise take down
+        // whatever walk reached it: a band's count, the dominance regroup, or a render rule asking
+        // whether its bloc is an alliance.
+        @Test
+        void resolveBlocIdNamesNoBlocForAFactionWithNoId() {
+
+            assertThat(buildAllianceGrouping().resolveBlocId(null))
+                .isNull();
+            assertThat(HolderGrouping.identity().resolveBlocId(" "))
+                .isNull();
+        }
+
+        @Test
+        void resolveColourFactionIdNamesNoPaletteForABlocWithNoId() {
+
+            assertThat(buildAllianceGrouping().resolveColourFactionId(null))
+                .isNull();
+            assertThat(HolderGrouping.identity().resolveColourFactionId(" "))
+                .isNull();
+        }
+
+        @Test
+        void resolveAllianceNameReadsABlocWithNoIdAsNoAlliance() {
+            
+            assertThat(buildAllianceGrouping().resolveAllianceName(null))
+                .isNull();
+            assertThat(buildAllianceGrouping().isAlliance(null))
+                .isFalse();
         }
     }
 
@@ -182,6 +219,21 @@ class HolderGroupingTest {
             var valueByFactionId = new LinkedHashMap<String, Integer>();
 
             valueByFactionId.put("hegemony", 2);
+            valueByFactionId.put("tritachyon", 3);
+
+            assertThat(HolderGrouping.identity().regroupByBloc(valueByFactionId, 0, Integer::sum))
+                .containsOnly(entry("hegemony", 2), entry("tritachyon", 3));
+        }
+
+        @Test
+        void leavesOutAFactionItCanNameNoBlocFor() {
+            // The one thing the fold decides that the lookup cannot. A nameless key would travel on
+            // as a bloc, and two such owners would merge into one entry naming neither of them -
+            // one run, one fill, one row. The named factions beside it fold as they always do.
+            var valueByFactionId = new LinkedHashMap<String, Integer>();
+
+            valueByFactionId.put("hegemony", 2);
+            valueByFactionId.put(null, 5);
             valueByFactionId.put("tritachyon", 3);
 
             assertThat(HolderGrouping.identity().regroupByBloc(valueByFactionId, 0, Integer::sum))

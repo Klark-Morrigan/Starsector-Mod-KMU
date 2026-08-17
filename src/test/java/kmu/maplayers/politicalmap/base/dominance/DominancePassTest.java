@@ -12,6 +12,7 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.bu
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStabilityWeightedRules;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -86,6 +87,29 @@ class DominancePassTest {
             // how the walk is written rather than how often it is made.
             verify(system, times(1))
                 .getAllEntities();
+        }
+    }
+
+    @Nested
+    class ReadBlocFootprints {
+
+        @Test
+        void leavesOutAColonyWhoseOwnerCarriesNoId() {
+            // A colony a mod hung on a faction with no id. The fold cannot name a bloc for it, so it
+            // is left out - where before it was folded under a nameless key and the grouping faulted
+            // on that key, taking the whole resolve down with it.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony),
+                buildVisibleMarket(hegemony, 5),
+                buildVisibleMarket(buildFaction(null, HEGEMONY_BRIGHT), 5));
+
+            var footprintByBlocId = buildPassOver(sector)
+                .readBlocFootprints(buildOnlySystem(sector));
+
+            assertThat(footprintByBlocId)
+                .containsOnlyKeys("hegemony");
         }
     }
 }
