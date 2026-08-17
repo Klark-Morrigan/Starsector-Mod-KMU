@@ -8,6 +8,7 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.maplayers.politicalmap.base.ribbon.BlocPaletteReader;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
@@ -66,12 +67,10 @@ final class HeldSystemRibbonPlannerIntegrationTest {
 
     // The uncontested arm off, so a lone holder's system declines to band and the cases below read
     // the contest gate alone. What the other arm admits is UncontestedCellBandsTest's.
-    private static final RibbonPlanInputs STANDARD_INPUTS =
-        new RibbonPlanInputs(
-            PALETTES,
-            new RibbonPlanRules(
-                new RibbonSegmentLengths(3, 1),
-                new UncontestedCellBands(false, false)));
+    private static final RibbonPlanRules STANDARD_RULES =
+        new RibbonPlanRules(
+            new RibbonSegmentLengths(3, 1),
+            new UncontestedCellBands(false, false));
 
     // Undiscovered colonies left out, which is the shipped reveal; no case here turns on it.
     private static final boolean WITHOUT_DEV_REVEAL = false;
@@ -179,14 +178,16 @@ final class HeldSystemRibbonPlannerIntegrationTest {
 
     // The planner under a pass reading the shared stability-weighted rule under the plain faction
     // grouping, which is the pass a faction-view rebuild resolves.
+    //
+    // The ranking and the counting take the one reading of the sector, as they do in a live bake:
+    // built apart, the weights could be read off one walk of a system and its colonies off another.
     private static HeldSystemRibbonPlanner buildPlanner(SectorAPI sector) {
+
+        var holding = HolderPass.over(sector, WITHOUT_DEV_REVEAL, HolderGrouping.identity());
+
         return new HeldSystemRibbonPlanner(
-            DominancePass.over(
-                sector,
-                SectorPoliticsFixtures.buildStabilityWeightedRules(),
-                WITHOUT_DEV_REVEAL,
-                HolderGrouping.identity()),
-            STANDARD_INPUTS);
+            DominancePass.over(holding, SectorPoliticsFixtures.buildStabilityWeightedRules()),
+            new RibbonPlanInputs(holding, PALETTES, STANDARD_RULES));
     }
 
     private static Optional<RibbonPlan> planFor(SectorAPI sector, StarSystemAPI system) {

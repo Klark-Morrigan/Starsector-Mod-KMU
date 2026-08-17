@@ -33,6 +33,7 @@ import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryF
 import kmu.maplayers.politicalmap.base.render.territories.StyledCellBuilder;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
+import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.KmuPoliticalMapSettings;
 import kmu.settings.RibbonNameClearanceChoice;
 
@@ -227,6 +228,11 @@ final class IncrementalPoliticsRefreshTest {
             settingsMock = openSeam(KmuPoliticalMapSettings.class);
             RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
 
+            // A re-bake also opens its own pass, which samples the dev reveal off the map-layer
+            // knobs - LunaLib again. No case here turns on the reveal, so the seam's own false is
+            // the answer.
+            openSeam(KmuMapLayerSettings.class);
+
             // The stale set is static and shared, so a residue from another suite would
             // read here as a system this one never marked.
             MapLayerRefresh.drainStaleGroupingSystemIds();
@@ -309,7 +315,7 @@ final class IncrementalPoliticsRefreshTest {
             when(cellGeometry.cells().getSiteBySystemId())
                 .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
 
-            when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
+            when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             assertResolvesTo(FLIPPED_SYSTEM, readOwnerOf(HEGEMONY));
@@ -341,7 +347,7 @@ final class IncrementalPoliticsRefreshTest {
             when(cellGeometry.cells().getSiteBySystemId())
                 .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
 
-            when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
+            when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             // A name takes up room only while the names are being drawn at all.
@@ -377,7 +383,7 @@ final class IncrementalPoliticsRefreshTest {
             when(cellGeometry.cells().getSiteBySystemId())
                 .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
 
-            when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
+            when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             nameFormatMock
@@ -428,7 +434,7 @@ final class IncrementalPoliticsRefreshTest {
             when(cellGeometry.cells().getSiteBySystemId())
                 .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
 
-            when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
+            when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
@@ -459,7 +465,7 @@ final class IncrementalPoliticsRefreshTest {
             when(cellGeometry.cells().getSiteBySystemId())
                 .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
 
-            when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
+            when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             nameFormatMock
@@ -684,7 +690,7 @@ final class IncrementalPoliticsRefreshTest {
             when(cellGeometry.cells().getSiteBySystemId())
                 .thenReturn(Map.of(DISTANT_SYSTEM, new double[] {12000.0, 12000.0}));
 
-            when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
+            when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
         }
 

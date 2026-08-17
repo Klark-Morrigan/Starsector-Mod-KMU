@@ -9,6 +9,7 @@ import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritorie
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
+import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.KmuPoliticalMapSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -69,16 +70,22 @@ final class CellRibbonsBakerTest {
     // stub rather than from a LunaLib the test JVM has no game to load.
     private MockedStatic<KmuPoliticalMapSettings> settingsMock;
 
+    // The map-layer knobs stand in for the same reason, a bake opening a pass that samples the dev
+    // reveal off them. No case here turns on the reveal, so the stub's own false is the answer.
+    private MockedStatic<KmuMapLayerSettings> mapLayerSettingsMock;
+
     @BeforeEach
     void stubBandSettings() {
 
         settingsMock = mockStatic(KmuPoliticalMapSettings.class);
+        mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
 
         RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
     }
 
     @AfterEach
     void releaseBandSettings() {
+        mapLayerSettingsMock.close();
         settingsMock.close();
     }
 
@@ -211,7 +218,7 @@ final class CellRibbonsBakerTest {
         // The mechanic the pass counts by, answered off the view the territories already carry -
         // which is where a bake reads it from, so a stub anywhere else would leave the pass
         // counting through whatever the fixture's mock returns by default.
-        when(territories.getView().resolveRibbonPlanner(any(), any(), any()))
+        when(territories.getView().resolveRibbonPlanner(any()))
             .thenReturn(system -> ANY_PLAN);
 
         return territories;

@@ -1,9 +1,9 @@
 # Presence band vocabulary (`base.ribbon`)
 
 What a cell's presence band is made of, stated as pure data ahead of any geometry: a run of colour
-per colony, whose runs, and in what order. Nothing here traces a ring or emits a triangle - that is
-[`base.render.ribbon`](../render/ribbon/README.md) - and nothing here counts colonies either, which
-is each painting mechanic's own business.
+per colony, whose runs, and in what order - and, since one band must mean one thing on every layer,
+the count itself. Nothing here traces a ring or emits a triangle; that is
+[`base.render.ribbon`](../render/ribbon/README.md).
 
 Part of [the political map](../../README.md), in Klark Morrigan's Utilities; see the
 [mod README](../../../../../../../../README.md) for project context.
@@ -11,6 +11,7 @@ Part of [the political map](../../README.md), in Klark Morrigan's Utilities; see
 ## Index
 
 - [The plan](#the-plan)
+- [One count for both mechanics](#one-count-for-both-mechanics)
 - [The two ports](#the-two-ports)
 - [Which cells band at all](#which-cells-band-at-all)
 - [What is not here](#what-is-not-here)
@@ -31,11 +32,36 @@ The grammar it lays down:
 - The band's last run is left open, so a divider never ends a band.
 
 `RibbonSegmentLengths` pairs the two proportions the grammar is stated in, and `RibbonPlanRules`
-pairs those with the gate below. `RibbonPlanInputs` carries the rules plus the palette port, so a
-planner is handed one object rather than four loose knobs.
+pairs those with the gate below. `RibbonPlanInputs` carries the rules, the palette port and the
+bake's own `HolderPass`, so a planner is handed one object rather than four loose knobs - and so
+both mechanics of a composed planner count off a single walk of each system.
 
 Lengths are counts of widths, never world sizes: how large a width is in the world is the render
 side's question, which is what lets this whole package be exercised on literals.
+
+## One count for both mechanics
+
+`ColonyCellRibbons` counts every cell on every layer: the pass's **known projection** of the
+system's colonies, folded into a count per bloc under the pass's grouping.
+
+That projection is the one filter, and it is the fog - `Markets.isCountedAsColony` under the pass's
+`shouldIncludeUndiscoveredMarkets`, which is the same arm the cell classification paints on and the
+same override, sampled once per bake, that the fills are resolved under. So a colony the player has
+not found is left out, and the dev reveal puts it back on band and fill together.
+
+Past it, nothing about a colony is asked: hidden, unlisted by the economy, weighed or never weighed,
+each counts as the one colony it is.
+
+It is here rather than beside each mechanic because a band reports how a system splits, which is a
+fact about the system rather than about the mechanic reading it. Counted per mechanic, the two
+answers drifted: an unlisted station reached neither band while both hover boxes named it, a
+concealed colony fed a weight on one layer and a sibling term on the other, and the dev reveal
+reached the held count while the claim count went on hiding what the fill was drawing.
+
+What each mechanic still supplies is the **painter** and the **ranking**, which are what genuinely
+differ - whose fill the band sits inside, and the order that fill decided. A bloc the mechanic never
+ranked draws behind the ranked ones in id order, since any place among them would claim it took part
+in a contest it never entered.
 
 ## The two ports
 
@@ -63,10 +89,14 @@ bands under neither arm.
 
 ## What is not here
 
-**The counts.** Where a bloc's colony count comes from is the mechanic's, so it lives with the
-mechanic: [`dominance.ribbon`](../../dominance/ribbon/README.md) counts a held cell off the very
-footprints the fill was ranked from, and [`claims.ribbon`](../../claims/ribbon/README.md) counts a
-claimed cell off the contest that settled the claim. Keeping the counting out of here is what makes
-one band mean one thing on every view.
+**The painter and the ranking.** Which bloc a cell was painted for, and the order the blocs come
+out in, are the painting mechanic's: [`dominance.ribbon`](../../dominance/ribbon/README.md) ranks a
+held cell by the footprints its fill was decided from, and
+[`claims.ribbon`](../../claims/ribbon/README.md) ranks a claimed cell by the contest that settled
+the claim.
+
+**Where the colonies come from.** The walk itself is `SystemColoniesIndex`'s, reached through the
+pass on `RibbonPlanInputs` - so a planner counts what the bake already read rather than being able
+to walk a system again.
 
 **Every size in the world**, and every triangle - [`base.render.ribbon`](../render/ribbon/README.md).

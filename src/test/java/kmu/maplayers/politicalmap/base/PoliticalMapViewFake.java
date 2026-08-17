@@ -66,10 +66,7 @@ public final class PoliticalMapViewFake implements PoliticalMapView {
     // because the seam has no default: naming one mechanic's planner on it would put that
     // mechanic in front of every view.
     @Override
-    public SystemRibbonPlanner resolveRibbonPlanner(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            RibbonPlanInputs inputs) {
+    public SystemRibbonPlanner resolveRibbonPlanner(RibbonPlanInputs inputs) {
         return system -> RibbonPlan.NONE;
     }
 

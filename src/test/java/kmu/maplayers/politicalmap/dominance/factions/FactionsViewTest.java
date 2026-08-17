@@ -86,28 +86,25 @@ final class FactionsViewTest {
             // The faction view paints held territory and extends it with claims, so its bands are
             // counted the same way round: the shared composition every contest-painted view
             // inherits, rather than one mechanic answering for cells the other painted.
-            // The held half samples the player's live dominance settings, which reach LunaLib -
-            // a class the test JVM cannot load - so the pass is handed over already resolved.
-            // What the case reads is which planner the view assembles, not where its knobs came
-            // from.
+            // The held half names the player's live weighting rule, which reaches LunaLib - a
+            // class the test JVM cannot load - so the pass it would build is handed over already
+            // resolved. What the case reads is which planner the view assembles, not where its
+            // knobs came from.
+            var holding = new HolderPass(
+                HolderGrouping.identity(),
+                false, // Undiscovered colonies do not count, as on the live map.
+                new SystemColoniesIndex(null));
+
             try (var passMock = mockStatic(DominancePass.class)) {
                 passMock
-                    .when(() -> DominancePass.readFromLunaSettings(
-                        any(SectorAPI.class),
-                        any(HolderGrouping.class)))
+                    .when(() -> DominancePass.readRulesFromLunaSettings(any(HolderPass.class)))
                     // Built through the constructor rather than the static entry, which is stood
                     // in for here and would answer with the stand-in rather than build a pass.
-                    .thenReturn(new DominancePass(
-                        mock(DominanceRules.class),
-                        new HolderPass(
-                            HolderGrouping.identity(),
-                            false, // Undiscovered colonies do not count, as on the live map.
-                            new SystemColoniesIndex(null))));
+                    .thenReturn(new DominancePass(mock(DominanceRules.class), holding));
 
                 var planner = FactionsView.INSTANCE.resolveRibbonPlanner(
-                    mock(SectorAPI.class),
-                    HolderGrouping.identity(),
                     new RibbonPlanInputs(
+                        holding,
                         blocId -> null,
                         new RibbonPlanRules(
                             new RibbonSegmentLengths(3, 1),

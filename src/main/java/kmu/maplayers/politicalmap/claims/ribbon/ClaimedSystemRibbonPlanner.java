@@ -5,63 +5,52 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 
 /**
- * The live read behind a claimed cell's band: the contest that settled the system's claim,
- * counted by {@link ClaimCellRibbons}.
+ * The live read behind a claimed cell's band: the contest that settled the system's claim, which
+ * says who painted the cell and where each bloc stands in it.
  *
- * <p>The claim mechanic publishes only its winner, so a band drawn from that alone would have to
- * go and count colonies on its own account. The whole contest is read instead - the same read the
- * box explaining a claim is written from - so the band and the box are two readings of one walk
- * rather than two opinions about what is in the system.
+ * <p>The claim mechanic publishes only its winner, so a band drawn from that alone would know
+ * neither the painter's rivals nor their order. The whole contest is read instead - the same read
+ * the box explaining a claim is written from - so the band and the box cannot disagree about who is
+ * present or who leads.
  *
- * <p>The band is ordered around the claimant, since that is the bloc the cell is painted for,
- * under a decree as much as under a scored win: a decreed bloc holding nothing there leads a band
- * made of the rivals present, which is exactly what the fill leaves unsaid.
- *
- * <p>Scoring walks every market in the system, so this is the costlier of the two mechanics to
- * count a band from. It is asked only of the cells a claim paints, and only when the map rebuilds.
+ * <p>The counting itself is the shared rule's, off the pass's own walk of the system, which is why
+ * the reader is built over that walk rather than one of its own: the contest and the count then
+ * read one reading of the system instead of two.
  */
 public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
 
     private final ClaimBreakdownReader breakdownReader;
-    private final HolderGrouping grouping;
     private final RibbonPlanInputs inputs;
 
     /**
      * @param breakdownReader where the contest behind a claim is read from
-     * @param grouping        the view's grouping, folding each standing's faction into the bloc
-     *                        the cell was painted in
-     * @param inputs          where a bloc's shades are read from, and how far its runs go
+     * @param inputs          the pass the colonies are read from, where a bloc's shades come from,
+     *                        and how far its runs go
      */
     public ClaimedSystemRibbonPlanner(
             ClaimBreakdownReader breakdownReader,
-            HolderGrouping grouping,
             RibbonPlanInputs inputs) {
 
         this.breakdownReader = breakdownReader;
-        this.grouping = grouping;
         this.inputs = inputs;
     }
 
     /**
-     * The planner a view resolves its claimed bands through, reading vanilla's own claim contest.
+     * The planner a view resolves its claimed bands through, reading vanilla's own claim contest
+     * over the bake's single walk of each system.
      *
-     * @param grouping the view's grouping, sampled once for the whole pass
-     * @param inputs   where a bloc's shades are read from, and how far its runs go
-     * @return the planner counting claimed cells from the vanilla contest
+     * @param inputs the bake's pass, palette source and laying rules
+     * @return the planner ranking claimed cells by the vanilla contest
      */
-    public static ClaimedSystemRibbonPlanner createForSector(
-            HolderGrouping grouping,
-            RibbonPlanInputs inputs) {
+    public static ClaimedSystemRibbonPlanner createForPass(RibbonPlanInputs inputs) {
 
         return new ClaimedSystemRibbonPlanner(
-            new VanillaClaimBreakdownReader(),
-            grouping,
+            new VanillaClaimBreakdownReader(inputs.pass().colonies()),
             inputs);
     }
 
@@ -76,9 +65,9 @@ public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
             return RibbonPlan.NONE;
         }
         return ClaimCellRibbons.planClaimCellRibbon(
-            grouping.resolveBlocId(contest.claimantFactionId()),
+            inputs.grouping().resolveBlocId(contest.claimantFactionId()),
+            system,
             contest,
-            grouping,
             inputs);
     }
 }

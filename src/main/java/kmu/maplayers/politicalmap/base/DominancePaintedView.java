@@ -43,18 +43,12 @@ public interface DominancePaintedView extends PoliticalMapView {
      * assembly names the dominance planner, and on {@link PoliticalMapView} that name would reach
      * the views the contest does not paint.
      *
-     * @param sector   the sector the counts are read from
-     * @param grouping the grouping this pass resolved
-     * @param inputs   where a bloc's shades are read from, and how far its runs go
+     * @param inputs the bake's pass, palette source and laying rules
      * @return the planner counting each system by the mechanic that painted it
      */
     @Override
-    default SystemRibbonPlanner resolveRibbonPlanner(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            RibbonPlanInputs inputs) {
-                
-        return HeldOrClaimedSystemRibbonPlanner.createForSector(sector, grouping, inputs);
+    default SystemRibbonPlanner resolveRibbonPlanner(RibbonPlanInputs inputs) {
+        return HeldOrClaimedSystemRibbonPlanner.createForPass(inputs);
     }
 
     /**

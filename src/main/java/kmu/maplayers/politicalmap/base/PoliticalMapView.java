@@ -109,18 +109,13 @@ public interface PoliticalMapView {
      * the band on a bloc the cell is not painted for, or count a set of colonies the fill's own
      * score never saw.
      *
-     * @param sector   the sector the counts are read from; the planner samples it once for the
-     *                 whole pass
-     * @param grouping the grouping this pass resolved, so a band folds factions into blocs exactly
-     *                 as the fill did
-     * @param inputs   where a bloc's shades are read from and how far its runs go, sampled once by
-     *                 the pass so every cell's band is planned at one set of proportions
+     * @param inputs everything one bake's bands are settled from, sampled once by the bake: the
+     *               reading of the sector the counts are folded from - grouping and dev reveal
+     *               included, so a band folds factions into blocs exactly as the fill did - the
+     *               palette source, and the proportions every cell's band is laid at
      * @return the planner this view's bands are counted through
      */
-    SystemRibbonPlanner resolveRibbonPlanner(
-        SectorAPI sector,
-        HolderGrouping grouping,
-        RibbonPlanInputs inputs);
+    SystemRibbonPlanner resolveRibbonPlanner(RibbonPlanInputs inputs);
 
     /**
      * Whether a bloc paints in the muted independent cell style rather than the full

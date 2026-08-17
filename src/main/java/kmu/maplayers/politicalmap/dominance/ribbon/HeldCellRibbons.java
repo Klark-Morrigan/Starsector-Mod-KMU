@@ -1,33 +1,37 @@
 package kmu.maplayers.politicalmap.dominance.ribbon;
 
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
-import kmu.maplayers.politicalmap.base.ribbon.BlocPresence;
+import kmu.maplayers.politicalmap.base.ribbon.ColonyCellRibbons;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Plans the ribbon of a cell painted by the dominance mechanic, where the count each bloc's run
- * is made of is already in hand: the map sampled the system's colonies to decide who holds it,
- * and {@link MarketFootprint#marketCount()} is how many that sample banked for each bloc.
+ * The order a held cell's band comes out in: the fill's own order, read off the footprints the
+ * system was ranked by.
  *
- * <p>So there is no second walk and no second rule here, only an ordering. Every market the
- * count reports is one the dominance score was summed over, which is what makes a band on a
- * held cell a readout of the very sample the fill beneath it was decided from - the claim side
- * reaches the same guarantee the long way round, from the contest's own market list.
+ * <p>The counting is {@link ColonyCellRibbons}'s and is the same on every layer, so what the held
+ * side supplies is the ranking alone - which is all it ever added, the weights being an ordering
+ * key rather than anything a band reports.
  *
- * <p>The order is the fill's order. The bloc the cell was painted for leads, whatever settled
- * that - a plain weight lead, or one of the tie-breaks below the weights - so a reader never
- * finds the leading colour second in a band on a cell painted in it. Behind the leader the
- * blocs run by descending weight and then by id, the same total order the standings box ranks
- * them in, so the band and the box agree about who is second.
+ * <p>The bloc the cell was painted for leads, whatever settled that - a plain weight lead, or one
+ * of the tie-breaks below the weights - so a reader never finds the leading colour second in a band
+ * on a cell painted in it. Behind the leader the blocs run by descending weight and then by id, the
+ * same total order the standings box ranks them in, so the band and the box agree about who is
+ * second.
  *
- * <p>Pure over the footprints a pass already read, with the one live read - a bloc's shades -
- * inverted to a port, exactly as on the claim side.
+ * <p>A bloc the weights never reached - one holding nothing but colonies the economy does not list,
+ * which have no industries, conditions or stability for the arithmetic to read - takes no place in
+ * this ranking and draws behind it in id order. It is present in the system and counted like any
+ * other bloc; what it has no claim to is a rank among the blocs that were weighed.
+ *
+ * <p>Pure over the footprints a pass already read, every live read reached through the inputs.
  */
 public final class HeldCellRibbons {
 
@@ -35,47 +39,47 @@ public final class HeldCellRibbons {
     }
 
     /**
-     * Plans one held cell's ribbon from the footprints its system was ranked by.
+     * Plans one held cell's band, ranked by the footprints its system was decided from.
      *
-     * @param paintingBlocId the bloc the cell's fill was painted for - the dominant bloc, which
-     *                       leads the band whatever settled its lead
+     * @param paintingBlocId    the bloc the cell's fill was painted for - the dominant bloc, which
+     *                          leads the band whatever settled its lead
+     * @param system            the system the cell draws as, whose colonies the band counts
      * @param footprintByBlocId each bloc's footprint in the cell's system, as the dominance pass
-     *                       folded them under the view's grouping
-     * @param inputs         where a bloc's shades are read from, and how far its runs go
+     *                          folded them under the view's grouping
+     * @param inputs            the pass the colonies are read from, where a bloc's shades come
+     *                          from, and how far its runs go
      * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where the gate the counts
      *         are handed to leaves the cell bare
      */
     public static RibbonPlan planHeldCellRibbon(
             String paintingBlocId,
+            StarSystemAPI system,
             Map<String, MarketFootprint> footprintByBlocId,
             RibbonPlanInputs inputs) {
 
-        return RibbonPlan.planCellRibbon(
+        return ColonyCellRibbons.planCellRibbon(
             paintingBlocId,
-            BlocPresence.collectColouredPresences(
-                rankMarketCounts(paintingBlocId, footprintByBlocId),
-                inputs.palettes()),
-            inputs.rules());
+            system,
+            rankBlocsByWeight(paintingBlocId, footprintByBlocId),
+            inputs);
     }
 
-    // Each bloc's colony count in the band's order: the painter, then the rest by descending
-    // weight and by id. The weights are read no further than this - what the band reports is the
-    // count - so the ordering is the last thing a footprint is consulted for.
-    private static Map<String, Integer> rankMarketCounts(
+    // The blocs the weights reached, in the band's order. The weights are read no further than
+    // this - what the band reports is the count - so the ordering is the last thing a footprint is
+    // consulted for.
+    private static List<String> rankBlocsByWeight(
             String paintingBlocId,
             Map<String, MarketFootprint> footprintByBlocId) {
 
         var ranked = new ArrayList<>(footprintByBlocId.entrySet());
         ranked.sort(orderByPaintedThenWeight(paintingBlocId));
 
-        var marketCountByBlocId = new LinkedHashMap<String, Integer>();
+        var rankedBlocIds = new ArrayList<String>(ranked.size());
 
         for (var blocFootprint : ranked) {
-            marketCountByBlocId.put(
-                blocFootprint.getKey(),
-                blocFootprint.getValue().marketCount());
+            rankedBlocIds.add(blocFootprint.getKey());
         }
-        return marketCountByBlocId;
+        return rankedBlocIds;
     }
 
     // The band's order. The painter sorts ahead of everything because the dominance rule can

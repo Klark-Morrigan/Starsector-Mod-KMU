@@ -1,32 +1,24 @@
-# Held-cell band counting (`dominance.ribbon`)
+# Held-cell band ranking (`dominance.ribbon`)
 
-Where a band's colony counts come from on a cell the **dominance** mechanic painted, plus the rule
-deciding which mechanic speaks for a cell at all. The grammar those counts are turned into is
-[`base.ribbon`](../../base/ribbon/README.md)'s; the geometry is
-[`base.render.ribbon`](../../base/render/ribbon/README.md)'s.
+Where a band's painter and its order come from on a cell the **dominance** mechanic painted, plus
+the rule deciding which mechanic speaks for a cell at all. How many colonies each bloc draws is one
+shared rule's answer for every layer, in [`base.ribbon`](../../base/ribbon/README.md); the geometry
+is [`base.render.ribbon`](../../base/render/ribbon/README.md)'s.
 
 Part of [the political map](../../README.md), in Klark Morrigan's Utilities; see the
 [mod README](../../../../../../../../README.md) for project context.
 
 ## Index
 
-- [The count is already in hand](#the-count-is-already-in-hand)
 - [The order](#the-order)
 - [Held or claimed](#held-or-claimed)
 
-## The count is already in hand
-
-`HeldCellRibbons` performs no walk and states no second rule. The map already sampled the system's
-colonies to decide who holds it, and `MarketFootprint.marketCount` is how many that sample banked
-for each bloc - so every market a band reports is one the dominance score was summed over. That is
-what makes a held cell's band a readout of the very sample the fill beneath it was decided from.
-
-`HeldSystemRibbonPlanner` is the live read behind it, taking both the economy read and the winner
-through the same `DominancePass` the fills were resolved under - so a band cannot be counted under a
-weighting rule or a dev reveal the player has since moved. One extra walk of a system's own market
-list, not of the sector's.
-
 ## The order
+
+`HeldCellRibbons` performs no walk and states no count. What it reads off the footprints the map
+already ranked the system by is their order, and `HeldSystemRibbonPlanner` is the live read behind
+it - taking both the weights and the winner through the same `DominancePass` the fills were resolved
+under, so a band cannot be ordered under a weighting rule or a dev reveal the player has since moved.
 
 The bloc the cell was **painted for** leads, whatever settled that. The dominance rule can hand a
 system to a bloc that leads on none of the weights - a tie settled by the market nearest the system
@@ -35,6 +27,11 @@ painted in.
 
 Behind the leader: descending combined weight, then ascending id. The same two keys in the same
 order the standings box ranks by, so the band and the box cannot disagree about who stands second.
+
+A bloc the weights never reached - one holding nothing but colonies the economy does not list, which
+have no industries, conditions or stability for the arithmetic to read - takes no place in this
+ranking. It is present in the system and counted like any other bloc, and draws behind the weighed
+ones in id order under the shared rule's fallback.
 
 ## Held or claimed
 
@@ -45,10 +42,10 @@ through to the claim contest only where the held side **declines**.
 That decline is the whole hinge, and it is why `HeldSystemRibbonSource` exists as a narrow seam
 beside the planner interface. A planner can only ever answer with a plan; what this composition
 needs is the one thing a plan cannot say - whether the mechanic speaks for the system at all. So the
-source answers `Optional`, where empty means "no bloc holds a counted market here" and a present
+source answers `Optional`, where empty means "no bloc holds a weighed market here" and a present
 `RibbonPlan.NONE` means "held, but with no contest to report".
 
-Both answers come off one economy walk, which is what keeps the distinction from costing a second
-one. The composition lives on the dominance side rather than between the two mechanics because a
+Both halves are built from the one set of inputs, so they share the bake's single walk of each
+system. The composition lives on the dominance side rather than between the two mechanics because a
 claim counts a cell here only where dominance paints nothing - a fact about how the
 dominance-painted views extend themselves, not a mechanic of its own.

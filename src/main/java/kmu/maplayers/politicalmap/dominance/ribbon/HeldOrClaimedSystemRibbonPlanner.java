@@ -1,9 +1,7 @@
 package kmu.maplayers.politicalmap.dominance.ribbon;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
@@ -49,23 +47,18 @@ public final class HeldOrClaimedSystemRibbonPlanner implements SystemRibbonPlann
     /**
      * The planner the faction and alliance views resolve their bands through.
      *
-     * <p>Both halves are built from the one set of inputs, so the two mechanics read a bloc's
-     * colours through a single palette source rather than each resolving its own from the same
-     * sector and grouping.
+     * <p>Both halves are built from the one set of inputs, so the two mechanics count off a single
+     * walk of each system and read a bloc's colours through a single palette source rather than
+     * each opening its own.
      *
-     * @param sector   the sector whose economy the held count is read from
-     * @param grouping the view's grouping, sampled once for the whole pass
-     * @param inputs   where a bloc's shades are read from, and how far its runs go
+     * @param inputs the bake's pass, palette source and laying rules
      * @return the planner counting each system by the mechanic that painted it
      */
-    public static HeldOrClaimedSystemRibbonPlanner createForSector(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            RibbonPlanInputs inputs) {
+    public static HeldOrClaimedSystemRibbonPlanner createForPass(RibbonPlanInputs inputs) {
 
         return new HeldOrClaimedSystemRibbonPlanner(
-            HeldSystemRibbonPlanner.createForSector(sector, grouping, inputs),
-            ClaimedSystemRibbonPlanner.createForSector(grouping, inputs));
+            HeldSystemRibbonPlanner.createForPass(inputs),
+            ClaimedSystemRibbonPlanner.createForPass(inputs));
     }
 
     @Override

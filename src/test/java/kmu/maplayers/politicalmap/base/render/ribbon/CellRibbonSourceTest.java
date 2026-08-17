@@ -14,6 +14,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
+import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.KmuPoliticalMapSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -93,16 +94,22 @@ final class CellRibbonSourceTest {
     // read from a stub rather than from a LunaLib the test JVM has no game to load.
     private MockedStatic<KmuPoliticalMapSettings> settingsMock;
 
+    // The map-layer knobs stand in for the same reason, the bake opening a pass that samples the
+    // dev reveal off them. No case here turns on the reveal, so the stub's own false is the answer.
+    private MockedStatic<KmuMapLayerSettings> mapLayerSettingsMock;
+
     @BeforeEach
     void stubBandSettings() {
 
         settingsMock = mockStatic(KmuPoliticalMapSettings.class);
+        mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
 
         RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
     }
 
     @AfterEach
     void releaseBandSettings() {
+        mapLayerSettingsMock.close();
         settingsMock.close();
     }
 
@@ -208,7 +215,7 @@ final class CellRibbonSourceTest {
             var inputsCaptor = ArgumentCaptor.forClass(RibbonPlanInputs.class);
 
             verify(viewMock)
-                .resolveRibbonPlanner(any(), any(), inputsCaptor.capture());
+                .resolveRibbonPlanner(inputsCaptor.capture());
             assertThat(inputsCaptor.getValue().rules().uncontestedBands())
                 .isEqualTo(new UncontestedCellBands(true, false));
         }
@@ -363,7 +370,7 @@ final class CellRibbonSourceTest {
 
         var viewMock = mock(PoliticalMapView.class);
 
-        when(viewMock.resolveRibbonPlanner(any(), any(), any()))
+        when(viewMock.resolveRibbonPlanner(any()))
             .thenReturn(planner);
 
         return viewMock;

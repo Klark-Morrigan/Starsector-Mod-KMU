@@ -103,16 +103,12 @@ public final class ClaimsView implements PoliticalMapView {
     }
 
     @Override
-    public SystemRibbonPlanner resolveRibbonPlanner(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            RibbonPlanInputs inputs) {
+    public SystemRibbonPlanner resolveRibbonPlanner(RibbonPlanInputs inputs) {
         // Every cell here is painted by the claim mechanic, held systems included, so every band is
-        // counted from the contest - where the dominance views' composition would count a claimed
-        // system its claimant does not hold by the markets of whoever does, and lead the band on a
-        // bloc the cell is not painted for. The sector goes unread: the contest is walked per
-        // system, and a bloc's shades arrive already resolved in the inputs.
-        return ClaimedSystemRibbonPlanner.createForSector(grouping, inputs);
+        // ranked by the contest - where the dominance views' composition would rank a claimed
+        // system its claimant does not hold by the weights of whoever does, and lead the band on a
+        // bloc the cell is not painted for.
+        return ClaimedSystemRibbonPlanner.createForPass(inputs);
     }
 
     @Override

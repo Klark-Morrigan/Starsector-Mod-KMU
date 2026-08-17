@@ -7,6 +7,7 @@ import kmlib.math.geometry.RingPath;
 import kmlib.starsector.systems.StarSystems;
 
 import kmu.maplayers.politicalmap.base.ViewGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
@@ -135,18 +136,26 @@ public final class CellRibbonSource {
         }
         var style = RibbonStyleReader.readRibbonStyle();
 
+        // The bake's own reading of the sector, opened here so both mechanics of a composed planner
+        // count off one walk of each system, under one sampling of the dev reveal - a band read
+        // under a reveal the player moved mid-bake would count out colonies the fills are hiding.
+        //
+        // Its own pass rather than the rebuild's, because a bake runs whenever a cluster name may
+        // have moved and a rebuild's pass is a snapshot of the moment that rebuild began: re-baking
+        // through it would count a sector as it stood some flips ago.
+        var pass = HolderPass.readFromLunaSettings(sector, viewGrouping.grouping());
+
         // The colour source and the laying rules are sampled here, once, and handed to whatever
-        // planner the view resolves - so both mechanics of a composed planner read a bloc's
-        // shades through one object and gate their cells by one rule.
-        var inputs = RibbonPlanInputs.createForSector(
-            sector,
-            viewGrouping.grouping(),
+        // planner the view resolves - so both mechanics read a bloc's shades through one object
+        // and gate their cells by one rule.
+        var inputs = RibbonPlanInputs.createForPass(
+            pass,
             new RibbonPlanRules(
                 style.lengths(),
                 UncontestedCellBands.readFromLunaSettings()));
 
         return new CellRibbonSource(
-            viewGrouping.view().resolveRibbonPlanner(sector, viewGrouping.grouping(), inputs),
+            viewGrouping.view().resolveRibbonPlanner(inputs),
             style,
             holderBySystemId,
             StarSystems.indexById(sector),

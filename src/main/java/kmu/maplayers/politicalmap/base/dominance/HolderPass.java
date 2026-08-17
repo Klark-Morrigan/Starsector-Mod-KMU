@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SystemColonies;
 import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.SystemColony;
 
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
@@ -143,4 +144,19 @@ public record HolderPass(
         return colonies.readColoniesIn(system);
     }
 
+    /**
+     * The colonies in one system the player may be shown - the known projection over this pass's
+     * one walk of it, taken under the reveal the pass was opened with.
+     *
+     * <p>Named here rather than composed at each display reader, because the fill painting a cell,
+     * the band counting inside it and the box over it all have to withhold the same colonies. Two
+     * of them applying the fog separately is two chances for a band to count out a colony the fill
+     * declines to draw.
+     *
+     * @param system the system to read; null yields an empty list
+     * @return the system's colonies the reveal admits, in the set's own order
+     */
+    public List<SystemColony> readKnownColoniesIn(StarSystemAPI system) {
+        return readColoniesIn(system).readKnownColonies(shouldIncludeUndiscoveredMarkets);
+    }
 }

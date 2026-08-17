@@ -1,45 +1,79 @@
 package kmu.maplayers.politicalmap.base.ribbon;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+
+import kmlib.starsector.systems.SystemColony;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
+
+import java.util.List;
 
 /**
- * What every counting rule needs beyond the counts themselves: where a bloc's two shades come
- * from, and how a band is laid.
+ * What one bake's bands are counted and coloured from: the reading of the sector the colonies come
+ * out of, where a bloc's two shades are read, and how a band is laid.
  *
- * <p>The pair travels together through every rule and every planner, because neither half is
- * usable without the other - a run is a colour laid to a rule - and because both are the pass's
- * own one-time reads. Carried as one value so a planner cannot be built from this pass's rules
- * and a stale palette source, and so the two are sampled in a single place rather than at each
- * mechanic's own factory.
+ * <p>The three travel together through every planner because no one of them is usable without the
+ * others - a run is a count of colonies, coloured, laid to a rule - and because all three are the
+ * bake's own one-time reads. Carried as one value so a planner cannot be built from this bake's
+ * rules and a stale palette source, and so the two mechanics counting one map share a single walk
+ * of each system rather than each opening a pass of its own.
  *
+ * <p>The pass is what makes the counting rule the same rule on every layer. It names the sector,
+ * the grouping factions fold into blocs under, and the dev reveal - so a band cannot be counted
+ * under a different fog or a different fold from the fill it sits inside, and no counter needs a
+ * settings read of its own to find out which.
+ *
+ * @param pass     the bake's reading of the sector: which sector, the grouping, the reveal, and the
+ *                 one walk of each system every count is folded from
  * @param palettes where each present bloc's two shades are read from
  * @param rules    how a band is laid: the run lengths, and what a cell nobody contests draws
  */
 public record RibbonPlanInputs(
+    HolderPass pass,
     BlocPaletteReader palettes,
     RibbonPlanRules rules) {
 
     /**
-     * Samples the pair for one pass against the live sector.
+     * Samples the trio for one bake over a pass the caller has already opened.
      *
-     * <p>The palette source is built here, once, and handed to every planner the pass creates -
-     * so two mechanics counting the same map read a bloc's colours through one object rather than
-     * each resolving its own from the same two inputs.
+     * <p>The palette source is built here, once, off the pass's own sector and grouping - so two
+     * mechanics counting the same map read a bloc's colours through one object, and neither can
+     * colour a bloc under a grouping the counts were not folded under.
      *
-     * @param sector   the sector each bloc's colour faction is read from
-     * @param grouping the grouping that names that colour faction, sampled once by the pass
-     * @param rules    how a band is laid, sampled once by the pass
-     * @return the pair every rule in the pass is stated over
+     * @param pass  the bake's reading of the sector, opened once by whoever begins the bake
+     * @param rules how a band is laid, sampled once by the bake
+     * @return the trio every planner in the bake is stated over
      */
-    public static RibbonPlanInputs createForSector(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            RibbonPlanRules rules) {
+    public static RibbonPlanInputs createForPass(HolderPass pass, RibbonPlanRules rules) {
 
         return new RibbonPlanInputs(
-            new SectorBlocPalettes(sector, grouping),
+            pass,
+            new SectorBlocPalettes(pass.sector(), pass.grouping()),
             rules);
+    }
+
+    /**
+     * The grouping every count is folded under, so two allies' colonies come out as one bloc's run
+     * exactly as they come out as one bloc's fill.
+     *
+     * @return the bake's grouping
+     */
+    public HolderGrouping grouping() {
+        return pass.grouping();
+    }
+
+    /**
+     * The colonies in one system a band may report - the pass's known projection over its single
+     * walk of the system.
+     *
+     * <p>Taken off the pass rather than from a sector each planner holds, because a planner that
+     * could reach a sector is one that could walk a system the bake has already walked.
+     *
+     * @param system the system to count; null yields an empty list
+     * @return the system's colonies the bake's reveal admits, in the set's own order
+     */
+    public List<SystemColony> readKnownColoniesIn(StarSystemAPI system) {
+        return pass.readKnownColoniesIn(system);
     }
 }

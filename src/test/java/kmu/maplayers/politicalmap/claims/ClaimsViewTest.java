@@ -10,6 +10,7 @@ import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -108,9 +109,11 @@ final class ClaimsViewTest {
             // would count a claimed system its claimant does not hold by the markets of whoever
             // does, and open the band on a bloc the cell is not painted for.
             var planner = ClaimsView.INSTANCE.resolveRibbonPlanner(
-                mock(SectorAPI.class),
-                HolderGrouping.identity(),
                 new RibbonPlanInputs(
+                    HolderPass.over(
+                        mock(SectorAPI.class),
+                        false, // Undiscovered colonies do not count, as on the live map.
+                        HolderGrouping.identity()),
                     blocId -> null,
                     new RibbonPlanRules(
                         new RibbonSegmentLengths(3, 1),
