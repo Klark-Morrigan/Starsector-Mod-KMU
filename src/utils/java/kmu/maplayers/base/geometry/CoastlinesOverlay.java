@@ -67,7 +67,7 @@ final class CoastlinesOverlay {
                 settings.voidSpanMultiple * settings.parameters.cellRadius(),
                 settings.minSectionShare));
 
-        spills = CoastPocketFaults.findSpills(pockets, traced.union());
+        spills = CoastPocketFaults.findSpills(pockets, traced.union().sites());
     }
 
     // The knobs as the sliders currently stand. Read once per refresh rather than rebuilt at

@@ -3,6 +3,7 @@ package kmu.maplayers.base.geometry;
 import kmlib.math.geometry.HalfPlane;
 import kmlib.math.geometry.LabelledPolygon;
 import kmlib.math.geometry.Limits;
+import kmlib.math.geometry.Points;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,15 +52,15 @@ final class CoastPocketFaults {
      *
      * @param point the point to place
      * @param reach the reach to place it against
-     * @param union the discs the reach was laid across
+     * @param sites the sites, to find the cell the reach leaves from
      * @return how far landward the point is - negative out to sea, zero on the line
      */
     static double measureLandwardOffset(
             double[] point,
             DiscUnionBoundary.Chord reach,
-            DiscUnion union) {
+            List<double[]> sites) {
 
-        var landward = buildLandwardNormal(reach, union);
+        var landward = buildLandwardNormal(reach, sites);
 
         if (landward == null) {
             return 0;
@@ -77,12 +78,12 @@ final class CoastPocketFaults {
      * short of it until they are measured apart.
      *
      * @param pockets the pockets, each paired with the reaches that walled it
-     * @param union   the discs the pockets were traced against
+     * @param sites   the sites, to say which side of each reach the cells are on
      * @return the closest any outline comes to a reach it closes on, or zero when there are
      *         no pockets - which should be the channel, and is nothing when the inset is
      *         missing
      */
-    static double measureClosestApproach(List<WalledPocket> pockets, DiscUnion union) {
+    static double measureClosestApproach(List<WalledPocket> pockets, List<double[]> sites) {
 
         var closest = Double.MAX_VALUE;
 
@@ -90,13 +91,13 @@ final class CoastPocketFaults {
             for (var outline : walled.pocket().outlines()) {
                 for (var reach : walled.reaches()) {
 
-                    var bounds = buildBounds(reach, union, 0);
+                    var bounds = buildBounds(reach, sites, 0);
 
                     for (var point : outline) {
 
                         if (measureExcursionFrom(point, bounds) <= 0) {
                             closest = Math.min(
-                                closest, measureLandwardOffset(point, reach, union));
+                                closest, measureLandwardOffset(point, reach, sites));
                         }
                     }
                 }
@@ -126,12 +127,11 @@ final class CoastPocketFaults {
      * it or the other for no reason worth reporting; what makes the test mean anything is that
      * the pocket and the line are two edges of one shape.
      *
-     * @param pockets   the pockets, each paired with the reaches that walled it
-     * @param union     the discs the pockets were traced against, to say which side the cells
-     *                  are on
+     * @param pockets the pockets, each paired with the reaches that walled it
+     * @param sites   the sites, to say which side of each reach the cells are on
      * @return one entry per offending run, deepest first
      */
-    static List<Spill> findSpills(List<WalledPocket> pockets, DiscUnion union) {
+    static List<Spill> findSpills(List<WalledPocket> pockets, List<double[]> sites) {
 
         var found = new ArrayList<Spill>();
 
@@ -139,7 +139,7 @@ final class CoastPocketFaults {
             for (var outline : walled.pocket().outlines()) {
                 for (var reach : walled.reaches()) {
 
-                    collectSpillsAlong(found, outline, reach, union);
+                    collectSpillsAlong(found, outline, reach, sites);
                 }
             }
         }
@@ -185,7 +185,7 @@ final class CoastPocketFaults {
      *
      * @param outline the pocket outline as traced
      * @param reaches the coast reaches it closes on
-     * @param union   the discs it was traced against, to say which side the cells are on
+     * @param sites   the sites, to say which side of each reach the cells are on
      * @param channel how far the pocket holds back from a reach, so the cut lands where the
      *                fill should stop rather than on the line itself
      * @return what is left, which is empty when the whole outline was over the line
@@ -193,13 +193,13 @@ final class CoastPocketFaults {
     static List<double[]> cutToLandward(
             List<double[]> outline,
             List<DiscUnionBoundary.Chord> reaches,
-            DiscUnion union,
+            List<double[]> sites,
             double channel) {
 
         var kept = outline;
 
         for (var reach : reaches) {
-            for (var bound : buildBounds(reach, union, channel)) {
+            for (var bound : buildBounds(reach, sites, channel)) {
 
                 if (kept.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                     return List.of();
@@ -233,16 +233,16 @@ final class CoastPocketFaults {
      * the cells' own arcs, which the reach it was traced at already holds it off.
      *
      * @param reach   the reach
-     * @param union   the discs it was laid across
+     * @param sites   the sites, to find the cell it leaves from
      * @param channel how far the pocket holds back from its line
      * @return the three bounds, or none where the reach is too short to have a direction
      */
     private static List<HalfPlane> buildBounds(
             DiscUnionBoundary.Chord reach,
-            DiscUnion union,
+            List<double[]> sites,
             double channel) {
 
-        var landward = buildLandwardNormal(reach, union);
+        var landward = buildLandwardNormal(reach, sites);
 
         if (landward == null) {
             return List.of();
@@ -270,7 +270,7 @@ final class CoastPocketFaults {
     // the other way round the coast is judged like any other.
     private static double[] buildLandwardNormal(
             DiscUnionBoundary.Chord reach,
-            DiscUnion union) {
+            List<double[]> sites) {
 
         var line = reach.line().toUnitLine();
 
@@ -280,10 +280,9 @@ final class CoastPocketFaults {
         var normalX = -line.directionY();
         var normalY = line.directionX();
 
-        var centre = union.sites().get(reach.fromCircle());
-
-        var towardsCells = Math.signum(
-            (centre[0] - line.originX()) * normalX + (centre[1] - line.originY()) * normalY);
+        var towardsCells = Math.signum(measureOffsetFrom(
+            sites.get(reach.fromCircle()),
+            new HalfPlane(line.originX(), line.originY(), normalX, normalY)));
 
         return new double[] {towardsCells * normalX, towardsCells * normalY};
     }
@@ -305,8 +304,11 @@ final class CoastPocketFaults {
     // How far a point sits on the kept side of one bound, negative out past it.
     private static double measureOffsetFrom(double[] point, HalfPlane bound) {
 
-        return (point[0] - bound.pointX()) * bound.normalX()
-            + (point[1] - bound.pointY()) * bound.normalY();
+        return Points.projectPointOnto(
+            point[0] - bound.pointX(),
+            point[1] - bound.pointY(),
+            bound.normalX(),
+            bound.normalY());
     }
 
     // Every maximal stretch of one outline lying seaward of one reach. Walked as runs rather
@@ -315,9 +317,9 @@ final class CoastPocketFaults {
             List<Spill> found,
             List<double[]> outline,
             DiscUnionBoundary.Chord reach,
-            DiscUnion union) {
+            List<double[]> sites) {
 
-        var bounds = buildBounds(reach, union, 0);
+        var bounds = buildBounds(reach, sites, 0);
         var run = new ArrayList<double[]>();
         var deepest = 0.0;
 
@@ -336,6 +338,9 @@ final class CoastPocketFaults {
         closeRun(found, run, deepest);
     }
 
+    // Ends a run and hands back the depth to carry into the next one, which is none. Given
+    // back rather than reset by the caller so that closing a run and forgetting how deep it
+    // went are one statement and cannot come apart.
     private static double closeRun(List<Spill> found, List<double[]> run, double deepest) {
 
         if (run.size() >= MIN_RUN_VERTICES) {

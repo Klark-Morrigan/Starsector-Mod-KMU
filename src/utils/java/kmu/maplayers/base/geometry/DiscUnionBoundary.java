@@ -56,6 +56,9 @@ final class DiscUnionBoundary {
     // Stands in for a neighbouring circle where there is none: a disc that overlaps nothing
     // contributes its whole circle as one arc, with no disc entered or left at either end.
     private static final int NO_CIRCLE = -1;
+
+    // Stands in for the arc a cycle continues onto where there is none, which is a walk that
+    // has run off the end of a broken chain rather than closed.
     private static final int NO_SUCCESSOR = -1;
 
     // No arc begins here, so an arc pointed at it simply has no successor. Beyond the range
@@ -67,6 +70,9 @@ final class DiscUnionBoundary {
     private static final int FROM_SIDE = 0;
     private static final int TO_SIDE = 1;
 
+    // Nothing laid across the void, for the callers that want the cells' own boundary. Its
+    // channel is zero, which the pairing refuses for any real wall and does not need here:
+    // with no chords there is no mouth for a channel to size.
     private static final Walls NO_WALLS = new Walls(List.of(), 0);
 
     private DiscUnionBoundary() {
@@ -326,11 +332,6 @@ final class DiscUnionBoundary {
      * {@code acos(channel / reach)}. That was the closed form this used before, written for
      * the one line it then had to handle.
      *
-     * <p>A line crosses a circle twice, so the condition is met on two opposite arcs. The one
-     * taken is the one facing the circle at the wall's far end, because that is the side the
-     * wall actually runs off towards; the other is where the same line leaves the circle
-     * again, on a stretch the wall never covers.
-     *
      * @param union   the discs the wall is laid across
      * @param chord   the wall
      * @param circle  which of its circles to measure the mouth on
@@ -351,98 +352,164 @@ final class DiscUnionBoundary {
         }
         var centre = union.sites().get(circle);
 
-        // The normal, and how far off the line this circle sits along it. A point at angle
-        // t on the circle is then offset + reach * cos(t - normalAngle) from the line, so
-        // the mouth is the run of t over which that stays inside the channel.
+        // The normal, and how far off the line this circle sits along it. A point at angle t
+        // on the circle is then offset + reach * cos(t - normalAngle) from the line, so the
+        // mouth is the run of t over which that stays inside the channel.
         var normalX = -line.directionY();
         var normalY = line.directionX();
-        var normalAngle = Math.atan2(normalY, normalX);
 
-        var offset = (centre[0] - line.originX()) * normalX
-            + (centre[1] - line.originY()) * normalY;
+        var arcs = findChannelArcs(
+            union.reach(),
+            Math.atan2(normalY, normalX),
+            Points.projectPointOnto(
+                centre[0] - line.originX(), centre[1] - line.originY(), normalX, normalY),
+            channel);
 
-        var nearest = (channel - offset) / union.reach();
-        var furthest = (-channel - offset) / union.reach();
-
-        if (furthest >= 1 || nearest <= -1) {
+        if (arcs.isEmpty()) {
             return null;
         }
+        var mouth = arcs.size() < 2
+            ? arcs.get(0)
+            : pickArcHolding(measureAngleToWallEnd(chord, circle, centre), arcs);
 
-        // Where only ONE of the channel's two edges cuts the circle, the mouth is a single
-        // arc wrapped round the end of the circle nearest the line, or round the end furthest
-        // from it - not one of two.
-        //
-        // The two arcs below are the two ways a circle can cross a straight band. They are
-        // separate only while the band cuts clean through; once one edge of it clears the
-        // circle the arcs join up round the back, and taking either one alone takes half a
-        // mouth. Half a mouth leaves the circle uncovered where the wall actually crosses it,
-        // so the boundary walks straight past the wall and the void behind it never closes.
-        //
+        // Folded into the first turn only now that it has been chosen. The choice is an
+        // interval test at an exact boundary, and folding a start by a whole turn moves that
+        // boundary by a rounding - so the arcs are compared in the turn they were built in
+        // and put in a standard one on the way out.
+        return new double[] {Angles.normalise(mouth[0]), mouth[1]};
+    }
+
+    /**
+     * The stretches of one circle lying within {@code channel} of a line.
+     *
+     * <p>A point at angle {@code t} sits {@code offset + reach * cos(t - normalAngle)} from
+     * the line, so the answer is the run of {@code t} that keeps this within the channel -
+     * which is a run of {@code cos t}, and so either two arcs or one.
+     *
+     * <p>TWO while the channel cuts clean through the circle: the band crosses it twice, once
+     * going in and once coming out, on opposite stretches with the rest of the circle between
+     * them.
+     *
+     * <p>ONE once either edge of the channel clears the circle entirely. The two arcs then
+     * join up round the near end or the far one and are a single stretch, and handing back
+     * half of it leaves the circle uncovered where the wall actually crosses - so the
+     * boundary walks straight past the wall and the void behind it never closes.
+     *
+     * <p>NONE when the channel misses the circle altogether, which is a wall passing too far
+     * off to meet it.
+     *
+     * @param reach       the circle's radius
+     * @param normalAngle the direction from the circle's centre along the line's normal
+     * @param offset      how far the centre sits off the line, along that normal
+     * @param channel     how far each side of the line the band reaches
+     * @return the arcs as {@code {start, width}} pairs - none, one or two of them - each
+     *         starting in the turn it was built in rather than folded into the first
+     */
+    private static List<double[]> findChannelArcs(
+            double reach,
+            double normalAngle,
+            double offset,
+            double channel) {
+
+        var nearest = (channel - offset) / reach;
+        var furthest = (-channel - offset) / reach;
+
+        if (furthest >= 1 || nearest <= -1) {
+            return List.of();
+        }
+
+        // Joined round the far end of the circle, the channel's far edge having cleared it.
         // A coast reach sits exactly on that threshold: it is drawn tangent to a cell's own
-        // border and laid across discs one channel wider, so its line is a channel from the
-        // far edge and whether it clears turns on a rounding. A bridge runs through both
-        // sites and is nowhere near it.
+        // border and laid across discs one channel wider, so whether it clears turns on a
+        // rounding. A bridge runs through both sites and is nowhere near it.
         if (furthest <= -1) {
 
             var half = Math.PI - Math.acos(Math.min(1, nearest));
-            return new double[] {Angles.normalise(normalAngle + Math.PI - half), 2 * half};
+            return List.of(new double[] {normalAngle + Math.PI - half, 2 * half});
         }
+
+        // Joined round the near end, the channel's near edge having cleared it instead.
         if (nearest >= 1) {
 
             var half = Math.acos(furthest);
-            return new double[] {Angles.normalise(normalAngle - half), 2 * half};
+            return List.of(new double[] {normalAngle - half, 2 * half});
         }
 
         var inner = Math.acos(nearest);
         var outer = Math.acos(furthest);
 
-        // Of the two arcs the line cuts, the one where the wall actually meets this circle.
-        //
-        // Asked of the wall's own end rather than of the direction to the cell at its far
-        // end. Those agree for a bridge, whose line runs through both sites, and they are
-        // most of a right angle apart for a reach of coast, which leaves a cell along its
-        // tangent. Taking the far cell's direction opened half the coast's mouths on the
-        // wrong side of the cell, which walled off pockets inland of it and left the void it
-        // had actually shut in open to the sea.
-        var anchor = circle == chord.fromCircle()
-            ? new double[] {line.originX(), line.originY()}
-            : new double[] {
-                line.originX() + chord.line().directionX(),
-                line.originY() + chord.line().directionY()};
+        return List.of(
+            new double[] {normalAngle + inner, outer - inner},
+            new double[] {normalAngle - outer, outer - inner});
+    }
 
-        var towards = Math.atan2(anchor[1] - centre[1], anchor[0] - centre[0]);
+    /**
+     * Which of the arcs a channel cuts is the one the wall actually meets.
+     *
+     * <p>The arc that CONTAINS the wall's end, not the one whose middle is nearest it.
+     * Nearest is a tiebreak, and a tiebreak needs its candidates to be far apart. On a cell
+     * facing void most of the way round - the end of a chain, or either half of a two-cell
+     * island - the arcs close up on each other and the tiebreak stops meaning anything.
+     * Picked wrong there, the wall wraps the far side of the circle and the void it closes
+     * runs off along the line instead of stopping at the cells: long wedges out to sea that
+     * no side-of-the-line check will complain about, because they lie between two
+     * near-parallel reaches and a pair of those bounds a slab rather than a shape.
+     *
+     * <p>Containment cannot degenerate that way. The wall meets the circle at one known
+     * angle, and exactly one of the arcs holds it.
+     *
+     * @param towards where the wall meets this circle, as an angle from its centre
+     * @param arcs    the arcs to choose between
+     * @return the arc holding it
+     */
+    private static double[] pickArcHolding(double towards, List<double[]> arcs) {
 
-        var ahead = normalAngle + inner;
-        var behind = normalAngle - outer;
-        var width = outer - inner;
+        for (var arc : arcs) {
 
-        // The arc that CONTAINS the wall's end, not the one whose middle is nearest it.
-        //
-        // Nearest is a tiebreak, and a tiebreak needs the two candidates to be far apart. On
-        // a cell facing void most of the way round - the end of a chain, or either half of a
-        // two-cell island - the two arcs a line cuts close up on each other and the tiebreak
-        // stops meaning anything. Picked wrong there, the wall wraps the far side of the
-        // circle and the void it closes runs off along the line instead of stopping at the
-        // cells: the long wedges out to sea that no side-of-the-line check will complain
-        // about, because they lie between two near-parallel reaches and a pair of those
-        // bounds a slab rather than a shape.
-        //
-        // Containment cannot degenerate that way. The wall meets this circle at one known
-        // angle, and exactly one of the two arcs holds it.
-        if (Angles.placeAfter(towards, ahead) <= ahead + width) {
-            return new double[] {Angles.normalise(ahead), width};
-        }
-        if (Angles.placeAfter(towards, behind) <= behind + width) {
-            return new double[] {Angles.normalise(behind), width};
+            if (Angles.placeAfter(towards, arc[0]) <= arc[0] + arc[1]) {
+                return arc;
+            }
         }
 
-        // Neither holds it, which the geometry says cannot happen: the wall meets the circle,
-        // so its end is on one of the two arcs the wall's own channel opens. Falling back to
-        // the nearer of the two keeps a rounding at an arc's edge from dropping the wall.
-        return Angles.measureGap(towards, ahead + width / 2)
-                <= Angles.measureGap(towards, behind + width / 2)
-            ? new double[] {Angles.normalise(ahead), width}
-            : new double[] {Angles.normalise(behind), width};
+        // None holds it, which the geometry says cannot happen: the wall meets the circle, so
+        // its end is on one of the arcs its own channel opens. Falling back to the nearer of
+        // them keeps a rounding at an arc's edge from dropping the wall.
+        var nearest = arcs.get(0);
+
+        for (var arc : arcs) {
+
+            if (Angles.measureGap(towards, arc[0] + arc[1] / 2)
+                    < Angles.measureGap(towards, nearest[0] + nearest[1] / 2)) {
+
+                nearest = arc;
+            }
+        }
+        return nearest;
+    }
+
+    /**
+     * Where a wall meets one of its circles, as an angle from that circle's centre.
+     *
+     * <p>The wall's own end rather than the direction to the cell at its far end. Those agree
+     * for a bridge, whose line runs through both sites, and they are most of a right angle
+     * apart for a reach of coast, which leaves a cell along its tangent. Taking the far cell's
+     * direction opened half a coast's mouths on the wrong side of the cell, which walled off
+     * pockets inland of it and left the void it had actually shut in open to the sea.
+     *
+     * @param chord  the wall
+     * @param circle which of its circles the angle is measured at
+     * @param centre that circle's centre
+     * @return the angle
+     */
+    private static double measureAngleToWallEnd(Chord chord, int circle, double[] centre) {
+
+        var line = chord.line();
+        var isFromSide = circle == chord.fromCircle();
+
+        var endX = isFromSide ? line.originX() : line.originX() + line.directionX();
+        var endY = isFromSide ? line.originY() : line.originY() + line.directionY();
+
+        return Math.atan2(endY - centre[1], endX - centre[0]);
     }
 
     /**
@@ -504,6 +571,9 @@ final class DiscUnionBoundary {
         return inside;
     }
 
+    // The whole walk, in the order its four steps depend on each other: drop the walls that
+    // cannot attach, cut every circle into the arcs nothing covers, join each arc to the one
+    // it names, then follow the joins round until they close.
     private static List<TracedCycle> traceCycles(
             DiscUnion union,
             Walls walls,
@@ -732,6 +802,9 @@ final class DiscUnionBoundary {
         return successors;
     }
 
+    // One cycle, followed from a starting arc until it returns to it. A run that stops on an
+    // arc it has already walked, rather than on the one it set out from, is a chain leading
+    // into some earlier cycle and not a cycle of its own.
     private static List<Integer> walkCycleFrom(
             int start,
             List<Arc> arcs,
@@ -756,6 +829,10 @@ final class DiscUnionBoundary {
         return at == start ? cycle : List.of();
     }
 
+    // A walked cycle as the shape it stands for: its arcs sampled into a closed outline, the
+    // corners where they meet, the cells it runs on and the walls it closes against. Null
+    // where too few points came back to enclose anything, which is a cycle that has collapsed
+    // rather than a pocket too small to matter.
     private static VoidHole buildHole(
             List<Integer> cycle,
             List<Arc> arcs,
@@ -929,10 +1006,16 @@ final class DiscUnionBoundary {
         return (long) circle * (siteCount + 1) + neighbour + 1;
     }
 
+    // Negative, so a wall's terminal can never collide with a crossing between two discs -
+    // those are the positive half of the same space. Offset by one because a wall at index
+    // zero would otherwise name terminal zero, which is neither negative nor free.
     private static long formatChordTerminal(int chord, int side) {
         return -(2L * chord + side + 1);
     }
 
+    // Which half of the terminal space a name came from. The sweep needs it to tell a mouth
+    // from a disc's cover: two mouths that overlap hand the boundary from one wall to the
+    // next, while a stretch a disc swallows is off the boundary and joins nothing.
     private static boolean isChordTerminal(long terminal) {
         return terminal < 0 && terminal != NO_TERMINAL;
     }

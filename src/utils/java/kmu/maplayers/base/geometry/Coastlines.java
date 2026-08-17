@@ -326,6 +326,8 @@ final class Coastlines {
         return collectKeptPositions(isKept);
     }
 
+    // The kept stretches as positions along the walk, which is what everything downstream
+    // indexes by. The flags are how the smoothing decides; the positions are how it is read.
     private static List<Integer> collectKeptPositions(boolean[] isKept) {
 
         var kept = new ArrayList<Integer>();
@@ -502,6 +504,9 @@ final class Coastlines {
         return outline;
     }
 
+    // One stretch of coast as the points the line passes through: the sampled fillet running
+    // along the cell's own border, each carrying the cell it belongs to so a later pass can
+    // tell which stretch a point came off without matching coordinates back to a circle.
     private static List<CoastVertex> buildVertices(
             DiscUnionBoundary.CoastMark mark,
             List<double[]> points) {
@@ -692,6 +697,9 @@ final class Coastlines {
             toCentre[1] - fromCentre[1]);
     }
 
+    // An angle held to the stretch of border a cell actually offers. A reach slid to clear
+    // one neighbour can otherwise leave the cell's own frontage entirely, which puts the
+    // coast on a piece of border that belongs to no stretch of the walk.
     private static double clampIntoFrontage(DiscUnionBoundary.CoastMark mark, double angle) {
 
         return Angles.clampInto(
@@ -730,10 +738,14 @@ final class Coastlines {
             Math.min(mark.toAngle(), facing + reachable));
     }
 
+    // Where a stretch of coast would be passed through if nothing were in the way, which is
+    // what the skip rules measure distances between.
     private static double[] findMidpoint(DiscUnion union, DiscUnionBoundary.CoastMark mark) {
         return findPointAt(union, mark, mark.midAngle());
     }
 
+    // A point on the cell's own border at one angle along it. The single conversion from an
+    // angle on a stretch to a place on the map, so no caller does the trigonometry twice.
     private static double[] findPointAt(
             DiscUnion union,
             DiscUnionBoundary.CoastMark mark,

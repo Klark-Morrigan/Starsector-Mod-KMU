@@ -123,7 +123,7 @@ final class CoastPockets {
             // ended up is the result of a chain of angles, while the side of the line it has
             // to stay on is one fact that holds whatever the wall did.
             var legal = CoastPocketFaults.cutToLandward(
-                hole.boundary(), walling, union, channel);
+                hole.boundary(), walling, sites, channel);
 
             // A pocket the cut leaves nothing of is still a pocket - it keeps its extent,
             // its span and the cells around it, and only loses what there was to draw. That

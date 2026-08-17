@@ -701,12 +701,12 @@ final class VoidRegionsDump {
         }
         spans.sort(Double::compare);
 
-        var spills = CoastPocketFaults.findSpills(pockets, traced.union());
+        var spills = CoastPocketFaults.findSpills(pockets, traced.union().sites());
 
         System.out.printf(
             Locale.ROOT,
             "closest a pocket comes to the reach that closed it: %.0f (the channel, %.0f)%n",
-            CoastPocketFaults.measureClosestApproach(pockets, traced.union()),
+            CoastPocketFaults.measureClosestApproach(pockets, traced.union().sites()),
             shipped.borderInset());
 
         System.out.printf(
