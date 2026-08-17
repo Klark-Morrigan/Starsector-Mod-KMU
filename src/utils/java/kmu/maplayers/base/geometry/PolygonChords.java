@@ -128,6 +128,9 @@ final class PolygonChords {
         return measureLongestVertexGap(outline) * SNAP_VERTEX_SPACINGS;
     }
 
+    // The widest step between neighbouring points on an outline, which is how finely it was
+    // sampled. What a tolerance has to be scaled against: a test tighter than the sampling
+    // asks the outline a question its own resolution cannot answer.
     private static double measureLongestVertexGap(List<double[]> outline) {
 
         var longest = 0.0;
@@ -142,6 +145,9 @@ final class PolygonChords {
         return longest;
     }
 
+    // Which point of a piece lies closest to a place on the map. Used to land an endpoint on
+    // an outline the endpoint was not built from, so the two meet at a vertex rather than a
+    // sliver short of one.
     private static int findNearestVertex(List<double[]> piece, double[] point) {
 
         var nearest = 0;

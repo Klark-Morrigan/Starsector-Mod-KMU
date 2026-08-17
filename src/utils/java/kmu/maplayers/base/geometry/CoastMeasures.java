@@ -150,6 +150,9 @@ final class CoastMeasures {
         return Math.floorMod(to[1] - from[1] - 1, from[2]);
     }
 
+    // How much border one stretch of coast offers, as the length of the arc it spans. What a
+    // crossing is judged against: the same depth into a cell means one thing on a stretch
+    // barely facing the void and another on one facing it for half a turn.
     private static double measureFrontage(DiscUnion union, DiscUnionBoundary.CoastMark mark) {
         return mark == null ? 0 : (mark.toAngle() - mark.fromAngle()) * union.reach();
     }

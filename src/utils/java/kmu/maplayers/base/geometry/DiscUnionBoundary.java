@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Angles;
 import kmlib.math.geometry.DirectedLine;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
@@ -32,8 +33,8 @@ import java.util.Map;
  *
  * <p>{@link Walls} join that walk as covering intervals of their own. Where a neighbouring
  * disc takes a stretch of circle out of the boundary, a chord takes out the mouth it comes
- * through: the stretch holding the end where the wall meets it, as wide as the channel it
- * keeps. The arcs either side of that mouth are then the two sides of the chord, one bounding
+ * through - the stretch lying within a channel of the wall, which {@link WallMouths} works
+ * out. The arcs either side of that mouth are then the two sides of the chord, one bounding
  * the void on each side of it, and the channel between them is the gap the two never claim.
  *
  * <p>So a chord is exactly a cover whose ends are named by the chord rather than by a
@@ -283,10 +284,14 @@ final class DiscUnionBoundary {
      * mouth an earlier chord on the same circle already took, leaving it no terminal of its
      * own to leave from or land on once the sweep merges the two.
      *
-     * <p>Sharing part of a mouth is allowed, and is how a coast turning on a cell's border
-     * gets laid at all: the two reaches either side of the turn meet at one point, so their
-     * mouths overlap by whatever the channel adds to each. Both keep an outer terminal, and
-     * the sweep hands one wall straight on to the next.
+     * <p>Sharing PART of a mouth is allowed. Both walls keep an outer terminal, and the
+     * sweep hands one straight on to the next rather than choosing between them.
+     *
+     * <p>How much this has to rule on depends on the reach it is asked at, because that is
+     * what decides how wide a mouth is. Walked on the cells' own border, no two mouths on a
+     * circle overlap at all and neither rule fires. Walked a channel outside it, where a wall
+     * cuts into its cells rather than meeting them, mouths widen enough that a few dozen
+     * pairs overlap on each sector and a handful swallow one another.
      *
      * <p>Offered in order and taken greedily, so the caller's own ordering decides which of
      * two crowding chords survives.
@@ -302,8 +307,8 @@ final class DiscUnionBoundary {
 
         for (var chord : walls.chords()) {
 
-            var fromMouth = measureMouth(union, chord, chord.fromCircle(), walls.channel());
-            var toMouth = measureMouth(union, chord, chord.toCircle(), walls.channel());
+            var fromMouth = WallMouths.measureMouth(union, chord, chord.fromCircle(), walls.channel());
+            var toMouth = WallMouths.measureMouth(union, chord, chord.toCircle(), walls.channel());
 
             if (fromMouth == null
                     || toMouth == null
@@ -320,348 +325,6 @@ final class DiscUnionBoundary {
             attachable.add(chord);
         }
         return attachable;
-    }
-
-    /**
-     * The stretch of one circle a wall's mouth takes out of the boundary.
-     *
-     * <p>The one place a wall's position is turned into angles, and the reason a coast's
-     * reaches and a bridge can be the same kind of thing. A mouth is the arc of a circle lying
-     * within a channel of the wall - of the wall itself, which is a segment, and not of the
-     * unbounded line it sits on.
-     *
-     * @param union   the discs the wall is laid across
-     * @param chord   the wall
-     * @param circle  which of its circles to measure the mouth on
-     * @param channel how far each side of the wall holds back from it
-     * @return the mouth as {@code {start, width}}, or null when the wall passes too far from
-     *         this circle to open one at all
-     */
-    private static double[] measureMouth(
-            DiscUnion union,
-            Chord chord,
-            int circle,
-            double channel) {
-
-        var line = chord.line().toUnitLine();
-
-        if (line == null) {
-            return null;
-        }
-        var centre = union.sites().get(circle);
-
-        var awayX = centre[0] - line.originX();
-        var awayY = centre[1] - line.originY();
-
-        // Across the wall and along it. A point at angle t on the circle sits
-        // offset + reach * cos(t - axis) from the origin along either axis, so the two
-        // conditions are the same shape and the mouth is the stretch where both hold.
-        var across = findArcsWithin(
-            union.reach(),
-            Math.atan2(line.directionX(), -line.directionY()),
-            Points.projectPointOnto(awayX, awayY, -line.directionY(), line.directionX()),
-            -channel,
-            channel);
-
-        // Bounded by the wall's own ENDS as well as by its line. A wall is a segment, and
-        // past its ends there is no wall to hold anything back - but a line near tangent to a
-        // circle stays within a channel of it for most of a radian, nearly all of it beyond
-        // where the wall stops. Unbounded, that stretch is claimed anyway, and a cell the
-        // coast turns on has its arrival mouth swallow its departure mouth whole.
-        var along = findArcsWithin(
-            union.reach(),
-            Math.atan2(line.directionY(), line.directionX()),
-            Points.projectPointOnto(awayX, awayY, line.directionX(), line.directionY()),
-            0,
-            Math.hypot(chord.line().directionX(), chord.line().directionY()));
-
-        // And rounded off at each end, because what is within a channel of a SEGMENT is a
-        // capsule and not a box: past an end the channel is measured to the end itself.
-        //
-        // Whether that matters turns on where the wall's ends sit. Laid across discs one
-        // channel wider than the border it was built on, an end is a channel inside this
-        // circle and its cap meets the circle at a point, so the ends round off nothing.
-        // Laid across the border itself - which is where a coast is walked - an end sits ON
-        // the circle, and its cap is the whole of the mouth behind it. Left out, every
-        // bridge in the coast's own walk loses the half of its mouth behind its end.
-        var pieces = new ArrayList<>(intersectArcs(across, along));
-
-        pieces.addAll(findCapArc(union, circle, line.originX(), line.originY(), channel));
-        pieces.addAll(findCapArc(
-            union,
-            circle,
-            line.originX() + chord.line().directionX(),
-            line.originY() + chord.line().directionY(),
-            channel));
-
-        var towards = measureAngleToWallEnd(chord, circle, centre);
-        var arcs = mergeArcs(pieces, towards);
-
-        if (arcs.isEmpty()) {
-            return null;
-        }
-        var mouth = arcs.size() < 2 ? arcs.get(0) : pickArcHolding(towards, arcs);
-
-        // Folded into the first turn only now that it has been chosen. The choice is an
-        // interval test at an exact boundary, and folding a start by a whole turn moves that
-        // boundary by a rounding - so the arcs are compared in the turn they were built in
-        // and put in a standard one on the way out.
-        return new double[] {Angles.normalise(mouth[0]), mouth[1]};
-    }
-
-    /**
-     * The stretches of one circle whose offset along an axis falls in a given range.
-     *
-     * <p>A point at angle {@code t} sits {@code offset + reach * cos(t - axisAngle)} along the
-     * axis, so the answer is the run of {@code t} keeping that between the two bounds - which
-     * is a run of {@code cos t}, and so either two stretches or one.
-     *
-     * <p>Both halves of a mouth are this shape, which is why it is one routine. Across the
-     * wall the range is the channel either side of its line; along the wall it is nothing to
-     * the wall's own length.
-     *
-     * <p>TWO while the band cuts clean through the circle: it crosses twice, going in and
-     * coming out, on opposite stretches with the rest of the circle between them.
-     *
-     * <p>ONE once either edge of the band clears the circle entirely. The two stretches then
-     * join up round the near end or the far one and are a single stretch, and handing back
-     * half of it leaves the circle uncovered where the wall actually crosses - so the boundary
-     * walks straight past the wall and the void behind it never closes.
-     *
-     * <p>NONE when the band misses the circle altogether.
-     *
-     * @param reach     the circle's radius
-     * @param axisAngle the direction from the circle's centre along the axis
-     * @param offset    how far the centre sits along that axis from where the range is
-     *                  measured
-     * @param low       the near bound
-     * @param high      the far bound
-     * @return the stretches as {@code {start, width}} pairs - none, one or two of them - each
-     *         starting in the turn it was built in rather than folded into the first
-     */
-    private static List<double[]> findArcsWithin(
-            double reach,
-            double axisAngle,
-            double offset,
-            double low,
-            double high) {
-
-        var nearest = (high - offset) / reach;
-        var furthest = (low - offset) / reach;
-
-        if (furthest >= 1 || nearest <= -1) {
-            return List.of();
-        }
-
-        // Joined round the far end of the circle, the band's far edge having cleared it. A
-        // coast reach sits exactly on that threshold across its line: it is drawn tangent to
-        // a cell's own border and laid across discs one channel wider, so whether it clears
-        // turns on a rounding. A bridge runs through both sites and is nowhere near it.
-        if (furthest <= -1) {
-
-            var half = Math.PI - Math.acos(Math.min(1, nearest));
-            return List.of(new double[] {axisAngle + Math.PI - half, 2 * half});
-        }
-
-        // Joined round the near end, the band's near edge having cleared it instead.
-        if (nearest >= 1) {
-
-            var half = Math.acos(furthest);
-            return List.of(new double[] {axisAngle - half, 2 * half});
-        }
-
-        var inner = Math.acos(nearest);
-        var outer = Math.acos(furthest);
-
-        return List.of(
-            new double[] {axisAngle + inner, outer - inner},
-            new double[] {axisAngle - outer, outer - inner});
-    }
-
-    /**
-     * The stretches two sets of them have in common.
-     *
-     * <p>Each pair is tried in the turn before, the same turn and the turn after, because two
-     * stretches built about different axes need not have been built in the same turn and a
-     * comparison of raw angles would miss an overlap that is there. One pair can leave two
-     * pieces, which is a genuine answer rather than a duplicate: a long stretch can meet
-     * another at both of its ends.
-     *
-     * @param first  one set
-     * @param second the other
-     * @return what they share, in the turn the first set was built in
-     */
-    private static List<double[]> intersectArcs(
-            List<double[]> first,
-            List<double[]> second) {
-
-        var shared = new ArrayList<double[]>();
-
-        for (var one : first) {
-            for (var other : second) {
-                for (var turn = -1; turn <= 1; turn++) {
-
-                    var from = Math.max(one[0], other[0] + turn * Angles.FULL_TURN);
-                    var to = Math.min(
-                        one[0] + one[1],
-                        other[0] + other[1] + turn * Angles.FULL_TURN);
-
-                    if (to > from) {
-                        shared.add(new double[] {from, to - from});
-                    }
-                }
-            }
-        }
-        return shared;
-    }
-
-    /**
-     * The stretch of one circle lying within {@code channel} of a single point.
-     *
-     * <p>What rounds off a mouth at one of the wall's ends. Two circles meeting is the same
-     * closed form the discs' own crossings use, taken here between this circle and the
-     * channel's reach about the end.
-     *
-     * @param union   the discs
-     * @param circle  the circle to measure on
-     * @param pointX  x of the end
-     * @param pointY  y of the end
-     * @param channel how far from the end still counts as against the wall
-     * @return the stretch as one {@code {start, width}} pair, or none where the end is too
-     *         far from the circle to round anything off
-     */
-    private static List<double[]> findCapArc(
-            DiscUnion union,
-            int circle,
-            double pointX,
-            double pointY,
-            double channel) {
-
-        var centre = union.sites().get(circle);
-
-        var awayX = pointX - centre[0];
-        var awayY = pointY - centre[1];
-        var away = Points.computeVectorLength(awayX, awayY);
-
-        if (away < Limits.MIN_EDGE_LENGTH) {
-            return List.of();
-        }
-        var reach = union.reach();
-        var cosine = (reach * reach + away * away - channel * channel) / (2 * reach * away);
-
-        if (cosine >= 1) {
-            return List.of();
-        }
-        var half = Math.acos(Math.max(-1, cosine));
-
-        return List.of(new double[] {Math.atan2(awayY, awayX) - half, 2 * half});
-    }
-
-    /**
-     * Overlapping stretches joined into the runs they make up.
-     *
-     * <p>Placed in the turn beginning half a turn before {@code about} first, so that pieces
-     * built about different axes - across the wall, along it, and round each of its ends -
-     * are comparable at all. A mouth surrounds the wall's own end, so taking that as the
-     * middle of the window is what keeps a run from being split across its edge.
-     *
-     * @param pieces what to join
-     * @param about  the direction the runs are expected to gather around
-     * @return the maximal runs, in order
-     */
-    private static List<double[]> mergeArcs(List<double[]> pieces, double about) {
-
-        var placed = new ArrayList<double[]>(pieces.size());
-
-        for (var piece : pieces) {
-            placed.add(new double[] {
-                Angles.placeAfter(piece[0], about - Angles.HALF_TURN), piece[1]});
-        }
-        placed.sort(Comparator.comparingDouble(piece -> piece[0]));
-
-        var merged = new ArrayList<double[]>();
-
-        for (var piece : placed) {
-
-            var last = merged.isEmpty() ? null : merged.get(merged.size() - 1);
-
-            if (last != null && piece[0] <= last[0] + last[1]) {
-
-                last[1] = Math.max(last[1], piece[0] + piece[1] - last[0]);
-                continue;
-            }
-            merged.add(new double[] {piece[0], piece[1]});
-        }
-        return merged;
-    }
-
-    /**
-     * Which of the arcs a channel cuts is the one the wall actually meets.
-     *
-     * <p>The arc that CONTAINS the wall's end, not the one whose middle is nearest it.
-     * Nearest is a tiebreak, and a tiebreak needs its candidates to be far apart. On a cell
-     * facing void most of the way round - the end of a chain, or either half of a two-cell
-     * island - the arcs close up on each other and the tiebreak stops meaning anything.
-     * Picked wrong there, the wall wraps the far side of the circle and the void it closes
-     * runs off along the line instead of stopping at the cells: long wedges out to sea that
-     * no side-of-the-line check will complain about, because they lie between two
-     * near-parallel reaches and a pair of those bounds a slab rather than a shape.
-     *
-     * <p>Containment cannot degenerate that way. The wall meets the circle at one known
-     * angle, and exactly one of the arcs holds it.
-     *
-     * @param towards where the wall meets this circle, as an angle from its centre
-     * @param arcs    the arcs to choose between
-     * @return the arc holding it
-     */
-    private static double[] pickArcHolding(double towards, List<double[]> arcs) {
-
-        for (var arc : arcs) {
-
-            if (Angles.placeAfter(towards, arc[0]) <= arc[0] + arc[1]) {
-                return arc;
-            }
-        }
-
-        // None holds it, which the geometry says cannot happen: the wall meets the circle, so
-        // its end is on one of the arcs its own channel opens. Falling back to the nearer of
-        // them keeps a rounding at an arc's edge from dropping the wall.
-        var nearest = arcs.get(0);
-
-        for (var arc : arcs) {
-
-            if (Angles.measureGap(towards, arc[0] + arc[1] / 2)
-                    < Angles.measureGap(towards, nearest[0] + nearest[1] / 2)) {
-
-                nearest = arc;
-            }
-        }
-        return nearest;
-    }
-
-    /**
-     * Where a wall meets one of its circles, as an angle from that circle's centre.
-     *
-     * <p>The wall's own end rather than the direction to the cell at its far end. Those agree
-     * for a bridge, whose line runs through both sites, and they are most of a right angle
-     * apart for a reach of coast, which leaves a cell along its tangent. Taking the far cell's
-     * direction opened half a coast's mouths on the wrong side of the cell, which walled off
-     * pockets inland of it and left the void it had actually shut in open to the sea.
-     *
-     * @param chord  the wall
-     * @param circle which of its circles the angle is measured at
-     * @param centre that circle's centre
-     * @return the angle
-     */
-    private static double measureAngleToWallEnd(Chord chord, int circle, double[] centre) {
-
-        var line = chord.line();
-        var isFromSide = circle == chord.fromCircle();
-
-        var endX = isFromSide ? line.originX() : line.originX() + line.directionX();
-        var endY = isFromSide ? line.originY() : line.originY() + line.directionY();
-
-        return Math.atan2(endY - centre[1], endX - centre[0]);
     }
 
     /**
@@ -687,8 +350,8 @@ final class DiscUnionBoundary {
             Chord chord,
             double channel) {
 
-        var fromMouth = measureMouth(union, chord, chord.fromCircle(), channel);
-        var toMouth = measureMouth(union, chord, chord.toCircle(), channel);
+        var fromMouth = WallMouths.measureMouth(union, chord, chord.fromCircle(), channel);
+        var toMouth = WallMouths.measureMouth(union, chord, chord.toCircle(), channel);
 
         if (fromMouth == null || toMouth == null) {
             return List.of();
@@ -759,6 +422,8 @@ final class DiscUnionBoundary {
         return PolygonRegions.computeSignedArea(cycle.shape().boundary()) < 0;
     }
 
+    // A walked cycle as the arcs it ran along rather than as indices into every arc on the
+    // map, so nothing downstream has to keep the two lists side by side to read one of them.
     private static List<Arc> collectArcs(List<Integer> cycle, List<Arc> arcs) {
 
         var walked = new ArrayList<Arc>(cycle.size());
@@ -852,7 +517,7 @@ final class DiscUnionBoundary {
             if (!isFromSide && chord.toCircle() != circle) {
                 continue;
             }
-            var mouth = measureMouth(union, chord, circle, walls.channel());
+            var mouth = WallMouths.measureMouth(union, chord, circle, walls.channel());
 
             if (mouth == null) {
                 continue;
@@ -908,8 +573,11 @@ final class DiscUnionBoundary {
                 // rather than absent - given as an arc of no width, since what the walk wants
                 // of it is that its two terminals name each other rather than any length.
                 //
-                // Two walls meeting at one point on this circle. Each mouth is as wide as
-                // the channel makes it, so a pair that meet overlap.
+                // Two walls whose mouths overlap. The boundary comes back along one and
+                // leaves along the next with nothing on the circle in between, so the stretch
+                // between them is empty rather than absent - given as an arc of no width,
+                // since what the walk wants of it is that its two terminals name each other
+                // rather than any length.
                 //
                 // Only where WALLS are what overlap. A stretch a neighbouring disc swallows
                 // really is off the boundary, and joining its ends would run a cycle through
@@ -1099,10 +767,9 @@ final class DiscUnionBoundary {
     // to then has nowhere to leave from and nowhere to land, which breaks the walk rather than
     // spoiling a shape.
     //
-    // Overlapping in part is not that. Two walls meeting at a point on a circle overlap by
-    // whatever the channel adds to each of their mouths, and each keeps the outer terminal the
-    // walk needs; the sweep hands one straight on to the other. Refused, the void behind one
-    // of the two is left open to the sea with nothing to close it.
+    // Overlapping in part is not that. Each wall keeps the outer terminal the walk needs and
+    // the sweep hands one straight on to the other, so refusing those would leave the void
+    // behind one of them open to the sea with nothing to close it.
     private static boolean isMouthTaken(
             Map<Integer, List<double[]>> takenByCircle,
             int circle,
@@ -1119,6 +786,8 @@ final class DiscUnionBoundary {
         return false;
     }
 
+    // Remembers a mouth as taken, so the walls offered after this one are held to what is
+    // left of the circle rather than to the whole of it.
     private static void recordMouth(
             Map<Integer, List<double[]>> takenByCircle,
             int circle,
@@ -1127,6 +796,8 @@ final class DiscUnionBoundary {
         takenByCircle.computeIfAbsent(circle, held -> new ArrayList<>()).add(mouth);
     }
 
+    // The direction from one circle's centre to another's, which is where the stretch of the
+    // first that the second swallows is centred.
     private static double measureAngleTowards(
             DiscUnion union,
             int fromCircle,

@@ -1,7 +1,9 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Angles;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
+import kmlib.math.ranges.Ranges;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -119,10 +121,11 @@ final class Coastlines {
     /**
      * A traced coast and the two things it was traced against.
      *
-     * <p>Handed back together because everything asked of a coast afterwards needs one or
-     * both: which cells a run crosses needs the discs, and how many stretches there were
-     * before smoothing needs the walls. Rebuilt separately by each asker, they can be built
-     * from knobs that have since moved.
+     * <p>Handed back together because everything asked of a coast afterwards needs one of
+     * them: which cells a reach crosses needs the discs, how much the smoothing took out
+     * needs the stretches it started from, and laying more walls beside the coast's own needs
+     * those walls. Rebuilt separately by each asker, they can be built from knobs that have
+     * since moved.
      *
      * @param coasts      one closed run of points per run of connected cells
      * @param silhouettes the stretches of coast the cells make, in walk order, before any
@@ -271,6 +274,50 @@ final class Coastlines {
             }
         }
         return smoothed;
+    }
+
+    /**
+     * One straight reach of a smoothed coast: the two vertices it runs between.
+     *
+     * @param from the vertex it leaves
+     * @param to   the vertex it arrives at
+     */
+    record CoastReach(
+        CoastVertex from,
+        CoastVertex to) {
+    }
+
+    /**
+     * Every straight reach of a traced coast, in the order the coast is walked.
+     *
+     * <p>A coast alternates between reaches, which cross open void from one cell to another,
+     * and fillets, which run along one cell's own border. Both ends of a fillet sit on the
+     * SAME circle, and that is the whole of the difference - so which vertex pairs are
+     * reaches is a fact about the coast rather than a rule each reader should keep its own
+     * copy of.
+     *
+     * <p>Wanted by everything that treats a reach as a thing in its own right: what it walls
+     * off behind it, and which cells it cuts through on the way.
+     *
+     * @param traced the coast
+     * @return one entry per reach, in walk order
+     */
+    static List<CoastReach> collectStraightReaches(TracedCoasts traced) {
+
+        var reaches = new ArrayList<CoastReach>();
+
+        for (var coast : traced.coasts()) {
+            for (var index = 0; index < coast.size(); index++) {
+
+                var from = coast.get(index);
+                var to = coast.get((index + 1) % coast.size());
+
+                if (from.circle() != to.circle()) {
+                    reaches.add(new CoastReach(from, to));
+                }
+            }
+        }
+        return reaches;
     }
 
     /**
@@ -702,7 +749,7 @@ final class Coastlines {
     // coast on a piece of border that belongs to no stretch of the walk.
     private static double clampIntoFrontage(DiscUnionBoundary.CoastMark mark, double angle) {
 
-        return Angles.clampInto(
+        return Ranges.clampInto(
             Angles.placeAfter(angle, mark.fromAngle()), mark.fromAngle(), mark.toAngle());
     }
 
@@ -732,7 +779,7 @@ final class Coastlines {
 
         var reachable = Math.acos(union.reach() / distance);
 
-        return Angles.clampInto(
+        return Ranges.clampInto(
             mark.midAngle(),
             Math.max(mark.fromAngle(), facing - reachable),
             Math.min(mark.toAngle(), facing + reachable));

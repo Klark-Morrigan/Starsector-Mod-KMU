@@ -85,29 +85,21 @@ final class CoastCrossings {
 
         var found = new ArrayList<Penetration>();
 
-        for (var coast : traced.coasts()) {
-            for (var index = 0; index < coast.size(); index++) {
+        for (var reach : Coastlines.collectStraightReaches(traced)) {
 
-                var from = coast.get(index);
-                var to = coast.get((index + 1) % coast.size());
+            var pierced = findPiercedCells(traced.union(), reach.from(), reach.to());
 
-                if (from.circle() == to.circle()) {
-                    continue;
-                }
-
-                var pierced = findPiercedCells(traced.union(), from, to);
-
-                if (pierced.isEmpty()) {
-                    continue;
-                }
-
-                var circles = new ArrayList<Integer>(pierced.size());
-
-                for (var pierce : pierced) {
-                    circles.add(pierce.circle());
-                }
-                found.add(new Penetration(from, to, circles, pierced.get(0).depth()));
+            if (pierced.isEmpty()) {
+                continue;
             }
+
+            var circles = new ArrayList<Integer>(pierced.size());
+
+            for (var pierce : pierced) {
+                circles.add(pierce.circle());
+            }
+            found.add(new Penetration(
+                reach.from(), reach.to(), circles, pierced.get(0).depth()));
         }
         return found;
     }

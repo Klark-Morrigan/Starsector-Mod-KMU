@@ -24,13 +24,6 @@ import java.util.List;
  * afterwards. Against the COAST it is a cut, because a reach is a line and a line does
  * not move when a reach does - see {@link CoastPocketFaults}.
  *
- * <p>An earlier attempt built the ring here instead, by sampling the border the reach bypassed
- * and dropping the samples the channel had eaten. Dropping points from a ring does not shrink
- * it, it short-circuits it: the survivors either side of a dropped run get joined by a chord
- * straight across whatever was between them. Pinching, closing over, and a wall meeting a cell
- * at a shallow angle all came out wrong, and each would have needed its own special case.
- * Laid as a wall, none of them is a case at all.
- *
  * <p>Which holes are the coast's is read off {@link VoidHole#walledBy}. Bridges and coast
  * reaches are walls of one kind and the trace closes both in one walk, so the wall a hole
  * closes on is the only thing that distinguishes what shut it in.
@@ -71,51 +64,25 @@ final class CoastPockets {
         if (reaches.isEmpty()) {
             return List.of();
         }
-
-        // The coast's own bridges are laid alongside its reaches, though nothing here reports
-        // what they close. Void a bridge already holds is that construction's, and a trace
-        // that cannot see the bridge runs a coast pocket straight across it and paints the
-        // same emptiness twice.
-        //
-        // Taken from the coast rather than found again. A second search is a second answer,
-        // and a reach was walked round bridges that the walk it is laid beside cannot see.
-        var laid = new ArrayList<>(traced.walls().chords());
-        laid.addAll(reaches);
-
-        // At the channel the coast was walled at, for the same reason: the pocket has to
-        // give up against a reach exactly what the coast gave up against a bridge.
-        var channel = traced.walls().channel();
-        var walls = new DiscUnionBoundary.Walls(laid, channel);
-        var arcSegments = parameters.measureArcSegments();
+        var walls = layCoastWalls(traced, reaches);
+        var union = VoidPockets.buildDrawnUnion(sites, parameters);
 
         // ONE trace, and what it hands back is what gets drawn - the same thing
         // VoidBridgePockets does with its own walls. A pocket found among the cells can
         // afford to be traced twice and the two matched up by containment, because a bridge
         // spans a real gap and is still on the boundary at a wider reach. A reach of coast is
         // tangent to the fills and is not, so the two traces lay different walls, their holes
-        // do not correspond, and the match silently drops the ones that fail - which is what
-        // left pockets on the map with nothing drawn in them.
-        //
-        // A reach is drawn on the cells' own border while the trace runs a channel outside
-        // it, so a reach cuts into each of its cells rather than touching them. That is what
-        // opens its mouths at all, and also what buries the ones whose cells have grown over
-        // where the coast left them.
+        // do not correspond, and the match silently drops the ones that fail.
         var pockets = new ArrayList<CoastPocketFaults.WalledPocket>();
 
-        var union = VoidPockets.buildDrawnUnion(sites, parameters);
+        for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
+                union, walls, parameters.measureArcSegments())) {
 
-        for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(union, walls, arcSegments)) {
+            var walling = findWallingReaches(hole, reaches);
 
-            // Only what a COAST reach shut in. Void the cells closed unaided, and void a
-            // bridge holds, are both the other construction's to report; drawing them here
-            // too would paint the same emptiness twice over.
-            if (java.util.Collections.disjoint(hole.walledBy(), reaches)) {
+            if (walling.isEmpty()) {
                 continue;
             }
-            // Its own outline, because this trace already IS the shaped one - the channel
-            // came out of it at the mouths and out of the reach against the cells.
-            var walling = new ArrayList<>(hole.walledBy());
-            walling.retainAll(reaches);
 
             // Held to the landward side of every reach that closed it, before the fill is
             // measured from it. A reach has open sea beyond it, so an outline that has
@@ -123,7 +90,7 @@ final class CoastPockets {
             // ended up is the result of a chain of angles, while the side of the line it has
             // to stay on is one fact that holds whatever the wall did.
             var legal = CoastPocketFaults.cutToLandward(
-                hole.boundary(), walling, sites, channel);
+                hole.boundary(), walling, sites, walls.channel());
 
             // A pocket the cut leaves nothing of is still a pocket - it keeps its extent,
             // its span and the cells around it, and only loses what there was to draw. That
@@ -138,9 +105,43 @@ final class CoastPockets {
                     VoidPockets.resolveAbsorbingOwner(hole.ringing(), ownerBySite),
                     sites,
                     sectionRules),
-                List.copyOf(walling)));
+                walling));
         }
         return pockets;
+    }
+
+    // The coast's reaches laid alongside the bridges the coast itself was walled by, at the
+    // channel it was walled at.
+    //
+    // The bridges have to be there, though nothing here reports what they close: void a
+    // bridge already holds is that construction's, and a trace that cannot see the bridge
+    // runs a coast pocket straight across it and paints the same emptiness twice. Taken from
+    // the coast rather than found again, because a second search is a second answer, and a
+    // reach was walked round the bridges the first one found.
+    //
+    // At the coast's channel for the same reason: a pocket has to give up against a reach
+    // exactly what the coast gave up against a bridge.
+    private static DiscUnionBoundary.Walls layCoastWalls(
+            Coastlines.TracedCoasts traced,
+            List<DiscUnionBoundary.Chord> reaches) {
+
+        var laid = new ArrayList<>(traced.walls().chords());
+        laid.addAll(reaches);
+
+        return new DiscUnionBoundary.Walls(laid, traced.walls().channel());
+    }
+
+    // Which of the coast's reaches shut one hole in, which is none for a hole the cells
+    // closed unaided or a bridge holds - both of those are the other construction's to
+    // report, and drawing them here too would paint the same emptiness twice over.
+    private static List<DiscUnionBoundary.Chord> findWallingReaches(
+            VoidHole hole,
+            List<DiscUnionBoundary.Chord> reaches) {
+
+        var walling = new ArrayList<>(hole.walledBy());
+        walling.retainAll(reaches);
+
+        return List.copyOf(walling);
     }
 
     /**
@@ -179,39 +180,30 @@ final class CoastPockets {
 
         var walls = new ArrayList<DiscUnionBoundary.Chord>();
 
-        for (var coast : traced.coasts()) {
-            for (var index = 0; index < coast.size(); index++) {
+        for (var reach : Coastlines.collectStraightReaches(traced)) {
 
-                var from = coast.get(index);
-                var to = coast.get((index + 1) % coast.size());
+            var from = reach.from();
+            var to = reach.to();
 
-                if (from.circle() == to.circle()) {
-                    continue;
-                }
-                var alongX = to.point()[0] - from.point()[0];
-                var alongY = to.point()[1] - from.point()[1];
-                var length = Math.hypot(alongX, alongY);
+            var alongX = to.point()[0] - from.point()[0];
+            var alongY = to.point()[1] - from.point()[1];
 
-                if (length < Limits.MIN_EDGE_LENGTH) {
-                    continue;
-                }
-
-                // The reach's own line, unshifted. A wall already holds each side back by
-                // the channel it keeps - that IS the inset against the coast - so nudging the
-                // line over as well insets twice, and getting the direction of that nudge
-                // wrong cancels the channel instead: the pocket lands exactly on the coast,
-                // which is a fill touching the border that defines it.
-                //
-                // Leaving it out also makes the wall line the COAST line, so anything asking
-                // how far a pocket sits off its reach is asking how far it sits off the coast.
-                // Shifted, that question had a different answer from the one worth knowing,
-                // and reported a healthy channel while the fill sat on the line.
-                walls.add(new DiscUnionBoundary.Chord(
-                    from.circle(),
-                    to.circle(),
-                    new DirectedLine(
-                        from.point()[0], from.point()[1], alongX, alongY)));
+            if (Math.hypot(alongX, alongY) < Limits.MIN_EDGE_LENGTH) {
+                continue;
             }
+
+            // The reach's own line, unshifted. A wall already holds each side back by the
+            // channel it keeps - that IS the inset against the coast - so nudging the line
+            // over as well insets twice, and getting the direction of that nudge wrong
+            // cancels the channel instead: the pocket lands exactly on the coast, which is a
+            // fill touching the border that defines it.
+            //
+            // Leaving it out also makes the wall line the COAST line, so anything asking how
+            // far a pocket sits off its reach is asking how far it sits off the coast.
+            walls.add(new DiscUnionBoundary.Chord(
+                from.circle(),
+                to.circle(),
+                new DirectedLine(from.point()[0], from.point()[1], alongX, alongY)));
         }
         return walls;
     }

@@ -53,10 +53,8 @@ import java.util.List;
  * and divided; only the fill is withheld, and a caller with nowhere to draw it can mark the
  * centre.
  *
- * <p>This replaces a construction that only closed a boundary around a single Voronoi vertex,
- * which meant exactly three cells. On the shipped fixture that left 12 of 19 pockets with no
- * outline, no area, and nothing to draw. The count of surrounding cells is not a special case
- * here: it is however many arcs the cycle turned out to have.
+ * <p>How many cells ring a pocket is not a special case: it is however many arcs the cycle
+ * turned out to have.
  */
 final class VoidPockets {
 
