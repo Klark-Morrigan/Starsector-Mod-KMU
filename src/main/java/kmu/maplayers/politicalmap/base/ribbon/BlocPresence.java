@@ -89,7 +89,7 @@ public record BlocPresence(
      *
      * @return true where the bloc holds at least one colony the player may be shown
      */
-    public boolean holdsSomething() {
+    public boolean hasMarkets() {
         return marketCount > NO_MARKETS;
     }
 }

@@ -139,7 +139,7 @@ public record RibbonPlan(
             // A bloc holding nothing counted lays no run, so it opens no handover either: a
             // divider laid for it would part two blocs across a run that is not there, and
             // the bloc actually going out would go unclosed.
-            if (!presence.holdsSomething()) {
+            if (!presence.hasMarkets()) {
                 continue;
             }
             // The divider closing the run just laid is the outgoing bloc's own, not the
@@ -175,7 +175,7 @@ public record RibbonPlan(
             List<BlocPresence> rankedPresences) {
 
         for (var presence : rankedPresences) {
-            if (presence.holdsSomething() && !presence.blocId().equals(paintingBlocId)) {
+            if (presence.hasMarkets() && !presence.blocId().equals(paintingBlocId)) {
                 return true;
             }
         }
@@ -192,7 +192,7 @@ public record RibbonPlan(
         var presentBlocs = 0;
 
         for (var presence : rankedPresences) {
-            if (presence.holdsSomething()) {
+            if (presence.hasMarkets()) {
                 presentBlocs++;
             }
         }
