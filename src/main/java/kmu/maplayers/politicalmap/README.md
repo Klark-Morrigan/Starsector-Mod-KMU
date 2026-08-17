@@ -358,8 +358,9 @@ is what makes one band mean one thing on every view. The band spans four package
 own register: the [plan and its gate](base/ribbon/README.md), the
 [ring geometry and the draw](base/render/ribbon/README.md), and the two counting rules -
 [held cells](dominance/ribbon/README.md), counted off the very footprints the fill was ranked
-from, and [claimed cells](claims/ribbon/README.md), counted off the contest that settled the
-claim. Which of the two answers for a cell is the view's own call, made through the same seam it
+from, and [claims-layer cells](claims/ribbon/README.md), counted off the contest over the system -
+the cells no claim covers among them, since the claim walk never sees a hidden or player-owned
+market and a band is the only thing that reports those systems. Which of the two answers for a cell is the view's own call, made through the same seam it
 picks its holder source and its hover box by),
 and `sidebar` - the last being this layer's own body
 controls, neither the box they sit in nor the spotlight picker among them, both of which are

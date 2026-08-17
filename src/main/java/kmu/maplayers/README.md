@@ -58,7 +58,7 @@ the thing it hands over".
 | `base` says | political map says | Means |
 | --- | --- | --- |
 | **owner** | **holder** (`DominantHolder`, `HolderProvider`) | what a cell is attributed to; two cells fuse only if it matches. Opaque to `base` - a faction id under the factions view, an alliance id under alliances, a claimant under claims |
-| **unowned** | factionless, uninhabited, decivilised | a cell no owner is attributed to. It never fuses, and draws its own lone outline. Unowned is not the same as empty: a view whose holding rule admits only some factions (claims, where only a territorial faction may claim) leaves settled systems unowned, so the factionless split is read from the pass's inhabited-system set, not from the absent owner |
+| **unowned** | factionless, uninhabited, decivilised | a cell no owner is attributed to. It never fuses, and draws its own lone outline. Unowned is not the same as empty: a view whose holding rule admits only some markets (claims, whose walk skips hidden and player-owned markets and factions with no territorial flag) leaves settled systems unowned, so the factionless split is read from the pass's inhabited-system set, not from the absent owner |
 | **cluster** (`StyledCluster`) | one body of a **territory** | the merged shape connected same-owner cells form, inside one traced border. A lone cell is a cluster of one |
 | **cluster group** (`StyledClusterGroup`) | **territory** | everything one owner paints: its clusters, plus the paints they all share. "Territory" is the political word for *all* of a bloc's cells, which may be several disjoint clusters - so a territory is a cluster group, never a cluster |
 | **cluster border** | national border, frontier | the inset ring around a cluster. `base` never calls it national - nothing about a border is political |
@@ -142,7 +142,8 @@ about what the overlay means.
   render pass. It asks the active layer for a renderer and hands it the frame, so it names no layer;
   a layer that only switches (No Layer) supplies none, which is read as nothing to draw. More than
   one terrain surface can paint one frame, so the per-frame work behind a layer is claimed rather
-  than assumed: `MapFramePreparationClaim` grants it to the first surface to reach each frame.
+  than assumed: `MapFramePreparationClaim` grants it to the first surface to reach each frame. The
+  cursor read is the exception, being taken per pass so the surface that drew last owns the answer.
 - **[Clusters](base/render/clusters/README.md)** - the shape work under that surface: turning shaped
   cells and opaque owner ids into borders, fills, and GL-ready runs. The cluster-border trace,
   the smoothing passes, the vertex packing, and the split fill that puts several fills inside one

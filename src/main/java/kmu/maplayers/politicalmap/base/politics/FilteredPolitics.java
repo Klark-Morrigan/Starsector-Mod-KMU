@@ -145,8 +145,9 @@ public final class FilteredPolitics {
      * reaches. That resolve keeps the bloc visible wherever it is present by rekeying the
      * system, which only works on a system somebody holds; a view whose holding rule admits
      * only some factions leaves settled systems with no holder at all, and the spotlit bloc can
-     * be living in one of them. On the claims view it routinely is - vanilla lets only a
-     * territorial faction claim, so a bloc's own unclaimed colonies land here.
+     * be living in one of them. On the claims view it routinely is - vanilla's walk skips a
+     * hidden market, a player-owned one, and one whose faction carries no territorial flag, so a
+     * bloc's own unclaimed colonies land here.
      *
      * <p>Answered over a caller-supplied candidate set rather than the whole sector, because the
      * only systems it can change anything for are the handful the holder map left out. Walking

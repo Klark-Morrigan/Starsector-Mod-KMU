@@ -66,6 +66,12 @@ public final class PoliticalMapTerritoryFixtures {
      * agnostic about which exist - the model only carries it for an incremental re-shape to read
      * back, and nothing here re-shapes.
      *
+     * <p>Every held system counts as inhabited, since a bloc holds one only by having a colony in
+     * it: a fixture where the two disagreed would pose a map production cannot build, and the
+     * readers that gate on inhabitation - the factionless classifier, the band pass - would answer
+     * a held cell as empty space. A suite needing a settled system no bloc holds writes it into
+     * the live set the model hands back.
+     *
      * @param ownerBySystemId who holds each system, the one input most callers vary
      * @return a live territories, ready to have draw records written into it
      */
@@ -73,7 +79,7 @@ public final class PoliticalMapTerritoryFixtures {
             Map<String, DominantHolder> ownerBySystemId) {
         return new PoliticalMapTerritories(
             new LinkedHashMap<>(ownerBySystemId),
-            new LinkedHashSet<>(),
+            new LinkedHashSet<>(ownerBySystemId.keySet()),
             new LinkedHashSet<>(),
             new MapStyling(
                 null, // No render style.

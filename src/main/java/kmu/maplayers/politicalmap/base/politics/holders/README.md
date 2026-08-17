@@ -137,14 +137,23 @@ territorial market in the system. The map shows exactly what the mechanic resolv
 nothing. A marketless system (unpopulated or decivilised) only resolves through the flag, which is
 rare in practice. So claims mostly attach to inhabited systems.
 
-**Inhabited does not imply claimed.** Only a *territorial* faction may claim, and in vanilla the
-flag lives inside `punitiveExpeditionData`, which independents, pirates, the Path, and the
-Remnant carry no version of. A system settled by those alone - a large share of the core, since
-independent worlds are not rare - resolves no claimant at all and leaves this package's holding
-empty for it. That is the mechanic answering correctly, not a gap to paper over here. What must
-not follow from it is the *render* reading the missing holder as an empty system: the factionless
-classification is made against the pass's inhabited-system set instead, see
-[`render.style`](../../render/style/README.md).
+**Inhabited does not imply claimed**, and the reasons are worth naming exactly, because they are
+easy to get wrong. `Misc.getClaimingFaction` walks `getEconomy().getMarkets(location)` and skips a
+market on three separate tests:
+
+| Test | What it excludes |
+| --- | --- |
+| `curr.isHidden()` | pirate and Path bases, which `PirateBaseIntel` and `LuddicPathBaseIntel` both create with `setHidden(true)` |
+| `curr.getFaction().isPlayerFaction()` | every player colony, before territoriality is even read |
+| no `punitiveExpeditionData.territorial` | the Remnant, derelicts, scavengers, mercenaries, the Dweller, `neutral`, and the rest of the thirteen vanilla factions carrying no such block |
+
+And the walk reads the *economy's listing*, so a colony never registered with it - as vanilla builds
+Galatia Academy - is not seen at all, whatever its owner.
+
+A system that resolves nothing leaves this package's holding empty for it. That is the mechanic
+answering correctly, not a gap to paper over here. What must not follow from it is the *render*
+reading the missing holder as an empty system: the factionless classification is made against the
+pass's inhabited-system set instead, see [`render.style`](../../render/style/README.md).
 
 ## What is not here
 

@@ -104,7 +104,11 @@ public final class CellRibbonsBaker {
             CellRibbonSource.createForPass(
                 sector,
                 territories.getViewGrouping(),
-                territories.getHolderBySystemId(),
+                // The pass's inhabitation scan rather than its holding, so a settled system this
+                // layer gives to nobody - an unclaimed pirate haven on the claims layer - is still
+                // offered a band. It is the same set the factionless cell beneath it is classified
+                // from, so a cell drawn as settled and a cell offered a band are one set.
+                territories.getInhabitedSystemIds(),
                 geometryCache.getSiteBySystemId(),
                 resolveNameBoxes(clusterAnchors),
                 // The cells' own store, so a ring walked by one bake is the ring the next reads

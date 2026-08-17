@@ -35,8 +35,9 @@ final class FactionlessStyleResolverTest {
 
         @Test
         void resolveCategoryOfReturnsDecivilisedForAnInhabitedSystemThePassFoundNoHolderFor() {
-            // The claims layer's case: vanilla lets only a territorial faction claim, so a system
-            // settled by pirates alone resolves no claimant and reaches this rule with no holder.
+            // The claims layer's case: vanilla's claim walk skips a hidden market, and
+            // a pirate base is created hidden, so a system settled by pirates alone
+            // resolves no claimant and reaches this rule with no holder.
             // It is still inhabited, so it must not fall to the backdrop category the
             // uninhabited-systems checkbox switches off.
             assertThat(FactionlessStyleResolver.resolveCategoryOf(

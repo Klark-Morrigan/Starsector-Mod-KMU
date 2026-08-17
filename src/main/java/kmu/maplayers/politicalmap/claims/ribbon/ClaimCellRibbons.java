@@ -15,7 +15,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * The order a claimed cell's band comes out in: the contest's own ranking, folded into blocs.
+ * The order a cell's band comes out in on the claims layer: the contest's own ranking, folded
+ * into blocs.
  *
  * <p>The counting is {@link ColonyCellRibbons}'s and is the same on every layer, so what the claim
  * side supplies is the one thing that is its own - where each bloc stands. Blocs come out at the
@@ -42,10 +43,11 @@ public final class ClaimCellRibbons {
     }
 
     /**
-     * Plans one claimed cell's band, ranked by the contest behind its claim.
+     * Plans one cell's band, ranked by the contest over its system's claim.
      *
      * @param paintingBlocId the bloc the cell's fill was painted for - the claimant's bloc, or the
-     *                       decreed one where a memory flag took the system outright
+     *                       decreed one where a memory flag took the system outright; empty on a
+     *                       system nobody claims, whose cell no fill of this layer's covers
      * @param system         the system the cell draws as, whose colonies the band counts
      * @param contest        the whole claim contest for the cell's system, standings and all
      * @param inputs         the pass the colonies are read from, where a bloc's shades come from,
@@ -54,15 +56,13 @@ public final class ClaimCellRibbons {
      *         are handed to leaves the cell bare
      */
     public static RibbonPlan planClaimCellRibbon(
-            String paintingBlocId,
+            Optional<String> paintingBlocId,
             StarSystemAPI system,
             SystemClaimBreakdown contest,
             RibbonPlanInputs inputs) {
 
-        // A painter always, since a claimed cell is painted for whoever the claim settled on -
-        // the cells no claim covers are refused before a band is ever planned for them.
         return ColonyCellRibbons.planCellRibbon(
-            Optional.of(paintingBlocId),
+            paintingBlocId,
             system,
             rankBlocsByContest(contest, inputs.grouping()),
             inputs);

@@ -32,11 +32,13 @@ public final class FactionlessStyleResolver {
      *
      * <p>The question is what is <em>in</em> the system, not whether this pass found a holder
      * for it. The two answers part company as soon as a layer resolves holding under a rule
-     * that admits only some factions: vanilla lets only a territorial faction claim, so on the
-     * claims layer a system settled solely by independents, pirates, or the Path resolves no
-     * claimant at all. Reading emptiness off the holder map would call such a system empty
-     * space and hide it behind the uninhabited-systems checkbox - a populated system erased
-     * from the map by a toggle that names the opposite of what it holds.
+     * that admits only some markets: vanilla's claim walk skips a hidden market, a player-owned
+     * one, and one whose faction carries no territorial flag, and reads only what the economy
+     * lists - so on the claims layer a system settled solely by a pirate or Path base, by the
+     * player, or by the Remnant resolves no claimant at all. Reading emptiness off the holder
+     * map would call such a system empty space and hide it behind the uninhabited-systems
+     * checkbox - a populated system erased from the map by a toggle that names the opposite of
+     * what it holds.
      *
      * <p>A live colony and a dead one therefore share the one bundle. The distinction the two
      * factionless styles draw is presence against absence - is anything here, or is this the
@@ -73,7 +75,8 @@ public final class FactionlessStyleResolver {
      *
      * <p>A settled cell the spotlighted bloc <em>lives in</em> is the exception to that. Sinking it
      * would hide the pick's own colonies for the sole reason that this layer's holding rule cannot
-     * account for them - on the claims view, that a non-territorial faction may not claim. The
+     * account for them - on the claims view, that the walk never saw the market that put them
+     * there. The
      * recede clears away what the pick is not, and a system the pick is living in is not that.
      *
      * <p>Such a cell stays at full strength <em>as it already draws</em> - neutral, in the settled

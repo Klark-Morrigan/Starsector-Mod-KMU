@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.DIKTAT;
@@ -182,7 +183,7 @@ final class ClaimCellRibbonsTest {
             RibbonPlanInputs inputs) {
 
         return ClaimCellRibbons.planClaimCellRibbon(
-            paintingBlocId,
+            Optional.of(paintingBlocId),
             buildOnlySystem(sector),
             contest,
             inputs);

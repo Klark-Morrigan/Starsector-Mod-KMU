@@ -24,23 +24,46 @@ public interface MapLayerRenderer {
 
     /**
      * Brings whatever this layer draws from up to date for the frame about to be painted, and
-     * resolves anything the frame has to read from the live game rather than emit - the cursor, most
-     * of all. Called once per frame, before the first band is drawn.
+     * answers anything the frame owes once rather than per pass. Called once per frame, before the
+     * first band is drawn.
      *
      * <p>It is a separate call because a frame can be painted in more than one pass: the map's own
      * nebula icons sit between two of a layer's bands, so the parts either side of them are
-     * emitted by different surfaces. Preparation that ran per pass would resolve the cursor against
-     * a half-drawn frame and repeat every staleness check, so the contract says once rather than
+     * emitted by different surfaces. Work that ran per pass would repeat every staleness check, and
+     * anything latched - the moment the cursor reaches a cell, above all - would be stepped once per
+     * pass and report crossings the pointer never made. So the contract says once rather than
      * leaving each renderer to guard itself.
      *
      * <p>Defaulting to nothing makes "no preparation" the base case: a layer that emits fixed
      * geometry has nothing to bring up to date.
      *
      * @param factor the per-vertex scale the map's render pass applies, folding in its zoom - the
-     *               same value the bands are drawn with, since a cursor read has to resolve against
-     *               the geometry the frame will actually paint
+     *               same value the bands are drawn with
      */
     default void prepareFrame(float factor) {
+    }
+
+    /**
+     * Resolves what the cursor is over and publishes it for the frame. Called on every pass the
+     * surface admits, before that pass's bands are drawn, and the frame's last pass owns the answer.
+     *
+     * <p>Per pass rather than beside the preparation above, because the read is the one piece of
+     * per-frame work that depends on <em>which</em> pass is running: it inverts the transform that
+     * pass bound and divides by the {@code factor} it supplied. The hook this all hangs off names no
+     * caller, and a mod compositing a sector map of its own drives it too - from the campaign HUD,
+     * so before the map screen. A read pinned to the frame's first pass is therefore taken through
+     * whichever transform happened to draw earliest, and the map the player is pointing at then
+     * draws a hover resolved through somebody else's zoom and pan. Last write wins is what puts the
+     * answer on the pass that drew last.
+     *
+     * <p>Defaulting to nothing makes "no hover" the base case: a layer that paints need not answer
+     * the pointer at all.
+     *
+     * @param factor the per-vertex scale this pass applies, folding in its zoom - the value the
+     *               cursor read has to undo, since a hover has to resolve against the geometry this
+     *               pass will actually paint
+     */
+    default void publishHoverForPass(float factor) {
     }
 
     /**

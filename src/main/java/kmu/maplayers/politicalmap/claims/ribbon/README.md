@@ -1,6 +1,7 @@
-# Claimed-cell band ranking (`claims.ribbon`)
+# Claims-layer band ranking (`claims.ribbon`)
 
-Where a band's painter and its order come from on a cell the **claim** mechanic painted. How many
+Where a band's painter and its order come from on the **claims** layer - on a cell the mechanic
+painted, and on one it left bare. How many
 colonies each bloc draws is one shared rule's answer for every layer, in
 [`base.ribbon`](../../base/ribbon/README.md); the geometry is
 [`base.render.ribbon`](../../base/render/ribbon/README.md)'s.
@@ -11,6 +12,7 @@ Part of [the political map](../../README.md), in Klark Morrigan's Utilities; see
 ## Index
 
 - [Reading the contest, not just its winner](#reading-the-contest-not-just-its-winner)
+- [A system nobody claims](#a-system-nobody-claims)
 - [Blocs and their order](#blocs-and-their-order)
 
 ## Reading the contest, not just its winner
@@ -27,6 +29,28 @@ contest's own, which `ClaimCellRibbons` folds into blocs.
 
 The reader is built over the bake's own colony walk, so the contest and the count beneath it read
 one reading of the system rather than two.
+
+## A system nobody claims
+
+`Misc.getClaimingFaction` skips a **hidden** market, a **player-owned** one, and one whose faction
+carries no **territorial** flag, and it reads only what the economy lists. So a pirate or Path base
+(both created hidden), a player colony, a Remnant station or an unregistered one leaves its system
+unclaimed however settled it is - the full set of exclusions is
+[`politics.holders`](../../base/politics/holders/README.md)'s. This layer's fill *is* the claim, so
+over those systems it says nothing at all, and the band is the only readout there is.
+
+Territoriality on its own is *not* the dividing line, and reading it as one is the easy mistake here:
+pirates, the Path and independents all carry `"territorial":true`, and an ordinary independent world
+claims its system like anybody else.
+
+`ClaimedSystemRibbonPlanner` therefore plans such a system with **no painter** rather than refusing
+it. That absence is a case of its own, not an id no bloc happens to carry: with a painter, one rival
+makes a contest; with none, there is nobody to be a rival of, so it takes two blocs. Which cells
+reach the planner at all is [`base.render.ribbon`](../../base/render/ribbon/README.md)'s gate, and it
+reads the pass's inhabitation scan for the same reason.
+
+A system nobody claims *and* nobody lives in counts nought for every bloc, so it draws nothing under
+either arm - the widening reaches settled space and stops there.
 
 ## Blocs and their order
 

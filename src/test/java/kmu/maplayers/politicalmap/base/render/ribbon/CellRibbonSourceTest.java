@@ -8,7 +8,6 @@ import kmlib.math.geometry.RingPath;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
@@ -27,6 +26,7 @@ import org.mockito.MockedStatic;
 import java.awt.Color;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,14 +44,19 @@ import static org.mockito.Mockito.when;
  * Pins which cells are counted at all, what a cell missing part of its identity does, and what the
  * player's switch takes away when it is off.
  *
- * <p>The gate is the point. A band reports what the fill leaves out, so a cell no bloc paints has
- * nothing for one to say - and the claim mechanic's counting walks a system's whole market list,
- * so a pass that asked it about every empty cell in the sector would pay for a contest nobody is
- * contesting. Both halves are stated here: the unpainted cell gets no band, and the planner is not
- * even asked. The switch is stated the same way and for the same reason - it has to take the
- * counting off the rebuild, not merely the bands off the map, since a rebuild already stalls
- * elsewhere and a switched-off feature that still walks the sector's markets is a cost with
- * nothing to show for it.
+ * <p>The gate is the point, and what it reads is inhabitation rather than this layer's holding. A
+ * band reports how a system splits, so a cell nobody lives in has nothing for one to say - and the
+ * claim mechanic's counting walks a system's whole market list, so a pass that asked it about every
+ * empty cell in the sector would pay for a contest nobody is contesting. Both halves are stated
+ * here: the empty cell gets no band, and the planner is not even asked. The switch is stated the
+ * same way and for the same reason - it has to take the counting off the rebuild, not merely the
+ * bands off the map, since a rebuild already stalls elsewhere and a switched-off feature that still
+ * walks the sector's markets is a cost with nothing to show for it.
+ *
+ * <p>A settled system is offered a band whether or not the active layer's holding accounts for it,
+ * which is why no case here poses a holder at all: vanilla's claim walk never sees a hidden market
+ * or a player-owned one, and gating on what it resolved would leave every pirate haven and player
+ * colony uncounted on the one layer that has nothing else to say about them.
  *
  * <p>The ring cases are the same question asked once more, of the work rather than of the count: a
  * cell is walked when its path is not already standing, once however often it is baked, and never
@@ -66,8 +71,8 @@ import static org.mockito.Mockito.when;
  */
 final class CellRibbonSourceTest {
 
-    private static final String PAINTED_SYSTEM = "corvus";
-    private static final String UNPAINTED_SYSTEM = "empty";
+    private static final String INHABITED_SYSTEM = "corvus";
+    private static final String EMPTY_SYSTEM = "empty";
     private static final String SITELESS_SYSTEM = "unplaced";
 
     // The cell a case bakes, which is the key its traced ring is kept under. One cell is enough
@@ -117,28 +122,31 @@ final class CellRibbonSourceTest {
     class BuildCellRibbon {
 
         @Test
-        void bakesABandForACellSomeBlocPaints() {
-
-            assertThat(buildFor(PAINTED_SYSTEM).bands())
+        void bakesABandForACellSomethingLivesIn() {
+            // No holder is posed anywhere in this suite, so the band offered here is offered on
+            // inhabitation alone - which is what an unclaimed pirate haven has and this layer's
+            // holding does not give it.
+            assertThat(buildFor(INHABITED_SYSTEM).bands())
                 .extracting(RibbonBand::colour)
                 .containsExactly(BAND_COLOUR);
         }
 
         @Test
-        void drawsNoBandForACellNothingPaints() {
-            // An uninhabited cell reports no presence, because presence is what a fill is.
-            assertThat(buildFor(UNPAINTED_SYSTEM))
+        void drawsNoBandForACellNothingLivesIn() {
+            // Nobody is there, so there are no holdings for a band to report how a system splits
+            // between.
+            assertThat(buildFor(EMPTY_SYSTEM))
                 .isEqualTo(CellRibbon.NONE);
         }
 
         @Test
-        void asksNoPlannerAboutACellNothingPaints() {
+        void asksNoPlannerAboutACellNothingLivesIn() {
             // The cost half of the gate: the claim mechanic's count walks every market in a
-            // system, and most of the sector is cells nobody paints.
+            // system, and most of the sector is empty space.
             var plannerMock = mock(SystemRibbonPlanner.class);
 
             buildWith(plannerMock)
-                .buildCellRibbon(CELL, UNPAINTED_SYSTEM, SQUARE_CELL, passTimings);
+                .buildCellRibbon(CELL, EMPTY_SYSTEM, SQUARE_CELL, passTimings);
 
             verify(plannerMock, never())
                 .planSystemRibbon(any());
@@ -153,19 +161,19 @@ final class CellRibbonSourceTest {
             var timingsMock = mock(RibbonBakeTimings.class);
 
             buildWith(system -> ANY_PLAN)
-                .buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, timingsMock);
+                .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, timingsMock);
 
             verify(timingsMock).addPlanNanos(anyLong());
         }
 
         @Test
-        void chargesNothingForACellNothingPaints() {
+        void chargesNothingForACellNothingLivesIn() {
             // The gate's cost half, stated as what a gated-out cell adds to the bake: nothing was
             // counted for it, so nothing is charged for it either.
             var timingsMock = mock(RibbonBakeTimings.class);
 
             buildWith(system -> ANY_PLAN)
-                .buildCellRibbon(CELL, UNPAINTED_SYSTEM, SQUARE_CELL, timingsMock);
+                .buildCellRibbon(CELL, EMPTY_SYSTEM, SQUARE_CELL, timingsMock);
 
             verifyNoInteractions(timingsMock);
         }
@@ -179,20 +187,19 @@ final class CellRibbonSourceTest {
         }
 
         @Test
-        void drawsNoBandForAPaintedSystemWithNoRecordedSite() {
+        void drawsNoBandForASettledSystemWithNoRecordedSite() {
             // The band starts above the cell's own site. With none there is nowhere to start from,
-            // which is the same answer as an unpainted cell rather than a start point invented for
-            // it.
+            // which is the same answer as an empty cell rather than a start point invented for it.
             assertThat(buildFor(SITELESS_SYSTEM))
                 .isEqualTo(CellRibbon.NONE);
         }
 
         @Test
-        void drawsNoBandForAPaintedCellWhileTheBandsAreSwitchedOff() {
+        void drawsNoBandForASettledCellWhileTheBandsAreSwitchedOff() {
             
             switchBandsOff();
 
-            assertThat(buildFor(PAINTED_SYSTEM))
+            assertThat(buildFor(INHABITED_SYSTEM))
                 .isEqualTo(CellRibbon.NONE);
         }
 
@@ -221,16 +228,16 @@ final class CellRibbonSourceTest {
         }
 
         @Test
-        void asksNoPlannerAboutAPaintedCellWhileTheBandsAreSwitchedOff() {
+        void asksNoPlannerAboutASettledCellWhileTheBandsAreSwitchedOff() {
             // The half of the switch that is invisible either way: with the bands off, a rebuild
-            // must not still be counting every painted system's colonies for a readout nothing
+            // must not still be counting every settled system's colonies for a readout nothing
             // will draw.
             switchBandsOff();
 
             var plannerMock = mock(SystemRibbonPlanner.class);
 
             buildWith(plannerMock)
-                .buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, passTimings);
+                .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passTimings);
 
             verify(plannerMock, never())
                 .planSystemRibbon(any());
@@ -241,7 +248,7 @@ final class CellRibbonSourceTest {
             // The single-holder cell: the bloc that painted it is the only one present, so there
             // is nothing a band could report that the fill beneath it has not said already.
             assertThat(buildWith(system -> RibbonPlan.NONE)
-                    .buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, passTimings))
+                    .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passTimings))
                 .isEqualTo(CellRibbon.NONE);
         }
 
@@ -255,7 +262,7 @@ final class CellRibbonSourceTest {
             var timingsMock = mock(RibbonBakeTimings.class);
 
             buildCachingInto(system -> RibbonPlan.NONE, ringPathCache)
-                .buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, timingsMock);
+                .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, timingsMock);
 
             verify(timingsMock, never())
                 .addTraceNanos(anyLong());
@@ -272,8 +279,8 @@ final class CellRibbonSourceTest {
             var timingsMock = mock(RibbonBakeTimings.class);
             var ribbonSource = buildCachingInto(system -> ANY_PLAN, ringPathCache);
 
-            ribbonSource.buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, timingsMock);
-            ribbonSource.buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, timingsMock);
+            ribbonSource.buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, timingsMock);
+            ribbonSource.buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, timingsMock);
 
             verify(timingsMock, times(1))
                 .addTraceNanos(anyLong());
@@ -289,7 +296,7 @@ final class CellRibbonSourceTest {
             ringPathCache.putRingPath(OTHER_CELL, RingPath.nothingLeftToTrace());
 
             assertThat(buildCachingInto(system -> ANY_PLAN, ringPathCache)
-                    .buildCellRibbon(CELL, PAINTED_SYSTEM, SQUARE_CELL, passTimings)
+                    .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passTimings)
                     .bands())
                 .isNotEmpty();
         }
@@ -299,23 +306,23 @@ final class CellRibbonSourceTest {
     class TraceCellRibbonPath {
 
         @Test
-        void tracesAPathForACellSomeBlocPaints() {
+        void tracesAPathForACellSomethingLivesIn() {
 
-            assertThat(traceFor(PAINTED_SYSTEM).verdict())
+            assertThat(traceFor(INHABITED_SYSTEM).verdict())
                 .isEqualTo(RibbonPathVerdict.LAID_AT_PAD);
         }
 
         @Test
-        void tracesNoPathForACellNothingPaints() {
+        void tracesNoPathForACellNothingLivesIn() {
             // The overlay covers the cells the band pass considered and no more. Traced for every
             // cell instead, it would ring every piece of empty space in the sector and bury the
             // cells it is looked at to explain.
-            assertThat(traceFor(UNPAINTED_SYSTEM))
+            assertThat(traceFor(EMPTY_SYSTEM))
                 .isEqualTo(CellRibbonPath.NONE);
         }
 
         @Test
-        void tracesNoPathForAPaintedSystemWithNoRecordedSite() {
+        void tracesNoPathForASettledSystemWithNoRecordedSite() {
             // A path opens above the cell's own site, so a system without one has no start to
             // trace from - the same answer the band pass gives it.
             assertThat(traceFor(SITELESS_SYSTEM))
@@ -323,13 +330,13 @@ final class CellRibbonSourceTest {
         }
 
         @Test
-        void tracesNoPathForAPaintedCellWhileTheBandsAreSwitchedOff() {
+        void tracesNoPathForASettledCellWhileTheBandsAreSwitchedOff() {
             // With the bands off there is no layout in play, so the overlay has nothing to report
             // on: a ring drawn from sizes nothing is laid at would be a diagnostic of its own
             // arithmetic.
             switchBandsOff();
 
-            assertThat(traceFor(PAINTED_SYSTEM))
+            assertThat(traceFor(INHABITED_SYSTEM))
                 .isEqualTo(CellRibbonPath.NONE);
         }
     }
@@ -349,8 +356,8 @@ final class CellRibbonSourceTest {
             .thenReturn(false);
     }
 
-    // A pass over two painted systems - one placed, one with no site recorded - and one system no
-    // bloc paints, counted through the given planner and keeping its traced rings to itself.
+    // A pass over two settled systems - one placed, one with no site recorded - and one system
+    // nobody lives in, counted through the given planner and keeping its traced rings to itself.
     private static CellRibbonSource buildWith(SystemRibbonPlanner planner) {
         return buildCachingInto(planner, new CellRingPathCache());
     }
@@ -383,8 +390,8 @@ final class CellRibbonSourceTest {
         // The systems are built before the stubbing rather than inside it: each is itself a mock,
         // and building one while another stubbing is open reads to Mockito as an unfinished stub.
         var systems = List.of(
-            buildSystem(PAINTED_SYSTEM),
-            buildSystem(UNPAINTED_SYSTEM),
+            buildSystem(INHABITED_SYSTEM),
+            buildSystem(EMPTY_SYSTEM),
             buildSystem(SITELESS_SYSTEM));
 
         var sectorMock = mock(SectorAPI.class);
@@ -395,12 +402,10 @@ final class CellRibbonSourceTest {
         return CellRibbonSource.createForPass(
             sectorMock,
             new ViewGrouping(viewMock, HolderGrouping.identity()),
-            Map.of(
-                PAINTED_SYSTEM, buildHolder(),
-                SITELESS_SYSTEM, buildHolder()),
-            // Only the placed system has a site; the other painted one is what a band with
+            Set.of(INHABITED_SYSTEM, SITELESS_SYSTEM),
+            // Only the placed system has a site; the other settled one is what a band with
             // nowhere to start is posed on.
-            Map.of(PAINTED_SYSTEM, new double[] {2000.0, 2000.0}),
+            Map.of(INHABITED_SYSTEM, new double[] {2000.0, 2000.0}),
             // No names anywhere near these cells: where a name falls is pinned by the builder
             // that lays a band inside one cell, not by which cells are offered a band at all.
             List.of(),
@@ -415,10 +420,5 @@ final class CellRibbonSourceTest {
             .thenReturn(systemId);
 
         return systemMock;
-    }
-
-    // Any holder: the gate reads whether a system has one, never which.
-    private static DominantHolder buildHolder() {
-        return new DominantHolder("hegemony", Color.WHITE, Color.GRAY);
     }
 }

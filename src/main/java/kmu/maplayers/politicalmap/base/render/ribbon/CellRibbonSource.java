@@ -8,7 +8,6 @@ import kmlib.starsector.systems.StarSystems;
 
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
-import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
@@ -19,6 +18,7 @@ import kmu.settings.KmuPoliticalMapSettings;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * One rebuild's band source: everything a cell's band is settled from, sampled once, so asking
@@ -27,20 +27,35 @@ import java.util.Map;
  * <p>What it holds is what must not vary across a pass. The planner is the mechanic the active
  * view paints by, resolved once so no cell is counted by a different one; the sizes are one read
  * of the player's proportions, so a slider moved mid-pass cannot leave two cells drawn to
- * different designs; the holder map is the pass's own, so the cells that get a band are exactly
- * the cells something painted; and the names' boxes are one reading of where the map's names
- * ended up, so no two cells keep clear of different placements of the same name. Sampling them
- * here mirrors how the rest of a rebuild is driven -
+ * different designs; the inhabited systems are the pass's own, so the cells that get a band are
+ * exactly the cells something stands in; and the names' boxes are one reading of where the map's
+ * names ended up, so no two cells keep clear of different placements of the same name. Sampling
+ * them here mirrors how the rest of a rebuild is driven -
  * one snapshot, then a per-item call over it - and is what lets the incremental re-shape bake a
  * band identical to the one the full rebuild would have.
  *
- * <p>The holder map is also the cost gate, and the reason it is held rather than looked up per
- * call site. Most of the sector is cells nobody paints, and asking for a band walks the system's
- * colonies - and on the claims layer settles a whole contest over them; without the gate, every
- * empty cell in the sector would pay for a contest nobody is contesting.
+ * <p>Inhabitation rather than this layer's holding, because that is the question a band is actually
+ * about. A band reports how a system splits, and a system splits whether or not the mechanic
+ * painting the map gives it to anybody: vanilla's claim walk skips a hidden market, a player-owned
+ * one, and one whose faction carries no territorial flag, so a pirate haven or a player colony is
+ * holderless on the claims layer and would never be counted at all. Every system the holding names
+ * is inhabited - a bloc holds one only by having a colony in it - so nothing that was banded before
+ * stops being.
+ *
+ * <p>The inhabited set is also the cost gate, and the reason it is held rather than looked up per
+ * call site. Most of the sector is empty space, and asking for a band walks the system's colonies -
+ * and on the claims layer settles a whole contest over them; without the gate, every empty cell in
+ * the sector would pay for a contest nobody is contesting.
+ *
+ * <p>It gates more loosely than the holding it replaced, and deliberately: inhabitation is the
+ * wider set, so the systems the holding left out - the hidden-only, the player-only, the
+ * decivilised - now each pay their first walk of the pass's colony index. That is the widening
+ * doing its job for the first two. The decivilised are the case it does not yet buy anything for:
+ * their markets are condition-only, so the count comes back empty and they walk for a band that is
+ * never laid, until the shared colony set admits them.
  *
  * <p>Which cells get a band at all is settled here, in three refusals read in one place: a cell
- * nothing paints or with nowhere to start from, a system the sector no longer lists, and a cell
+ * nothing lives in or with nowhere to start from, a system the sector no longer lists, and a cell
  * whose plan came back empty. The last of them is the one that has to be answered before the
  * geometry rather than inside it, since what it saves is the ring walk - the single-holder cell
  * is most of the sector, and it costs a bake nothing.
@@ -74,7 +89,7 @@ public final class CellRibbonSource {
 
     private final SystemRibbonPlanner planner;
     private final RibbonStyle style;
-    private final Map<String, DominantHolder> holderBySystemId;
+    private final Set<String> inhabitedSystemIds;
     private final Map<String, StarSystemAPI> systemById;
     private final Map<String, double[]> siteBySystemId;
     private final List<List<double[]>> nameBoxes;
@@ -83,7 +98,7 @@ public final class CellRibbonSource {
     private CellRibbonSource(
             SystemRibbonPlanner planner,
             RibbonStyle style,
-            Map<String, DominantHolder> holderBySystemId,
+            Set<String> inhabitedSystemIds,
             Map<String, StarSystemAPI> systemById,
             Map<String, double[]> siteBySystemId,
             List<List<double[]>> nameBoxes,
@@ -91,7 +106,7 @@ public final class CellRibbonSource {
 
         this.planner = planner;
         this.style = style;
-        this.holderBySystemId = holderBySystemId;
+        this.inhabitedSystemIds = inhabitedSystemIds;
         this.systemById = systemById;
         this.siteBySystemId = siteBySystemId;
         this.nameBoxes = nameBoxes;
@@ -103,30 +118,32 @@ public final class CellRibbonSource {
      * the bands switched off - in which case every cell is answered "no band" without a count, a
      * size read, or a ring traced.
      *
-     * @param sector           the sector the counts are read from
-     * @param viewGrouping     the active view and the grouping it resolved, the pair the pass
-     *                         already carries: the view supplies the mechanic its cells are
-     *                         counted by - the same one they were painted by - and the grouping
-     *                         folds factions into blocs exactly as the fill did
-     * @param holderBySystemId who paints each system this pass, the gate deciding which cells are
-     *                         asked for a band at all
-     * @param siteBySystemId   each system's own site, the point a band's start is found above.
-     *                         Taken as the one map this reads rather than as the geometry cache
-     *                         holding it, so what a band is laid out from is stated in the
-     *                         signature rather than reachable through it
-     * @param nameBoxes        the room the drawn cluster names take up, which every cell's band
-     *                         keeps out of; the whole map's, since a name reaches into cells its
-     *                         own cluster does not hold
-     * @param ringPathCache    the rings already traced inside the cells' current shapes, asked
-     *                         before a cell's ring is walked and written back when one is. Taken
-     *                         from whatever holds those shapes, so its lifetime is theirs and a
-     *                         path can never be served against a shape it was not traced inside
+     * @param sector             the sector the counts are read from
+     * @param viewGrouping       the active view and the grouping it resolved, the pair the pass
+     *                           already carries: the view supplies the mechanic its cells are
+     *                           counted by - the same one they were painted by - and the grouping
+     *                           folds factions into blocs exactly as the fill did
+     * @param inhabitedSystemIds every system something stands in this pass, the gate deciding
+     *                           which cells are asked for a band at all. The pass's own scan
+     *                           rather than its holding, so a settled system this layer gives to
+     *                           nobody is still counted
+     * @param siteBySystemId     each system's own site, the point a band's start is found above.
+     *                           Taken as the one map this reads rather than as the geometry cache
+     *                           holding it, so what a band is laid out from is stated in the
+     *                           signature rather than reachable through it
+     * @param nameBoxes          the room the drawn cluster names take up, which every cell's band
+     *                           keeps out of; the whole map's, since a name reaches into cells its
+     *                           own cluster does not hold
+     * @param ringPathCache      the rings already traced inside the cells' current shapes, asked
+     *                           before a cell's ring is walked and written back when one is. Taken
+     *                           from whatever holds those shapes, so its lifetime is theirs and a
+     *                           path can never be served against a shape it was not traced inside
      * @return the source the pass bakes its bands through
      */
     public static CellRibbonSource createForPass(
             SectorAPI sector,
             ViewGrouping viewGrouping,
-            Map<String, DominantHolder> holderBySystemId,
+            Set<String> inhabitedSystemIds,
             Map<String, double[]> siteBySystemId,
             List<List<double[]>> nameBoxes,
             CellRingPathCache ringPathCache) {
@@ -157,7 +174,7 @@ public final class CellRibbonSource {
         return new CellRibbonSource(
             viewGrouping.view().resolveRibbonPlanner(inputs),
             style,
-            holderBySystemId,
+            inhabitedSystemIds,
             StarSystems.indexById(sector),
             siteBySystemId,
             nameBoxes,
@@ -272,33 +289,32 @@ public final class CellRibbonSource {
     // The point a cell's band is laid out from, or null on a cell no band is laid on at all.
     //
     // Two refusals in one answer, since both are the same fact about the cell rather than about
-    // the band. Nothing paints it, so there is no bloc for the band's gate to be stated against -
-    // an uninhabited cell reports no presence because presence is what a fill is, and a band only
-    // ever says what the fill beneath it leaves out; or it has no recorded site, leaving the band
-    // nowhere to start from rather than starting it somewhere arbitrary.
+    // the band. Nobody lives in it, so there are no holdings for a band to report how a system
+    // splits between - a band over empty space would be a readout of nothing; or it has no recorded
+    // site, leaving the band nowhere to start from rather than starting it somewhere arbitrary.
     //
     // Shared by the two calls above so the overlay covers exactly the cells the band pass
     // considered: a diagnostic answering for a wider set than the pass it reports on would show
     // paths where no band was ever going to be laid.
     private double[] resolveBandLayoutSite(String drawnSystemId) {
 
-        if (drawnSystemId == null || !holderBySystemId.containsKey(drawnSystemId)) {
+        if (drawnSystemId == null || !inhabitedSystemIds.contains(drawnSystemId)) {
             return null;
         }
         return siteBySystemId.get(drawnSystemId);
     }
 
-    // A pass with the bands switched off, which the empty holding states outright: the holding is
-    // the gate every cell is answered by, so an empty one answers "no band" for the whole sector.
-    // Nothing is sampled for it - no planner resolved, no system index built, no sizes read, and
-    // the cells' own traced rings left where they are rather than reached for - so the switch takes
-    // the counting off the rebuild as well as the bands off the map, which is the half of it a
-    // player cannot see and the half that costs.
+    // A pass with the bands switched off, which the empty inhabited set states outright: that set
+    // is the gate every cell is answered by, so an empty one answers "no band" for the whole
+    // sector. Nothing is sampled for it - no planner resolved, no system index built, no sizes
+    // read, and the cells' own traced rings left where they are rather than reached for - so the
+    // switch takes the counting off the rebuild as well as the bands off the map, which is the half
+    // of it a player cannot see and the half that costs.
     private static CellRibbonSource createBandlessPass() {
         return new CellRibbonSource(
             system -> RibbonPlan.NONE,
             BANDLESS_STYLE,
-            Map.of(),
+            Set.of(),
             Map.of(),
             Map.of(),
             List.of(),

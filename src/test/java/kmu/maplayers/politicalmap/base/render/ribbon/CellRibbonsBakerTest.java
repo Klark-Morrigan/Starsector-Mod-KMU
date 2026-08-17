@@ -197,7 +197,7 @@ final class CellRibbonsBakerTest {
         }
     }
 
-    // Two painted, placed, band-sized cells, each drawing as a system of its own - the ordinary
+    // Two settled, placed, band-sized cells, each drawing as a system of its own - the ordinary
     // arrangement a pass runs over, and the smallest one that can show a bake reaching every cell
     // rather than only the first.
     private static PoliticalMapTerritories buildTwoDrawnCells() {
@@ -284,7 +284,8 @@ final class CellRibbonsBakerTest {
         return systemMock;
     }
 
-    // Any holder: the gate a pass reads is whether a system has one, never which.
+    // Any holder, which the fixture also counts as making its system inhabited - the set the band
+    // pass gates on. Which bloc holds it decides nothing here.
     private static DominantHolder buildHolder() {
         return new DominantHolder("hegemony", Color.WHITE, Color.GRAY);
     }

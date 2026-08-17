@@ -46,12 +46,32 @@ them through.
 
 `CellRibbonSource` is a source rather than a builder because the per-cell work is
 `CellRibbonBuilder`'s; what it adds is the pass that work is done under - the planner the view
-resolved, the player's sizes, the holder gate, and the names' boxes, each sampled once so no two
-cells of one pass are settled differently. It also settles which cells get a band at all, in three
-refusals read in one place: a cell nothing paints or with nowhere to start from, a system the
+resolved, the player's sizes, the inhabitation gate, and the names' boxes, each sampled once so no
+two cells of one pass are settled differently. It also settles which cells get a band at all, in
+three refusals read in one place: a cell nobody lives in or with nowhere to start from, a system the
 sector no longer lists, and a cell whose plan came back empty. Each is a cost gate as much as an
 answer - the claim mechanic's count walks a system's whole market list, and the empty plan is what
 spares the single-holder cell a ring walk.
+
+The gate is the pass's **inhabitation scan**, not its holding, and that is what puts a band on the
+systems no layer paints. Vanilla's claim walk skips a hidden market, a player-owned one, and one
+whose faction carries no territorial flag, so a pirate haven or a player colony resolves no claimant
+(see [`politics.holders`](../../politics/holders/README.md)) - the claims layer's fill says nothing
+about it, and gating on that fill would have left the band silent on exactly the systems it is the
+only readout for. Every held system is inhabited (a bloc holds one only by having a colony in it),
+so nothing that banded before stops banding. It is also the very set the factionless cell beneath is
+classified from, so a cell drawn as settled and a cell offered a band are one set. Such a cell
+reaches `ClaimedSystemRibbonPlanner` with **no painter**, which is a case of its own rather than an
+absent one; see [`base.ribbon`](../../ribbon/README.md) for the two arms that follow from it.
+
+The gate is **wider** than the holding it replaced, which is a real cost and not a free swap.
+Inhabitation is the larger set, so the systems the holding left out each pay their first walk of the
+pass's colony index - and `readMarketsUnlistedByEconomy` walks every entity in the system. For a
+pirate haven or a player colony that walk buys the band it exists for. For a **decivilised** system
+it does not, yet: those are inhabited (`MapVisibility.isInhabited` reads the revealed-ruin arm), so
+they reach the planner, but their markets are condition-only and the shared colony set excludes them
+- so they walk for a count that comes back empty and a band that is never laid. That stays true
+until the shared set admits a revealed dead world as the colony it is.
 
 ## Laying a band inside a ring
 

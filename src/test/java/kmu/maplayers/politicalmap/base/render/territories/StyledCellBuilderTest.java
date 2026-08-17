@@ -345,10 +345,11 @@ final class StyledCellBuilderTest {
 
         @Test
         void buildStyledCellForSystemDrawsAnInhabitedCellWithNoHolderAsSettledRatherThanBackdrop() {
-            // The claims layer's case: vanilla lets only a territorial faction claim, so a system
-            // settled by pirates alone resolves no claimant and arrives here holderless - exactly
-            // as an empty system does. It must still take the settled bundle, since the
-            // uninhabited bundle is what the uninhabited-systems checkbox switches off, and a
+            // The claims layer's case: vanilla's claim walk skips a hidden market, and
+            // a pirate base is created hidden, so a system settled by pirates alone
+            // resolves no claimant and arrives here holderless - exactly as an empty
+            // system does. It must still take the settled bundle, since the uninhabited
+            // bundle is what the uninhabited-systems checkbox switches off, and a
             // populated system erased by that checkbox is the map lying about what is there.
             //
             // The two bundles are told apart by the fill: only the settled one carries one here.

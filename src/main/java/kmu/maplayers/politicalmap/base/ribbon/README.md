@@ -104,8 +104,8 @@ nobody carries, and a lone haven banded at contested length as though it were fo
 **The painter and the ranking.** Which bloc a cell was painted for, and the order the blocs come
 out in, are the painting mechanic's: [`dominance.ribbon`](../../dominance/ribbon/README.md) ranks a
 held cell by the footprints its fill was decided from, and
-[`claims.ribbon`](../../claims/ribbon/README.md) ranks a claimed cell by the contest that settled
-the claim.
+[`claims.ribbon`](../../claims/ribbon/README.md) ranks a claims-layer cell by the contest over its
+system - including the cells no claim covers, which reach the rule above with no painter at all.
 
 **Where the colonies come from.** The walk itself is `SystemColoniesIndex`'s, reached through the
 pass on `RibbonPlanInputs` - so a planner counts what the bake already read rather than being able
