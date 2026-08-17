@@ -19,6 +19,7 @@ import java.util.Map;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOrbitingEntity;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStarAt;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;

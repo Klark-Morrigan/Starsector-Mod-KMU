@@ -32,6 +32,7 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.bu
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.centreSystemOn;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketOnOrbit;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

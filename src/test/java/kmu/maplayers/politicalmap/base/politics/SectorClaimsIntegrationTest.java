@@ -17,6 +17,7 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.bu
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHolderPassOver;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWithSystems;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

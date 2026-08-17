@@ -20,6 +20,7 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.NO_PAINT
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

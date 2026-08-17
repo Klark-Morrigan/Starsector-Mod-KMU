@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 
 import static kmu.util.KmuTextFormats.joinWithParenthetical;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class KmuTextFormatsTest {

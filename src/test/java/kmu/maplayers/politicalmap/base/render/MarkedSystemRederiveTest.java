@@ -31,6 +31,7 @@ import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.build
 import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.buildSectorWithSystems;
 import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.buildTwoAdjacentCells;
 import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.matchSystemArg;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;

@@ -23,6 +23,7 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsFor;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

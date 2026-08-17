@@ -26,6 +26,7 @@ import java.awt.Color;
 import java.util.List;
 
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

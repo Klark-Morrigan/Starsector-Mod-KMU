@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;

@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildStandingOnOneMarket;
+
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_LABEL_RUN;
@@ -38,6 +39,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_QUALIFIER_RU
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;

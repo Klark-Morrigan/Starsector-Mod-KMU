@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.buildEmptySector;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

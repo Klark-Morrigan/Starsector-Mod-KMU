@@ -28,6 +28,7 @@ import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

@@ -33,6 +33,7 @@ import org.mockito.Mockito;
 import java.util.List;
 
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;

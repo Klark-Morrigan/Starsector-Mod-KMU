@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static kmu.maplayers.base.hover.HoverSwitchScopes.runWithHoverTooltipSwitchOn;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;

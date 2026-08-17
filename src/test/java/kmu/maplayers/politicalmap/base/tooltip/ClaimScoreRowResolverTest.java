@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

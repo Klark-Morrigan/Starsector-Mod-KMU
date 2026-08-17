@@ -17,6 +17,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.tooltip.FactionAccountResolver.NO_ACCOUNT;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.buildEmptySector;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

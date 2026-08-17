@@ -8,6 +8,7 @@ import java.util.Map;
 
 import static kmu.maplayers.politicalmap.base.dominance.MarketFootprintFixtures.buildWeightedFootprint;
 import static kmu.maplayers.politicalmap.base.dominance.MarketFootprintFixtures.listOrderedFootprints;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

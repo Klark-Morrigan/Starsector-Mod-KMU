@@ -35,6 +35,7 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.VANISHED
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

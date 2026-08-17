@@ -18,6 +18,7 @@ import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.C
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.NECKED_CELL;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;

@@ -8,6 +8,7 @@ import static kmu.util.KmuValues.getTextOrEmpty;
 import static kmu.util.KmuValues.hasText;
 import static kmu.util.KmuValues.normalizeText;
 import static kmu.util.KmuValues.requireNonBlankText;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 

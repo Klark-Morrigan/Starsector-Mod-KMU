@@ -29,6 +29,7 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHY
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
