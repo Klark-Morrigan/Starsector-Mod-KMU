@@ -104,12 +104,18 @@ asked only of the inhabited systems the holding left out, since a system somebod
 draws in that bloc's territory; on the faction and alliance views that candidate set is the dead
 worlds alone, which no bloc lives in, so the read costs the set arithmetic and returns empty.
 
-Both sets are held **live** beside the holder map rather than inside the `FilterSnapshot` the
-spotlight's fixed answers sit in, because both move between rebuilds: a colony founded or lost
-changes what stands in a system, and the pick founding one changes where the pick lives, in
-neither case moving a holder the map would notice. The incremental refresh folds each marked
-system's answer into both, so all three facts a cell is styled from are read off one state of
-the sector rather than two.
+Both sets sit with the holder map in **`SystemOccupancy`** - who is in each system - rather than
+beside the `FilterSnapshot` the spotlight's fixed answers live in, because all three move between
+rebuilds: a colony founded or lost changes what stands in a system, and the pick founding one
+changes where the pick lives, in neither case moving a holder the map would notice. The
+incremental refresh folds each marked system's answer into that one type, so the three facts a
+cell is styled from are read off one state of the sector rather than three.
+
+The type owns its collections - it copies what a pass hands it and answers every read with an
+unmodifiable view - so the only way to move a fact is one of its folds, each of which reports
+whether it moved anything. That report is what the refresh redraws a cell on. Held as three loose
+collections instead, they would have had to be mutable by the caller's good manners, which a
+build answering with an immutable empty set keeps perfectly until the first colony is founded.
 
 ## Borders against empty space
 
@@ -134,8 +140,8 @@ changing them does not move a border.
 ## The draw packets
 
 `PoliticalMapTerritories` is the built state a rebuild produces and an incremental refresh edits in
-place: the two draw lists (`StyledClusterGroup` per bloc, `StyledCell` per cell) plus the retained
-ownership, theme, and filter inputs a re-shape needs. Both packets are the framework's, described
+place: the two draw lists (`StyledClusterGroup` per bloc, `StyledCell` per cell) plus the
+occupancy, theme, and filter inputs a re-shape needs. Both packets are the framework's, described
 in [`base.render.clusters`](../../../../base/render/clusters/README.md) - a bloc's bodies with the
 paints they share, each body carrying its own fill triangles, contested-hatch segments, outer loop
 and enclaves; and one cell's seam, or its own fill and outline.

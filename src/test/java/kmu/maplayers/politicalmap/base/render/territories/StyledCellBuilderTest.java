@@ -560,10 +560,10 @@ final class StyledCellBuilderTest {
         }
 
         // The shared factionless backdrop: the theme plus the pass's spotlight state, since a
-        // factionless cell's recede is the filter's. Carries an immutable holder map AND an
-        // immutable inhabited set, both null-hostile: a clean result for a null system proves
-        // that path reads neither - it resolves no holder and is not taken for settled
-        // without ever probing a map with the null key.
+        // factionless cell's recede is the filter's. What the null-system cases read off it is
+        // that a cell drawing as no system resolves no holder and is not taken for settled; that
+        // neither read reaches its collection with a null key at all is the resolver's own claim,
+        // pinned over null-hostile collections in FactionlessStyleResolverTest.
         private static PoliticalMapTerritories buildFactionlessDrawablesWith(
                 RenderStyle theme,
                 String selectedBlocId,
@@ -581,9 +581,10 @@ final class StyledCellBuilderTest {
                 Set<String> spotlitPresenceSystemIds) {
 
             return new PoliticalMapTerritories(
-                Map.of(),
-                Set.of(DECIVILISED_SYSTEM_ID, UNHELD_INHABITED_SYSTEM_ID),
-                spotlitPresenceSystemIds,
+                SystemOccupancy.createCopyOf(
+                    Map.of(),
+                    Set.of(DECIVILISED_SYSTEM_ID, UNHELD_INHABITED_SYSTEM_ID),
+                    spotlitPresenceSystemIds),
                 Set.of(),
                 new MapStyling(
                     theme,
@@ -673,7 +674,8 @@ final class StyledCellBuilderTest {
             // A filtered pass carries the selected bloc's id; the fixture's holder is never that
             // bloc, so it reads as non-spotlit and the recede applies. Off filter the id is null.
             return new PoliticalMapTerritories(
-                Map.of(SYSTEM_ID, OWNER), Set.of(), Set.of(), Set.of(),
+                SystemOccupancy.createCopyOf(Map.of(SYSTEM_ID, OWNER), Set.of(), Set.of()),
+                Set.of(),
                 new MapStyling(
                     PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(STYLE),
                     PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,

@@ -33,8 +33,8 @@ import static org.mockito.Mockito.mock;
  * not what is under test, and the two placeholder draw records that stand in wherever a cell or
  * a territory only has to exist rather than draw.
  *
- * <p>One home for these because a built territories takes seven constructor arguments of which
- * most tests vary one, so each suite that hand-rolled its own was repeating the same six
+ * <p>One home for these because a built territories takes five constructor arguments of which
+ * most tests vary one, so each suite that hand-rolled its own was repeating the same four
  * inert placeholders - and a placeholder that drifts between suites is the kind of difference
  * that makes two tests of the same behaviour quietly disagree.
  *
@@ -129,9 +129,10 @@ public final class PoliticalMapTerritoryFixtures {
             Set<String> inhabitedSystemIds,
             Set<String> spotlitPresenceSystemIds) {
         return new PoliticalMapTerritories(
-            new LinkedHashMap<>(ownerBySystemId),
-            new LinkedHashSet<>(inhabitedSystemIds),
-            new LinkedHashSet<>(spotlitPresenceSystemIds),
+            SystemOccupancy.createCopyOf(
+                ownerBySystemId,
+                inhabitedSystemIds,
+                spotlitPresenceSystemIds),
             new LinkedHashSet<>(),
             new MapStyling(
                 null, // No render style.

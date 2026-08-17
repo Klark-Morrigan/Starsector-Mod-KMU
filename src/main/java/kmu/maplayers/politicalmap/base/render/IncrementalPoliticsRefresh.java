@@ -376,11 +376,7 @@ final class IncrementalPoliticsRefresh {
         if (Objects.equals(oldHolder, newHolder)) {
             return;
         }
-        if (newHolder == null) {
-            territories.getHolderBySystemId().remove(systemId);
-        } else {
-            territories.getHolderBySystemId().put(systemId, newHolder);
-        }
+        territories.getOccupancy().recordHolderOf(systemId, newHolder);
         disturbance.recordFlip(
             systemId,
             neighbourSystemIdsOf(geometryCache, systemId),
@@ -404,7 +400,7 @@ final class IncrementalPoliticsRefresh {
 
         var isInhabited = PoliticalMapInhabitation.isSystemInhabited(sector, system);
 
-        if (foldSystemIntoSet(territories.getInhabitedSystemIds(), systemId, isInhabited)) {
+        if (territories.getOccupancy().foldInhabitationOf(systemId, isInhabited)) {
             disturbance.recordRestyle(systemId);
         }
     }
@@ -435,10 +431,7 @@ final class IncrementalPoliticsRefresh {
 
             var isPresent = presentSystemIds.contains(systemId);
 
-            if (foldSystemIntoSet(
-                    territories.getSpotlitPresenceSystemIds(),
-                    systemId,
-                    isPresent)) {
+            if (territories.getOccupancy().foldSpotlitPresenceOf(systemId, isPresent)) {
                 disturbance.recordRestyle(systemId);
             }
         }
@@ -459,19 +452,6 @@ final class IncrementalPoliticsRefresh {
             }
         }
         return unheldSystemIds;
-    }
-
-    // Folds one system's membership of a live set, reporting whether that moved. Both sets a cell
-    // is styled from beside its holder are written through here, so neither can be brought up to
-    // date without the change that obliges its cell to redraw being noticed.
-    private static boolean foldSystemIntoSet(
-            Set<String> systemIds,
-            String systemId,
-            boolean isMember) {
-
-        return isMember
-            ? systemIds.add(systemId)
-            : systemIds.remove(systemId);
     }
 
     // The systems whose cell borders this one, read from the adjacency graph. When this

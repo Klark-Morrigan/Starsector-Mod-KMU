@@ -233,10 +233,12 @@ merely cheap:
 [`IncrementalPoliticsRefresh`](../../src/main/java/kmu/maplayers/politicalmap/base/render/IncrementalPoliticsRefresh.java)
 re-classifies a handful of cells against exactly the ownership and styles the full
 build used, through the same builder primitives, so an incrementally-updated map is
-indistinguishable from a rebuilt one. Which is also why the inhabited and spotlit-presence
-sets are retained *live* rather than as a snapshot: a cell is classified from them beside
-the holder map, so a set fixed where the rebuild began would have the refresh styling a cell
-from two different readings of the sector.
+indistinguishable from a rebuilt one. Which is also why the holder map, the inhabited set and
+the spotlit-presence set are retained *live*, as one
+[`SystemOccupancy`](../../src/main/java/kmu/maplayers/politicalmap/base/render/territories/SystemOccupancy.java):
+a cell is classified from all three at once, so one of them fixed where the rebuild began would
+have the refresh styling a cell from two different readings of the sector. The type owns its
+collections and reports what each fold moved, which is what the refresh redraws a cell on.
 
 ### Cluster-label placements
 

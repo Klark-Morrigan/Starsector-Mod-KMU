@@ -500,9 +500,7 @@ final class FactionTerritoryBuilderTest {
             Map<String, DominantHolder> ownerBySystemId) {
 
         return new PoliticalMapTerritories(
-            ownerBySystemId,
-            Set.of(),
-            Set.of(),
+            SystemOccupancy.createCopyOf(ownerBySystemId, Set.of(), Set.of()),
             Set.of(),
             new MapStyling(
                 PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(style),

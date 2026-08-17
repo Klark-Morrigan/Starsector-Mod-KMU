@@ -11,6 +11,7 @@ import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
 import kmu.maplayers.politicalmap.base.render.territories.MapStyling;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
+import kmu.maplayers.politicalmap.base.render.territories.SystemOccupancy;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,16 +39,32 @@ final class ClusterLabelStylingSnapshotTest {
 
         @Test
         void resolveFromCarriesTheTerritoriesOwnHoldersAndDesaturationPalette() {
-            var holderBySystemId = Map.of("corvus", new DominantHolder(
-                SPOTLIT_BLOC_ID, Color.BLUE, Color.DARK_GRAY));
+
+            var holderBySystemId = Map.of(
+                "corvus",
+                new DominantHolder(
+                    SPOTLIT_BLOC_ID,
+                    Color.BLUE,
+                    Color.DARK_GRAY));
+
             var desaturationPalette = new FactionPalette(Color.LIGHT_GRAY, Color.GRAY);
 
-            var styling = ClusterLabelStylingSnapshot.resolveFrom(
-                buildTerritories(holderBySystemId, desaturationPalette,
-                    buildViewGrouping(), buildSpotlightFilter()));
+            var territories = buildTerritories(
+                holderBySystemId,
+                desaturationPalette,
+                buildViewGrouping(),
+                buildSpotlightFilter());
 
-            assertThat(styling.holderBySystemId()).isSameAs(holderBySystemId);
-            assertThat(styling.desaturationPalette()).isSameAs(desaturationPalette);
+            var styling = ClusterLabelStylingSnapshot.resolveFrom(territories);
+
+            // Against what the built map itself hands out rather than against what was handed to
+            // it: the holders are the occupancy's own, so identity here is what says the snapshot
+            // reads them live rather than taking a copy that a later refresh would leave behind.
+            assertThat(styling.holderBySystemId())
+                .isSameAs(territories.getHolderBySystemId());
+
+            assertThat(styling.desaturationPalette())
+                .isSameAs(desaturationPalette);
         }
 
         @Test
@@ -58,11 +75,16 @@ final class ClusterLabelStylingSnapshotTest {
             var filterSnapshot = buildSpotlightFilter();
 
             var styling = ClusterLabelStylingSnapshot.resolveFrom(
-                buildTerritories(Map.of(), new FactionPalette(Color.GRAY, Color.GRAY),
-                    viewGrouping, filterSnapshot));
+                buildTerritories(
+                    Map.of(),
+                    new FactionPalette(Color.GRAY, Color.GRAY),
+                    viewGrouping,
+                    filterSnapshot));
 
-            assertThat(styling.viewGrouping()).isSameAs(viewGrouping);
-            assertThat(styling.filterSnapshot()).isSameAs(filterSnapshot);
+            assertThat(styling.viewGrouping())
+                .isSameAs(viewGrouping);
+            assertThat(styling.filterSnapshot())
+                .isSameAs(filterSnapshot);
         }
 
         @Test
@@ -70,10 +92,14 @@ final class ClusterLabelStylingSnapshotTest {
             // A pass with no spotlight still answers the filter question, so the label rebuild
             // reads "nothing recedes" off the snapshot rather than off a null it must interpret.
             var styling = ClusterLabelStylingSnapshot.resolveFrom(
-                buildTerritories(Map.of(), new FactionPalette(Color.GRAY, Color.GRAY),
-                    buildViewGrouping(), FilterSnapshot.unfiltered()));
+                buildTerritories(
+                    Map.of(),
+                    new FactionPalette(Color.GRAY, Color.GRAY),
+                    buildViewGrouping(),
+                    FilterSnapshot.unfiltered()));
 
-            assertThat(styling.filterSnapshot().isFiltering()).isFalse();
+            assertThat(styling.filterSnapshot().isFiltering())
+                .isFalse();
         }
     }
 
@@ -84,9 +110,7 @@ final class ClusterLabelStylingSnapshotTest {
             FilterSnapshot filterSnapshot) {
 
         return new PoliticalMapTerritories(
-            holderBySystemId,
-            new LinkedHashSet<>(),
-            new LinkedHashSet<>(),
+            SystemOccupancy.createCopyOf(holderBySystemId, Set.of(), Set.of()),
             new LinkedHashSet<>(),
             new MapStyling(
                 null,

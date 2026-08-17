@@ -42,29 +42,25 @@ import java.util.Set;
  * seam/outline records, and each faction's bodies with the fill and national border they
  * share. They start empty and the build fills them, so they are created here rather than
  * passed in. The rest are
- * retained inputs, grouped into three cohesive snapshots: {@link MapStyling} (the theme,
+ * retained inputs, grouped into four cohesive snapshots: {@link SystemOccupancy} (who is in each
+ * system - the holder, what stands there, and where a spotlit pick lives unheld),
+ * {@link MapStyling} (the theme,
  * the neutral colour, and the desaturation palette - how each category draws and what a
  * desaturated bloc recolours to), {@link ViewGrouping} (the view and its once-sampled
  * grouping - how holding is grouped and which blocs recede to the independent style),
- * and {@link FilterSnapshot} (the spotlight state). The holder-by-system, inhabited-system,
- * spotlit-presence and unfilled-system sets ride alongside as who holds each system, what stands
- * in it, where the pick is living unheld, and how its fill is drawn. An incremental re-shape reads
- * them all back so it classifies a cell exactly as the full build did.
+ * and {@link FilterSnapshot} (the spotlight state). The unfilled-system set rides alongside as
+ * how an owned system's fill is drawn. An incremental re-shape reads them all back so it
+ * classifies a cell exactly as the full build did.
  *
- * <p>A plain class rather than a record because five of its fields are mutable state,
- * not values: the styled-cell, styled-cluster-group, and holder-by-system maps are mutated
+ * <p>A plain class rather than a record because three of its fields are mutable state,
+ * not values: the styled-cell and styled-cluster-group maps are mutated
  * in place by the incremental refresh, which replaces just the cells and factions a
- * holder change touched, and the inhabited and spotlit-presence sets are folded by the same
- * refresh - the three facts a cell is classified from move together as colonies come and go, so
- * a live holder map beside a set fixed at build time would style a cell from two different
- * readings of the sector. The styling, unfilled set, view grouping, and filter snapshot are set
+ * holder change touched, and the occupancy is folded by the same refresh as colonies come
+ * and go. Its three facts are mutable together and behind that one type's folds, so no pass
+ * can bring one of them up to date and leave a cell drawn from two readings of the sector.
+ * The styling, unfilled set, view grouping, and filter snapshot are set
  * once at build and only read after, so an incremental pass re-shapes against the exact inputs
  * the full build baked in.
- *
- * <p>The three live collections are handed in rather than copied, so what edits them is the
- * caller's own state and every reader below sees one set: a build supplies collections it does
- * not go on to read, and a fixture that supplies immutable ones is stating that nothing in its
- * case folds them.
  *
  * <p>It satisfies {@link ClusterDrawLists} directly, and so is what the framework's cluster
  * emission paints: the two draw lists it hands over are the two it already holds, and the
@@ -115,26 +111,14 @@ public final class PoliticalMapTerritories implements
     // CellRingPathCache for why that tie is the whole of the cache's safety.
     private final CellRingPathCache ringPathCache = new CellRingPathCache();
 
-    // Retained derivation inputs. The holder map is mutated in place as systems flip; the
-    // rest are set once at build and only read after.
-    private final Map<String, DominantHolder> ownerBySystemId;
-
-    // Every system something stands in, scanned once per build and folded per marked system by
-    // the incremental refresh. Read against the holder map rather than derived from it: a cell
-    // with no holder is empty space only when this set agrees, which is what keeps a system this
-    // layer's holding cannot account for - an unclaimed pirate haven on the claims layer - from
-    // drawing as backdrop.
-    private final Set<String> inhabitedSystemIds;
-
-    // The settled systems the spotlit bloc lives in that no holder was resolved for, kept live
-    // beside the set above because it goes stale for the same reason: the pick founding a colony
-    // in a system nothing here holds moves this and nothing else, and a cell restyled against the
-    // standing set would sink the very system the spotlight was asked about. Empty off filter.
-    private final Set<String> spotlitPresenceSystemIds;
+    // Who is in each system: the holder, what stands there, and where a spotlit pick lives in a
+    // system nobody holds. The one live input, folded per marked system by the incremental
+    // refresh; every other retained input below is set once at build and only read after.
+    private final SystemOccupancy occupancy;
 
     // The owned systems drawn with no fill: held by their bloc for border and label but painting
     // nothing inside its one frontier, so a held/claimed boundary reads as a seam where the fill
-    // stops. Set once at build alongside the holder map, read by the per-faction fill split.
+    // stops. Set once at build alongside the occupancy, read by the per-faction fill split.
     private final Set<String> unfilledSystemIds;
 
     // The three cohesive input snapshots: the resolved paint scheme, the view and its once-sampled
@@ -157,16 +141,12 @@ public final class PoliticalMapTerritories implements
     private List<float[]> candidateLoops = List.of();
 
     public PoliticalMapTerritories(
-            Map<String, DominantHolder> ownerBySystemId,
-            Set<String> inhabitedSystemIds,
-            Set<String> spotlitPresenceSystemIds,
+            SystemOccupancy occupancy,
             Set<String> unfilledSystemIds,
             MapStyling styling,
             ViewGrouping viewGrouping,
             FilterSnapshot filter) {
-        this.ownerBySystemId = ownerBySystemId;
-        this.inhabitedSystemIds = inhabitedSystemIds;
-        this.spotlitPresenceSystemIds = spotlitPresenceSystemIds;
+        this.occupancy = occupancy;
         this.unfilledSystemIds = unfilledSystemIds;
         this.styling = styling;
         this.viewGrouping = viewGrouping;
@@ -183,9 +163,7 @@ public final class PoliticalMapTerritories implements
     // never read for the same reason. The scheme's own stand-ins are named by MapStyling.
     public static PoliticalMapTerritories createEmpty(PoliticalMapView view) {
         return new PoliticalMapTerritories(
-            new LinkedHashMap<>(),
-            new LinkedHashSet<>(),
-            new LinkedHashSet<>(),
+            SystemOccupancy.createEmpty(),
             new LinkedHashSet<>(),
             MapStyling.createEmpty(),
             new ViewGrouping(
@@ -351,7 +329,9 @@ public final class PoliticalMapTerritories implements
             Map<String, String> systemIdByCellId) {
         clusterIndex = SystemClusterIndex.indexClusters(SystemClusters.findClusters(
             cellEdgesByCellId,
-            DominantHolder.mapCellGrouping(systemIdByCellId, ownerBySystemId)));
+            DominantHolder.mapCellGrouping(
+                systemIdByCellId,
+                occupancy.getHolderBySystemId())));
     }
 
     // Each bloc's bodies with the fill, hatch, and national border they share, keyed by its
@@ -398,16 +378,22 @@ public final class PoliticalMapTerritories implements
         return candidateLoops;
     }
 
+    // Who is in each system, as the one live record; what a pass folding a marked system's holder,
+    // its inhabitation or the pick's presence in it writes through. The three flat getters below
+    // unwrap it for the readers that only look, as the other snapshots' getters do.
+    public SystemOccupancy getOccupancy() {
+        return occupancy;
+    }
+
     public Map<String, DominantHolder> getHolderBySystemId() {
-        return ownerBySystemId;
+        return occupancy.getHolderBySystemId();
     }
 
     // Every system something is standing in, whoever holds it and whether or not this layer's
     // holding accounts for them; what the factionless classifier reads to tell a settled cell from
-    // the empty backdrop. Live rather than a copy, since the incremental refresh folds each marked
-    // system's answer into it.
+    // the empty backdrop.
     public Set<String> getInhabitedSystemIds() {
-        return inhabitedSystemIds;
+        return occupancy.getInhabitedSystemIds();
     }
 
     // The owned systems the per-faction fill split leaves empty, drawn inside their bloc's one
@@ -526,10 +512,9 @@ public final class PoliticalMapTerritories implements
 
     // The settled systems the spotlit bloc lives in that no holder was resolved for, so the
     // factionless cell builder spares them the recede that sinks the rest of the sector. Empty off
-    // filter, and empty on any view whose holding accounts for every inhabited system. Live for
-    // the reason the inhabited set above is.
+    // filter, and empty on any view whose holding accounts for every inhabited system.
     public Set<String> getSpotlitPresenceSystemIds() {
-        return spotlitPresenceSystemIds;
+        return occupancy.getSpotlitPresenceSystemIds();
     }
 
     // True when there is nothing to paint, so the renderer can skip the GL state push

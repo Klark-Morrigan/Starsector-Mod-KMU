@@ -159,9 +159,7 @@ final class PoliticalMapTerritoriesTest {
                 .createRenderStyleForEveryCategory(buildStyleMarked(1));
 
             var territories = new PoliticalMapTerritories(
-                new LinkedHashMap<>(),
-                new LinkedHashSet<>(),
-                new LinkedHashSet<>(),
+                SystemOccupancy.createEmpty(),
                 new LinkedHashSet<>(),
                 new MapStyling(
                     renderStyle,
@@ -325,10 +323,10 @@ final class PoliticalMapTerritoriesTest {
             // systems the spotlit bloc is in, so only differing contents catch a swap between them.
             var spotlitPresence = new LinkedHashSet<>(Set.of("present-unheld-system"));
 
+            var occupancy = SystemOccupancy.createCopyOf(holders, inhabited, spotlitPresence);
+
             var territories = new PoliticalMapTerritories(
-                holders,
-                inhabited,
-                spotlitPresence,
+                occupancy,
                 unfilled,
                 new MapStyling(
                     renderStyle,
@@ -348,10 +346,15 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getStyledClusterGroupByOwnerId())
                 .isEmpty();
 
+            // The occupancy is handed over whole, and its own three reads are unwrapped through
+            // the flat getters below - which is what lets every reader keep the accessor it had
+            // when the three facts moved behind one type.
+            assertThat(territories.getOccupancy())
+                .isSameAs(occupancy);
             assertThat(territories.getHolderBySystemId())
-                .isSameAs(holders);
+                .isSameAs(occupancy.getHolderBySystemId());
             assertThat(territories.getInhabitedSystemIds())
-                .isSameAs(inhabited);
+                .isSameAs(occupancy.getInhabitedSystemIds());
             assertThat(territories.getUnfilledSystemIds())
                 .isSameAs(unfilled);
             assertThat(territories.getNeutralPalette())
@@ -389,7 +392,7 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getContestedSystemIds())
                 .isSameAs(contested);
             assertThat(territories.getSpotlitPresenceSystemIds())
-                .isSameAs(spotlitPresence);
+                .isSameAs(occupancy.getSpotlitPresenceSystemIds());
         }
     }
 
@@ -681,7 +684,7 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
                 .containsExactlyInAnyOrder("A", "B", "C");
 
-            territories.getHolderBySystemId().put("B", readOwnerOf("RIVAL"));
+            territories.getOccupancy().recordHolderOf("B", readOwnerOf("RIVAL"));
             reindex(territories, edges);
 
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
@@ -700,7 +703,7 @@ final class PoliticalMapTerritoriesTest {
             var territories = buildOwnedBy(Map.of("A", "F", "B", "RIVAL", "C", "F"));
             reindex(territories, edges);
 
-            territories.getHolderBySystemId().put("B", readOwnerOf("F"));
+            territories.getOccupancy().recordHolderOf("B", readOwnerOf("F"));
             reindex(territories, edges);
 
             assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
