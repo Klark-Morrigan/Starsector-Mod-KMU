@@ -12,8 +12,10 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapMarketTrans
  * nested {@link Installer} holder, which the classloader does not resolve until
  * the mod-enabled gate has passed. That keeps an install without Nex from
  * seeking {@code exerelin.utilities.InvasionListener} and failing with a
- * missing-class error - the same isolation KMU uses for its optional Random
- * Assortment of Things integration.
+ * missing-class error - the same isolation KMLib's Abyssal Fracture matcher uses
+ * for Random Assortment of Things. An optional mod read through settings rather
+ * than through its own types needs none of this: there is no class to defer, only
+ * a mod-enabled gate in front of the read.
  *
  * <p>Nexerelin is the only source of colony ownership transfers, which vanilla
  * fires no listener for, so this is the one place the political map learns that a

@@ -117,6 +117,15 @@ public final class KmuMapLayerSettings {
     private static final String MAP_LAYER_MOUSEOVER_ONLY_ON_THEIR_HOSTS_FIELD =
         "kmu_map_compatibility_foreignMapSurfaces_mapLayerMouseoverOnlyOnTheirHosts";
 
+    // The one foreign map surface named rather than described (Map - Compatibility tab). Random
+    // Assortment of Things puts a sector map where the campaign radar was, which the two
+    // constraints above can only stand clear of - and standing clear of a map the player put on
+    // screen on purpose and is pointing at is the wrong answer. Named for the mod because that is
+    // how a player arrives at this tab, and kept under the same header because it refines those
+    // two rather than sitting beside them.
+    private static final String RANDOM_ASSORTMENT_OF_THINGS_MODE_FIELD =
+        "kmu_map_compatibility_foreignMapSurfaces_randomAssortmentOfThingsMode";
+
     // Hover tooltip density (Map - Visuals tab): how tightly a hover box is set, across every map
     // layer. The shrink is how much smaller each step of indent draws than the step above it; the
     // three gaps are the room left under a line before the next one - the box's baseline, and the
@@ -340,6 +349,12 @@ public final class KmuMapLayerSettings {
     // open at all, so it reads as the mod malfunctioning rather than as a compatibility nicety.
     private static final boolean DEFAULT_MAP_LAYER_MOUSEOVER_ONLY_ON_THEIR_HOSTS = true;
 
+    // On: the mode is inert on every install that does not run the mod's minimap, so what it
+    // defaults to is only ever read by a player who has one - and to that player, layers that
+    // stand clear of the map under the pointer read as the mod failing rather than as a setting
+    // waiting to be found. A switch to turn off, not one to discover.
+    private static final boolean DEFAULT_RANDOM_ASSORTMENT_OF_THINGS_MODE = true;
+
     // No shrink by default: every line of a hover box draws at the body's own size, which is the
     // size its atlas is crisp at, and how deep a line sits is said by its indent alone. A box is
     // read at a glance while the cursor rests on a system, so the default trades height for the
@@ -462,6 +477,18 @@ public final class KmuMapLayerSettings {
         return KmuLunaSettings.readBoolean(
             MAP_LAYER_MOUSEOVER_ONLY_ON_THEIR_HOSTS_FIELD,
             DEFAULT_MAP_LAYER_MOUSEOVER_ONLY_ON_THEIR_HOSTS);
+    }
+
+    /**
+     * @return whether the layers may adapt to the minimap Random Assortment of Things draws in the
+     *         campaign radar's place - answering the cursor on it rather than standing clear of
+     *         it; on by default. The player's half of the mode only: whether there is a minimap to
+     *         adapt to is the other half, and both are ANDed before anything behaves differently
+     */
+    public static boolean getRandomAssortmentOfThingsModeEnabled() {
+        return KmuLunaSettings.readBoolean(
+            RANDOM_ASSORTMENT_OF_THINGS_MODE_FIELD,
+            DEFAULT_RANDOM_ASSORTMENT_OF_THINGS_MODE);
     }
 
     /**

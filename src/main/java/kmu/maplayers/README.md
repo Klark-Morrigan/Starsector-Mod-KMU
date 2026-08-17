@@ -195,7 +195,19 @@ about what the overlay means.
   hovering is switched at three tiers - a master over the whole map, a pair under it for the
   effects and the box separately, and a pair of the layer's own - and this answers for the two that
   reach every layer, which a layer ANDs its own into. So one layer's box can go dark while another's
-  stays up, and one row still silences them all.
+  stays up, and one row still silences them all. `RandomAssortmentOfThingsMode` is the same tab's
+  per-mod switch: whether the player has left that mod's compatibility mode on *and* the mod is
+  installed with its own minimap replacing the campaign radar, which is KMLib's `CampaignMinimap`
+  role to answer - the map surface `MapPresence` cannot report, since it stands in for the radar
+  rather than opening as a screen, and answered for that mod in KMLib's own
+  `rat` package. Both halves, ANDed,
+  so an install without that minimap reads one boolean and behaves as it always did. Named for the
+  mod because the switch is, while what it asks stays the mod-neutral question the role carries -
+  so a second mod replacing the radar arrives as its own switch rather than folded under this
+  one's name. It narrows
+  what the two constraints beside it allow and never widens it - those are written for the mods
+  nobody here has met, and a per-mod mode able to override them would make them unreliable as
+  general switches.
 - **`base/hover/cover`** - whether anything is drawn over the map where the cursor rests, which a
   layer asks before resolving a hover at all. A hover reads a cell out of map geometry, which knows
   nothing of what is composited on top, so without this it lights cells and floats boxes under

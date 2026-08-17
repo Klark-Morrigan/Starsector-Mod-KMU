@@ -568,16 +568,11 @@ final class DiscUnionBoundary {
 
             } else if (isChordTerminal(departingFrom) && isChordTerminal(cover.arrival())) {
 
-                // The boundary comes back along one wall and leaves along the next with
-                // nothing on the circle in between, so the stretch between them is empty
-                // rather than absent - given as an arc of no width, since what the walk wants
-                // of it is that its two terminals name each other rather than any length.
-                //
-                // Two walls whose mouths overlap. The boundary comes back along one and
-                // leaves along the next with nothing on the circle in between, so the stretch
-                // between them is empty rather than absent - given as an arc of no width,
-                // since what the walk wants of it is that its two terminals name each other
-                // rather than any length.
+                // Two walls whose mouths overlap. The boundary comes back along one and leaves
+                // along the next with nothing on the circle in between, so the stretch between
+                // them is empty rather than absent - given as an arc of no width, since what
+                // the walk wants of it is that its two terminals name each other rather than
+                // any length.
                 //
                 // Only where WALLS are what overlap. A stretch a neighbouring disc swallows
                 // really is off the boundary, and joining its ends would run a cycle through
