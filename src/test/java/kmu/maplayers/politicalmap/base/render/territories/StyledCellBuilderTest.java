@@ -583,6 +583,7 @@ final class StyledCellBuilderTest {
             return new PoliticalMapTerritories(
                 Map.of(),
                 Set.of(DECIVILISED_SYSTEM_ID, UNHELD_INHABITED_SYSTEM_ID),
+                spotlitPresenceSystemIds,
                 Set.of(),
                 new MapStyling(
                     theme,
@@ -595,8 +596,7 @@ final class StyledCellBuilderTest {
                 new FilterSnapshot(
                     selectedBlocId,
                     recede,
-                    Set.of(),
-                    spotlitPresenceSystemIds));
+                    Set.of()));
         }
 
         // A category whose outer outline is drawn (a real palette slot, resolved to the neutral
@@ -673,7 +673,7 @@ final class StyledCellBuilderTest {
             // A filtered pass carries the selected bloc's id; the fixture's holder is never that
             // bloc, so it reads as non-spotlit and the recede applies. Off filter the id is null.
             return new PoliticalMapTerritories(
-                Map.of(SYSTEM_ID, OWNER), Set.of(), Set.of(),
+                Map.of(SYSTEM_ID, OWNER), Set.of(), Set.of(), Set.of(),
                 new MapStyling(
                     PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(STYLE),
                     PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
@@ -683,7 +683,6 @@ final class StyledCellBuilderTest {
                 new FilterSnapshot(
                     isFiltering ? "selected-bloc" : null,
                     recede,
-                    Set.of(),
                     Set.of()));
         }
 

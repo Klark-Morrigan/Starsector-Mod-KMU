@@ -162,6 +162,7 @@ final class PoliticalMapTerritoriesTest {
                 new LinkedHashMap<>(),
                 new LinkedHashSet<>(),
                 new LinkedHashSet<>(),
+                new LinkedHashSet<>(),
                 new MapStyling(
                     renderStyle,
                     PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
@@ -320,13 +321,14 @@ final class PoliticalMapTerritoriesTest {
             // A distinct contested set so a swapped filter-snapshot field is caught by identity.
             var contested = new LinkedHashSet<>(Set.of("contested-system"));
 
-            // Likewise distinct, and held apart from the contested set it sits beside: the two are
-            // both spotlit-presence sets, so only differing contents catch a swap between them.
+            // Likewise distinct, and held apart from the contested set it stands beside: both name
+            // systems the spotlit bloc is in, so only differing contents catch a swap between them.
             var spotlitPresence = new LinkedHashSet<>(Set.of("present-unheld-system"));
 
             var territories = new PoliticalMapTerritories(
                 holders,
                 inhabited,
+                spotlitPresence,
                 unfilled,
                 new MapStyling(
                     renderStyle,
@@ -337,8 +339,7 @@ final class PoliticalMapTerritoriesTest {
                 new FilterSnapshot(
                     selectedBlocId,
                     recedeAdjustment,
-                    contested,
-                    spotlitPresence));
+                    contested));
 
             // The two draw lists are created internally, not passed, so the build can fill them;
             // they start empty and stay mutable for the incremental refresh to edit in place.

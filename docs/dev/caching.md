@@ -233,7 +233,10 @@ merely cheap:
 [`IncrementalPoliticsRefresh`](../../src/main/java/kmu/maplayers/politicalmap/base/render/IncrementalPoliticsRefresh.java)
 re-classifies a handful of cells against exactly the ownership and styles the full
 build used, through the same builder primitives, so an incrementally-updated map is
-indistinguishable from a rebuilt one.
+indistinguishable from a rebuilt one. Which is also why the inhabited and spotlit-presence
+sets are retained *live* rather than as a snapshot: a cell is classified from them beside
+the holder map, so a set fixed where the rebuild began would have the refresh styling a cell
+from two different readings of the sector.
 
 ### Cluster-label placements
 
@@ -327,7 +330,14 @@ Per frame, in increasing cost:
    common path.
 2. **Systems marked stale** - the stale set is drained and only those systems and
    their neighbours are re-derived and re-shaped, with the two affected factions'
-   territories rebuilt. The marked systems' presence bands are re-baked whether or not
+   territories rebuilt. Three facts are re-derived per marked system, over one reading of
+   the sector opened for the whole batch: who holds it, whether anything stands in it, and
+   whether the spotlit bloc is one of the things standing in it. The last two are what a
+   cell that no bloc holds is drawn from, and they move without any holder moving - a system
+   settled or emptied on a layer whose holding cannot account for whoever is there flips
+   nothing, so its own cell is the only surface the change reaches. Such a cell is redrawn
+   alone: neither fact moves a seam, so no neighbour re-shapes and no territory is retraced.
+   The marked systems' presence bands are re-baked whether or not
    anything flipped: the colonisation and transfer events that mark a system are exactly
    the events that change how many colonies are in it, and a band counts colonies where
    the fills only weigh them. A flip widens that beyond the cells it re-shaped, because it

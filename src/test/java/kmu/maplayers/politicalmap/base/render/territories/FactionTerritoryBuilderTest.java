@@ -503,13 +503,14 @@ final class FactionTerritoryBuilderTest {
             ownerBySystemId,
             Set.of(),
             Set.of(),
+            Set.of(),
             new MapStyling(
                 PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(style),
                 PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
                 new FactionPalette(Color.GREEN, Color.YELLOW),
                 PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE),
             new ViewGrouping(buildViewMockAdjustingNothing(), HolderGrouping.identity()),
-            new FilterSnapshot(null, ElementStyleAdjustment.NONE, Set.of(), Set.of()));
+            new FilterSnapshot(null, ElementStyleAdjustment.NONE, Set.of()));
     }
 
     // A view stub that styles every bloc as its own faction and recedes none of them, so the

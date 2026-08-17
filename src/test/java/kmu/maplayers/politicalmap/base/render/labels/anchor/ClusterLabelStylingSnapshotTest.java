@@ -87,6 +87,7 @@ final class ClusterLabelStylingSnapshotTest {
             holderBySystemId,
             new LinkedHashSet<>(),
             new LinkedHashSet<>(),
+            new LinkedHashSet<>(),
             new MapStyling(
                 null,
                 PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
@@ -106,7 +107,6 @@ final class ClusterLabelStylingSnapshotTest {
         return new FilterSnapshot(
             SPOTLIT_BLOC_ID,
             ElementStyleAdjustment.NONE,
-            Set.of("corvus"),
-            Set.of());
+            Set.of("corvus"));
     }
 }

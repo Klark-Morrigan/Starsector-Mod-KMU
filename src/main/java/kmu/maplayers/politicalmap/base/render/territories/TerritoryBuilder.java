@@ -118,25 +118,30 @@ public final class TerritoryBuilder {
             // Under the same reveal the holding resolved under, so a colony the dev toggle
             // admits to one is admitted to the other and the two cannot disagree about whether
             // a system holds anything.
-            var inhabitedSystemIds = measureSystemScan(
+            //
+            // Copied into a set of this build's own, as the presence read below is: the
+            // incremental refresh folds each marked system's answer into both, and a read free to
+            // answer with an immutable empty set would leave the first such fold throwing rather
+            // than writing.
+            var inhabitedSystemIds = new LinkedHashSet<>(measureSystemScan(
                 profiler,
                 "politicalMap.findInhabited",
                 "inhabitation scan",
-                () -> PoliticalMapInhabitation.readInhabitedSystemIds(sector));
+                () -> PoliticalMapInhabitation.readInhabitedSystemIds(sector)));
 
             // Where the spotlit bloc is living outside anything this build attributed to it, so
             // the factionless cells over its own colonies are spared the recede. Asked only of the
             // inhabited systems the holding left out - on the faction and alliance views that is
             // the dead worlds alone, which no bloc lives in, so the read comes back empty for the
             // cost of the set arithmetic.
-            var spotlitPresenceSystemIds = measureSystemScan(
+            var spotlitPresenceSystemIds = new LinkedHashSet<>(measureSystemScan(
                 profiler,
                 "politicalMap.findSpotlitPresence",
                 "spotlit presence scan",
                 () -> FilteredPolitics.findPresentSystemIds(
                     pass,
                     selectedBlocId,
-                    selectUnheldSystemIds(inhabitedSystemIds, ownerBySystemId)));
+                    selectUnheldSystemIds(inhabitedSystemIds, ownerBySystemId))));
 
             // The whole theme - the global tier plus one style per category - read once here
             // through the single reader seam, plus the shared neutral colour and the desaturation
@@ -175,6 +180,7 @@ public final class TerritoryBuilder {
             var territories = new PoliticalMapTerritories(
                 ownerBySystemId,
                 inhabitedSystemIds,
+                spotlitPresenceSystemIds,
                 unfilledSystemIds,
                 new MapStyling(
                     renderStyle,
@@ -185,8 +191,7 @@ public final class TerritoryBuilder {
                 new FilterSnapshot(
                     selectedBlocId,
                     recedeAdjustment,
-                    contestedSystemIds,
-                    spotlitPresenceSystemIds));
+                    contestedSystemIds));
 
             // Shape the raw cells into merged clusters once, holding-aware. The agnostic
             // geometry clusters by holder, so hand it each system's faction id as the

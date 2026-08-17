@@ -6,32 +6,30 @@ import java.util.Set;
 
 /**
  * The spotlight state one build resolved and then paints and names the sector under: which
- * bloc is spotlighted, how every other bloc recedes around it, which of the spotlit bloc's
- * systems it holds but does not dominate, and which settled systems it lives in without this
- * build giving it any hold on them at all.
+ * bloc is spotlighted, how every other bloc recedes around it, and which of the spotlit bloc's
+ * systems it holds but does not dominate.
  *
- * <p>The last two are both "the pick is here but does not own the place", split by whether the
- * holder map reached the system. A contested system is inside the spotlit territory and needs a
- * fill telling it from the solid ones; a present-unheld system is outside every territory - the
- * holding rule could not attribute it to anyone - and needs only to be spared the recede.
+ * <p>A contested system is inside the spotlit territory and needs a fill telling it from the
+ * solid ones. The other half of "the pick is here but does not own the place" - a system the
+ * holding rule could attribute to nobody, which needs only to be spared the recede - is not
+ * here: it moves between rebuilds as colonies come and go, so it is held live beside the holder
+ * map rather than in this snapshot.
  *
  * <p>Held on the built territories so an incremental re-shape and the label rebuild recede a
  * cell and name a spotlight cluster exactly as the full build did. Off filter it is the inert
- * default - no selected bloc, the identity recede, neither set populated - so a normal pass
+ * default - no selected bloc, the identity recede, no contested system - so a normal pass
  * paints every bloc untouched.
  */
 public record FilterSnapshot(
     String selectedBlocId,
     ElementStyleAdjustment recedeAdjustment,
-    Set<String> contestedSystemIds,
-    Set<String> spotlitPresenceSystemIds) {
+    Set<String> contestedSystemIds) {
 
-    // The inert default: nothing spotlighted, so nothing recedes, no system is contested, and no
-    // system carries the pick's unheld presence. Named here rather than spelt out at each pass
-    // that has no filter, so "off filter" is one value every such pass shares and cannot get
-    // subtly wrong.
+    // The inert default: nothing spotlighted, so nothing recedes and no system is contested.
+    // Named here rather than spelt out at each pass that has no filter, so "off filter" is one
+    // value every such pass shares and cannot get subtly wrong.
     public static FilterSnapshot unfiltered() {
-        return new FilterSnapshot(null, ElementStyleAdjustment.NONE, Set.of(), Set.of());
+        return new FilterSnapshot(null, ElementStyleAdjustment.NONE, Set.of());
     }
 
     // A build spotlights a bloc exactly when one was selected, so the shared cell and faction

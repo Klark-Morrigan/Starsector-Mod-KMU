@@ -33,8 +33,8 @@ import static org.mockito.Mockito.mock;
  * not what is under test, and the two placeholder draw records that stand in wherever a cell or
  * a territory only has to exist rather than draw.
  *
- * <p>One home for these because a built territories takes six constructor arguments of which
- * most tests vary one, so each suite that hand-rolled its own was repeating the same five
+ * <p>One home for these because a built territories takes seven constructor arguments of which
+ * most tests vary one, so each suite that hand-rolled its own was repeating the same six
  * inert placeholders - and a placeholder that drifts between suites is the kind of difference
  * that makes two tests of the same behaviour quietly disagree.
  *
@@ -102,9 +102,36 @@ public final class PoliticalMapTerritoryFixtures {
     public static PoliticalMapTerritories createTerritoriesSettledIn(
             Map<String, DominantHolder> ownerBySystemId,
             Set<String> inhabitedSystemIds) {
+        return createTerritoriesSpotlighting(
+            null, // No bloc spotlighted.
+            ownerBySystemId,
+            inhabitedSystemIds,
+            Set.of());
+    }
+
+    /**
+     * The same territories with a bloc spotlighted, for a case about the recede a spotlight sinks
+     * the rest of the sector under - or about the settled systems the pick lives in that spare it.
+     *
+     * <p>The spotlight state is a value on the built model rather than something a caller can
+     * write on top afterwards, so a case that needs one states it here rather than editing a
+     * territories built without.
+     *
+     * @param selectedBlocId           the spotlighted bloc's id
+     * @param ownerBySystemId          who holds each system
+     * @param inhabitedSystemIds       every system something stands in
+     * @param spotlitPresenceSystemIds the settled systems the pick lives in that nobody holds
+     * @return a live territories, ready to have draw records written into it
+     */
+    public static PoliticalMapTerritories createTerritoriesSpotlighting(
+            String selectedBlocId,
+            Map<String, DominantHolder> ownerBySystemId,
+            Set<String> inhabitedSystemIds,
+            Set<String> spotlitPresenceSystemIds) {
         return new PoliticalMapTerritories(
             new LinkedHashMap<>(ownerBySystemId),
             new LinkedHashSet<>(inhabitedSystemIds),
+            new LinkedHashSet<>(spotlitPresenceSystemIds),
             new LinkedHashSet<>(),
             new MapStyling(
                 null, // No render style.
@@ -115,10 +142,9 @@ public final class PoliticalMapTerritoryFixtures {
                 mock(PoliticalMapView.class),
                 HolderGrouping.identity()),
             new FilterSnapshot(
-                null, // No selected bloc ID.
+                selectedBlocId,
                 ElementStyleAdjustment.NONE, // No recede adjustment.
-                new LinkedHashSet<>(), // No contested system IDs.
-                new LinkedHashSet<>())); // No spotlit presence system IDs.
+                new LinkedHashSet<>())); // No contested system IDs.
     }
 
     /**

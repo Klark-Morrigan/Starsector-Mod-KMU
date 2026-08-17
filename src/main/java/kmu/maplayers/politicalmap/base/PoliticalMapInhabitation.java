@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.base.visibility.MapVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
@@ -40,6 +41,27 @@ public final class PoliticalMapInhabitation {
     public static Set<String> readInhabitedSystemIds(SectorAPI sector) {
         return MapVisibility.findInhabitedSystemIds(
             sector,
+            MapVisibilityOverrides.readFromLunaSettings());
+    }
+
+    /**
+     * Whether anything stands in one star system, under the player's current reveal.
+     *
+     * <p>The single-system arm of the scan above, for the incremental refresh: a colony event
+     * marks the systems it moved, and re-deriving those is what keeps the standing inhabited set
+     * in step with the sector between rebuilds. Answered here rather than at that caller so both
+     * arms bind the reveal to the same rule - a per-system read taken under a different toggle
+     * from the scan it edits would leave one system in the set answering under a reveal none of
+     * its neighbours did.
+     *
+     * @param sector the sector the system belongs to; null yields false
+     * @param system the system to read; null yields false
+     * @return true when the system holds a live colony or a known ruin
+     */
+    public static boolean isSystemInhabited(SectorAPI sector, StarSystemAPI system) {
+        return MapVisibility.isInhabited(
+            sector,
+            system,
             MapVisibilityOverrides.readFromLunaSettings());
     }
 }

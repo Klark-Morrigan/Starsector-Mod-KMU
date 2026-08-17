@@ -97,12 +97,19 @@ re-shape classifies against exactly what the full build used. Deriving emptiness
 instead would make every view whose holding rule admits only some factions report its unheld
 systems as empty space.
 
-The presence exception rides beside it as the **spotlit-presence set** on `FilterSnapshot`, read
-through `FilteredPolitics.findPresentSystemIds` - the same presence rule `resolveFilteredHolder`
+The presence exception rides beside it as the **spotlit-presence set**, read through
+`FilteredPolitics.findPresentSystemIds` - the same presence rule `resolveFilteredHolder`
 keeps a spotlit bloc visible by, so "the pick lives here" means one thing across the map. It is
 asked only of the inhabited systems the holding left out, since a system somebody holds already
 draws in that bloc's territory; on the faction and alliance views that candidate set is the dead
 worlds alone, which no bloc lives in, so the read costs the set arithmetic and returns empty.
+
+Both sets are held **live** beside the holder map rather than inside the `FilterSnapshot` the
+spotlight's fixed answers sit in, because both move between rebuilds: a colony founded or lost
+changes what stands in a system, and the pick founding one changes where the pick lives, in
+neither case moving a holder the map would notice. The incremental refresh folds each marked
+system's answer into both, so all three facts a cell is styled from are read off one state of
+the sector rather than two.
 
 ## Borders against empty space
 
@@ -235,7 +242,8 @@ drive - the border-ring trace, the smoothing passes, the vertex packing, the `St
 the split-fill machinery, and the GL emission itself - is the framework's
 [`base.render.clusters`](../../../../base/render/clusters/README.md), which knows nothing of who
 holds what; the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`). The
-*incremental refresh* that folds per-system ownership changes into the packets is
+*incremental refresh* that folds a marked system's holder, its inhabitation and the spotlit
+bloc's presence in it into the packets is
 `render.IncrementalPoliticsRefresh`, at the render root alongside the plugin and the per-frame
 cache that drives it - the composition root that wires these feature packages together. *Which*
 change triggers a full rebuild here and which one only re-shapes a handful of cells is

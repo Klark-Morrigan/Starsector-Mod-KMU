@@ -343,7 +343,6 @@ final class ClusterAnchorsBuilderTest {
                     new FilterSnapshot(
                         HEGEMONY,
                         new ElementStyleAdjustment(FULL_OPACITY, true),
-                        Set.of(),
                         Set.of())));
 
             assertThat(standingAnchors.getAnchors().get(0).colour())
