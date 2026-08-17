@@ -24,6 +24,7 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_ALLIANCE;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.NO_PAINTER;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN_DARK;
@@ -59,9 +60,6 @@ final class ColonyCellRibbonsTest {
 
     // The faction view, where a bloc is a single faction. The alliance case states its own.
     private static final HolderGrouping NO_ALLIANCES = HolderGrouping.identity();
-
-    // A cell no bloc's fill covers, which is what an unclaimed populated system draws as.
-    private static final Optional<String> NO_PAINTER = Optional.empty();
 
     // The size every posed colony carries. A band counts holdings rather than weighing them, so a
     // case varying it would vary nothing the rule can see.

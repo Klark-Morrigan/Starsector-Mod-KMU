@@ -10,6 +10,7 @@ import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 
 import java.awt.Color;
 import java.util.Map;
+import java.util.Optional;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
@@ -88,6 +89,13 @@ public final class RibbonPlanFixtures {
         new RibbonPlanRules(
             new RibbonSegmentLengths(3, 1),
             new UncontestedCellBands(false, false));
+
+    /**
+     * A cell no bloc's fill covers, which is what an unclaimed populated system draws as. There is
+     * no painter for a bloc to be a rival of, so what makes such a cell contested is how many blocs
+     * are in it.
+     */
+    public static final Optional<String> NO_PAINTER = Optional.empty();
 
     // Whether the pass lifts the fog off colonies the player has not found. Named at both settings
     // because a suite posing the reveal is posing the one thing the counting rule's input reads.

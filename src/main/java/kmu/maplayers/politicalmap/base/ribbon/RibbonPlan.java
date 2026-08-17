@@ -53,8 +53,9 @@ import java.util.Optional;
 public record RibbonPlan(
     List<RibbonSegment> segments) {
 
-    // The cell draws no band: nothing is present in it, or nothing but its own painter is and the
-    // uncontested cells are not admitted.
+    // The cell draws no band: nothing is present in it, or nothing contests it - its painter alone
+    // is there, or a lone bloc is and no fill names anyone - and the uncontested cells are not
+    // admitted.
     public static final RibbonPlan NONE = new RibbonPlan(List.of());
 
     // What makes a painterless cell contested. With no fill naming anyone, a lone bloc is a
@@ -138,7 +139,7 @@ public record RibbonPlan(
             // A bloc holding nothing counted lays no run, so it opens no handover either: a
             // divider laid for it would part two blocs across a run that is not there, and
             // the bloc actually going out would go unclosed.
-            if (presence.marketCount() <= 0) {
+            if (!presence.holdsSomething()) {
                 continue;
             }
             // The divider closing the run just laid is the outgoing bloc's own, not the
@@ -174,24 +175,24 @@ public record RibbonPlan(
             List<BlocPresence> rankedPresences) {
 
         for (var presence : rankedPresences) {
-            if (presence.marketCount() > 0 && !presence.blocId().equals(paintingBlocId)) {
+            if (presence.holdsSomething() && !presence.blocId().equals(paintingBlocId)) {
                 return true;
             }
         }
         return false;
     }
 
-    // How many blocs hold something in the cell, which both the painterless contest and the
-    // second arm of the gate are read off. A bloc counted at nothing is not presence: it holds no
-    // colony the player may be shown, so there is nothing about it for a band to report, and
-    // admitting it would draw an empty ribbon on a cell that deserves none - a decreed system its
-    // decreed bloc holds nothing in being the case that produces one.
+    // How many blocs hold something in the cell, which both the painterless contest and the second
+    // arm of the gate are read off. Counted over the blocs that hold something rather than over the
+    // list, a bloc ranked and holding nothing being one a mechanic listed rather than one the cell
+    // has in it - a decreed system its decreed bloc holds nothing in being the case that produces
+    // one.
     private static int countPresentBlocs(List<BlocPresence> rankedPresences) {
 
         var presentBlocs = 0;
 
         for (var presence : rankedPresences) {
-            if (presence.marketCount() > 0) {
+            if (presence.holdsSomething()) {
                 presentBlocs++;
             }
         }

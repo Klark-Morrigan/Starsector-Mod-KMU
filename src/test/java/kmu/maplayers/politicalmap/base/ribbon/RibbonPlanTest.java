@@ -10,6 +10,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.DIKTAT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.DIKTAT_BRIGHT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.DIKTAT_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.NO_PAINTER;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -22,26 +32,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  * is enough, and a lone holder's cell banding only where the uncontested cells are admitted - at
  * the shortened runs that admission carries, and never taking those runs into a contested cell.
  * The contest is stated a second time over a cell no fill covers, where there is no painter to be
- * a rival of and the second bloc is what makes a contest; those cases are read off the run lengths,
- * which is the only place the arm a cell took is visible.
- * The partings - a dark one between two markets of one bloc, and one
- * more in the outgoing bloc's shade wherever another bloc's run follows - are checked on a
- * run long enough to have an inside, across a handover, and at the end of a band, which is
- * the one boundary that stays open.
+ * a rival of and a second bloc holding something is what makes one; those cases are read off the
+ * run lengths, which is the only place the arm a cell took is visible. The partings - a dark one
+ * between two markets of one bloc, and one more in the outgoing bloc's shade wherever another
+ * bloc's run follows - are checked on a run long enough to have an inside, across a handover, and
+ * at the end of a band, which is the one boundary that stays open.
  *
  * <p>Every case names its blocs in a deliberate order and expects that same order out, since
  * the rule ranks nothing itself and a case that happened to be sorted would hide it.
  */
 final class RibbonPlanTest {
 
-    private static final Color HEGEMONY_BRIGHT = new Color(140, 160, 220);
-    private static final Color HEGEMONY_DARK = new Color(40, 60, 120);
-    private static final Color TRITACHYON_BRIGHT = new Color(120, 220, 200);
-    private static final Color TRITACHYON_DARK = new Color(20, 90, 80);
-    private static final Color DIKTAT_BRIGHT = new Color(230, 180, 90);
-    private static final Color DIKTAT_DARK = new Color(110, 70, 20);
-
-    // The design's own proportions: a market three widths long, parted by one width.
+    // The design's own proportions: a market three widths long, parted by one width. Stated here
+    // rather than taken from the fixtures, which withhold their widths so that an edit to the
+    // proportions fails every suite reading a band back instead of moving with them.
     private static final RibbonSegmentLengths STANDARD_LENGTHS = new RibbonSegmentLengths(3, 1);
 
     // The uncontested cells left bare, which is what every case about the first arm of the gate
@@ -61,11 +65,6 @@ final class RibbonPlanTest {
     private static final RibbonPlanRules RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS =
         new RibbonPlanRules(STANDARD_LENGTHS, new UncontestedCellBands(true, true));
 
-    // A cell no bloc's fill covers, which the second reading of the contest is posed on: there is
-    // nobody for a bloc to be a rival of, so what makes such a cell contested is how many blocs
-    // are in it.
-    private static final Optional<String> NO_PAINTER = Optional.empty();
-
     @Nested
     class PlanCellRibbon {
 
@@ -74,7 +73,7 @@ final class RibbonPlanTest {
             // A decreed system nobody holds anything in: the decree painted the fill, and
             // there is no presence anywhere for a band to report.
             assertThat(RibbonPlan.planCellRibbon(
-                    Optional.of("hegemony"),
+                    Optional.of(HEGEMONY),
                     List.of(),
                     STANDARD_RULES))
                 .isEqualTo(RibbonPlan.NONE);
@@ -85,7 +84,7 @@ final class RibbonPlanTest {
             // The single-holder case the gate exists for: however many markets the painter
             // holds, a band would only repeat what its own fill already says.
             assertThat(RibbonPlan.planCellRibbon(
-                    Optional.of("hegemony"),
+                    Optional.of(HEGEMONY),
                     List.of(buildHegemonyPresence(4)),
                     STANDARD_RULES))
                 .isEqualTo(RibbonPlan.NONE);
@@ -96,7 +95,7 @@ final class RibbonPlanTest {
             // A bloc counted at nothing holds no market the score was decided on, so it is not
             // presence and cannot open a band on a cell that is otherwise single-holder.
             assertThat(RibbonPlan.planCellRibbon(
-                    Optional.of("hegemony"),
+                    Optional.of(HEGEMONY),
                     List.of(buildHegemonyPresence(2), buildTriTachyonPresence(0)),
                     STANDARD_RULES))
                 .isEqualTo(RibbonPlan.NONE);
@@ -107,7 +106,7 @@ final class RibbonPlanTest {
             // The second arm of the gate: nobody contests the system, and the band is there to
             // say how much is in it rather than whose it is - which its fill has already said.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("hegemony"),
+                Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(2)),
                 RULES_ADMITTING_UNCONTESTED_AT_FULL_RUNS);
 
@@ -125,7 +124,7 @@ final class RibbonPlanTest {
             // parting keeps its own length, or the ticks and the gaps between them would be
             // indistinguishable.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("hegemony"),
+                Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(3)),
                 RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS);
 
@@ -144,7 +143,7 @@ final class RibbonPlanTest {
             // the first arm's, and the two arms answer different questions - so no knob under the
             // second one may change how a contest is drawn.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("hegemony"),
+                Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
                 RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS);
 
@@ -161,7 +160,7 @@ final class RibbonPlanTest {
             // holder, and there is no holder here - so admitting the cell would lay a band of no
             // runs on a system holding nothing.
             assertThat(RibbonPlan.planCellRibbon(
-                    Optional.of("hegemony"),
+                    Optional.of(HEGEMONY),
                     List.of(buildHegemonyPresence(0)),
                     RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS))
                 .isEqualTo(RibbonPlan.NONE);
@@ -173,7 +172,7 @@ final class RibbonPlanTest {
             // partings strictly between them - the run itself neither opens nor closes on one,
             // and the only other parting here is the divider the bloc ahead of it is closed by.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("hegemony"),
+                Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(3)),
                 STANDARD_RULES);
 
@@ -195,7 +194,7 @@ final class RibbonPlanTest {
             // is what makes it read as the Hegemony's holdings ending rather than as a gap
             // belonging to nobody.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("hegemony"),
+                Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(3), buildTriTachyonPresence(2)),
                 STANDARD_RULES);
 
@@ -218,7 +217,7 @@ final class RibbonPlanTest {
             // after the last run, since a band ending on a divider would part its final bloc
             // from nothing at all.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("hegemony"),
+                Optional.of(HEGEMONY),
                 List.of(
                     buildHegemonyPresence(1),
                     buildTriTachyonPresence(1),
@@ -240,7 +239,7 @@ final class RibbonPlanTest {
             // rival mark the ribbon can make is one bright segment, and the only dark run in
             // this band is the divider between the two blocs.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("hegemony"),
+                Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
                 STANDARD_RULES);
 
@@ -256,7 +255,7 @@ final class RibbonPlanTest {
             // The decree case the gate is phrased for: the Diktat holds the system by decree
             // and nothing in it, so the band is Tri-Tachyon's run by itself.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("sindria"),
+                Optional.of(DIKTAT),
                 List.of(buildTriTachyonPresence(2)),
                 STANDARD_RULES);
 
@@ -314,11 +313,24 @@ final class RibbonPlanTest {
         }
 
         @Test
+        void drawsNoRibbonForALoneBlocBesideAnEmptyOneOnACellNoFillCovers() {
+            // The same painterless cell with its second bloc counted at nothing. What makes such a
+            // cell a contest is a second bloc holding something, not a second entry in the list -
+            // so this is the lone holder's cell it looks like, and bare with the uncontested cells
+            // left out.
+            assertThat(RibbonPlan.planCellRibbon(
+                    NO_PAINTER,
+                    List.of(buildTriTachyonPresence(2), buildDiktatPresence(0)),
+                    STANDARD_RULES))
+                .isEqualTo(RibbonPlan.NONE);
+        }
+
+        @Test
         void keepsTheBlocOrderItWasHandedRatherThanRankingThemItself() {
             // The painter is listed second and stays second: the caller ranked these, and a
             // ribbon that re-sorted could disagree with the fill about who leads the system.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("hegemony"),
+                Optional.of(HEGEMONY),
                 List.of(buildTriTachyonPresence(1), buildHegemonyPresence(1)),
                 STANDARD_RULES);
 
@@ -336,7 +348,7 @@ final class RibbonPlanTest {
             // takes no divider either: the single dark run at the handover is the Hegemony's,
             // closing the run it actually follows.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("hegemony"),
+                Optional.of(HEGEMONY),
                 List.of(
                     buildHegemonyPresence(2),
                     buildDiktatPresence(0),
@@ -358,7 +370,7 @@ final class RibbonPlanTest {
             // in the band is the second bloc's. A divider laid for the empty bloc would open the
             // band on a parting, which parts the first run from nothing at all.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("sindria"),
+                Optional.of(DIKTAT),
                 List.of(
                     buildDiktatPresence(0),
                     buildHegemonyPresence(2),
@@ -381,7 +393,7 @@ final class RibbonPlanTest {
             // the empty bloc would close the band on a parting belonging to a bloc that is not
             // in it.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("hegemony"),
+                Optional.of(HEGEMONY),
                 List.of(
                     buildHegemonyPresence(1),
                     buildTriTachyonPresence(1),
@@ -401,7 +413,7 @@ final class RibbonPlanTest {
             // same holdings at the proportions the player set. The divider takes that same
             // parting length, so no knob can make one boundary say more than the other.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("hegemony"),
+                Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(2), buildTriTachyonPresence(1)),
                 new RibbonPlanRules(
                     new RibbonSegmentLengths(4, 2),
@@ -438,7 +450,7 @@ final class RibbonPlanTest {
             // and the divider between them, summed into the budget the drawn width is settled
             // against on a crowded cell.
             var plan = RibbonPlan.planCellRibbon(
-                Optional.of("hegemony"),
+                Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(3), buildTriTachyonPresence(2)),
                 STANDARD_RULES);
 
@@ -477,16 +489,20 @@ final class RibbonPlanTest {
     // The three blocs the cases are stated over, each with its own pair of shades so a run can
     // be told from its neighbour's and a bright segment from the parting inside it. Each names
     // only what makes it that bloc, leaving how many markets it holds the one thing a case says.
+    //
+    // Both the ids and the shades are the shared ones, since a bloc drawing one colour here and
+    // another in the suites that read a band back through a palette would let two of them mean
+    // different things by the same faction while all of them passed.
     private static BlocPresence buildHegemonyPresence(int marketCount) {
-        return buildPresence("hegemony", HEGEMONY_BRIGHT, HEGEMONY_DARK, marketCount);
+        return buildPresence(HEGEMONY, HEGEMONY_BRIGHT, HEGEMONY_DARK, marketCount);
     }
 
     private static BlocPresence buildTriTachyonPresence(int marketCount) {
-        return buildPresence("tritachyon", TRITACHYON_BRIGHT, TRITACHYON_DARK, marketCount);
+        return buildPresence(TRITACHYON, TRITACHYON_BRIGHT, TRITACHYON_DARK, marketCount);
     }
 
     private static BlocPresence buildDiktatPresence(int marketCount) {
-        return buildPresence("sindria", DIKTAT_BRIGHT, DIKTAT_DARK, marketCount);
+        return buildPresence(DIKTAT, DIKTAT_BRIGHT, DIKTAT_DARK, marketCount);
     }
 
     // The one shape every bloc above is built in, so a presence gaining a component is one edit

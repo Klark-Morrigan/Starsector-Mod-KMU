@@ -39,6 +39,9 @@ public record BlocPresence(
     FactionPalette palette,
     int marketCount) {
 
+    // A bloc holding nothing the player may be shown, which is the count presence starts above.
+    private static final int NO_MARKETS = 0;
+
     /**
      * Colours an already-ordered set of bloc counts into the presences a plan is stated over.
      *
@@ -74,5 +77,19 @@ public record BlocPresence(
             }
         }
         return presences;
+    }
+
+    /**
+     * Whether the bloc holds anything a band can report.
+     *
+     * <p>The one place the rule above is spelled: a bloc counted at nothing draws no run, does not
+     * contest a cell, and does not keep one from being bare. Held here rather than as a comparison
+     * at each reader, since three readers asking it three times is three chances for one of them to
+     * come to mean something slightly different by presence.
+     *
+     * @return true where the bloc holds at least one colony the player may be shown
+     */
+    public boolean holdsSomething() {
+        return marketCount > NO_MARKETS;
     }
 }

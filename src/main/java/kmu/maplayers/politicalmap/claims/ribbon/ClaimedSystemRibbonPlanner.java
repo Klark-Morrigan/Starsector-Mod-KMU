@@ -59,8 +59,9 @@ public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
 
         var contest = breakdownReader.readBreakdown(system);
 
-        // Nobody claims the system, so nothing painted the cell for a bloc and there is no painter
-        // for the gate to be stated against - the band that would be drawn is one no fill asked for.
+        // Nobody claims the system, so this layer paints no fill over it - and a band is a readout
+        // drawn inside a fill, saying what that fill cannot. With nothing painted there is nothing
+        // for one to sit in.
         if (contest.claimantFactionId() == null) {
             return RibbonPlan.NONE;
         }
