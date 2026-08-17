@@ -28,10 +28,10 @@ import java.util.Map;
  * the lowest colour-faction id - which is grouping-invariant, so even that rare case stays
  * consistent across views.
  *
- * <p>The colonies are the pass's own set rather than a walk of the sector made here, so the tie
- * is settled among the very colonies the ranking that tied was read from - and only among those
- * the economy lists, since a colony that took no weight must not be able to move a fill by
- * settling a dead heat.
+ * <p>The colonies are the pass's own set rather than a walk of the sector made here, and which of
+ * them count is {@link KnownMarketFootprints#readWeighedColonies}'s answer rather than a rule
+ * restated here - so the tie is settled among the very colonies the tied weights were folded
+ * from. A colony that took no weight cannot move a fill, and settling a dead heat is moving one.
  *
  * <p>The comparator is lazy: it reads no geometry until first asked to compare, which
  * {@link SystemDominance} does only when two blocs tie on all three weight levels. A system
@@ -105,12 +105,12 @@ public final class MarketProximityTieBreak {
     }
 
     // Each present bloc's nearest-colony distance from the system's central star, built once
-    // when the tie-break is first consulted. Reads the pass's own known projection - the same
-    // colonies the ranking that tied read - folds each into its bloc, and keeps the smallest
-    // orbit-chain distance to the centremost star, so the comparator reads a ready lookup. The
-    // projection is taken here rather than by the caller so a system that never ties pays for
-    // neither it nor the geometry. The star search and the orbit-chain distance are StarSystems'
-    // job; this only maps the result onto blocs.
+    // when the tie-break is first consulted. Reads the very colonies the ranking that tied was
+    // folded from, folds each into its bloc, and keeps the smallest orbit-chain distance to the
+    // centremost star, so the comparator reads a ready lookup. The selection is asked for here
+    // rather than by the caller so a system that never ties pays for neither it nor the geometry.
+    // The star search and the orbit-chain distance are StarSystems' job; this only maps the result
+    // onto blocs.
     private static Map<String, Double> computeMinDistanceByBlocId(
             StarSystemAPI system,
             SystemColonies colonies,
@@ -120,15 +120,10 @@ public final class MarketProximityTieBreak {
         var centremostStar = StarSystems.getCentremostStar(system);
         var minDistanceByBlocId = new LinkedHashMap<String, Double>();
 
-        for (var colony : colonies.readKnownColonies(shouldIncludeUndiscoveredMarkets)) {
+        for (var market : KnownMarketFootprints.readWeighedColonies(
+                colonies,
+                shouldIncludeUndiscoveredMarkets)) {
 
-            // Only the colonies the economy lists, which is what the ranking that tied weighed. A
-            // colony the economy does not list takes no weight and so cannot move a fill; letting
-            // one settle a dead heat would be moving one by the back door.
-            if (!colony.isListedByEconomy()) {
-                continue;
-            }
-            var market = colony.market();
             var blocId = grouping.resolveBlocId(market.getFaction().getId());
             var distance =
                 StarSystems.getOrbitalDistanceTo(market.getPrimaryEntity(), centremostStar);

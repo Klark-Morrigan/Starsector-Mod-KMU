@@ -280,6 +280,29 @@ public final class KnownMarketFootprints {
     }
 
     /**
+     * The colonies in one system this class weighs: the ones the economy lists, in the order it
+     * lists them, under the known projection.
+     *
+     * <p>Named here rather than left implicit in each read because it is the whole of what
+     * "dominance is economy-fed" amounts to, and it is asked from outside the weighing too - a
+     * reader ordering the blocs this class ranked has to be ranking them over the same colonies,
+     * or it can settle a contest among markets the weights were never folded from.
+     *
+     * @param colonies                         the system's colony set, as one walk of it reported;
+     *                                         empty yields an empty list
+     * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
+     *                                         still counts (the "show all factions" dev reveal);
+     *                                         false applies the normal known-to-player filter
+     * @return the weighed colonies' markets, in the economy's own order
+     */
+    public static List<MarketAPI> readWeighedColonies(
+            SystemColonies colonies,
+            boolean shouldIncludeUndiscoveredMarkets) {
+
+        return selectMarkets(colonies, shouldIncludeUndiscoveredMarkets, true);
+    }
+
+    /**
      * Rounds a worth in size points onto the dominance grid, which is the only place a
      * weight is ever expressed as an integer.
      *
@@ -295,16 +318,7 @@ public final class KnownMarketFootprints {
         return (int) Math.round(contribution * DOMINANCE_WEIGHT_SCALE);
     }
 
-    // The colonies the economy lists, in the order it lists them. What every weighed read reads,
-    // so the totals and the parts can never be folded from different sets of markets.
-    private static List<MarketAPI> readWeighedColonies(
-            SystemColonies colonies,
-            boolean shouldIncludeUndiscoveredMarkets) {
-
-        return selectMarkets(colonies, shouldIncludeUndiscoveredMarkets, true);
-    }
-
-    // The colonies present that the economy does not list - what the read above passes over, and
+    // The colonies present that the economy does not list - what the weighed read passes over, and
     // nothing it takes, the two dividing the projection between them.
     private static List<MarketAPI> readUnweighedColonies(
             SystemColonies colonies,
