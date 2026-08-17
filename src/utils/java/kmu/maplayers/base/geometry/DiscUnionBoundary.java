@@ -338,7 +338,7 @@ final class DiscUnionBoundary {
      * @return the mouth as {@code {start, width}}, or null when the wall passes too far from
      *         this circle to open one at all
      */
-    static double[] measureMouth(
+    private static double[] measureMouth(
             DiscUnion union,
             Chord chord,
             int circle,
@@ -368,8 +368,33 @@ final class DiscUnionBoundary {
             return null;
         }
 
-        var inner = Math.acos(Math.min(1, nearest));
-        var outer = Math.acos(Math.max(-1, furthest));
+        // Where only ONE of the channel's two edges cuts the circle, the mouth is a single
+        // arc wrapped round the end of the circle nearest the line, or round the end furthest
+        // from it - not one of two.
+        //
+        // The two arcs below are the two ways a circle can cross a straight band. They are
+        // separate only while the band cuts clean through; once one edge of it clears the
+        // circle the arcs join up round the back, and taking either one alone takes half a
+        // mouth. Half a mouth leaves the circle uncovered where the wall actually crosses it,
+        // so the boundary walks straight past the wall and the void behind it never closes.
+        //
+        // A coast reach sits exactly on that threshold: it is drawn tangent to a cell's own
+        // border and laid across discs one channel wider, so its line is a channel from the
+        // far edge and whether it clears turns on a rounding. A bridge runs through both
+        // sites and is nowhere near it.
+        if (furthest <= -1) {
+
+            var half = Math.PI - Math.acos(Math.min(1, nearest));
+            return new double[] {Angles.normalise(normalAngle + Math.PI - half), 2 * half};
+        }
+        if (nearest >= 1) {
+
+            var half = Math.acos(furthest);
+            return new double[] {Angles.normalise(normalAngle - half), 2 * half};
+        }
+
+        var inner = Math.acos(nearest);
+        var outer = Math.acos(furthest);
 
         // Of the two arcs the line cuts, the one where the wall actually meets this circle.
         //
@@ -815,7 +840,7 @@ final class DiscUnionBoundary {
     // the boundary and needs no interval arithmetic to agree with. A third disc reaching into
     // the middle of a mouth without touching an edge changes nothing: its cover nests inside
     // the mouth's, so the merged sweep still opens the arcs at the mouth's own edges.
-    static boolean isMouthOnBoundary(
+    private static boolean isMouthOnBoundary(
             DiscUnion union,
             int circle,
             double[] mouth) {
@@ -848,7 +873,7 @@ final class DiscUnionBoundary {
     // whatever the channel adds to each of their mouths, and each keeps the outer terminal the
     // walk needs; the sweep hands one straight on to the other. Refused, the void behind one
     // of the two is left open to the sea with nothing to close it.
-    static boolean isMouthTaken(
+    private static boolean isMouthTaken(
             Map<Integer, List<double[]>> takenByCircle,
             int circle,
             double[] mouth) {
