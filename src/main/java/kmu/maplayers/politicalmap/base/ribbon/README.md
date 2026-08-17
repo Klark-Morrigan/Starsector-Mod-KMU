@@ -78,14 +78,26 @@ hand-built values:
 Two arms of one gate, stated as a disjunction because they answer different questions and only one
 of them is about contest:
 
-1. Some bloc **other than the cell's own painter** is present. Unconditional - this is the readout
-   the bands exist for, and the fill cannot report it.
+1. The cell is **contested**. Unconditional - this is the readout the bands exist for, and the fill
+   cannot report it.
 2. The cell is populated at all and the player asked for it, which is `UncontestedCellBands`.
 
 Written as two arms rather than one settings-dependent rule so no switch can reach the first kind.
 The second arm also carries whether its bands draw their runs at a single width, so a large
 uncontested holding cannot out-shout the contested cells beside it. A cell nothing is present in
 bands under neither arm.
+
+**What contested means** depends on whether the cell has a painter, which the rule takes as a value
+that can state absence rather than as an id no bloc happens to carry:
+
+- **With a painter**, any other bloc holding something. A system claimed by decree whose decreed
+  bloc holds nothing there still bands, against the one rival present, because the fill names the
+  decreed bloc and the band names somebody else.
+- **With none** - an unclaimed cell, which no bloc's fill covers - two or more blocs holding
+  something. There is nobody to be a rival of, so a lone holder says nothing its fill contradicts.
+
+Under a sentinel painter the second case collapsed into the first, every bloc differing from an id
+nobody carries, and a lone haven banded at contested length as though it were fought over.
 
 ## What is not here
 

@@ -4,6 +4,7 @@ import kmlib.starsector.factions.FactionPalette;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The banded stroke one cell draws inside its own ring, as the ordered runs it is made of:
@@ -19,12 +20,16 @@ import java.util.List;
  * makes it read as that bloc's holdings ending rather than as an unowned gap between two
  * rivals. The band's last run is left open, a divider having nothing to part it from.
  *
- * <p>A cell draws a ribbon when some bloc other than the one it was painted for is present in it,
- * or when the cell holds anything at all and {@link UncontestedCellBands} admits the uncontested
- * ones. Phrasing the first arm on the painter rather than on "two or more blocs" is what makes the
- * sparse cases fall out right: a system claimed by decree whose decreed bloc holds nothing there
- * draws the one bloc that is present, alone, because that single bloc is still something the fill
- * does not already say.
+ * <p>A cell draws a ribbon when it is contested, or when it holds anything at all and
+ * {@link UncontestedCellBands} admits the uncontested ones. What makes a cell contested is one
+ * question - does the band say something its own fill does not - asked of the two kinds of fill a
+ * cell can have.
+ *
+ * <p>With a painter, that is any other bloc holding something. A system claimed by decree whose
+ * decreed bloc holds nothing there still draws the one bloc present, alone, because the fill names
+ * the decreed bloc and the band names somebody else. With no painter - an unclaimed cell, which no
+ * bloc's fill covers - there is nobody to be a rival of, so the reading falls to the count: one
+ * bloc alone is a footprint nothing contradicts, and two are a contest.
  *
  * <p>Two arms rather than one rewritten rule, because they answer different questions. A cell with
  * a rival in it bands because the fill cannot report a contest, which is what the whole readout is
@@ -52,6 +57,13 @@ public record RibbonPlan(
     // uncontested cells are not admitted.
     public static final RibbonPlan NONE = new RibbonPlan(List.of());
 
+    // What makes a painterless cell contested. With no fill naming anyone, a lone bloc is a
+    // footprint nothing already said rather than a rivalry, so it takes a second bloc.
+    private static final int CONTESTING_BLOC_COUNT = 2;
+
+    // A cell no bloc holds anything in, which has no footprint to report under either arm.
+    private static final int NO_BLOCS = 0;
+
     public RibbonPlan {
         segments = List.copyOf(segments);
     }
@@ -60,9 +72,9 @@ public record RibbonPlan(
      * Plans one cell's ribbon from the blocs present in it, in the order they were ranked.
      *
      * @param paintingBlocId  the bloc the cell's fill was painted for, whose presence alone is
-     *                        worth a band only where the uncontested cells are admitted; an id
-     *                        no listed bloc carries - a cell painted for nobody - simply leaves
-     *                        every bloc a rival
+     *                        worth a band only where the uncontested cells are admitted; empty
+     *                        where no bloc's fill covers the cell, which is a case of its own
+     *                        rather than a painter every bloc happens to differ from
      * @param rankedPresences the blocs present in the cell, already ranked as the fill was
      *                        decided, since the runs come out in exactly this order
      * @param rules           how a band is laid: the run lengths, and what a cell nobody
@@ -70,19 +82,20 @@ public record RibbonPlan(
      * @return the cell's runs in draw order, or {@link #NONE} where the cell draws no band
      */
     public static RibbonPlan planCellRibbon(
-            String paintingBlocId,
+            Optional<String> paintingBlocId,
             List<BlocPresence> rankedPresences,
             RibbonPlanRules rules) {
 
-        if (hasRivalPresence(paintingBlocId, rankedPresences)) {
+        if (isCellContested(paintingBlocId, rankedPresences)) {
             return layBlocRuns(rankedPresences, rules.lengths());
         }
         var uncontestedBands = rules.uncontestedBands();
 
-        // Nothing but the painter is here, so the band is the player's to ask for - and there has
-        // to be something for it to report, which a decreed system its decreed bloc holds nothing
-        // in has not.
-        if (!uncontestedBands.isBandDrawn() || !hasAnyPresence(rankedPresences)) {
+        // Nothing the fill does not already say is here, so the band is the player's to ask for -
+        // and there has to be something for it to report, which a decreed system its decreed bloc
+        // holds nothing in has not.
+        if (!uncontestedBands.isBandDrawn()
+                || countPresentBlocs(rankedPresences) == NO_BLOCS) {
             return NONE;
         }
         return layBlocRuns(
@@ -140,10 +153,22 @@ public record RibbonPlan(
         return new RibbonPlan(segments);
     }
 
-    // Whether any bloc but the painter holds something in the cell. A bloc counted at nothing
-    // is not presence: it holds no colony the player may be shown, so there is nothing about
-    // it for a band to report, and admitting it would draw an empty ribbon on a cell that
-    // deserves none.
+    // Whether the band would say anything the cell's own fill does not, which is the first arm
+    // of the gate.
+    //
+    // Branched on whether there is a painter at all rather than letting an absent one stand in as
+    // an id no bloc carries: that sentinel leaves every bloc a rival, so a lone haven no fill
+    // covers would band at contested length as though it were fought over.
+    private static boolean isCellContested(
+            Optional<String> paintingBlocId,
+            List<BlocPresence> rankedPresences) {
+
+        return paintingBlocId
+            .map(blocId -> hasRivalPresence(blocId, rankedPresences))
+            .orElseGet(() -> countPresentBlocs(rankedPresences) >= CONTESTING_BLOC_COUNT);
+    }
+
+    // Whether any bloc but the painter holds something in the cell.
     private static boolean hasRivalPresence(
             String paintingBlocId,
             List<BlocPresence> rankedPresences) {
@@ -156,17 +181,21 @@ public record RibbonPlan(
         return false;
     }
 
-    // Whether the cell holds anything at all, which is what the second arm of the gate is stated
-    // over: a footprint is what it offers to report, and a cell whose painter is there by decree
-    // alone has none - so admitting it would lay a band of no runs on a system holding nothing.
-    private static boolean hasAnyPresence(List<BlocPresence> rankedPresences) {
+    // How many blocs hold something in the cell, which both the painterless contest and the
+    // second arm of the gate are read off. A bloc counted at nothing is not presence: it holds no
+    // colony the player may be shown, so there is nothing about it for a band to report, and
+    // admitting it would draw an empty ribbon on a cell that deserves none - a decreed system its
+    // decreed bloc holds nothing in being the case that produces one.
+    private static int countPresentBlocs(List<BlocPresence> rankedPresences) {
+
+        var presentBlocs = 0;
 
         for (var presence : rankedPresences) {
             if (presence.marketCount() > 0) {
-                return true;
+                presentBlocs++;
             }
         }
-        return false;
+        return presentBlocs;
     }
 
     // Lays down one bloc's run: a bright segment per market, parted by a dark interjection.

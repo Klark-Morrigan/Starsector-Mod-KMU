@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHiddenMarket;
@@ -58,6 +59,9 @@ final class ColonyCellRibbonsTest {
 
     // The faction view, where a bloc is a single faction. The alliance case states its own.
     private static final HolderGrouping NO_ALLIANCES = HolderGrouping.identity();
+
+    // A cell no bloc's fill covers, which is what an unclaimed populated system draws as.
+    private static final Optional<String> NO_PAINTER = Optional.empty();
 
     // The size every posed colony carries. A band counts holdings rather than weighing them, so a
     // case varying it would vary nothing the rule can see.
@@ -163,7 +167,7 @@ final class ColonyCellRibbonsTest {
                 buildUndiscoveredHiddenMarket(buildFaction(TRITACHYON), COLONY_SIZE));
 
             var plan = planThrough(
-                HEGEMONY,
+                Optional.of(HEGEMONY),
                 List.of(HEGEMONY, TRITACHYON),
                 buildOnlySystem(sector),
                 buildInputsOver(sector, NO_ALLIANCES, FOG_LIFTED));
@@ -234,7 +238,7 @@ final class ColonyCellRibbonsTest {
                 TRITACHYON);
 
             var plan = planThrough(
-                HEGEMONY_ALLIANCE,
+                Optional.of(HEGEMONY_ALLIANCE),
                 List.of(HEGEMONY_ALLIANCE, TRITACHYON),
                 buildOnlySystem(sector),
                 buildInputsOver(sector, buildAllianceOf(HEGEMONY, PERSEAN), FOG_KEPT));
@@ -245,6 +249,26 @@ final class ColonyCellRibbonsTest {
                     new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
                     new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 3));
+        }
+
+        @Test
+        void countsTheColoniesOfACellNoFillCovers() {
+            // A system two blocs are settled in that no layer paints for anybody. The counting is
+            // the same as ever - the painter is the gate's question, not the count's - and neither
+            // bloc is ranked, so both come out in id order.
+            var sector = buildSectorHolding(SYSTEM_ID, TRITACHYON, HEGEMONY);
+
+            var plan = planThrough(
+                NO_PAINTER,
+                List.of(),
+                buildOnlySystem(sector),
+                buildInputsOver(sector, NO_ALLIANCES, FOG_KEPT));
+
+            assertThat(plan.segments())
+                .containsExactly(
                     new RibbonSegment(HEGEMONY_BRIGHT, 3),
                     new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
@@ -263,21 +287,22 @@ final class ColonyCellRibbonsTest {
     }
 
     // The one call most cases make: the faction view and the fog where the player finds it, leaving
-    // a case to state the system and the ranking.
+    // a case to state the system and the ranking. The painter is named rather than optional here,
+    // a case posing one having nothing to say about the cells no fill covers.
     private static RibbonPlan planFor(
             String paintingBlocId,
             List<String> rankedBlocIds,
             SectorAPI sector) {
 
         return planThrough(
-            paintingBlocId,
+            Optional.of(paintingBlocId),
             rankedBlocIds,
             buildOnlySystem(sector),
             buildInputsOver(sector, NO_ALLIANCES, FOG_KEPT));
     }
 
     private static RibbonPlan planThrough(
-            String paintingBlocId,
+            Optional<String> paintingBlocId,
             List<String> rankedBlocIds,
             StarSystemAPI system,
             RibbonPlanInputs inputs) {

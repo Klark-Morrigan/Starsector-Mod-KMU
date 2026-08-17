@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -54,8 +55,9 @@ public final class ColonyCellRibbons {
      * Plans one cell's band from the colonies in its system.
      *
      * @param paintingBlocId the bloc the cell's fill was painted for, which the band's gate is
-     *                       stated against; an id no present bloc carries - a cell painted for
-     *                       nobody - leaves every bloc a rival
+     *                       stated against; empty where no bloc's fill covers the cell, which the
+     *                       gate reads as its own case rather than as a painter every bloc differs
+     *                       from
      * @param system         the system the cell draws as, counted through the pass's own walk of it
      * @param rankedBlocIds  the order the painting mechanic ranked its blocs in, best placed first;
      *                       a bloc absent from it draws behind those that are, ordered by id
@@ -65,7 +67,7 @@ public final class ColonyCellRibbons {
      *         are handed to leaves the cell bare
      */
     public static RibbonPlan planCellRibbon(
-            String paintingBlocId,
+            Optional<String> paintingBlocId,
             StarSystemAPI system,
             List<String> rankedBlocIds,
             RibbonPlanInputs inputs) {

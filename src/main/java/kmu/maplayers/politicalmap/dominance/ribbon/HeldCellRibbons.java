@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * The order a held cell's band comes out in: the fill's own order, read off the footprints the
@@ -57,8 +58,10 @@ public final class HeldCellRibbons {
             Map<String, MarketFootprint> footprintByBlocId,
             RibbonPlanInputs inputs) {
 
+        // A painter always: the held mechanic paints a cell for the bloc its weights led, and a
+        // system no bloc holds anything in raises no footprints for one to be resolved from.
         return ColonyCellRibbons.planCellRibbon(
-            paintingBlocId,
+            Optional.of(paintingBlocId),
             system,
             rankBlocsByWeight(paintingBlocId, footprintByBlocId),
             inputs);

@@ -12,6 +12,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The order a claimed cell's band comes out in: the contest's own ranking, folded into blocs.
@@ -58,8 +59,10 @@ public final class ClaimCellRibbons {
             SystemClaimBreakdown contest,
             RibbonPlanInputs inputs) {
 
+        // A painter always, since a claimed cell is painted for whoever the claim settled on -
+        // the cells no claim covers are refused before a band is ever planned for them.
         return ColonyCellRibbons.planCellRibbon(
-            paintingBlocId,
+            Optional.of(paintingBlocId),
             system,
             rankBlocsByContest(contest, inputs.grouping()),
             inputs);
