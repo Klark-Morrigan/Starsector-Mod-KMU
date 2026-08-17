@@ -28,6 +28,7 @@ import kmu.maplayers.politicalmap.base.render.territories.StyledCellBuilder;
 
 import org.apache.log4j.Logger;
 
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -84,115 +85,195 @@ final class IncrementalPoliticsRefresh {
         if (staleSystemIds.isEmpty()) {
             return;
         }
-        KmuProfiling.getProfiler().measure("politicalMap.applyPoliticsUpdates", () -> {
-            var sector = Global.getSector();
-            var geometryCache = cellGeometry.cells();
-            var systemById = StarSystems.indexById(sector);
-
-            // What the batch disturbed is accumulated as one value rather than two sets filled
-            // side by side: every flip owes both a re-shape and a territory rebuild, so recording
-            // one without the other is exactly the half-done redraw this fold has to avoid.
-            var disturbance = new HolderFlipDisturbance();
-
-            // Re-derive every marked system first, so re-shaping below reads a fully
-            // updated holder map even when two adjacent systems flipped in one batch.
-            for (var systemId : staleSystemIds) {
-                rederiveSystemHolder(
-                    territories,
-                    geometryCache,
-                    sector,
-                    systemById,
-                    systemId,
-                    disturbance);
-            }
-            if (!disturbance.hasFlips()) {
-                // Every marked system resized without flipping its holder, so no fill or border
-                // moved and no name was re-fitted - but a band counts colonies rather than
-                // weighing them, and the events that mark a system are exactly the ones that add
-                // or remove one. So the bands of the marked systems are re-baked against the
-                // names already standing, and nothing else is. Logged so an un-updated colour can
-                // be confirmed a no-op flip rather than a missed event.
-                CellRibbonsBaker
-                    .createForPass(
-                        territories,
-                        geometryCache,
-                        sector,
-                        standingAnchors.getAnchors())
-                    .bakeCellRibbonsOf(staleSystemIds);
-
-                LOG.debug("Political map politics update: no holder changed; stale="
-                    + staleSystemIds.size());
-                return;
-            }
-            for (var cellId : disturbance.getCellIdsToReshape()) {
-                reshapeCellInPlace(territories, geometryCache, cellId);
-            }
-
-            // A flip changes which systems are contiguous - it can sever one territory in two or
-            // bridge two into one - so the cursor read's cluster index is re-derived off the
-            // updated holders here, in step with the cells that just re-shaped.
-            territories.reindexClusters(
-                geometryCache.getCellEdgesByCellId(),
-                geometryCache.getSystemIdByCellId());
-
-            // Only the old and new holders' territories can have changed shape; every
-            // other faction's rings trace unchanged cells, so they are left as-is. A faction's
-            // members are the cells it draws, so they are grouped from the cells here to match
-            // what buildFactionTerritory traces.
-            var cellsByFaction = DominantHolder.mapCellGrouping(
-                    geometryCache.getSystemIdByCellId(),
-                    territories.getHolderBySystemId())
-                .groupCellIdsByOwner();
-
-            for (var factionId : disturbance.getAffectedFactionIds()) {
-                rebuildFactionTerritoryInPlace(
-                    territories,
-                    geometryCache,
-                    factionId,
-                    cellsByFaction.get(factionId));
-            }
-
-            // A flip can split or merge clusters (a lost system severs one, a gained
-            // one bridges two), so the whole placement list is re-derived off the updated
-            // holders rather than the touched factions' anchors being patched alone. What that
-            // costs is settled by the matching inside the rebuild, not here: a cluster the flip
-            // re-partitioned no longer matches any standing placement and is searched again,
-            // while every cluster it left alone is carried over - which is why naming the
-            // affected factions would buy nothing this does not already get. A no-op while both
-            // consumers are off. Runs only on a real flip - the early return above already left.
-            // The name labels then rebuild from the placements so a renamed or relocated
-            // cluster's name follows.
-            var nameDisturbance = ClusterAnchorsBuilder.rebuildClusterAnchors(
+        KmuProfiling.getProfiler().measure(
+            "politicalMap.applyPoliticsUpdates",
+            () -> applyDrainedPoliticsUpdates(
+                territories,
                 standingAnchors,
-                cellGeometry,
-                sector,
-                ClusterLabelStylingSnapshot.resolveFrom(territories));
-
-            LabelsBuilder.rebuildLabels(
                 factionLabels,
-                standingAnchors.getAnchors(),
-                NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
+                cellGeometry,
+                staleSystemIds));
+    }
 
-            var cellIdsToBake = collectCellIdsToBake(
-                territories.getFillPolygonByCellId(),
-                staleSystemIds,
-                disturbance,
-                nameDisturbance);
+    // The batch itself, once the drain has found something to do: re-derive what was marked, then
+    // take whichever of the two redraws the result calls for.
+    //
+    // The split is the batch's own shape rather than a division for length. A batch that flipped
+    // nothing owes its marked systems a band and nothing else; a batch that flipped something owes
+    // the whole redraw. Reading that fork in one place is what keeps the cheap path visibly cheap.
+    private static void applyDrainedPoliticsUpdates(
+            PoliticalMapTerritories territories,
+            StandingClusterAnchors standingAnchors,
+            List<Label> factionLabels,
+            RevisedCellGeometry cellGeometry,
+            Set<String> staleSystemIds) {
 
-            CellRibbonsBaker
-                .createForPass(
-                    territories,
-                    geometryCache,
-                    sector,
-                    standingAnchors.getAnchors())
-                .bakeCellRibbonsOf(cellIdsToBake);
+        var sector = Global.getSector();
+        var disturbance = rederiveMarkedSystemHolders(
+            territories,
+            cellGeometry.cells(),
+            sector,
+            staleSystemIds);
 
-            LOG.debug("Political map politics updated incrementally; stale="
-                + staleSystemIds.size()
-                + " reshapedCells=" + disturbance.getCellIdsToReshape().size()
-                + " rebuiltFactions=" + disturbance.getAffectedFactionIds().size()
-                + " rebakedBands=" + cellIdsToBake.size());
-        });
+        if (!disturbance.hasFlips()) {
+            // Every marked system resized without flipping its holder, so no fill or border moved
+            // and no name was re-fitted - but a band counts colonies rather than weighing them,
+            // and the events that mark a system are exactly the ones that add or remove one. So
+            // the bands of the marked systems are re-baked against the names already standing, and
+            // nothing else is. Logged so an un-updated colour can be confirmed a no-op flip rather
+            // than a missed event.
+            bakeBandsOf(territories, cellGeometry, sector, standingAnchors, staleSystemIds);
+
+            LOG.debug("Political map politics update: no holder changed; stale="
+                + staleSystemIds.size());
+            return;
+        }
+        redrawFlippedHolders(
+            territories,
+            standingAnchors,
+            factionLabels,
+            cellGeometry,
+            sector,
+            staleSystemIds,
+            disturbance);
+    }
+
+    // Re-derives every marked system's holder, folding what changed into one record of what the
+    // batch disturbed.
+    //
+    // What the batch disturbed is accumulated as one value rather than two sets filled side by
+    // side: every flip owes both a re-shape and a territory rebuild, so recording one without the
+    // other is exactly the half-done redraw this fold has to avoid.
+    //
+    // Every marked system is re-derived before anything is re-shaped, so the re-shaping below
+    // reads a fully updated holder map even when two adjacent systems flipped in one batch.
+    private static HolderFlipDisturbance rederiveMarkedSystemHolders(
+            PoliticalMapTerritories territories,
+            CellGeometryCache geometryCache,
+            SectorAPI sector,
+            Set<String> staleSystemIds) {
+
+        var systemById = StarSystems.indexById(sector);
+        var disturbance = new HolderFlipDisturbance();
+
+        for (var systemId : staleSystemIds) {
+            rederiveSystemHolder(
+                territories,
+                geometryCache,
+                sector,
+                systemById,
+                systemId,
+                disturbance);
+        }
+        return disturbance;
+    }
+
+    // The whole redraw a flip owes: the ring of cells around it re-shaped, the cluster index and
+    // the two sides' territories rebuilt off the updated holders, the names re-fitted, and the
+    // bands laid last around wherever those names ended up.
+    //
+    // Takes the batch's sector rather than reaching for the global one, so every half of one
+    // redraw is answered off the reading the re-derive above already worked from.
+    private static void redrawFlippedHolders(
+            PoliticalMapTerritories territories,
+            StandingClusterAnchors standingAnchors,
+            List<Label> factionLabels,
+            RevisedCellGeometry cellGeometry,
+            SectorAPI sector,
+            Set<String> staleSystemIds,
+            HolderFlipDisturbance disturbance) {
+
+        var geometryCache = cellGeometry.cells();
+
+        for (var cellId : disturbance.getCellIdsToReshape()) {
+            reshapeCellInPlace(territories, geometryCache, cellId);
+        }
+
+        // A flip changes which systems are contiguous - it can sever one territory in two or
+        // bridge two into one - so the cursor read's cluster index is re-derived off the
+        // updated holders here, in step with the cells that just re-shaped.
+        territories.reindexClusters(
+            geometryCache.getCellEdgesByCellId(),
+            geometryCache.getSystemIdByCellId());
+
+        rebuildAffectedFactionTerritories(territories, geometryCache, disturbance);
+
+        // A flip can split or merge clusters (a lost system severs one, a gained
+        // one bridges two), so the whole placement list is re-derived off the updated
+        // holders rather than the touched factions' anchors being patched alone. What that
+        // costs is settled by the matching inside the rebuild, not here: a cluster the flip
+        // re-partitioned no longer matches any standing placement and is searched again,
+        // while every cluster it left alone is carried over - which is why naming the
+        // affected factions would buy nothing this does not already get. A no-op while both
+        // consumers are off. Reached only on a real flip - the caller's other arm already left.
+        // The name labels then rebuild from the placements so a renamed or relocated
+        // cluster's name follows.
+        var nameDisturbance = ClusterAnchorsBuilder.rebuildClusterAnchors(
+            standingAnchors,
+            cellGeometry,
+            sector,
+            ClusterLabelStylingSnapshot.resolveFrom(territories));
+
+        LabelsBuilder.rebuildLabels(
+            factionLabels,
+            standingAnchors.getAnchors(),
+            NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
+
+        var cellIdsToBake = collectCellIdsToBake(
+            territories.getFillPolygonByCellId(),
+            staleSystemIds,
+            disturbance,
+            nameDisturbance);
+
+        bakeBandsOf(territories, cellGeometry, sector, standingAnchors, cellIdsToBake);
+
+        LOG.debug("Political map politics updated incrementally; stale="
+            + staleSystemIds.size()
+            + " reshapedCells=" + disturbance.getCellIdsToReshape().size()
+            + " rebuiltFactions=" + disturbance.getAffectedFactionIds().size()
+            + " rebakedBands=" + cellIdsToBake.size());
+    }
+
+    // Rebuilds the territory of each faction the batch's flips moved. Only the old and new
+    // holders' territories can have changed shape; every other faction's rings trace unchanged
+    // cells, so they are left as-is. A faction's members are the cells it draws, so they are
+    // grouped from the cells here to match what buildFactionTerritory traces.
+    private static void rebuildAffectedFactionTerritories(
+            PoliticalMapTerritories territories,
+            CellGeometryCache geometryCache,
+            HolderFlipDisturbance disturbance) {
+
+        var cellsByFaction = DominantHolder.mapCellGrouping(
+                geometryCache.getSystemIdByCellId(),
+                territories.getHolderBySystemId())
+            .groupCellIdsByOwner();
+
+        for (var factionId : disturbance.getAffectedFactionIds()) {
+            rebuildFactionTerritoryInPlace(
+                territories,
+                geometryCache,
+                factionId,
+                cellsByFaction.get(factionId));
+        }
+    }
+
+    // One bake of the named cells' bands, which both arms of the batch end on. Held in one place
+    // because they differ only in which cells they name: a second copy of the pass construction
+    // could drift into baking the two arms from different snapshots of the same map.
+    private static void bakeBandsOf(
+            PoliticalMapTerritories territories,
+            RevisedCellGeometry cellGeometry,
+            SectorAPI sector,
+            StandingClusterAnchors standingAnchors,
+            Collection<String> cellIds) {
+
+        CellRibbonsBaker
+            .createForPass(
+                territories,
+                cellGeometry.cells(),
+                sector,
+                standingAnchors.getAnchors())
+            .bakeCellRibbonsOf(cellIds);
     }
 
     // Which cells owe a fresh band after a flip, from the three separate reasons one can.

@@ -67,10 +67,10 @@ public interface MapLayerRenderer {
     }
 
     /**
-     * Emits one band of this layer's overlay for the frame {@link #prepareFrame} has just made
-     * ready. Called from inside the map's render pass, so an implementation may read the GL state
-     * that pass binds. Mirrors the engine's own {@code renderOnMap} signature, since that pass is
-     * what ultimately drives it.
+     * Emits one band of this layer's overlay, for a frame {@link #prepareFrame} has brought up to
+     * date and {@link #publishHoverForPass} has resolved the cursor against. Called from inside the
+     * map's render pass, so an implementation may read the GL state that pass binds. Mirrors the
+     * engine's own {@code renderOnMap} signature, since that pass is what ultimately drives it.
      *
      * <p>A band that a layer has nothing to put in is drawn as nothing, not refused: which sub-layers
      * ride above the nebulae is the surface's question to ask and the layer's to answer with an

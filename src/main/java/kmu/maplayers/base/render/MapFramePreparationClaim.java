@@ -11,9 +11,10 @@ import com.fs.starfarer.api.combat.ViewportAPI;
  * settled by that surface alone - each answers only for itself, so two can answer yes for the same
  * frame. Pinning preparation to the band every mode paints narrows that without closing it: a band
  * is something a surface claims rather than something one surface holds. Preparation cannot absorb
- * being run twice either, since it steps the cursor's arrival latch, and a latch stepped twice for
- * one frame reports the cursor leaving and reaching the cell it is resting on. So "once" is enforced
- * here rather than argued from which surface the engine reaches first.
+ * being run twice either, since it is where the cursor's arrival latch is stepped - the moment a
+ * layer announces for the frame just closed - and a latch stepped twice for one frame reports the
+ * cursor leaving and reaching the cell it is resting on. So "once" is enforced here rather than
+ * argued from which surface the engine reaches first.
  *
  * <p>A frame begins where the campaign UI begins drawing one, which is the below-UI render pass -
  * it runs under the screen the map widget hangs off, so the claim is already reset by the time any

@@ -1,8 +1,7 @@
 package kmu.maplayers.politicalmap.base.render;
 
-import kmlib.starsector.ui.map.presence.MapPresence;
-
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCover;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
@@ -26,6 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -35,8 +36,14 @@ import static org.mockito.Mockito.when;
  * framework with is the active view's and only while this layer's own tooltip switch is on, that a
  * covered cursor parks the hover rather than leaving it standing, and that a game load leaves
  * nothing of the previous sector behind. What the discard actually empties is
- * {@link PoliticalMapCacheTest}'s; the cache refresh, the cursor read and the GL emission run only
- * in-engine and are covered by their own collaborators.
+ * {@link PoliticalMapCacheTest}'s; the cache refresh and the GL emission run only in-engine and are
+ * covered by their own collaborators.
+ *
+ * <p>Beside those sits the split between a frame and its passes, which is this renderer's alone to
+ * get right: what the frame settles once - whether a hover is wanted at all, and the moment the
+ * frame before ended on - against what each pass asks of its own transform. The read itself needs a
+ * live map, so it arrives as a source this test hands a double to; what is pinned is which call
+ * reaches it and with what.
  */
 final class PoliticalMapLayerRendererTest {
 
@@ -52,6 +59,10 @@ final class PoliticalMapLayerRendererTest {
     // A hover left standing from an earlier frame, so a parked read is told apart from one that
     // never had anything to drop.
     private static final MapHover HOVERED_CELL = new MapHover("system_id", List.of("system_id"));
+
+    // The cursor read, which needs the running game's GL matrices and so cannot be built here. What
+    // it resolves is MapHoverPublisherTest's; what this test asks of it is which call reaches it.
+    private final MapHoverPublisher hoverPublisherMock = mock(MapHoverPublisher.class);
 
     @Nested
     class PrepareFrame {
@@ -75,6 +86,46 @@ final class PoliticalMapLayerRendererTest {
                     .verifyNoInteractions();
                 layerSettingsMock
                     .verifyNoInteractions();
+            }
+        }
+
+        @Test
+        void prepareFrameAnnouncesTheMomentTheFrameBeforeSettledOn() {
+            // Where the tick comes from, and the reason it comes from here: the frame's passes each
+            // read through their own transform and the last of them wins, so the moment can only be
+            // answered once they are all in - which the next frame's single preparation is.
+            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                stubASelectedView(viewRegistryMock);
+                stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
+
+                var renderer = buildRenderer(NOT_COVERING_THE_MAP);
+
+                renderer.decideWhetherTheHoverIsWantedThisFrame();
+                renderer.publishHoverForPass(FACTOR);
+                renderer.prepareFrame(FACTOR);
+
+                verify(hoverPublisherMock)
+                    .announceSettledArrival();
+            }
+        }
+
+        @Test
+        void prepareFrameAnnouncesNothingBeforeAnyPassHasReadTheCursor() {
+            // The first preparation of a session runs before any pass ever has, so there is no read
+            // to answer for - and none to build one for either, the read needing a running map.
+            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                stubASelectedView(viewRegistryMock);
+                stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
+
+                buildRenderer(NOT_COVERING_THE_MAP).prepareFrame(FACTOR);
+
+                verifyNoInteractions(hoverPublisherMock);
             }
         }
     }
@@ -181,10 +232,10 @@ final class PoliticalMapLayerRendererTest {
     }
 
     @Nested
-    class PublishHoverForPass {
+    class DecideWhetherTheHoverIsWantedThisFrame {
 
         @Test
-        void publishHoverForPassParksTheHoverWhileTheMapIsCovered() {
+        void decideWhetherTheHoverIsWantedThisFrameParksTheHoverWhileTheMapIsCovered() {
             // The renderer's half of the arrangement: a covered cursor is not hovering the cells
             // beneath it, so the hover is parked rather than left standing. Without it the map went
             // on lighting cells and floating boxes behind an open console.
@@ -194,16 +245,13 @@ final class PoliticalMapLayerRendererTest {
             // what this pins is that the renderer obeys whichever answer it gets.
             MapHoverState.getInstance().publishHover(HOVERED_CELL);
 
-            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                stubASelectedView(viewRegistryMock);
                 stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
 
-                new PoliticalMapLayerRenderer(
-                    new MapCoverReader(List.of(COVERING_THE_MAP)), new MapPresence())
-                    .publishHoverForPass(FACTOR);
+                buildRenderer(COVERING_THE_MAP)
+                    .decideWhetherTheHoverIsWantedThisFrame();
 
                 assertThat(MapHoverState.getInstance().getHover())
                     .isEqualTo(MapHover.NONE);
@@ -211,25 +259,21 @@ final class PoliticalMapLayerRendererTest {
         }
 
         @Test
-        void publishHoverForPassParksTheHoverWhileEveryHoverSwitchIsOff() {
+        void decideWhetherTheHoverIsWantedThisFrameParksTheHoverWhileEveryHoverSwitchIsOff() {
             // The other park, pinned beside it so the covered one cannot be read as the only way a
             // stale cell is dropped: with both kinds of feedback switched off there is nothing that
-            // wants the answer, and the cursor read is skipped along with the covers.
+            // wants the answer, and the frame's passes read no cursor at all.
             MapHoverState.getInstance().publishHover(HOVERED_CELL);
 
-            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
-
-                stubASelectedView(viewRegistryMock);
 
                 frameworkSettingsMock
                     .when(KmuMapLayerSettings::getMapHoveringEnabled)
                     .thenReturn(false);
 
-                new PoliticalMapLayerRenderer(
-                    new MapCoverReader(List.of(NOT_COVERING_THE_MAP)), new MapPresence())
-                    .publishHoverForPass(FACTOR);
+                buildRenderer(NOT_COVERING_THE_MAP)
+                    .decideWhetherTheHoverIsWantedThisFrame();
 
                 assertThat(MapHoverState.getInstance().getHover())
                     .isEqualTo(MapHover.NONE);
@@ -237,27 +281,81 @@ final class PoliticalMapLayerRendererTest {
         }
 
         @Test
-        void publishHoverForPassStandsDownWhileNoViewIsSelected() {
-            // This runs on every pass rather than under the frame's claim, so a deselected view has
-            // to cost each of them nothing: the read behind it is a matrix readback, and paying for
-            // one per pass while the overlay is dark is the cost the view gate exists to refuse.
-            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+        void decideWhetherTheHoverIsWantedThisFrameAsksNoCoverWhileEveryHoverSwitchIsOff() {
+            // The covers are the dear half - the last of them walks the live widget tree - so a
+            // player who wants no feedback at all must not pay for a walk that could only refine an
+            // answer nobody asked for.
+            var coverReadCount = new int[1];
+
+            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
-                viewRegistryMock
-                    .when(PoliticalMapViewRegistry::getActiveView)
-                    .thenReturn(null);
-
-                new PoliticalMapLayerRenderer(
-                    new MapCoverReader(List.of(NOT_COVERING_THE_MAP)), new MapPresence())
-                    .publishHoverForPass(FACTOR);
-
                 frameworkSettingsMock
-                    .verifyNoInteractions();
-                layerSettingsMock
-                    .verifyNoInteractions();
+                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                    .thenReturn(false);
+
+                buildRenderer(() -> {
+                    coverReadCount[0]++;
+                    return false;
+                }).decideWhetherTheHoverIsWantedThisFrame();
+
+                assertThat(coverReadCount[0])
+                    .isZero();
             }
+        }
+    }
+
+    @Nested
+    class PublishHoverForPass {
+
+        @Test
+        void publishHoverForPassReadsTheCursorOnceTheFrameWantsAHover() {
+            // The pass's whole remaining job: hand the frame's draw lists and this pass's own zoom
+            // to the read. The lists are empty here, which is what a pass before the first build
+            // sees and what the publisher parks on.
+            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
+
+                var renderer = buildRenderer(NOT_COVERING_THE_MAP);
+
+                renderer.decideWhetherTheHoverIsWantedThisFrame();
+                renderer.publishHoverForPass(FACTOR);
+
+                verify(hoverPublisherMock)
+                    .publishHoverFrom(null, FACTOR);
+            }
+        }
+
+        @Test
+        void publishHoverForPassAnnouncesNoArrival() {
+            // The moment belongs to the frame, not to a pass. A pass answering one would sound the
+            // crossing between two transforms' answers every frame a foreign map draws beside the
+            // real one.
+            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
+
+                var renderer = buildRenderer(NOT_COVERING_THE_MAP);
+
+                renderer.decideWhetherTheHoverIsWantedThisFrame();
+                renderer.publishHoverForPass(FACTOR);
+
+                verify(hoverPublisherMock, never())
+                    .announceSettledArrival();
+            }
+        }
+
+        @Test
+        void publishHoverForPassReadsNothingWhileTheFrameWantsNoHover() {
+            // The frame's decision is what the passes stand down on, so the read - and with it the
+            // publisher and the renderer binding it holds - is never reached at all.
+            buildRenderer(NOT_COVERING_THE_MAP)
+                .publishHoverForPass(FACTOR);
+
+            verifyNoInteractions(hoverPublisherMock);
         }
     }
 
@@ -273,7 +371,15 @@ final class PoliticalMapLayerRendererTest {
         }
     }
 
-    // A view the player has picked, so the reads gated behind one are reached. Which view it is
+    // The renderer under test, over one stated cover and a read it hands out rather than builds.
+    // Both are the seams a running game supplies, and stating them here is what lets a frame be
+    // driven at all without a map on screen.
+    private PoliticalMapLayerRenderer buildRenderer(MapCover cover) {
+        return new PoliticalMapLayerRenderer(
+            new MapCoverReader(List.of(cover)), () -> hoverPublisherMock);
+    }
+
+    // A view the player has picked, so the frame work gated behind one is reached. Which view it is
     // decides only what would be painted, which none of these cases gets as far as.
     private static void stubASelectedView(MockedStatic<PoliticalMapViewRegistry> viewRegistryMock) {
 

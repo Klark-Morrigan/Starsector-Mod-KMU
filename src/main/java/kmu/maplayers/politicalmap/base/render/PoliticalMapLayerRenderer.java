@@ -22,6 +22,7 @@ import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import org.apache.log4j.Logger;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Draws the political map on the sector map as merged HOI4-style clusters, where adjacent
@@ -50,15 +51,23 @@ import java.util.Optional;
  * per frame in {@code prepareFrame}, the cursor read once per pass in {@code publishHoverForPass} -
  * each pass binding a transform of its own, and the last of them owning the answer - and the paint
  * per band in {@code renderOnMap}.
+ *
+ * <p>Everything <em>about</em> that read which does not turn on the pass is settled once, in the
+ * preparation: whether any feedback still wants a hover, whether something is drawn over the cursor,
+ * and what moment the frame before settled on. None of those changes between two passes of one
+ * frame, and the dearest of them walks the live widget tree, so a pass asks only what its own
+ * transform can answer.
  */
 public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
     /**
      * The one shared instance; the political-map layer hands it to the map surface as its renderer.
-     * This is where the live covers are chosen, the renderer itself naming only the reader.
+     * This is where the live covers and the live cursor read are chosen, the renderer itself naming
+     * only the reader and the source.
      */
-    public static final PoliticalMapLayerRenderer INSTANCE =
-        new PoliticalMapLayerRenderer(MapCoverReader.createForLiveScreen(), new MapPresence());
+    public static final PoliticalMapLayerRenderer INSTANCE = new PoliticalMapLayerRenderer(
+        MapCoverReader.createForLiveScreen(),
+        PoliticalMapLayerRenderer::buildLiveHoverPublisher);
 
     private static final Logger LOG = Global.getLogger(PoliticalMapLayerRenderer.class);
 
@@ -75,29 +84,49 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // layer could be given differently.
     private final MapCoverReader mapCoverReader;
 
-    // Whether a vanilla map host is on screen, for the hover's own question of whether the pass now
-    // running is one the cursor can be located against. Held rather than resolved per frame, the
-    // binding behind it being fixed for the session; handed in for the cover reader's reason, so a
-    // test can answer it without a live widget tree.
-    private final MapPresence mapPresence;
+    // Where the cursor read comes from when one is first wanted. A source rather than the read
+    // itself because the matrix binding it holds is chosen from the renderer in force, which can
+    // only be read from a running game - and because a player who leaves the hover off never needs
+    // one at all. Handed in for the cover reader's reason: what a frame does with the read is this
+    // class's business and answerable without a live map, while building one is not.
+    private final Supplier<MapHoverPublisher> hoverPublisherSource;
 
-    // The last widget-trace line logged, so a resting cursor reports once rather than every frame.
-    // Held here rather than in the trace because the trace only describes; deciding how often this
-    // layer repeats itself is this layer's business.
-    private String lastLoggedWidgetTrace;
+    // Which terrain icons the map holds and in what order, reported when that order moves. This
+    // layer rides on a terrain, so where its icon was seeded is what decides whether the map's own
+    // nebula fog paints over the overlay or under it - an insertion-order artefact of the live
+    // widget, not a contract, and one no published call reports. A build that starts seeding its
+    // icons differently shows up here as a moved position rather than as a picture nobody can
+    // account for.
+    //
+    // Reported under this mod's own verbosity rather than the library's, the line being about this
+    // layer's problem: a logger named after a library class would sit outside the switch a player
+    // reaches for when the map looks wrong.
+    private final ChangedLineTrace iconOrderTrace =
+        new ChangedLineTrace(LOG, "Map icon order", MapIconOrderTrace::describeTerrainIconOrder);
 
-    // The last icon-order line logged, for the same reason and on the same terms: the order moves
-    // only when a map is opened or an entity is reseated, so an unchanging map reports once.
-    private String lastLoggedIconOrder;
+    // Which vanilla widgets the cursor is inside, reported when that changes. The hover comes from
+    // the map's own geometry and knows nothing of the chrome laid over it, which is what the covers
+    // answer for - and this is the line that says which widgets a build actually puts under the
+    // cursor, so a cover that stops fitting a game build is diagnosed from the tree rather than
+    // guessed at. Logged here for the reason above.
+    private final ChangedLineTrace widgetsUnderCursorTrace = new ChangedLineTrace(
+        LOG, "Map-tab widget trace", MapTabWidgetTrace::describeWidgetsUnderCursor);
 
-    // The cursor read, created on the first frame the hover toggle is on. Deferred because the
-    // matrix binding it holds is chosen from the renderer in force, which can only be read from a
-    // running game - and because a player who leaves the hover off never needs one at all.
+    // The cursor read, taken from the source above on the first pass that wants one.
     private MapHoverPublisher hoverPublisher;
 
-    PoliticalMapLayerRenderer(MapCoverReader mapCoverReader, MapPresence mapPresence) {
+    // Whether this frame's passes are to read the cursor at all: some feedback still wants a hover,
+    // and nothing is drawn over where the cursor rests. Settled once per frame because neither half
+    // turns on which pass is running, and asking per pass would walk the live widget tree two or
+    // three times over for one answer.
+    private boolean isHoverWantedThisFrame;
+
+    PoliticalMapLayerRenderer(
+            MapCoverReader mapCoverReader,
+            Supplier<MapHoverPublisher> hoverPublisherSource) {
+
         this.mapCoverReader = mapCoverReader;
-        this.mapPresence = mapPresence;
+        this.hoverPublisherSource = hoverPublisherSource;
     }
 
     /**
@@ -127,10 +156,15 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         // here.
         var view = PoliticalMapViewRegistry.getActiveView();
         if (view == null) {
+            // The frame's passes stand down with it, or a deselected view would still pay for a
+            // matrix read per pass.
+            isHoverWantedThisFrame = false;
             return;
         }
-        traceMapIconOrder();
+        iconOrderTrace.traceWhenChanged();
+        widgetsUnderCursorTrace.traceWhenChanged();
         announceArrivalOnTheFrameJustClosed();
+        decideWhetherTheHoverIsWantedThisFrame();
         cache.refresh(view);
     }
 
@@ -166,42 +200,24 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     }
 
     /**
-     * Resolves the cursor for the pass now running, while some hover feedback still wants the
-     * answer - either the halo and wash or the hover box.
+     * Resolves the cursor for the pass now running, if the frame settled that a hover is wanted at
+     * all.
      *
-     * <p>The whole read - the map-matrix read (bridged, and a render-thread hop under Fast
-     * Rendering), the unproject, and the cell hit test - hangs off this call, so gating it here is
-     * what makes the switches real off switches rather than ones that draw nothing while still
-     * paying to resolve the hover every frame. It is the union of the two kinds rather than the
-     * effects alone because the box needs the same hovered cell the halo does. With both off the
-     * hover is parked so nothing downstream keeps a stale cell lit, and the publisher (and the
-     * renderer binding it holds) is never created.
+     * <p>Only what turns on the pass is left here. The whole read - the map-matrix read (bridged,
+     * and a render-thread hop under Fast Rendering), the unproject, and the cell hit test - hangs
+     * off the frame's decision, so a player with both kinds of feedback off pays for none of it, and
+     * the publisher (with the renderer binding it holds) is never built.
      *
      * @param factor the per-vertex scale this pass applies, folding in its zoom
      */
     @Override
     public void publishHoverForPass(float factor) {
-        // The same view read the preparation stands down on. Repeated here because this runs on
-        // every pass rather than under the frame's claim, so a deselected view has to cost each of
-        // them nothing rather than only the first.
-        if (PoliticalMapViewRegistry.getActiveView() == null) {
-            return;
-        }
-        traceVanillaWidgetsUnderCursor();
 
-        if (!PoliticalMapHoverGates.isCursorReadNeeded()) {
-            MapHoverState.getInstance().clearHover();
-            return;
-        }
-        // Something drawn over the map takes the cursor with it, and the hover is blind to all of
-        // it: it resolves a cell from map geometry, which has no notion of what is composited on
-        // top. Park so nothing under a cover is lit or described.
-        if (mapCoverReader.isMapCoveredAtCursor()) {
-            MapHoverState.getInstance().clearHover();
+        if (!isHoverWantedThisFrame) {
             return;
         }
         if (hoverPublisher == null) {
-            hoverPublisher = buildHoverPublisher();
+            hoverPublisher = hoverPublisherSource.get();
         }
         // The cursor read sits between the frame's refresh and this pass's draw: after the refresh,
         // so it tests against the shapes the frame actually paints, and before the draw, so the
@@ -210,6 +226,52 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         // as the hover targets they satisfy - null when nothing was painted, which the publisher
         // parks on.
         hoverPublisher.publishHoverFrom(cache.getTerritories(), factor);
+    }
+
+    // Settles whether this frame's passes are to read the cursor, and parks the hover when they are
+    // not so nothing downstream keeps a stale cell lit.
+    //
+    // Both halves are frame facts rather than pass facts - what the player has switched on, and
+    // where the cursor rests relative to what is drawn over the map - and the covers are dear, the
+    // last of them walking the live widget tree. Asked once, they cost one walk however many
+    // surfaces paint.
+    //
+    // The read is wanted for either kind of feedback, the halo and wash or the hover box, because
+    // the box needs the same hovered cell the halo does. The switches are asked first so a player
+    // who wants neither pays for no cover read either.
+    //
+    // Package-private so the frame's decision is answerable without a live map: the covers answer
+    // from the screen, while the refresh beside them needs a running sector.
+    void decideWhetherTheHoverIsWantedThisFrame() {
+
+        isHoverWantedThisFrame = PoliticalMapHoverGates.isCursorReadNeeded()
+            && !mapCoverReader.isMapCoveredAtCursor();
+
+        if (!isHoverWantedThisFrame) {
+            MapHoverState.getInstance().clearHover();
+        }
+    }
+
+    // The cursor read a running game gets, and what answers a cell reached under it: the binding is
+    // chosen from the renderer in force, and what a moment sounds like belongs to whatever owns the
+    // look - the publisher under them names only the moment. The cue is composed per arrival rather
+    // than fixed now, so a level changed on the settings screen reaches a publisher built long
+    // before it.
+    //
+    // Taken as a source rather than built at construction because both reads behind it need a game
+    // that is running, and this renderer is created when the class loads.
+    private static MapHoverPublisher buildLiveHoverPublisher() {
+
+        var mapPresence = new MapPresence();
+        var soundPlayer = new VanillaUiSoundPlayer();
+
+        return new MapHoverPublisher(
+            ModelviewMatrixReaders.selectForActiveRenderer(),
+            () -> soundPlayer.playCueIfPresent(MapHoverCues.composeCellArrivalCue()),
+            // Composed here rather than inside the publisher because the two halves belong to
+            // different ends: the setting is the framework's to state, and what counts as a vanilla
+            // map on screen is a live read.
+            () -> MapHoverGates.isCursorLocatableOn(mapPresence.isAnyMapShowing()));
     }
 
     // Answers the moment the frame just closed settled on, that frame's last pass having had the
@@ -227,65 +289,4 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         }
         hoverPublisher.announceSettledArrival();
     }
-
-    // The cursor read and what answers a cell reached under it, composed together because both are
-    // this host's to name: the binding is chosen from the renderer in force, and what a moment
-    // sounds like belongs to whatever owns the look - the publisher under them names only the
-    // moment. The cue is composed per arrival rather than fixed now, so a level changed on the
-    // settings screen reaches a publisher built long before it.
-    private MapHoverPublisher buildHoverPublisher() {
-
-        var soundPlayer = new VanillaUiSoundPlayer();
-
-        return new MapHoverPublisher(
-            ModelviewMatrixReaders.selectForActiveRenderer(),
-            () -> soundPlayer.playCueIfPresent(MapHoverCues.composeCellArrivalCue()),
-            // Composed here rather than inside the publisher because the two halves belong to
-            // different ends: the setting is the framework's to state, and what counts as a
-            // vanilla map on screen is the live read this renderer already holds a binding for.
-            () -> MapHoverGates.isCursorLocatableOn(mapPresence.isAnyMapShowing()));
-    }
-
-    // Diagnostic only, and silent unless KMU's log verbosity is DEBUG: names the vanilla widgets the
-    // cursor is inside. The hover comes from the map's own geometry and knows nothing of the chrome
-    // laid over it, which is what the covers answer for - and this is the line that says which
-    // widgets a build actually puts under the cursor, so a cover that stops fitting a game build is
-    // diagnosed from the tree rather than guessed at.
-    //
-    // Logged here rather than in the library that reads it: the line is about this layer's problem
-    // and belongs under this mod's own verbosity, which a logger named after a library class would
-    // sit outside of. Reported only when the answer changes, so a resting cursor costs one line.
-    private void traceVanillaWidgetsUnderCursor() {
-        if (!LOG.isDebugEnabled()) {
-            return;
-        }
-        var widgetsUnderCursor = MapTabWidgetTrace.describeWidgetsUnderCursor();
-        if (widgetsUnderCursor != null && !widgetsUnderCursor.equals(lastLoggedWidgetTrace)) {
-            lastLoggedWidgetTrace = widgetsUnderCursor;
-            LOG.debug("Map-tab widget trace: " + widgetsUnderCursor);
-        }
-    }
-
-    // Diagnostic only, and silent unless KMU's log verbosity is DEBUG: names the terrain icons the
-    // map widget holds, in the order it will draw them. This layer rides on a terrain, so where its
-    // icon was seeded is what decides whether the map's own nebula fog paints over the overlay
-    // or under it - an insertion-order artefact of the live widget, not a contract, and one no
-    // published call reports. A build that starts seeding its icons differently shows up here as a
-    // moved position rather than as a picture nobody can account for.
-    //
-    // Read on the frames this layer actually paints, since the order only means anything while
-    // there is something of ours in it to be buried. Logged here rather than in the library that
-    // reads it, on the same terms as the widget trace above: the line answers to this mod's own
-    // verbosity, and is repeated only when the order changes.
-    private void traceMapIconOrder() {
-        if (!LOG.isDebugEnabled()) {
-            return;
-        }
-        var iconOrder = MapIconOrderTrace.describeTerrainIconOrder();
-        if (iconOrder != null && !iconOrder.equals(lastLoggedIconOrder)) {
-            lastLoggedIconOrder = iconOrder;
-            LOG.debug("Map icon order: " + iconOrder);
-        }
-    }
-
 }

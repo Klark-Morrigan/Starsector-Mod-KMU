@@ -20,7 +20,8 @@ import static org.mockito.Mockito.verify;
  * Pins the two things this half adds to the map's draw: it paints only while a Starscape map is on
  * screen, so no two surfaces lay the same overlay down in one frame, and it paints the lower band
  * alone - the half of the picture the map's nebulae are allowed to fog. It is also the surface
- * that prepares the frame, that being what the lower band carries with it.
+ * that prepares the frame, that being what the lower band carries with it, while the cursor read it
+ * takes beside that is a pass's own and is taken by the surface above it as well.
  */
 final class SectorMapLayerStarscapeTerrainPluginTest {
 
@@ -100,6 +101,26 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
 
                 verify(layerRendererMock)
                     .prepareFrame(FACTOR);
+            }
+        }
+
+        @Test
+        void renderOnMapPublishesTheHoverForItsOwnPass() {
+            // Both Starscape surfaces read, this one included: the read inverts the transform its
+            // own pass bound, so a surface skipping it would leave the frame's answer to whichever
+            // other pass drew - the fault this arrangement exists to close.
+            var layerRendererMock = mock(MapLayerRenderer.class);
+
+            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
+
+                layerRegistryMock
+                    .when(MapLayerRegistry::resolveActiveMapRenderer)
+                    .thenReturn(layerRendererMock);
+
+                new SectorMapLayerStarscapeTerrainPlugin(() -> true).renderOnMap(FACTOR, ALPHA_MULT);
+
+                verify(layerRendererMock)
+                    .publishHoverForPass(FACTOR);
             }
         }
 

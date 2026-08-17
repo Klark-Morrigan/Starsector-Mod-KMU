@@ -104,7 +104,13 @@ rather than stalling under Fast Rendering - and leaves one residual case: a mod 
 surface *after* the map screen would win instead, which `mapLayerMouseoverOnlyOnTheirHosts` is the
 escape from.
 
-The moment stays per frame for the reason the claim states. Two passes of one frame resolving
+Only the read moves, though. Everything *about* the read that does not turn on the pass stays in the
+preparation: whether any feedback still wants a hover, and whether something is drawn over the
+cursor. Neither changes between two passes of one frame, and the last cover in the chain walks the
+live widget tree, so a pass asks only what its own transform can answer and reads a flag for the
+rest.
+
+The moment stays per frame too, for the reason the claim states. Two passes of one frame resolving
 different cells is exactly what a foreign transform produces, so a latch stepped per pass would
 report a crossing on every frame the pointer rests still. `MapHoverPublisher` therefore keeps what
 its passes settled on and answers the moment once, from the preparation - one frame behind the read,
