@@ -130,6 +130,30 @@ public final class SystemOccupancy {
     }
 
     /**
+     * Which of the given systems nobody holds.
+     *
+     * <p>The candidate rule for a spotlit bloc's presence, which is only ever asked about systems
+     * the holding could attribute to nobody: one somebody holds already draws in that bloc's
+     * territory, so where the pick also lives there changes nothing. Asked over a caller's own
+     * candidates rather than over the whole map, since both callers already know the narrow set
+     * they care about - every settled system for a full build, the marked ones for a refresh.
+     *
+     * @param candidateSystemIds the systems to filter, in the order they are to be answered in
+     * @return those of them no holder was resolved for
+     */
+    public Set<String> selectUnheldSystemIdsAmong(Set<String> candidateSystemIds) {
+
+        var unheldSystemIds = new LinkedHashSet<String>();
+
+        for (var systemId : candidateSystemIds) {
+            if (!holderBySystemId.containsKey(systemId)) {
+                unheldSystemIds.add(systemId);
+            }
+        }
+        return unheldSystemIds;
+    }
+
+    /**
      * Records who holds one system, or that nobody does.
      *
      * <p>Takes the absent holder as a null rather than through a second method, because the two

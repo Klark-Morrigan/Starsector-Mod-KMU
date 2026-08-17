@@ -248,8 +248,9 @@ drive - the border-ring trace, the smoothing passes, the vertex packing, the `St
 the split-fill machinery, and the GL emission itself - is the framework's
 [`base.render.clusters`](../../../../base/render/clusters/README.md), which knows nothing of who
 holds what; the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`). The
-*incremental refresh* that folds a marked system's holder, its inhabitation and the spotlit
-bloc's presence in it into the packets is
+*incremental refresh* that redraws what a colony event moved - over the marked systems'
+holder, inhabitation and spotlit presence, which `render.MarkedSystemRederive` reads back first -
+is
 `render.IncrementalPoliticsRefresh`, at the render root alongside the plugin and the per-frame
 cache that drives it - the composition root that wires these feature packages together. *Which*
 change triggers a full rebuild here and which one only re-shapes a handful of cells is

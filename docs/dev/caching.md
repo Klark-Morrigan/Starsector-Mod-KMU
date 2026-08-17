@@ -332,7 +332,10 @@ Per frame, in increasing cost:
    common path.
 2. **Systems marked stale** - the stale set is drained and only those systems and
    their neighbours are re-derived and re-shaped, with the two affected factions'
-   territories rebuilt. Three facts are re-derived per marked system, over one reading of
+   territories rebuilt. Reading the sector back is
+   [`MarkedSystemRederive`](../../src/main/java/kmu/maplayers/politicalmap/base/render/MarkedSystemRederive.java)'s
+   and redrawing what that disturbed is the refresh's, so what a change costs is decided apart
+   from what changed. Three facts are re-derived per marked system, over one reading of
    the sector opened for the whole batch: who holds it, whether anything stands in it, and
    whether the spotlit bloc is one of the things standing in it. The last two are what a
    cell that no bloc holds is drawn from, and they move without any holder moving - a system

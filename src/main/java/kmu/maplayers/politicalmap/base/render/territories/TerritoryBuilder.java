@@ -27,8 +27,6 @@ import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 
 import org.apache.log4j.Logger;
 
-import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -125,6 +123,15 @@ public final class TerritoryBuilder {
                 "inhabitation scan",
                 () -> PoliticalMapInhabitation.readInhabitedSystemIds(sector));
 
+            // Who is in each system, gathered as soon as the first two facts are resolved: the
+            // third is asked of this one - which systems it left unheld - and folded back into it,
+            // so the pass never holds a loose presence set the incremental refresh would then have
+            // to be handed separately.
+            var occupancy = SystemOccupancy.createCopyOf(
+                ownerBySystemId,
+                inhabitedSystemIds,
+                Set.of());
+
             // Where the spotlit bloc is living outside anything this build attributed to it, so
             // the factionless cells over its own colonies are spared the recede. Asked only of the
             // inhabited systems the holding left out - on the faction and alliance views that is
@@ -137,7 +144,11 @@ public final class TerritoryBuilder {
                 () -> FilteredPolitics.findPresentSystemIds(
                     pass,
                     selectedBlocId,
-                    selectUnheldSystemIds(inhabitedSystemIds, ownerBySystemId)));
+                    occupancy.selectUnheldSystemIdsAmong(inhabitedSystemIds)));
+
+            for (var systemId : spotlitPresenceSystemIds) {
+                occupancy.foldSpotlitPresenceOf(systemId, true);
+            }
 
             // The whole theme - the global tier plus one style per category - read once here
             // through the single reader seam, plus the shared neutral colour and the desaturation
@@ -174,10 +185,7 @@ public final class TerritoryBuilder {
                 : ElementStyleAdjustment.NONE;
 
             var territories = new PoliticalMapTerritories(
-                SystemOccupancy.createCopyOf(
-                    ownerBySystemId,
-                    inhabitedSystemIds,
-                    spotlitPresenceSystemIds),
+                occupancy,
                 unfilledSystemIds,
                 new MapStyling(
                     renderStyle,
@@ -269,23 +277,6 @@ public final class TerritoryBuilder {
             + " took=" + Timings.formatMillis(System.nanoTime() - start));
 
         return systemIds;
-    }
-
-    // The inhabited systems this build resolved no holder for - every cell that will reach the
-    // factionless classifier with something standing in it. The only systems a spotlit bloc's
-    // presence can change anything for, since one it does hold already draws in its territory.
-    private static Set<String> selectUnheldSystemIds(
-            Set<String> inhabitedSystemIds,
-            Map<String, DominantHolder> ownerBySystemId) {
-
-        var unheldSystemIds = new LinkedHashSet<String>();
-
-        for (var systemId : inhabitedSystemIds) {
-            if (!ownerBySystemId.containsKey(systemId)) {
-                unheldSystemIds.add(systemId);
-            }
-        }
-        return unheldSystemIds;
     }
 
     // How many hatch strokes this pass baked, as a count of GL_LINES segments rather than of the

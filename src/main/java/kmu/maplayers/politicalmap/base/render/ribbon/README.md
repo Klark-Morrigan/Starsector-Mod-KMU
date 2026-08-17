@@ -106,7 +106,7 @@ names its cells instead, from the three separate reasons one can owe a band:
 | Reason | Which cells |
 | --- | --- |
 | the count moved | the systems a colony event marked, whether or not their holder changed |
-| the ring moved | the cells the flip re-shaped, each of which lost the band laid in its old shape |
+| the ring moved | the cells the batch redrew - the ring around a flip, and any system whose own facts moved - each of which lost the band laid in its old shape |
 | the room moved | the cells a re-fitted name reaches, which the flip need never have touched |
 
 The third is the one that reaches beyond the flip, and it used to be answered by re-baking the
