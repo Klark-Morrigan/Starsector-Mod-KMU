@@ -1,5 +1,7 @@
 package kmu.maplayers.base.theme;
 
+import kmlib.math.geometry.Angles;
+
 /**
  * The halo the hovered cluster's frontier blooms with - the outer edge of the contiguous
  * group of cells the cursor is inside, so the player reads how far that cluster reaches
@@ -22,9 +24,6 @@ public record HoverGlowStyle(
     int layers,
     double pulseStrength,
     double pulsePeriodSeconds) {
-
-    // A full breath is one cosine cycle, so the phase advances by this much per period.
-    private static final double FULL_CYCLE_RADIANS = 2 * Math.PI;
 
     /**
      * How wide one layer of the stack strokes, in pixels - the innermost layer thinnest and
@@ -67,7 +66,7 @@ public record HoverGlowStyle(
         }
         // cos runs 1..-1, so this rides 0 (crest) to 1 (trough) and scales the strength into
         // the alpha it removes.
-        var trough = 0.5 - 0.5 * Math.cos(FULL_CYCLE_RADIANS * timeSeconds / pulsePeriodSeconds);
+        var trough = 0.5 - 0.5 * Math.cos(Angles.FULL_TURN * timeSeconds / pulsePeriodSeconds);
         return 1 - pulseStrength * trough;
     }
 }

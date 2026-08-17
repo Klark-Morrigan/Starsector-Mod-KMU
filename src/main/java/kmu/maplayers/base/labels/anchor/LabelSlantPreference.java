@@ -1,5 +1,6 @@
 package kmu.maplayers.base.labels.anchor;
 
+import kmlib.math.geometry.Angles;
 import kmlib.math.geometry.PrincipalAxis;
 
 /**
@@ -21,11 +22,6 @@ import kmlib.math.geometry.PrincipalAxis;
  */
 public record LabelSlantPreference(double preferredAngle) {
 
-    // The undirected right angle a label line can be at most from the preference: a
-    // line and its preferred angle are both folded into [-90, 90] degrees, so their
-    // separation never exceeds a quarter turn, and this normalises the penalty against it.
-    private static final double QUARTER_TURN = Math.PI / 2.0;
-
     /**
      * Resolves the slant a cluster's label prefers from the cluster's principal axis:
      * the axis direction folded into {@code [-90, 90]} degrees, capped to
@@ -37,7 +33,7 @@ public record LabelSlantPreference(double preferredAngle) {
      * @return the resolved slant preference
      */
     public static LabelSlantPreference resolveFrom(PrincipalAxis axis, double maxSlantDegrees) {
-        var axisAngle = foldToRightAngle(Math.atan2(axis.axisY(), axis.axisX()));
+        var axisAngle = Angles.foldToHalfTurn(Math.atan2(axis.axisY(), axis.axisX()));
         var maxSlant = Math.toRadians(maxSlantDegrees);
         var capped = Math.max(-maxSlant, Math.min(maxSlant, axisAngle));
         return new LabelSlantPreference(capped * axis.computeElongation());
@@ -56,9 +52,9 @@ public record LabelSlantPreference(double preferredAngle) {
      * @return the multiplier in {@code [1 - strength, 1]}
      */
     public double computePenaltyMultiplier(double[] direction, double strength, double exponent) {
-        var lineAngle = foldToRightAngle(Math.atan2(direction[1], direction[0]));
-        var deviation = undirectedAngularDistance(lineAngle, preferredAngle);
-        return 1.0 - strength * Math.pow(deviation / QUARTER_TURN, exponent);
+        var lineAngle = Angles.foldToHalfTurn(Math.atan2(direction[1], direction[0]));
+        var deviation = Angles.measureUndirectedGap(lineAngle, preferredAngle);
+        return 1.0 - strength * Math.pow(deviation / Angles.QUARTER_TURN, exponent);
     }
 
     /**
@@ -69,26 +65,5 @@ public record LabelSlantPreference(double preferredAngle) {
      */
     public double[] toDirection() {
         return new double[] {Math.cos(preferredAngle), Math.sin(preferredAngle)};
-    }
-
-    // Folds any angle into [-90, 90] degrees, the range of an undirected line: a line and
-    // its 180-degree opposite are the same line, so both map to one representative angle.
-    private static double foldToRightAngle(double angle) {
-        var folded = angle;
-        while (folded > QUARTER_TURN) {
-            folded -= Math.PI;
-        }
-        while (folded < -QUARTER_TURN) {
-            folded += Math.PI;
-        }
-        return folded;
-    }
-
-    // The acute separation between two folded line angles: their raw difference can reach
-    // a half turn, but the smaller of it and its supplement is the quarter-turn-bounded
-    // angle between the two undirected lines.
-    private static double undirectedAngularDistance(double first, double second) {
-        var difference = Math.abs(first - second);
-        return Math.min(difference, Math.PI - difference);
     }
 }
