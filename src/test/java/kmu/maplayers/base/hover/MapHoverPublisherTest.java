@@ -1,6 +1,8 @@
 package kmu.maplayers.base.hover;
 
+import kmlib.starsector.ui.map.transform.CampaignMapTransform;
 import kmlib.starsector.ui.map.transform.MapCursor;
+import kmlib.starsector.ui.map.transform.MapCursorRead;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReader;
 import kmlib.starsector.ui.sound.StarsectorUiSound;
 import kmlib.starsector.ui.sound.UiSoundCue;
@@ -51,6 +53,12 @@ final class MapHoverPublisherTest {
     // A non-trivial zoom, so a publisher that failed to thread the factor through to the cursor
     // read could not pass on the argument assertion below.
     private static final float MAP_ZOOM = 2f;
+
+    // The pixel a stubbed reading says it was taken at. Nothing here asserts on it - the publisher
+    // acts on the world point alone - but a reading carries it for the diagnostic line, so a stub
+    // that left it out would be a shape the live seam never produces.
+    private static final int CURSOR_PIXEL_X = 410;
+    private static final int CURSOR_PIXEL_Y = 320;
 
     private static final String HOVERED_SYSTEM_ID = "corvus";
     private static final String NEIGHBOUR_SYSTEM_ID = "yma";
@@ -178,7 +186,7 @@ final class MapHoverPublisherTest {
                 .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
 
             cursorMock.verify(() ->
-                MapCursor.resolveWorldPointDuringMapPass(MAP_ZOOM, readerMock));
+                MapCursor.readCursorDuringMapPass(MAP_ZOOM, readerMock));
         }
 
         @Test
@@ -428,12 +436,23 @@ final class MapHoverPublisherTest {
                 () -> isCursorLocatable);
         }
 
+        // A null world point stands for no reading at all, which is what the seam reports for every
+        // way of not knowing where the cursor is. The reading's other parts are carried for the
+        // description and never read by the publisher, so they are left at their empty shapes.
         private void stubCursorAt(Vector2f worldPoint) {
+            var cursorRead = worldPoint == null
+                ? null
+                : new MapCursorRead(
+                    CURSOR_PIXEL_X,
+                    CURSOR_PIXEL_Y,
+                    new CampaignMapTransform(new float[16], new float[16], new int[4], MAP_ZOOM),
+                    worldPoint);
+
             cursorMock
-                .when(() -> MapCursor.resolveWorldPointDuringMapPass(
+                .when(() -> MapCursor.readCursorDuringMapPass(
                     eq(MAP_ZOOM),
                     any(ModelviewMatrixReader.class)))
-                .thenReturn(worldPoint);
+                .thenReturn(cursorRead);
         }
     }
 }

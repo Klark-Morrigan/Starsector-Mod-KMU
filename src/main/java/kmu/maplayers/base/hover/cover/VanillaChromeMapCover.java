@@ -23,9 +23,11 @@ public final class VanillaChromeMapCover implements MapCover {
 
     @Override
     public boolean isCoveringCursor() {
+
         // The dearest of the covers, costing a read into the live widget tree, so it is asked last
         // and only once the cheaper two have declined.
         var surfaceArea = MapSurfaceBounds.resolveSurfaceArea();
+        
         return surfaceArea != null
             && !surfaceArea.containsPoint(UiCursor.getUiX(), UiCursor.getUiY());
     }

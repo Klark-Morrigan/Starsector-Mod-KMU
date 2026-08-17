@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 
 import kmlib.starsector.ui.input.KeyedHoverArrival;
 import kmlib.starsector.ui.map.transform.MapCursor;
+import kmlib.starsector.ui.map.transform.MapCursorRead;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReader;
 import kmlib.starsector.ui.sound.UiSoundCue;
 import kmlib.starsector.ui.sound.UiSoundPlayer;
@@ -124,17 +125,17 @@ public final class MapHoverPublisher {
             parkHoverKeepingLastCell();
             return;
         }
-        // No world point means the read could not be trusted - the cursor has left the window, the
-        // transform is not the map's, or it will not invert. Which of the three it was does not
-        // change the answer here: a cell resolved from an untrustworthy point is worse than none.
-        var worldPoint = MapCursor.resolveWorldPointDuringMapPass(factor, modelviewMatrixReader);
-        if (worldPoint == null) {
+        // No reading means it could not be trusted - the cursor has left the window, the transform
+        // is not the map's, or it will not invert. Which of the three it was does not change the
+        // answer here: a cell resolved from an untrustworthy point is worse than none.
+        var cursorRead = MapCursor.readCursorDuringMapPass(factor, modelviewMatrixReader);
+        if (cursorRead == null) {
             parkHoverKeepingLastCell();
             return;
         }
         var hoveredSystemId = CellHitTest.resolveSystemIdAt(
-            worldPoint.x,
-            worldPoint.y,
+            cursorRead.worldPoint().x,
+            cursorRead.worldPoint().y,
             targets.getFillPolygonByCellId());
 
         if (hoveredSystemId == null) {
@@ -145,7 +146,7 @@ public final class MapHoverPublisher {
             hoveredSystemId,
             targets.getClusterIndex().findClusterMembersOf(hoveredSystemId)));
 
-        announceArrivalAt(hoveredSystemId, factor);
+        announceArrivalAt(hoveredSystemId, cursorRead);
     }
 
     // Parks the hover and forgets which cell the cursor was on, for a hit-test that ran and found
@@ -172,13 +173,13 @@ public final class MapHoverPublisher {
     // What is owed on the cursor reaching a cell, as opposed to resting on one: the tick the player
     // hears and the line the trace prints. The latch is stepped before either is asked for, so a
     // moment left unanswered - a silenced cue, a trace at INFO - still tracks where the cursor is.
-    private void announceArrivalAt(String hoveredSystemId, float factor) {
+    private void announceArrivalAt(String hoveredSystemId, MapCursorRead cursorRead) {
 
         if (!cellArrival.detectArrivalAt(hoveredSystemId)) {
             return;
         }
         soundPlayer.playCueIfPresent(cellArrivalCueSource.get());
-        logHoverArrival(hoveredSystemId, factor);
+        logHoverArrival(hoveredSystemId, cursorRead);
     }
 
     // Traces each move onto a new cell: which system the cursor resolved to and how large a
@@ -189,9 +190,13 @@ public final class MapHoverPublisher {
     // system is not wrong at this end: the cell it resolved really does hold the point it was
     // given. What is wrong is upstream, in the pixel it started from or the viewport and modelview
     // that pixel was mapped through, and those are only diagnosable together with what came out.
-    // Rebuilt rather than remembered from the resolve above, this line being written on arrivals
-    // alone while the resolve runs every frame.
-    private void logHoverArrival(String hoveredSystemId, float factor) {
+    //
+    // Described from the reading the hover was resolved from, not from a fresh one. A second read
+    // can capture a different transform - it is taken live, and a frame can hold more than one map
+    // pass - so a line built that way would account for a hover that never happened, and would do
+    // it most convincingly on exactly the frames worth diagnosing. Only the wording is deferred to
+    // arrivals; the reading itself is already in hand.
+    private void logHoverArrival(String hoveredSystemId, MapCursorRead cursorRead) {
 
         if (!LOG.isDebugEnabled()) {
             return;
@@ -201,6 +206,6 @@ public final class MapHoverPublisher {
             + " clusterMembers="
             + MapHoverState.getInstance().getHover().clusterMemberSystemIds()
             + "; read: "
-            + MapCursor.describeCursorReadDuringMapPass(factor, modelviewMatrixReader));
+            + cursorRead.describeRead());
     }
 }
