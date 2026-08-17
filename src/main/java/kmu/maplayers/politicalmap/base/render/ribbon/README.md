@@ -54,15 +54,15 @@ answer - the claim mechanic's count walks a system's whole market list, and the 
 spares the single-holder cell a ring walk.
 
 The gate is the pass's **inhabitation scan**, not its holding, and that is what puts a band on the
-systems no layer paints. Vanilla's claim walk skips a hidden market, a player-owned one, and one
-whose faction carries no territorial flag, so a pirate haven or a player colony resolves no claimant
-(see [`politics.holders`](../../politics/holders/README.md)) - the claims layer's fill says nothing
-about it, and gating on that fill would have left the band silent on exactly the systems it is the
-only readout for. Every held system is inhabited (a bloc holds one only by having a colony in it),
-so nothing that banded before stops banding. It is also the very set the factionless cell beneath is
-classified from, so a cell drawn as settled and a cell offered a band are one set. Such a cell
-reaches `ClaimedSystemRibbonPlanner` with **no painter**, which is a case of its own rather than an
-absent one; see [`base.ribbon`](../../ribbon/README.md) for the two arms that follow from it.
+systems no layer paints. A settled system can resolve no claimant for
+[several reasons](../../politics/holders/README.md) - a pirate haven and a player colony among them
+- so the claims layer's fill says nothing about it, and gating on that fill would have left the band
+silent on exactly the systems it is the only readout for. Every held system is inhabited (a bloc
+holds one only by having a colony in it), so nothing that banded before stops banding. It is also
+the very set the factionless cell beneath is classified from, so a cell drawn as settled and a cell
+offered a band are one set. Such a cell reaches `ClaimedSystemRibbonPlanner` with **no painter**,
+which is a case of its own rather than an absent one; see
+[`base.ribbon`](../../ribbon/README.md) for the two arms that follow from it.
 
 The gate is **wider** than the holding it replaced, which is a real cost and not a free swap.
 Inhabitation is the larger set, so the systems the holding left out each pay their first walk of the

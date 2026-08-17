@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.mockito.Mockito.mock;
 
@@ -69,17 +70,41 @@ public final class PoliticalMapTerritoryFixtures {
      * <p>Every held system counts as inhabited, since a bloc holds one only by having a colony in
      * it: a fixture where the two disagreed would pose a map production cannot build, and the
      * readers that gate on inhabitation - the factionless classifier, the band pass - would answer
-     * a held cell as empty space. A suite needing a settled system no bloc holds writes it into
-     * the live set the model hands back.
+     * a held cell as empty space.
+     *
+     * <p>That makes the two sets identical here, so a case telling them apart - one that must
+     * fail if a reader gates on the holding where it should gate on inhabitation - has to state
+     * its own through {@link #createTerritoriesSettledIn}.
      *
      * @param ownerBySystemId who holds each system, the one input most callers vary
      * @return a live territories, ready to have draw records written into it
      */
     public static PoliticalMapTerritories createTerritoriesOwnedBy(
             Map<String, DominantHolder> ownerBySystemId) {
+        return createTerritoriesSettledIn(ownerBySystemId, ownerBySystemId.keySet());
+    }
+
+    /**
+     * The same territories with the settled systems stated apart from the held ones, for a case
+     * about a system something stands in that this layer's holding does not account for - an
+     * unclaimed pirate haven on the claims layer.
+     *
+     * <p>The distinction is invisible under {@link #createTerritoriesOwnedBy}, where the two sets
+     * are equal by construction, so a reader that confused them would answer every case there
+     * correctly. Stating a settled system no bloc holds is the only arrangement that tells the
+     * two reads apart.
+     *
+     * @param ownerBySystemId    who holds each system
+     * @param inhabitedSystemIds every system something stands in, which the held systems are
+     *                           expected to be a subset of
+     * @return a live territories, ready to have draw records written into it
+     */
+    public static PoliticalMapTerritories createTerritoriesSettledIn(
+            Map<String, DominantHolder> ownerBySystemId,
+            Set<String> inhabitedSystemIds) {
         return new PoliticalMapTerritories(
             new LinkedHashMap<>(ownerBySystemId),
-            new LinkedHashSet<>(ownerBySystemId.keySet()),
+            new LinkedHashSet<>(inhabitedSystemIds),
             new LinkedHashSet<>(),
             new MapStyling(
                 null, // No render style.

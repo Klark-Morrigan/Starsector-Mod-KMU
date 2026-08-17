@@ -32,16 +32,12 @@ one reading of the system rather than two.
 
 ## A system nobody claims
 
-`Misc.getClaimingFaction` skips a **hidden** market, a **player-owned** one, and one whose faction
-carries no **territorial** flag, and it reads only what the economy lists. So a pirate or Path base
-(both created hidden), a player colony, a Remnant station or an unregistered one leaves its system
-unclaimed however settled it is - the full set of exclusions is
-[`politics.holders`](../../base/politics/holders/README.md)'s. This layer's fill *is* the claim, so
-over those systems it says nothing at all, and the band is the only readout there is.
+Vanilla leaves a settled system unclaimed for several reasons - a pirate haven, a player colony and
+a dead world all resolve no claimant. Which reasons, and the mistake that is easy to make about
+them, are [`politics.holders`](../../base/politics/holders/README.md)'s to state.
 
-Territoriality on its own is *not* the dividing line, and reading it as one is the easy mistake here:
-pirates, the Path and independents all carry `"territorial":true`, and an ordinary independent world
-claims its system like anybody else.
+What follows here is that this layer's fill *is* the claim, so over those systems it says nothing at
+all, and the band is the only readout there is.
 
 `ClaimedSystemRibbonPlanner` therefore plans such a system with **no painter** rather than refusing
 it. That absence is a case of its own, not an id no bloc happens to carry: with a painter, one rival

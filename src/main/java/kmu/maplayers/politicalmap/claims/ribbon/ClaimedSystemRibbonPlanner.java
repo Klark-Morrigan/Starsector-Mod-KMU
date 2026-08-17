@@ -21,12 +21,10 @@ import java.util.Optional;
  * the box explaining a claim is written from - so the band and the box cannot disagree about who is
  * present or who leads.
  *
- * <p>A system the contest settled on nobody is planned all the same, without a painter. Vanilla's
- * walk skips a hidden market, a player-owned one, and one whose faction carries no territorial
- * flag, and reads only what the economy lists - so a pirate or Path base (both created hidden), a
- * player colony, a Remnant station or an unregistered one leaves its system unclaimed however
- * settled it is. This layer's fill is the claim, so it says nothing about those systems at all.
- * The band is what does.
+ * <p>A system the contest settled on nobody is planned all the same, without a painter. Vanilla
+ * leaves a settled system unclaimed for several reasons - see
+ * {@link kmu.maplayers.politicalmap.base.politics.holders} for which - and this layer's fill
+ * <em>is</em> the claim, so it says nothing about such a system at all. The band is what does.
  *
  * <p>The counting itself is the shared rule's, off the pass's own walk of the system, which is why
  * the reader is built over that walk rather than one of its own: the contest and the count then

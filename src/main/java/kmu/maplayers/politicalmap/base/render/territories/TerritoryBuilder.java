@@ -111,10 +111,9 @@ public final class TerritoryBuilder {
 
             // What stands in each system, read once for the whole pass. Independent of the
             // holding resolved above and deliberately so: the holding answers who this view
-            // gives a system to, and a view whose rule admits only some markets - claims, whose
-            // walk skips the hidden, the player-owned and the factions carrying no territorial
-            // flag - leaves inhabited systems with no holder. Only this read can tell those apart
-            // from empty space.
+            // gives a system to, and a view whose rule admits only some markets - claims, for the
+            // several reasons base.politics.holders sets out - leaves inhabited systems with no
+            // holder. Only this read can tell those apart from empty space.
             //
             // Under the same reveal the holding resolved under, so a colony the dev toggle
             // admits to one is admitted to the other and the two cannot disagree about whether

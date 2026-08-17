@@ -32,13 +32,11 @@ public final class FactionlessStyleResolver {
      *
      * <p>The question is what is <em>in</em> the system, not whether this pass found a holder
      * for it. The two answers part company as soon as a layer resolves holding under a rule
-     * that admits only some markets: vanilla's claim walk skips a hidden market, a player-owned
-     * one, and one whose faction carries no territorial flag, and reads only what the economy
-     * lists - so on the claims layer a system settled solely by a pirate or Path base, by the
-     * player, or by the Remnant resolves no claimant at all. Reading emptiness off the holder
-     * map would call such a system empty space and hide it behind the uninhabited-systems
-     * checkbox - a populated system erased from the map by a toggle that names the opposite of
-     * what it holds.
+     * that admits only some markets, which the claims layer does for several reasons - see
+     * {@link kmu.maplayers.politicalmap.base.politics.holders} - leaving settled systems with
+     * no claimant at all. Reading emptiness off the holder map would call such a system empty
+     * space and hide it behind the uninhabited-systems checkbox - a populated system erased
+     * from the map by a toggle that names the opposite of what it holds.
      *
      * <p>A live colony and a dead one therefore share the one bundle. The distinction the two
      * factionless styles draw is presence against absence - is anything here, or is this the

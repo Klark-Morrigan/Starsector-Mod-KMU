@@ -35,24 +35,17 @@ import java.util.Set;
  * band identical to the one the full rebuild would have.
  *
  * <p>Inhabitation rather than this layer's holding, because that is the question a band is actually
- * about. A band reports how a system splits, and a system splits whether or not the mechanic
- * painting the map gives it to anybody: vanilla's claim walk skips a hidden market, a player-owned
- * one, and one whose faction carries no territorial flag, so a pirate haven or a player colony is
- * holderless on the claims layer and would never be counted at all. Every system the holding names
- * is inhabited - a bloc holds one only by having a colony in it - so nothing that was banded before
- * stops being.
+ * about: a system splits whether or not the mechanic painting the map gives it to anybody, and a
+ * layer's holding can leave a settled system unaccounted for - see
+ * {@link kmu.maplayers.politicalmap.base.politics.holders} for why the claims layer routinely
+ * does. Every held system is inhabited, a bloc holding one only by having a colony in it, so the
+ * wider set can only add cells.
  *
  * <p>The inhabited set is also the cost gate, and the reason it is held rather than looked up per
  * call site. Most of the sector is empty space, and asking for a band walks the system's colonies -
  * and on the claims layer settles a whole contest over them; without the gate, every empty cell in
- * the sector would pay for a contest nobody is contesting.
- *
- * <p>It gates more loosely than the holding it replaced, and deliberately: inhabitation is the
- * wider set, so the systems the holding left out - the hidden-only, the player-only, the
- * decivilised - now each pay their first walk of the pass's colony index. That is the widening
- * doing its job for the first two. The decivilised are the case it does not yet buy anything for:
- * their markets are condition-only, so the count comes back empty and they walk for a band that is
- * never laid, until the shared colony set admits them.
+ * the sector would pay for a contest nobody is contesting. Being the wider set, it gates more
+ * loosely than the holding did, and what that costs is weighed in this package's README.
  *
  * <p>Which cells get a band at all is settled here, in three refusals read in one place: a cell
  * nothing lives in or with nowhere to start from, a system the sector no longer lists, and a cell

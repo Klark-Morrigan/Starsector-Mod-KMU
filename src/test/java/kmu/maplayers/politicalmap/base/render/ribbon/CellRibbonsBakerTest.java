@@ -19,8 +19,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
@@ -34,6 +37,11 @@ import static org.mockito.Mockito.when;
 /**
  * Pins what the pass does that no single cell can be asked about: which cells it walks over, and
  * where the rings it walks are kept.
+ *
+ * <p>Which cells is really the question of which of the territories' two sets the bake hands the
+ * source - what the sector holds, or what this layer painted - and the two are equal on an
+ * ordinary map, so only a settled system no bloc holds can tell them apart. One case poses that
+ * deliberately; every other here would pass either way.
  *
  * <p>The store is the point, and it is the one thing here that cannot be seen one level down. A
  * band's own suite bakes through one source and would pass just as well if every pass kept its
@@ -54,6 +62,11 @@ final class CellRibbonsBakerTest {
 
     private static final String BANDED_CELL = "corvus";
     private static final String OTHER_BANDED_CELL = "askonia";
+
+    // A settled system this layer's holding gives to nobody - the unclaimed pirate haven, on the
+    // claims layer. Held apart from the two above because it is the one cell whose band depends on
+    // which of the pass's two sets the bake gates on.
+    private static final String UNHELD_SETTLED_CELL = "hybrasil";
 
     // A cell the territories were never told about, which is what an incremental re-bake names
     // when a colony change takes the last thing standing in a system.
@@ -101,6 +114,21 @@ final class CellRibbonsBakerTest {
 
             assertThat(territories.getRibbonByCellId())
                 .containsOnlyKeys(BANDED_CELL, OTHER_BANDED_CELL);
+        }
+
+        @Test
+        void bandsASettledCellThisLayersHoldingGivesToNobody() {
+            // The wiring the whole step turns on, and the one case that can fail if the bake reads
+            // the wrong set: the pass gates on what the sector holds, not on what this layer
+            // painted, so a haven no bloc holds is offered a band like any settled cell. Handed
+            // the holder map instead, this cell would be skipped and every other case here would
+            // still pass.
+            var territories = buildHeldAndUnheldDrawnCells();
+
+            bakeEveryCellThrough(territories);
+
+            assertThat(territories.getRibbonByCellId())
+                .containsOnlyKeys(BANDED_CELL, UNHELD_SETTLED_CELL);
         }
 
         @Test
@@ -202,18 +230,39 @@ final class CellRibbonsBakerTest {
     // rather than only the first.
     private static PoliticalMapTerritories buildTwoDrawnCells() {
 
-        var territories = PoliticalMapTerritoryFixtures.createTerritoriesOwnedBy(Map.of(
-            BANDED_CELL, buildHolder(),
-            OTHER_BANDED_CELL, buildHolder()));
-
-        territories.putStyledCell(
+        return drawCells(
+            PoliticalMapTerritoryFixtures.createTerritoriesOwnedBy(Map.of(
+                BANDED_CELL, buildHolder(),
+                OTHER_BANDED_CELL, buildHolder())),
             BANDED_CELL,
-            PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-            SQUARE_CELL);
-        territories.putStyledCell(
-            OTHER_BANDED_CELL,
-            PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-            SQUARE_CELL);
+            OTHER_BANDED_CELL);
+    }
+
+    // One held cell beside one the holding does not account for, which is the only arrangement
+    // that tells the pass's two sets apart: under createTerritoriesOwnedBy they are equal, so a
+    // bake gating on the holding would answer every other case here correctly.
+    private static PoliticalMapTerritories buildHeldAndUnheldDrawnCells() {
+
+        return drawCells(
+            PoliticalMapTerritoryFixtures.createTerritoriesSettledIn(
+                Map.of(BANDED_CELL, buildHolder()),
+                Set.of(BANDED_CELL, UNHELD_SETTLED_CELL)),
+            BANDED_CELL,
+            UNHELD_SETTLED_CELL);
+    }
+
+    // Records each named cell as drawn, at the one band-sized shape this suite poses, and answers
+    // the view with the planner every case counts through.
+    private static PoliticalMapTerritories drawCells(
+            PoliticalMapTerritories territories,
+            String... cellIds) {
+
+        for (var cellId : cellIds) {
+            territories.putStyledCell(
+                cellId,
+                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
+                SQUARE_CELL);
+        }
 
         // The mechanic the pass counts by, answered off the view the territories already carry -
         // which is where a bake reads it from, so a stub anywhere else would leave the pass
@@ -229,12 +278,18 @@ final class CellRibbonsBakerTest {
     }
 
     // A fresh pass over the given territories, as a rebuild mints one per bake.
+    //
+    // The geometry and the sector are derived from the cells the territories actually drew rather
+    // than named here, so a case adding a cell gets it placed and listed without a second fixture
+    // to keep in step - which is what let the settled-but-unheld case below be posed at all.
     private static CellRibbonsBaker bakeThrough(PoliticalMapTerritories territories) {
+
+        var drawnCellIds = territories.getFillPolygonByCellId().keySet();
 
         return CellRibbonsBaker.createForPass(
             territories,
-            buildGeometryOfTwoPlacedCells(),
-            buildSectorOfTwoSystems(),
+            buildGeometryPlacing(drawnCellIds),
+            buildSectorOf(drawnCellIds),
             // No names placed, since where a name falls is pinned by the builder that lays a band
             // inside one cell rather than by which cells a pass reaches.
             List.of());
@@ -242,30 +297,34 @@ final class CellRibbonsBakerTest {
 
     // Each cell drawing as the system of its own name, each system placed at the same site: the
     // cells are told apart by their ids here, never by where they sit.
-    private static CellGeometryCache buildGeometryOfTwoPlacedCells() {
+    private static CellGeometryCache buildGeometryPlacing(Set<String> cellIds) {
 
+        var systemIdByCellId = new LinkedHashMap<String, String>();
+        var siteBySystemId = new LinkedHashMap<String, double[]>();
+
+        for (var cellId : cellIds) {
+            systemIdByCellId.put(cellId, cellId);
+            siteBySystemId.put(cellId, SQUARE_CELL_SITE);
+        }
         var geometryCacheMock = mock(CellGeometryCache.class);
 
         when(geometryCacheMock.getSystemIdByCellId())
-            .thenReturn(Map.of(
-                BANDED_CELL, BANDED_CELL,
-                OTHER_BANDED_CELL, OTHER_BANDED_CELL));
+            .thenReturn(systemIdByCellId);
         when(geometryCacheMock.getSiteBySystemId())
-            .thenReturn(Map.of(
-                BANDED_CELL, SQUARE_CELL_SITE,
-                OTHER_BANDED_CELL, SQUARE_CELL_SITE));
+            .thenReturn(siteBySystemId);
 
         return geometryCacheMock;
     }
 
-    private static SectorAPI buildSectorOfTwoSystems() {
+    private static SectorAPI buildSectorOf(Set<String> systemIds) {
 
         // The systems are built before the stubbing rather than inside it: each is itself a mock,
         // and building one while another stubbing is open reads to Mockito as an unfinished stub.
-        var systems = List.of(
-            buildSystem(BANDED_CELL),
-            buildSystem(OTHER_BANDED_CELL));
+        var systems = new ArrayList<StarSystemAPI>(systemIds.size());
 
+        for (var systemId : systemIds) {
+            systems.add(buildSystem(systemId));
+        }
         var sectorMock = mock(SectorAPI.class);
 
         when(sectorMock.getStarSystems())

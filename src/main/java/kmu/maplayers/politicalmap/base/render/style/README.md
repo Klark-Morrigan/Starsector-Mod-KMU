@@ -50,11 +50,10 @@ so there are no province divisions to stroke.
 `DECIVILISED` is named for the case that first needed it, and now covers every settled cell no
 holder was resolved for. The split the two factionless bundles actually draw is **presence against
 absence** - is anything here, or is this the backdrop - not dead against alive. A view resolving
-holding under a narrow rule leaves settled systems holderless: on the claims view, vanilla's walk
-skips hidden markets, player-owned ones and factions carrying no territorial flag, and reads only
-the economy's listing - so a system settled solely by a pirate or Path base, by the player, by the
-Remnant, or by an unregistered station reaches the classifier with no claimant (the full set of
-exclusions is [`politics.holders`](../../politics/holders/README.md)'s). Those cells are settled, so they take this bundle. The
+holding under a narrow rule leaves settled systems holderless: on the claims view, a system settled
+solely by a pirate haven, by the player or by the Remnant reaches the classifier with no claimant,
+for reasons [`politics.holders`](../../politics/holders/README.md) sets out. Those cells are
+settled, so they take this bundle. The
 alternative - reading emptiness off the holder map - hides a populated system behind the
 uninhabited-systems checkbox, which is the map erasing what is there.
 
