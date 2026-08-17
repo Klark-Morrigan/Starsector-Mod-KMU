@@ -137,9 +137,9 @@ final class SectorMapLayerTerrainPluginTest {
 
         @Test
         void renderOnMapPreparesTheFrameOnceBeforeDrawingAnyBand() {
-            // The refresh and the cursor read run once however many passes the frame is painted in:
-            // a second cursor read would resolve against a half-drawn frame, and a second refresh
-            // would repeat the whole staleness check for nothing.
+            // The refresh runs once however many passes the frame is painted in - a second one would
+            // repeat the whole staleness check for nothing - and so does everything latched behind
+            // it, the moment the cursor reaches a cell above all.
             try (var globalMock = mockStatic(Global.class)) {
 
                 globalMock
@@ -182,6 +182,55 @@ final class SectorMapLayerTerrainPluginTest {
                 verify(layerRendererMock, times(1))
                     .prepareFrame(anyFloat());
                 verify(layerRendererMock, times(2))
+                    .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+            }
+        }
+
+        @Test
+        void renderOnMapPublishesTheHoverOnEveryPassOfOneFrame() {
+            // The read is the one piece of per-frame work that turns on which pass is running: it
+            // inverts the transform that pass bound. Pinned to the frame's first pass it would be
+            // taken through whichever surface drew earliest - a map another mod composited, drawn
+            // from the campaign HUD before the map screen - and the real map would then draw a hover
+            // resolved through somebody else's zoom and pan. So every pass reads and the last wins,
+            // while the preparation beside it still happens once.
+            try (var globalMock = mockStatic(Global.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                MapFramePreparationClaim.getInstance().renderInUICoordsBelowUI(null);
+
+                new SectorMapLayerTerrainPlugin().renderOnMap(1.5f, 0.25f);
+                new SectorMapLayerTerrainPlugin().renderOnMap(1.5f, 0.25f);
+
+                verify(layerRendererMock, times(2))
+                    .publishHoverForPass(1.5f);
+                verify(layerRendererMock, times(1))
+                    .prepareFrame(anyFloat());
+            }
+        }
+
+        @Test
+        void renderOnMapPublishesTheHoverBeforeDrawingAnyBand() {
+            // The highlight rides the same draw lists as the fill, so the answer has to be standing
+            // before this pass emits any of them.
+            try (var globalMock = mockStatic(Global.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                new SectorMapLayerTerrainPlugin().renderOnMap(1.5f, 0.25f);
+
+                var hoverOrder = inOrder(layerRendererMock);
+
+                hoverOrder
+                    .verify(layerRendererMock)
+                    .publishHoverForPass(1.5f);
+                hoverOrder
+                    .verify(layerRendererMock)
                     .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
             }
         }

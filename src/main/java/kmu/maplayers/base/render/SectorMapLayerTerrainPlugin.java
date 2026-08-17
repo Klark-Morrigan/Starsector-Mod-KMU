@@ -128,6 +128,14 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
             layerRenderer.prepareFrame(factor);
         }
 
+        // The cursor read, on every admitted pass rather than under the claim above. The claim is
+        // first-come and this hook names no caller, so a map another mod composited - drawn from the
+        // campaign HUD, ahead of the map screen - takes it every frame and performs the read with
+        // its own zoom and pan. Reading per pass and letting the last write win puts the frame's
+        // answer on the surface that drew last, which is the map the player is pointing at. It costs
+        // one matrix read per extra pass, deferred rather than stalling under Fast Rendering.
+        layerRenderer.publishHoverForPass(factor);
+
         for (var band : paintedBands) {
             layerRenderer.renderOnMap(factor, alphaMult, band);
         }

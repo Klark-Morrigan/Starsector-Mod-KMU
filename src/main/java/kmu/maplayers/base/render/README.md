@@ -11,7 +11,7 @@ Part of [the map layers](../../README.md), in Klark Morrigan's Utilities; see th
 
 - [Who gets the frame](#who-gets-the-frame)
 - [Bands](#bands)
-- [One preparation per frame](#one-preparation-per-frame)
+- [One preparation per frame, one cursor read per pass](#one-preparation-per-frame-one-cursor-read-per-pass)
 - [Three terrains, one draw](#three-terrains-one-draw)
 - [Where the Starscape surfaces sit in the draw order](#where-the-starscape-surfaces-sit-in-the-draw-order)
 - [What is not here](#what-is-not-here)
@@ -19,11 +19,12 @@ Part of [the map layers](../../README.md), in Klark Morrigan's Utilities; see th
 ## Who gets the frame
 
 `MapLayerRenderer` is the seam a layer draws through: `prepareFrame(factor)` to bring what it draws
-from up to date, `renderOnMap(factor, alphaMult, band)` for one band of the overlay, and
-`resolveHoverTooltip()` for the box shown over one cell of it. The last two default to nothing, so a
-layer states only what it has. It is kept apart from `MapLayer` itself, which is a descriptor (id,
-tab label, body controls, hotkey): folding drawing into the descriptor would merge two roles in one
-type, and a tab that only switches would be left with methods it has no answer for.
+from up to date, `publishHoverForPass(factor)` to resolve what the cursor is over,
+`renderOnMap(factor, alphaMult, band)` for one band of the overlay, and `resolveHoverTooltip()` for
+the box shown over one cell of it. All but the band default to nothing, so a layer states only what
+it has. It is kept apart from `MapLayer` itself, which is a descriptor (id, tab label, body controls,
+hotkey): folding drawing into the descriptor would merge two roles in one type, and a tab that only
+switches would be left with methods it has no answer for.
 
 `SectorMapLayerTerrainPlugin` is the terrain the engine actually calls. It reads the active layer,
 asks it for a renderer, and draws through it. A layer that supplies none - No Layer, or any future
@@ -70,11 +71,11 @@ question about how the picture reads, and moving one is a change of which band a
 for - not a rename here. A layer is free to hand that question to the player and emit each
 sub-layer for the band its own setting picked, which is what the political map does.
 
-## One preparation per frame
+## One preparation per frame, one cursor read per pass
 
 Preparation is separate from drawing because a frame can be painted by more than one surface. It
 runs on whichever surface paints `BENEATH_STARSCAPE_NEBULAE`, that band being painted in every mode
-and reached first, which is what keeps a cursor read from resolving against a half-drawn frame.
+and reached first, which is what keeps the draw lists fresh before anything is emitted.
 
 That pinning says *when* preparation lands but cannot say *how often*, and preparation is not
 something a frame can absorb twice: it steps the cursor's arrival latch, and a latch stepped twice
@@ -89,6 +90,25 @@ because a duplicated preparation costs work while a denied one costs the overlay
 bringing the draw lists up to date. The mod's entry point clears it per load before re-registering
 it, so a load that never re-registers falls back to that open state rather than to a claim armed by
 a session whose boundary pass is gone.
+
+The cursor read is the one piece of per-frame work that cannot ride that claim, because it depends
+on *which* pass is running: it inverts the transform that pass bound and divides by the `factor` it
+supplied. The claim is first-come, and a mod compositing a sector map of its own draws it from the
+campaign HUD - before the map screen is composited - so it takes the claim every frame and the read
+lands on its zoom and pan. Random Assortment of Things' minimap does exactly this, and the symptom
+is a hover offset from the pointer on the real map.
+
+So `publishHoverForPass` runs on every pass the surface admits and the last write wins, which puts
+the frame's answer on the surface that drew last. It costs one matrix read per extra pass - deferred
+rather than stalling under Fast Rendering - and leaves one residual case: a mod drawing a map
+surface *after* the map screen would win instead, which `mapLayerMouseoverOnlyOnTheirHosts` is the
+escape from.
+
+The moment stays per frame for the reason the claim states. Two passes of one frame resolving
+different cells is exactly what a foreign transform produces, so a latch stepped per pass would
+report a crossing on every frame the pointer rests still. `MapHoverPublisher` therefore keeps what
+its passes settled on and answers the moment once, from the preparation - one frame behind the read,
+which is 16ms and inaudible.
 
 ## Three terrains, one draw
 

@@ -6,15 +6,12 @@ import kmlib.starsector.ui.input.KeyedHoverArrival;
 import kmlib.starsector.ui.map.transform.MapCursor;
 import kmlib.starsector.ui.map.transform.MapCursorRead;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReader;
-import kmlib.starsector.ui.sound.UiSoundCue;
-import kmlib.starsector.ui.sound.UiSoundPlayer;
 
 import kmu.maplayers.base.geometry.CellHitTest;
 
 import org.apache.log4j.Logger;
 
 import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 
 /**
  * Works out which cell the cursor is over on the map, publishes it for the frame, and answers the
@@ -31,6 +28,13 @@ import java.util.function.Supplier;
  * sequencing between them is the last piece a second layer would otherwise have to work out again
  * - and it would have to get every park right to avoid lighting a cell the cursor is not on.
  *
+ * <p>The two halves run at different rates, and that is the whole of why they are two calls. A
+ * frame can be painted by several map passes, each binding a transform of its own - including
+ * passes belonging to a map another mod composited, since the hook names no caller - so the read is
+ * made per pass and the last one wins. The moment is per frame: an arrival latch stepped once per
+ * pass would report the cursor leaving and reaching the cell it is resting on wherever two passes
+ * of one frame resolve differently, which is a tick every frame under a motionless pointer.
+ *
  * <p>Which frames are an <em>arrival</em> is the same question the trace has always asked - the cell
  * changed under a cursor that was somewhere else before - so one {@link KeyedHoverArrival} answers
  * both what is sounded and what is logged. Two latches over one question would be two chances to
@@ -46,11 +50,13 @@ public final class MapHoverPublisher {
     // "reached" mean the same thing here as it does on a panel's controls.
     private final KeyedHoverArrival<String> cellArrival = new KeyedHoverArrival<>();
 
-    // What an arrival sounds like, asked at the moment rather than held, so the level the player set
-    // is the one in force now: this publisher outlives any number of visits to the settings screen.
-    private final Supplier<UiSoundCue> cellArrivalCueSource;
+    // What an arrival is answered with. A role rather than a sound and a level held here, both being
+    // the host's look to state; asked at the moment rather than held, so the answer is composed
+    // against the settings in force now - this publisher outlives any number of visits to the
+    // settings screen.
+    private final CellArrivalAnnouncer cellArrivalAnnouncer;
 
-    // Whether the pass now running is one the cursor can be located against at all. Asked per frame
+    // Whether the pass now running is one the cursor can be located against at all. Asked per pass
     // rather than settled once, because it turns on what is on screen and on a setting the player
     // can move mid-session. Supplied rather than composed here: which surfaces count as locatable is
     // the host's knowledge, and this end needs only the answer.
@@ -61,47 +67,82 @@ public final class MapHoverPublisher {
     // of this publisher's session-long life.
     private final ModelviewMatrixReader modelviewMatrixReader;
 
-    private final UiSoundPlayer soundPlayer;
+    // The last completed reading of where the cursor is: the hover it resolved to - MapHover.NONE
+    // for a hit test that found no cell - together with the reading it came from, for the trace.
+    // Null until some pass has completed one.
+    //
+    // Left standing by a pass that could not read at all, which is what keeps the moment honest
+    // across a frame several passes paint: a run that learned nothing about the cursor must neither
+    // announce nor forget, or a foreign map redrawing beside the real one would read as the cursor
+    // leaving and returning to the cell it is resting on.
+    private SettledCellReading settledCellReading;
 
     /**
      * @param modelviewMatrixReader       the binding the running renderer needs, from
      *                                    {@code ModelviewMatrixReaders#selectForActiveRenderer}
-     * @param soundPlayer                 where the arrival tick goes
-     * @param cellArrivalCueSource        what that tick sounds like when one is owed, from the
-     *                                    host's own look -
-     *                                    {@code MapHoverCues#composeCellArrivalCue} for this mod's
-     *                                    map. A source rather than a cue because the level behind
-     *                                    it is the player's and may change under a publisher
-     *                                    already built
+     * @param cellArrivalAnnouncer        what the host answers a reached cell with, from its own
+     *                                    look - the tick {@code MapHoverCues#composeCellArrivalCue}
+     *                                    names for this mod's map
      * @param isCursorLocatableOnThisPass whether the pass now running is one the cursor can be
      *                                    located against, from
      *                                    {@code MapHoverGates#isCursorLocatableOn}
      */
     public MapHoverPublisher(
             ModelviewMatrixReader modelviewMatrixReader,
-            UiSoundPlayer soundPlayer,
-            Supplier<UiSoundCue> cellArrivalCueSource,
+            CellArrivalAnnouncer cellArrivalAnnouncer,
             BooleanSupplier isCursorLocatableOnThisPass) {
 
         this.modelviewMatrixReader = modelviewMatrixReader;
-        this.soundPlayer = soundPlayer;
-        this.cellArrivalCueSource = cellArrivalCueSource;
+        this.cellArrivalAnnouncer = cellArrivalAnnouncer;
         this.isCursorLocatableOnThisPass = isCursorLocatableOnThisPass;
     }
 
     /**
+     * Answers the moment the frame's passes settled on, if the cursor reached a cell it was not on.
+     * Called once per frame, and from the frame's single preparation rather than from a pass, that
+     * being the one place a run happens exactly once however many surfaces paint.
+     *
+     * <p>It reports on the passes already made rather than the ones about to run, since a frame's
+     * answer is only final once its last pass has read. A tick therefore lands one frame after the
+     * pointer crossed, which no player can hear; announcing per pass instead would sound the
+     * crossings that never happened - one per frame, for as long as two passes of a frame disagree.
+     */
+    public void announceSettledArrival() {
+
+        // No pass has read since the last frame's answer, so nothing is known to have changed.
+        // Re-announcing the standing reading would be silent anyway - the latch already holds its
+        // cell - but reading nothing is the truer statement of a frame that resolved nothing.
+        if (settledCellReading == null) {
+            return;
+        }
+        // A completed hit test that found no cell is a sighting: the cursor is on nothing. Forgetting
+        // the cell is what makes stepping off one and back onto it a fresh arrival, the map being
+        // mostly the space between cells.
+        if (!settledCellReading.hover().isHovering()) {
+            cellArrival.resetArrival();
+            return;
+        }
+        if (!cellArrival.detectArrivalAt(settledCellReading.hover().hoveredSystemId())) {
+            return;
+        }
+        cellArrivalAnnouncer.announceCellArrival();
+        logHoverArrival(settledCellReading);
+    }
+
+    /**
      * Resolves the cursor to a cell and the cluster around it and publishes the result, or parks
-     * the hover when the cursor is over no cell.
+     * the hover when the cursor is over no cell. Called on every pass of the frame that is allowed
+     * to read, the last of them owning the answer.
+     *
+     * <p>Last write wins because the passes cannot be told apart from inside one. The hook belongs
+     * to the sector map by convention alone, so a mod compositing a map of its own drives it too,
+     * with its own zoom and pan - and it draws before the map screen is composited, a minimap
+     * hanging off the campaign HUD. Reading on the frame's first pass would hand every frame's
+     * answer to that transform; reading on all of them puts it on the one that drew last.
      *
      * <p>Parking is what every guard below reaches for, rather than leaving the previous frame's
      * answer standing: a stale hover washes a cell the cursor has left and answers the tooltip
      * with the wrong system, which reads as a bug in the highlight rather than in the read.
-     *
-     * <p>The guards part company over the arrival latch, though, because they answer two different
-     * questions. A completed hit-test that finds no cell is a sighting - the cursor is on nothing -
-     * and forgetting the cell is what makes stepping off one and back onto it a fresh arrival. A
-     * read that could not be made is not a sighting at all, so it leaves the latch holding the last
-     * cell the cursor was actually seen on.
      *
      * @param targets the frame's drawn cells, or null when the layer painted nothing to hover
      *                over - a build that has yet to succeed, or a diagnostic overlay standing in
@@ -116,13 +157,13 @@ public final class MapHoverPublisher {
         // over - and the point it lands on is inside real cells, so this cannot be left to the
         // guards below to catch: they only reject an answer that fails to arrive.
         if (!isCursorLocatableOnThisPass.getAsBoolean()) {
-            parkHoverKeepingLastCell();
+            parkHoverWithoutASighting();
             return;
         }
         // Nothing painted, so there are no cell shapes to test the cursor against. That is a
-        // missing input rather than an answer about where the cursor is, so the latch stands.
+        // missing input rather than an answer about where the cursor is, so the sighting stands.
         if (targets == null) {
-            parkHoverKeepingLastCell();
+            parkHoverWithoutASighting();
             return;
         }
         // No reading means it could not be trusted - the cursor has left the window, the transform
@@ -130,7 +171,7 @@ public final class MapHoverPublisher {
         // answer here: a cell resolved from an untrustworthy point is worse than none.
         var cursorRead = MapCursor.readCursorDuringMapPass(factor, modelviewMatrixReader);
         if (cursorRead == null) {
-            parkHoverKeepingLastCell();
+            parkHoverWithoutASighting();
             return;
         }
         var hoveredSystemId = CellHitTest.resolveSystemIdAt(
@@ -138,48 +179,27 @@ public final class MapHoverPublisher {
             cursorRead.worldPoint().y,
             targets.getFillPolygonByCellId());
 
-        if (hoveredSystemId == null) {
-            parkHoverAndForgetCell();
-            return;
-        }
-        MapHoverState.getInstance().publishHover(new MapHover(
-            hoveredSystemId,
-            targets.getClusterIndex().findClusterMembersOf(hoveredSystemId)));
+        // A hit test that found nothing publishes the parked hover rather than a cell, and is kept
+        // as the frame's sighting all the same: the cursor being over no cell is an answer.
+        var hover = hoveredSystemId == null
+            ? MapHover.NONE
+            : new MapHover(
+                hoveredSystemId,
+                targets.getClusterIndex().findClusterMembersOf(hoveredSystemId));
 
-        announceArrivalAt(hoveredSystemId, cursorRead);
+        settledCellReading = new SettledCellReading(hover, cursorRead);
+        MapHoverState.getInstance().publishHover(hover);
     }
 
-    // Parks the hover and forgets which cell the cursor was on, for a hit-test that ran and found
-    // nothing under the cursor. Forgetting is what makes stepping off a cell and back onto it
-    // reached again rather than swallowed as unchanged.
-    private void parkHoverAndForgetCell() {
-        parkHoverKeepingLastCell();
-        cellArrival.resetArrival();
-    }
-
-    // Parks the hover but leaves the latch holding the last cell the cursor was seen on, for a
-    // frame whose inputs never arrived. Nothing was learned about where the cursor is, so nothing
-    // about where it was is worth discarding.
+    // Parks the hover for a pass whose inputs never arrived, leaving the last sighting standing.
+    // Nothing was learned about where the cursor is, so nothing about where it was is worth
+    // discarding - and the moment, being answered from the sighting, stays keyed to the cell the
+    // cursor was actually seen on.
     //
-    // The distinction is what keeps the tick honest on a pass that can run more than once a frame:
-    // one run failing its read while another resolves the cell the cursor is resting on would,
-    // under a latch that forgets, read as leaving and reaching that cell over and over - a tick
-    // every frame under a motionless cursor. The hover itself is still cleared, since a highlight
-    // left standing on an unverified cell is the fault every guard here exists to avoid.
-    private void parkHoverKeepingLastCell() {
+    // The hover itself is still cleared, since a highlight left standing on an unverified cell is
+    // the fault every guard here exists to avoid.
+    private void parkHoverWithoutASighting() {
         MapHoverState.getInstance().clearHover();
-    }
-
-    // What is owed on the cursor reaching a cell, as opposed to resting on one: the tick the player
-    // hears and the line the trace prints. The latch is stepped before either is asked for, so a
-    // moment left unanswered - a silenced cue, a trace at INFO - still tracks where the cursor is.
-    private void announceArrivalAt(String hoveredSystemId, MapCursorRead cursorRead) {
-
-        if (!cellArrival.detectArrivalAt(hoveredSystemId)) {
-            return;
-        }
-        soundPlayer.playCueIfPresent(cellArrivalCueSource.get());
-        logHoverArrival(hoveredSystemId, cursorRead);
     }
 
     // Traces each move onto a new cell: which system the cursor resolved to and how large a
@@ -191,21 +211,34 @@ public final class MapHoverPublisher {
     // given. What is wrong is upstream, in the pixel it started from or the viewport and modelview
     // that pixel was mapped through, and those are only diagnosable together with what came out.
     //
-    // Described from the reading the hover was resolved from, not from a fresh one. A second read
-    // can capture a different transform - it is taken live, and a frame can hold more than one map
-    // pass - so a line built that way would account for a hover that never happened, and would do
-    // it most convincingly on exactly the frames worth diagnosing. Only the wording is deferred to
-    // arrivals; the reading itself is already in hand.
-    private void logHoverArrival(String hoveredSystemId, MapCursorRead cursorRead) {
+    // Described from the reading the announced cell came from, not from a fresh one, and not from
+    // whatever the shared holder happens to say. A second read can capture a different transform -
+    // it is taken live, and a frame can hold more than one map pass - so a line built that way would
+    // account for a hover that never happened, and would do it most convincingly on exactly the
+    // frames worth diagnosing.
+    private void logHoverArrival(SettledCellReading settledReading) {
 
         if (!LOG.isDebugEnabled()) {
             return;
         }
         LOG.debug("Map hover resolved; system="
-            + hoveredSystemId
+            + settledReading.hover().hoveredSystemId()
             + " clusterMembers="
-            + MapHoverState.getInstance().getHover().clusterMemberSystemIds()
+            + settledReading.hover().clusterMemberSystemIds()
             + "; read: "
-            + cursorRead.describeRead());
+            + settledReading.cursorRead().describeRead());
+    }
+
+    /**
+     * One pass's completed answer about where the cursor is, kept whole so the moment and the line
+     * that explains it come from the same reading. Carried together rather than as a cell id alone
+     * because the trace is only worth having if it describes the transform the announced cell was
+     * resolved through, and a frame can hold more than one.
+     *
+     * @param hover      what that reading resolved to, {@link MapHover#NONE} for a cursor over no
+     *                   cell
+     * @param cursorRead the pixel, the transform and the world point it was resolved through
+     */
+    private record SettledCellReading(MapHover hover, MapCursorRead cursorRead) {
     }
 }

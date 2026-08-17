@@ -20,8 +20,12 @@ import static org.mockito.Mockito.verify;
  * Pins the whole of what this surface adds over the one it extends: it paints the upper band and
  * nothing else, and it prepares no frame. Both are what make it a second pass over the same frame
  * rather than a second copy of it - painting the lower band here would double every fill the surface
- * beneath already drew, and preparing again would resolve the cursor a second time against a frame
- * already half painted.
+ * beneath already drew, and preparing again would repeat a refresh and step the cursor's arrival
+ * latch a second time for one frame.
+ *
+ * <p>The cursor read is the one thing it does share with the surface beneath, because that read
+ * belongs to a pass rather than to a frame: this is the map's last pass under Starscape, so its
+ * transform is the one the frame's answer should come from.
  */
 final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
 
@@ -101,6 +105,27 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
 
                 verify(layerRendererMock, never())
                     .prepareFrame(anyFloat());
+            }
+        }
+
+        @Test
+        void renderOnMapPublishesTheHoverThoughItPreparesNoFrame() {
+            // The split the plugin's own frame call cannot express: this surface leaves the frame's
+            // preparation to the one beneath it and still reads the cursor, because it is the pass
+            // that draws last under Starscape and the last read is the one the frame keeps.
+            var layerRendererMock = mock(MapLayerRenderer.class);
+
+            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
+
+                layerRegistryMock
+                    .when(MapLayerRegistry::resolveActiveMapRenderer)
+                    .thenReturn(layerRendererMock);
+
+                new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(() -> true)
+                    .renderOnMap(FACTOR, ALPHA_MULT);
+
+                verify(layerRendererMock)
+                    .publishHoverForPass(FACTOR);
             }
         }
 

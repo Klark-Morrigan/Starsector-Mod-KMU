@@ -44,10 +44,12 @@ import java.util.Optional;
  * lists fresh with the least work per frame, reading the cursor, and composing the overlay layers -
  * lives in those three.
  *
- * <p>The first two of those run in {@code prepareFrame} and the third in {@code renderOnMap}, which
- * is what lets one frame be painted by more than one surface: under Starscape the map draws its own
- * nebulae between two of this layer's bands, so the bands are emitted from separate terrain passes
- * while the refresh and the cursor read still happen once.
+ * <p>Those three run at the three rates a frame has to offer, which is what lets one frame be
+ * painted by more than one surface: under Starscape the map draws its own nebulae between two of
+ * this layer's bands, so the bands are emitted from separate terrain passes. The refresh runs once
+ * per frame in {@code prepareFrame}, the cursor read once per pass in {@code publishHoverForPass} -
+ * each pass binding a transform of its own, and the last of them owning the answer - and the paint
+ * per band in {@code renderOnMap}.
  */
 public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
@@ -128,8 +130,8 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             return;
         }
         traceMapIconOrder();
+        announceArrivalOnTheFrameJustClosed();
         cache.refresh(view);
-        publishHoverIfAnyFeedbackNeedsIt(factor);
     }
 
     @Override
@@ -163,18 +165,28 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         return view.resolveHoverTooltip();
     }
 
-    // Runs the cursor read only while some hover feedback still wants the answer - either the halo
-    // and wash or the hover box. The whole read - the map-matrix read (bridged, and a per-frame
-    // render-thread hop under Fast Rendering), the unproject, and the cell hit test - hangs off this
-    // call, so gating it here is what makes the switches real off switches rather than ones that
-    // draw nothing while still paying to resolve the hover every frame. It is the union of the two
-    // kinds rather than the effects alone because the box needs the same hovered cell the halo does.
-    // With both off the hover is parked so nothing downstream keeps a stale cell lit, and the
-    // publisher (and the renderer binding it holds) is never created.
-    //
-    // Package-private rather than private so the parking is answerable without a live map: a
-    // covered cursor returns before the publisher, which needs the running game's GL matrices.
-    void publishHoverIfAnyFeedbackNeedsIt(float factor) {
+    /**
+     * Resolves the cursor for the pass now running, while some hover feedback still wants the
+     * answer - either the halo and wash or the hover box.
+     *
+     * <p>The whole read - the map-matrix read (bridged, and a render-thread hop under Fast
+     * Rendering), the unproject, and the cell hit test - hangs off this call, so gating it here is
+     * what makes the switches real off switches rather than ones that draw nothing while still
+     * paying to resolve the hover every frame. It is the union of the two kinds rather than the
+     * effects alone because the box needs the same hovered cell the halo does. With both off the
+     * hover is parked so nothing downstream keeps a stale cell lit, and the publisher (and the
+     * renderer binding it holds) is never created.
+     *
+     * @param factor the per-vertex scale this pass applies, folding in its zoom
+     */
+    @Override
+    public void publishHoverForPass(float factor) {
+        // The same view read the preparation stands down on. Repeated here because this runs on
+        // every pass rather than under the frame's claim, so a deselected view has to cost each of
+        // them nothing rather than only the first.
+        if (PoliticalMapViewRegistry.getActiveView() == null) {
+            return;
+        }
         traceVanillaWidgetsUnderCursor();
 
         if (!PoliticalMapHoverGates.isCursorReadNeeded()) {
@@ -189,25 +201,49 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             return;
         }
         if (hoverPublisher == null) {
-            // The tick the cursor makes on reaching a cell is composed here, with the binding: what a
-            // moment sounds like belongs to whatever owns the look, and the publisher under it names
-            // only the moment. The cue is asked for per arrival rather than fixed now, so a level
-            // changed on the settings screen reaches a publisher built long before it.
-            hoverPublisher = new MapHoverPublisher(
-                ModelviewMatrixReaders.selectForActiveRenderer(),
-                new VanillaUiSoundPlayer(),
-                MapHoverCues::composeCellArrivalCue,
-                // Composed here rather than inside the publisher because the two halves belong to
-                // different ends: the setting is the framework's to state, and what counts as a
-                // vanilla map on screen is the live read this renderer already holds a binding for.
-                () -> MapHoverGates.isCursorLocatableOn(mapPresence.isAnyMapShowing()));
+            hoverPublisher = buildHoverPublisher();
         }
-        // The cursor read sits between the refresh and the draw: after, so it tests against the
-        // shapes this frame actually paints, and before, so the highlight layers already have the
-        // frame's answer when they draw. It is the one point in the frame with both the live GL
-        // matrices it needs and the current draw lists. The draw lists are handed over as the
-        // hover targets they satisfy - null when nothing was painted, which the publisher parks on.
+        // The cursor read sits between the frame's refresh and this pass's draw: after the refresh,
+        // so it tests against the shapes the frame actually paints, and before the draw, so the
+        // highlight layers have an answer when they emit. It is the one point in a pass with both
+        // the live GL matrices it needs and the current draw lists. The draw lists are handed over
+        // as the hover targets they satisfy - null when nothing was painted, which the publisher
+        // parks on.
         hoverPublisher.publishHoverFrom(cache.getTerritories(), factor);
+    }
+
+    // Answers the moment the frame just closed settled on, that frame's last pass having had the
+    // final say on where the cursor was. Nothing is owed before the first pass has ever read, which
+    // is also the only state the publisher can be absent in.
+    //
+    // Driven from the preparation rather than from a pass because the arrival latch behind it must
+    // be stepped once a frame: several surfaces paint one frame, and one of them may be a foreign
+    // map's, so a latch stepped per pass would report the cursor crossing between two transforms'
+    // answers on every frame it rests still.
+    private void announceArrivalOnTheFrameJustClosed() {
+
+        if (hoverPublisher == null) {
+            return;
+        }
+        hoverPublisher.announceSettledArrival();
+    }
+
+    // The cursor read and what answers a cell reached under it, composed together because both are
+    // this host's to name: the binding is chosen from the renderer in force, and what a moment
+    // sounds like belongs to whatever owns the look - the publisher under them names only the
+    // moment. The cue is composed per arrival rather than fixed now, so a level changed on the
+    // settings screen reaches a publisher built long before it.
+    private MapHoverPublisher buildHoverPublisher() {
+
+        var soundPlayer = new VanillaUiSoundPlayer();
+
+        return new MapHoverPublisher(
+            ModelviewMatrixReaders.selectForActiveRenderer(),
+            () -> soundPlayer.playCueIfPresent(MapHoverCues.composeCellArrivalCue()),
+            // Composed here rather than inside the publisher because the two halves belong to
+            // different ends: the setting is the framework's to state, and what counts as a
+            // vanilla map on screen is the live read this renderer already holds a binding for.
+            () -> MapHoverGates.isCursorLocatableOn(mapPresence.isAnyMapShowing()));
     }
 
     // Diagnostic only, and silent unless KMU's log verbosity is DEBUG: names the vanilla widgets the

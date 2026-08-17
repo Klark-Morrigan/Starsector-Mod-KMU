@@ -181,10 +181,10 @@ final class PoliticalMapLayerRendererTest {
     }
 
     @Nested
-    class PublishHoverIfAnyFeedbackNeedsIt {
+    class PublishHoverForPass {
 
         @Test
-        void publishHoverIfAnyFeedbackNeedsItParksTheHoverWhileTheMapIsCovered() {
+        void publishHoverForPassParksTheHoverWhileTheMapIsCovered() {
             // The renderer's half of the arrangement: a covered cursor is not hovering the cells
             // beneath it, so the hover is parked rather than left standing. Without it the map went
             // on lighting cells and floating boxes behind an open console.
@@ -194,14 +194,16 @@ final class PoliticalMapLayerRendererTest {
             // what this pins is that the renderer obeys whichever answer it gets.
             MapHoverState.getInstance().publishHover(HOVERED_CELL);
 
-            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
+                stubASelectedView(viewRegistryMock);
                 stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
 
                 new PoliticalMapLayerRenderer(
                     new MapCoverReader(List.of(COVERING_THE_MAP)), new MapPresence())
-                    .publishHoverIfAnyFeedbackNeedsIt(FACTOR);
+                    .publishHoverForPass(FACTOR);
 
                 assertThat(MapHoverState.getInstance().getHover())
                     .isEqualTo(MapHover.NONE);
@@ -209,14 +211,17 @@ final class PoliticalMapLayerRendererTest {
         }
 
         @Test
-        void publishHoverIfAnyFeedbackNeedsItParksTheHoverWhileEveryHoverSwitchIsOff() {
+        void publishHoverForPassParksTheHoverWhileEveryHoverSwitchIsOff() {
             // The other park, pinned beside it so the covered one cannot be read as the only way a
             // stale cell is dropped: with both kinds of feedback switched off there is nothing that
             // wants the answer, and the cursor read is skipped along with the covers.
             MapHoverState.getInstance().publishHover(HOVERED_CELL);
 
-            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                stubASelectedView(viewRegistryMock);
 
                 frameworkSettingsMock
                     .when(KmuMapLayerSettings::getMapHoveringEnabled)
@@ -224,10 +229,34 @@ final class PoliticalMapLayerRendererTest {
 
                 new PoliticalMapLayerRenderer(
                     new MapCoverReader(List.of(NOT_COVERING_THE_MAP)), new MapPresence())
-                    .publishHoverIfAnyFeedbackNeedsIt(FACTOR);
+                    .publishHoverForPass(FACTOR);
 
                 assertThat(MapHoverState.getInstance().getHover())
                     .isEqualTo(MapHover.NONE);
+            }
+        }
+
+        @Test
+        void publishHoverForPassStandsDownWhileNoViewIsSelected() {
+            // This runs on every pass rather than under the frame's claim, so a deselected view has
+            // to cost each of them nothing: the read behind it is a matrix readback, and paying for
+            // one per pass while the overlay is dark is the cost the view gate exists to refuse.
+            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                viewRegistryMock
+                    .when(PoliticalMapViewRegistry::getActiveView)
+                    .thenReturn(null);
+
+                new PoliticalMapLayerRenderer(
+                    new MapCoverReader(List.of(NOT_COVERING_THE_MAP)), new MapPresence())
+                    .publishHoverForPass(FACTOR);
+
+                frameworkSettingsMock
+                    .verifyNoInteractions();
+                layerSettingsMock
+                    .verifyNoInteractions();
             }
         }
     }
@@ -242,6 +271,15 @@ final class PoliticalMapLayerRendererTest {
             assertThatCode(PoliticalMapLayerRenderer.INSTANCE::discardStateFromPreviousSave)
                 .doesNotThrowAnyException();
         }
+    }
+
+    // A view the player has picked, so the reads gated behind one are reached. Which view it is
+    // decides only what would be painted, which none of these cases gets as far as.
+    private static void stubASelectedView(MockedStatic<PoliticalMapViewRegistry> viewRegistryMock) {
+
+        viewRegistryMock
+            .when(PoliticalMapViewRegistry::getActiveView)
+            .thenReturn(mock(PoliticalMapView.class));
     }
 
     // The three tiers the hover box is switched at, set together: the two above the layer left on,
