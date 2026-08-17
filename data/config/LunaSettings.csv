@@ -156,6 +156,10 @@ kmu_map_compatibility_foreignMapSurfaces_mapLayerMouseoverOnlyOnTheirHosts,,,,Li
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
+kmu_map_dev_visibilityOverrides_header,,,,Visibility overrides (SPOILERS),,Header,Visibility overrides (SPOILERS),,,,,,,,,Map - Dev
+kmu_map_dev_visibilityOverrides_showUndiscoveredMarkets,,,,Show undiscovered markets,,Boolean,FALSE,,,,"Dev: count colonies the player has not discovered yet - bypasses the known-to-player gate, so an undiscovered colony marks its system as inhabited and, on a layer that weighs colonies, folds into what that layer weighs. Off by default; a reveal aid for inspecting the whole sector. Default: false.",,,,,Map - Dev
+kmu_map_dev_visibilityOverrides_showHiddenSystems,,,,Show hidden star systems,,Boolean,FALSE,,,,"Dev: seed map geometry for every star system in the sector, not just the reachable, visible, or inhabited ones - forces a cell onto a system the map would otherwise omit. A forced system draws as uninhabited unless it holds a colony. Off by default; a reveal aid for inspecting the full cell partition. Default: false.",,,,,Map - Dev
+,,,,,,,,,,,,,,,,
 kmu_devCellGeometryHeader,,,,Cell geometry,,Header,Cell geometry,,,,,,,,,Map - Dev
 kmu_politicalMapCellRadius,,,,Territory reach,,Double,4000,,,,"Dev: How far each system's coloured territory extends into empty space, in world units, before its frontier edge closes it off. Higher lets each system claim more open space - distant systems' territories grow until they meet and merge; lower pulls every territory in tight around its own systems. Default: 4000.",,,500,12000,Map - Dev
 kmu_politicalMapCellBoundSegments,,,,Cell frontier segments,,Int,48,,,,"Dev: sides of the polygon that rounds each system cell's outer frontier - its reach into empty space. Higher is smoother but adds a vertex per segment to every frontier cell, which can cost map FPS; lower trades a faceted frontier for fewer vertices. Default: 48.",,,8,128,Map - Dev
@@ -208,10 +212,6 @@ kmu_dev_map_ui_fontSharpness_tabHeaders_sidebar_mMap,,,,M-map sidebar pixel font
 kmu_dev_map_ui_fontSharpness_tabHeaders_sidebar_intelScreen,,,,Intel sidebar pixel font sharpness,,Double,0.8,,,,"Dev: how hard the intel-screen sidebar's raised-button labels read. The atlas those labels are drawn from is a pixel face, and the font loader hands it over interpolated, which costs every single-pixel stroke part of itself and leaves the text reading dimmer than the colour it was set in; drawn unfiltered instead they read harder-edged than the vanilla chrome beside them. 0 leaves them as the loader hands them over, 1 draws them unfiltered, and anything between lays the two over one another at that weight. The default is mostly hard: what matches the vanilla row is the tone rather than the edge. Default: 0.8.",,,0,1,Map - Dev
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,
-kmu_devRevealHeader,,,,Reveal overrides (SPOILER ALERT),,Header,Reveal overrides (SPOILER ALERT),,,,,,,,,Map - Politics - Dev
-kmu_politicalMapShowAllFactions,,,,Show all factions,,Boolean,FALSE,,,,"Dev: draw every faction's colonies on the political map, including ones the player has not discovered yet - bypasses the known-to-player gate so an undiscovered colony still folds into its system's dominance, inhabitation, and cell geometry. Off by default; a reveal aid for inspecting the whole sector's politics. Default: false.",,,,,Map - Politics - Dev
-kmu_politicalMapForceAllSystemsOnMap,,,,Force all systems to map,,Boolean,FALSE,,,,"Dev: seed political-map geometry for every star system in the sector, not just the reachable, visible, or inhabited ones - forces a cell onto systems the map would otherwise omit. A forced system draws as uninhabited (no faction colour) unless it holds a colony. Off by default; a reveal aid for inspecting the full cell partition. Default: false.",,,,,Map - Politics - Dev
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,

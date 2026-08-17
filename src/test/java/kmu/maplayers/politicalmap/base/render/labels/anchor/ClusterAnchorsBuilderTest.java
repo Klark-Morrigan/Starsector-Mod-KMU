@@ -24,11 +24,13 @@ import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.ThemeFixtures;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
@@ -50,6 +52,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -206,6 +209,7 @@ final class ClusterAnchorsBuilderTest {
     private MockedStatic<LabelFonts> fontsMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
     private MockedStatic<SectorPolitics> politicsMock;
+    private MockedStatic<MapVisibilityOverrides> visibilityOverridesMock;
 
     @BeforeEach
     void openTheSettingsHolderAndFontSeams() {
@@ -217,6 +221,13 @@ final class ClusterAnchorsBuilderTest {
         fontsMock = mockStatic(LabelFonts.class);
         styleReaderMock = mockStatic(RenderStyleReader.class);
         politicsMock = mockStatic(SectorPolitics.class);
+        visibilityOverridesMock = mockStatic(MapVisibilityOverrides.class);
+
+        // The debug path opens its own pass, which samples the reveal toggles; no LunaLib
+        // answers outside the game, so the no-reveal view stands in for the read.
+        visibilityOverridesMock
+            .when(MapVisibilityOverrides::readFromLunaSettings)
+            .thenReturn(MapVisibilityOverrides.NONE);
 
         // The live tuning and name styling arrive as the data the rebuild reads them into, so a
         // case states its gate and its styling and nothing about the dozens of knobs behind them.
@@ -260,6 +271,7 @@ final class ClusterAnchorsBuilderTest {
     @AfterEach
     void closeTheSettingsHolderAndFontSeams() {
 
+        visibilityOverridesMock.close();
         politicsMock.close();
         styleReaderMock.close();
         fontsMock.close();
@@ -700,8 +712,7 @@ final class ClusterAnchorsBuilderTest {
     private void stubSectorHolders(Map<String, DominantHolder> holderBySystemId) {
         politicsMock
             .when(() -> SectorPolitics.resolveDominantHolderBySystemId(
-                sectorMock,
-                HolderGrouping.identity()))
+                argThat((HolderPass pass) -> HolderGrouping.identity().equals(pass.grouping()))))
             .thenReturn(holderBySystemId);
     }
 

@@ -587,7 +587,7 @@ class MapVisibilityIntegrationTest {
 
     // An undiscovered colony the player has not found: hidden market on a still-
     // discoverable entity, so it fails the normal known-to-player gate and confers
-    // presence only under the show-all-factions reveal.
+    // presence only under the show-undiscovered-markets reveal.
     private static MarketAPI buildUndiscoveredColony() {
 
         var entityMock = mock(SectorEntityToken.class);

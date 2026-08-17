@@ -13,6 +13,8 @@ import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageCollector;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
@@ -60,7 +62,11 @@ public final class DebugBorderTracingBuilder {
             CellGeometryCache geometryCache,
             SectorAPI sector) {
 
-        var ownerBySystemId = SectorPolitics.resolveDominantHolderBySystemId(sector);
+        // This overlay's own reading of the sector: it never filters and groups nothing, so it
+        // opens a plain identity pass rather than being handed one - there is no rebuild above it
+        // to inherit from.
+        var ownerBySystemId = SectorPolitics.resolveDominantHolderBySystemId(
+            HolderPass.readFromLunaSettings(sector, HolderGrouping.identity()));
 
         // The agnostic geometry groups the drawn cells, resolving each to the system it draws
         // as and that system to its faction id.

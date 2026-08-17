@@ -197,12 +197,11 @@ public final class FilteredPolitics {
             Set<String> candidateSystemIds) {
 
         var presentSystemIds = new LinkedHashSet<String>();
-        var sector = pass.sector();
 
-        if (sector == null || sector.getEconomy() == null || selectedBlocId == null) {
+        if (!pass.canReadEconomy() || selectedBlocId == null) {
             return presentSystemIds;
         }
-        for (var system : sector.getStarSystems()) {
+        for (var system : pass.readSystems()) {
 
             // Membership is tested before the economy read, so a system outside the candidate
             // set costs a set probe rather than a walk of its markets.
@@ -271,12 +270,11 @@ public final class FilteredPolitics {
 
         var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
         var contestedSystemIds = new LinkedHashSet<String>();
-        var sector = pass.sector();
 
-        if (sector == null || sector.getEconomy() == null || selectedBlocId == null) {
+        if (!pass.canReadEconomy() || selectedBlocId == null) {
             return new FilteredHolder(ownerBySystemId, contestedSystemIds);
         }
-        for (var system : sector.getStarSystems()) {
+        for (var system : pass.readSystems()) {
             var holder = resolveHolder(system, pass, selectedBlocId, contestedSystemIds);
             if (holder != null) {
                 ownerBySystemId.put(system.getId(), holder);

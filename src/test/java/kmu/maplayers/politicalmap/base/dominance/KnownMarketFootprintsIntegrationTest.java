@@ -461,7 +461,7 @@ class KnownMarketFootprintsIntegrationTest {
 
         @Test
         void readByFactionIncludesAnUndiscoveredStationWhenIncludingUndiscoveredMarkets() {
-            // The show-all-factions dev reveal drops the known-to-player gate, so an
+            // The show-undiscovered-markets dev reveal drops the known-to-player gate, so an
             // undiscovered hidden market folds in at its fixed token size of 1 rather
             // than being skipped as it is under the normal filter.
             var sector = buildSectorWith(

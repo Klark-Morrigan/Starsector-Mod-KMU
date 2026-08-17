@@ -14,7 +14,9 @@ import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
@@ -35,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -127,6 +130,7 @@ final class DebugBorderTracingBuilderTest {
     private MockedStatic<SectorPolitics> politicsMock;
     private MockedStatic<PoliticalMapInhabitation> inhabitationMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
+    private MockedStatic<MapVisibilityOverrides> visibilityOverridesMock;
 
     @BeforeEach
     void openTheSectorAndSettingsSeams() {
@@ -140,7 +144,14 @@ final class DebugBorderTracingBuilderTest {
             .thenReturn(MITER_SPIKE_LIMIT);
 
         politicsMock = mockStatic(SectorPolitics.class);
+        visibilityOverridesMock = mockStatic(MapVisibilityOverrides.class);
         inhabitationMock = mockStatic(PoliticalMapInhabitation.class);
+
+        // This overlay opens its own pass, which samples the reveal toggles; no LunaLib answers
+        // outside the game, so the no-reveal view stands in for the read.
+        visibilityOverridesMock
+            .when(MapVisibilityOverrides::readFromLunaSettings)
+            .thenReturn(MapVisibilityOverrides.NONE);
         styleReaderMock = mockStatic(RenderStyleReader.class);
 
         // An empty sector by default, so a case names only the cells it is about.
@@ -153,6 +164,7 @@ final class DebugBorderTracingBuilderTest {
     void closeTheSectorAndSettingsSeams() {
         styleReaderMock.close();
         inhabitationMock.close();
+        visibilityOverridesMock.close();
         politicsMock.close();
         settingsMock.close();
     }
@@ -387,7 +399,7 @@ final class DebugBorderTracingBuilderTest {
 
     private void stubHolders(Map<String, DominantHolder> ownerBySystemId) {
         politicsMock
-            .when(() -> SectorPolitics.resolveDominantHolderBySystemId(sectorMock))
+            .when(() -> SectorPolitics.resolveDominantHolderBySystemId(any(HolderPass.class)))
             .thenReturn(ownerBySystemId);
     }
 

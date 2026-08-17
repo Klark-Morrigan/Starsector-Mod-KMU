@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.base.geometry.CellSeedInputs;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,8 +24,8 @@ final class CellCutInputsTest {
     // The reading two cuts share where the case is about one of the other inputs.
     private static final int GEOMETRY_REVISION = 7;
     private static final CellSeedInputs SEED_INPUTS = new CellSeedInputs(48, 4000.0);
-    private static final PoliticalMapDevToggles DEV_TOGGLES =
-        new PoliticalMapDevToggles(false, false);
+    private static final MapVisibilityOverrides DEV_TOGGLES =
+        new MapVisibilityOverrides(false, false);
 
     @Nested
     class Equality {
@@ -70,25 +70,25 @@ final class CellCutInputsTest {
         }
 
         @Test
-        void equalitySeparatesReadingsAcrossAForceAllSystemsFlip() {
+        void equalitySeparatesReadingsAcrossAHiddenSystemsFlip() {
             // The toggle admits every star system to the partition, so cells appear where there
             // were none and every neighbour cedes area to them - at an unmoved revision again.
             assertThat(new CellCutInputs(GEOMETRY_REVISION, SEED_INPUTS, DEV_TOGGLES))
                 .isNotEqualTo(new CellCutInputs(
                     GEOMETRY_REVISION,
                     SEED_INPUTS,
-                    new PoliticalMapDevToggles(false, true)));
+                    new MapVisibilityOverrides(false, true)));
         }
 
         @Test
-        void equalitySeparatesReadingsAcrossAShowAllFactionsFlip() {
+        void equalitySeparatesReadingsAcrossAnUndiscoveredMarketsFlip() {
             // The second reveal reaches the cells through inhabitation: an undiscovered colony
             // counted makes its system drawn, which seeds a cell that was not there before.
             assertThat(new CellCutInputs(GEOMETRY_REVISION, SEED_INPUTS, DEV_TOGGLES))
                 .isNotEqualTo(new CellCutInputs(
                     GEOMETRY_REVISION,
                     SEED_INPUTS,
-                    new PoliticalMapDevToggles(true, false)));
+                    new MapVisibilityOverrides(true, false)));
         }
     }
 }

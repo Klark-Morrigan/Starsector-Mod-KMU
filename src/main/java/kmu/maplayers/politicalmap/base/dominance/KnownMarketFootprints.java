@@ -122,11 +122,11 @@ public final class KnownMarketFootprints {
      *                                         player's LunaLib toggles, read once per pass
      *                                         by the caller so a whole pass resolves under
      *                                         one rule
-     * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet
-     *                                         discovered still folds in (the "show all
-     *                                         factions" dev reveal); false applies the normal
-     *                                         known-to-player filter, true drops it so an
-     *                                         undiscovered colony counts too
+     * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
+     *                                         still folds in (the "show undiscovered markets" dev
+     *                                         override); false applies the normal known-to-player
+     *                                         filter, true drops it so an undiscovered colony
+     *                                         counts too
      * @return each faction's footprint in the system, keyed by faction id; empty
      *         when the system holds no folded market
      */
@@ -167,9 +167,10 @@ public final class KnownMarketFootprints {
      *                                         empty yields an empty map
      * @param rules                            the dominance-weighting rules for this pass, read once per
      *                                         pass by the caller so a whole pass resolves under one rule
-     * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered still
-     *                                         folds in (the "show all factions" dev reveal); false applies
-     *                                         the normal known-to-player filter
+     * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
+     *                                         still folds in (the "show undiscovered markets" dev
+     *                                         reveal); false applies the normal known-to-player
+     *                                         filter
      * @return each faction's contribution in the system, keyed by faction id; empty when the system
      *         holds no folded market
      */
@@ -214,8 +215,9 @@ public final class KnownMarketFootprints {
      *                                         once per pass by the caller so a whole pass resolves
      *                                         under one rule
      * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
-     *                                         still counts (the "show all factions" dev reveal);
-     *                                         false applies the normal known-to-player filter
+     *                                         still counts (the "show undiscovered markets" dev
+     *                                         reveal); false applies the normal known-to-player
+     *                                         filter
      * @return each faction's counted markets in the system with the breakdown of each market's
      *         weight, keyed by faction id and in the economy's own market order; empty when the
      *         system holds no counted market
@@ -260,8 +262,9 @@ public final class KnownMarketFootprints {
      * @param colonies                         the system's colony set, as one walk of it reported;
      *                                         empty yields an empty map
      * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
-     *                                         still counts (the "show all factions" dev reveal);
-     *                                         false applies the normal known-to-player filter
+     *                                         still counts (the "show undiscovered markets" dev
+     *                                         reveal); false applies the normal known-to-player
+     *                                         filter
      * @return each faction's unlisted colonies in the system, identified and nothing more, keyed by
      *         faction id and in the system's own entity order; empty when every colony present is
      *         one the economy lists
@@ -291,8 +294,9 @@ public final class KnownMarketFootprints {
      * @param colonies                         the system's colony set, as one walk of it reported;
      *                                         empty yields an empty list
      * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
-     *                                         still counts (the "show all factions" dev reveal);
-     *                                         false applies the normal known-to-player filter
+     *                                         still counts (the "show undiscovered markets" dev
+     *                                         reveal); false applies the normal known-to-player
+     *                                         filter
      * @return the weighed colonies' markets, in the economy's own order
      */
     public static List<MarketAPI> readWeighedColonies(

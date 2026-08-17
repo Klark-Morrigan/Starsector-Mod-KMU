@@ -12,7 +12,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -76,7 +76,7 @@ final class PoliticalMapStatusRevealIntegrationTest {
 
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
 
-    private MockedStatic<PoliticalMapDevToggles> devTogglesMock;
+    private MockedStatic<MapVisibilityOverrides> visibilityOverridesMock;
     private MockedStatic<DominanceRules> dominanceRulesMock;
     private MockedStatic<PoliticalMapViewRegistry> viewRegistryMock;
     private MockedStatic<SystemStandings> standingsMock;
@@ -95,7 +95,7 @@ final class PoliticalMapStatusRevealIntegrationTest {
             .when(DominanceRules::readFromLunaSettings)
             .thenReturn(ANY_RULES);
 
-        devTogglesMock = Mockito.mockStatic(PoliticalMapDevToggles.class);
+        visibilityOverridesMock = Mockito.mockStatic(MapVisibilityOverrides.class);
         setReveal(false);
 
         var viewMock = mock(PoliticalMapView.class);
@@ -125,7 +125,7 @@ final class PoliticalMapStatusRevealIntegrationTest {
     void clearSettingsAndTheLunaReads() {
         standingsMock.close();
         viewRegistryMock.close();
-        devTogglesMock.close();
+        visibilityOverridesMock.close();
         dominanceRulesMock.close();
         CellTooltipPaletteFake.clearPalette();
     }
@@ -188,10 +188,10 @@ final class PoliticalMapStatusRevealIntegrationTest {
             : null;
     }
 
-    private void setReveal(boolean isShowingAllFactions) {
-        devTogglesMock
-            .when(PoliticalMapDevToggles::readFromLunaSettings)
-            .thenReturn(new PoliticalMapDevToggles(isShowingAllFactions, false));
+    private void setReveal(boolean shouldIncludeUndiscoveredMarkets) {
+        visibilityOverridesMock
+            .when(MapVisibilityOverrides::readFromLunaSettings)
+            .thenReturn(new MapVisibilityOverrides(shouldIncludeUndiscoveredMarkets, false));
     }
 
     private SectorAPI buildSectorHolding(MarketAPI market) {

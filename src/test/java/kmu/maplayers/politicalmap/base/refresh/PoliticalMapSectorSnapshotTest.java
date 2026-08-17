@@ -12,7 +12,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 
-import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -118,7 +118,7 @@ class PoliticalMapSectorSnapshotTest {
         return PoliticalMapSectorSnapshot.scan(
                 sector,
                 STABILITY_WEIGHTED,
-                PoliticalMapDevToggles.NONE);
+                MapVisibilityOverrides.NONE);
     }
 
     // A single-system sector whose economy returns the given markets for that

@@ -9,6 +9,7 @@ import kmlib.starsector.systems.SystemColoniesIndex;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -90,8 +91,8 @@ public record DominancePass(
 
     /**
      * A pass reading the player's live LunaLib settings under an explicit grouping: the weighting
-     * rule and the show-all-factions reveal are sampled once here so the whole pass resolves under
-     * the settings in force when it began, even if the player changes a toggle mid-walk.
+     * rule and the undiscovered-markets reveal are sampled once here, so the whole pass resolves
+     * under the settings in force when it began even if the player moves a toggle mid-walk.
      *
      * @param sector   the sector this pass reads
      * @param grouping the grouping this pass folds factions into blocs under
@@ -133,7 +134,7 @@ public record DominancePass(
     /**
      * Whether undiscovered colonies count toward this pass's reads.
      *
-     * @return true while the "show all factions" dev reveal is lifting the fog
+     * @return true while the "show undiscovered markets" dev reveal is lifting the fog
      */
     public boolean shouldIncludeUndiscoveredMarkets() {
         return holding.shouldIncludeUndiscoveredMarkets();
@@ -147,6 +148,24 @@ public record DominancePass(
      */
     public SystemColoniesIndex colonies() {
         return holding.colonies();
+    }
+
+    /**
+     * The systems this pass walks, in the sector's own order; empty for a pass over no sector.
+     *
+     * @return the sector's star systems
+     */
+    public List<StarSystemAPI> readSystems() {
+        return holding.readSystems();
+    }
+
+    /**
+     * Whether this pass can read an economy at all - a sector to walk, with its economy up.
+     *
+     * @return true when both the sector and its economy are there to read
+     */
+    public boolean canReadEconomy() {
+        return holding.canReadEconomy();
     }
 
     /**
@@ -227,10 +246,19 @@ public record DominancePass(
      * the market nearest the system centre. Lazy - it reads no geometry unless a tie forces it - so
      * every pass shares one on-demand tie-break rather than each resolver building its own.
      *
+     * <p>Here rather than on the reading of the sector it is built from, because a tie is settled
+     * among the colonies this mechanic weighs: the tie-break reaches the same weighed selection
+     * the ranking that tied was folded from, and a reading of the sector that named it would be
+     * carrying a mechanic no other layer's pass has any use for.
+     *
      * @param system the system the tie-break ranks blocs within
      * @return the comparator that orders tied bloc ids for this system
      */
     public Comparator<String> tieBreakFor(StarSystemAPI system) {
-        return holding.tieBreakFor(system);
+        return MarketProximityTieBreak.forSystem(
+            system,
+            readColoniesIn(system),
+            shouldIncludeUndiscoveredMarkets(),
+            grouping());
     }
 }

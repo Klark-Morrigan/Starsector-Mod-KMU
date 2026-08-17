@@ -112,10 +112,10 @@ final class LunaSettingsCsvIntegrationTest {
     // that one row, which reads to a player as a knob that has gone missing from where it lived.
     // Held here so the layout is a decision the file cannot drift away from by typo.
     //
-    // The "Map - " prefix is what marks a tab as belonging to the map, so the three diagnostics
-    // tabs read as what they tune: "Map - Dev" is the map-layer framework's, "Map - Politics - Dev"
-    // the political layer's, and the unprefixed "Dev" the mod-wide one - which is why logging keeps
-    // the bare name rather than taking a prefix that would claim it for a feature it is not part of.
+    // The "Map - " prefix is what marks a tab as belonging to the map, so the two diagnostics
+    // tabs read as what they tune: "Map - Dev" is the map's own, and the unprefixed "Dev" the
+    // mod-wide one - which is why logging keeps the bare name rather than taking a prefix that
+    // would claim it for a feature it is not part of.
     private static final Set<String> KNOWN_TABS = Set.of(
         "Map - Visuals",
         "Map - Politics - Visuals",
@@ -124,7 +124,6 @@ final class LunaSettingsCsvIntegrationTest {
         "Map - Keybinds",
         "Map - Compatibility",
         "Map - Dev",
-        "Map - Politics - Dev",
         "Dev",
         "Market Condition Manager (MCM)");
     

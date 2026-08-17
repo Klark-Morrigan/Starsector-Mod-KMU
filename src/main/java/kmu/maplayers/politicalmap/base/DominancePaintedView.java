@@ -72,7 +72,8 @@ public interface DominancePaintedView extends PoliticalMapView {
      *                                         selectable blocs are gated under the same rule the map
      *                                         paints under
      * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward a bloc's
-     *                                         visibility (the "show all factions" dev reveal)
+     *                                         visibility (the "show undiscovered markets" dev
+     *                                         reveal)
      * @return this view's picker, its blocs in the order the economy walk surfaces them
      */
     @Override

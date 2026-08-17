@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.visibility.MapVisibility;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
 import java.util.Set;
 
@@ -39,6 +40,6 @@ public final class PoliticalMapInhabitation {
     public static Set<String> readInhabitedSystemIds(SectorAPI sector) {
         return MapVisibility.findInhabitedSystemIds(
             sector,
-            PoliticalMapDevToggles.readFromLunaSettings().convertToVisibilityOverrides());
+            MapVisibilityOverrides.readFromLunaSettings());
     }
 }

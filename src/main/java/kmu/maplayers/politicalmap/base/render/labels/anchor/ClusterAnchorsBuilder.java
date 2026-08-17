@@ -20,6 +20,7 @@ import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
@@ -278,7 +279,8 @@ public final class ClusterAnchorsBuilder {
             cellGeometry,
             sector,
             new ClusterLabelStylingSnapshot(
-                SectorPolitics.resolveDominantHolderBySystemId(sector, grouping),
+                SectorPolitics.resolveDominantHolderBySystemId(
+                    HolderPass.readFromLunaSettings(sector, grouping)),
                 desaturationPalette,
                 new ViewGrouping(view, grouping),
                 FilterSnapshot.unfiltered()));

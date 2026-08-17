@@ -45,12 +45,11 @@ public final class DominanceStatsAggregator {
      */
     public static Map<String, DominanceStats> aggregateDominanceStats(DominancePass pass) {
         var statsByBlocId = new LinkedHashMap<String, DominanceStats>();
-        var sector = pass.sector();
 
-        if (sector == null || sector.getEconomy() == null) {
+        if (!pass.canReadEconomy()) {
             return statsByBlocId;
         }
-        for (var system : sector.getStarSystems()) {
+        for (var system : pass.readSystems()) {
             accumulateSystemStats(statsByBlocId, system, pass);
         }
         return statsByBlocId;

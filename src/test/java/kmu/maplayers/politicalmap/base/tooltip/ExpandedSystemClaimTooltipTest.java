@@ -16,7 +16,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
@@ -98,7 +98,7 @@ final class ExpandedSystemClaimTooltipTest {
     private final SectorAPI sectorMock = mock(SectorAPI.class);
 
     private MockedStatic<SystemStatusRow> statusRowMock;
-    private MockedStatic<PoliticalMapDevToggles> devTogglesMock;
+    private MockedStatic<MapVisibilityOverrides> visibilityOverridesMock;
 
     @BeforeEach
     void installStringsColoursAndTheSystemStatusSeam() {
@@ -115,10 +115,10 @@ final class ExpandedSystemClaimTooltipTest {
 
         // The reveal is a live LunaLib read, unreachable from the test JVM; stood in as off, the state
         // every case here is posed under.
-        devTogglesMock = Mockito.mockStatic(PoliticalMapDevToggles.class);
-        devTogglesMock
-            .when(PoliticalMapDevToggles::readFromLunaSettings)
-            .thenReturn(PoliticalMapDevToggles.NONE);
+        visibilityOverridesMock = Mockito.mockStatic(MapVisibilityOverrides.class);
+        visibilityOverridesMock
+            .when(MapVisibilityOverrides::readFromLunaSettings)
+            .thenReturn(MapVisibilityOverrides.NONE);
 
         when(systemMock.getId())
             .thenReturn(SYSTEM_ID);
@@ -130,7 +130,7 @@ final class ExpandedSystemClaimTooltipTest {
     @AfterEach
     void clearStringsColoursAndTheSystemStatusSeam() {
 
-        devTogglesMock.close();
+        visibilityOverridesMock.close();
         statusRowMock.close();
         
         CellTooltipPaletteFake.clearPalette();

@@ -20,9 +20,8 @@ import static org.mockito.Mockito.mock;
  * walk the systems of one sector and price them against a second - which with one sector in play
  * would show as nothing at all.
  *
- * <p>What the reads answer is covered where they are consumed: {@link MarketProximityTieBreak} has
- * its own suite, and the per-system colony read is exercised through the resolves in the
- * {@code base.politics} integration suites.
+ * <p>What the per-system colony read answers is covered where it is consumed, through the resolves
+ * in the {@code base.politics} integration suites.
  */
 final class HolderPassTest {
 

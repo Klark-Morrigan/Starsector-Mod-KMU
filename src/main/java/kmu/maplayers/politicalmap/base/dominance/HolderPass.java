@@ -6,9 +6,9 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.SystemColonies;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
-import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
-import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -21,7 +21,9 @@ import java.util.Objects;
  * is the layer's own, and each carries its rule beside this rather than inside it
  * ({@link DominancePass} is this plus the weighting rule). That is what lets the holder seam take
  * a pass at all: a seam naming a whole mechanic's pass could only be implemented by layers that
- * paint by that mechanic.
+ * paint by that mechanic. Anything answered by weighing markets - which colonies count toward a
+ * weight, how a dead heat between them is settled - therefore belongs on that pass and not here,
+ * however generic the inputs it is computed from look.
  *
  * <p>Opened where a rebuild begins and handed down, so the sector is read at one moment and
  * every system is walked once for the whole rebuild rather than once per surface that asks about
@@ -34,9 +36,9 @@ import java.util.Objects;
  * @param grouping                         the grouping that folds factions into blocs before any
  *                                         mechanic compares them; the identity grouping resolves
  *                                         the plain faction view
- * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count (the "show all
- *                                         factions" dev reveal); false applies the normal
- *                                         known-to-player filter
+ * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count (the "show
+ *                                         undiscovered markets" dev reveal); false applies the
+ *                                         normal known-to-player filter
  * @param colonies                         the pass's one walk of each system, shared by every
  *                                         read made through it
  */
@@ -84,7 +86,7 @@ public record HolderPass(
     public static HolderPass readFromLunaSettings(SectorAPI sector, HolderGrouping grouping) {
         return over(
             sector,
-            PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions(),
+            MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets(),
             grouping);
     }
 
@@ -95,6 +97,38 @@ public record HolderPass(
      */
     public SectorAPI sector() {
         return colonies.getSector();
+    }
+
+    /**
+     * The systems this pass walks, in the sector's own order.
+     *
+     * <p>Empty for a pass over no sector, which is what lets a resolve state its walk without
+     * guarding the unreachable case first: there is nothing to iterate, so the loop body decides
+     * nothing and the guard it would have needed cannot be forgotten at one call site and kept at
+     * another.
+     *
+     * @return the sector's star systems; empty when the pass was opened over no sector
+     */
+    public List<StarSystemAPI> readSystems() {
+
+        var sector = sector();
+        return sector == null ? List.of() : sector.getStarSystems();
+    }
+
+    /**
+     * Whether this pass can read an economy at all - a sector to walk, with its economy up.
+     *
+     * <p>The one named answer to a state every resolve below meets: the sector is unreachable, or
+     * it is mid-load and its economy has not been built yet. A resolve that reads market weights
+     * reports nothing at all in that case rather than reporting a sector as empty, and stating the
+     * condition once is what stops one of them testing half of it.
+     *
+     * @return true when both the sector and its economy are there to read
+     */
+    public boolean canReadEconomy() {
+
+        var sector = sector();
+        return sector != null && sector.getEconomy() != null;
     }
 
     /**
@@ -109,20 +143,4 @@ public record HolderPass(
         return colonies.readColoniesIn(system);
     }
 
-    /**
-     * The market-proximity tie-break for one system, consulted only when blocs tie on every
-     * level of whatever mechanic ranked them, so a dead heat falls to whoever holds the colony
-     * nearest the system centre. Lazy - it reads no geometry unless a tie forces it - so every
-     * pass shares one on-demand tie-break rather than each resolver building its own.
-     *
-     * @param system the system the tie-break ranks blocs within
-     * @return the comparator that orders tied bloc ids for this system
-     */
-    public Comparator<String> tieBreakFor(StarSystemAPI system) {
-        return MarketProximityTieBreak.forSystem(
-            system,
-            readColoniesIn(system),
-            shouldIncludeUndiscoveredMarkets,
-            grouping);
-    }
 }

@@ -5,7 +5,7 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
 import java.util.List;
 
@@ -43,7 +43,7 @@ public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip 
         // repeat what it learned there. Read live off the same toggle the status line and the
         // faction layer's pass sample, so the three cannot disagree about what the player knows.
         var isListingUnfoundMarkets =
-            PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions();
+            MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets();
 
         // The whole contest travels with the standing: who the claim holder is and which listing
         // ties actually decided something are facts of the contest, not of one faction's list, and

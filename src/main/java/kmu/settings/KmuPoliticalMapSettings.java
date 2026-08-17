@@ -55,12 +55,10 @@ package kmu.settings;
  * each set how deeply their factor collapses at zero stability. The tab groups the fields
  * under Colony size, Hidden markets, Stability, Orbital stations, and Patrols headers.
  *
- * <p>The rest sit under the two dev tabs, which are tuning surfaces rather than player-facing
- * appearance. Most land on "Map - Dev", because a tab answers to whose map a knob shapes and
+ * <p>The rest sit under "Map - Dev", which is a tuning surface rather than player-facing
+ * appearance. They land on a framework tab because a tab answers to whose map a knob shapes and
  * what these shape is a map's geometry rather than a political verdict - their getters stay
  * here for the reason above, which is why a framework tab and this class are no contradiction.
- * Only the reveal overrides take "Map - Politics - Dev", since what they widen is who the map
- * draws colonies for.
  *
  * <p>The cell reach and frontier resolution seed the partition itself, so they feed
  * the geometry rebuild rather than the drawables restyle. The border shaping is split into
@@ -69,9 +67,7 @@ package kmu.settings;
  * that turns the pass off whole without zeroing the knobs beneath it. The corner-rounding
  * gate also covers the factionless (decivilised and uninhabited) cell outlines, which reuse
  * the same rounding. The hatch fill and its joining tolerance shape the contested cluster's
- * texture. Two reveal overrides widen what the map draws for inspection - show-all-factions,
- * which draws undiscovered colonies too, and force-all-systems, which seeds a cell for every
- * star system - and the two diagnostics draw the layer's own workings: the cluster label
+ * texture. The two diagnostics draw the layer's own workings: the cluster label
  * anchors, and the border-tracing overlay that layers the smoothing stages in distinct
  * colours.
  */
@@ -353,19 +349,6 @@ public final class KmuPoliticalMapSettings {
     private static final String HATCH_JOIN_TOLERANCE_FIELD =
         "kmu_politicalMapHatchJoinTolerance";
 
-    // Reveal overrides (Map - Politics - Dev tab): two toggles that widen what the map draws for
-    // inspection, each bypassing a normal gate. Show-all-factions drops the
-    // known-to-player footprint filter so undiscovered colonies count toward
-    // dominance, inhabitation, and geometry; force-all-systems bypasses the map
-    // visibility rule so every star system seeds a cell. Both off by default. They
-    // reseed the geometry (they change which systems get a cell), so the plugin
-    // treats them like the frontier resolution - a change forces a geometry rebuild,
-    // not just the drawables restyle a styling setting triggers.
-    private static final String SHOW_ALL_FACTIONS_FIELD =
-        "kmu_politicalMapShowAllFactions";
-    private static final String FORCE_ALL_SYSTEMS_ON_MAP_FIELD =
-        "kmu_politicalMapForceAllSystemsOnMap";
-
     // Diagnostics (Map - Dev tab): draws the per-cluster label anchors (a centre dot and the
     // accepted label line in green) so the clustering and axis fit behind the map
     // labels can be eyeballed on the map. Off by default.
@@ -623,11 +606,8 @@ public final class KmuPoliticalMapSettings {
     private static final double DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT = 0.1;
     private static final double HATCH_JOIN_TOLERANCE_PERCENT_PER_UNIT = 100.0;
 
-    // Both reveal overrides off by default: the map draws exactly what the normal
-    // gates admit until the player opts into a wider view. The three diagnostics likewise,
-    // so the map draws its result rather than its workings until asked.
-    private static final boolean DEFAULT_SHOW_ALL_FACTIONS = false;
-    private static final boolean DEFAULT_FORCE_ALL_SYSTEMS_ON_MAP = false;
+    // The diagnostics off by default, so the map draws its result rather than its workings
+    // until asked.
     private static final boolean DEFAULT_SHOW_CLUSTER_ANCHORS = false;
     private static final boolean DEFAULT_SHOW_RIBBON_PATHS = false;
     private static final boolean DEFAULT_DEBUG_BORDER_TRACING = false;
@@ -1431,29 +1411,6 @@ public final class KmuPoliticalMapSettings {
      */
     public static NebulaDrawOrderChoice getPoliticalMapLabelNebulaDrawOrder() {
         return KmuLunaSettings.readChoice(NEBULA_DRAW_ORDER_LABELS_FIELD, DEFAULT_NEBULA_DRAW_ORDER_LABELS);
-    }
-
-    /**
-     * @return whether the political map draws every faction's colonies, including ones
-     *         the player has not discovered yet - bypasses the known-to-player gate so
-     *         an undiscovered colony still folds into its system's dominance,
-     *         inhabitation, and cell geometry; off by default, a reveal aid for
-     *         inspecting the whole sector's politics
-     */
-    public static boolean getPoliticalMapShowAllFactions() {
-        return KmuLunaSettings.readBoolean(SHOW_ALL_FACTIONS_FIELD, DEFAULT_SHOW_ALL_FACTIONS);
-    }
-
-    /**
-     * @return whether the political map seeds a cell for every star system, not just the
-     *         reachable, visible, or inhabited ones - bypasses the visibility rule so a
-     *         system the map would otherwise omit still gets geometry; off by default, a
-     *         reveal aid for inspecting the full cell partition
-     */
-    public static boolean shouldForceAllSystemsOnMap() {
-        return KmuLunaSettings.readBoolean(
-            FORCE_ALL_SYSTEMS_ON_MAP_FIELD,
-            DEFAULT_FORCE_ALL_SYSTEMS_ON_MAP);
     }
 
     /**

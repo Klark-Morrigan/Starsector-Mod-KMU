@@ -17,10 +17,10 @@ package kmu.settings;
  * where it does no harm - the Java side says which half of the map code owns a knob, the
  * stored key stays put.
  *
- * <p>The axis diagnostics below are the exception that rule allows: a toggle defaulting off
- * holds nothing a rename could cost, so those two say {@code kmu_map_dev_diagnostics_*} -
- * the tab and section a player finds them under - rather than the layer that first wanted
- * them drawn.
+ * <p>The visibility overrides and the axis diagnostics below are the exception that rule
+ * allows: a toggle defaulting off holds nothing a rename could cost, so their ids say
+ * {@code kmu_map_dev_*} - the tab and section a player finds them under - rather than the
+ * layer that first wanted them.
  *
  * <p>The knobs lay out across five tabs. {@code Map - Visuals} carries the overlay
  * sidebar, the map labels, the two upper hover tiers and how tightly a hover box is set -
@@ -32,9 +32,10 @@ package kmu.settings;
  * appearance. {@code Map - Compatibility} carries what the layers may do on a map this mod
  * does not own, which is neither a look nor a control but a boundary - the one tab whose
  * knobs are reached for because another mod is installed rather than because of anything
- * this one draws. {@code Map - Dev} carries the tuning surfaces a player does not browse:
- * the national border's tracing tolerances, the label-anchor search's modifiers, and the
- * band and axis diagnostics that draw the search's own workings on the map.
+ * this one draws. {@code Map - Dev} carries the tuning surfaces a player does not browse: the
+ * two visibility overrides that widen what any layer draws, the national border's tracing
+ * tolerances, the label-anchor search's modifiers, and the band and axis diagnostics that
+ * draw the search's own workings on the map.
  */
 public final class KmuMapLayerSettings {
 
@@ -242,6 +243,22 @@ public final class KmuMapLayerSettings {
     // what the fit would accept with no horizontal bias, so the bias knob's effect is
     // visible directly. Both meaningful only while the anchors themselves draw, which is
     // the drawing layer's own toggle.
+    // Visibility overrides (Map - Dev tab): two toggles that widen what every map layer draws,
+    // each bypassing a gate the visibility rule would otherwise hold. Show-undiscovered-markets
+    // drops the known-to-player filter so a colony the player has not found still counts as
+    // inhabitation - and, on a layer that weighs colonies, toward what it weighs;
+    // show-hidden-systems bypasses the rule outright so every star system seeds a cell. Both off
+    // by default. They reseed the geometry (they change which systems get a cell), so a change
+    // forces a geometry rebuild rather than the restyle a styling knob triggers.
+    //
+    // The ids are the framework's own rather than inherited, unlike most above: a toggle
+    // defaulting off holds nothing a rename could cost, which is the same allowance the axis
+    // diagnostics take.
+    private static final String SHOW_UNDISCOVERED_MARKETS_FIELD =
+        "kmu_map_dev_visibilityOverrides_showUndiscoveredMarkets";
+    private static final String SHOW_HIDDEN_SYSTEMS_FIELD =
+        "kmu_map_dev_visibilityOverrides_showHiddenSystems";
+
     private static final String SHOW_REJECTED_AXES_FIELD =
         "kmu_map_dev_diagnostics_labels_boxes_areRejectedShown";
     private static final String SHOW_UNBIASED_AXES_FIELD =
@@ -386,6 +403,11 @@ public final class KmuMapLayerSettings {
     // until the reader asks for the candidate the fit discarded.
     private static final boolean DEFAULT_SHOW_REJECTED_AXES = false;
     private static final boolean DEFAULT_SHOW_UNBIASED_AXES = false;
+
+    // Both visibility overrides off by default: the map draws exactly what the normal gates admit
+    // until the player opts into a wider view.
+    private static final boolean DEFAULT_SHOW_UNDISCOVERED_MARKETS = false;
+    private static final boolean DEFAULT_SHOW_HIDDEN_SYSTEMS = false;
 
     private KmuMapLayerSettings() {
     }
@@ -762,6 +784,30 @@ public final class KmuMapLayerSettings {
      */
     public static boolean getMapShowUnbiasedAxes() {
         return KmuLunaSettings.readBoolean(SHOW_UNBIASED_AXES_FIELD, DEFAULT_SHOW_UNBIASED_AXES);
+    }
+
+    /**
+     * @return whether a colony the player has not discovered yet still counts - bypasses the
+     *         known-to-player gate, so such a colony marks its system as inhabited and, on a
+     *         layer that weighs colonies, folds into what that layer weighs; off by default, a
+     *         reveal aid for inspecting the whole sector
+     */
+    public static boolean shouldShowUndiscoveredMarkets() {
+        return KmuLunaSettings.readBoolean(
+            SHOW_UNDISCOVERED_MARKETS_FIELD,
+            DEFAULT_SHOW_UNDISCOVERED_MARKETS);
+    }
+
+    /**
+     * @return whether a star system the map would otherwise omit still seeds a cell - bypasses
+     *         the visibility rule, so a system that is unreachable, unseen or uninhabited gets
+     *         geometry like any other; off by default, a reveal aid for inspecting the full cell
+     *         partition
+     */
+    public static boolean shouldShowHiddenSystems() {
+        return KmuLunaSettings.readBoolean(
+            SHOW_HIDDEN_SYSTEMS_FIELD,
+            DEFAULT_SHOW_HIDDEN_SYSTEMS);
     }
 
     /**

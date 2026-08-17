@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.claims;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.hashing.Fingerprints;
+import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimReader;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
@@ -50,7 +51,18 @@ public final class ClaimsView implements PoliticalMapView {
     /** The one shared instance; stateless, so every pass reuses it. */
     public static final ClaimsView INSTANCE = new ClaimsView();
 
+    // Where this view's claim reader comes from, held as the means of opening one rather than as
+    // a reader for the same reason the claim-reading holder providers hold it that way: a reader
+    // answers off the colonies behind it, so one is opened over the read being made and discarded
+    // with it. This view outlives every one of them.
+    private final ClaimReaderSource claimReaderSource;
+
     private ClaimsView() {
+        this(VanillaClaimReader::new);
+    }
+
+    ClaimsView(ClaimReaderSource claimReaderSource) {
+        this.claimReaderSource = claimReaderSource;
     }
 
     @Override
@@ -165,7 +177,8 @@ public final class ClaimsView implements PoliticalMapView {
      *                                         the shared pass, which the market-size half of the stats
      *                                         reads its economy through
      * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward a bloc's
-     *                                         market size (the "show all factions" dev reveal)
+     *                                         market size (the "show undiscovered markets" dev
+     *                                         reveal)
      * @return this view's picker, its blocs in the order the sector walk surfaces them
      */
     @Override
@@ -189,7 +202,7 @@ public final class ClaimsView implements PoliticalMapView {
                 grouping,
                 ClaimStatsAggregator.aggregateClaimStats(
                     pass,
-                    new VanillaClaimReader(pass.colonies())),
+                    claimReaderSource.openReaderOver(pass.colonies())),
                 blocId -> true),
             ClaimSortMode.MODES);
     }

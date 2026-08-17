@@ -16,8 +16,8 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.render.debug.DebugBorderTracingBuilder;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
@@ -209,7 +209,7 @@ final class PoliticalMapCache {
         var rebuiltCells = false;
 
         // What the cells would be cut from right now. The reachable-set revision alone does not
-        // answer that: the frontier resolution, the cell reach and the two dev reveal toggles
+        // answer that: the frontier resolution, the cell reach and the two visibility overrides
         // each reseed every cell without it moving, so all four are read into one value and the
         // staleness question is asked of that value rather than of the signal.
         var cellCut = new CellCutInputs(
@@ -217,7 +217,7 @@ final class PoliticalMapCache {
             new CellSeedInputs(
                 KmuPoliticalMapSettings.getPoliticalMapCellBoundSegments(),
                 KmuPoliticalMapSettings.getPoliticalMapCellRadius()),
-            PoliticalMapDevToggles.readFromLunaSettings());
+            MapVisibilityOverrides.readFromLunaSettings());
 
         if (!cellCut.equals(lastCellCut)) {
 
@@ -226,7 +226,7 @@ final class PoliticalMapCache {
             LOG.debug("Political map geometry stale; rebuilding cut " + cellGeometry.revision()
                 + " from " + lastCellCut + " to " + cellCut);
 
-            rebuildGeometry(cellCut.seedInputs(), cellCut.devToggles());
+            rebuildGeometry(cellCut.seedInputs(), cellCut.visibilityOverrides());
 
             // A fresh cut number the moment the cells are recut, whichever of the four inputs
             // drove it - so work derived from the previous cut can never read as derived from
@@ -402,12 +402,11 @@ final class PoliticalMapCache {
     // affected by an access change or a system starting or stopping moving - or every cell, when
     // the frontier resolution or the cell radius changed, since either reseeds them all. Feeds the
     // cache the currently-moving systems so they are left out of the partition (they seed no cell
-    // and clip no neighbour), and the dev reveal toggles so a forced or undiscovered-colony
-    // system joins the drawn set. The toggles cross into the framework as the visibility overrides
-    // they amount to, so the geometry cache never learns which dev toggle wanted them.
+    // and clip no neighbour), and the visibility overrides so a forced or undiscovered-colony
+    // system joins the drawn set.
     private void rebuildGeometry(
             CellSeedInputs seedInputs,
-            PoliticalMapDevToggles devToggles) {
+            MapVisibilityOverrides visibilityOverrides) {
 
         var movingSystemIds = MovingSystems.getInstance().getMovingSystemIds();
         KmuProfiling
@@ -418,6 +417,6 @@ final class PoliticalMapCache {
                     Global.getSector(),
                     movingSystemIds,
                     seedInputs,
-                    devToggles.convertToVisibilityOverrides()));
+                    visibilityOverrides));
     }
 }

@@ -14,7 +14,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -69,7 +69,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         var statusRow = SystemStatusRow.resolveStatusRow(
             sector,
             system,
-            PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions());
+            MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets());
 
         CellTooltipSections.appendBannerSection(sections, statusRow);
 

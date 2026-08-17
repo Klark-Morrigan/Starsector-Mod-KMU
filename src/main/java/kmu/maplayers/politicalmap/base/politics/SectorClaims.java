@@ -57,10 +57,7 @@ public final class SectorClaims {
         var sector = pass.sector();
         var grouping = pass.grouping();
 
-        if (sector == null) {
-            return ownerBySystemId;
-        }
-        for (var system : sector.getStarSystems()) {
+        for (var system : pass.readSystems()) {
             var claimantId = claimReader.readClaimingFactionId(system);
             if (claimantId == null) {
                 continue;

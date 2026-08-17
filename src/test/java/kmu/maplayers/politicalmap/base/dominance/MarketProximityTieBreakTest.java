@@ -22,6 +22,8 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.bu
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -206,6 +208,42 @@ class MarketProximityTieBreakTest {
         }
 
         @Test
+        void ignoresAnUndiscoveredColonyUntilTheRevealAdmitsIt() {
+            // The tie-break reads the pass's own projection rather than a filter of its own, so a
+            // colony the player has not found is out of the tie exactly while it is out of the
+            // weights - and back in the moment the dev reveal admits it to both.
+            try (var marketsMock = mockStatic(Markets.class)) {
+
+                stubEveryMarketOwnedAndKnown(marketsMock);
+
+                var starMock = buildStarAt(0.0f, 0.0f);
+                var systemMock = buildSystemCentredOn(starMock, starMock);
+                var undiscoveredColony =
+                    buildListedColonyOwnedBy("blackrock", buildOrbitingEntity(ORBIT_CLOSE, starMock));
+
+                stubColonyUndiscovered(marketsMock, undiscoveredColony);
+
+                var colonies = listColonies(
+                    buildListedColonyOwnedBy("hegemony", buildOrbitingEntity(ORBIT_FAR, starMock)),
+                    undiscoveredColony);
+
+                // Without the reveal blackrock's nearer colony is not counted, so it is placeless
+                // and hegemony's farther one decides.
+                assertThat(MarketProximityTieBreak
+                        .forSystem(systemMock, colonies, false, HolderGrouping.identity())
+                        .compare("hegemony", "blackrock"))
+                    .isNegative();
+
+                // Under the reveal the same colony counts, and being the nearer one it takes the
+                // tie.
+                assertThat(MarketProximityTieBreak
+                        .forSystem(systemMock, colonies, true, HolderGrouping.identity())
+                        .compare("hegemony", "blackrock"))
+                    .isPositive();
+            }
+        }
+
+        @Test
         void treatsAMarketWithNoPrimaryEntityAsFarthestFromTheCentre() {
             try (var marketsMock = mockStatic(Markets.class)) {
 
@@ -238,6 +276,17 @@ class MarketProximityTieBreakTest {
         marketsMock
             .when(() -> Markets.isCountedAsColony(any(), anyBoolean()))
             .thenReturn(true);
+    }
+
+    // Narrows the open filter for one colony: counted under the dev reveal and not without it,
+    // which is what an undiscovered colony reads as.
+    private static void stubColonyUndiscovered(
+            MockedStatic<Markets> marketsMock,
+            SystemColony colony) {
+
+        marketsMock
+            .when(() -> Markets.isCountedAsColony(same(colony.market()), eq(false)))
+            .thenReturn(false);
     }
 
     // A market owned by a faction, sitting on the given primary entity - the body whose orbit

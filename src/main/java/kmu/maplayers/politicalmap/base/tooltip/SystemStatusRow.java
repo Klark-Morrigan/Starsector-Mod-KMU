@@ -47,11 +47,12 @@ public final class SystemStatusRow {
      *
      * @param sector                           the sector whose economy is read
      * @param system                           the hovered system
-     * @param shouldIncludeUndiscoveredMarkets whether an unfound colony still counts as populating
-     *                                         the system (the "show all factions" dev reveal);
-     *                                         passed by the caller so the status agrees with
-     *                                         whatever that caller's own reads admit, rather than
-     *                                         calling a system empty that the body below it fills
+     * @param shouldIncludeUndiscoveredMarkets whether an unfound colony still counts as
+     *                                         populating the system (the "show undiscovered
+     *                                         markets" dev reveal); passed by the caller so the
+     *                                         status agrees with whatever that caller's own reads
+     *                                         admit, rather than calling a system empty that the
+     *                                         body below it fills
      * @return the Decivilised or Unpopulated row, or empty when the player has found a colony here
      */
     public static Optional<TooltipRow.CentredRow> resolveStatusRow(

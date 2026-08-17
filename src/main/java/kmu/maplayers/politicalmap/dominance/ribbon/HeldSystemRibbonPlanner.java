@@ -76,9 +76,7 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
     @Override
     public Optional<RibbonPlan> planHeldSystemRibbon(StarSystemAPI system) {
 
-        var sector = pass.sector();
-
-        if (sector == null || system == null || sector.getEconomy() == null) {
+        if (system == null || !pass.canReadEconomy()) {
             return Optional.empty();
         }
         var footprintByBlocId = pass.readBlocFootprints(system);

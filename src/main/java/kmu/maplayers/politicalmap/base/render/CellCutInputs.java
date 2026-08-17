@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.base.geometry.CellSeedInputs;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
 /**
  * Everything that decides the shape of a cut of the cells: the revision of the reachable set,
@@ -20,5 +20,5 @@ import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
 record CellCutInputs(
     int geometryRevision,
     CellSeedInputs seedInputs,
-    PoliticalMapDevToggles devToggles) {
+    MapVisibilityOverrides visibilityOverrides) {
 }

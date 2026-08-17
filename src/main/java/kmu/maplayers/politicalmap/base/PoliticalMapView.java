@@ -8,6 +8,7 @@ import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
@@ -209,8 +210,9 @@ public interface PoliticalMapView {
      * @param rules                            the dominance-weighting rules for this read, so selectable
      *                                         blocs are gated under the same rule the map paints under
      * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward a bloc's
-     *                                         visibility (the "show all factions" dev reveal); false
-     *                                         applies the normal known-to-player filter
+     *                                         visibility (the "show undiscovered markets" dev
+     *                                         reveal); false applies the normal known-to-player
+     *                                         filter
      * @return this view's picker - its blocs in the order the source walk surfaces them, and the
      *         vocabulary ranking them; empty when no bloc qualifies, and empty by default for a view
      *         with no spotlight
@@ -234,7 +236,7 @@ public interface PoliticalMapView {
         return resolveBlocPicker(
             sector,
             DominanceRules.readFromLunaSettings(),
-            PoliticalMapDevToggles.readFromLunaSettings().isShowingAllFactions());
+            MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets());
     }
 
     /**

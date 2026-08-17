@@ -16,7 +16,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
-import kmu.maplayers.politicalmap.base.PoliticalMapDevToggles;
+import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -100,7 +100,7 @@ final class SystemClaimTooltipTest {
     private final SectorAPI sectorMock = mock(SectorAPI.class);
 
     private MockedStatic<SystemStatusRow> statusRowMock;
-    private MockedStatic<PoliticalMapDevToggles> devTogglesMock;
+    private MockedStatic<MapVisibilityOverrides> visibilityOverridesMock;
 
     @BeforeEach
     void installColoursAndTheSystemStatusSeam() {
@@ -115,10 +115,10 @@ final class SystemClaimTooltipTest {
 
         // The reveal is a live LunaLib read, unreachable from the test JVM; stood in as off, the
         // state every case but the reveal's own is posed under.
-        devTogglesMock = Mockito.mockStatic(PoliticalMapDevToggles.class);
-        devTogglesMock
-            .when(PoliticalMapDevToggles::readFromLunaSettings)
-            .thenReturn(PoliticalMapDevToggles.NONE);
+        visibilityOverridesMock = Mockito.mockStatic(MapVisibilityOverrides.class);
+        visibilityOverridesMock
+            .when(MapVisibilityOverrides::readFromLunaSettings)
+            .thenReturn(MapVisibilityOverrides.NONE);
 
         when(systemMock.getId())
             .thenReturn(SYSTEM_ID);
@@ -130,7 +130,7 @@ final class SystemClaimTooltipTest {
 
     @AfterEach
     void clearColoursAndTheSystemStatusSeam() {
-        devTogglesMock.close();
+        visibilityOverridesMock.close();
         statusRowMock.close();
         CellTooltipPaletteFake.clearPalette();
     }
@@ -477,9 +477,9 @@ final class SystemClaimTooltipTest {
         void buildBodySectionsJudgesTheSystemEmptyUnderTheDevRevealWhileItIsOn() {
             // The reveal is read live off the same toggle the faction layer samples, so a player who
             // has turned it on is not told two different things by two layers about one system.
-            devTogglesMock
-                .when(PoliticalMapDevToggles::readFromLunaSettings)
-                .thenReturn(new PoliticalMapDevToggles(true, false));
+            visibilityOverridesMock
+                .when(MapVisibilityOverrides::readFromLunaSettings)
+                .thenReturn(new MapVisibilityOverrides(true, false));
 
             stubBreakdown(SystemClaimBreakdown.NONE);
 

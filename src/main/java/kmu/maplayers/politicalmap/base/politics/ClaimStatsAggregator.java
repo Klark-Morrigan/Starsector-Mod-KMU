@@ -56,18 +56,13 @@ public final class ClaimStatsAggregator {
             ClaimReader claimReader) {
 
         var statsByBlocId = new LinkedHashMap<String, ClaimStats>();
-        var sector = pass.sector();
-
-        if (sector == null) {
-            return statsByBlocId;
-        }
 
         // Claims are read from the port and so stand on their own, but market sizes need an economy
         // this sector may not have yet (mid-load). Sampled once rather than per system: a walk cannot
         // gain an economy halfway through, and the primary metric is still worth counting without one.
-        var hasEconomy = sector.getEconomy() != null;
+        var hasEconomy = pass.canReadEconomy();
 
-        for (var system : sector.getStarSystems()) {
+        for (var system : pass.readSystems()) {
             accumulateSystemClaim(statsByBlocId, system, pass, claimReader);
             if (hasEconomy) {
                 accumulateSystemMarketSizes(statsByBlocId, system, pass);
