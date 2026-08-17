@@ -145,7 +145,7 @@ public final class MapHoverPublisher {
             hoveredSystemId,
             targets.getClusterIndex().findClusterMembersOf(hoveredSystemId)));
 
-        announceArrivalAt(hoveredSystemId);
+        announceArrivalAt(hoveredSystemId, factor);
     }
 
     // Parks the hover and forgets which cell the cursor was on, for a hit-test that ran and found
@@ -172,19 +172,26 @@ public final class MapHoverPublisher {
     // What is owed on the cursor reaching a cell, as opposed to resting on one: the tick the player
     // hears and the line the trace prints. The latch is stepped before either is asked for, so a
     // moment left unanswered - a silenced cue, a trace at INFO - still tracks where the cursor is.
-    private void announceArrivalAt(String hoveredSystemId) {
+    private void announceArrivalAt(String hoveredSystemId, float factor) {
 
         if (!cellArrival.detectArrivalAt(hoveredSystemId)) {
             return;
         }
         soundPlayer.playCueIfPresent(cellArrivalCueSource.get());
-        logHoverArrival(hoveredSystemId);
+        logHoverArrival(hoveredSystemId, factor);
     }
 
     // Traces each move onto a new cell: which system the cursor resolved to and how large a
     // cluster that pulls in - the two answers this pass exists to produce, and the ones a wrong
     // highlight is diagnosed against. Set KMU log verbosity to DEBUG in LunaLib to see it.
-    private void logHoverArrival(String hoveredSystemId) {
+    //
+    // The read behind it is described beside the answer, because a hover that names the wrong
+    // system is not wrong at this end: the cell it resolved really does hold the point it was
+    // given. What is wrong is upstream, in the pixel it started from or the viewport and modelview
+    // that pixel was mapped through, and those are only diagnosable together with what came out.
+    // Rebuilt rather than remembered from the resolve above, this line being written on arrivals
+    // alone while the resolve runs every frame.
+    private void logHoverArrival(String hoveredSystemId, float factor) {
 
         if (!LOG.isDebugEnabled()) {
             return;
@@ -192,6 +199,8 @@ public final class MapHoverPublisher {
         LOG.debug("Map hover resolved; system="
             + hoveredSystemId
             + " clusterMembers="
-            + MapHoverState.getInstance().getHover().clusterMemberSystemIds());
+            + MapHoverState.getInstance().getHover().clusterMemberSystemIds()
+            + "; read: "
+            + MapCursor.describeCursorReadDuringMapPass(factor, modelviewMatrixReader));
     }
 }
