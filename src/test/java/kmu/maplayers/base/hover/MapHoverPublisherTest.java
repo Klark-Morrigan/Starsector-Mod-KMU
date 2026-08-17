@@ -12,14 +12,18 @@ import kmlib.testfixtures.starsector.ui.sound.UiSoundPlayerFake;
 
 import kmu.maplayers.base.geometry.SystemClusterIndex;
 
+import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
+import org.apache.log4j.spi.LoggingEvent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector2f;
 import org.mockito.MockedStatic;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -113,6 +117,7 @@ final class MapHoverPublisherTest {
     // Whether the pass under test is one the cursor can be located against, mutable so a case
     // can put the publisher on a foreign map's pass the way a frame does.
     private boolean isCursorLocatable;
+    private LogAppenderFake appenderFake;
     private MockedStatic<MapCursor> cursorMock;
     private MapHoverState hoverState;
     private ModelviewMatrixReader readerMock;
@@ -149,9 +154,16 @@ final class MapHoverPublisherTest {
     void setUp() {
 
         // The arrival trace words the reading it announced, and wording one reads the clip live off
-        // GL - which a test JVM has no context for. What that line says is a diagnostic rather than
-        // anything this publisher promises, so it is held below DEBUG here and pinned nowhere.
-        Global.getLogger(MapHoverPublisher.class).setLevel(Level.INFO);
+        // GL - which a test JVM has no context for. So the level is held below DEBUG for every case
+        // but the one about the trace itself, which raises it with that read mocked out.
+        //
+        // Additivity is off with it: the trace case plants a line on a logger the whole run shares,
+        // and a run's console output should carry none of what a test logs.
+        var log = Global.getLogger(MapHoverPublisher.class);
+        log.setLevel(Level.INFO);
+        log.setAdditivity(false);
+
+        appenderFake = new LogAppenderFake();
 
         readerMock = mock(ModelviewMatrixReader.class);
         soundPlayerFake = new UiSoundPlayerFake();
@@ -169,9 +181,13 @@ final class MapHoverPublisherTest {
 
     @AfterEach
     void tearDown() {
-        // Both are shared for the run, so what this test planted must not reach another: the level
-        // goes back to inheriting whatever the run was configured with.
-        Global.getLogger(MapHoverPublisher.class).setLevel(null);
+        // All of these are shared for the run, so what this test planted must not reach another: the
+        // level goes back to inheriting whatever the run was configured with, and the appender comes
+        // off whether or not the case attached it.
+        var log = Global.getLogger(MapHoverPublisher.class);
+        log.removeAppender(appenderFake);
+        log.setAdditivity(true);
+        log.setLevel(null);
         hoverState.clearHover();
         cursorMock.close();
     }
@@ -506,6 +522,51 @@ final class MapHoverPublisherTest {
                 .containsExactly(CELL_ARRIVAL_CUE, RETUNED_CELL_ARRIVAL_CUE);
         }
 
+        @Test
+        void announceSettledArrivalTracesTheCellItAnnouncedAndTheReadingBehindIt() {
+            // The trace is the only caller that words a reading, so this is the one case that runs
+            // the composed line at all - which is what makes the clip read inside it reachable from
+            // a test, and the reason it is mocked out here rather than left to a GL-less JVM.
+            //
+            // Asserted on the two answers the pass produces and on the reading riding along with
+            // them, not on the whole line: how a reading reads is KMLib's to state, and the clip
+            // field is checked by name only because it is the half read live - its presence is what
+            // says the description was built inside the pass rather than from a value alone.
+            try (MockedStatic<GL11> glMock = mockStatic(GL11.class)) {
+                glMock
+                    .when(() -> GL11.glIsEnabled(GL11.GL_SCISSOR_TEST))
+                    .thenReturn(false);
+                Global.getLogger(MapHoverPublisher.class).setLevel(Level.DEBUG);
+                Global.getLogger(MapHoverPublisher.class).addAppender(appenderFake);
+
+                driveOneFrame(buildPublisher(), buildTargetsWithOneCell());
+
+                assertThat(appenderFake.getMessages()).hasSize(1);
+                assertThat(appenderFake.getMessages().get(0))
+                    .contains("system=" + HOVERED_SYSTEM_ID)
+                    .contains("clusterMembers=[" + HOVERED_SYSTEM_ID + ", " + NEIGHBOUR_SYSTEM_ID
+                        + "]")
+                    .contains("cursorPixel=(" + CURSOR_PIXEL_X + "," + CURSOR_PIXEL_Y + ")")
+                    .contains("printingPassScissor=");
+            }
+        }
+
+        @Test
+        void announceSettledArrivalTracesNothingWhileTheLogIsAboveDebug() {
+            // What a player who never turns the trace on pays: no line, and no clip read either. The
+            // read is the expensive half - a stalling GL call under Fast Rendering, where the gate in
+            // the seam is all that keeps it survivable - so reaching it and discarding the string
+            // would be the diagnostic's whole cost paid on every arrival.
+            try (MockedStatic<GL11> glMock = mockStatic(GL11.class)) {
+                Global.getLogger(MapHoverPublisher.class).addAppender(appenderFake);
+
+                driveOneFrame(buildPublisher(), buildTargetsWithOneCell());
+
+                assertThat(appenderFake.getMessages()).isEmpty();
+                glMock.verifyNoInteractions();
+            }
+        }
+
         // Two surfaces painting one frame while the pointer is still, resolving different cells
         // because they bound different transforms - the shape a foreign map's pass gives every
         // frame it draws in.
@@ -555,5 +616,30 @@ final class MapHoverPublisherTest {
                 eq(MAP_ZOOM),
                 any(ModelviewMatrixReader.class)))
             .thenReturn(cursorRead);
+    }
+
+    // Records what reached the log, the trace's line being the one thing the arrival pass produces
+    // that leaves nothing behind in state a case could read back.
+    private static final class LogAppenderFake extends AppenderSkeleton {
+
+        private final List<String> messages = new ArrayList<>();
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public boolean requiresLayout() {
+            return false;
+        }
+
+        List<String> getMessages() {
+            return messages;
+        }
+
+        @Override
+        protected void append(LoggingEvent event) {
+            messages.add(String.valueOf(event.getMessage()));
+        }
     }
 }

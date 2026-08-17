@@ -216,6 +216,14 @@ public final class MapHoverPublisher {
     // it is taken live, and a frame can hold more than one map pass - so a line built that way would
     // account for a hover that never happened, and would do it most convincingly on exactly the
     // frames worth diagnosing.
+    //
+    // The exception is the clip, and it is the seam's own: it is read where the line is built, which
+    // is here, in the frame's single preparation. That is the frame's FIRST admitted pass, while the
+    // reading is the previous frame's LAST - so the clip names the pass that printed and not the one
+    // that read, and under a mod whose minimap draws ahead of the map screen those are reliably
+    // different passes. The fields are named for the printing pass to say so. Not worth closing by
+    // carrying a clip in the reading: that would cost a stalling GL read on every hovering frame to
+    // improve a line nobody sees unless they turned DEBUG on.
     private void logHoverArrival(SettledCellReading settledReading) {
 
         if (!LOG.isDebugEnabled()) {
