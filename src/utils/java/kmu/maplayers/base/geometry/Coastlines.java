@@ -292,9 +292,21 @@ final class Coastlines {
      *
      * <p>A coast alternates between reaches, which cross open void from one cell to another,
      * and fillets, which run along one cell's own border. Both ends of a fillet sit on the
-     * SAME circle, and that is the whole of the difference - so which vertex pairs are
-     * reaches is a fact about the coast rather than a rule each reader should keep its own
-     * copy of.
+     * SAME circle - so which vertex pairs are reaches is a fact about the coast rather than a
+     * rule each reader should keep its own copy of.
+     *
+     * <p><b>Naming two circles is not enough on its own.</b> Where two circles cross, the
+     * crossing point lies on BOTH of them, and a coast clamped onto it arrives on one cell and
+     * leaves on the other without going anywhere: the step has no length, and which circle
+     * each of its two vertices is labelled with is arbitrary. That is the coast handing over
+     * between two cells, which is what a fillet's two ends do as well, and it crosses no void
+     * at all. Reported as a reach it becomes a wall with nothing on either side of it, laid
+     * across the one point where two cells meet.
+     *
+     * <p>Told apart by the channel, because that is what a reach is FOR: a wall holds its two
+     * sides half a channel off its line each, so a step shorter than the channel has no room
+     * between those sides and cannot separate anything. A reach that genuinely crosses void
+     * runs from one cell's frontage to another's and is thousands of units long.
      *
      * <p>Wanted by everything that treats a reach as a thing in its own right: what it walls
      * off behind it, and which cells it cuts through on the way.
@@ -312,7 +324,10 @@ final class Coastlines {
                 var from = coast.get(index);
                 var to = coast.get((index + 1) % coast.size());
 
-                if (from.circle() != to.circle()) {
+                if (from.circle() != to.circle()
+                        && Points.computeDistance(from.point(), to.point())
+                            >= traced.walls().channel()) {
+
                     reaches.add(new CoastReach(from, to));
                 }
             }
