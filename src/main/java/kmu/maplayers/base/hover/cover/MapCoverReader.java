@@ -49,8 +49,9 @@ public final class MapCoverReader {
     }
 
     /**
-     * @return whether something is drawn over the map where the cursor rests, so the cell beneath it
-     *         is not what the player is pointing at
+     * @return whether the cell where the cursor rests is not what the player is pointing at -
+     *         because something is drawn over the map there, or because the cursor is outside the
+     *         only surface on the frame that could be pointed at
      */
     public boolean isMapCoveredAtCursor() {
         for (var cover : covers) {

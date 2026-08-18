@@ -30,10 +30,12 @@ import java.util.function.BooleanSupplier;
  * another mod rather than about this one's map layers, so it sits with the rest of what KMLib
  * knows about that mod, and only the switch and the ANDing are this mod's to own.
  *
- * <p>This narrows what the two broader constraints on the same tab allow; it does not widen it.
- * Those exist for the mods nobody here has met, and a per-mod mode able to override them would
- * make them unreliable as general switches - the reading a player takes from "constrain layers to
- * their own map" has to hold whatever else is installed.
+ * <p>This narrows what the general switches on the same tab allow; it does not widen it. Which
+ * frames the layers may answer the cursor on at all is settled by those - the render constraint and
+ * the two hover permissions beside it - and this only confines, within a frame they already allow,
+ * to the surface the minimap actually occupies. They exist for the mods nobody here has met, and a
+ * per-mod mode able to override them would make them unreliable as general switches: the reading a
+ * player takes from "constrain layers to their own map" has to hold whatever else is installed.
  *
  * <p>Both halves are read live, like every other hover switch, so a player toggling the mode sees
  * the map change on the next frame rather than on the next load.

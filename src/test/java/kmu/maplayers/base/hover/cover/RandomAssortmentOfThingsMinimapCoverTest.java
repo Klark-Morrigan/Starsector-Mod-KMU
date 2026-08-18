@@ -1,9 +1,9 @@
 package kmu.maplayers.base.hover.cover;
 
-import com.fs.starfarer.api.ui.PositionAPI;
-
+import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.map.probes.EmbeddedMap;
 import kmlib.testfixtures.starsector.ui.input.CursorPositionFake;
+import kmlib.testfixtures.starsector.ui.layout.PositionFake;
 import kmlib.testfixtures.starsector.ui.map.presence.CampaignMinimapFake;
 import kmlib.testfixtures.starsector.ui.map.probes.PlacedSectorMapWidgetFake;
 
@@ -16,8 +16,6 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins the one cover that opens something up rather than shutting it down, and every way it declines
@@ -181,42 +179,30 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
             cursorFake);
     }
 
-    // The player's switch on and a minimap standing in for the radar - both halves the mode ANDs.
+    // The player's switch on over a minimap standing in for the radar - both halves the mode ANDs.
     private static RandomAssortmentOfThingsMode buildEngagedMode() {
-
-        var minimapFake = new CampaignMinimapFake();
-        minimapFake.replaceRadarWithMinimap();
-
-        return new RandomAssortmentOfThingsMode(() -> true, minimapFake);
+        return buildMode(true);
     }
 
-    // The player's switch off, which is the half no install can be without.
+    // The player's switch off over the same minimap, so what disengages the mode is the switch and
+    // not the absence of a map to adapt to - the half a case about the switch has to hold still.
     private static RandomAssortmentOfThingsMode buildDisengagedMode() {
+        return buildMode(false);
+    }
+
+    private static RandomAssortmentOfThingsMode buildMode(boolean isModeSwitchedOn) {
 
         var minimapFake = new CampaignMinimapFake();
         minimapFake.replaceRadarWithMinimap();
 
-        return new RandomAssortmentOfThingsMode(() -> false, minimapFake);
+        return new RandomAssortmentOfThingsMode(() -> isModeSwitchedOn, minimapFake);
     }
 
-    // A drawn map widget at a known box. The engine's position is a wide interface of which only the
-    // four layout numbers are read, so it is mocked rather than stood up.
+    // A drawn map widget at a known box.
     private static EmbeddedMap createMinimapAt(float x, float y, float width, float height) {
-
-        var positionMock = mock(PositionAPI.class);
-
-        when(positionMock.getX())
-            .thenReturn(x);
-        when(positionMock.getY())
-            .thenReturn(y);
-
-        when(positionMock.getWidth())
-            .thenReturn(width);
-        when(positionMock.getHeight())
-            .thenReturn(height);
-        
         return new EmbeddedMap(
-            new PlacedSectorMapWidgetFake(positionMock, FULLY_DRAWN),
+            new PlacedSectorMapWidgetFake(
+                new PositionFake(new Rectangle(x, y, width, height)), FULLY_DRAWN),
             List.of());
     }
 }

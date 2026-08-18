@@ -24,8 +24,8 @@ public final class VanillaChromeMapCover implements MapCover {
     @Override
     public boolean isCoveringCursor() {
 
-        // The dearest of the covers, costing a read into the live widget tree, so it is asked last
-        // and only once the cheaper two have declined.
+        // Costs a read into the live widget tree, so it is asked only once the three covers that
+        // read a flag or a box this mod laid out have declined.
         var surfaceArea = MapSurfaceBounds.resolveSurfaceArea();
         
         return surfaceArea != null

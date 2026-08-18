@@ -127,11 +127,11 @@ public final class KmuMapLayerSettings {
         "kmu_map_compatibility_foreignMapSurfaces_mapLayerMouseoverInGameSpace";
 
     // The one foreign map surface named rather than described (Map - Compatibility tab). Random
-    // Assortment of Things puts a sector map where the campaign radar was, which the two
-    // constraints above can only stand clear of - and standing clear of a map the player put on
-    // screen on purpose and is pointing at is the wrong answer. Named for the mod because that is
-    // how a player arrives at this tab, and kept under the same header because it refines those
-    // two rather than sitting beside them.
+    // Assortment of Things puts a sector map where the campaign radar was, which the general
+    // switches above can only admit or stand clear of whole - and on a frame where that minimap is
+    // the only map drawn, admitting it whole means answering the cursor over the entire campaign
+    // view. Named for the mod because that is how a player arrives at this tab, and kept under the
+    // same header because it refines those switches rather than sitting beside them.
     private static final String RANDOM_ASSORTMENT_OF_THINGS_MODE_FIELD =
         "kmu_map_compatibility_foreignMapSurfaces_randomAssortmentOfThingsMode";
 

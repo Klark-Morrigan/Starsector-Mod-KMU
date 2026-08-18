@@ -212,9 +212,10 @@ about what the overlay means.
   mod because the switch is, while what it asks stays the mod-neutral question the role carries -
   so a second mod replacing the radar arrives as its own switch rather than folded under this
   one's name. It narrows
-  what the two constraints beside it allow and never widens it - those are written for the mods
-  nobody here has met, and a per-mod mode able to override them would make them unreliable as
-  general switches.
+  what the general switches beside it allow and never widens it: which frames may answer the cursor
+  at all is theirs, and the mode only confines - within a frame they already allow - to the surface
+  that minimap occupies. Those are written for the mods nobody here has met, and a per-mod mode able
+  to override them would make them unreliable as general switches.
 - **`base/hover/cover`** - whether anything is drawn over the map where the cursor rests, which a
   layer asks before resolving a hover at all. A hover reads a cell out of map geometry, which knows
   nothing of what is composited on top, so without this it lights cells and floats boxes under
