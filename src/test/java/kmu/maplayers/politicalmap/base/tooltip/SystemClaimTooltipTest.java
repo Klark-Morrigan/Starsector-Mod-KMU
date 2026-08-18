@@ -3,10 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.entities.EntityNameplate;
-import kmlib.starsector.systems.claims.ContestAdmission;
-import kmlib.starsector.systems.claims.MarketClaimBreakdown;
-import kmlib.starsector.systems.claims.PresenceOnlyClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
@@ -30,10 +26,10 @@ import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildPresenceOnlyStanding;
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildStandingOnOneMarket;
+import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildUnfoundPresenceOnlyStanding;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
@@ -105,14 +101,6 @@ final class SystemClaimTooltipTest {
     // other - and, deliberately, the only thing that does.
     private static final boolean IS_TERRITORIAL = true;
     private static final boolean IS_NON_TERRITORIAL = false;
-
-    // The one colony an unfound presence stands on, as the projection reads it: held in concealment
-    // and never found, which is the only combination the box has to keep back. Its size is never read,
-    // a presence-only standing reporting a nought of its own.
-    private static final int UNFOUND_COLONY_SIZE = 5;
-    private static final int FIRST_LISTED = 1;
-    private static final int NO_SIBLING_MARKETS = 0;
-    private static final boolean IS_UNFOUND_BY_PLAYER = false;
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final SystemClaimTooltip tooltip = new SystemClaimTooltip(claimBreakdownReaderFake);
@@ -287,7 +275,7 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
-                    buildUnfoundPresenceOnlyStanding(TRITACHYON))));
+                    buildUnfoundPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
             assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly("Claim:", "The Hegemony");
@@ -307,7 +295,7 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
-                    buildUnfoundPresenceOnlyStanding(TRITACHYON))));
+                    buildUnfoundPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
             assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly("Claim:", "The Hegemony", "Contested by:", "Tri-Tachyon");
@@ -680,7 +668,7 @@ final class SystemClaimTooltipTest {
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 null,
-                List.of(buildUnfoundPresenceOnlyStanding(TRITACHYON))));
+                List.of(buildUnfoundPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
             assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
                 .isEmpty();
@@ -709,26 +697,6 @@ final class SystemClaimTooltipTest {
             assertThat(expandedVariant.claimBreakdownReader)
                 .isSameAs(claimBreakdownReaderFake);
         }
-    }
-
-    // A faction present through one colony the player has not found - the only standing the known
-    // projection ever keeps out of the box, a weighed one resting on a market held in the open and
-    // therefore on one the player knows of.
-    //
-    // Built here rather than taken from the shared fixture, which poses a found colony: what varies is
-    // the one flag the projection reads, and stating it beside the case is what makes the case legible.
-    private static PresenceOnlyClaimStanding buildUnfoundPresenceOnlyStanding(String factionId) {
-        return new PresenceOnlyClaimStanding(
-            factionId,
-            IS_TERRITORIAL,
-            List.of(new MarketClaimBreakdown(
-                EntityNameplate.createUnmarkedNameplate("Undiscovered Base"),
-                FIRST_LISTED,
-                IS_UNFOUND_BY_PLAYER,
-                ContestAdmission.HIDDEN,
-                UNFOUND_COLONY_SIZE,
-                NO_SIBLING_MARKETS,
-                OptionalInt.empty())));
     }
 
     // Hands the tooltip the contest it is about, standing in for the market walk that would otherwise

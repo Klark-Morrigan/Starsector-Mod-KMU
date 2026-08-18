@@ -64,10 +64,6 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
     @Override
     protected final List<TooltipSection> buildBodySections(SectorAPI sector, StarSystemAPI system) {
-        // One read for the whole box: the claimant, the override behind it, and every standing are all
-        // taken from a single pass, so no two lines can describe different states of the system.
-        var breakdown = claimBreakdownReader.readBreakdown(system);
-        var claimantFactionId = breakdown.claimantFactionId();
         var sections = new ArrayList<TooltipSection>();
 
         // Read once for the whole box and applied to both questions it settles - whether the system
@@ -75,13 +71,18 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // system empty over a list naming who lives there is the one pairing the box cannot make.
         var isListingUnfoundMarkets = isListingUnfoundMarkets();
 
+        // One read for the whole box: the claimant, the override behind it, and every standing the
+        // projection leaves it free to name are all taken from a single pass, so no two lines can
+        // describe different states of the system.
+        var contest = ListedClaimContest.selectFrom(
+            claimBreakdownReader.readBreakdown(system),
+            isListingUnfoundMarkets);
+
         // Why the system holds nobody comes before who claims it, so a dead system names its state
         // first and the claim below reads as a hold over an empty system rather than over a colony.
         var statusRow = SystemStatusRow.resolveStatusRow(sector, system, isListingUnfoundMarkets);
 
         CellTooltipSections.appendBannerSection(sections, statusRow);
-
-        var listedStandings = selectListedStandings(breakdown, isListingUnfoundMarkets);
 
         // The status is what the claim block is judged against, so the two are read from the one
         // resolve: a banner that appeared and a claim that says nobody would otherwise be settled by
@@ -90,29 +91,17 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
-            buildClaimEntries(sector, breakdown, listedStandings, statusRow.isPresent()));
+            buildClaimEntries(sector, contest, statusRow.isPresent()));
 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
-            buildFactionEntries(
-                sector,
-                breakdown,
-                selectRivalStandings(
-                    listedStandings,
-                    claimantFactionId,
-                    FactionClaimStanding::isTerritorial)));
+            buildRivalEntries(sector, contest, FactionClaimStanding::isTerritorial));
 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL),
-            buildFactionEntries(
-                sector,
-                breakdown,
-                selectRivalStandings(
-                    listedStandings,
-                    claimantFactionId,
-                    standing -> !standing.isTerritorial())));
+            buildRivalEntries(sector, contest, standing -> !standing.isTerritorial()));
 
         return sections;
     }
@@ -136,10 +125,9 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // projection the box is built from, so it can never offer to expand a contest it is about to
         // draw as empty - which the fog alone can produce, a faction present only through colonies
         // the player has not found leaving a standing the box may not state.
-        if (selectListedStandings(
-                claimBreakdownReader.readBreakdown(system),
-                isListingUnfoundMarkets())
-                .isEmpty()) {
+        if (!ListedClaimContest
+                .selectFrom(claimBreakdownReader.readBreakdown(system), isListingUnfoundMarkets())
+                .hasListedStanding()) {
 
             return Optional.empty();
         }
@@ -203,23 +191,22 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     // drops every other empty one and the box cannot grow a heading standing over nothing.
     private List<CellTooltipEntry> buildClaimEntries(
             SectorAPI sector,
-            SystemClaimBreakdown breakdown,
-            List<FactionClaimStanding> listedStandings,
+            ListedClaimContest contest,
             boolean isSystemHoldingNobody) {
 
-        if (isSystemHoldingNobody && !KmlibStrings.hasText(breakdown.claimantFactionId())) {
+        if (isSystemHoldingNobody
+                && !KmlibStrings.hasText(contest.breakdown().claimantFactionId())) {
+
             return List.of();
         }
-        return List.of(buildClaimantEntry(sector, breakdown, listedStandings));
+        return List.of(buildClaimantEntry(sector, contest));
     }
 
     // The one entry the claim section lists where it has one: whoever holds the system, or the plain
     // word for nobody when no eligible faction scored and no decree imposed one.
-    private CellTooltipEntry buildClaimantEntry(
-            SectorAPI sector,
-            SystemClaimBreakdown breakdown,
-            List<FactionClaimStanding> listedStandings) {
+    private CellTooltipEntry buildClaimantEntry(SectorAPI sector, ListedClaimContest contest) {
 
+        var breakdown = contest.breakdown();
         var claimantFactionId = breakdown.claimantFactionId();
 
         if (!KmlibStrings.hasText(claimantFactionId)) {
@@ -233,7 +220,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // for it - so the number and the account beneath it are both read off the one standing rather
         // than looked up apart, which is what stops a line showing one faction's score over another's
         // colonies.
-        var standing = findStanding(listedStandings, claimantFactionId);
+        var standing = contest.findStanding(claimantFactionId);
         var claimantLine = standing
             .map(found -> buildStandingLine(sector, found))
             .orElseGet(() -> FactionTooltipEntry.buildFactionLine(
@@ -254,57 +241,6 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             .nesting(standing
                 .map(found -> resolveAccountEntries(breakdown, found))
                 .orElseGet(List::of));
-    }
-
-    // The standings shown under a section other than the claim: everyone present but the claimant,
-    // narrowed to the eligibility that section is about. The claimant is dropped from both, since a
-    // faction named twice would read as holding two separate presences in the system.
-    //
-    // Routed on eligibility rather than on which kind of standing the contest gave a faction, because
-    // that is what the two headings actually say. A territorial faction holding only concealed bases
-    // is in the running by the mechanic's own gate and scored nothing in this system, which is what
-    // `Contested by:` plus a nought states exactly - while sorting it by record kind would file it
-    // beside a Remnant station's owner, which is ineligible where it is not.
-    private static List<FactionClaimStanding> selectRivalStandings(
-            List<FactionClaimStanding> listedStandings,
-            String claimantFactionId,
-            Predicate<FactionClaimStanding> isWantedKind) {
-
-        return listedStandings
-            .stream()
-            .filter(standing -> !standing.factionId().equals(claimantFactionId))
-            .filter(isWantedKind)
-            .toList();
-    }
-
-    // The standings the box may state: every faction the contest reports, less those the player has
-    // found no colony of. The known projection over the contest - the same fog the market lines
-    // beneath a faction are drawn through - applied to the listing rather than line by line, since a
-    // faction whose every colony is withheld would otherwise be named over an account with nothing in
-    // it, which is precisely the reading that tells the player what the fog is keeping back.
-    //
-    // A weighed standing always survives it: the mechanic scores only markets held in the open, and
-    // one held in the open is one the player knows of. What this ever drops is a presence-only
-    // standing resting on undiscovered colonies alone.
-    private static List<FactionClaimStanding> selectListedStandings(
-            SystemClaimBreakdown breakdown,
-            boolean isListingUnfoundColonies) {
-
-        return breakdown
-            .scores()
-            .stream()
-            .filter(standing -> isListingUnfoundColonies || hasFoundColony(standing))
-            .toList();
-    }
-
-    // Whether the player has found any of the colonies a faction's standing rests on - one found
-    // colony being enough, since the faction is then present on the map in its own colours and the
-    // box is telling the player nothing they cannot already see.
-    private static boolean hasFoundColony(FactionClaimStanding standing) {
-        return standing
-            .readHeldMarkets()
-            .stream()
-            .anyMatch(MarketClaimBreakdown::isKnownToPlayer);
     }
 
     // One faction's line as its standing states it: its crest, its name, and what the contest weighed
@@ -336,35 +272,112 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             && breakdown.claimantFactionId().equals(breakdown.overrideFactionId());
     }
 
-    // The standings as entries, already ranked strongest first by the breakdown - the order a contest
-    // is read in, and the same order the mechanic itself settles it in. Each carries whatever this box
+    // One rival block's lines: everyone present but the claimant, narrowed to the eligibility that
+    // block is about, already ranked strongest first by the breakdown - the order a contest is read
+    // in, and the same order the mechanic itself settles it in. Each carries whatever this box
     // accounts for it with, subordinated: an account explains the line it hangs under rather than
     // restating it more finely.
-    private List<CellTooltipEntry> buildFactionEntries(
+    private List<CellTooltipEntry> buildRivalEntries(
             SectorAPI sector,
-            SystemClaimBreakdown breakdown,
-            List<FactionClaimStanding> standings) {
+            ListedClaimContest contest,
+            Predicate<FactionClaimStanding> isWantedKind) {
 
-        var entries = new ArrayList<CellTooltipEntry>(standings.size());
+        var rivalStandings = contest.selectRivalStandings(isWantedKind);
+        var entries = new ArrayList<CellTooltipEntry>(rivalStandings.size());
 
-        for (var standing : standings) {
+        for (var standing : rivalStandings) {
             entries.add(CellTooltipEntry
                 .createEntry(buildStandingLine(sector, standing))
-                .nesting(resolveAccountEntries(breakdown, standing)));
+                .nesting(resolveAccountEntries(contest.breakdown(), standing)));
         }
         return entries;
     }
 
-    // One faction's place in the contest as the box may state it, or none where the faction holds
-    // nothing the projection lists - a decree over a system its holder has no colony in, or one whose
-    // every colony there the player has yet to find.
-    private static Optional<FactionClaimStanding> findStanding(
-            List<FactionClaimStanding> listedStandings,
-            String factionId) {
+    /**
+     * The contest as this box may state it: the whole read, and the standings the known projection
+     * leaves it free to name.
+     *
+     * <p>The two travel as one value because the second is a projection of the first and most lines
+     * the box draws are read against both - the claimant off the breakdown, the number beside its
+     * name off the standing the projection kept. Passed apart, one call's standings could arrive
+     * beside another read's breakdown, and the box would state a claimant it had no standing for.
+     */
+    private record ListedClaimContest(
+        SystemClaimBreakdown breakdown,
+        List<FactionClaimStanding> listedStandings) {
 
-        return listedStandings
-            .stream()
-            .filter(standing -> standing.factionId().equals(factionId))
-            .findFirst();
+        /**
+         * Selects from a contest the standings the player may be shown.
+         *
+         * <p>The known projection over the contest - the same fog the market lines beneath a faction
+         * are drawn through - applied to the listing rather than line by line, since a faction whose
+         * every colony is withheld would otherwise be named over an account with nothing in it,
+         * which is precisely the reading that tells the player what the fog is keeping back.
+         *
+         * <p>A weighed standing always survives it: the mechanic scores only markets held in the
+         * open, and one held in the open is one the player knows of. What this ever drops is a
+         * presence-only standing resting on undiscovered colonies alone.
+         */
+        static ListedClaimContest selectFrom(
+                SystemClaimBreakdown breakdown,
+                boolean isListingUnfoundMarkets) {
+
+            return new ListedClaimContest(
+                breakdown,
+                breakdown
+                    .scores()
+                    .stream()
+                    .filter(standing -> isListingUnfoundMarkets || hasFoundColony(standing))
+                    .toList());
+        }
+
+        /** Whether anything survived the projection, which is what the box has to state at all. */
+        boolean hasListedStanding() {
+            return !listedStandings.isEmpty();
+        }
+
+        /**
+         * One faction's place in the contest as the box may state it, or none where the faction
+         * holds nothing the projection lists - a decree over a system its holder has no colony in,
+         * or one whose every colony there the player has yet to find.
+         */
+        Optional<FactionClaimStanding> findStanding(String factionId) {
+            return listedStandings
+                .stream()
+                .filter(standing -> standing.factionId().equals(factionId))
+                .findFirst();
+        }
+
+        /**
+         * The standings shown under a block other than the claim: everyone present but the
+         * claimant, narrowed to the eligibility that block is about. The claimant is dropped from
+         * both, since a faction named twice would read as holding two separate presences.
+         *
+         * <p>Narrowed on eligibility rather than on which kind of standing the contest gave a
+         * faction, because that is what the two headings actually say. A territorial faction
+         * holding only concealed bases is in the running by the mechanic's own gate and scored
+         * nothing in this system, which is what {@code Contested by:} plus a nought states exactly
+         * - while sorting it by record kind would file it beside a Remnant station's owner, which
+         * is ineligible where it is not.
+         */
+        List<FactionClaimStanding> selectRivalStandings(
+                Predicate<FactionClaimStanding> isWantedKind) {
+
+            return listedStandings
+                .stream()
+                .filter(standing -> !standing.factionId().equals(breakdown.claimantFactionId()))
+                .filter(isWantedKind)
+                .toList();
+        }
+
+        // Whether the player has found any of the colonies a faction's standing rests on - one
+        // found colony being enough, since the faction is then present on the map in its own
+        // colours and the box is telling the player nothing they cannot already see.
+        private static boolean hasFoundColony(FactionClaimStanding standing) {
+            return standing
+                .readHeldMarkets()
+                .stream()
+                .anyMatch(MarketClaimBreakdown::isKnownToPlayer);
+        }
     }
 }

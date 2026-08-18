@@ -251,6 +251,33 @@ final class ExpandedSystemClaimTooltipTest {
         }
 
         @Test
+        void buildBodySectionsHangsTheColoniesOfAFactionTheContestNeverWeighedBeneathItsOwnLine() {
+            // The whole point of the widening, read as the box draws it: the faction's line states a
+            // nought and its colonies hang under that line rather than under the claimant's above.
+            // They break down no further, nothing having been computed for them - which is what
+            // parts such an account from the weighed one two lines above it.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    new PresenceOnlyClaimStanding(
+                        TRITACHYON,
+                        IS_TERRITORIAL,
+                        List.of(buildConcealedMarket("Kanta's Den", FIRST_LISTED))))));
+
+            assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Standing Colony",
+                    "Size",
+                    "Contested by:",
+                    "Tri-Tachyon",
+                    "Kanta's Den");
+        }
+
+        @Test
         void buildBodySectionsKeepsTheDecreeMarkerOnTheClaimLine() {
             // The decree is what took the system, and it is no less true of the box the player asked
             // for detail from - a marker present in one mode and gone in the other would read as the
