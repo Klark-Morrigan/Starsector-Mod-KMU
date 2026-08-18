@@ -4,6 +4,7 @@ import kmlib.logging.KmLogging;
 import kmlib.settings.LabeledChoice;
 import kmlib.settings.LabeledChoices;
 import kmlib.settings.LunaSettingsReader;
+import kmlib.settings.LunaSettingsWriter;
 
 import kmu.KmuMod;
 
@@ -43,6 +44,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * is switched on to answer a question and off again after - so there is nothing to reset,
  * and the id can be made to say what its subject actually is rather than which layer
  * happened to want it first.
+ *
+ * <p>{@link KmuRetiredSettings} is the counterpart to that freeze, holding the ids of fields
+ * withdrawn since shipping and sweeping their orphaned values at load. It reaches the store
+ * through here for the reason the three above do - the mod id is bound in one place - and holds
+ * its ids apart from theirs because a retired id has no reader to be paired with.
  */
 public final class KmuLunaSettings {
 
@@ -83,6 +89,14 @@ public final class KmuLunaSettings {
      */
     public static int getSettingsRevision() {
         return settingsRevision.get();
+    }
+
+    // Sheds a retired field's stored value, binding this mod's settings id the way the reads below
+    // do. The only write here, and it writes nothing: what it removes is a key no accessor names,
+    // so no listener is told and no consumer has anything to rebuild over. Which ids are retired is
+    // KmuRetiredSettings', that being a list with no reader rather than settings machinery.
+    static void clearSetting(String fieldId) {
+        LunaSettingsWriter.removeSetting(MOD_ID, fieldId);
     }
 
     // Reads any Radio field and maps its stored label back to a choice, falling back on that

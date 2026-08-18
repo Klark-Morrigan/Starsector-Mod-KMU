@@ -26,10 +26,10 @@ public final class RibbonSettingsFixtures {
     private static final int SEGMENT_LENGTH_UNITS = 3;
     private static final int INTERJECTION_LENGTH_UNITS = 1;
 
-    // The uncontested cells left bare, so a suite reaching for these bakes only the bands that
-    // report a contest. A suite about what a lone holder's cell draws states that arm itself,
-    // where the answer it is posing is visible beside the case.
-    private static final boolean UNCONTESTED_CELLS_BANDED = false;
+    // The uncontested runs left at their authored length, which is not the shipped answer: a suite
+    // reaching for these reads a band back against the segment lengths above, and the shortening
+    // would silently redraw every uncontested cell at one width a colony. A suite about the
+    // shortening states it on the case, where the answer it is posing is visible beside it.
     private static final boolean UNCONTESTED_RUNS_SHORTENED = false;
 
     // The bands kept clear of the names, which is the shipped answer and the one every case about
@@ -79,9 +79,6 @@ public final class RibbonSettingsFixtures {
         settingsMock
             .when(KmuPoliticalMapSettings::getPoliticalMapRibbonInterjectionLength)
             .thenReturn(INTERJECTION_LENGTH_UNITS);
-        settingsMock
-            .when(KmuPoliticalMapSettings::shouldDrawPoliticalMapUncontestedRibbons)
-            .thenReturn(UNCONTESTED_CELLS_BANDED);
         settingsMock
             .when(KmuPoliticalMapSettings::shouldShortenPoliticalMapUncontestedRibbonRuns)
             .thenReturn(UNCONTESTED_RUNS_SHORTENED);

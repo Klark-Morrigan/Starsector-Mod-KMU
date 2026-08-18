@@ -30,6 +30,7 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListen
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuRetiredSettings;
 import kmu.spike.VanillaMapPanelProbe;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
@@ -61,6 +62,14 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // loads. LunaLib is a hard dependency, so it has already loaded by the time this runs.
         runGuardedStep("Failed to install KMU LunaLib settings bindings",
             KmuLunaSettings::installBindings);
+
+        // Shed the values of settings withdrawn since shipping, LunaLib pruning nothing itself.
+        // After the bindings and behind its own boundary: it is housekeeping over keys nothing
+        // reads, so a failure here must cost only the orphaned values. One seam owns the full set,
+        // so this call site never has to track which ids are retired - the app-load counterpart of
+        // the save migrations below.
+        runGuardedStep("Failed to clear retired KMU settings",
+            KmuRetiredSettings::clearRetiredSettings);
 
         // Wire the concrete map layers into the framework registry once per launch, before any
         // sector map can open. The registry stays agnostic to which views exist; this is the

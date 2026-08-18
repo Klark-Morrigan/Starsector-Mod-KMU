@@ -150,10 +150,10 @@ public final class KmuPoliticalMapSettings {
     // design's proportions: the width every other size is stated against, the gap that keeps the
     // band clear of the border, and the two run lengths whose ratio is what makes a faction's
     // stretch read as several colonies rather than one.
-    // The uncontested pair sits under the switch because it answers a different question from it:
-    // not whether the map bands at all, but whether a cell whose colonies all belong to one bloc
-    // bands too, and how loudly. Kept apart from the switch so that the bands reporting a contest -
-    // what the readout is for - are reachable by neither.
+    // The uncontested shortening sits under the switch because it answers a different question
+    // from it: not whether the map bands at all, but how loudly a cell whose colonies all belong
+    // to one bloc bands. Kept apart from the switch so that the bands reporting a contest - what
+    // the readout is for - are reachable by neither.
     // The name-clearing toggle is the other non-size boolean: whether a band breaks around the room
     // the cluster names take, or runs its whole ring and lets a name draw across it. A knob because
     // which of the two readouts wins the room they share is taste rather than correctness. The
@@ -162,8 +162,6 @@ public final class KmuPoliticalMapSettings {
     // placement reserved, or the words as drawn.
     private static final String RIBBON_ENABLED_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_enabled";
-    private static final String RIBBON_UNCONTESTED_ENABLED_FIELD =
-        "kmu_map_politics_visuals_presenceRibbons_uncontestedEnabled";
     private static final String RIBBON_UNCONTESTED_SHORT_RUNS_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_uncontestedShortRuns";
     private static final String RIBBON_KEEP_CLEAR_OF_NAMES_FIELD =
@@ -428,12 +426,11 @@ public final class KmuPoliticalMapSettings {
     // feature rather than spare the map.
     private static final boolean DEFAULT_RIBBON_ENABLED = true;
 
-    // The uncontested cells band too by default, at one width a colony. A lone holder's footprint
-    // is the one thing an unbanded map says nothing about - the fill gives whose the system is and
-    // stops - and the shortened run is what keeps that from costing the contested cells their
+    // An uncontested cell's colonies draw at one width each by default. A lone holder's footprint
+    // is the one thing the fill says nothing about - it gives whose the system is and stops - and
+    // the shortened run is what keeps reporting it from costing the contested cells their
     // prominence, since a large uncontested holding at the authored run length would lay more band
     // than the contests the readout exists for.
-    private static final boolean DEFAULT_RIBBON_UNCONTESTED_ENABLED = true;
     private static final boolean DEFAULT_RIBBON_UNCONTESTED_SHORT_RUNS = true;
 
     // The bands keep clear of the cluster names by default, so a name reads whole rather than
@@ -883,22 +880,12 @@ public final class KmuPoliticalMapSettings {
     }
 
     /**
-     * @return whether a cell whose colonies all belong to one bloc draws a band as well, saying how
-     *         many are there where its fill has already said whose they are; on by default. A cell
-     *         some rival holds something in bands whatever this says - that is the readout the
-     *         bands exist for - so this reaches only the cells nobody contests
-     */
-    public static boolean shouldDrawPoliticalMapUncontestedRibbons() {
-        return KmuLunaSettings.readBoolean(
-            RIBBON_UNCONTESTED_ENABLED_FIELD,
-            DEFAULT_RIBBON_UNCONTESTED_ENABLED);
-    }
-
-    /**
      * @return whether the band on an uncontested cell draws each colony at a single width rather
      *         than at the authored run length; on by default, so a large lone holding reads as a
-     *         tally of what is there instead of out-shouting the contested cells beside it. Read
-     *         only while the uncontested cells band at all
+     *         tally of what is there instead of out-shouting the contested cells beside it. A cell
+     *         some rival holds something in draws at the authored length whatever this says - that
+     *         contest is the readout the bands exist for - so this reaches only the cells nobody
+     *         contests
      */
     public static boolean shouldShortenPoliticalMapUncontestedRibbonRuns() {
         return KmuLunaSettings.readBoolean(

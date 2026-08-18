@@ -117,16 +117,17 @@ final class HeldSystemRibbonPlannerIntegrationTest {
 
         @Test
         void declinesNothingWhereOneBlocHoldsTheWholeSystem() {
-            // A lone holder is present, so the mechanic does speak for the system - it simply has
-            // no contest to report while the uncontested arm is off. Present-but-NONE rather than
-            // empty is the whole distinction: an empty answer here would hand a system dominance
-            // owns outright to the claim contest.
+            // A lone holder is present, so the mechanic speaks for the system - reporting the
+            // holder's own footprint rather than a contest. Present rather than empty is the whole
+            // distinction: an empty answer here would hand a system dominance owns outright to the
+            // claim contest.
             var sector = SectorPoliticsFixtures.buildSectorWith(
                 SYSTEM_ID,
                 buildColony(HEGEMONY, LARGER_COLONY));
 
             assertThat(planFor(sector, systemOf(sector)))
-                .contains(RibbonPlan.NONE);
+                .map(RibbonPlan::segments)
+                .contains(List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3)));
         }
     }
 

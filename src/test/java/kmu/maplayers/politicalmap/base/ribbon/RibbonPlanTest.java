@@ -24,20 +24,20 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHY
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the segment rule on hand-built presences: which cells get a band at all, and what the
- * runs inside one look like.
+ * Pins the segment rule on hand-built presences: which cells get a band at all, what length its
+ * runs are laid at, and what the runs inside one look like.
  *
- * <p>Two things carry the whole design and are stated here on literals. The presence gate is
- * checked from both sides on each of its arms: a band wherever some bloc other than the painter
+ * <p>Two things carry the whole design and are stated here on literals. Which reading a cell falls
+ * under is checked from both sides: the authored lengths wherever some bloc other than the painter
  * holds something, the decree case where the painter holds nothing itself and a single other bloc
- * is enough, and a lone holder's cell banding only where the uncontested cells are admitted - at
- * the shortened runs that admission carries, and never taking those runs into a contested cell.
- * The contest is stated a second time over a cell no fill covers, where there is no painter to be
- * a rival of and a second bloc holding something is what makes one; those cases are read off the
- * run lengths, which is the only place the arm a cell took is visible. The partings - a dark one
- * between two markets of one bloc, and one more in the outgoing bloc's shade wherever another
- * bloc's run follows - are checked on a run long enough to have an inside, across a handover, and
- * at the end of a band, which is the one boundary that stays open.
+ * is enough, and a lone holder's cell banding at the shortened runs while a contested one beside it
+ * keeps the authored ones under that same shortening. The contest is stated a second time over a
+ * cell no fill covers, where there is no painter to be a rival of and a second bloc holding
+ * something is what makes one; those cases are read off the run lengths, which is the only place
+ * the reading a cell took is visible. The partings - a dark one between two markets of one bloc,
+ * and one more in the outgoing bloc's shade wherever another bloc's run follows - are checked on a
+ * run long enough to have an inside, across a handover, and at the end of a band, which is the one
+ * boundary that stays open.
  *
  * <p>Every case names its blocs in a deliberate order and expects that same order out, since
  * the rule ranks nothing itself and a case that happened to be sorted would hide it.
@@ -49,22 +49,20 @@ final class RibbonPlanTest {
     // proportions fails every suite reading a band back instead of moving with them.
     private static final RibbonSegmentLengths STANDARD_LENGTHS = new RibbonSegmentLengths(3, 1);
 
-    // The uncontested cells left bare, which is what every case about the first arm of the gate
-    // is posed under: with them admitted, a single-holder cell bands and the case would be
-    // stating the second arm's answer instead.
-    private static final UncontestedCellBands NO_UNCONTESTED_BANDS =
-        new UncontestedCellBands(false, false);
+    // The shortening off, which is what every case about the contested reading is posed under: it
+    // leaves both readings at the same lengths, so a case about what a band is made of cannot be
+    // read as a statement about which reading laid it.
+    private static final UncontestedRibbonRuns UNSHORTENED_RUNS =
+        new UncontestedRibbonRuns(false);
 
-    // The rules most cases are posed under: the standard proportions, uncontested cells bare.
+    // The rules most cases are posed under: the standard proportions, no shortening anywhere.
     private static final RibbonPlanRules STANDARD_RULES =
-        new RibbonPlanRules(STANDARD_LENGTHS, NO_UNCONTESTED_BANDS);
+        new RibbonPlanRules(STANDARD_LENGTHS, UNSHORTENED_RUNS);
 
-    // The uncontested cells admitted, at the two run lengths that tell the second knob's two
-    // answers apart: the authored run, and the tally of single widths.
-    private static final RibbonPlanRules RULES_ADMITTING_UNCONTESTED_AT_FULL_RUNS =
-        new RibbonPlanRules(STANDARD_LENGTHS, new UncontestedCellBands(true, false));
-    private static final RibbonPlanRules RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS =
-        new RibbonPlanRules(STANDARD_LENGTHS, new UncontestedCellBands(true, true));
+    // The shortening on, which is the one thing that tells the two readings apart: an uncontested
+    // cell falls to the tally of single widths while a contested one keeps the authored run.
+    private static final RibbonPlanRules RULES_SHORTENING_UNCONTESTED_RUNS =
+        new RibbonPlanRules(STANDARD_LENGTHS, new UncontestedRibbonRuns(true));
 
     @Nested
     class PlanCellRibbon {
@@ -81,35 +79,13 @@ final class RibbonPlanTest {
         }
 
         @Test
-        void drawsNoRibbonWhereThePainterIsTheOnlyBlocPresent() {
-            // The single-holder case the gate exists for: however many markets the painter
-            // holds, a band would only repeat what its own fill already says.
-            assertThat(RibbonPlan.planCellRibbon(
-                    Optional.of(HEGEMONY),
-                    List.of(buildHegemonyPresence(4)),
-                    STANDARD_RULES))
-                .isEqualTo(RibbonPlan.NONE);
-        }
-
-        @Test
-        void drawsNoRibbonWhereTheOnlyOtherBlocHoldsNothing() {
-            // A bloc counted at nothing holds no market the score was decided on, so it is not
-            // presence and cannot open a band on a cell that is otherwise single-holder.
-            assertThat(RibbonPlan.planCellRibbon(
-                    Optional.of(HEGEMONY),
-                    List.of(buildHegemonyPresence(2), buildTriTachyonPresence(0)),
-                    STANDARD_RULES))
-                .isEqualTo(RibbonPlan.NONE);
-        }
-
-        @Test
-        void drawsThePainterAloneWhereTheUncontestedCellsAreAdmitted() {
-            // The second arm of the gate: nobody contests the system, and the band is there to
-            // say how much is in it rather than whose it is - which its fill has already said.
+        void drawsThePainterAloneWhereItIsTheOnlyBlocPresent() {
+            // The single-holder cell: nobody contests the system, and the band is there to say
+            // how much is in it rather than whose it is - which its fill has already said.
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(2)),
-                RULES_ADMITTING_UNCONTESTED_AT_FULL_RUNS);
+                STANDARD_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -119,7 +95,24 @@ final class RibbonPlanTest {
         }
 
         @Test
-        void drawsEachMarketAtOneWidthOnAnAdmittedUncontestedCell() {
+        void leavesABlocHoldingNothingOutOfAnOtherwiseSingleHolderCell() {
+            // A bloc counted at nothing holds no market the score was decided on, so it is not
+            // presence: it takes no run of its own, and the cell stays the painter's uncontested
+            // one rather than becoming a contest.
+            var plan = RibbonPlan.planCellRibbon(
+                Optional.of(HEGEMONY),
+                List.of(buildHegemonyPresence(2), buildTriTachyonPresence(0)),
+                RULES_SHORTENING_UNCONTESTED_RUNS);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1));
+        }
+
+        @Test
+        void drawsEachMarketAtOneWidthOnAnUncontestedCell() {
             // The shortening, which is what keeps a large lone holding from laying more band than
             // the contested cells the readout exists for. Only the market runs shorten: the
             // parting keeps its own length, or the ticks and the gaps between them would be
@@ -127,7 +120,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(3)),
-                RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS);
+                RULES_SHORTENING_UNCONTESTED_RUNS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -140,13 +133,13 @@ final class RibbonPlanTest {
 
         @Test
         void keepsTheAuthoredRunLengthOnAContestedCellWhileTheShorteningIsOn() {
-            // The shortening reaches only the cells the second arm admitted. A contested cell is
-            // the first arm's, and the two arms answer different questions - so no knob under the
-            // second one may change how a contest is drawn.
+            // The shortening reaches only the cells nobody contests. A contest is the readout the
+            // bands exist for, so no knob under the uncontested reading may change how one is
+            // drawn.
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
-                RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS);
+                RULES_SHORTENING_UNCONTESTED_RUNS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -156,14 +149,14 @@ final class RibbonPlanTest {
         }
 
         @Test
-        void drawsNoRibbonInAnEmptyCellEvenWhereTheUncontestedCellsAreAdmitted() {
-            // A system held by decree alone: the second arm asks for the footprints of a lone
-            // holder, and there is no holder here - so admitting the cell would lay a band of no
+        void drawsNoRibbonInACellHeldByDecreeAlone() {
+            // A system its decreed bloc holds nothing in: the uncontested reading reports the size
+            // of a footprint, and there is none here - so banding the cell would lay a band of no
             // runs on a system holding nothing.
             assertThat(RibbonPlan.planCellRibbon(
                     Optional.of(HEGEMONY),
                     List.of(buildHegemonyPresence(0)),
-                    RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS))
+                    RULES_SHORTENING_UNCONTESTED_RUNS))
                 .isEqualTo(RibbonPlan.NONE);
         }
 
@@ -253,7 +246,7 @@ final class RibbonPlanTest {
 
         @Test
         void drawsTheOnePresentBlocAloneWhereTheCellIsPaintedForAnAbsentOne() {
-            // The decree case the gate is phrased for: the Diktat holds the system by decree
+            // The decree case the contest rule is phrased for: the Diktat holds the system by decree
             // and nothing in it, so the band is Tri-Tachyon's run by itself.
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(DIKTAT),
@@ -268,26 +261,15 @@ final class RibbonPlanTest {
         }
 
         @Test
-        void drawsNoRibbonForALoneBlocOnACellNoFillCovers() {
-            // A system settled by one bloc that no layer paints for anybody. Nothing here is a
-            // rival of anything, so the cell falls to the second arm - and with the uncontested
-            // cells bare, that leaves it bare too.
-            assertThat(RibbonPlan.planCellRibbon(
-                    NO_PAINTER,
-                    List.of(buildTriTachyonPresence(2)),
-                    STANDARD_RULES))
-                .isEqualTo(RibbonPlan.NONE);
-        }
-
-        @Test
         void shortensALoneBlocsRunsOnACellNoFillCovers() {
-            // The same cell with the uncontested cells admitted: the band is the second arm's, so
-            // it draws at that arm's shortened runs. Read off the lengths rather than off the fact
-            // of a band, since only they tell the two arms apart.
+            // A system settled by one bloc that no layer paints for anybody. Nothing here is a
+            // rival of anything, so the cell falls to the uncontested reading and draws at its
+            // shortened runs. Read off the lengths rather than off the fact of a band, since only
+            // they tell the two readings apart.
             var plan = RibbonPlan.planCellRibbon(
                 NO_PAINTER,
                 List.of(buildTriTachyonPresence(2)),
-                RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS);
+                RULES_SHORTENING_UNCONTESTED_RUNS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -300,11 +282,11 @@ final class RibbonPlanTest {
         void keepsTheAuthoredRunLengthForTwoBlocsOnACellNoFillCovers() {
             // Two blocs settled in a system no layer paints: with no fill naming either of them,
             // the second bloc is what makes the cell a contest. Posed with the shortening on, so
-            // the authored lengths are what say the contested arm took it.
+            // the authored lengths are what say the contested reading took it.
             var plan = RibbonPlan.planCellRibbon(
                 NO_PAINTER,
                 List.of(buildTriTachyonPresence(1), buildDiktatPresence(1)),
-                RULES_ADMITTING_UNCONTESTED_AT_SHORT_RUNS);
+                RULES_SHORTENING_UNCONTESTED_RUNS);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -314,16 +296,20 @@ final class RibbonPlanTest {
         }
 
         @Test
-        void drawsNoRibbonForALoneBlocBesideAnEmptyOneOnACellNoFillCovers() {
+        void shortensALoneBlocsRunsBesideAnEmptyOneOnACellNoFillCovers() {
             // The same painterless cell with its second bloc counted at nothing. What makes such a
             // cell a contest is a second bloc holding something, not a second entry in the list -
-            // so this is the lone holder's cell it looks like, and bare with the uncontested cells
-            // left out.
-            assertThat(RibbonPlan.planCellRibbon(
-                    NO_PAINTER,
-                    List.of(buildTriTachyonPresence(2), buildDiktatPresence(0)),
-                    STANDARD_RULES))
-                .isEqualTo(RibbonPlan.NONE);
+            // so this is the lone holder's cell it looks like, and takes the shortened runs.
+            var plan = RibbonPlan.planCellRibbon(
+                NO_PAINTER,
+                List.of(buildTriTachyonPresence(2), buildDiktatPresence(0)),
+                RULES_SHORTENING_UNCONTESTED_RUNS);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(TRITACHYON_BRIGHT, 1),
+                    new RibbonSegment(TRITACHYON_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 1));
         }
 
         @Test
@@ -418,7 +404,7 @@ final class RibbonPlanTest {
                 List.of(buildHegemonyPresence(2), buildTriTachyonPresence(1)),
                 new RibbonPlanRules(
                     new RibbonSegmentLengths(4, 2),
-                    NO_UNCONTESTED_BANDS));
+                    UNSHORTENED_RUNS));
 
             assertThat(plan.segments())
                 .containsExactly(

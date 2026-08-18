@@ -22,7 +22,7 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
-import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
+import kmu.maplayers.politicalmap.base.ribbon.UncontestedRibbonRuns;
 import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.util.KmuStrings;
@@ -117,7 +117,7 @@ final class ClaimsViewTest {
                     blocId -> null,
                     new RibbonPlanRules(
                         new RibbonSegmentLengths(3, 1),
-                        new UncontestedCellBands(false, false))));
+                        new UncontestedRibbonRuns(false))));
 
             assertThat(planner)
                 .isInstanceOf(ClaimedSystemRibbonPlanner.class);

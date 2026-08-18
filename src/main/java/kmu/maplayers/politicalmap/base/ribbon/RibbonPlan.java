@@ -20,10 +20,10 @@ import java.util.Optional;
  * makes it read as that bloc's holdings ending rather than as an unowned gap between two
  * rivals. The band's last run is left open, a divider having nothing to part it from.
  *
- * <p>A cell draws a ribbon when it is contested, or when it holds anything at all and
- * {@link UncontestedCellBands} admits the uncontested ones. What makes a cell contested is one
- * question - does the band say something its own fill does not - asked of the two kinds of fill a
- * cell can have.
+ * <p>A cell draws a ribbon when anything is present in it at all. What contest adds is the length
+ * its runs are laid at: a contested cell keeps the player's authored lengths, and an uncontested
+ * one takes whatever {@link UncontestedRibbonRuns} answers. Contest is one question - does the
+ * band say something its own fill does not - asked of the two kinds of fill a cell can have.
  *
  * <p>With a painter, that is any other bloc holding something. A system claimed by decree whose
  * decreed bloc holds nothing there still draws the one bloc present, alone, because the fill names
@@ -31,12 +31,11 @@ import java.util.Optional;
  * bloc's fill covers - there is nobody to be a rival of, so the reading falls to the count: one
  * bloc alone is a footprint nothing contradicts, and two are a contest.
  *
- * <p>Two arms rather than one rewritten rule, because they answer different questions. A cell with
- * a rival in it bands because the fill cannot report a contest, which is what the whole readout is
- * for; a cell with a lone holder bands because the player asked to see footprints. Folded into a
- * single settings-dependent rule, the switch over the second would reach the first as well - and
- * the one band a map must not be able to lose is the one saying a system is contested. A cell
- * nothing is present in draws under neither arm: there is no footprint to report.
+ * <p>Contest decides the lengths and never whether there is a band, which is what keeps the one
+ * band a map must not be able to lose - the one saying a system is contested - out of reach of
+ * every knob. A cell with a rival in it bands because the fill cannot report a contest; a cell with
+ * a lone holder bands because the fill says whose the system is and not how much is in it. A cell
+ * nothing is present in draws under neither reading: there is no footprint to report.
  *
  * <p>The painting bloc draws in the ribbon like any other present bloc. Its own segments are
  * what give the rivals beside them a scale: a lone rival segment against a long run of the
@@ -53,16 +52,14 @@ import java.util.Optional;
 public record RibbonPlan(
     List<RibbonSegment> segments) {
 
-    // The cell draws no band: nothing is present in it, or nothing contests it - its painter alone
-    // is there, or a lone bloc is and no fill names anyone - and the uncontested cells are not
-    // admitted.
+    // The cell draws no band: nothing is present in it, so there is no footprint to report.
     public static final RibbonPlan NONE = new RibbonPlan(List.of());
 
     // What makes a painterless cell contested. With no fill naming anyone, a lone bloc is a
     // footprint nothing already said rather than a rivalry, so it takes a second bloc.
     private static final int CONTESTING_BLOC_COUNT = 2;
 
-    // A cell no bloc holds anything in, which has no footprint to report under either arm.
+    // A cell no bloc holds anything in, which has no footprint to report.
     private static final int NO_BLOCS = 0;
 
     public RibbonPlan {
@@ -72,14 +69,14 @@ public record RibbonPlan(
     /**
      * Plans one cell's ribbon from the blocs present in it, in the order they were ranked.
      *
-     * @param paintingBlocId  the bloc the cell's fill was painted for, whose presence alone is
-     *                        worth a band only where the uncontested cells are admitted; empty
-     *                        where no bloc's fill covers the cell, which is a case of its own
-     *                        rather than a painter every bloc happens to differ from
+     * @param paintingBlocId  the bloc the cell's fill was painted for, whose presence alone is a
+     *                        footprint rather than a contest; empty where no bloc's fill covers
+     *                        the cell, which is a case of its own rather than a painter every bloc
+     *                        happens to differ from
      * @param rankedPresences the blocs present in the cell, already ranked as the fill was
      *                        decided, since the runs come out in exactly this order
-     * @param rules           how a band is laid: the run lengths, and what a cell nobody
-     *                        contests draws
+     * @param rules           how a band is laid: the run lengths, and how far they reach on a cell
+     *                        nobody contests
      * @return the cell's runs in draw order, or {@link #NONE} where the cell draws no band
      */
     public static RibbonPlan planCellRibbon(
@@ -90,18 +87,16 @@ public record RibbonPlan(
         if (isCellContested(paintingBlocId, rankedPresences)) {
             return layBlocRuns(rankedPresences, rules.lengths());
         }
-        var uncontestedBands = rules.uncontestedBands();
 
-        // Nothing the fill does not already say is here, so the band is the player's to ask for -
-        // and there has to be something for it to report, which a decreed system its decreed bloc
-        // holds nothing in has not.
-        if (!uncontestedBands.isBandDrawn()
-                || countPresentBlocs(rankedPresences) == NO_BLOCS) {
+        // Nothing the fill does not already say is here, so what is left to report is the size of
+        // the footprint - and there has to be one, which a decreed system its decreed bloc holds
+        // nothing in has not.
+        if (countPresentBlocs(rankedPresences) == NO_BLOCS) {
             return NONE;
         }
         return layBlocRuns(
             rankedPresences,
-            uncontestedBands.resolveRunLengths(rules.lengths()));
+            rules.uncontestedRuns().resolveRunLengths(rules.lengths()));
     }
 
     /**
@@ -125,10 +120,10 @@ public record RibbonPlan(
     // Lays the whole band: every bloc's run in the order handed over, each closed off by its own
     // dark shade wherever another bloc's run follows it.
     //
-    // Reached from both arms of the gate and given its lengths rather than choosing them, since
-    // what the two arms differ on is which cells band and how long their runs are - not what a band
-    // is made of. A second copy for the uncontested cells would let their bands drift into a
-    // different shape from the contested ones, which is the one comparison the readout rests on.
+    // Reached from both readings and given its lengths rather than choosing them, since all the
+    // two differ on is how long the runs are - not what a band is made of. A second copy for the
+    // uncontested cells would let their bands drift into a different shape from the contested ones,
+    // which is the one comparison the readout rests on.
     private static RibbonPlan layBlocRuns(
             List<BlocPresence> rankedPresences,
             RibbonSegmentLengths lengths) {
@@ -154,8 +149,8 @@ public record RibbonPlan(
         return new RibbonPlan(segments);
     }
 
-    // Whether the band would say anything the cell's own fill does not, which is the first arm
-    // of the gate.
+    // Whether the band would say anything the cell's own fill does not, which is what decides
+    // the lengths its runs are laid at.
     //
     // Branched on whether there is a painter at all rather than letting an absent one stand in as
     // an id no bloc carries: that sentinel leaves every bloc a rival, so a lone haven no fill
@@ -182,11 +177,11 @@ public record RibbonPlan(
         return false;
     }
 
-    // How many blocs hold something in the cell, which both the painterless contest and the second
-    // arm of the gate are read off. Counted over the blocs that hold something rather than over the
-    // list, a bloc ranked and holding nothing being one a mechanic listed rather than one the cell
-    // has in it - a decreed system its decreed bloc holds nothing in being the case that produces
-    // one.
+    // How many blocs hold something in the cell, which both the painterless contest and the check
+    // for a footprint at all are read off. Counted over the blocs that hold something rather than
+    // over the list, a bloc ranked and holding nothing being one a mechanic listed rather than one
+    // the cell has in it - a decreed system its decreed bloc holds nothing in being the case that
+    // produces one.
     private static int countPresentBlocs(List<BlocPresence> rankedPresences) {
 
         var presentBlocs = 0;

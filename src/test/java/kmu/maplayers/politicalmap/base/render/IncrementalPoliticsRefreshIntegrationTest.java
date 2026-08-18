@@ -90,9 +90,10 @@ import static org.mockito.Mockito.when;
  * lay different bands over identical holdings. Off, the bands are a function of the map alone,
  * which is what this comparison is about; the carried-over fit has its own suite.
  *
- * <p>The uncontested cells are banded here, unlike in most band suites: the fixture starts with
- * one bloc per system, so with the uncontested cells bare most of these cases would compare two
- * maps carrying no bands at all.
+ * <p>The fixture starts with one bloc per system, so most of these cases compare two maps whose
+ * bands are the uncontested kind - the footprint each cell's lone holder leaves. That is the
+ * common shape on a live map too, and it is the one a refresh has most opportunity to get wrong,
+ * a cell restyled without its count being re-read looking exactly like one that was.
  */
 final class IncrementalPoliticsRefreshIntegrationTest {
 
@@ -218,12 +219,6 @@ final class IncrementalPoliticsRefreshIntegrationTest {
 
             var settingsMock = openSeam(KmuPoliticalMapSettings.class);
             RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
-
-            // The fixture starts with one bloc per system, so without this only the case that puts
-            // a rival in a system would band at all and the rest would agree by drawing nothing.
-            settingsMock
-                .when(KmuPoliticalMapSettings::shouldDrawPoliticalMapUncontestedRibbons)
-                .thenReturn(true);
 
             // The weighting rule the fills and the bands are both resolved under. Read live off
             // LunaLib in production, so it is answered here rather than left to the settings seam,

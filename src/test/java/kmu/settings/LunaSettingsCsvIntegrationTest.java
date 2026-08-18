@@ -53,6 +53,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * not mark a string as a setting - unrelated ids such as the terrain plugin's share it - so that second
  * walk names its exceptions rather than assuming there are none.
  *
+ * <p>A retired id is the other exception, and the one that has to keep working after the row is gone.
+ * LunaLib seeds defaults and prunes nothing, so a withdrawn field's value stays in the player's settings
+ * file until something takes it out; the sweep that does is the only source that may still name the id.
+ * The pair of walks over those ids holds both ends of that: the file declares no row for one, and some
+ * source still sweeps it - so a row deleted without a sweep, or a sweep dropped while the id sits listed,
+ * fails here rather than leaving a value nothing will ever reach again.
+ *
  * <p>A Boolean row's default column is held the same way where the value is a decision rather than a
  * taste: the hover tiers ship on so that switching them is the player's move and not the file's, and
  * the Java fallback beside each getter cannot stand in for that - it answers only while LunaLib has
@@ -258,6 +265,18 @@ final class LunaSettingsCsvIntegrationTest {
             "kmu_sector_map_layer_starscape_terrain",
             "kmu_sector_map_layer_above_starscape_nebulae_terrain");
 
+    // The ids of rows KMU has shipped and since withdrawn. Each is still named by a source - the
+    // load-time sweep that takes its orphaned value out of the player's settings file - so the walk
+    // over named ids has to know them, or a retired row would read as a getter fetching a key the
+    // file never writes. LunaLib prunes nothing itself, which is why the sweep exists at all.
+    //
+    // Restated here rather than read off KmuRetiredSettings, whose list is private, and read out of
+    // the source text by nothing: the two checks below are what stop this pair falling out of step -
+    // an id the file still declares, or an id no source sweeps, fails rather than sitting here as a
+    // stale exemption.
+    private static final Set<String> RETIRED_FIELD_IDS = Set.of(
+            "kmu_map_politics_visuals_presenceRibbons_uncontestedEnabled");
+
     // A field id as the sources spell it: quoted, so a mention in prose or a comment does not count
     // as reading the field.
     private static final Pattern FIELD_ID_LITERAL = Pattern.compile("\"(kmu_[A-Za-z0-9_]+)\"");
@@ -412,7 +431,11 @@ final class LunaSettingsCsvIntegrationTest {
         void everyFieldIdNamedBySourceIsDeclaredInTheFile() {
 
             var declaredFieldIds = Stream
-                .concat(readDeclaredFieldIds().stream(), NON_SETTINGS_PREFIXED_IDS.stream())
+                .of(
+                    readDeclaredFieldIds().stream(),
+                    NON_SETTINGS_PREFIXED_IDS.stream(),
+                    RETIRED_FIELD_IDS.stream())
+                .flatMap(ids -> ids)
                 .toList();
 
             assertThat(readFieldIdLiteralsInMainSources())
@@ -423,6 +446,35 @@ final class LunaSettingsCsvIntegrationTest {
                     MAIN_SOURCE_ROOT,
                     SETTINGS_CSV)
                 .isSubsetOf(declaredFieldIds);
+        }
+    }
+
+    @Nested
+    class RetiredFieldIds {
+
+        @Test
+        void noRetiredFieldIdIsStillDeclaredInTheFile() {
+
+            assertThat(readDeclaredFieldIds())
+                .as(
+                    "rows %s still declares for ids listed as retired, so a field the mod treats as"
+                        + " withdrawn is still on the settings screen - and the sweep at load"
+                        + " deletes the value the player just set on it",
+                    SETTINGS_CSV)
+                .doesNotContainAnyElementsOf(RETIRED_FIELD_IDS);
+        }
+
+        @Test
+        void everyRetiredFieldIdIsStillNamedBySomeSource() {
+            // The sweep is the only thing that may name one, and it is what stops the orphaned
+            // value travelling in the player's file forever. An id listed here and named nowhere
+            // is a sweep that was dropped along with the reader it belonged to.
+            assertThat(RETIRED_FIELD_IDS)
+                .as(
+                    "ids listed as retired that no source under %s names, so nothing takes their"
+                        + " orphaned values out of the player's stored settings",
+                    MAIN_SOURCE_ROOT)
+                .isSubsetOf(readFieldIdLiteralsInMainSources());
         }
     }
 

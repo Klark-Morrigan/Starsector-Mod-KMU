@@ -13,7 +13,7 @@ Part of [the political map](../../README.md), in Klark Morrigan's Utilities; see
 - [The plan](#the-plan)
 - [One count for both mechanics](#one-count-for-both-mechanics)
 - [The two ports](#the-two-ports)
-- [Which cells band at all](#which-cells-band-at-all)
+- [Which cells band, and how loudly](#which-cells-band-and-how-loudly)
 - [What is not here](#what-is-not-here)
 
 ## The plan
@@ -32,7 +32,7 @@ The grammar it lays down:
 - The band's last run is left open, so a divider never ends a band.
 
 `RibbonSegmentLengths` pairs the two proportions the grammar is stated in, and `RibbonPlanRules`
-pairs those with the gate below. `RibbonPlanInputs` carries the rules, the palette port and the
+pairs those with the shortening below. `RibbonPlanInputs` carries the rules, the palette port and the
 bake's own `HolderPass`, so a planner is handed one object rather than four loose knobs - and so
 both mechanics of a composed planner count off a single walk of each system.
 
@@ -73,19 +73,22 @@ hand-built values:
 - `SystemRibbonPlanner` - the counting itself, one system in, one plan out. The seam each painting
   mechanic implements.
 
-## Which cells band at all
+## Which cells band, and how loudly
 
-Two arms of one gate, stated as a disjunction because they answer different questions and only one
-of them is about contest:
+Every cell anything is present in bands. Contest decides only the length its runs are laid at:
 
-1. The cell is **contested**. Unconditional - this is the readout the bands exist for, and the fill
-   cannot report it.
-2. The cell is populated at all and the player asked for it, which is `UncontestedCellBands`.
+1. A **contested** cell draws at the player's authored lengths - this is the readout the bands
+   exist for, and the fill cannot report it.
+2. An **uncontested** one draws at whatever `UncontestedRibbonRuns` answers, which is a single
+   width a colony unless the player turns the shortening off. Its fill has already said whose the
+   system is, so the band is a tally, and a large lone holding drawn at full length would
+   out-shout the contested cells beside it.
 
-Written as two arms rather than one settings-dependent rule so no switch can reach the first kind.
-The second arm also carries whether its bands draw their runs at a single width, so a large
-uncontested holding cannot out-shout the contested cells beside it. A cell nothing is present in
-bands under neither arm.
+A cell nothing is present in bands under neither reading: there is no footprint to report.
+
+No knob reaches whether a cell bands, only how far its runs go. That is what keeps the one band a
+map must not be able to lose - the one saying a system is contested - out of reach of the settings
+screen entirely.
 
 **What contested means** depends on whether the cell has a painter, which the rule takes as a value
 that can state absence rather than as an id no bloc happens to carry:

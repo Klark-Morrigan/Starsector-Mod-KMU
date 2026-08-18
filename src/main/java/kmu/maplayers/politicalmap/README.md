@@ -32,8 +32,8 @@ For each controlling bloc the overlay draws four things:
 A system where somebody other than the bloc painting it also has colonies carries a fifth: a banded
 stroke running inside that one cell, a run per colony in the bloc's own colours, so a cell reads as
 who is there and in what proportion without the fill having to be split. A system its painter holds
-alone - most of the sector - bands only where the player asks for the uncontested ones, and then at
-one width a colony, so its cell says how much is there without out-shouting the contested ones.
+alone - most of the sector - bands too, at one width a colony, so its cell says how much is there
+without out-shouting the contested ones.
 
 The tab body picks the view by radio, and a filter picker below it can spotlight one bloc. When a
 bloc is spotlighted, the rest fade into a muted background. The radio always lists the views in

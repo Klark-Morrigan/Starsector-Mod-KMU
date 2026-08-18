@@ -49,8 +49,8 @@ public final class HeldCellRibbons {
      *                          folded them under the view's grouping
      * @param inputs            the pass the colonies are read from, where a bloc's shades come
      *                          from, and how far its runs go
-     * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where the gate the counts
-     *         are handed to leaves the cell bare
+     * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where nothing the rule
+     *         counts is present in the cell
      */
     public static RibbonPlan planHeldCellRibbon(
             String paintingBlocId,

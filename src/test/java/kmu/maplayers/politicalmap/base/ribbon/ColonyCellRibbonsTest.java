@@ -85,24 +85,24 @@ final class ColonyCellRibbonsTest {
         }
 
         @Test
-        void drawsNoRibbonWhereThePainterIsTheOnlyBlocPresent() {
-            // The single-holder cell, which most of the sector is: the fill already says whose
-            // system it is, so a band of the painter alone would only repeat it.
+        void drawsThePainterAloneWhereItIsTheOnlyBlocPresent() {
+            // The single-holder cell, which most of the sector is: the fill has said whose system
+            // it is, and the band says how much is in it.
             var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY);
 
-            assertThat(planFor(HEGEMONY, List.of(HEGEMONY), sector))
-                .isEqualTo(RibbonPlan.NONE);
+            assertThat(planFor(HEGEMONY, List.of(HEGEMONY), sector).segments())
+                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
         }
 
         @Test
-        void drawsNoRibbonForABlocRankedButPresentInNothing() {
+        void drawsNoRunForABlocRankedButPresentInNothing() {
             // A bloc the mechanic ranked and the system does not hold - a faction whose only colony
             // there is one the fog keeps back, say - raises no run at all rather than a run of no
-            // width, so the cell reads as the lone holder's it is.
+            // width, so the band is the painter's own and carries no trace of the ranking.
             var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY);
 
-            assertThat(planFor(HEGEMONY, List.of(HEGEMONY, TRITACHYON), sector))
-                .isEqualTo(RibbonPlan.NONE);
+            assertThat(planFor(HEGEMONY, List.of(HEGEMONY, TRITACHYON), sector).segments())
+                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
         }
 
         @Test
@@ -145,15 +145,16 @@ final class ColonyCellRibbonsTest {
         @Test
         void leavesOutAColonyThePlayerHasNotFound() {
             // The one exclusion the rule keeps: a band counting out a colony the rest of the map
-            // declines to show would state the very holding the fog is keeping back - and on a cell
-            // with nothing else in it, name the faction hiding there.
+            // declines to show would state the very holding the fog is keeping back - and in a
+            // system with nothing else of that faction's in it, name the faction hiding there. The
+            // cell reads as the Hegemony's own, which is what the fog is telling the player.
             var sector = buildSectorWith(
                 SYSTEM_ID,
                 buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE),
                 buildUndiscoveredHiddenMarket(buildFaction(TRITACHYON), COLONY_SIZE));
 
-            assertThat(planFor(HEGEMONY, List.of(HEGEMONY, TRITACHYON), sector))
-                .isEqualTo(RibbonPlan.NONE);
+            assertThat(planFor(HEGEMONY, List.of(HEGEMONY, TRITACHYON), sector).segments())
+                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
         }
 
         @Test
@@ -214,21 +215,21 @@ final class ColonyCellRibbonsTest {
         void leavesOutAColonyWhoseOwnerCarriesNoId() {
             // A faction with no id belongs to no bloc the map can name. Left out rather than pooled
             // under a nameless bloc, which would draw one run for several such owners' colonies at
-            // once - and with only the painter left, the cell draws nothing at all.
+            // once - so the band is the painter's own colony and nothing beside it.
             var sector = buildSectorWith(
                 SYSTEM_ID,
                 buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE),
                 buildVisibleMarket(buildFaction(null), COLONY_SIZE));
 
-            assertThat(planFor(HEGEMONY, List.of(HEGEMONY), sector))
-                .isEqualTo(RibbonPlan.NONE);
+            assertThat(planFor(HEGEMONY, List.of(HEGEMONY), sector).segments())
+                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
         }
 
         @Test
         void foldsAlliedFactionsIntoOneRunInTheBlocsOwnShades() {
             // Two allies hold three colonies between them. The cell is painted for their bloc, so
-            // the band is that bloc's three colonies in one run rather than two neighbouring runs -
-            // and the rival beside them is what the presence gate opens on.
+            // the band is that bloc's three colonies in one run rather than two neighbouring runs,
+            // with the rival's own run following it.
             var sector = buildSectorHolding(
                 SYSTEM_ID,
                 HEGEMONY,
@@ -256,7 +257,7 @@ final class ColonyCellRibbonsTest {
         @Test
         void countsTheColoniesOfACellNoFillCovers() {
             // A system two blocs are settled in that no layer paints for anybody. The counting is
-            // the same as ever - the painter is the gate's question, not the count's - and neither
+            // the same as ever - the painter is the contest's question, not the count's - and neither
             // bloc is ranked, so both come out in id order.
             var sector = buildSectorHolding(SYSTEM_ID, TRITACHYON, HEGEMONY);
 
@@ -276,12 +277,12 @@ final class ColonyCellRibbonsTest {
         @Test
         void leavesOutABlocWithNoShadesToDrawIn() {
             // A bloc whose colour faction has gone from the sector has nothing to paint a run in,
-            // so it is left out rather than drawn colourless - and with only the painter left, the
-            // cell falls through the gate and draws nothing at all.
+            // so it is left out rather than drawn colourless - and the band is the painter's own
+            // colony, with no gap where the vanished bloc's run would have been.
             var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY, VANISHED_BLOC);
 
-            assertThat(planFor(HEGEMONY, List.of(HEGEMONY, VANISHED_BLOC), sector))
-                .isEqualTo(RibbonPlan.NONE);
+            assertThat(planFor(HEGEMONY, List.of(HEGEMONY, VANISHED_BLOC), sector).segments())
+                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
         }
     }
 

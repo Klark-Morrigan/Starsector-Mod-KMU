@@ -82,9 +82,9 @@ public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
     // every such system unpainted and the band is the only thing that can say they are settled at
     // all.
     //
-    // Handed on as an absent painter rather than as an id no bloc carries, since the two arms of
-    // the gate read it differently: with a painter, one rival is a contest; with none, there is
-    // nobody to be a rival of, so it takes two blocs.
+    // Handed on as an absent painter rather than as an id no bloc carries, since the two readings
+    // of contest differ on it: with a painter, one rival is a contest; with none, there is nobody
+    // to be a rival of, so it takes two blocs.
     private Optional<String> resolvePaintingBlocId(SystemClaimBreakdown contest) {
 
         return Optional

@@ -13,7 +13,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
-import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
+import kmu.maplayers.politicalmap.base.ribbon.UncontestedRibbonRuns;
 import kmu.settings.KmuPoliticalMapSettings;
 
 import java.util.List;
@@ -157,12 +157,12 @@ public final class CellRibbonSource {
 
         // The colour source and the laying rules are sampled here, once, and handed to whatever
         // planner the view resolves - so both mechanics read a bloc's shades through one object
-        // and gate their cells by one rule.
+        // and lay their cells by one rule.
         var inputs = RibbonPlanInputs.createForPass(
             pass,
             new RibbonPlanRules(
                 style.lengths(),
-                UncontestedCellBands.readFromLunaSettings()));
+                UncontestedRibbonRuns.readFromLunaSettings()));
 
         return new CellRibbonSource(
             viewGrouping.view().resolveRibbonPlanner(inputs),

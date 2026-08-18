@@ -78,8 +78,9 @@ public final class RibbonPlanFixtures {
 
     /**
      * The design's own proportions - a colony three widths long, parted by one width - paired with
-     * the uncontested arm switched off, so a cell reads as banded only where a rival is in it.
-     * What the other arm admits is {@link UncontestedCellBandsTest}'s.
+     * the uncontested shortening switched off, so every cell's runs come out at those same lengths
+     * whether a rival is in it or not. What the shortening does to them is
+     * {@link UncontestedRibbonRunsTest}'s.
      *
      * <p>The widths are not exported for a case to assert with. A case states the run lengths it
      * expects as its own literals, so an edit to these proportions fails the suites that read a
@@ -88,7 +89,21 @@ public final class RibbonPlanFixtures {
     public static final RibbonPlanRules STANDARD_RULES =
         new RibbonPlanRules(
             new RibbonSegmentLengths(3, 1),
-            new UncontestedCellBands(false, false));
+            new UncontestedRibbonRuns(false));
+
+    /**
+     * The same proportions with the shortening switched on, which is the shipped answer and the
+     * only witness to which reading a cell fell under: a cell nobody contests draws its colonies
+     * one width each, where a contested one keeps the authored run. A suite reaching for these is
+     * posing that question and nothing else.
+     *
+     * <p>The proportions come off the rules above rather than being restated, so the two cannot
+     * drift into disagreeing about what an unshortened run is.
+     */
+    public static final RibbonPlanRules SHORTENED_UNCONTESTED_RULES =
+        new RibbonPlanRules(
+            STANDARD_RULES.lengths(),
+            new UncontestedRibbonRuns(true));
 
     /**
      * A cell no bloc's fill covers, which is what an unclaimed populated system draws as. There is
@@ -177,6 +192,18 @@ public final class RibbonPlanFixtures {
      * @return the inputs a planner is posed with
      */
     public static RibbonPlanInputs buildInputsFor(HolderPass pass) {
-        return new RibbonPlanInputs(pass, PALETTES, STANDARD_RULES);
+        return buildInputsFor(pass, STANDARD_RULES);
+    }
+
+    /**
+     * The same inputs under laying rules the suite chooses - what a case posing which reading a
+     * cell fell under takes, the run lengths being the only place that is visible.
+     *
+     * @param pass  the bake's reading of the sector
+     * @param rules how a band is laid
+     * @return the inputs a planner is posed with
+     */
+    public static RibbonPlanInputs buildInputsFor(HolderPass pass, RibbonPlanRules rules) {
+        return new RibbonPlanInputs(pass, PALETTES, rules);
     }
 }

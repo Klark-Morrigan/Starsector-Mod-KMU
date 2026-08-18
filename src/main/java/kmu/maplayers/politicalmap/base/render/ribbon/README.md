@@ -336,7 +336,7 @@ without the console command being opened.
 
 ## What is not here
 
-**What a band says** - the runs, the dividers, the presence gate - is
+**What a band says** - the runs, the dividers, which cells band and at what length - is
 [`base.ribbon`](../../ribbon/README.md). **Where the counts come from** is each mechanic's:
 [`dominance.ribbon`](../../../dominance/ribbon/README.md) and
 [`claims.ribbon`](../../../claims/ribbon/README.md).

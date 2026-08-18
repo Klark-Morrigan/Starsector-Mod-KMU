@@ -12,7 +12,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
-import kmu.maplayers.politicalmap.base.ribbon.UncontestedCellBands;
+import kmu.maplayers.politicalmap.base.ribbon.UncontestedRibbonRuns;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.KmuPoliticalMapSettings;
 
@@ -206,12 +206,11 @@ final class CellRibbonSourceTest {
 
         @Test
         void handsThePlayersUncontestedAnswerToTheMechanicTheViewCountsBy() {
-            // The one place the two uncontested knobs reach the counting: they are sampled by the
-            // pass and carried in the inputs every planner is built from. Read anywhere else, or
-            // not read at all, they would show only as a setting a player moves to no effect.
-            settingsMock
-                .when(KmuPoliticalMapSettings::shouldDrawPoliticalMapUncontestedRibbons)
-                .thenReturn(true);
+            // The one place the uncontested knob reaches the counting: it is sampled by the pass
+            // and carried in the inputs every planner is built from. Read anywhere else, or not
+            // read at all, it would show only as a setting a player moves to no effect. Answered
+            // off rather than on, which is not the shipped default, so an answer that ignored the
+            // setting could not pass.
             settingsMock
                 .when(KmuPoliticalMapSettings::shouldShortenPoliticalMapUncontestedRibbonRuns)
                 .thenReturn(false);
@@ -224,8 +223,8 @@ final class CellRibbonSourceTest {
 
             verify(viewMock)
                 .resolveRibbonPlanner(inputsCaptor.capture());
-            assertThat(inputsCaptor.getValue().rules().uncontestedBands())
-                .isEqualTo(new UncontestedCellBands(true, false));
+            assertThat(inputsCaptor.getValue().rules().uncontestedRuns())
+                .isEqualTo(new UncontestedRibbonRuns(false));
         }
 
         @Test

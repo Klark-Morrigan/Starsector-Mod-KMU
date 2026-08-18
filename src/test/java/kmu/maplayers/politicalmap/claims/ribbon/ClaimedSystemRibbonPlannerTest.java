@@ -8,7 +8,9 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 
 import org.junit.jupiter.api.Nested;
@@ -21,9 +23,11 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.FOG_KEPT
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.SHORTENED_UNCONTESTED_RULES;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsFor;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
 
@@ -31,14 +35,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins what the claim planner takes from a contest before handing it to the counting rule: the
- * claimant is the bloc the presence gate is stated against, and a system nobody claims is planned
- * without one.
+ * claimant is the bloc contest is judged against, and a system nobody claims is planned without
+ * one.
  *
  * <p>The counting and the ordering both have suites of their own - the band counts the system's own
  * colonies and keeps the contest's ranking. What is stated here is the one thing this planner
- * decides: which bloc counts as the painter. Read it off the wrong faction and a two-bloc system
- * where the claimant is the junior standing draws no band, or a lone claimant's cell draws one the
- * fill never earned.
+ * decides: which bloc counts as the painter.
+ *
+ * <p>Every cell with anything in it bands, so the painter shows in the run lengths rather than in
+ * whether there is a band: a cell the painter is alone in draws its colonies as a tally, and one
+ * with a rival in it at the authored run. The cases that turn on the painter are therefore posed
+ * with the shortening on, which is the only setting under which the two lengths differ - read the
+ * painter off the wrong faction and a system whose claimant holds nothing in it reports itself as
+ * that claimant's quiet footprint instead of the contest it is.
  *
  * <p>The unclaimed case is stated as an absent painter rather than as a refusal, which is what lets
  * the settlements vanilla's claim walk never sees - pirate and Path bases, which it skips as hidden;
@@ -88,10 +97,9 @@ final class ClaimedSystemRibbonPlannerTest {
         }
 
         @Test
-        void drawsNoBandWhereTheClaimantIsTheOnlyBlocStanding() {
-            // The gate read off the claimant: the one bloc present is the one the fill already
-            // names, so the cell stays bare. Taking the painter from the top standing instead
-            // would agree here by accident and disagree wherever the two differ.
+        void shortensTheRunsWhereTheClaimantIsTheOnlyBlocPresent() {
+            // The claimant is the one bloc in the system, so the band adds only how much is there
+            // to a fill that has already named the owner - and draws as the tally that says so.
             var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY);
 
             var contest = new SystemClaimBreakdown(
@@ -99,8 +107,28 @@ final class ClaimedSystemRibbonPlannerTest {
                 HEGEMONY,
                 List.of(buildStanding(HEGEMONY, LEADING_SCORE)));
 
-            assertThat(planFrom(contest, sector))
-                .isEqualTo(RibbonPlan.NONE);
+            assertThat(planWithShorteningFrom(contest, sector).segments())
+                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 1));
+        }
+
+        @Test
+        void keepsTheAuthoredRunsWhereTheClaimantHoldsNothingInTheSystem() {
+            // The painter read off the claimant rather than off the top standing, stated where the
+            // two disagree: the Hegemony holds the claim without a colony in the system, and
+            // Tri-Tachyon - which stands ahead of it - is the one bloc actually there. Against the
+            // claimant that is a rival and the runs stay authored; against the top standing the
+            // cell would be Tri-Tachyon's own and shorten into a footprint the fill never named.
+            var sector = buildSectorHolding(SYSTEM_ID, TRITACHYON);
+
+            var contest = new SystemClaimBreakdown(
+                NO_DECREE,
+                HEGEMONY,
+                List.of(
+                    buildStanding(TRITACHYON, LEADING_SCORE),
+                    buildStanding(HEGEMONY, TRAILING_SCORE)));
+
+            assertThat(planWithShorteningFrom(contest, sector).segments())
+                .containsExactly(new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
 
         @Test
@@ -128,7 +156,7 @@ final class ClaimedSystemRibbonPlannerTest {
         void plansNoBandForASystemNobodyClaimsAndNobodyLivesIn() {
             // The other half of dropping the refusal, and what keeps the widening from banding the
             // empty sector: a system with nothing standing in it counts nought for every bloc, so
-            // there is no footprint for a band to report under either arm.
+            // there is no footprint for a band to report, contested or not.
             var sector = buildSectorHolding(SYSTEM_ID);
 
             var contest = new SystemClaimBreakdown(NO_DECREE, NO_CLAIMANT, List.of());
@@ -141,12 +169,35 @@ final class ClaimedSystemRibbonPlannerTest {
     // The planner over a posed contest, counting the colonies of the stubbed sector's one system.
     private static RibbonPlan planFrom(SystemClaimBreakdown contest, SectorAPI sector) {
 
+        return planThrough(
+            contest,
+            sector,
+            buildInputsOver(sector, HolderGrouping.identity(), FOG_KEPT));
+    }
+
+    // The same planner with the uncontested shortening on, which is what a case turning on the
+    // painter takes: the run length is the only place that decision shows.
+    private static RibbonPlan planWithShorteningFrom(
+            SystemClaimBreakdown contest,
+            SectorAPI sector) {
+
+        return planThrough(
+            contest,
+            sector,
+            buildInputsFor(
+                HolderPass.over(sector, FOG_KEPT, HolderGrouping.identity()),
+                SHORTENED_UNCONTESTED_RULES));
+    }
+
+    private static RibbonPlan planThrough(
+            SystemClaimBreakdown contest,
+            SectorAPI sector,
+            RibbonPlanInputs inputs) {
+
         var readerFake = new ClaimBreakdownReaderFake();
         readerFake.setBreakdown(SYSTEM_ID, contest);
 
-        return new ClaimedSystemRibbonPlanner(
-                readerFake,
-                buildInputsOver(sector, HolderGrouping.identity(), FOG_KEPT))
+        return new ClaimedSystemRibbonPlanner(readerFake, inputs)
             .planSystemRibbon(buildOnlySystem(sector));
     }
 
