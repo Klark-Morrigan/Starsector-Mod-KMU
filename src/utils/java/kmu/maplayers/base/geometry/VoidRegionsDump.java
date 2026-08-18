@@ -77,9 +77,10 @@ final class VoidRegionsDump {
                 VoidPockets.findVoidPockets(
                     sites,
                     fixture.getOwnerBySite(),
-                    SectorGeometryParameters.createDefaults(),
-                    SECTION_RULES,
-                    VoidPockets.PocketShaping.WITH_CHANNEL),
+                    new VoidPockets.PocketRules(
+                        SectorGeometryParameters.createDefaults(),
+                        SECTION_RULES,
+                        VoidPockets.PocketShaping.WITH_CHANNEL)),
                 fixture);
 
             System.out.println();
@@ -212,14 +213,15 @@ final class VoidRegionsDump {
         return VoidPockets.findVoidPockets(
             fixture.getSites(),
             fixture.getOwnerBySite(),
-            new SectorGeometryParameters(
-                reach,
-                shipped.boundSegments(),
-                0,
-                shipped.weldTolerance(),
-                shipped.miterSpikeLimit()),
-            SECTION_RULES,
-            VoidPockets.PocketShaping.WITH_CHANNEL).size();
+            new VoidPockets.PocketRules(
+                new SectorGeometryParameters(
+                    reach,
+                    shipped.boundSegments(),
+                    0,
+                    shipped.weldTolerance(),
+                    shipped.miterSpikeLimit()),
+                SECTION_RULES,
+                VoidPockets.PocketShaping.WITH_CHANNEL)).size();
     }
 
     // The first split the design asks for: a cell buried among its neighbours has every edge
@@ -489,9 +491,10 @@ final class VoidRegionsDump {
             var summary = summariseDivision(VoidPockets.findVoidPockets(
                 fixture.getSites(),
                 fixture.getOwnerBySite(),
-                SectorGeometryParameters.createDefaults(),
-                new VoidSections.SectionRules(SECTION_LENGTH, share),
-                VoidPockets.PocketShaping.WITH_CHANNEL));
+                new VoidPockets.PocketRules(
+                    SectorGeometryParameters.createDefaults(),
+                    new VoidSections.SectionRules(SECTION_LENGTH, share),
+                    VoidPockets.PocketShaping.WITH_CHANNEL)));
 
             System.out.printf(
                 Locale.ROOT,
@@ -687,9 +690,8 @@ final class VoidRegionsDump {
         var pockets = CoastPockets.findCoastPockets(
             traced,
             CoastPockets.markEverySiteUnowned(sites),
-            shipped,
-            SECTION_RULES,
-            VoidPockets.PocketShaping.WITH_CHANNEL);
+            new VoidPockets.PocketRules(
+                shipped, SECTION_RULES, VoidPockets.PocketShaping.WITH_CHANNEL));
 
         if (pockets.isEmpty()) {
             System.out.println("the coast traps no void at all");

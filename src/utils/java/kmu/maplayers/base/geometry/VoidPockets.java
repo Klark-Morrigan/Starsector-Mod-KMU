@@ -126,7 +126,41 @@ final class VoidPockets {
          * sits flush against every cell around it, which is the one thing the shaping exists
          * to prevent.
          */
-        AT_TRUE_EXTENT
+        AT_TRUE_EXTENT;
+
+        /**
+         * Whether nothing is given up, so the void's own extent is what comes back.
+         *
+         * <p>Every construction asks this as it decides which discs to walk, and each of them
+         * spelling out the comparison is three copies of one rule.
+         *
+         * @return whether this is the extent itself rather than a channel inside it
+         */
+        boolean isAtTrueExtent() {
+            return this == AT_TRUE_EXTENT;
+        }
+    }
+
+    /**
+     * The knobs one pocket is built under, gathered because they never travel apart.
+     *
+     * <p>Three answers that have to agree with each other: what the void is measured against,
+     * how a long piece of it is divided, and which of the two maps is being asked for. Handed
+     * over loose, a caller can give one construction the shipped knobs and another a swept
+     * set within the same frame, and the two then describe different sectors while looking
+     * like one.
+     *
+     * @param parameters   the same knobs the cells are built under, so the void takes the
+     *                     reach that decides where it begins and the channel the cells leave
+     * @param sectionRules how long a piece of a pocket should be before it is cut into more
+     *                     than one, and how narrow a crossing has to be to count as a place
+     *                     to cut it
+     * @param shaping      how much of the channel each pocket takes out of its own outline
+     */
+    record PocketRules(
+        SectorGeometryParameters parameters,
+        VoidSections.SectionRules sectionRules,
+        PocketShaping shaping) {
     }
 
     private VoidPockets() {
@@ -135,25 +169,19 @@ final class VoidPockets {
     /**
      * Finds every pocket of void the cells close around.
      *
-     * @param sites        the sites
-     * @param ownerBySite  each site's owner, index-aligned with {@code sites} and null where
-     *                     the site is unowned, to decide which pockets sit inside one owner's
-     *                     area rather than between owners
-     * @param parameters   the same knobs the cells are built under, so the void takes the
-     *                     reach that decides where it begins and the channel the cells leave
-     * @param sectionRules how long a piece of a pocket should be before it is cut into more
-     *                     than one, and how narrow a crossing has to be to count as a place
-     *                     to cut it
-     * @param shaping      how much of the channel each pocket takes out of its own outline
+     * @param sites       the sites
+     * @param ownerBySite each site's owner, index-aligned with {@code sites} and null where
+     *                    the site is unowned, to decide which pockets sit inside one owner's
+     *                    area rather than between owners
+     * @param rules       the knobs to build them under
      * @return the pockets, each with a closed outline
      */
     static List<VoidPocket> findVoidPockets(
             List<double[]> sites,
             List<String> ownerBySite,
-            SectorGeometryParameters parameters,
-            VoidSections.SectionRules sectionRules,
-            PocketShaping shaping) {
+            PocketRules rules) {
 
+        var parameters = rules.parameters();
         var arcSegments = parameters.measureArcSegments();
 
         var trueHoles = DiscUnionBoundary.traceHoles(
@@ -161,7 +189,7 @@ final class VoidPockets {
 
         // Traced only where an outline is going to come off them. At the true extent a pocket
         // IS its hole, and these two are the expensive half of the call.
-        var isAtTrueExtent = shaping == PocketShaping.AT_TRUE_EXTENT;
+        var isAtTrueExtent = rules.shaping().isAtTrueExtent();
 
         var withChannel = isAtTrueExtent
             ? List.<VoidHole>of()
@@ -180,10 +208,10 @@ final class VoidPockets {
 
             pockets.add(shapeVoidPocket(
                 hole,
-                findOutlines(hole, absorbingOwner, shaping, withChannel, atFills),
+                findOutlines(hole, absorbingOwner, rules.shaping(), withChannel, atFills),
                 absorbingOwner,
                 sites,
-                sectionRules));
+                rules.sectionRules()));
         }
         return pockets;
     }
@@ -298,7 +326,7 @@ final class VoidPockets {
             List<VoidHole> withChannel,
             List<VoidHole> atFills) {
 
-        if (shaping == PocketShaping.AT_TRUE_EXTENT) {
+        if (shaping.isAtTrueExtent()) {
             return List.of(hole.boundary());
         }
         return absorbingOwner == null

@@ -147,7 +147,7 @@ final class VoidBridgePockets {
 
         var outlines = new ArrayList<List<double[]>>();
 
-        var union = shaping == VoidPockets.PocketShaping.AT_TRUE_EXTENT
+        var union = shaping.isAtTrueExtent()
             ? new DiscUnion(sites, parameters.cellRadius())
             : VoidPockets.buildDrawnUnion(sites, parameters);
 

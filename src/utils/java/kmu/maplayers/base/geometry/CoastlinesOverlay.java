@@ -62,11 +62,12 @@ final class CoastlinesOverlay {
         pockets = CoastPockets.findCoastPockets(
             traced,
             fixture.getOwnerBySite(),
-            settings.parameters,
-            new VoidSections.SectionRules(
-                settings.voidSpanMultiple * settings.parameters.cellRadius(),
-                settings.minSectionShare),
-            ViewerPainting.resolvePocketShaping(settings));
+            new VoidPockets.PocketRules(
+                settings.parameters,
+                new VoidSections.SectionRules(
+                    settings.voidSpanMultiple * settings.parameters.cellRadius(),
+                    settings.minSectionShare),
+                ViewerPainting.resolvePocketShaping(settings)));
 
         spills = CoastPocketFaults.findSpills(pockets, traced.union().sites());
     }

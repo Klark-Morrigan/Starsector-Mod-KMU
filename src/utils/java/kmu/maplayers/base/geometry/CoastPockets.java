@@ -42,22 +42,18 @@ final class CoastPockets {
      * @param ownerBySite  each site's owner, index-aligned with {@code sites} and null where
      *                     the site is unowned, to decide which pockets sit inside one owner's
      *                     area rather than between owners
-     * @param parameters   the knobs the cells are built under
-     * @param sectionRules how long a piece of a pocket should be before it is cut into more
-     *                     than one, and how narrow a crossing has to be to count as a place
-     *                     to cut it
-     * @param shaping      how much of the channel each pocket takes out of its own outline.
-     *                     At its true extent the trace itself moves to the cell radius, since
-     *                     a coast pocket takes the channel from the discs it is walked
-     *                     against rather than from a reach applied afterwards
+     * @param rules        the knobs to build them under. At its true extent the trace
+     *                     itself moves to the cell radius, since a coast pocket takes the
+     *                     channel from the discs it is walked against rather than from a
+     *                     reach applied afterwards
      * @return the pockets, each with a closed outline and the reaches that walled it
      */
     static List<CoastPocketFaults.WalledPocket> findCoastPockets(
             Coastlines.TracedCoasts traced,
             List<String> ownerBySite,
-            SectorGeometryParameters parameters,
-            VoidSections.SectionRules sectionRules,
-            VoidPockets.PocketShaping shaping) {
+            VoidPockets.PocketRules rules) {
+
+        var parameters = rules.parameters();
 
         // The sites come off the coast rather than beside it. Handed in separately, a caller
         // can pair one construction's sites with another's coast and still compile, and every
@@ -74,7 +70,7 @@ final class CoastPockets {
         // A coast pocket gives up the channel against the cells by being WALKED a channel
         // outside them, so at its true extent the discs move rather than the outline: walked
         // at the cell radius, the pocket runs up to the border itself.
-        var isAtTrueExtent = shaping == VoidPockets.PocketShaping.AT_TRUE_EXTENT;
+        var isAtTrueExtent = rules.shaping().isAtTrueExtent();
 
         var union = isAtTrueExtent
             ? new DiscUnion(sites, parameters.cellRadius())
@@ -102,9 +98,10 @@ final class CoastPockets {
             // strayed there is claiming void that is not the pocket's - and where the wall
             // ended up is the result of a chain of angles, while the side of the line it has
             // to stay on is one fact that holds whatever the wall did.
-            // Not cut at the true extent: the cut holds the outline back from a line it is
-            // meant to reach there, and the pockets it empties are the ones this exists to
-            // show.
+            //
+            // Not cut at the true extent, where there is no channel to hold it back from:
+            // the outline is meant to reach the reach itself, and the pockets the cut would
+            // empty are the ones that map exists to show.
             var legal = isAtTrueExtent
                 ? hole.boundary()
                 : CoastPocketFaults.cutToLandward(
@@ -122,7 +119,7 @@ final class CoastPockets {
                         : List.of(legal),
                     VoidPockets.resolveAbsorbingOwner(hole.ringing(), ownerBySite),
                     sites,
-                    sectionRules),
+                    rules.sectionRules()),
                 walling));
         }
         return pockets;
