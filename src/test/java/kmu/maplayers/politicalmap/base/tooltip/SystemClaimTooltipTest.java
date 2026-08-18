@@ -113,7 +113,6 @@ final class SystemClaimTooltipTest {
     private static final int FIRST_LISTED = 1;
     private static final int NO_SIBLING_MARKETS = 0;
     private static final boolean IS_UNFOUND_BY_PLAYER = false;
-    private static final ContestAdmission CONCEALED = new ContestAdmission(true, false);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final SystemClaimTooltip tooltip = new SystemClaimTooltip(claimBreakdownReaderFake);
@@ -726,7 +725,7 @@ final class SystemClaimTooltipTest {
                 EntityNameplate.createUnmarkedNameplate("Undiscovered Base"),
                 FIRST_LISTED,
                 IS_UNFOUND_BY_PLAYER,
-                CONCEALED,
+                ContestAdmission.HIDDEN,
                 UNFOUND_COLONY_SIZE,
                 NO_SIBLING_MARKETS,
                 OptionalInt.empty())));

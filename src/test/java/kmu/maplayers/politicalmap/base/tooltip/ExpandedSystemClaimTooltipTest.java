@@ -83,11 +83,6 @@ final class ExpandedSystemClaimTooltipTest {
     private static final int FIRST_LISTED = 1;
     private static final int SECOND_LISTED = 2;
 
-    // How the mechanic met a colony it never weighed: held in concealment, which it skips before
-    // scoring. Arbitrary between that and an absence from the economy's listing - the two suppress
-    // scoring identically, and the case is not about which of them did it.
-    private static final ContestAdmission CONCEALED = new ContestAdmission(true, false);
-
     // Every market posed here is one the player has found and one the mechanic weighed. What the
     // box withholds of a market they have not found, and which listing ties it marks, are the
     // resolver's and pinned there; the cases below are about which faction gets an account at all.
@@ -340,12 +335,15 @@ final class ExpandedSystemClaimTooltipTest {
     // A colony held in concealment and found all the same - the shape a faction the contest never
     // weighed is present through, and the one the map draws in that faction's colours. Sized like
     // any other, the size going nowhere: nothing was computed for it.
+    //
+    // Concealment rather than an absence from the economy's listing, arbitrarily: the two suppress
+    // scoring identically and no case here is about which of them did it.
     private static MarketClaimBreakdown buildConcealedMarket(String marketName, int listingPosition) {
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
             listingPosition,
             IS_KNOWN_TO_PLAYER,
-            CONCEALED,
+            ContestAdmission.HIDDEN,
             LESSER_SCORE,
             NO_SIBLING_MARKETS,
             OptionalInt.empty());

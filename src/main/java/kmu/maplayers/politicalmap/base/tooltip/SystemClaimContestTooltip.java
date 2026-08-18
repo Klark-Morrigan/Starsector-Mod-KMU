@@ -70,21 +70,18 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         var claimantFactionId = breakdown.claimantFactionId();
         var sections = new ArrayList<TooltipSection>();
 
-        // The reveal is read live off the same toggle the faction layer's pass samples, so crossing
-        // between the two layers cannot make one call a system empty that the other calls held. Read
-        // once for the whole box and applied to both questions it settles - whether the system counts
-        // as populated, and which standings the player may be shown - since a banner calling a system
-        // empty over a list naming who lives there is the one pairing the box cannot make.
-        var isListingUnfoundColonies =
-            MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets();
+        // Read once for the whole box and applied to both questions it settles - whether the system
+        // counts as populated, and which standings the player may be shown - since a banner calling a
+        // system empty over a list naming who lives there is the one pairing the box cannot make.
+        var isListingUnfoundMarkets = isListingUnfoundMarkets();
 
         // Why the system holds nobody comes before who claims it, so a dead system names its state
         // first and the claim below reads as a hold over an empty system rather than over a colony.
-        var statusRow = SystemStatusRow.resolveStatusRow(sector, system, isListingUnfoundColonies);
+        var statusRow = SystemStatusRow.resolveStatusRow(sector, system, isListingUnfoundMarkets);
 
         CellTooltipSections.appendBannerSection(sections, statusRow);
 
-        var listedStandings = selectListedStandings(breakdown, isListingUnfoundColonies);
+        var listedStandings = selectListedStandings(breakdown, isListingUnfoundMarkets);
 
         // The status is what the claim block is judged against, so the two are read from the one
         // resolve: a banner that appeared and a claim that says nobody would otherwise be settled by
@@ -139,12 +136,9 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // projection the box is built from, so it can never offer to expand a contest it is about to
         // draw as empty - which the fog alone can produce, a faction present only through colonies
         // the player has not found leaving a standing the box may not state.
-        var isListingUnfoundColonies =
-            MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets();
-
         if (selectListedStandings(
                 claimBreakdownReader.readBreakdown(system),
-                isListingUnfoundColonies)
+                isListingUnfoundMarkets())
                 .isEmpty()) {
 
             return Optional.empty();
@@ -185,6 +179,22 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             FactionClaimStanding standing) {
 
         return List.of();
+    }
+
+    /**
+     * Whether a colony the player has not found may be shown - the dev reveal, read live off the
+     * same toggle the faction layer's pass samples, so crossing between the two layers cannot make
+     * one call a system empty that the other calls held.
+     *
+     * <p>Named here rather than spelled at each of the three places this family asks it - the
+     * listing, the key hint's gate, and the account beneath a faction - because those three have to
+     * agree. A box naming a faction whose every colony its own account then withholds is the shape
+     * one read exists to rule out.
+     *
+     * @return true while the reveal is on
+     */
+    protected static boolean isListingUnfoundMarkets() {
+        return MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets();
     }
 
     // What the claim block lists: the one line naming whoever holds the system, and nothing at all

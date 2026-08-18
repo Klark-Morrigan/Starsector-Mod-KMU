@@ -104,13 +104,6 @@ final class ClaimScoreRowResolverTest {
     private static final EntityNameplate UNMARKED_MARKET =
         EntityNameplate.createUnmarkedNameplate(STRONGEST_MARKET);
 
-    // How the mechanic met a market. A concealed one it skips before scoring, so it competes in
-    // neither comparison the listing settles and no tie it appears in is marked; one the economy
-    // does not list it never reaches at all, which additionally keeps that market out of the
-    // presence count. Either brings nothing to the contest.
-    private static final ContestAdmission CONCEALED = new ContestAdmission(true, false);
-    private static final ContestAdmission OFF_ECONOMY = new ContestAdmission(false, true);
-
     @BeforeEach
     void installStrings() {
         StarsectorSettingsFake.installSettings();
@@ -176,7 +169,7 @@ final class ClaimScoreRowResolverTest {
                             new Color(120, 200, 90)))),
                     SECOND_LISTED,
                     IS_KNOWN_TO_PLAYER,
-                    CONCEALED,
+                    ContestAdmission.HIDDEN,
                     9,
                     ONE_SIBLING_MARKET,
                     OptionalInt.empty()))));
@@ -867,7 +860,7 @@ final class ClaimScoreRowResolverTest {
             EntityNameplate.createUnmarkedNameplate(marketName),
             listingPosition,
             IS_UNFOUND_BY_PLAYER,
-            CONCEALED,
+            ContestAdmission.HIDDEN,
             marketSize,
             siblingMarketCount,
             OptionalInt.empty());
@@ -917,7 +910,7 @@ final class ClaimScoreRowResolverTest {
     // concealed one - the two arms of "known" being discovery and being held in the open - so a case
     // posing one poses both, and a found market is the ordinary competitor.
     private static ContestAdmission admitAsFound(boolean isKnownToPlayer) {
-        return isKnownToPlayer ? ContestAdmission.WEIGHED : CONCEALED;
+        return isKnownToPlayer ? ContestAdmission.WEIGHED : ContestAdmission.HIDDEN;
     }
 
     // The same market, stated as one the player has or has not found - the two cases the withholding
@@ -962,7 +955,7 @@ final class ClaimScoreRowResolverTest {
             EntityNameplate.createUnmarkedNameplate(marketName),
             listingPosition,
             IS_KNOWN_TO_PLAYER,
-            CONCEALED,
+            ContestAdmission.HIDDEN,
             marketSize,
             siblingMarketCount,
             OptionalInt.empty());
@@ -980,7 +973,7 @@ final class ClaimScoreRowResolverTest {
             EntityNameplate.createUnmarkedNameplate(marketName),
             listingPosition,
             IS_KNOWN_TO_PLAYER,
-            OFF_ECONOMY,
+            ContestAdmission.OFF_ECONOMY,
             marketSize,
             NO_SIBLING_MARKETS,
             OptionalInt.empty());

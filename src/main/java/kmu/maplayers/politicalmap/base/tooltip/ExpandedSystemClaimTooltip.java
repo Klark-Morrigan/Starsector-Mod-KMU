@@ -5,7 +5,6 @@ import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
 import java.util.List;
 
@@ -44,14 +43,15 @@ public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip 
             FactionClaimStanding standing) {
 
         // The mechanic settles a claim over colonies nobody has found, and the box declines to
-        // repeat what it learned there. Read live off the same toggle the status line and the
-        // faction layer's pass sample, so the three cannot disagree about what the player knows.
-        var isListingUnfoundMarkets =
-            MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets();
-
+        // repeat what it learned there. Asked through the shared read, so the account withholds
+        // exactly what the listing above it withheld.
+        //
         // The whole contest travels with the standing: who the claim holder is and which listing
         // ties actually decided something are facts of the contest, not of one faction's list, and
         // the resolver reads both off the very breakdown this box is drawing.
-        return ClaimScoreRowResolver.resolveMarketRows(breakdown, standing, isListingUnfoundMarkets);
+        return ClaimScoreRowResolver.resolveMarketRows(
+            breakdown,
+            standing,
+            isListingUnfoundMarkets());
     }
 }
