@@ -8,10 +8,10 @@ import java.util.List;
 /**
  * The smoothed outer edge, drawn: one line round each run of connected cells.
  *
- * <p>Its own class alongside {@link VoidPocketsOverlay} and {@link VoidBridgesOverlay}, and
- * switched on and off like them, because it is a proposal about the same map rather than a
- * settled part of it - and the only way to judge a smoothed edge is against the scalloped one
- * it replaces, both on screen at once.
+ * <p>Its own class alongside {@link VoidBridgesOverlay}, and switched on and off like it,
+ * because it is a proposal about the same map rather than a settled part of it - and the
+ * only way to judge a smoothed edge is against the scalloped one it replaces, both on
+ * screen at once.
  *
  * <p>Drawn as a line over everything rather than as a fill under it, for that reason. A fill
  * would hide the arcs the line is meant to be compared with, which is the one thing looking

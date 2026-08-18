@@ -53,6 +53,11 @@ import java.util.List;
  * and divided; only the fill is withheld, and a caller with nowhere to draw it can mark the
  * centre.
  *
+ * <p>Which is why the true extent is a {@link PocketShaping} a caller has to ask for by name.
+ * It answers a different question - WHICH void is there, including the pockets with no room
+ * for a channel that otherwise have nothing to show - and its answer is not a map that can be
+ * drawn as one.
+ *
  * <p>How many cells ring a pocket is not a special case: it is however many arcs the cycle
  * turned out to have.
  */

@@ -8,16 +8,13 @@ import java.util.List;
  * The second construction over the void, drawn: void held between two cells that face each
  * other across a short gap.
  *
- * <p>Its own class alongside {@link VoidPocketsOverlay}, and drawn in the same colour and
- * stroke as that one's cuts on purpose. Both are a line across void saying "this much is
- * held between these two cells", arrived at from opposite ends - one by dividing a shape the
- * cells closed around, the other by finding pairs that hold something between them with no
- * notion of a shape at all. Two colours would claim they were two kinds of thing, when the
- * whole point of drawing them together is that they are not.
+ * <p>Its own class so it can be switched off and drawn beside the coast without either
+ * being able to disturb the other. Its fills and its spans are one construction seen twice:
+ * a span is a line across void saying "this much is held between these two cells", and a
+ * fill is what a run of those closes around.
  *
- * <p>It has fills as well as spans, and they are built the same way the other construction
- * builds its own - see {@link VoidBridgePockets} for why the bridges can be turned back into
- * a reach and traced rather than offset.
+ * <p>See {@link VoidBridgePockets} for why the bridges can be turned back into a reach and
+ * traced rather than offset.
  */
 final class VoidBridgesOverlay {
 
@@ -50,7 +47,8 @@ final class VoidBridgesOverlay {
                 fixture.getSites(),
                 bridges,
                 settings.parameters,
-                settings.parameters.measureArcSegments());
+                settings.parameters.measureArcSegments(),
+                ViewerPainting.resolvePocketShaping(settings));
     }
 
     /**

@@ -588,7 +588,11 @@ final class VoidRegionsDump {
             bridges.size() - capturing.size());
 
         var captured = VoidBridgePockets.findCapturedPockets(
-            sites, bridges, shipped, CELL_BOUND_SEGMENTS / 2);
+            sites,
+            bridges,
+            shipped,
+            CELL_BOUND_SEGMENTS / 2,
+            VoidPockets.PocketShaping.WITH_CHANNEL);
 
         System.out.printf(
             Locale.ROOT,

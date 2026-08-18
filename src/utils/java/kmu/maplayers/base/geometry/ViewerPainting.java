@@ -17,8 +17,10 @@ import java.util.List;
  * back into the viewer for them, which is the wrong way round: an overlay is drawn by the
  * window, not the other way about.
  *
- * <p>Nothing here reads a setting except where an owner's colour is asked for, which cannot
- * be answered without knowing whether jitter is on and how far it spreads.
+ * <p>A setting is read in two places only, and both are questions every overlay has to answer
+ * the same way within one frame: an owner's colour, which needs to know whether jitter is on
+ * and how far it spreads, and which map of the void is being drawn. Two overlays disagreeing
+ * about either would put two different sectors on screen at once.
  */
 final class ViewerPainting {
 

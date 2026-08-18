@@ -146,7 +146,6 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     private SectorGeometry geometry;
     private long lastBuildMillis;
     private final ViewerSettings settings = new ViewerSettings();
-    private final VoidPocketsOverlay voidPockets = new VoidPocketsOverlay(settings);
     private final VoidBridgesOverlay voidBridges = new VoidBridgesOverlay(settings);
     private final CoastlinesOverlay coastlines = new CoastlinesOverlay(settings);
 
@@ -290,13 +289,6 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     // why the void colour is applied to the unbounded cells rather than to a shape of its
     // own.
     // The pockets of void the cells trap, as their own outlines. Not the same black as the
-    @Override
-    public void refreshVoidPockets() {
-
-        voidPockets.refresh(fixture);
-        refreshVoidBridges();
-    }
-
     // Rebuilt alongside the pockets rather than on its own schedule, because the two are only
     // worth anything side by side and a knob that moved one without the other would be
     // comparing two different maps.
@@ -331,7 +323,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
                 fixture.getSites(),
                 settings.parameters.boundSegments());
         }
-        refreshVoidPockets();
+        refreshVoidBridges();
         lastBuildMillis = (System.nanoTime() - start) / NANOS_PER_MILLI;
         refreshStatus();
     }
@@ -522,7 +514,6 @@ final class SectorGeometryViewer implements ViewerRefreshes {
                     settings.unboundedCellEdge);
             }
 
-            voidPockets.paintFills(g2);
             voidBridges.paintFills(g2);
             coastlines.paintPocketFills(g2);
 
@@ -587,7 +578,6 @@ final class SectorGeometryViewer implements ViewerRefreshes {
 
             paintFillContours(g2);
             paintCentrelines(g2);
-            voidPockets.paintSpans(g2);
             voidBridges.paintSpans(g2);
             coastlines.paintCoasts(g2);
 

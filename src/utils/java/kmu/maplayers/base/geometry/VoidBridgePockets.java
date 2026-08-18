@@ -133,18 +133,26 @@ final class VoidBridgePockets {
      * @param bridges     the bridges, as {@link VoidBridges} found them
      * @param parameters  the knobs the cells are built under
      * @param arcSegments how finely a half-turn of arc is sampled
-     * @return one outline per captured pocket, at the reach that leaves the channel
+     * @param shaping     how much of the channel each pocket takes out of its own outline.
+     *                    Taken by walking the discs at a moved reach rather than by offsetting
+     *                    afterwards, so at its true extent it is the discs that move
+     * @return one outline per captured pocket
      */
     static List<List<double[]>> findCapturedPockets(
             List<double[]> sites,
             List<CellGaps.CellGap> bridges,
             SectorGeometryParameters parameters,
-            int arcSegments) {
+            int arcSegments,
+            VoidPockets.PocketShaping shaping) {
 
         var outlines = new ArrayList<List<double[]>>();
 
+        var union = shaping == VoidPockets.PocketShaping.AT_TRUE_EXTENT
+            ? new DiscUnion(sites, parameters.cellRadius())
+            : VoidPockets.buildDrawnUnion(sites, parameters);
+
         for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
-                VoidPockets.buildDrawnUnion(sites, parameters),
+                union,
                 buildWalls(bridges, parameters),
                 arcSegments)) {
 

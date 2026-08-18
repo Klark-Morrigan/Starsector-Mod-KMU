@@ -96,9 +96,8 @@ final class ViewerSettings {
     double minSectionShare = MIN_SECTION_DEFAULT / MIN_SECTION_SCALE;
     double bridgeReachMultiple = BRIDGE_REACH_DEFAULT;
 
-    // Two constructions over the same void, drawn together so one can be judged against the
-    // other on the same map rather than from two screenshots taken minutes apart.
-    boolean showVoidPockets = true;
+    // The void the cells and their bridges close around, as shapes rather than as the black
+    // left showing between the fills.
     boolean showVoidBridges = true;
 
     // A third reading of the same map: not what the void is, but where the edge of what is

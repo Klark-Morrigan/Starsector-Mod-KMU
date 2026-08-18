@@ -18,9 +18,6 @@ interface ViewerRefreshes {
     /** Builds the partition again and everything downstream of it. */
     void rebuildGeometry();
 
-    /** Finds the pockets of void again, and the sections they divide into. */
-    void refreshVoidPockets();
-
     /** Finds the void held between facing cells again. */
     void refreshVoidBridges();
 

@@ -222,7 +222,7 @@ final class ViewerSettingsPanel {
             on -> {
                 settings.showUnboundedCells = on;
                 refreshes.refreshUnboundedCells();
-                refreshes.refreshVoidPockets();
+                refreshes.refreshVoidBridges();
             }));
 
         controls.add(ViewerControls.buildColourPair(
@@ -267,28 +267,22 @@ final class ViewerSettingsPanel {
             colour -> settings.voidCellEdge = colour,
             refreshes::repaintMap));
 
-        controls.add(ViewerControls.buildToggleRow(
-            refreshes::refreshVoidPockets,
-            new ViewerControls.Toggle(
-                "Show void pockets",
-                "Void pockets v1",
-                true,
-                on -> settings.showVoidPockets = on),
-            new ViewerControls.Toggle(
-                "Show void bridges",
-                "Void pockets v2",
-                true,
-                on -> settings.showVoidBridges = on)));
+        controls.add(ViewerControls.buildToggle(
+            "Show void bridges",
+            "Void pockets",
+            true,
+            on -> settings.showVoidBridges = on,
+            refreshes::refreshVoidBridges));
 
-        // Redoes the coast as well as the pockets, because both constructions answer to it and
-        // a frame with one of them moved is a map neither of them describes.
+        // Redoes both constructions over the void, because each answers to it and a frame with
+        // one of them moved is a map neither of them describes.
         controls.add(ViewerControls.buildToggle(
             "Draw void at its true extent",
             "Void at its true extent (no channel)",
             false,
             on -> settings.showPocketsAtTrueExtent = on,
             () -> {
-                refreshes.refreshVoidPockets();
+                refreshes.refreshVoidBridges();
                 refreshes.refreshCoastlines();
             }));
 
@@ -351,7 +345,7 @@ final class ViewerSettingsPanel {
             VOID_SPAN_MAXIMUM * ViewerSettings.VOID_SPAN_STEP_SCALE,
             ViewerSettings.VOID_SPAN_DEFAULT * ViewerSettings.VOID_SPAN_STEP_SCALE,
             multiple -> settings.voidSpanMultiple = multiple / ViewerSettings.VOID_SPAN_STEP_SCALE,
-            refreshes::refreshVoidPockets,
+            refreshes::refreshVoidBridges,
             () -> { }));
 
         controls.add(ViewerControls.buildSlider(
@@ -371,7 +365,7 @@ final class ViewerSettingsPanel {
             MIN_SECTION_MAXIMUM,
             ViewerSettings.MIN_SECTION_DEFAULT,
             share -> settings.minSectionShare = share / ViewerSettings.MIN_SECTION_SCALE,
-            refreshes::refreshVoidPockets,
+            refreshes::refreshVoidBridges,
             () -> { }));
 
         controls.add(ViewerControls.buildToggle(
