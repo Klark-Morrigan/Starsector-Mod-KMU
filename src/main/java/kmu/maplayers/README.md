@@ -190,7 +190,11 @@ about what the overlay means.
   `CampaignScreenView` to answer - and is on by default, being inert without a mod that docks a map
   surface there. Stated as permissions rather than as one restriction so the tab reads as a set; the
   narrower of the two is also what closes such a surface again without naming a mod, since a mod
-  parks its panel on exactly the conditions that end game space. What that tick sounds like is `MapHoverCues` beside it - the map's own sample and the
+  parks its panel on exactly the conditions that end game space. `MapHoverPermission` is that rule
+  bound to the two live screen reads, and is what a running game holds: the hover pass and the
+  tooltip box both take their answer from it, so a permission the player grants reaches the lit cell
+  and the box naming it together rather than one without the other.
+  What that tick sounds like is `MapHoverCues` beside it - the map's own sample and the
   player's own level, read live like the switches are, and no cue at all once that level reaches the
   bottom of its slider. The cell rather than the cluster is what the tick is keyed by, so it answers
   the same change the hover box does. `HoverHighlightGeometry` resolves the highlight geometry and
@@ -247,8 +251,11 @@ about what the overlay means.
   many frames. Named for the mod because the switch is - nothing it reads names one, `EmbeddedMap`
   being found structurally.
 - **`base/tooltip`** - the box floating beside the cursor, in a later UI pass than the map's own.
+  That pass is `CampaignUIRenderingListener`'s, which the engine drives for the whole campaign UI
+  rather than for a map screen - so the box has a host wherever the campaign is drawn, game space
+  included, and reaching a docked map surface cost a gate rather than a render host.
   `MapLayerCellTooltip` owns the gates every hover box shares (the settings tiers above any layer, a
-  map on screen, stepping aside for the vanilla star
+  frame the cursor can be located against, stepping aside for the vanilla star
   tooltip) and draws whichever `MapHoverTooltip` the active layer's renderer injects - so a layer
   with none, a layer whose own tooltip switch is off, and a switch-only tab with no renderer at all
   show nothing for the same reason. How much detail the drawn box states is one shared fact rather

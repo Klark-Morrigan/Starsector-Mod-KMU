@@ -2,15 +2,13 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
-import kmlib.starsector.ui.coreui.CampaignScreenView;
-import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconOrderTrace;
 import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
 import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
 
 import kmu.maplayers.base.hover.MapHoverCues;
-import kmu.maplayers.base.hover.MapHoverGates;
+import kmu.maplayers.base.hover.MapHoverPermission;
 import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
@@ -267,18 +265,15 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // that is running, and this renderer is created when the class loads.
     private static MapHoverPublisher buildLiveHoverPublisher() {
 
-        var mapPresence = new MapPresence();
         var soundPlayer = new VanillaUiSoundPlayer();
 
         return new MapHoverPublisher(
             ModelviewMatrixReaders.selectForActiveRenderer(),
             () -> soundPlayer.playCueIfPresent(MapHoverCues.composeCellArrivalCue()),
-            // Composed here rather than inside the publisher because the halves belong to different
-            // ends: the settings are the framework's to state, while what counts as a vanilla map on
-            // screen and whether the player is looking at the campaign itself are live reads.
-            () -> MapHoverGates.isCursorLocatableOn(
-                mapPresence::isAnyMapShowing,
-                CampaignScreenView::isShowingGameSpace));
+            // Taken from the shared permission rather than composed here, so this pass and the box
+            // that reports what it finds answer from one reading: a hover resolved on a frame no box
+            // may draw on would light a cell the map then refuses to name.
+            MapHoverPermission.createForLiveScreen()::isCursorLocatable);
     }
 
     // Answers the moment the frame just closed settled on, that frame's last pass having had the

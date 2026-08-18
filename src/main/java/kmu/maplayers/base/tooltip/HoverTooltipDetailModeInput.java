@@ -53,18 +53,18 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
      */
     public static final String TOGGLE_KEY_NAME = Keyboard.getKeyName(TOGGLE_KEY);
 
-    // Whether a map is on screen at all this frame - either host, either look. Supplied rather than
-    // read here for the reason the dispatcher takes it supplied: the live read walks the running
-    // game's widget tree on the intel side, which no test can stand up.
-    private final BooleanSupplier isAnyMapShowing;
+    // Whether the cursor can be located against the frame now running. Supplied rather than read
+    // here for the reason the dispatcher takes it supplied: the live read walks the running game's
+    // widget tree on the intel side, which no test can stand up.
+    private final BooleanSupplier isCursorLocatable;
 
     /**
-     * @param isAnyMapShowing whether a map is on screen at all - either host, either look -
-     *                        host-blind because this listener is called for the whole campaign UI
-     *                        and is never told which screen is up
+     * @param isCursorLocatable whether the cursor can be located against the frame now running -
+     *                          host-blind because this listener is called for the whole campaign UI
+     *                          and is never told which screen is up
      */
-    public HoverTooltipDetailModeInput(BooleanSupplier isAnyMapShowing) {
-        this.isAnyMapShowing = isAnyMapShowing;
+    public HoverTooltipDetailModeInput(BooleanSupplier isCursorLocatable) {
+        this.isCursorLocatable = isCursorLocatable;
     }
 
     @Override
@@ -77,7 +77,7 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
         // The one seam the drawing pass reads too, rather than a second copy of its conditions: off
         // it no box can be showing, so there is nothing for the key to switch and it must fall
         // through untouched.
-        if (!HoverTooltipGates.canAnyBoxDraw(isAnyMapShowing)) {
+        if (!HoverTooltipGates.canAnyBoxDraw(isCursorLocatable)) {
             return;
         }
         for (var event : events) {

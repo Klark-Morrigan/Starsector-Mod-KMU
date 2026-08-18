@@ -36,10 +36,11 @@ import java.util.function.BooleanSupplier;
  */
 public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 
-    // Whether a map is on screen at all this frame - either host, either look. Supplied rather than
-    // read here so a test can name the answer: the live read walks the running game's widget tree on
-    // the intel side, which no test can stand up.
-    private final BooleanSupplier isAnyMapShowing;
+    // Whether the cursor can be located against the frame now running - a vanilla map host up, or a
+    // permission the player granted reaching further. Supplied rather than read here so a test can
+    // name the answer: the live read walks the running game's widget tree on the intel side, which
+    // no test can stand up.
+    private final BooleanSupplier isCursorLocatable;
 
     // The live read this dispatcher steps aside for. Supplied rather than built here: it is the one
     // collaborator whose answer changes what this draws, so a caller that can hand over a stub is
@@ -49,15 +50,15 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
     /**
      * @param vanillaMapTooltipProbe the probe answering whether the map is drawing its own tooltip,
      *                          which this box stands aside for
-     * @param isAnyMapShowing   whether a map is on screen at all - either host, either look -
+     * @param isCursorLocatable whether the cursor can be located against the frame now running -
      *                          host-blind because this listener is called for the whole campaign UI
      *                          and is never told which screen is up
      */
     public MapLayerCellTooltip(
             VanillaMapTooltipProbe vanillaMapTooltipProbe,
-            BooleanSupplier isAnyMapShowing) {
+            BooleanSupplier isCursorLocatable) {
         this.vanillaMapTooltipProbe = vanillaMapTooltipProbe;
-        this.isAnyMapShowing = isAnyMapShowing;
+        this.isCursorLocatable = isCursorLocatable;
     }
 
     @Override
@@ -74,10 +75,11 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
     public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
         // The conditions shared with the pass that claims the detail-mode key, asked of the one seam
         // both read so the key cannot come to be claimed on a frame this draws nothing in: the hover
-        // switches answering for every layer, and a map on screen to draw over. The layer's own
-        // tooltip switch is not among them - it is the layer's to read, withheld by injecting no box
-        // at all, the same way a layer with nothing to say about a cell does.
-        if (!HoverTooltipGates.canAnyBoxDraw(isAnyMapShowing)) {
+        // switches answering for every layer, and a frame the cursor can be located against - the
+        // same answer the hover under it was resolved from. The layer's own tooltip switch is not
+        // among them - it is the layer's to read, withheld by injecting no box at all, the same way
+        // a layer with nothing to say about a cell does.
+        if (!HoverTooltipGates.canAnyBoxDraw(isCursorLocatable)) {
             return;
         }
         // Step aside when the vanilla map screen is drawing its own tooltip (the player is over a

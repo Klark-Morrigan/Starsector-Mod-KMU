@@ -34,10 +34,28 @@ public final class HoverSwitchScopes {
      * @param body the case to run inside the scope
      */
     public static void runWithHoverTooltipSwitchOn(Runnable body) {
-        runWithHoverSwitches(true, body);
+        runWithHoverSwitches(true, false, body);
     }
 
-    private static void runWithHoverSwitches(boolean isTooltipEnabled, Runnable body) {
+    /**
+     * Runs body with both switches on and the game-space permission granted, for a case about the
+     * frames where the player is looking at the campaign world rather than at a map screen.
+     *
+     * <p>Named apart from the pair above rather than defaulted into them, because granting it is
+     * what a case about game space is testing: a scope that granted it to everyone would leave every
+     * other case unable to say that withholding it closes those frames.
+     *
+     * @param body the case to run inside the scope
+     */
+    public static void runWithHoverTooltipSwitchOnInGameSpace(Runnable body) {
+        runWithHoverSwitches(true, true, body);
+    }
+
+    private static void runWithHoverSwitches(
+            boolean isTooltipEnabled,
+            boolean isGameSpacePermitted,
+            Runnable body) {
+
         try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
 
             settingsMock
@@ -46,6 +64,9 @@ public final class HoverSwitchScopes {
             settingsMock
                 .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
                 .thenReturn(isTooltipEnabled);
+            settingsMock
+                .when(KmuMapLayerSettings::getMapLayerMouseoverIsEnabledInGameSpace)
+                .thenReturn(isGameSpacePermitted);
 
             body.run();
         }

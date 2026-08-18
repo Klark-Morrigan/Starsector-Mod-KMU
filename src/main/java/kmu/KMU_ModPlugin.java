@@ -12,6 +12,7 @@ import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 
 import kmu.maplayers.MapLayers;
+import kmu.maplayers.base.hover.MapHoverPermission;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.render.MapFramePreparationClaim;
@@ -361,7 +362,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
             MapLayerCellTooltip.class,
             () -> new MapLayerCellTooltip(
                 new VanillaMapTooltipProbe(),
-                buildMapPresenceRead()));
+                buildCursorLocatableRead()));
     }
 
     // Registers the input listener that reads the hover box's detail-mode toggle key. A separate
@@ -372,21 +373,25 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // save-relevant state, and a registration an older save carried would flip the mode twice per
     // press.
     static void installHoverTooltipDetailModeInput(SectorAPI sector) {
-        // Handed the same map read the dispatcher is, so the key is claimed on exactly the screens
+        // Handed the same frame read the dispatcher is, so the key is claimed on exactly the screens
         // and looks the box it switches can draw on - which is the whole of what makes the toggle
         // honest, and is pinned against this composition in MapLayerCellTooltipGateIntegrationTest.
         installTransientListener(
             sector,
             HoverTooltipDetailModeInput.class,
-            () -> new HoverTooltipDetailModeInput(buildMapPresenceRead()));
+            () -> new HoverTooltipDetailModeInput(buildCursorLocatableRead()));
     }
 
-    // The live "is a map on screen" read the hover box and its toggle key both gate on. Built here
-    // rather than at each listener because the two must answer alike: a key claimed on a wider read
-    // than the box draws behind would be swallowed on a screen showing no box, and on a narrower one
-    // it would go dead exactly where the box is live.
-    private static BooleanSupplier buildMapPresenceRead() {
-        return new MapPresence()::isAnyMapShowing;
+    // The live "can the cursor be located against this frame" read the hover box and its toggle key
+    // both gate on. Built here rather than at each listener because the two must answer alike: a key
+    // claimed on a wider read than the box draws behind would be swallowed on a screen showing no
+    // box, and on a narrower one it would go dead exactly where the box is live.
+    //
+    // The same answer the map pass resolves its hover from, taken through the one class that states
+    // it, so a box is offered on exactly the frames a cell was lit - a permission the player grants
+    // reaches both or neither.
+    private static BooleanSupplier buildCursorLocatableRead() {
+        return MapHoverPermission.createForLiveScreen()::isCursorLocatable;
     }
 
     // Adds one listener to the sector, clearing any registration of that class first, which a
