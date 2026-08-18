@@ -120,12 +120,9 @@ final class StalePoliticsFixtures {
     }
 
     // A closed four-edge cell offset along x, one edge of which faces the given neighbour while the
-    // rest face open space. Real coordinates because a redraw insets these edges for real; only the
-    // adjacency tag is what the re-derive itself reads.
+    // rest face the cell's own outer reach. Real coordinates because a redraw insets these edges
+    // for real; only the adjacency tag is what the re-derive itself reads.
     static List<CellEdge> buildSquareCellFacing(String neighbourSystemId, double offsetX) {
-
-        var frontier = new EdgeTarget.NoSystem("frontier");
-
         return List.of(
             new CellEdge(
                 offsetX,
@@ -133,8 +130,8 @@ final class StalePoliticsFixtures {
                 offsetX + 50,
                 0,
                 new EdgeTarget.AcrossSystem(neighbourSystemId)),
-            new CellEdge(offsetX + 50, 0, offsetX + 50, 50, frontier),
-            new CellEdge(offsetX + 50, 50, offsetX, 50, frontier),
-            new CellEdge(offsetX, 50, offsetX, 0, frontier));
+            new CellEdge(offsetX + 50, 0, offsetX + 50, 50, EdgeTarget.REACH_BOUND),
+            new CellEdge(offsetX + 50, 50, offsetX, 50, EdgeTarget.REACH_BOUND),
+            new CellEdge(offsetX, 50, offsetX, 0, EdgeTarget.REACH_BOUND));
     }
 }

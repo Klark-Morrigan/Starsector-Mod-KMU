@@ -16,6 +16,7 @@ import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.render.clusters.StyledCell;
+import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -49,6 +50,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -76,10 +78,10 @@ import static org.mockito.Mockito.when;
  * ({@link IncrementalPoliticsRefreshTest}) mocks {@code StyledCellBuilder} and
  * {@code FactionTerritoryBuilder} at their static seams - which is what lets it assert that a
  * neighbour was not re-shaped - and that leaves the produced cell unobservable, the seam it would
- * be observed through being the one that was neutralised. Here both legs shape, style and band for
- * real over a hand-built partition and a stubbed sector, so the only thing varying between them is
- * which path produced the map. The settings and theme reads are seamed, being the pass's inputs
- * rather than its subject.
+ * be observed through being the one that was neutralised. Here both legs shape, style, trace and
+ * band for real over a hand-built partition and a stubbed sector, so the only thing varying
+ * between them is which path produced the map. The settings and theme reads are seamed, being the
+ * pass's inputs rather than its subject.
  *
  * <p>The names are switched off for the comparison, and that is a decision rather than a
  * convenience. Cluster-name placements are the one derivation deliberately carried across a
@@ -88,9 +90,9 @@ import static org.mockito.Mockito.when;
  * lay different bands over identical holdings. Off, the bands are a function of the map alone,
  * which is what this comparison is about; the carried-over fit has its own suite.
  *
- * <p>The uncontested cells are banded here, unlike in most band suites: every case moves a colony
- * in a system one bloc holds alone, so with the uncontested cells bare the band half of the
- * comparison would hold trivially for every one of them.
+ * <p>The uncontested cells are banded here, unlike in most band suites: the fixture starts with
+ * one bloc per system, so with the uncontested cells bare most of these cases would compare two
+ * maps carrying no bands at all.
  */
 final class IncrementalPoliticsRefreshIntegrationTest {
 
@@ -101,7 +103,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
     private static final String PIRATES = "pirates";
 
     // The four systems, each drawing one square cell abutting the next in a row. Named for what
-    // each case does to it: the core is the system nothing ever happens to, and every other one
+    // each case does to it: the core is the system no holder ever moves in, and every other one
     // moves in exactly one of the three ways a colony event can move a system.
     private static final String CORE_SYSTEM = "core";
     private static final String BORDER_SYSTEM = "border";
@@ -121,6 +123,13 @@ final class IncrementalPoliticsRefreshIntegrationTest {
     private static final int BORDER_COLONY_SIZE = 4;
     private static final int DYING_COLONY_SIZE = 3;
     private static final int FRONTIER_COLONY_SIZE = 2;
+
+    // A rival arriving beside the core's own colony: small enough that the core does not change
+    // hands, so the case is about the band alone.
+    private static final int RIVAL_COLONY_SIZE = 1;
+
+    // The core's colony one size up, for the case where a resize moves nothing at all.
+    private static final int GROWN_CORE_COLONY_SIZE = CORE_COLONY_SIZE + 1;
 
     // The cut these hand-built cells stand at. Any number will do - nothing here recuts them - but
     // both legs must name the same one, or the second would refuse to reuse the first's placements
@@ -143,10 +152,6 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         // when the inner one is already gone.
         private final List<MockedStatic<?>> openStaticSeams = new ArrayList<>();
 
-        // The systems the fixture sector lists, kept by id so a case can re-stub the colonies of
-        // the one it moves.
-        private final Map<String, StarSystemAPI> systemMocksById = new LinkedHashMap<>();
-
         // The four cells, hand-built rather than partitioned from the sector: the comparison is
         // about which path produced the map, so the partition has to be the one thing that cannot
         // differ between the legs.
@@ -156,6 +161,9 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         private FactionAPI tritachyonMock;
         private FactionAPI piratesMock;
 
+        // The systems the fixture sector lists, kept by id so a case can re-stub the colonies of
+        // the one it moves.
+        private Map<String, StarSystemAPI> systemMocksById;
         private EconomyAPI economyMock;
         private SectorAPI sectorMock;
 
@@ -181,7 +189,15 @@ final class IncrementalPoliticsRefreshIntegrationTest {
                 PIRATES,
                 SectorPoliticsFixtures.PERSEAN_BRIGHT);
 
-            sectorMock = buildSectorOverTheDrawnSystems();
+            // Assembled in three named steps rather than behind one builder, so the systems a case
+            // re-stubs colonies through and the economy it re-stubs them on are visible here
+            // instead of being filled in as a side effect of building the sector.
+            systemMocksById = buildSystemMocksById();
+            economyMock = mock(EconomyAPI.class);
+            sectorMock = buildSectorListing(
+                systemMocksById.values(),
+                economyMock,
+                List.of(hegemonyMock, tritachyonMock, piratesMock));
 
             // The refresh reads the sector globally, where a rebuild is handed one, so both legs
             // have to be answered with the same object or they would be comparing two sectors.
@@ -191,9 +207,9 @@ final class IncrementalPoliticsRefreshIntegrationTest {
 
             // The state both legs start from: two hegemony systems, one tritachyon system, and a
             // frontier nothing stands in.
-            placeColoniesIn(CORE_SYSTEM, buildColonyOf(hegemonyMock, CORE_COLONY_SIZE));
-            placeColoniesIn(BORDER_SYSTEM, buildColonyOf(hegemonyMock, BORDER_COLONY_SIZE));
-            placeColoniesIn(DYING_SYSTEM, buildColonyOf(tritachyonMock, DYING_COLONY_SIZE));
+            placeColoniesIn(CORE_SYSTEM, buildColony(hegemonyMock, CORE_COLONY_SIZE));
+            placeColoniesIn(BORDER_SYSTEM, buildColony(hegemonyMock, BORDER_COLONY_SIZE));
+            placeColoniesIn(DYING_SYSTEM, buildColony(tritachyonMock, DYING_COLONY_SIZE));
             placeColoniesIn(FRONTIER_SYSTEM);
 
             // The dev reveal and the map-anchor tuning, both LunaLib-backed: no case turns on
@@ -203,8 +219,8 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             var settingsMock = openSeam(KmuPoliticalMapSettings.class);
             RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
 
-            // Every system here is held by one bloc alone, so without this no cell would band and
-            // the bands would agree between the legs by drawing nothing.
+            // The fixture starts with one bloc per system, so without this only the case that puts
+            // a rival in a system would band at all and the rest would agree by drawing nothing.
             settingsMock
                 .when(KmuPoliticalMapSettings::shouldDrawPoliticalMapUncontestedRibbons)
                 .thenReturn(true);
@@ -253,7 +269,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             // never had.
             var standingMap = buildMapByFullRebuild();
 
-            placeColoniesIn(FRONTIER_SYSTEM, buildColonyOf(piratesMock, FRONTIER_COLONY_SIZE));
+            placeColoniesIn(FRONTIER_SYSTEM, buildColony(piratesMock, FRONTIER_COLONY_SIZE));
 
             assertRefreshDrawsWhatARebuildWould(standingMap, FRONTIER_SYSTEM);
         }
@@ -277,9 +293,38 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             // the edge it shares with the dying system turns the other way.
             var standingMap = buildMapByFullRebuild();
 
-            placeColoniesIn(BORDER_SYSTEM, buildColonyOf(tritachyonMock, BORDER_COLONY_SIZE));
+            placeColoniesIn(BORDER_SYSTEM, buildColony(tritachyonMock, BORDER_COLONY_SIZE));
 
             assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
+        }
+
+        @Test
+        void applyStalePoliticsUpdatesDrawsWhatARebuildWouldWhenARivalArrivesInAHeldSystem() {
+            // The band's own case, and the arm no switch can reach: the holder is unmoved and the
+            // fill says exactly what it said before, while the band goes from one bloc's tally to
+            // a contest. Nothing but the band reports it, so a batch that re-derived the holder
+            // and left the count alone would look right everywhere else.
+            var standingMap = buildMapByFullRebuild();
+
+            placeColoniesIn(
+                CORE_SYSTEM,
+                buildColony(hegemonyMock, CORE_COLONY_SIZE),
+                buildColony(tritachyonMock, RIVAL_COLONY_SIZE));
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, CORE_SYSTEM);
+        }
+
+        @Test
+        void applyStalePoliticsUpdatesDrawsWhatARebuildWouldWhenAColonyGrowsAndNothingMoves() {
+            // The commonest event of all - a colony resize that leaves the same winner, the same
+            // settlement and the same count - so the map must come back exactly as it was. It is
+            // not a no-op path: the marked system's band is re-baked whatever happened, and this
+            // is what says the band it lays is the band it replaced.
+            var standingMap = buildMapByFullRebuild();
+
+            placeColoniesIn(CORE_SYSTEM, buildColony(hegemonyMock, GROWN_CORE_COLONY_SIZE));
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, CORE_SYSTEM);
         }
 
         @Test
@@ -290,9 +335,9 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             // arriving at the map the other has already left behind.
             var standingMap = buildMapByFullRebuild();
 
-            placeColoniesIn(BORDER_SYSTEM, buildColonyOf(tritachyonMock, BORDER_COLONY_SIZE));
+            placeColoniesIn(BORDER_SYSTEM, buildColony(tritachyonMock, BORDER_COLONY_SIZE));
             placeColoniesIn(DYING_SYSTEM);
-            placeColoniesIn(FRONTIER_SYSTEM, buildColonyOf(piratesMock, FRONTIER_COLONY_SIZE));
+            placeColoniesIn(FRONTIER_SYSTEM, buildColony(piratesMock, FRONTIER_COLONY_SIZE));
 
             assertRefreshDrawsWhatARebuildWould(
                 standingMap,
@@ -320,9 +365,9 @@ final class IncrementalPoliticsRefreshIntegrationTest {
                 standingMap.factionLabels(),
                 standingMap.cellGeometry());
 
-            // Compared structurally rather than by equality: a cell's draw record and a band's
-            // runs are baked geometry, held as float arrays, which compare by identity under
-            // equals and so would pass for any two maps whatever.
+            // Compared structurally rather than by equality: a cell's draw record, a bloc's traced
+            // territory and a band's runs are baked geometry, held as float arrays, which compare
+            // by identity under equals and so would pass for any two maps whatever.
             //
             // The two occupancy sets are compared as the sets they are, since their iteration
             // order is not a fact about the map: a rebuild's scan fills a hash set, while a
@@ -383,38 +428,6 @@ final class IncrementalPoliticsRefreshIntegrationTest {
                 .thenReturn(List.of(marketMocks));
         }
 
-        // The fixture sector: the four drawn systems, one economy, and the three factions
-        // resolvable by id so a holder can be coloured.
-        private SectorAPI buildSectorOverTheDrawnSystems() {
-
-            var systemMocks = new ArrayList<StarSystemAPI>(DRAWN_SYSTEM_IDS.size());
-
-            for (var systemId : DRAWN_SYSTEM_IDS) {
-                var systemMock = mock(StarSystemAPI.class);
-
-                when(systemMock.getId())
-                    .thenReturn(systemId);
-
-                systemMocksById.put(systemId, systemMock);
-                systemMocks.add(systemMock);
-            }
-            economyMock = mock(EconomyAPI.class);
-
-            var builtSectorMock = mock(SectorAPI.class);
-
-            when(builtSectorMock.getStarSystems())
-                .thenReturn(systemMocks);
-            when(builtSectorMock.getEconomy())
-                .thenReturn(economyMock);
-
-            for (var factionMock : List.of(hegemonyMock, tritachyonMock, piratesMock)) {
-
-                when(builtSectorMock.getFaction(factionMock.getId()))
-                    .thenReturn(factionMock);
-            }
-            return builtSectorMock;
-        }
-
         // Opens a static seam and registers it for closing, so a case names what it needs rather
         // than repeating the open-and-remember pair for each.
         private <T> MockedStatic<T> openSeam(Class<T> seamType) {
@@ -431,11 +444,17 @@ final class IncrementalPoliticsRefreshIntegrationTest {
     // The occupancy's three facts are here beside the cells because a difference in them is the
     // failure this suite exists to catch, and a difference that has not yet reached a cell is the
     // one a later change to how a cell is styled would turn into a visible one.
+    //
+    // The blocs' territories are here because a cell does not carry them: an owned cell draws only
+    // its interior seams, while the fill, the national border and the hatch belong to the cluster
+    // it fused into. A batch that rebuilt the wrong bloc's territory, or that re-shaped every cell
+    // correctly and never re-indexed the clusters, moves nothing a cell would report.
     private record DrawnMap(
         Map<String, DominantHolder> holderBySystemId,
         Set<String> inhabitedSystemIds,
         Set<String> spotlitPresenceSystemIds,
         Map<String, StyledCell> styledCellByCellId,
+        Map<String, StyledClusterGroup> styledClusterGroupByOwnerId,
         Map<String, CellRibbon> ribbonByCellId) {
     }
 
@@ -445,12 +464,51 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             new LinkedHashSet<>(territories.getInhabitedSystemIds()),
             new LinkedHashSet<>(territories.getSpotlitPresenceSystemIds()),
             new LinkedHashMap<>(territories.getStyledCellByCellId()),
+            new LinkedHashMap<>(territories.getStyledClusterGroupByOwnerId()),
             new LinkedHashMap<>(territories.getRibbonByCellId()));
     }
 
-    // A visible colony of the given size, the only kind of market this fixture stands up: what the
-    // suite varies is which system holds one and whose it is, never what sort of market it is.
-    private static MarketAPI buildColonyOf(FactionAPI factionMock, int size) {
+    // The systems the fixture sector lists, keyed by id and in row order.
+    private static Map<String, StarSystemAPI> buildSystemMocksById() {
+
+        var systemMocksById = new LinkedHashMap<String, StarSystemAPI>();
+
+        for (var systemId : DRAWN_SYSTEM_IDS) {
+            var systemMock = mock(StarSystemAPI.class);
+
+            when(systemMock.getId())
+                .thenReturn(systemId);
+
+            systemMocksById.put(systemId, systemMock);
+        }
+        return systemMocksById;
+    }
+
+    // The fixture sector: the given systems, the economy their colonies are listed on, and the
+    // factions resolvable by id so a holder can be coloured.
+    private static SectorAPI buildSectorListing(
+            Collection<StarSystemAPI> systemMocks,
+            EconomyAPI economyMock,
+            List<FactionAPI> factionMocks) {
+
+        var sectorMock = mock(SectorAPI.class);
+
+        when(sectorMock.getStarSystems())
+            .thenReturn(List.copyOf(systemMocks));
+        when(sectorMock.getEconomy())
+            .thenReturn(economyMock);
+
+        for (var factionMock : factionMocks) {
+
+            when(sectorMock.getFaction(factionMock.getId()))
+                .thenReturn(factionMock);
+        }
+        return sectorMock;
+    }
+
+    // A visible colony of the given size. What the suite varies is which system holds one and
+    // whose it is, never what sort of market it is.
+    private static MarketAPI buildColony(FactionAPI factionMock, int size) {
         return SectorPoliticsFixtures.buildVisibleMarket(factionMock, size);
     }
 
@@ -515,28 +573,29 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         return geometryCacheMock;
     }
 
-    // One closed square cell: its left and right edges face its neighbours in the row (or open
-    // space at the ends), its top and bottom face open space throughout. Real coordinates, since
-    // both paths inset these edges for real and lay a band inside what that leaves.
+    // One closed square cell: its left and right edges face its neighbours in the row, or the
+    // reach bound at the ends, and its top and bottom face the reach bound throughout. Real
+    // coordinates, since both paths inset these edges for real and lay a band inside what that
+    // leaves.
     private static List<CellEdge> buildSquareCellBetween(
             double leftEdgeX,
             String leftSystemId,
             String rightSystemId) {
 
         var rightEdgeX = leftEdgeX + CELL_SIDE;
-        var frontier = new EdgeTarget.NoSystem("frontier");
 
         return List.of(
-            new CellEdge(leftEdgeX, 0, rightEdgeX, 0, frontier),
+            new CellEdge(leftEdgeX, 0, rightEdgeX, 0, EdgeTarget.REACH_BOUND),
             new CellEdge(rightEdgeX, 0, rightEdgeX, CELL_SIDE, resolveEdgeTarget(rightSystemId)),
-            new CellEdge(rightEdgeX, CELL_SIDE, leftEdgeX, CELL_SIDE, frontier),
+            new CellEdge(rightEdgeX, CELL_SIDE, leftEdgeX, CELL_SIDE, EdgeTarget.REACH_BOUND),
             new CellEdge(leftEdgeX, CELL_SIDE, leftEdgeX, 0, resolveEdgeTarget(leftSystemId)));
     }
 
-    // What lies across one edge: the neighbouring system, or open space at the ends of the row.
+    // What lies across one edge: the neighbouring system, or the cell's own outer reach at the
+    // ends of the row.
     private static EdgeTarget resolveEdgeTarget(String neighbourSystemId) {
         return neighbourSystemId == null
-            ? new EdgeTarget.NoSystem("frontier")
+            ? EdgeTarget.REACH_BOUND
             : new EdgeTarget.AcrossSystem(neighbourSystemId);
     }
 }

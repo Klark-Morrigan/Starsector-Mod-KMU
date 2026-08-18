@@ -964,27 +964,22 @@ final class IncrementalPoliticsRefreshTest {
     // The distant cell's own edges, cutting the band-sized square its recorded ring describes: the
     // geometry a case needs when the cell it is about is redrawn and so cut afresh from its edges.
     private static List<CellEdge> buildBandSizedIsolatedCell() {
-
-        var frontier = new EdgeTarget.NoSystem("frontier");
-
         return List.of(
-            new CellEdge(10000, 10000, 14000, 10000, frontier),
-            new CellEdge(14000, 10000, 14000, 14000, frontier),
-            new CellEdge(14000, 14000, 10000, 14000, frontier),
-            new CellEdge(10000, 14000, 10000, 10000, frontier));
+            new CellEdge(10000, 10000, 14000, 10000, EdgeTarget.REACH_BOUND),
+            new CellEdge(14000, 10000, 14000, 14000, EdgeTarget.REACH_BOUND),
+            new CellEdge(14000, 14000, 10000, 14000, EdgeTarget.REACH_BOUND),
+            new CellEdge(10000, 14000, 10000, 10000, EdgeTarget.REACH_BOUND));
     }
 
-    // A closed four-edge cell whose every edge faces open space, so no flip anywhere can re-shape
-    // it - the cell a case needs when what it is about is the reasons other than a re-shape.
+    // A closed four-edge cell whose every edge faces its own outer reach, so no flip anywhere can
+    // re-shape it - the cell a case needs when what it is about is the reasons other than a
+    // re-shape.
     private static List<CellEdge> buildIsolatedSquareCell(double offsetX) {
-
-        var frontier = new EdgeTarget.NoSystem("frontier");
-
         return List.of(
-            new CellEdge(offsetX, 0, offsetX + 50, 0, frontier),
-            new CellEdge(offsetX + 50, 0, offsetX + 50, 50, frontier),
-            new CellEdge(offsetX + 50, 50, offsetX, 50, frontier),
-            new CellEdge(offsetX, 50, offsetX, 0, frontier));
+            new CellEdge(offsetX, 0, offsetX + 50, 0, EdgeTarget.REACH_BOUND),
+            new CellEdge(offsetX + 50, 0, offsetX + 50, 50, EdgeTarget.REACH_BOUND),
+            new CellEdge(offsetX + 50, 50, offsetX, 50, EdgeTarget.REACH_BOUND),
+            new CellEdge(offsetX, 50, offsetX, 0, EdgeTarget.REACH_BOUND));
     }
 
     // A territories holding the given systems, every one of which it also counts settled - the only
