@@ -68,6 +68,15 @@ final class ViewerPainting {
             : settings.ownedCellColour;
     }
 
+    // Which map of the void the overlays are asking for. Shared rather than read at each of
+    // them, because the two constructions drawn together have to be asked the same question
+    // within one frame or they are describing different maps.
+    static VoidPockets.PocketShaping resolvePocketShaping(ViewerSettings settings) {
+        return settings.showPocketsAtTrueExtent
+            ? VoidPockets.PocketShaping.AT_TRUE_EXTENT
+            : VoidPockets.PocketShaping.WITH_CHANNEL;
+    }
+
     static Color jitterBrightness(Color base, int seed, float strength) {
 
         var hsb = Color.RGBtoHSB(base.getRed(), base.getGreen(), base.getBlue(), null);

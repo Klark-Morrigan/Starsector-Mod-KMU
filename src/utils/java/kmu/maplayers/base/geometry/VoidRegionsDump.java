@@ -78,7 +78,8 @@ final class VoidRegionsDump {
                     sites,
                     fixture.getOwnerBySite(),
                     SectorGeometryParameters.createDefaults(),
-                    SECTION_RULES),
+                    SECTION_RULES,
+                    VoidPockets.PocketShaping.WITH_CHANNEL),
                 fixture);
 
             System.out.println();
@@ -217,7 +218,8 @@ final class VoidRegionsDump {
                 0,
                 shipped.weldTolerance(),
                 shipped.miterSpikeLimit()),
-            SECTION_RULES).size();
+            SECTION_RULES,
+            VoidPockets.PocketShaping.WITH_CHANNEL).size();
     }
 
     // The first split the design asks for: a cell buried among its neighbours has every edge
@@ -488,7 +490,8 @@ final class VoidRegionsDump {
                 fixture.getSites(),
                 fixture.getOwnerBySite(),
                 SectorGeometryParameters.createDefaults(),
-                new VoidSections.SectionRules(SECTION_LENGTH, share)));
+                new VoidSections.SectionRules(SECTION_LENGTH, share),
+                VoidPockets.PocketShaping.WITH_CHANNEL));
 
             System.out.printf(
                 Locale.ROOT,
@@ -681,7 +684,8 @@ final class VoidRegionsDump {
             traced,
             CoastPockets.markEverySiteUnowned(sites),
             shipped,
-            SECTION_RULES);
+            SECTION_RULES,
+            VoidPockets.PocketShaping.WITH_CHANNEL);
 
         if (pockets.isEmpty()) {
             System.out.println("the coast traps no void at all");

@@ -96,6 +96,34 @@ final class VoidPockets {
         VoidSections.VoidDivision division) {
     }
 
+    /**
+     * How much of the channel a pocket takes out of its own outline.
+     *
+     * <p>Named rather than flagged, because the two are different geometry rather than two
+     * settings of one thing: {@link #WITH_CHANNEL} re-traces the void at a moved reach, and
+     * {@link #AT_TRUE_EXTENT} hands back the void itself. A caller has to say which of the
+     * two maps it is asking about.
+     */
+    enum PocketShaping {
+
+        /**
+         * The channel taken out by moving the reach - out by one where the void lies between
+         * owners, in by one where a single owner rings it. What a player sees.
+         */
+        WITH_CHANNEL,
+
+        /**
+         * The void's own extent, with nothing given up anywhere.
+         *
+         * <p>Every pocket then has an outline, including the ones with no room for a channel
+         * that are otherwise handed back with nothing to draw - so this answers WHICH void is
+         * there rather than what may be drawn in it. Not a map to keep: a fill taken from it
+         * sits flush against every cell around it, which is the one thing the shaping exists
+         * to prevent.
+         */
+        AT_TRUE_EXTENT
+    }
+
     private VoidPockets() {
     }
 
@@ -111,24 +139,33 @@ final class VoidPockets {
      * @param sectionRules how long a piece of a pocket should be before it is cut into more
      *                     than one, and how narrow a crossing has to be to count as a place
      *                     to cut it
+     * @param shaping      how much of the channel each pocket takes out of its own outline
      * @return the pockets, each with a closed outline
      */
     static List<VoidPocket> findVoidPockets(
             List<double[]> sites,
             List<String> ownerBySite,
             SectorGeometryParameters parameters,
-            VoidSections.SectionRules sectionRules) {
+            VoidSections.SectionRules sectionRules,
+            PocketShaping shaping) {
 
         var arcSegments = parameters.measureArcSegments();
 
         var trueHoles = DiscUnionBoundary.traceHoles(
             new DiscUnion(sites, parameters.cellRadius()), arcSegments);
 
-        var withChannel = DiscUnionBoundary.traceHoles(
-            buildDrawnUnion(sites, parameters), arcSegments);
+        // Traced only where an outline is going to come off them. At the true extent a pocket
+        // IS its hole, and these two are the expensive half of the call.
+        var isAtTrueExtent = shaping == PocketShaping.AT_TRUE_EXTENT;
 
-        var atFills = DiscUnionBoundary.traceHoles(
-            new DiscUnion(sites, parameters.measureFilledReach()), arcSegments);
+        var withChannel = isAtTrueExtent
+            ? List.<VoidHole>of()
+            : DiscUnionBoundary.traceHoles(buildDrawnUnion(sites, parameters), arcSegments);
+
+        var atFills = isAtTrueExtent
+            ? List.<VoidHole>of()
+            : DiscUnionBoundary.traceHoles(
+                new DiscUnion(sites, parameters.measureFilledReach()), arcSegments);
 
         var pockets = new ArrayList<VoidPocket>(trueHoles.size());
 
@@ -138,9 +175,7 @@ final class VoidPockets {
 
             pockets.add(shapeVoidPocket(
                 hole,
-                absorbingOwner == null
-                    ? DiscUnionBoundary.findHolesInside(withChannel, hole)
-                    : findHoleAround(atFills, hole),
+                findOutlines(hole, absorbingOwner, shaping, withChannel, atFills),
                 absorbingOwner,
                 sites,
                 sectionRules));
@@ -245,6 +280,25 @@ final class VoidPockets {
             only = owner;
         }
         return only;
+    }
+
+    // What there is to draw for one pocket. At its true extent that is the hole itself, so
+    // nothing is given up and nothing can close over; otherwise the channel is taken by
+    // re-tracing at a moved reach, out where the void lies between owners and in where one
+    // owner rings it.
+    private static List<List<double[]>> findOutlines(
+            VoidHole hole,
+            String absorbingOwner,
+            PocketShaping shaping,
+            List<VoidHole> withChannel,
+            List<VoidHole> atFills) {
+
+        if (shaping == PocketShaping.AT_TRUE_EXTENT) {
+            return List.of(hole.boundary());
+        }
+        return absorbingOwner == null
+            ? DiscUnionBoundary.findHolesInside(withChannel, hole)
+            : findHoleAround(atFills, hole);
     }
 
     // The widened hole a pocket opens into, if it stays closed at all. The other way round

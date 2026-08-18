@@ -46,13 +46,18 @@ final class CoastPockets {
      * @param sectionRules how long a piece of a pocket should be before it is cut into more
      *                     than one, and how narrow a crossing has to be to count as a place
      *                     to cut it
+     * @param shaping      how much of the channel each pocket takes out of its own outline.
+     *                     At its true extent the trace itself moves to the cell radius, since
+     *                     a coast pocket takes the channel from the discs it is walked
+     *                     against rather than from a reach applied afterwards
      * @return the pockets, each with a closed outline and the reaches that walled it
      */
     static List<CoastPocketFaults.WalledPocket> findCoastPockets(
             Coastlines.TracedCoasts traced,
             List<String> ownerBySite,
             SectorGeometryParameters parameters,
-            VoidSections.SectionRules sectionRules) {
+            VoidSections.SectionRules sectionRules,
+            VoidPockets.PocketShaping shaping) {
 
         // The sites come off the coast rather than beside it. Handed in separately, a caller
         // can pair one construction's sites with another's coast and still compile, and every
@@ -65,7 +70,15 @@ final class CoastPockets {
             return List.of();
         }
         var walls = layCoastWalls(traced, reaches);
-        var union = VoidPockets.buildDrawnUnion(sites, parameters);
+
+        // A coast pocket gives up the channel against the cells by being WALKED a channel
+        // outside them, so at its true extent the discs move rather than the outline: walked
+        // at the cell radius, the pocket runs up to the border itself.
+        var isAtTrueExtent = shaping == VoidPockets.PocketShaping.AT_TRUE_EXTENT;
+
+        var union = isAtTrueExtent
+            ? new DiscUnion(sites, parameters.cellRadius())
+            : VoidPockets.buildDrawnUnion(sites, parameters);
 
         // ONE trace, and what it hands back is what gets drawn - the same thing
         // VoidBridgePockets does with its own walls. A pocket found among the cells can
@@ -89,8 +102,13 @@ final class CoastPockets {
             // strayed there is claiming void that is not the pocket's - and where the wall
             // ended up is the result of a chain of angles, while the side of the line it has
             // to stay on is one fact that holds whatever the wall did.
-            var legal = CoastPocketFaults.cutToLandward(
-                hole.boundary(), walling, sites, walls.channel());
+            // Not cut at the true extent: the cut holds the outline back from a line it is
+            // meant to reach there, and the pockets it empties are the ones this exists to
+            // show.
+            var legal = isAtTrueExtent
+                ? hole.boundary()
+                : CoastPocketFaults.cutToLandward(
+                    hole.boundary(), walling, sites, walls.channel());
 
             // A pocket the cut leaves nothing of is still a pocket - it keeps its extent,
             // its span and the cells around it, and only loses what there was to draw. That

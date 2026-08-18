@@ -250,7 +250,8 @@ final class SectorSvgWriter {
                 traced,
                 CoastPockets.markEverySiteUnowned(sites),
                 parameters,
-                sectionRules)) {
+                sectionRules,
+                VoidPockets.PocketShaping.WITH_CHANNEL)) {
 
             for (var outline : pocket.pocket().outlines()) {
 

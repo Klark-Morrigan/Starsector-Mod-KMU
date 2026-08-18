@@ -280,6 +280,18 @@ final class ViewerSettingsPanel {
                 true,
                 on -> settings.showVoidBridges = on)));
 
+        // Redoes the coast as well as the pockets, because both constructions answer to it and
+        // a frame with one of them moved is a map neither of them describes.
+        controls.add(ViewerControls.buildToggle(
+            "Draw void at its true extent",
+            "Void at its true extent (no channel)",
+            false,
+            on -> settings.showPocketsAtTrueExtent = on,
+            () -> {
+                refreshes.refreshVoidPockets();
+                refreshes.refreshCoastlines();
+            }));
+
         controls.add(ViewerControls.buildColourPair(
             "Wide void",
             "Void wider than that",

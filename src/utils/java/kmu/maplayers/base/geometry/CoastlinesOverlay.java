@@ -65,7 +65,8 @@ final class CoastlinesOverlay {
             settings.parameters,
             new VoidSections.SectionRules(
                 settings.voidSpanMultiple * settings.parameters.cellRadius(),
-                settings.minSectionShare));
+                settings.minSectionShare),
+            ViewerPainting.resolvePocketShaping(settings));
 
         spills = CoastPocketFaults.findSpills(pockets, traced.union().sites());
     }

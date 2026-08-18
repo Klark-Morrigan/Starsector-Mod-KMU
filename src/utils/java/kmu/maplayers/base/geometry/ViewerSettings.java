@@ -105,6 +105,12 @@ final class ViewerSettings {
     // NOT void could be drawn.
     boolean showCoastlines = true;
 
+    // Both constructions drawn at the void's own extent instead of a channel inside it, which
+    // is the only way to see the pockets that have no room for a channel and so draw nothing
+    // at all. Off by default because the map it produces is not one to keep: every fill sits
+    // flush against the cells around it.
+    boolean showPocketsAtTrueExtent;
+
     double coastSkipMultiple = COAST_SKIP_DEFAULT;
     int coastMaxSkips = (int) COAST_MAX_SKIPS_DEFAULT;
 

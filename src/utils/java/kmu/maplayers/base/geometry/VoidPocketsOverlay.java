@@ -50,7 +50,8 @@ final class VoidPocketsOverlay {
                 fixture.getSites(),
                 fixture.getOwnerBySite(),
                 settings.parameters,
-                buildSectionRules())
+                buildSectionRules(),
+                ViewerPainting.resolvePocketShaping(settings))
             : List.of();
     }
 
