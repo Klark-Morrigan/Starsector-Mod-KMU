@@ -37,9 +37,9 @@ public final class KmuRetiredSettings {
     /**
      * Takes every withdrawn field's value out of the player's stored settings.
      *
-     * <p>Call once per launch, from {@code KMU_ModPlugin.onApplicationLoad}. Each removal is a
-     * no-op where the key is absent - a fresh install, or an install this has already swept - so
-     * every launch after the first pays a lookup per retired id and no disk write.
+     * <p>Call once on application load. Each removal is a no-op where the key is absent - a fresh
+     * install, or an install this has already swept - so every launch after the first pays a
+     * lookup per retired id and no disk write.
      */
     public static void clearRetiredSettings() {
         for (var fieldId : RETIRED_FIELD_IDS) {

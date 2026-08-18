@@ -27,7 +27,8 @@ import java.util.List;
  * @param pass     the bake's reading of the sector: which sector, the grouping, the reveal, and the
  *                 one walk of each system every count is folded from
  * @param palettes where each present bloc's two shades are read from
- * @param rules    how a band is laid: the run lengths, and what a cell nobody contests draws
+ * @param rules    how a band is laid: the run lengths, and how far they reach on a cell nobody
+ *                 contests
  */
 public record RibbonPlanInputs(
     HolderPass pass,

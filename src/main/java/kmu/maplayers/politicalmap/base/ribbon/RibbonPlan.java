@@ -94,9 +94,7 @@ public record RibbonPlan(
         if (countPresentBlocs(rankedPresences) == NO_BLOCS) {
             return NONE;
         }
-        return layBlocRuns(
-            rankedPresences,
-            rules.uncontestedRuns().resolveRunLengths(rules.lengths()));
+        return layBlocRuns(rankedPresences, rules.resolveUncontestedLengths());
     }
 
     /**

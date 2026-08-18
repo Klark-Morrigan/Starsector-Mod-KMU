@@ -10,7 +10,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 
 import org.junit.jupiter.api.Nested;
@@ -24,11 +24,11 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.SHORTENED_UNCONTESTED_RULES;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.STANDARD_RULES;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsFor;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -168,11 +168,7 @@ final class ClaimedSystemRibbonPlannerTest {
 
     // The planner over a posed contest, counting the colonies of the stubbed sector's one system.
     private static RibbonPlan planFrom(SystemClaimBreakdown contest, SectorAPI sector) {
-
-        return planThrough(
-            contest,
-            sector,
-            buildInputsOver(sector, HolderGrouping.identity(), FOG_KEPT));
+        return planUnder(contest, sector, STANDARD_RULES);
     }
 
     // The same planner with the uncontested shortening on, which is what a case turning on the
@@ -181,23 +177,26 @@ final class ClaimedSystemRibbonPlannerTest {
             SystemClaimBreakdown contest,
             SectorAPI sector) {
 
-        return planThrough(
-            contest,
-            sector,
-            buildInputsFor(
-                HolderPass.over(sector, FOG_KEPT, HolderGrouping.identity()),
-                SHORTENED_UNCONTESTED_RULES));
+        return planUnder(contest, sector, SHORTENED_UNCONTESTED_RULES);
     }
 
-    private static RibbonPlan planThrough(
+    // The one call both make, with the laying rules as the only thing between them. The pass is
+    // spelt once here rather than at each: every case poses the faction view and the fog where the
+    // player finds it, and two spellings of one pass would read as a difference the cases do not
+    // mean.
+    private static RibbonPlan planUnder(
             SystemClaimBreakdown contest,
             SectorAPI sector,
-            RibbonPlanInputs inputs) {
+            RibbonPlanRules rules) {
 
         var readerFake = new ClaimBreakdownReaderFake();
         readerFake.setBreakdown(SYSTEM_ID, contest);
 
-        return new ClaimedSystemRibbonPlanner(readerFake, inputs)
+        return new ClaimedSystemRibbonPlanner(
+                readerFake,
+                buildInputsFor(
+                    HolderPass.over(sector, FOG_KEPT, HolderGrouping.identity()),
+                    rules))
             .planSystemRibbon(buildOnlySystem(sector));
     }
 

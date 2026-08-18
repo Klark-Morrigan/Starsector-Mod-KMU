@@ -21,4 +21,21 @@ package kmu.maplayers.politicalmap.base.ribbon;
 public record RibbonPlanRules(
     RibbonSegmentLengths lengths,
     UncontestedRibbonRuns uncontestedRuns) {
+
+    /**
+     * The lengths a cell nobody contests lays its runs at: these rules' own authored pair, put
+     * through these rules' own shortening.
+     *
+     * <p>Answered here rather than by handing a caller the two halves to combine, which is the
+     * pairing's whole point. The shortening states itself only as a change to some authored pair,
+     * so a caller that reached for both could pass it the wrong one - this pass's shortening over
+     * a previous pass's lengths - and produce a band at proportions nobody set. The one pairing
+     * that is ever correct is the one inside this value, so it is the only one reachable.
+     *
+     * @return the market run cut to a single width where the shortening is on, and the authored
+     *         lengths where it is not
+     */
+    public RibbonSegmentLengths resolveUncontestedLengths() {
+        return uncontestedRuns.resolveRunLengths(lengths);
+    }
 }
