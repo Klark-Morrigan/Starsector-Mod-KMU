@@ -370,6 +370,46 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         }
 
         @Test
+        void applyStalePoliticsUpdatesDrawsWhatARebuildWouldAtEveryStepOfAMiddleSystemsFlips() {
+            // The same walk over a system with neighbours on both sides, which is what the
+            // frontier's own life cannot reach: every step here re-shapes a ring rather than one
+            // cell, re-indexes the clusters, and rebuilds two blocs' territories - and does it to
+            // a map the previous step already re-shaped. A re-shape that left a neighbour holding
+            // an edge from the step before would survive any single fold and show here.
+            //
+            // The border system carries one colony throughout, the same size each time: what
+            // moves is who owns it, so nothing but the holder can account for a difference.
+            var standingMap = buildMapByFullRebuild();
+
+            assertRefreshDrawsWhatARebuildWould(standingMap);
+
+            // Sold to the neighbour on its right: the seam with the core hardens into a national
+            // border, and the border with the dying system softens into a same-bloc seam.
+            placeColoniesIn(BORDER_SYSTEM, buildColony(tritachyonMock, BORDER_COLONY_SIZE));
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
+
+            // Taken back, which reverses both of those - so the map has to return to the one it
+            // started at, having been re-shaped twice to get there.
+            placeColoniesIn(BORDER_SYSTEM, buildColony(hegemonyMock, BORDER_COLONY_SIZE));
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
+
+            // Taken by a third bloc that holds nothing else: both its edges are national borders
+            // now, and a territory that was not on the map appears with it.
+            placeColoniesIn(BORDER_SYSTEM, buildColony(piratesMock, BORDER_COLONY_SIZE));
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
+
+            // Lost outright, which severs the row: the middle goes back to backdrop, its two
+            // neighbours re-shape against empty space, and the third bloc's territory has to come
+            // off the map rather than linger with no cells under it.
+            placeColoniesIn(BORDER_SYSTEM);
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, BORDER_SYSTEM);
+        }
+
+        @Test
         void applyStalePoliticsUpdatesDrawsWhatARebuildWouldWhenOneBatchMovesAllThree() {
             // All three moves in one drain, which is what a fleet action or an economy tick
             // actually delivers. The flip's re-shape ring reaches a system whose own colonies
