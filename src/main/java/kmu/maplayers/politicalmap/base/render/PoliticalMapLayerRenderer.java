@@ -60,6 +60,12 @@ import java.util.function.Supplier;
  */
 public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
+    // Above INSTANCE, and load-bearing there. Static initialisers run in the order they are written,
+    // and constructing INSTANCE runs this class's field initialisers - two of which take this logger
+    // and hold it. Declared below, they would each capture null, and the first line either tried to
+    // write would take the frame down rather than say anything.
+    private static final Logger LOG = Global.getLogger(PoliticalMapLayerRenderer.class);
+
     /**
      * The one shared instance; the political-map layer hands it to the map surface as its renderer.
      * This is where the live covers and the live cursor read are chosen, the renderer itself naming
@@ -68,8 +74,6 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     public static final PoliticalMapLayerRenderer INSTANCE = new PoliticalMapLayerRenderer(
         MapCoverReader.createForLiveScreen(),
         PoliticalMapLayerRenderer::buildLiveHoverPublisher);
-
-    private static final Logger LOG = Global.getLogger(PoliticalMapLayerRenderer.class);
 
     // The freshness cache and the overlay compositor this renderer delegates to. Plain final fields:
     // a layer renderer is reached through a registered layer, so it lives for the session and never
