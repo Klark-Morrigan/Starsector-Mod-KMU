@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Pins the two things that make a repeated reading worth logging at all: a line is reported when it
@@ -52,6 +53,20 @@ final class ChangedLineTraceTest {
         log.removeAppender(appenderFake);
         log.setLevel(null);
         log.setAdditivity(true);
+    }
+
+    @Nested
+    class Constructor {
+
+        @Test
+        void constructorRefusesALoggerThatIsNull() {
+            // The one way one of these is built wrongly, and it is not a typo: a holder is typically
+            // a static field, so a logger declared below it in the same class is still null when it
+            // arrives here. Held, that surfaces frames later as a null dereference inside a render
+            // pass; refused, it surfaces at load, naming what was built without a logger.
+            assertThatThrownBy(() -> new ChangedLineTrace(null, SUBJECT, () -> LINE))
+                .isInstanceOf(NullPointerException.class);
+        }
     }
 
     @Nested

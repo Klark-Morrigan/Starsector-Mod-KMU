@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render;
 
 import org.apache.log4j.Logger;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -34,8 +35,18 @@ final class ChangedLineTrace {
     // What the line is about, printed ahead of it so one log holds several of these apart.
     private final String subject;
 
+    /**
+     * Refuses a logger it was handed as null, rather than holding one and failing at the first line
+     * it is asked for.
+     *
+     * <p>Not defensive noise: a holder of one of these is typically a static field, initialised
+     * while its own class still is, so a logger declared below it in the same class arrives here as
+     * null and nothing says so. Held, that surfaces as a null dereference on a later frame, inside a
+     * render pass, several classes away from the declaration order that caused it. Refused, it
+     * surfaces where it was made - at load, naming this constructor.
+     */
     ChangedLineTrace(Logger log, String subject, Supplier<String> describeLine) {
-        this.log = log;
+        this.log = Objects.requireNonNull(log, "A trace with no logger could report nothing.");
         this.subject = subject;
         this.describeLine = describeLine;
     }
