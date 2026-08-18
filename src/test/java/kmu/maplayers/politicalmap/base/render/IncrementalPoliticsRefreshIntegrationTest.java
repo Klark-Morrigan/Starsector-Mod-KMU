@@ -328,6 +328,48 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         }
 
         @Test
+        void applyStalePoliticsUpdatesDrawsWhatARebuildWouldAtEveryStepOfASystemsLife() {
+            // One map carried through a system's whole life, compared against a rebuild at every
+            // step of it - which is the arrangement production actually runs: the cache holds one
+            // map for the session and folds batch after batch into it, where every case above
+            // starts from a map just rebuilt. So this is the only case that can catch a refresh
+            // that is right once and wrong the second time - a fold that half-updates something,
+            // leaving a map each individual comparison accepts and the next one builds on.
+            //
+            // The first comparison marks nothing. It asserts what every case here rests on and
+            // none of them states: that two rebuilds of one sector agree, so a difference found
+            // after a fold is the fold's and not the rebuild's.
+            var standingMap = buildMapByFullRebuild();
+
+            assertRefreshDrawsWhatARebuildWould(standingMap);
+
+            // Settled: nobody held it, somebody does now.
+            placeColoniesIn(FRONTIER_SYSTEM, buildColony(piratesMock, FRONTIER_COLONY_SIZE));
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, FRONTIER_SYSTEM);
+
+            // Contested: the holder is unmoved, and only the band reports the newcomer.
+            placeColoniesIn(
+                FRONTIER_SYSTEM,
+                buildColony(piratesMock, FRONTIER_COLONY_SIZE),
+                buildColony(tritachyonMock, RIVAL_COLONY_SIZE));
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, FRONTIER_SYSTEM);
+
+            // Taken outright: the newcomer is all that is left, so the cell changes hands on a
+            // system that has already been folded into twice.
+            placeColoniesIn(FRONTIER_SYSTEM, buildColony(tritachyonMock, RIVAL_COLONY_SIZE));
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, FRONTIER_SYSTEM);
+
+            // Emptied: back to the backdrop it started as, which is also the only step that can
+            // show a fold leaving something behind - the map now has to match the one it began at.
+            placeColoniesIn(FRONTIER_SYSTEM);
+
+            assertRefreshDrawsWhatARebuildWould(standingMap, FRONTIER_SYSTEM);
+        }
+
+        @Test
         void applyStalePoliticsUpdatesDrawsWhatARebuildWouldWhenOneBatchMovesAllThree() {
             // All three moves in one drain, which is what a fleet action or an economy tick
             // actually delivers. The flip's re-shape ring reaches a system whose own colonies
