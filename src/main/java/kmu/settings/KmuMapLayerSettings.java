@@ -116,8 +116,7 @@ public final class KmuMapLayerSettings {
     // What the layers may answer the cursor on, beside it. Stated as two permissions rather than as
     // one restriction, because a tab holding a switch that grants next to one that restricts cannot
     // be read as a set - a player would have to work out which way each points before either
-    // sentence means anything. Both default off, which is the vanilla hosts alone: the frames where
-    // the cursor can be located against the pass with no reading of another mod's surface at all.
+    // sentence means anything.
     //
     // They overlap deliberately rather than being one three-way choice. With the global permission
     // on, the game-space one adds nothing and says nothing wrong, so no control has to prevent the
@@ -354,12 +353,19 @@ public final class KmuMapLayerSettings {
     // sight to pre-empt a complaint most installs never raise.
     private static final boolean DEFAULT_MAP_LAYERS_ONLY_ON_THEIR_HOSTS = false;
 
-    // Both off: the same pass answering the cursor is not a sight but a claim, and a wrong one - a
-    // system named that the pointer is not on, a tick sounded for reaching it. That is heard with no
-    // map open at all, so it reads as the mod malfunctioning rather than as a compatibility nicety.
-    // Withheld until asked for, therefore, unlike the picture above.
+    // Global off: the same pass answering the cursor is not a sight but a claim, and a wrong one - a
+    // system named that the pointer is not on, a tick sounded for reaching it. Granted over every
+    // surface on every screen, that is heard where no map is drawn at all, and it reads as the mod
+    // malfunctioning rather than as a compatibility nicety. Withheld until asked for, therefore,
+    // unlike the picture above.
     private static final boolean DEFAULT_MAP_LAYER_MOUSEOVER_IS_GLOBAL = false;
-    private static final boolean DEFAULT_MAP_LAYER_MOUSEOVER_IN_GAME_SPACE = false;
+
+    // Game space on, for the reason the mod mode below defaults on: it is inert wherever there is
+    // nothing to answer. No map on the campaign view means no pass to hover on, so what this widens
+    // is reached only by a player who has docked a map surface there - and to that player, layers
+    // that go quiet over the map under the pointer read as the mod failing rather than as a setting
+    // waiting to be found. A switch to turn off, not one to discover.
+    private static final boolean DEFAULT_MAP_LAYER_MOUSEOVER_IS_ENABLED_IN_GAME_SPACE = true;
 
     // On: the mode is inert on every install that does not run the mod's minimap, so what it
     // defaults to is only ever read by a player who has one - and to that player, layers that
@@ -493,12 +499,13 @@ public final class KmuMapLayerSettings {
     /**
      * @return whether the layers may additionally answer the cursor on the frames where the player
      *         is looking at the campaign world itself - no core screen open and no dialog up, which
-     *         is where a mod's docked map surface is the only map on screen; off by default
+     *         is where a mod's docked map surface is the only map on screen; on by default, being
+     *         inert on an install that has no such surface to draw a pass there
      */
-    public static boolean getMapLayerMouseoverInGameSpace() {
+    public static boolean getMapLayerMouseoverIsEnabledInGameSpace() {
         return KmuLunaSettings.readBoolean(
             MAP_LAYER_MOUSEOVER_IN_GAME_SPACE_FIELD,
-            DEFAULT_MAP_LAYER_MOUSEOVER_IN_GAME_SPACE);
+            DEFAULT_MAP_LAYER_MOUSEOVER_IS_ENABLED_IN_GAME_SPACE);
     }
 
     /**

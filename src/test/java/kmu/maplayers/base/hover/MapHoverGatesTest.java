@@ -4,7 +4,6 @@ import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.util.function.BooleanSupplier;
 
@@ -19,7 +18,8 @@ import static org.mockito.Mockito.mockStatic;
  *
  * <p>And beside them the question of a different kind: whether the pass now running is one the
  * cursor can be located against at all. What that pins is which frames each permission adds, and -
- * as importantly - that the pair leaves an untouched install answering on the vanilla hosts alone.
+ * as importantly - that withholding both leaves the vanilla hosts answering on their own, neither
+ * permission being what admits them.
  */
 final class MapHoverGatesTest {
 
@@ -183,7 +183,7 @@ final class MapHoverGatesTest {
 
         @Test
         void isCursorLocatableOnIsTrueOnAVanillaHostWithNeitherPermissionGiven() {
-            // The untouched install. Neither permission is the vanilla hosts, so the hosts have to
+            // Neither permission is the vanilla hosts, so with both withheld the hosts have to
             // answer on their own or the map would stop hovering on the screen it belongs to.
             runWithMouseoverPermissions(false, false, () ->
                 assertThat(MapHoverGates.isCursorLocatableOn(A_MAP_IS_SHOWING, NOT_IN_GAME_SPACE))
@@ -192,8 +192,8 @@ final class MapHoverGatesTest {
 
         @Test
         void isCursorLocatableOnIsFalseOffTheVanillaHostsWithNeitherPermissionGiven() {
-            // The other half of the untouched install: a foreign surface drawing with no map open
-            // resolves a confident wrong answer, so the pass is not read at all.
+            // The other half of that: with both withheld, a foreign surface drawing with no map
+            // open resolves a confident wrong answer, so the pass is not read at all.
             runWithMouseoverPermissions(false, false, () ->
                 assertThat(MapHoverGates.isCursorLocatableOn(NO_MAP_SHOWING, IN_GAME_SPACE))
                     .isFalse());
@@ -235,12 +235,13 @@ final class MapHoverGatesTest {
                 boolean isInGameSpacePermitted,
                 Runnable body) {
 
-            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+
                 settingsMock
                     .when(KmuMapLayerSettings::getMapLayerMouseoverIsGlobal)
                     .thenReturn(isGlobal);
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapLayerMouseoverInGameSpace)
+                    .when(KmuMapLayerSettings::getMapLayerMouseoverIsEnabledInGameSpace)
                     .thenReturn(isInGameSpacePermitted);
 
                 body.run();

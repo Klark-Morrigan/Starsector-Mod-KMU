@@ -64,18 +64,20 @@ public final class MapHoverGates {
      * elsewhere. The render constraint is what closes that case, by keeping the foreign pass from
      * running at all.
      *
-     * <p>Three ways to be locatable, of which the vanilla hosts are the one an untouched install
-     * has. The permissions on either side of it are the player's, both off by default, and each
-     * widens what the pass may answer rather than narrowing it:
+     * <p>Three ways to be locatable, of which the vanilla hosts are the one that answers with no
+     * permission given at all. The two beside it are the player's, and each widens what the pass may
+     * answer rather than narrowing it:
      *
      * <ul>
      *   <li>The global permission admits every pass there is, foreign surfaces on any screen
-     *       included, and so short-circuits before anything is read from the screen.</li>
+     *       included, and so short-circuits before anything is read from the screen. Off by
+     *       default: granted, a wrong hover is heard where no map is drawn at all.</li>
      *   <li>The game-space permission admits the frames where the player is looking at the campaign
      *       world itself. That is where a mod docking a map surface over the campaign puts the only
      *       map on screen - and it closes the same surface again the moment the panel is parked,
      *       since a mod parks it on exactly the conditions that end game space. Which is what makes
-     *       it a general rule rather than a per-mod one.</li>
+     *       it a general rule rather than a per-mod one. On by default, because it is inert without
+     *       such a surface: no map on the campaign view means no pass here to widen.</li>
      * </ul>
      *
      * <p>Game space deliberately excludes nothing about the pause menu, which is raised without
@@ -102,7 +104,7 @@ public final class MapHoverGates {
         if (isAnyMapShowing.getAsBoolean()) {
             return true;
         }
-        return KmuMapLayerSettings.getMapLayerMouseoverInGameSpace()
+        return KmuMapLayerSettings.getMapLayerMouseoverIsEnabledInGameSpace()
             && isInGameSpace.getAsBoolean();
     }
 }

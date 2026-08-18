@@ -102,7 +102,7 @@ So `publishHoverForPass` runs on every pass the surface admits and the last writ
 the frame's answer on the surface that drew last. It costs one matrix read per extra pass - deferred
 rather than stalling under Fast Rendering - and leaves one residual case: a mod drawing a map
 surface *after* the map screen would win instead, which the `Map - Compatibility` hover permissions
-are the escape from: leave both off and only the vanilla hosts are read at all.
+are the escape from: withhold both and only the vanilla hosts are read at all.
 
 Only the read moves, though. Everything *about* the read that does not turn on the pass stays in the
 preparation: whether any feedback still wants a hover, and whether something is drawn over the

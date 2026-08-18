@@ -183,13 +183,14 @@ about what the overlay means.
   located against at all parks the same way and is checked before any of it: a map another mod built
   drives the same hook with its own position and zoom, and unprojecting against that yields a
   confident wrong answer rather than a missing one, which no guard downstream would catch. Whether
-  to allow it is the `Map - Compatibility` pair of hover permissions, both off by default, which
-  between them add the frames the vanilla hosts do not cover: one admits every pass there is, the
-  other only those where the player is looking at the campaign world itself - no screen open and no
-  dialog up, which is KMLib's `CampaignScreenView` to answer. Stated as permissions rather than as
-  one restriction so the tab reads as a set; the narrower of the two is also what closes a docked
-  map surface without naming a mod, since a mod parks such a panel on exactly the conditions that
-  end game space. What that tick sounds like is `MapHoverCues` beside it - the map's own sample and the
+  to allow it is the `Map - Compatibility` pair of hover permissions, which between them add the
+  frames the vanilla hosts do not cover: one admits every pass there is and is off by default, since
+  granted it is heard where no map is drawn at all; the other admits only those where the player is
+  looking at the campaign world itself - no screen open and no dialog up, which is KMLib's
+  `CampaignScreenView` to answer - and is on by default, being inert without a mod that docks a map
+  surface there. Stated as permissions rather than as one restriction so the tab reads as a set; the
+  narrower of the two is also what closes such a surface again without naming a mod, since a mod
+  parks its panel on exactly the conditions that end game space. What that tick sounds like is `MapHoverCues` beside it - the map's own sample and the
   player's own level, read live like the switches are, and no cue at all once that level reaches the
   bottom of its slider. The cell rather than the cluster is what the tick is keyed by, so it answers
   the same change the hover box does. `HoverHighlightGeometry` resolves the highlight geometry and
