@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
+import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
-import kmlib.starsector.systems.claims.WeighedClaimStanding;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
@@ -12,6 +12,10 @@ import java.util.List;
 /**
  * The claim contest stated in full: the same factions the ordinary box names, each opened up into the
  * colonies it holds the system with and the terms each colony's score was summed from.
+ *
+ * <p>Every faction the box names takes one, including a faction the mechanic weighed nothing for: its
+ * colonies are exactly what the player can read nowhere else, the line above them stating a nought
+ * that says only that the contest passed it over.
  *
  * <p>The counterpart {@link SystemClaimTooltip} offers for the expanded detail mode. The ordinary box
  * answers who claims the system; this one answers on what, which is a different question and a far
@@ -37,7 +41,7 @@ public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip 
     @Override
     protected List<CellTooltipEntry> resolveAccountEntries(
             SystemClaimBreakdown breakdown,
-            WeighedClaimStanding standing) {
+            FactionClaimStanding standing) {
 
         // The mechanic settles a claim over colonies nobody has found, and the box declines to
         // repeat what it learned there. Read live off the same toggle the status line and the

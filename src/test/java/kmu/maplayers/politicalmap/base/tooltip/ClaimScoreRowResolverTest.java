@@ -3,7 +3,9 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import kmlib.starsector.entities.EntityMapIcon;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
+import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
+import kmlib.starsector.systems.claims.PresenceOnlyClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 
@@ -33,6 +35,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>What a term that never arose looks like is most of what is asserted here, because it is the
  * difference between an account and a form: a lone market has no presence line and no garrison line,
  * rather than two lines insisting they counted for nothing.
+ *
+ * <p>A faction the contest never weighed is pinned as the shape with the two closing statements taken
+ * out: no colony called out as having taken the system, and no presence term at the foot. Both would
+ * be arithmetic that never happened, and both are the kind of line a form prints and an account does
+ * not.
  *
  * <p>Where a mark may appear is pinned here too, since it is a statement about which line is about a
  * thing on the map: a market's own line leads with the glyph the map marks it by, scored or not, and
@@ -721,6 +728,78 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
+        void resolveMarketRowsListsAPresenceOnlyFactionsColoniesAtNoughtInListingOrder() {
+            // A faction the contest never weighed has no score to rank its colonies by, so the
+            // account reads in the order the system's listing reaches them - the one order the walk
+            // ever imposed - and every line carries the nought the contest weighed it at.
+            var rows = resolvePresenceOnlyRows(
+                buildFoundHiddenMarket("Kanta's Den", 6, NO_SIBLING_MARKETS, SECOND_LISTED),
+                buildOffEconomyMarket("Galatia Academy", 4, THIRD_LISTED));
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly("Kanta's Den", "Galatia Academy");
+            assertThat(rows)
+                .allSatisfy(row -> assertThat(row.line().valueText()).isEqualTo("0"));
+        }
+
+        @Test
+        void resolveMarketRowsCallsOutNoColonyOfAPresenceOnlyFaction() {
+            // Nothing behind such a standing took the system: it scores nought, and the lead changes
+            // only on a score strictly greater than nought. A call-out here would name a holder the
+            // contest never produced.
+            var rows = resolvePresenceOnlyRows(
+                buildFoundHiddenMarket("Kanta's Den", 6, NO_SIBLING_MARKETS, SECOND_LISTED));
+
+            assertThat(rows.get(0).line().qualifierText())
+                .isNull();
+        }
+
+        @Test
+        void resolveMarketRowsClosesAPresenceOnlyAccountWithNoPresenceTerm() {
+            // The term is arithmetic of a score, and no score was computed for this faction at all -
+            // so a line stating one would account for a sum that never happened. The colonies carry
+            // sibling counts all the same, being what the mechanic recorded on the way past them.
+            var rows = resolvePresenceOnlyRows(
+                buildFoundHiddenMarket("Kanta's Den", 6, TWO_SIBLING_MARKETS, SECOND_LISTED),
+                buildFoundHiddenMarket("Chalcedon", 4, TWO_SIBLING_MARKETS, THIRD_LISTED));
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly("Kanta's Den", "Chalcedon");
+        }
+
+        @Test
+        void resolveMarketRowsBreaksAPresenceOnlyFactionsColonyDownIntoNothing() {
+            // Nothing was computed for it, so there are no terms to state - the same sentence a
+            // weighed faction's passed-over market speaks, and for the same reason.
+            var rows = resolvePresenceOnlyRows(
+                buildFoundHiddenMarket("Kanta's Den", 6, NO_SIBLING_MARKETS, SECOND_LISTED));
+
+            assertThat(rows.get(0).children())
+                .isEmpty();
+        }
+
+        @Test
+        void resolveMarketRowsWithholdsAPresenceOnlyFactionsUnfoundColony() {
+            // The withholding is the account's rather than the standing's, so it reaches both kinds:
+            // a colony nobody has found is left off whichever kind of faction holds it.
+            var standing = buildPresenceOnlyStanding(
+                buildFoundHiddenMarket("Kanta's Den", 6, ONE_SIBLING_MARKET, SECOND_LISTED),
+                buildUnfoundHiddenMarket("Chalcedon", 4, ONE_SIBLING_MARKET, THIRD_LISTED));
+
+            assertThat(readLabelTexts(ClaimScoreRowResolver.resolveMarketRows(
+                    buildBreakdownClaimedBy(HEGEMONY, standing),
+                    standing,
+                    WITHHOLDING_UNFOUND_MARKETS)))
+                .containsExactly("Kanta's Den");
+
+            assertThat(readLabelTexts(ClaimScoreRowResolver.resolveMarketRows(
+                    buildBreakdownClaimedBy(HEGEMONY, standing),
+                    standing,
+                    LISTING_UNFOUND_MARKETS)))
+                .containsExactly("Kanta's Den", "Chalcedon");
+        }
+
+        @Test
         void resolveMarketRowsListsATermsOwnAccountNoDeeper() {
             // The claim score is one addition deep. A term breaking down further would be inventing an
             // arithmetic the mechanic does not have.
@@ -748,9 +827,50 @@ final class ClaimScoreRowResolverTest {
     // states it here.
     private static SystemClaimBreakdown buildBreakdownClaimedBy(
             String claimantFactionId,
-            WeighedClaimStanding standing) {
+            FactionClaimStanding standing) {
 
         return new SystemClaimBreakdown(null, claimantFactionId, List.of(standing));
+    }
+
+    // The account of a faction the contest never weighed, over a system another faction took. Posed
+    // as the claimant's rival throughout: what the cases are about is that nothing behind such a
+    // standing is called out or summed, which a system it could be mistaken for having won would
+    // leave unsaid.
+    private static List<CellTooltipEntry> resolvePresenceOnlyRows(
+            MarketClaimBreakdown... unweighedMarkets) {
+
+        var standing = buildPresenceOnlyStanding(unweighedMarkets);
+
+        return ClaimScoreRowResolver.resolveMarketRows(
+            buildBreakdownClaimedBy(TRITACHYON, standing),
+            standing,
+            WITHHOLDING_UNFOUND_MARKETS);
+    }
+
+    // A faction present in the system through the given colonies alone, none of which the mechanic
+    // weighed. Territorial like every standing posed here, which nothing in this resolver reads.
+    private static PresenceOnlyClaimStanding buildPresenceOnlyStanding(
+            MarketClaimBreakdown... unweighedMarkets) {
+
+        return new PresenceOnlyClaimStanding(HEGEMONY, IS_TERRITORIAL, List.of(unweighedMarkets));
+    }
+
+    // A concealed colony the player has not found either - the two arms of "known" both against it,
+    // which is the shape the withholding keeps off the list.
+    private static MarketClaimBreakdown buildUnfoundHiddenMarket(
+            String marketName,
+            int marketSize,
+            int siblingMarketCount,
+            int listingPosition) {
+
+        return new MarketClaimBreakdown(
+            EntityNameplate.createUnmarkedNameplate(marketName),
+            listingPosition,
+            IS_UNFOUND_BY_PLAYER,
+            CONCEALED,
+            marketSize,
+            siblingMarketCount,
+            OptionalInt.empty());
     }
 
     // A rival faction standing on one market of the given size, listed after the standing every case

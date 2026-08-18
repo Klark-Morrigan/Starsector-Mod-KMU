@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
@@ -32,6 +33,13 @@ import java.util.Optional;
  * the earlier place in the economy's listing - so the one representing the faction comes out on top by
  * that order rather than by being put there, and the list reads as the contest rather than as a ranking
  * laid over it.
+ *
+ * <p>A faction the mechanic weighed nothing for is accounted for the same way, and that is the case
+ * the whole shape has to bend least for: its colonies are listed at nought and nothing else is
+ * stated. No market is called out as the claim holder, nothing there having won the system, and no
+ * presence term closes the list, no score having been computed for the count to be a term of. What
+ * is left is the plain listing of what the faction holds, which is the whole of what the contest has
+ * to say about a presence it never reached.
  *
  * <p>A market the mechanic never weighed is listed at nought. Two kinds reach the box that way: one
  * held in concealment, which the walk skips before scoring, and one the economy does not list, which
@@ -115,6 +123,11 @@ public final class ClaimScoreRowResolver {
     // subtraction, and a bare 1 there would read as a point taken off rather than a market.
     private static final int THE_MARKET_BEING_SCORED = 1;
 
+    // What a market of a faction the contest never weighed is called out as: nothing at all. Named
+    // rather than passed as a bare false, since the flag says something about the system - no market
+    // of such a faction took it - rather than about this line.
+    private static final boolean NOTHING_TOOK_THE_SYSTEM = false;
+
     private ClaimScoreRowResolver() {
     }
 
@@ -126,7 +139,7 @@ public final class ClaimScoreRowResolver {
      * @param breakdown              the whole contest the standing was ranked in - what settles who
      *                               the claim holder is and which listing ties actually decided
      *                               something, neither of which one faction's standing can answer
-     * @param standing               the faction's ranked place in that contest
+     * @param standing               the faction's ranked place in that contest, of either kind
      * @param isListingUnfoundMarkets whether a market the player has not found may be listed. False
      *                               is the ordinary state and leaves those markets off; true is the
      *                               dev reveal, under which the account is stated in full
@@ -134,25 +147,54 @@ public final class ClaimScoreRowResolver {
      */
     public static List<CellTooltipEntry> resolveMarketRows(
             SystemClaimBreakdown breakdown,
-            WeighedClaimStanding standing,
+            FactionClaimStanding standing,
             boolean isListingUnfoundMarkets) {
+
+        var heldMarkets = standing.readHeldMarkets();
+        var listedMarkets = selectListedMarkets(heldMarkets, isListingUnfoundMarkets);
+
+        // Routed on the kind of standing because the two things the fuller account is built from -
+        // the market that carried the score, and the presence term counted for it - exist only on a
+        // weighed one. The other arm is the presence-only kind, the standing being sealed over the
+        // two.
+        if (standing instanceof WeighedClaimStanding weighedStanding) {
+            return resolveWeighedRows(breakdown, weighedStanding, listedMarkets, heldMarkets);
+        }
+        return resolvePresenceOnlyRows(listedMarkets);
+    }
+
+    // The markets an account lists, in the order the contest would settle them.
+    //
+    // A market the player has not found is left off rather than blanked on the list: it carries
+    // nothing the account needs, and a run of redacted lines would state the very count the
+    // withholding is meant to keep. A weighed standing's strongest is never among them - a market
+    // takes a standing only where it is not hidden, and one that is not hidden is one the player
+    // knows of.
+    private static List<MarketClaimBreakdown> selectListedMarkets(
+            List<MarketClaimBreakdown> heldMarkets,
+            boolean isListingUnfoundMarkets) {
+
+        return heldMarkets
+            .stream()
+            .filter(market -> isListingUnfoundMarkets || market.isKnownToPlayer())
+            .sorted(MARKET_ORDER)
+            .toList();
+    }
+
+    // The account of a faction the contest weighed: its markets strongest first, the one that took
+    // the system called out where this faction took it, and the presence its several holdings earned
+    // every one of them at the foot.
+    private static List<CellTooltipEntry> resolveWeighedRows(
+            SystemClaimBreakdown breakdown,
+            WeighedClaimStanding standing,
+            List<MarketClaimBreakdown> listedMarkets,
+            List<MarketClaimBreakdown> heldMarkets) {
 
         // Whether this faction is the one the contest handed the system to, and so whose strongest
         // market is the one that took it. A decree settles the system before a single market is
         // weighed, so under one no market is the holder however the scores fell.
         var isHoldingTheClaim = !KmlibStrings.hasText(breakdown.overrideFactionId())
             && standing.factionId().equals(breakdown.claimantFactionId());
-
-        // A market the player has not found is left off rather than blanked on the list: it carries
-        // nothing the account needs, and a run of redacted lines would state the very count the
-        // withholding is meant to keep. The strongest is never among them - a market takes a standing
-        // only where it is not hidden, and one that is not hidden is one the player knows of.
-        var heldMarkets = standing.readHeldMarkets();
-        var listedMarkets = heldMarkets
-            .stream()
-            .filter(market -> isListingUnfoundMarkets || market.isKnownToPlayer())
-            .sorted(MARKET_ORDER)
-            .toList();
 
         var entries = new ArrayList<CellTooltipEntry>();
 
@@ -171,6 +213,29 @@ public final class ClaimScoreRowResolver {
         // follows, and it loses that either way the two can part company.
         if (isEveryListedMarketCounted(listedMarkets, heldMarkets)) {
             resolveSiblingEntry(standing).ifPresent(entries::add);
+        }
+        return List.copyOf(entries);
+    }
+
+    // The account of a faction the contest never weighed: the colonies it holds, each at nought, and
+    // nothing else. Neither of the weighed account's two closing statements can be made here - no
+    // market took the system, a presence-only standing scoring nought against a lead that changes
+    // only on a score strictly greater than nought, and no presence term arose, the count being a
+    // term of a score that was never computed.
+    //
+    // Every market takes the uncontested reading of its listing place for the same reason the tie
+    // judgement would give it one: the mechanic passed over every colony behind such a standing, so
+    // none of them won or lost a tie against anything.
+    private static List<CellTooltipEntry> resolvePresenceOnlyRows(
+            List<MarketClaimBreakdown> listedMarkets) {
+
+        var entries = new ArrayList<CellTooltipEntry>(listedMarkets.size());
+
+        for (var market : listedMarkets) {
+            entries.add(resolveMarketEntry(
+                createMarketLine(market, CellTooltipIndexOutcome.UNCONTESTED),
+                market,
+                NOTHING_TOOK_THE_SYSTEM));
         }
         return List.copyOf(entries);
     }

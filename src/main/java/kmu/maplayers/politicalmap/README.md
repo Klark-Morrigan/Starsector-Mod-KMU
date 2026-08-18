@@ -328,15 +328,29 @@ count and every other term stay on the economy's own half of it, since admitting
 colony there would raise a real one's score above what the game scores it at and could hand the
 system to a different faction.
 A faction holding nothing but unweighed colonies takes a `PresenceOnlyClaimStanding` at nought
-rather than dropping out of the contest. Both rival blocks, the claimant's own line and the `F1`
-hint select from weighed standings alone (`streamWeighedStandings`), so such a faction is named
-nowhere here: `Contested by:` would say it contested something it did not, and `Non-territorial:`
-states why a presence could not win rather than that it never competed at all.
+rather than dropping out of the contest, and the box lists it like any other. Both rival blocks, the
+claimant's own line, the account beneath each of them and the `F1` hint read every standing rather
+than the weighed half (`selectListedStandings`), because a block says how a faction stands to the
+claim and not what kind of record the contest gave it: routing on `isTerritorial` alone draws the one
+axis a reader wants - eligible to take the system, or not - where routing by record kind would file a
+pirate base's owner beside a Remnant station's, which are ineligible and eligible respectively. A
+territorial faction holding only zero-claim colonies did enter the running by the mechanic's own gate
+and scored nothing there, which is what `Contested by:` plus a nought says exactly. That nought reads
+in the quiet shade (`statesUncountedValue`, the same treatment an unweighed market line takes): it is
+the contest's statement about a faction it never weighed rather than a score competed for and lost.
+The claimant's line takes the same nought where a decree holds a system its faction is present in
+through unweighed colonies alone, in place of the blank column a claimant holding nothing there gets.
 A market the player has not found is left off the list, since
 vanilla settles a claim over colonies nobody has found and repeating what it learned there would
 name something the player has no way of knowing about; the rule is
 `MarketClaimBreakdown.isKnownToPlayer`, the same one the faction and alliance tabs fog by, so all
-three agree on what the player knows, and the dev reveal states everything in full.
+three agree on what the player knows, and the dev reveal states everything in full. The same
+projection reaches the listing above the markets: a standing whose every colony is unfound is left
+off the box entirely (`selectListedStandings` again), since naming a faction over an account with
+nothing in it would tell the player exactly what the fog is keeping back - and `F1` is offered only
+where a standing survives that filter, so the key is never advertised over a box the fog has emptied.
+A weighed standing always survives it, the mechanic scoring only markets held in the open and one
+held in the open being one the player knows of.
 Closing the list is the presence term, which is the faction's rather than any one market's, since
 the mechanic gives every market of a faction the same point per other market it holds there: stated
 once beneath the very markets its count can be checked against, and worked out from that count

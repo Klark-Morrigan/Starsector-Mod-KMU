@@ -3,6 +3,10 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.entities.EntityNameplate;
+import kmlib.starsector.systems.claims.ContestAdmission;
+import kmlib.starsector.systems.claims.MarketClaimBreakdown;
+import kmlib.starsector.systems.claims.PresenceOnlyClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
@@ -11,7 +15,6 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipLabelPlacement;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
-import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
@@ -27,9 +30,12 @@ import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 
+import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildPresenceOnlyStanding;
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildStandingOnOneMarket;
 
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.LABEL_RUN;
@@ -94,6 +100,20 @@ final class SystemClaimTooltipTest {
     private static final int TOP_SCORE = 1200;
     private static final int RIVAL_SCORE = 8;
     private static final int OUTSIDER_SCORE = 3;
+
+    // Whether a faction may claim a system at all, which is what routes it into one rival block or the
+    // other - and, deliberately, the only thing that does.
+    private static final boolean IS_TERRITORIAL = true;
+    private static final boolean IS_NON_TERRITORIAL = false;
+
+    // The one colony an unfound presence stands on, as the projection reads it: held in concealment
+    // and never found, which is the only combination the box has to keep back. Its size is never read,
+    // a presence-only standing reporting a nought of its own.
+    private static final int UNFOUND_COLONY_SIZE = 5;
+    private static final int FIRST_LISTED = 1;
+    private static final int NO_SIBLING_MARKETS = 0;
+    private static final boolean IS_UNFOUND_BY_PLAYER = false;
+    private static final ContestAdmission CONCEALED = new ContestAdmission(true, false);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final SystemClaimTooltip tooltip = new SystemClaimTooltip(claimBreakdownReaderFake);
@@ -191,23 +211,125 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsLeavesAFactionTheContestNeverWeighedOutOfBothRivalBlocks() {
+        void buildBodySectionsListsATerritorialFactionTheContestNeverWeighedUnderContestedAtNought() {
             // A presence-only standing is a faction the mechanic reached nothing of - a concealed
-            // base, or a station the economy does not list. Neither heading can carry it: "Contested
-            // by:" would say it contested something it did not, and "Non-territorial:" states why a
-            // presence could not win rather than that it never competed. Its territoriality is real
-            // and is deliberately not what routes it, so the case poses a territorial one.
+            // base, or a station the economy does not list. Territorial, it is in the running by the
+            // mechanic's own gate and scored nothing here, which is what the contested heading plus a
+            // nought says exactly. The nought reads quiet: it is the contest's statement about a
+            // faction it never weighed, not a figure that faction competed with and lost on.
+            var presenceRow = 3;
+
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 HEGEMONY,
                 List.of(
-                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
-                    ClaimStandingFixture.buildPresenceOnlyStanding(TRITACHYON, true))));
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
             var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
             assertThat(readLabelTexts(sections))
+                .containsExactly("Claim:", "The Hegemony", "Contested by:", "Tri-Tachyon");
+            assertThat(readTableRow(sections, presenceRow).labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.Text(new TextSpan("0", GRAY)));
+        }
+
+        @Test
+        void buildBodySectionsListsANonTerritorialFactionTheContestNeverWeighedUnderNonTerritorial() {
+            // The other half of the same routing: a faction barred from claiming is barred whether or
+            // not the mechanic weighed anything for it, and that block is where the box says so.
+            var presenceRow = 3;
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildPresenceOnlyStanding(PIRATES, IS_NON_TERRITORIAL))));
+
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly("Claim:", "The Hegemony", "Non-territorial:", "Pirates");
+            assertThat(readTableRow(sections, presenceRow).labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.Text(new TextSpan("0", GRAY)));
+        }
+
+        @Test
+        void buildBodySectionsSortsBothKindsOfStandingByEligibilityRatherThanByKind() {
+            // The block says how a faction stands to the claim, not what kind of record the contest
+            // gave it - so two factions sharing an eligibility share a heading however differently
+            // they were reached. Sorting by kind instead would file a pirate base's owner beside a
+            // Remnant station's, which are ineligible and eligible respectively.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_NON_TERRITORIAL),
+                    buildPresenceOnlyStanding(PIRATES, IS_NON_TERRITORIAL))));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Non-territorial:",
+                    "Tri-Tachyon",
+                    "Pirates");
+        }
+
+        @Test
+        void buildBodySectionsLeavesOutAFactionThePlayerHasFoundNoColonyOf() {
+            // The known projection over the listing: a faction present only through colonies nobody
+            // has found is named nowhere, since naming it would tell the player exactly what the fog
+            // is keeping back - and the account beneath it would have nothing in it to boot.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildUnfoundPresenceOnlyStanding(TRITACHYON))));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly("Claim:", "The Hegemony");
+        }
+
+        @Test
+        void buildBodySectionsListsAFactionThePlayerHasNotFoundUnderTheDevReveal() {
+            // The reveal is the state a player has asked to be shown everything in, so the same
+            // faction is listed in full - the withholding is about what they have found rather than
+            // about the box.
+            visibilityOverridesMock
+                .when(MapVisibilityOverrides::readFromLunaSettings)
+                .thenReturn(new MapVisibilityOverrides(true, false));
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildUnfoundPresenceOnlyStanding(TRITACHYON))));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly("Claim:", "The Hegemony", "Contested by:", "Tri-Tachyon");
+        }
+
+        @Test
+        void buildBodySectionsShowsAQuietNoughtForADecreedClaimantTheContestNeverWeighed() {
+            // A decree over a system its holder is present in through a concealed base alone: the
+            // faction has a standing, so the claim line states the nought that standing reports
+            // rather than the blank value column of a claimant holding nothing there at all.
+            stubBreakdown(new SystemClaimBreakdown(
+                HEGEMONY,
+                HEGEMONY,
+                List.of(buildPresenceOnlyStanding(HEGEMONY, IS_TERRITORIAL))));
+
+            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
+
+            assertThat(readLabelRun(claimRow, MARKED_LABEL_RUN))
+                .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
+            assertThat(claimRow.labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.Text(new TextSpan("0", GRAY)));
         }
 
         @Test
@@ -538,14 +660,28 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void resolveExpandedDetailNameOffersNothingWhereTheContestWeighedNobody() {
-            // The counterpart accounts for the colonies behind a scored standing, and a faction the
-            // mechanic never weighed has none. Both boxes would state the same claim line, so the
-            // key would do nothing the player could see - and a hint over it would advertise it.
+        void resolveExpandedDetailNameOffersTheAccountBehindAPresenceTheContestNeverWeighed() {
+            // Such a faction's colonies are exactly what the player can read nowhere else in the box,
+            // its line stating a nought and nothing more - so the key has something to open even
+            // where the mechanic weighed the whole system at nothing.
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 null,
-                List.of(ClaimStandingFixture.buildPresenceOnlyStanding(TRITACHYON, true))));
+                List.of(buildPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
+
+            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
+                .contains("score contributions");
+        }
+
+        @Test
+        void resolveExpandedDetailNameOffersNothingWhereTheProjectionListsNobody() {
+            // The counterpart accounts for the factions this box lists, and the fog has left it
+            // listing none. Both boxes would state the same claim line, so the key would do nothing
+            // the player could see - and a hint over it would advertise that it would.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                null,
+                List.of(buildUnfoundPresenceOnlyStanding(TRITACHYON))));
 
             assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
                 .isEmpty();
@@ -574,6 +710,26 @@ final class SystemClaimTooltipTest {
             assertThat(expandedVariant.claimBreakdownReader)
                 .isSameAs(claimBreakdownReaderFake);
         }
+    }
+
+    // A faction present through one colony the player has not found - the only standing the known
+    // projection ever keeps out of the box, a weighed one resting on a market held in the open and
+    // therefore on one the player knows of.
+    //
+    // Built here rather than taken from the shared fixture, which poses a found colony: what varies is
+    // the one flag the projection reads, and stating it beside the case is what makes the case legible.
+    private static PresenceOnlyClaimStanding buildUnfoundPresenceOnlyStanding(String factionId) {
+        return new PresenceOnlyClaimStanding(
+            factionId,
+            IS_TERRITORIAL,
+            List.of(new MarketClaimBreakdown(
+                EntityNameplate.createUnmarkedNameplate("Undiscovered Base"),
+                FIRST_LISTED,
+                IS_UNFOUND_BY_PLAYER,
+                CONCEALED,
+                UNFOUND_COLONY_SIZE,
+                NO_SIBLING_MARKETS,
+                OptionalInt.empty())));
     }
 
     // Hands the tooltip the contest it is about, standing in for the market walk that would otherwise

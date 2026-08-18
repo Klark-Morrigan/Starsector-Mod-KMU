@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
+import kmlib.starsector.systems.claims.FactionClaimStanding;
+import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
@@ -21,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 /**
  * The shape every box built on a hovered system's claim contest takes: what the system is, then who
@@ -38,6 +39,13 @@ import java.util.stream.Stream;
  * none of them holds it. What it does not do is state "None" beneath a banner already saying the system
  * holds nobody, which answers the same absence twice over. A decree stays either way: holding a system
  * with nothing in it is the one thing that banner does not say.
+ *
+ * <p>A block says how a faction stands to the claim rather than what kind of standing the contest gave
+ * it. Both blocks therefore take both kinds - a faction the mechanic weighed and one it never reached -
+ * routed on eligibility alone, which is the single axis a reader of this box wants: able to take the
+ * system, or not. A faction present through concealed or unregistered colonies alone is a real presence
+ * the map is drawing, and blocking it out of the box would leave the fill and the band naming a faction
+ * the account of the system does not.
  *
  * <p>All of that is settled here rather than per box because two boxes over one system have to be two
  * amounts of detail about the same contest, not two contests. The breakdown is read once, the status is
@@ -62,16 +70,21 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         var claimantFactionId = breakdown.claimantFactionId();
         var sections = new ArrayList<TooltipSection>();
 
+        // The reveal is read live off the same toggle the faction layer's pass samples, so crossing
+        // between the two layers cannot make one call a system empty that the other calls held. Read
+        // once for the whole box and applied to both questions it settles - whether the system counts
+        // as populated, and which standings the player may be shown - since a banner calling a system
+        // empty over a list naming who lives there is the one pairing the box cannot make.
+        var isListingUnfoundColonies =
+            MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets();
+
         // Why the system holds nobody comes before who claims it, so a dead system names its state
         // first and the claim below reads as a hold over an empty system rather than over a colony.
-        // The reveal is read live off the same toggle the faction layer's pass samples, so crossing
-        // between the two layers cannot make one call a system empty that the other calls held.
-        var statusRow = SystemStatusRow.resolveStatusRow(
-            sector,
-            system,
-            MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets());
+        var statusRow = SystemStatusRow.resolveStatusRow(sector, system, isListingUnfoundColonies);
 
         CellTooltipSections.appendBannerSection(sections, statusRow);
+
+        var listedStandings = selectListedStandings(breakdown, isListingUnfoundColonies);
 
         // The status is what the claim block is judged against, so the two are read from the one
         // resolve: a banner that appeared and a claim that says nobody would otherwise be settled by
@@ -80,7 +93,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
-            buildClaimEntries(sector, breakdown, statusRow.isPresent()));
+            buildClaimEntries(sector, breakdown, listedStandings, statusRow.isPresent()));
 
         CellTooltipSections.appendSection(
             sections,
@@ -88,7 +101,10 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             buildFactionEntries(
                 sector,
                 breakdown,
-                selectRivalScores(breakdown, claimantFactionId, WeighedClaimStanding::isTerritorial)));
+                selectRivalStandings(
+                    listedStandings,
+                    claimantFactionId,
+                    FactionClaimStanding::isTerritorial)));
 
         CellTooltipSections.appendSection(
             sections,
@@ -96,7 +112,10 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             buildFactionEntries(
                 sector,
                 breakdown,
-                selectRivalScores(breakdown, claimantFactionId, score -> !score.isTerritorial())));
+                selectRivalStandings(
+                    listedStandings,
+                    claimantFactionId,
+                    standing -> !standing.isTerritorial())));
 
         return sections;
     }
@@ -114,11 +133,20 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             SectorAPI sector,
             StarSystemAPI system) {
 
-        // The counterpart accounts for the colonies behind a scored standing, so a system nobody was
-        // weighed in has nothing for it to account for: both boxes would state the same claim line and
-        // the key would do nothing the player could see. Asked of the very read the box is built from,
-        // so it can never offer to expand a contest it is about to draw as empty.
-        if (streamWeighedStandings(claimBreakdownReader.readBreakdown(system)).findAny().isEmpty()) {
+        // The counterpart accounts for the colonies behind the factions this box lists, so a box
+        // listing none has nothing for it to account for: both boxes would state the same claim line
+        // and the key would do nothing the player could see. Asked of the very read and the very
+        // projection the box is built from, so it can never offer to expand a contest it is about to
+        // draw as empty - which the fog alone can produce, a faction present only through colonies
+        // the player has not found leaving a standing the box may not state.
+        var isListingUnfoundColonies =
+            MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets();
+
+        if (selectListedStandings(
+                claimBreakdownReader.readBreakdown(system),
+                isListingUnfoundColonies)
+                .isEmpty()) {
+
             return Optional.empty();
         }
         // Answered for the pair at once rather than by each box, because it is the one thing they agree
@@ -140,17 +168,21 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      * settled rather than on the faction alone, and reading that a second way here is what would let
      * the account and the claim line above it disagree.
      *
+     * <p>Taken on the standing's own interface rather than on the weighed kind, so a faction present
+     * through colonies the mechanic never reached is accounted for like any other: it holds the very
+     * colonies the map is drawing, which is what an account is of.
+     *
      * <p>Listing a faction as the line naming it is the ordinary answer and the default, so a box with
      * nothing further to say overrides nothing.
      *
      * @param breakdown the whole contest the box is being built from, in case the account turns on it
-     * @param standing  the faction's ranked place in that contest
+     * @param standing  the faction's ranked place in that contest, of either kind
      * @return the entries listed beneath its line, in the order they are read; empty leaves the faction
      *         listed as its line alone
      */
     protected List<CellTooltipEntry> resolveAccountEntries(
             SystemClaimBreakdown breakdown,
-            WeighedClaimStanding standing) {
+            FactionClaimStanding standing) {
 
         return List.of();
     }
@@ -162,19 +194,21 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     private List<CellTooltipEntry> buildClaimEntries(
             SectorAPI sector,
             SystemClaimBreakdown breakdown,
+            List<FactionClaimStanding> listedStandings,
             boolean isSystemHoldingNobody) {
 
         if (isSystemHoldingNobody && !KmlibStrings.hasText(breakdown.claimantFactionId())) {
             return List.of();
         }
-        return List.of(buildClaimantEntry(sector, breakdown));
+        return List.of(buildClaimantEntry(sector, breakdown, listedStandings));
     }
 
     // The one entry the claim section lists where it has one: whoever holds the system, or the plain
     // word for nobody when no eligible faction scored and no decree imposed one.
     private CellTooltipEntry buildClaimantEntry(
             SectorAPI sector,
-            SystemClaimBreakdown breakdown) {
+            SystemClaimBreakdown breakdown,
+            List<FactionClaimStanding> listedStandings) {
 
         var claimantFactionId = breakdown.claimantFactionId();
 
@@ -184,17 +218,18 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_NONE),
                 CellTooltipRows.NO_SCORE));
         }
-        // The claimant's own market standing, or none at all when it holds none there: a core imposed on
-        // a system its faction has no colony in is claimed without ever having been scored for it - so
-        // the number and the account beneath it are both read off the one standing rather than looked up
-        // apart, which is what stops a line showing one faction's score over another's colonies.
-        var standing = findStanding(breakdown, claimantFactionId);
-        var claimantLine = FactionTooltipEntry.buildFactionLine(
-            sector,
-            claimantFactionId,
-            standing
-                .map(score -> KmlibNumbers.formatGroupedInteger(score.score()))
-                .orElse(CellTooltipRows.NO_SCORE));
+        // The claimant's own standing, or none at all when it holds nothing the box may list: a core
+        // imposed on a system its faction has no colony in is claimed without ever having been scored
+        // for it - so the number and the account beneath it are both read off the one standing rather
+        // than looked up apart, which is what stops a line showing one faction's score over another's
+        // colonies.
+        var standing = findStanding(listedStandings, claimantFactionId);
+        var claimantLine = standing
+            .map(found -> buildStandingLine(sector, found))
+            .orElseGet(() -> FactionTooltipEntry.buildFactionLine(
+                sector,
+                claimantFactionId,
+                CellTooltipRows.NO_SCORE));
 
         // A core is held by decree rather than won, so the claim is qualified on the very line it is
         // made - it is why that line outranks a higher-scoring one beneath it, which the banner heading
@@ -207,36 +242,80 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         return CellTooltipEntry
             .createEntry(claimantLine)
             .nesting(standing
-                .map(score -> resolveAccountEntries(breakdown, score))
+                .map(found -> resolveAccountEntries(breakdown, found))
                 .orElseGet(List::of));
     }
 
-    // The standings shown under a section other than the claim: everyone the contest weighed but the
-    // claimant, narrowed to the kind of presence that section is about. The claimant is dropped from
-    // both, since a faction named twice would read as holding two separate presences in the system.
-    private static List<WeighedClaimStanding> selectRivalScores(
-            SystemClaimBreakdown breakdown,
+    // The standings shown under a section other than the claim: everyone present but the claimant,
+    // narrowed to the eligibility that section is about. The claimant is dropped from both, since a
+    // faction named twice would read as holding two separate presences in the system.
+    //
+    // Routed on eligibility rather than on which kind of standing the contest gave a faction, because
+    // that is what the two headings actually say. A territorial faction holding only concealed bases
+    // is in the running by the mechanic's own gate and scored nothing in this system, which is what
+    // `Contested by:` plus a nought states exactly - while sorting it by record kind would file it
+    // beside a Remnant station's owner, which is ineligible where it is not.
+    private static List<FactionClaimStanding> selectRivalStandings(
+            List<FactionClaimStanding> listedStandings,
             String claimantFactionId,
-            Predicate<WeighedClaimStanding> isWantedKind) {
+            Predicate<FactionClaimStanding> isWantedKind) {
 
-        return streamWeighedStandings(breakdown)
-            .filter(score -> !score.factionId().equals(claimantFactionId))
+        return listedStandings
+            .stream()
+            .filter(standing -> !standing.factionId().equals(claimantFactionId))
             .filter(isWantedKind)
             .toList();
     }
 
-    // The standings the contest actually weighed, which is what every section of this box is built
-    // from. A faction the mechanic never scored belongs under neither heading: `Contested by:` would
-    // say it contested something it did not, and `Non-territorial:` states why a presence could not
-    // win rather than that it never competed at all.
-    private static Stream<WeighedClaimStanding> streamWeighedStandings(
-            SystemClaimBreakdown breakdown) {
+    // The standings the box may state: every faction the contest reports, less those the player has
+    // found no colony of. The known projection over the contest - the same fog the market lines
+    // beneath a faction are drawn through - applied to the listing rather than line by line, since a
+    // faction whose every colony is withheld would otherwise be named over an account with nothing in
+    // it, which is precisely the reading that tells the player what the fog is keeping back.
+    //
+    // A weighed standing always survives it: the mechanic scores only markets held in the open, and
+    // one held in the open is one the player knows of. What this ever drops is a presence-only
+    // standing resting on undiscovered colonies alone.
+    private static List<FactionClaimStanding> selectListedStandings(
+            SystemClaimBreakdown breakdown,
+            boolean isListingUnfoundColonies) {
 
         return breakdown
             .scores()
             .stream()
-            .filter(WeighedClaimStanding.class::isInstance)
-            .map(WeighedClaimStanding.class::cast);
+            .filter(standing -> isListingUnfoundColonies || hasFoundColony(standing))
+            .toList();
+    }
+
+    // Whether the player has found any of the colonies a faction's standing rests on - one found
+    // colony being enough, since the faction is then present on the map in its own colours and the
+    // box is telling the player nothing they cannot already see.
+    private static boolean hasFoundColony(FactionClaimStanding standing) {
+        return standing
+            .readHeldMarkets()
+            .stream()
+            .anyMatch(MarketClaimBreakdown::isKnownToPlayer);
+    }
+
+    // One faction's line as its standing states it: its crest, its name, and what the contest weighed
+    // its presence at.
+    //
+    // A presence-only standing's nought is drawn quiet, under the same treatment an unweighed market
+    // line takes. It is the contest's statement about a faction it never reached rather than a figure
+    // the faction competed with - drawn as loudly as the scores around it, that nought would read as
+    // one competed for and lost, inviting exactly the comparison it cannot bear.
+    private static CellTooltipEntryLine buildStandingLine(
+            SectorAPI sector,
+            FactionClaimStanding standing) {
+
+        var standingLine = FactionTooltipEntry.buildFactionLine(
+            sector,
+            standing.factionId(),
+            KmlibNumbers.formatGroupedInteger(standing.score()));
+
+        return standing instanceof WeighedClaimStanding
+            ? standingLine
+            : standingLine.statesUncountedValue();
     }
 
     // Whether the claim was imposed rather than won. Read off the claimant matching the override
@@ -254,28 +333,28 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     private List<CellTooltipEntry> buildFactionEntries(
             SectorAPI sector,
             SystemClaimBreakdown breakdown,
-            List<WeighedClaimStanding> scores) {
+            List<FactionClaimStanding> standings) {
 
-        var entries = new ArrayList<CellTooltipEntry>(scores.size());
+        var entries = new ArrayList<CellTooltipEntry>(standings.size());
 
-        for (var score : scores) {
-            entries.add(FactionTooltipEntry
-                .buildFactionEntry(
-                    sector,
-                    score.factionId(),
-                    KmlibNumbers.formatGroupedInteger(score.score()))
-                .nesting(resolveAccountEntries(breakdown, score)));
+        for (var standing : standings) {
+            entries.add(CellTooltipEntry
+                .createEntry(buildStandingLine(sector, standing))
+                .nesting(resolveAccountEntries(breakdown, standing)));
         }
         return entries;
     }
 
-    // One faction's weighed place in the contest, or none where the mechanic scored nothing for it.
-    private static Optional<WeighedClaimStanding> findStanding(
-            SystemClaimBreakdown breakdown,
+    // One faction's place in the contest as the box may state it, or none where the faction holds
+    // nothing the projection lists - a decree over a system its holder has no colony in, or one whose
+    // every colony there the player has yet to find.
+    private static Optional<FactionClaimStanding> findStanding(
+            List<FactionClaimStanding> listedStandings,
             String factionId) {
 
-        return streamWeighedStandings(breakdown)
-            .filter(score -> score.factionId().equals(factionId))
+        return listedStandings
+            .stream()
+            .filter(standing -> standing.factionId().equals(factionId))
             .findFirst();
     }
 }

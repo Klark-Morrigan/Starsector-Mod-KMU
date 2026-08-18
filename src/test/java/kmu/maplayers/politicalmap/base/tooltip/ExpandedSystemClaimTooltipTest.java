@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
+import kmlib.starsector.systems.claims.PresenceOnlyClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.starsector.ui.text.TextSpan;
@@ -77,8 +78,15 @@ final class ExpandedSystemClaimTooltipTest {
     private static final int NO_SIBLING_MARKETS = 0;
 
     // Where a market falls in the system's economy listing. No case here is about a tie, so every
-    // market posed takes the head of the listing.
+    // market posed takes the head of the listing bar the second colony of the one faction holding two
+    // the contest never weighed, whose account reads in listing order for want of any score to rank by.
     private static final int FIRST_LISTED = 1;
+    private static final int SECOND_LISTED = 2;
+
+    // How the mechanic met a colony it never weighed: held in concealment, which it skips before
+    // scoring. Arbitrary between that and an absence from the economy's listing - the two suppress
+    // scoring identically, and the case is not about which of them did it.
+    private static final ContestAdmission CONCEALED = new ContestAdmission(true, false);
 
     // Every market posed here is one the player has found and one the mechanic weighed. What the
     // box withholds of a market they have not found, and which listing ties it marks, are the
@@ -190,6 +198,22 @@ final class ExpandedSystemClaimTooltipTest {
 
             assertThat(entries.get(0).line().qualifierText())
                 .isNull();
+        }
+
+        @Test
+        void resolveAccountEntriesAccountsForAFactionTheContestNeverWeighed() {
+            // The case the widening exists for: such a faction's line is a nought and nothing else,
+            // so its colonies are the whole of what the detail mode has to add about it - and they
+            // are what the player is looking at on the map.
+            var standing = new PresenceOnlyClaimStanding(
+                TRITACHYON,
+                IS_TERRITORIAL,
+                List.of(
+                    buildConcealedMarket("Kanta's Den", FIRST_LISTED),
+                    buildConcealedMarket("Chalcedon", SECOND_LISTED)));
+
+            assertThat(readLabelTexts(tooltip.resolveAccountEntries(CONTESTED_SYSTEM, standing)))
+                .containsExactly("Kanta's Den", "Chalcedon");
         }
 
         @Test
@@ -311,6 +335,20 @@ final class ExpandedSystemClaimTooltipTest {
         return (TooltipRow.TableRow) TooltipSection
             .readRowsInOrder(sections)
             .get(rowIndex);
+    }
+
+    // A colony held in concealment and found all the same - the shape a faction the contest never
+    // weighed is present through, and the one the map draws in that faction's colours. Sized like
+    // any other, the size going nowhere: nothing was computed for it.
+    private static MarketClaimBreakdown buildConcealedMarket(String marketName, int listingPosition) {
+        return new MarketClaimBreakdown(
+            EntityNameplate.createUnmarkedNameplate(marketName),
+            listingPosition,
+            IS_KNOWN_TO_PLAYER,
+            CONCEALED,
+            LESSER_SCORE,
+            NO_SIBLING_MARKETS,
+            OptionalInt.empty());
     }
 
     // A market scoring its size alone, for a standing a case states by the markets under it rather
