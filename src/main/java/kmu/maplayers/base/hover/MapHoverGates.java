@@ -2,6 +2,8 @@ package kmu.maplayers.base.hover;
 
 import kmu.settings.KmuMapLayerSettings;
 
+import java.util.function.BooleanSupplier;
+
 /**
  * The hover switches that answer for every map layer at once: whether the map answers the cursor at
  * all, and then whether each kind of answer - the effects (the halo and the cell wash) and the
@@ -62,11 +64,45 @@ public final class MapHoverGates {
      * elsewhere. The render constraint is what closes that case, by keeping the foreign pass from
      * running at all.
      *
+     * <p>Three ways to be locatable, of which the vanilla hosts are the one an untouched install
+     * has. The permissions on either side of it are the player's, both off by default, and each
+     * widens what the pass may answer rather than narrowing it:
+     *
+     * <ul>
+     *   <li>The global permission admits every pass there is, foreign surfaces on any screen
+     *       included, and so short-circuits before anything is read from the screen.</li>
+     *   <li>The game-space permission admits the frames where the player is looking at the campaign
+     *       world itself. That is where a mod docking a map surface over the campaign puts the only
+     *       map on screen - and it closes the same surface again the moment the panel is parked,
+     *       since a mod parks it on exactly the conditions that end game space. Which is what makes
+     *       it a general rule rather than a per-mod one.</li>
+     * </ul>
+     *
+     * <p>Game space deliberately excludes nothing about the pause menu, which is raised without
+     * taking the screen under it down. {@code PauseMenuMapCover} owns that read, and a permission
+     * testing it as well would be answering a question a cover already answers - two places to
+     * change when the menu read moves, and one of them silent.
+     *
+     * <p>Both live reads arrive as suppliers so neither is taken on a frame whose answer does not
+     * turn on it: a player who has permitted the hover globally pays for no screen read at all.
+     *
      * @param isAnyMapShowing whether either vanilla map host is showing, from
      *                        {@code MapPresence#isAnyMapShowing}
+     * @param isInGameSpace   whether the player is looking at the campaign world with no screen over
+     *                        it, from {@code CampaignScreenView#isShowingGameSpace}
      * @return whether the hover may be resolved on this pass
      */
-    public static boolean isCursorLocatableOn(boolean isAnyMapShowing) {
-        return !KmuMapLayerSettings.getMapLayerMouseoverOnlyOnTheirHosts() || isAnyMapShowing;
+    public static boolean isCursorLocatableOn(
+            BooleanSupplier isAnyMapShowing,
+            BooleanSupplier isInGameSpace) {
+
+        if (KmuMapLayerSettings.getMapLayerMouseoverIsGlobal()) {
+            return true;
+        }
+        if (isAnyMapShowing.getAsBoolean()) {
+            return true;
+        }
+        return KmuMapLayerSettings.getMapLayerMouseoverInGameSpace()
+            && isInGameSpace.getAsBoolean();
     }
 }

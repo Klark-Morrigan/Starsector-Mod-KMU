@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.starsector.ui.coreui.CampaignScreenView;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconOrderTrace;
 import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
@@ -272,10 +273,12 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
         return new MapHoverPublisher(
             ModelviewMatrixReaders.selectForActiveRenderer(),
             () -> soundPlayer.playCueIfPresent(MapHoverCues.composeCellArrivalCue()),
-            // Composed here rather than inside the publisher because the two halves belong to
-            // different ends: the setting is the framework's to state, and what counts as a vanilla
-            // map on screen is a live read.
-            () -> MapHoverGates.isCursorLocatableOn(mapPresence.isAnyMapShowing()));
+            // Composed here rather than inside the publisher because the halves belong to different
+            // ends: the settings are the framework's to state, while what counts as a vanilla map on
+            // screen and whether the player is looking at the campaign itself are live reads.
+            () -> MapHoverGates.isCursorLocatableOn(
+                mapPresence::isAnyMapShowing,
+                CampaignScreenView::isShowingGameSpace));
     }
 
     // Answers the moment the frame just closed settled on, that frame's last pass having had the

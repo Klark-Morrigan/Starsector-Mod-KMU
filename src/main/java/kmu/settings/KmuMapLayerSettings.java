@@ -107,15 +107,25 @@ public final class KmuMapLayerSettings {
 
     // Compatibility with maps this mod does not own (Map - Compatibility tab). The hook the layers
     // draw through is the sector map's by convention only, and a mod that builds a map of its own
-    // drives it with its own position and zoom. Two separate constraints because they answer
-    // different complaints: one is about a picture appearing where it was not expected, the other
-    // about the cursor being answered from a transform that is not the one under it. The render
-    // constraint is the stronger of the two and the rarer want, so it defaults off, while the hover
-    // constraint defaults on - a wrong hover is heard and acted on rather than merely seen.
+    // drives it with its own position and zoom. The render constraint answers a picture appearing
+    // where it was not expected, and defaults off: a foreign map drawing the layers is a sight the
+    // player can judge for themselves.
     private static final String MAP_LAYERS_ONLY_ON_THEIR_HOSTS_FIELD =
         "kmu_map_compatibility_foreignMapSurfaces_mapLayersOnlyOnTheirHosts";
-    private static final String MAP_LAYER_MOUSEOVER_ONLY_ON_THEIR_HOSTS_FIELD =
-        "kmu_map_compatibility_foreignMapSurfaces_mapLayerMouseoverOnlyOnTheirHosts";
+
+    // What the layers may answer the cursor on, beside it. Stated as two permissions rather than as
+    // one restriction, because a tab holding a switch that grants next to one that restricts cannot
+    // be read as a set - a player would have to work out which way each points before either
+    // sentence means anything. Both default off, which is the vanilla hosts alone: the frames where
+    // the cursor can be located against the pass with no reading of another mod's surface at all.
+    //
+    // They overlap deliberately rather than being one three-way choice. With the global permission
+    // on, the game-space one adds nothing and says nothing wrong, so no control has to prevent the
+    // combination and no reader has to hold three named states in mind to see what one tick box does.
+    private static final String MAP_LAYER_MOUSEOVER_IS_GLOBAL_FIELD =
+        "kmu_map_compatibility_foreignMapSurfaces_mapLayerMouseoverIsGlobal";
+    private static final String MAP_LAYER_MOUSEOVER_IN_GAME_SPACE_FIELD =
+        "kmu_map_compatibility_foreignMapSurfaces_mapLayerMouseoverInGameSpace";
 
     // The one foreign map surface named rather than described (Map - Compatibility tab). Random
     // Assortment of Things puts a sector map where the campaign radar was, which the two
@@ -344,10 +354,12 @@ public final class KmuMapLayerSettings {
     // sight to pre-empt a complaint most installs never raise.
     private static final boolean DEFAULT_MAP_LAYERS_ONLY_ON_THEIR_HOSTS = false;
 
-    // On: the same pass answering the cursor is not a sight but a claim, and a wrong one - a system
-    // named that the pointer is not on, a tick sounded for reaching it. That is heard with no map
-    // open at all, so it reads as the mod malfunctioning rather than as a compatibility nicety.
-    private static final boolean DEFAULT_MAP_LAYER_MOUSEOVER_ONLY_ON_THEIR_HOSTS = true;
+    // Both off: the same pass answering the cursor is not a sight but a claim, and a wrong one - a
+    // system named that the pointer is not on, a tick sounded for reaching it. That is heard with no
+    // map open at all, so it reads as the mod malfunctioning rather than as a compatibility nicety.
+    // Withheld until asked for, therefore, unlike the picture above.
+    private static final boolean DEFAULT_MAP_LAYER_MOUSEOVER_IS_GLOBAL = false;
+    private static final boolean DEFAULT_MAP_LAYER_MOUSEOVER_IN_GAME_SPACE = false;
 
     // On: the mode is inert on every install that does not run the mod's minimap, so what it
     // defaults to is only ever read by a player who has one - and to that player, layers that
@@ -469,14 +481,24 @@ public final class KmuMapLayerSettings {
     }
 
     /**
-     * @return whether the layers may only answer the cursor while one of the two vanilla map hosts
-     *         is showing, so a map built by another mod neither lights cells nor names systems
-     *         under a pointer it cannot locate; on by default
+     * @return whether the layers may answer the cursor on every pass there is, foreign map surfaces
+     *         on any screen included; off by default, which permits the vanilla hosts alone
      */
-    public static boolean getMapLayerMouseoverOnlyOnTheirHosts() {
+    public static boolean getMapLayerMouseoverIsGlobal() {
         return KmuLunaSettings.readBoolean(
-            MAP_LAYER_MOUSEOVER_ONLY_ON_THEIR_HOSTS_FIELD,
-            DEFAULT_MAP_LAYER_MOUSEOVER_ONLY_ON_THEIR_HOSTS);
+            MAP_LAYER_MOUSEOVER_IS_GLOBAL_FIELD,
+            DEFAULT_MAP_LAYER_MOUSEOVER_IS_GLOBAL);
+    }
+
+    /**
+     * @return whether the layers may additionally answer the cursor on the frames where the player
+     *         is looking at the campaign world itself - no core screen open and no dialog up, which
+     *         is where a mod's docked map surface is the only map on screen; off by default
+     */
+    public static boolean getMapLayerMouseoverInGameSpace() {
+        return KmuLunaSettings.readBoolean(
+            MAP_LAYER_MOUSEOVER_IN_GAME_SPACE_FIELD,
+            DEFAULT_MAP_LAYER_MOUSEOVER_IN_GAME_SPACE);
     }
 
     /**

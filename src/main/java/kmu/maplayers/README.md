@@ -183,7 +183,13 @@ about what the overlay means.
   located against at all parks the same way and is checked before any of it: a map another mod built
   drives the same hook with its own position and zoom, and unprojecting against that yields a
   confident wrong answer rather than a missing one, which no guard downstream would catch. Whether
-  to allow it is the `Map - Compatibility` hover constraint, on by default. What that tick sounds like is `MapHoverCues` beside it - the map's own sample and the
+  to allow it is the `Map - Compatibility` pair of hover permissions, both off by default, which
+  between them add the frames the vanilla hosts do not cover: one admits every pass there is, the
+  other only those where the player is looking at the campaign world itself - no screen open and no
+  dialog up, which is KMLib's `CampaignScreenView` to answer. Stated as permissions rather than as
+  one restriction so the tab reads as a set; the narrower of the two is also what closes a docked
+  map surface without naming a mod, since a mod parks such a panel on exactly the conditions that
+  end game space. What that tick sounds like is `MapHoverCues` beside it - the map's own sample and the
   player's own level, read live like the switches are, and no cue at all once that level reaches the
   bottom of its slider. The cell rather than the cluster is what the tick is keyed by, so it answers
   the same change the hover box does. `HoverHighlightGeometry` resolves the highlight geometry and
@@ -212,19 +218,32 @@ about what the overlay means.
   layer asks before resolving a hover at all. A hover reads a cell out of map geometry, which knows
   nothing of what is composited on top, so without this it lights cells and floats boxes under
   whatever is covering them. `MapCover` is the role - one thing that can be over the cursor - and
-  `MapCoverReader` holds the set and stops at the first that answers. The four are
+  `MapCoverReader` holds the set and stops at the first that answers. The five are
   `PauseMenuMapCover` (the campaign's pause menu, raised over the screen without taking it down, so
   the map keeps drawing behind it), `ConsoleMapCover` (a text-entry console, which takes the whole
   screen and so reads no geometry at all), `SidebarMapCover` (any host's panel, through
-  `SidebarHosts`), and `VanillaChromeMapCover` (the map's own tab strip and control bar, stated as
-  "outside the map surface" since the chrome widgets are a fact about one game build). They are held
-  in ascending cost - a published one-call read, then a settled flag, then arithmetic over a box this
-  mod laid out, then a walk of the live widget tree - so the order is the composition's and each
-  cover states only its own reading. Every one fails open: what cannot be
+  `SidebarHosts`), `VanillaChromeMapCover` (the map's own tab strip and control bar, stated as
+  "outside the map surface" since the chrome widgets are a fact about one game build), and
+  `RandomAssortmentOfThingsMinimapCover` (everywhere that is *not* a docked minimap, on the frames
+  the mode from `RandomAssortmentOfThingsMode` is engaged and no vanilla map is showing). They are
+  held in ascending cost - a published one-call read, then a settled flag, then arithmetic over a box
+  this mod laid out, then the two that walk the live widget tree - so the order is the composition's
+  and each cover states only its own reading. All but the last fail open: what cannot be
   established is not covering, since a read taken to refine the hover must not be able to switch it
   off. One set for every layer, not one per layer, because nothing about a cover is a layer's own -
   a layer holding its own could be given a cover its neighbour was not, which is how a console came
   to hide the sidebar while the map went on lighting cells behind it.
+
+  The minimap cover is the exception on both counts, and deliberately. It is the only one that
+  *opens* something up - it exists so a permission granted in game space confines to the one surface
+  the player is actually pointing at, rather than answering over the whole campaign view - and so it
+  is the only one that fails **closed**: on those frames nothing is pointable except that one box,
+  so a walk that comes back with nothing, or with two maps, has to cover or the leak returns by way
+  of the read meant to stop it. It reads a vanilla map's presence first and answers before touching a
+  box, so a travelling panel cannot reach the `M` map or the intel visor even in principle; the box
+  itself is read live every frame and never kept, since such a panel walks to its resting place over
+  many frames. Named for the mod because the switch is - nothing it reads names one, `EmbeddedMap`
+  being found structurally.
 - **`base/tooltip`** - the box floating beside the cursor, in a later UI pass than the map's own.
   `MapLayerCellTooltip` owns the gates every hover box shares (the settings tiers above any layer, a
   map on screen, stepping aside for the vanilla star

@@ -22,8 +22,9 @@ import java.util.List;
 public final class MapCoverReader {
 
     // In ascending cost, since the first cover to answer ends the read: a published one-call read,
-    // then the console's settled flag, then arithmetic over a box this mod laid out, then a walk of
-    // the live widget tree.
+    // then the console's settled flag, then arithmetic over a box this mod laid out, then the two
+    // that walk the live widget tree - the map tab's own layout, and finally the surfaces another
+    // mod put on screen, which is the dearest because its walk is rooted above every tab.
     private final List<MapCover> covers;
 
     /**
@@ -43,7 +44,8 @@ public final class MapCoverReader {
             new PauseMenuMapCover(),
             new ConsoleMapCover(ConsoleCommandsOverlay.INSTANCE),
             new SidebarMapCover(),
-            new VanillaChromeMapCover()));
+            new VanillaChromeMapCover(),
+            RandomAssortmentOfThingsMinimapCover.createForLiveScreen()));
     }
 
     /**
