@@ -4,10 +4,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.math.hashing.Avalanche;
+import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
-import kmlib.starsector.systems.SystemColonies;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -158,7 +159,7 @@ public final class MapVisibility {
      * @return true when the system holds a colony or a known dead colony
      */
     public static boolean isInhabited(
-            SystemColonies colonies,
+            Colonies colonies,
             boolean isRevealedDecivilised,
             MapVisibilityOverrides overrides) {
 

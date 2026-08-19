@@ -28,7 +28,7 @@ import static org.mockito.Mockito.verify;
  * construction to fail fast rather than deep in the walk under a less legible error.
  *
  * <p>What each per-system read <em>answers</em> - {@link DominancePass#readBlocFootprints},
- * {@link DominancePass#readBlocContributions}, {@link DominancePass#readUnweighedColonyFactionIds},
+ * {@link DominancePass#readBlocContributions}, {@link DominancePass#readKnownColonyFactionIds},
  * and {@link DominancePass#tieBreakFor} - is covered end to end by the
  * {@link kmu.maplayers.politicalmap.base.politics.SectorPolitics},
  * {@link kmu.maplayers.politicalmap.base.politics.FilteredPolitics}, the standings suites, and the
@@ -80,7 +80,7 @@ class DominancePassTest {
 
             pass.readColoniesIn(system);
             pass.readFootprintsByFaction(system);
-            pass.readUnweighedColonyFactionIds(system);
+            pass.readKnownColonyFactionIds(system);
             pass.readBlocFootprints(system);
             pass.readBlocContributions(system);
             pass.tieBreakFor(system);

@@ -70,7 +70,7 @@ public record MarketWeightBreakdown(
 
     /**
      * The market's dominance weight: its summed contributions rounded once onto
-     * {@link KnownMarketFootprints#DOMINANCE_WEIGHT_SCALE}.
+     * {@link MarketWeights#DOMINANCE_WEIGHT_SCALE}.
      *
      * <p>Rounded once at the end rather than per factor, so the weight is exactly what the
      * factors add up to and the rule's comparisons stay exact.
@@ -78,6 +78,6 @@ public record MarketWeightBreakdown(
      * @return the weight this market folds into its faction's footprint
      */
     public int computeTotalWeight() {
-        return KnownMarketFootprints.roundToWeight(computeTotalContribution());
+        return MarketWeights.roundToWeight(computeTotalContribution());
     }
 }

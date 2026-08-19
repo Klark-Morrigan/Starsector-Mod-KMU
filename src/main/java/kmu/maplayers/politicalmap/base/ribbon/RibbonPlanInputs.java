@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.ribbon;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.SystemColony;
+import kmlib.starsector.colonies.Colony;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -74,7 +74,7 @@ public record RibbonPlanInputs(
      * @param system the system to count; null yields an empty list
      * @return the system's colonies the bake's reveal admits, in the set's own order
      */
-    public List<SystemColony> readKnownColoniesIn(StarSystemAPI system) {
+    public List<Colony> readKnownColoniesIn(StarSystemAPI system) {
         return pass.readKnownColoniesIn(system);
     }
 }

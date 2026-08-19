@@ -3,8 +3,8 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.entities.EntityNameplate;
-import kmlib.starsector.systems.SystemColonies;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
@@ -239,7 +239,7 @@ final class ExpandedSystemDominationTooltipTest {
 
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readBreakdownByFaction(
-                    SystemColonies.NONE,
+                    Colonies.NONE,
                     ANY_RULES,
                     false));
         }
@@ -261,7 +261,7 @@ final class ExpandedSystemDominationTooltipTest {
             // itself an invocation and an any()-matched count would take it for a second read.
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readBreakdownByFaction(
-                    SystemColonies.NONE,
+                    Colonies.NONE,
                     ANY_RULES,
                     false),
                 Mockito.times(1));
@@ -279,7 +279,7 @@ final class ExpandedSystemDominationTooltipTest {
 
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
-                    SystemColonies.NONE,
+                    Colonies.NONE,
                     true));
         }
 
@@ -303,7 +303,7 @@ final class ExpandedSystemDominationTooltipTest {
             // itself an invocation and an any()-matched count would take it for a second read.
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
-                    SystemColonies.NONE,
+                    Colonies.NONE,
                     false),
                 Mockito.times(1));
         }

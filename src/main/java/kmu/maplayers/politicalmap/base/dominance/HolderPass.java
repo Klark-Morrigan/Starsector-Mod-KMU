@@ -3,14 +3,16 @@ package kmu.maplayers.politicalmap.base.dominance;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.SystemColonies;
+import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.systems.SystemColoniesIndex;
-import kmlib.starsector.systems.SystemColony;
 
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * One rebuild's reading of a sector, as any owner-painted map layer needs it: which sector, how
@@ -140,7 +142,7 @@ public record HolderPass(
      * @param system the system to read; null yields an empty set
      * @return the system's colony set
      */
-    public SystemColonies readColoniesIn(StarSystemAPI system) {
+    public Colonies readColoniesIn(StarSystemAPI system) {
         return colonies.readColoniesIn(system);
     }
 
@@ -156,7 +158,30 @@ public record HolderPass(
      * @param system the system to read; null yields an empty list
      * @return the system's colonies the reveal admits, in the set's own order
      */
-    public List<SystemColony> readKnownColoniesIn(StarSystemAPI system) {
+    public List<Colony> readKnownColoniesIn(StarSystemAPI system) {
         return readColoniesIn(system).readKnownColonies(shouldIncludeUndiscoveredMarkets);
+    }
+
+    /**
+     * The factions present in one system - the owners of the colonies above, each named once
+     * however many it holds there.
+     *
+     * <p>Who is in a system is a question about the system rather than about the mechanic reading
+     * it, so it is answered here, off the one projection, rather than derived by each mechanic from
+     * whatever it happened to score. That is what lets a band counting a cell and a box listing it
+     * report one set of factions: both are projections of this, so neither can hold an owner the
+     * other lacks.
+     *
+     * @param system the system to read; null yields an empty set
+     * @return the ids of the factions holding a colony the reveal admits, in the projection's own
+     *         order
+     */
+    public Set<String> readKnownColonyFactionIds(StarSystemAPI system) {
+
+        var factionIds = new LinkedHashSet<String>();
+        for (var colony : readKnownColoniesIn(system)) {
+            factionIds.add(colony.market().getFaction().getId());
+        }
+        return factionIds;
     }
 }

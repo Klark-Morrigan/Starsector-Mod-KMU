@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.base.dominance;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.systems.StarSystems;
-import kmlib.starsector.systems.SystemColonies;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -69,7 +69,7 @@ public final class MarketProximityTieBreak {
      */
     public static Comparator<String> forSystem(
             StarSystemAPI system,
-            SystemColonies colonies,
+            Colonies colonies,
             boolean shouldIncludeUndiscoveredMarkets,
             HolderGrouping grouping) {
 
@@ -113,7 +113,7 @@ public final class MarketProximityTieBreak {
     // onto blocs.
     private static Map<String, Double> computeMinDistanceByBlocId(
             StarSystemAPI system,
-            SystemColonies colonies,
+            Colonies colonies,
             boolean shouldIncludeUndiscoveredMarkets,
             HolderGrouping grouping) {
 

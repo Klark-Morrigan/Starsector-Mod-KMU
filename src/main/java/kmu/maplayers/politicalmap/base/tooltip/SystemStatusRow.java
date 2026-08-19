@@ -3,8 +3,8 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.markets.DecivilisedMarkets;
-import kmlib.starsector.systems.SystemColonies;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.CellTooltipRows;

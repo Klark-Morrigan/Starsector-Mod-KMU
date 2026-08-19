@@ -199,7 +199,7 @@ class MapLayerCellTooltipGateIntegrationTest {
 
         @Test
         void claimsTheTogglePressWhileTheSectorMapIsShowingTheOrdinarySchematic() {
-            
+
             var eventMock = pressToggleOnInstalledInput(SectorMapState.SHOWING_WITH_STARSCAPE_OFF);
 
             assertThat(HoverTooltipDetailModeState.getInstance().getMode())

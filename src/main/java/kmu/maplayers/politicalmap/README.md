@@ -222,7 +222,9 @@ there too, once for both: "score contributions", which the framework puts at the
 of the two is drawn, beside the key that switches between them. Named here rather than by the
 framework because only this layer knows what its counterpart holds, and once rather than per box
 because the account is the same thing whichever way the player is switching. The parts come
-from the very arithmetic the scores were summed over (`KnownMarketFootprints.readBreakdownByFaction`),
+from the very arithmetic the scores were summed over (`KnownMarketFootprints.readBreakdownByFaction`,
+which folds what `MarketWeights` works out per colony - the base size, station and patrol factors and
+the stability cut each takes, plus the grid a worth in size points is rounded onto),
 so the lines always add up to the number the ordinary box and the fills show;
 `MarketWeightRowResolver` decides which lines a colony breaks into and `MarketFactorText` how one
 line's numbers read - a rating as the player set it, a weight on the grid the rest of the box counts
@@ -271,11 +273,13 @@ the quiet shade, and breaks down into no factors - the same sentence the claims 
 market its own mechanic never weighed, and for the same reason: the colony is there and it moved
 nothing, which is the whole of what the account has to say about it.
 A faction whose only colony in the system is one of these is listed all the same, at a nought of its
-own. Presence and weight are two questions: the ranking (`SystemStandings`) takes the owners of those
-colonies (`KnownMarketFootprints.readUnweighedColonyFactionIds`, the same selection the account is
-read from without paying for its names) beside the footprints, and gives each a
-`PresenceOnlyFactionStanding` - the sealed other half of `FactionStanding` - so the box names every
-faction the band beneath the cell counts. Nothing about the fill moves: holding is resolved off the
+own. Presence and weight are two questions, so the ranking (`SystemStandings`) is handed both: who is
+in the system (`HolderPass.readKnownColonyFactionIds` - the owners of the very projection the band
+counts, which is why the two surfaces cannot name different factions) beside each faction's
+footprint, and anyone present with no footprint takes a `PresenceOnlyFactionStanding`, the sealed
+other half of `FactionStanding`. Presence is read as the wider set rather than as whatever the
+weighing left over, so nothing a weighed read comes to exclude can drop a faction out of the listing
+while the band goes on counting it. Nothing about the fill moves: holding is resolved off the
 footprints, which such a faction raises none of, so its nought can neither take a system nor tie for
 one. The nought reads in the quiet shade at both tiers (`statesUncountedValue` again, and
 `GroupStanding.hasWeighedMember` for the bloc line over it) - a bloc counts as weighed where any one
@@ -331,7 +335,7 @@ the box would then owe an answer to.
 The unlisted colony is vanilla's own doing: Galatia Academy is built as a real market on a real
 station and deliberately never registered, so the mechanic's economy walk never sees it and a box
 reading the economy alone reports that station as nobody's. The contest is read over
-`SystemColonies` - KMLib's shared colony set, which covers both listings and which is also what
+`Colonies` - KMLib's shared colony set, which covers both listings and which is also what
 keeps the condition-only market every surveyed rock carries out of the account - and the sibling
 count and every other term stay on the economy's own half of it, since admitting an unregistered
 colony there would raise a real one's score above what the game scores it at and could hand the

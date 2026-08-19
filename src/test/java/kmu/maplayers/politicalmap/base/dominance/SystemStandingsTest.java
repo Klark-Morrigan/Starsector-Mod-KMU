@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base.dominance;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,13 +24,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>The presence cases pin the second input: a faction the pass could weigh nothing for is still
  * ranked, at the nought its standing carries, so the box over a cell can name every faction the band
- * inside it counts.
+ * inside it counts. It is the wider of the two inputs, so every case states it as the footprints'
+ * own owners plus whoever it poses as present without a weight - and the two nameless-owner cases
+ * pin that a faction the grouping can put no bloc to is dropped whichever input it arrived by.
  */
 class SystemStandingsTest {
-
-    // A system whose every colony the economy lists, which is what most cases pose - the presence
-    // cases name their own.
-    private static final Set<String> NOBODY_UNWEIGHED = Set.of();
 
     @Nested
     class RankByDominationScore {
@@ -38,7 +38,7 @@ class SystemStandingsTest {
 
             assertThat(SystemStandings.rankByDominationScore(
                     Map.of(),
-                    NOBODY_UNWEIGHED,
+                    Set.of(),
                     HolderGrouping.identity()))
                 .isEmpty();
         }
@@ -52,7 +52,7 @@ class SystemStandingsTest {
 
             var standings = SystemStandings.rankByDominationScore(
                 footprints,
-                NOBODY_UNWEIGHED,
+                listPresent(footprints),
                 HolderGrouping.identity());
 
             assertThat(standings)
@@ -75,7 +75,7 @@ class SystemStandingsTest {
 
             var standings = SystemStandings.rankByDominationScore(
                 footprints,
-                NOBODY_UNWEIGHED,
+                listPresent(footprints),
                 HolderGrouping.identity());
 
             assertThat(standings).extracting(GroupStanding::blocId)
@@ -96,7 +96,7 @@ class SystemStandingsTest {
 
             var standings = SystemStandings.rankByDominationScore(
                 footprints,
-                NOBODY_UNWEIGHED,
+                listPresent(footprints),
                 HolderGrouping.identity());
 
             assertThat(standings).extracting(GroupStanding::blocId)
@@ -115,7 +115,7 @@ class SystemStandingsTest {
 
             var standings = SystemStandings.rankByDominationScore(
                 footprints,
-                NOBODY_UNWEIGHED,
+                listPresent(footprints),
                 buildAllianceGrouping());
 
             assertThat(standings)
@@ -140,7 +140,7 @@ class SystemStandingsTest {
 
             var standings = SystemStandings.rankByDominationScore(
                 footprints,
-                NOBODY_UNWEIGHED,
+                listPresent(footprints),
                 buildAllianceGrouping());
 
             assertThat(standings)
@@ -161,7 +161,7 @@ class SystemStandingsTest {
 
             var standings = SystemStandings.rankByDominationScore(
                 footprints,
-                NOBODY_UNWEIGHED,
+                listPresent(footprints),
                 HolderGrouping.identity());
 
             assertThat(standings).containsExactly(
@@ -185,7 +185,7 @@ class SystemStandingsTest {
 
             var standings = SystemStandings.rankByDominationScore(
                 footprints,
-                NOBODY_UNWEIGHED,
+                listPresent(footprints),
                 buildAllianceGrouping());
 
             assertThat(standings).extracting(GroupStanding::blocId)
@@ -223,7 +223,7 @@ class SystemStandingsTest {
 
             var standings = SystemStandings.rankByDominationScore(
                 footprints,
-                Set.of("astral_armada"),
+                listPresent(footprints, "astral_armada"),
                 HolderGrouping.identity());
 
             assertThat(standings).extracting(GroupStanding::blocId)
@@ -231,17 +231,17 @@ class SystemStandingsTest {
         }
 
         @Test
-        void keepsTheWeighedStandingOfAFactionHoldingBothKindsOfColony() {
-            // An unregistered colony beside a weighed one is part of that faction's account rather
-            // than the whole of its presence, so the faction keeps the standing its arithmetic
-            // earned and is not listed twice.
+        void listsAFactionOnceWhereThePassAlsoWeighedIt() {
+            // Presence is the wider set, so a weighed faction is in both inputs. It keeps the
+            // standing its arithmetic earned and is listed once rather than twice - a second,
+            // presence-only line for the same faction would read as a second holder.
             var footprints = listOrderedFootprints(
                 "hegemony",
                 buildWeightedFootprint(6, 6, 0));
 
             var standings = SystemStandings.rankByDominationScore(
                 footprints,
-                Set.of("hegemony"),
+                listPresent(footprints),
                 HolderGrouping.identity());
 
             assertThat(standings).containsExactly(
@@ -282,13 +282,65 @@ class SystemStandingsTest {
 
             var standings = SystemStandings.rankByDominationScore(
                 footprints,
-                Set.of("astral_armada"),
+                listPresent(footprints, "astral_armada"),
                 buildAllianceGrouping());
 
             assertThat(standings).hasSize(1);
             assertThat(standings.get(0).hasWeighedMember())
                 .isTrue();
         }
+
+        @Test
+        void leavesOutAWeighedFactionTheGroupingCanNameNoBlocFor() {
+            // A colony a mod hung on a faction carrying no id. A nameless key would travel on as a
+            // bloc the box cannot name, and the group tie-break would fault on it the moment a
+            // second group stood beside it - which is the ordinary case.
+            var footprints = listOrderedFootprints(
+                "hegemony",
+                buildWeightedFootprint(4, 4, 0),
+                null,
+                buildWeightedFootprint(9, 9, 0));
+
+            var standings = SystemStandings.rankByDominationScore(
+                footprints,
+                listPresent(footprints),
+                HolderGrouping.identity());
+
+            assertThat(standings).extracting(GroupStanding::blocId)
+                .containsExactly("hegemony");
+        }
+
+        @Test
+        void leavesOutAPresentFactionTheGroupingCanNameNoBlocFor() {
+            // The same nameless owner reaching the ranking through presence rather than through a
+            // weight, which an unregistered colony is all it takes.
+            var footprints = listOrderedFootprints(
+                "hegemony",
+                buildWeightedFootprint(4, 4, 0));
+
+            var standings = SystemStandings.rankByDominationScore(
+                footprints,
+                listPresent(footprints, (String) null),
+                HolderGrouping.identity());
+
+            assertThat(standings).extracting(GroupStanding::blocId)
+                .containsExactly("hegemony");
+        }
+    }
+
+    // Everyone in the system: the owners the footprints name, plus any the case poses as present
+    // without a weight. Derived from the footprints rather than restated beside them because that
+    // is the relation the rule is handed - presence is the wider set, and a case stating the two
+    // apart could pose a system where a weighed faction is not in it.
+    private static Set<String> listPresent(
+            Map<String, MarketFootprint> footprints,
+            String... unweighedFactionIds) {
+
+        var presentFactionIds = new LinkedHashSet<>(footprints.keySet());
+
+        presentFactionIds.addAll(Arrays.asList(unweighedFactionIds));
+
+        return presentFactionIds;
     }
 
     // Two allied factions folded into one bloc, with tritachyon left an outsider mapped to itself, so

@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.dominance;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.SystemColonies;
+import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -177,7 +177,7 @@ public record DominancePass(
      * @param system the system to read; null yields an empty set
      * @return the system's colony set
      */
-    public SystemColonies readColoniesIn(StarSystemAPI system) {
+    public Colonies readColoniesIn(StarSystemAPI system) {
         return holding.readColoniesIn(system);
     }
 
@@ -200,23 +200,21 @@ public record DominancePass(
     }
 
     /**
-     * The factions present in this system through colonies the economy does not list, under the
-     * pass's reveal - who the read above cannot see, every term of a dominance weight being
-     * economy-fed.
+     * The factions present in this system under the pass's reveal - everyone holding a colony the
+     * player may be shown, whether or not this mechanic could weigh it.
      *
-     * <p>Beside the footprints rather than folded into them, and that is the whole of the
-     * separation: a faction here has nothing that could be summed, so what it reaches is a listing
-     * and never an arithmetic. A caller ranking a system asks for both and states the difference
-     * itself.
+     * <p>Beside the footprints rather than derived from them, and that is the whole of the
+     * separation: every term of a dominance weight is economy-fed, so a faction holding nothing the
+     * economy lists raises no footprint at all, and reading presence off the weights would leave it
+     * out of every listing while the band beneath the cell went on counting it. The wider set is
+     * the one to read: it can only ever be a superset of what was weighed, so a caller ranking a
+     * system cannot lose a faction to a filter applied on the weighed side.
      *
      * @param system the system whose colonies are read
-     * @return the ids of the factions holding an unlisted colony there; empty when every colony
-     *         present is one the economy lists
+     * @return the ids of the factions present there; empty when the player knows of no colony
      */
-    public Set<String> readUnweighedColonyFactionIds(StarSystemAPI system) {
-        return KnownMarketFootprints.readUnweighedColonyFactionIds(
-            readColoniesIn(system),
-            shouldIncludeUndiscoveredMarkets());
+    public Set<String> readKnownColonyFactionIds(StarSystemAPI system) {
+        return holding.readKnownColonyFactionIds(system);
     }
 
     /**

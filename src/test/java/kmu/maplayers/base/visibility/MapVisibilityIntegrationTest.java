@@ -13,10 +13,10 @@ import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
+import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
-import kmlib.starsector.systems.SystemColonies;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Integration coverage for the on-map rule: {@link MapVisibility}
- * composing the real {@link StarSystems}, {@link SystemColonies}, {@link VisibleStars},
+ * composing the real {@link StarSystems}, {@link Colonies}, {@link VisibleStars},
  * and {@link DecivilisedMarkets}. A reachable system appears; an unreachable one
  * appears once inhabited - a colony the player knows of, registered with the economy
  * or not, or a revealed decivilised planet - and otherwise stays off; and the
@@ -212,7 +212,7 @@ class MapVisibilityIntegrationTest {
             // second walk of every planet. A dropped argument would look identical everywhere
             // else, every other case passing a colony set that answers on its own.
             assertThat(MapVisibility.isInhabited(
-                    SystemColonies.NONE,
+                    Colonies.NONE,
                     IS_REVEALED_DECIVILISED,
                     MapVisibilityOverrides.NONE))
                 .isTrue();

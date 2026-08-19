@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.ribbon;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.SystemColony;
+import kmlib.starsector.colonies.Colony;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
@@ -95,7 +95,7 @@ public final class ColonyCellRibbons {
     // Unordered on purpose: the ranking is the mechanic's to state, and a count that came out in
     // the walk's order would look ranked without being it.
     private static Map<String, Integer> countColoniesByBloc(
-            List<SystemColony> knownColonies,
+            List<Colony> knownColonies,
             HolderGrouping grouping) {
 
         var countByFactionId = new HashMap<String, Integer>();

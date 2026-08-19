@@ -6,9 +6,9 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.markets.Markets;
-import kmlib.starsector.systems.SystemColonies;
-import kmlib.starsector.systems.SystemColony;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -283,7 +283,7 @@ class MarketProximityTieBreakTest {
     // which is what an undiscovered colony reads as.
     private static void stubColonyUndiscovered(
             MockedStatic<Markets> marketsMock,
-            SystemColony colony) {
+            Colony colony) {
 
         marketsMock
             .when(() -> Markets.isCountedAsColony(same(colony.market()), eq(false)))
@@ -324,25 +324,25 @@ class MarketProximityTieBreakTest {
 
     // The system's colony set as one walk of it would have reported, which is what a pass hands
     // the tie-break.
-    private static SystemColonies listColonies(SystemColony... colonies) {
-        return new SystemColonies(List.of(colonies));
+    private static Colonies listColonies(Colony... colonies) {
+        return new Colonies(List.of(colonies));
     }
 
     // A colony the sector's economy lists - one the dominance rule weighed, and so one entitled
     // to settle a tie between the blocs it weighed.
-    private static SystemColony buildListedColonyOwnedBy(
+    private static Colony buildListedColonyOwnedBy(
             String factionId,
             SectorEntityToken primaryEntity) {
 
-        return new SystemColony(buildMarketOwnedBy(factionId, primaryEntity), true);
+        return new Colony(buildMarketOwnedBy(factionId, primaryEntity), true);
     }
 
     // A colony present in the system that the economy does not list - named by a box, weighed by
     // nothing.
-    private static SystemColony buildUnlistedColonyOwnedBy(
+    private static Colony buildUnlistedColonyOwnedBy(
             String factionId,
             SectorEntityToken primaryEntity) {
 
-        return new SystemColony(buildMarketOwnedBy(factionId, primaryEntity), false);
+        return new Colony(buildMarketOwnedBy(factionId, primaryEntity), false);
     }
 }

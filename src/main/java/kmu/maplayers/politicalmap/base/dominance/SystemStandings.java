@@ -19,12 +19,14 @@ import java.util.Set;
  * {@link MarketFootprint#totalWeight()} folds into its group; groups rank by their summed score and
  * a group's members rank by their own, ties breaking by id at both tiers so the ordering is total.
  *
- * <p>Presence is what puts a faction on the list, not weight. A faction holding nothing in the
- * system but a colony the economy does not list raises no footprint - every term of a dominance
- * weight being economy-fed - and takes a {@link PresenceOnlyFactionStanding} at nought rather than
- * going unlisted, so the box over a cell names every faction the band inside it draws a run for.
- * Such a standing settles at the foot of its group on the score it carries, and cannot move a fill:
- * holding is resolved off the footprints, which it never enters.
+ * <p>Presence is what puts a faction on the list, not weight - so the list is built from who is in
+ * the system, with the weighed factions among them, rather than from the weighing plus whatever it
+ * missed. A faction holding nothing in the system but a colony the economy does not list raises no
+ * footprint - every term of a dominance weight being economy-fed - and takes a
+ * {@link PresenceOnlyFactionStanding} at nought rather than going unlisted, so the box over a cell
+ * names every faction the band inside it draws a run for. Such a standing settles at the foot of
+ * its group on the score it carries, and cannot move a fill: holding is resolved off the
+ * footprints, which it never enters.
  *
  * <p>Keying the fold on the grouping rather than hardcoding "faction" is what makes the alliances
  * tooltip fall out of the same read plus one grouped sum: the faction view is the identity grouping,
@@ -33,8 +35,8 @@ import java.util.Set;
  *
  * <p>The grouped ranking is a pure rule over hand-built inputs and a grouping, kept free of the
  * live economy so it is exercised directly on those inputs; the live entry only reads the one
- * hovered system's footprints and its unweighed colonies' owners
- * ({@link KnownMarketFootprints}) before handing them to that rule.
+ * hovered system's footprints ({@link KnownMarketFootprints}) and the factions present in it
+ * ({@link HolderPass#readKnownColonyFactionIds}) before handing them to that rule.
  */
 public final class SystemStandings {
 
@@ -59,12 +61,12 @@ public final class SystemStandings {
 
     /**
      * Ranks the one hovered system's factions into two-tier standings under a pass's rule, dev
-     * reveal, and grouping: reads each faction's footprint in the system beside the owners of the
-     * colonies the pass could not weigh, then folds and ranks both through the pure rule below. The
-     * live entry the tooltip resolves a hover through.
+     * reveal, and grouping: reads who is present in the system beside each faction's footprint in
+     * it, then folds and ranks both through the pure rule below. The live entry the tooltip
+     * resolves a hover through.
      *
-     * <p>Both reads come off the pass's one walk of the system, so who was weighed and who is
-     * merely present are two readings of one set of colonies rather than two walks that can part
+     * <p>Both reads come off the pass's one walk of the system, so who is present and what was
+     * weighed for them are two readings of one set of colonies rather than two walks that can part
      * company.
      *
      * @param system the hovered system whose colonies are ranked
@@ -78,7 +80,7 @@ public final class SystemStandings {
             DominancePass pass) {
         return rankByDominationScore(
             pass.readFootprintsByFaction(system),
-            pass.readUnweighedColonyFactionIds(system),
+            pass.readKnownColonyFactionIds(system),
             pass.grouping());
     }
 
@@ -88,24 +90,24 @@ public final class SystemStandings {
      * rank within it, ties breaking by id at both tiers. The pure rule the live entry delegates to,
      * so it is exercised on hand-built footprints and a hand-built grouping.
      *
-     * @param footprintByFactionId      each faction's footprint in the hovered system; an empty map
-     *                                  means the pass weighed no colony there
-     * @param unweighedColonyFactionIds the factions holding a colony the economy does not list, so
-     *                                  the ranking accounts for the ones the weighing could not
-     *                                  reach; each takes a presence-only standing at nought
-     * @param grouping                  the active view's grouping folding factions into groups; the
-     *                                  identity grouping yields one singleton group per faction
+     * @param footprintByFactionId each faction's footprint in the hovered system; an empty map means
+     *                             the pass weighed no colony there
+     * @param presentFactionIds    everyone holding a colony in the system, which the footprints are
+     *                             a subset of - a faction here with no footprint takes a
+     *                             presence-only standing at nought
+     * @param grouping             the active view's grouping folding factions into groups; the
+     *                             identity grouping yields one singleton group per faction
      * @return the groups ranked descending by summed score, each with its members ranked within;
-     *         empty when neither input holds a faction
+     *         empty when nobody is present
      */
     public static List<GroupStanding> rankByDominationScore(
             Map<String, MarketFootprint> footprintByFactionId,
-            Set<String> unweighedColonyFactionIds,
+            Set<String> presentFactionIds,
             HolderGrouping grouping) {
 
         var membersByBlocId = collectMembersByBloc(
             footprintByFactionId,
-            unweighedColonyFactionIds,
+            presentFactionIds,
             grouping);
         var groups = new ArrayList<GroupStanding>(membersByBlocId.size());
 
@@ -120,12 +122,14 @@ public final class SystemStandings {
     // one bucket while every other faction is its own. First-seen bloc order is kept here only for a
     // stable build; the caller sorts the groups into ranked order regardless.
     //
-    // The weighed factions are folded first so a faction reached by both reads keeps the standing
-    // its arithmetic earned: an unlisted colony beside a weighed one is part of that faction's
-    // account rather than the whole of its presence, and a second standing would list it twice.
+    // The weighed factions are folded first, so a faction the pass did weigh keeps the standing its
+    // arithmetic earned and is passed over on the presence walk. Taking presence as the wider set
+    // rather than as the leftovers of the weighing is what makes that safe: whoever is in the
+    // system reaches a standing of one kind or the other, whatever the weighed side goes on to
+    // exclude.
     private static Map<String, List<FactionStanding>> collectMembersByBloc(
             Map<String, MarketFootprint> footprintByFactionId,
-            Set<String> unweighedColonyFactionIds,
+            Set<String> presentFactionIds,
             HolderGrouping grouping) {
 
         var membersByBlocId = new LinkedHashMap<String, List<FactionStanding>>();
@@ -136,7 +140,7 @@ public final class SystemStandings {
                 grouping,
                 new WeighedFactionStanding(entry.getKey(), entry.getValue().totalWeight()));
         }
-        for (var factionId : unweighedColonyFactionIds) {
+        for (var factionId : presentFactionIds) {
             if (!footprintByFactionId.containsKey(factionId)) {
                 addMember(membersByBlocId, grouping, new PresenceOnlyFactionStanding(factionId));
             }
@@ -146,14 +150,23 @@ public final class SystemStandings {
 
     // Files one standing under the bloc its faction folds into, the two kinds being bucketed the
     // same way: what a standing is made of is the ranking's business and never the grouping's.
+    //
+    // A faction the grouping can name no bloc for is left out, on the same rule the per-bloc folds
+    // beside this one apply: a nameless key would travel on as a bloc, and the box would then be
+    // asked to draw a line for one - which it cannot name, and which either tie-break below would
+    // fault on the moment a second group stood beside it.
     private static void addMember(
             Map<String, List<FactionStanding>> membersByBlocId,
             HolderGrouping grouping,
             FactionStanding standing) {
 
-        membersByBlocId
-            .computeIfAbsent(grouping.resolveBlocId(standing.factionId()), id -> new ArrayList<>())
-            .add(standing);
+        var blocId = grouping.resolveBlocId(standing.factionId());
+
+        if (blocId != null) {
+            membersByBlocId
+                .computeIfAbsent(blocId, id -> new ArrayList<>())
+                .add(standing);
+        }
     }
 
     // Ranks one group's members and sums their scores into the group's aggregate, so a group's own

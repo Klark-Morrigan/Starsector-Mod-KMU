@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import kmlib.text.KmlibNumbers;
 
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
-import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
+import kmu.maplayers.politicalmap.base.dominance.MarketWeights;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
 import kmu.maplayers.politicalmap.base.dominance.StationFactor;
@@ -210,7 +210,7 @@ public final class MarketFactorText {
     // A worth in size points as the weight the rest of the box counts in, so a factor line, its
     // market's line, and the bloc's line are all read in one unit and add up.
     private static String formatWeight(double contribution) {
-        return KmlibNumbers.formatGroupedInteger(KnownMarketFootprints.roundToWeight(contribution));
+        return KmlibNumbers.formatGroupedInteger(MarketWeights.roundToWeight(contribution));
     }
 
     // Runs a value on into a cut taken off it, and leaves it alone where nothing was taken. Applied

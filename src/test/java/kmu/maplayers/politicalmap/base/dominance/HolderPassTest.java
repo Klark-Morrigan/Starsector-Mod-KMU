@@ -15,8 +15,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 /**
- * Unit coverage for {@link HolderPass}: the construction guard, and that the pass names the sector
- * its own walk was opened over rather than one carried beside it.
+ * Unit coverage for {@link HolderPass}: the construction guard, the two reads of the known
+ * projection, and that the pass names the sector its own walk was opened over rather than one
+ * carried beside it.
  *
  * <p>The naming matters because every resolver behind the holder seam takes its sector from here.
  * A pass that could report one sector while answering colonies out of another would let a resolver
@@ -108,6 +109,81 @@ final class HolderPassTest {
             assertThat(HolderPass
                     .over(mock(SectorAPI.class), false, HolderGrouping.identity())
                     .readKnownColoniesIn(null))
+                .isEmpty();
+        }
+    }
+
+    @Nested
+    class ReadKnownColonyFactionIds {
+
+        @Test
+        void namesEveryOwnerTheProjectionHolds() {
+            // Who is in the system, whatever the economy makes of them: the registered colony's
+            // owner and the owner of a station the listing never held both count, which is what
+            // lets a listing built on this name every faction a band counting the same projection
+            // draws a run for.
+            var registeredColony = SectorPoliticsFixtures.buildVisibleMarket(
+                HEGEMONY_FACTION,
+                COLONY_SIZE);
+            var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID, registeredColony);
+
+            SectorPoliticsFixtures.placeMarketsOnSystemEntities(
+                SectorPoliticsFixtures.buildOnlySystem(sector),
+                registeredColony,
+                SectorPoliticsFixtures.buildVisibleMarket(
+                    SectorPoliticsFixtures.buildFaction("tritachyon"),
+                    COLONY_SIZE));
+
+            assertThat(HolderPass
+                    .over(sector, false, HolderGrouping.identity())
+                    .readKnownColonyFactionIds(SectorPoliticsFixtures.buildOnlySystem(sector)))
+                .containsExactlyInAnyOrder("hegemony", "tritachyon");
+        }
+
+        @Test
+        void namesAnOwnerOnceHoweverManyColoniesItHolds() {
+            // A listing names a faction once, so the owners come back as a set: a faction with two
+            // colonies here is one faction present, not two.
+            var sector = SectorPoliticsFixtures.buildSectorWith(
+                SYSTEM_ID,
+                SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE),
+                SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE));
+
+            assertThat(HolderPass
+                    .over(sector, false, HolderGrouping.identity())
+                    .readKnownColonyFactionIds(SectorPoliticsFixtures.buildOnlySystem(sector)))
+                .containsExactly("hegemony");
+        }
+
+        @Test
+        void withholdsAnOwnerThePlayerHasOnlyUnfoundColoniesOf() {
+            // The fog reaches presence as it reaches the colonies themselves: naming a faction over
+            // a base the player has not found is the one thing the projection exists to prevent,
+            // and the dev reveal states it like anything else.
+            var sector = SectorPoliticsFixtures.buildSectorWith(
+                SYSTEM_ID,
+                SectorPoliticsFixtures.buildUndiscoveredHiddenMarket(
+                    HEGEMONY_FACTION,
+                    COLONY_SIZE));
+
+            var system = SectorPoliticsFixtures.buildOnlySystem(sector);
+
+            assertThat(HolderPass
+                    .over(sector, false, HolderGrouping.identity())
+                    .readKnownColonyFactionIds(system))
+                .isEmpty();
+            assertThat(HolderPass
+                    .over(sector, true, HolderGrouping.identity())
+                    .readKnownColonyFactionIds(system))
+                .containsExactly("hegemony");
+        }
+
+        @Test
+        void namesNobodyForASystemThatIsNotThere() {
+
+            assertThat(HolderPass
+                    .over(mock(SectorAPI.class), false, HolderGrouping.identity())
+                    .readKnownColonyFactionIds(null))
                 .isEmpty();
         }
     }
