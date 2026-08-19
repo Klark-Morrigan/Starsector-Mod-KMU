@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
@@ -101,7 +102,7 @@ final class MarkedSystemRederiveTest {
             presenceMock = openSeam(FilteredPolitics.class);
             presenceMock
                 .when(() -> FilteredPolitics.findPresentSystemIds(
-                    any(DominancePass.class),
+                    any(HolderPass.class),
                     any(),
                     any()))
                 .thenReturn(Set.of());
@@ -280,7 +281,7 @@ final class MarkedSystemRederiveTest {
             // sector to find its candidates, so handing it a system it cannot change anything for
             // is a walk paid for an answer that is discarded.
             presenceMock.verify(() -> FilteredPolitics.findPresentSystemIds(
-                any(DominancePass.class),
+                any(HolderPass.class),
                 eq(SPOTLIT_BLOC),
                 eq(Set.of())));
         }
@@ -339,7 +340,7 @@ final class MarkedSystemRederiveTest {
         private void assertPickLivesIn(String systemId) {
             presenceMock
                 .when(() -> FilteredPolitics.findPresentSystemIds(
-                    any(DominancePass.class),
+                    any(HolderPass.class),
                     eq(SPOTLIT_BLOC),
                     any()))
                 .thenReturn(Set.of(systemId));

@@ -140,6 +140,9 @@ final class MarkedSystemRederive {
     // and off filter it returns before touching an economy at all - so a batch on an unfiltered
     // map pays a call that decides nothing rather than a per-system branch stating the same thing.
     //
+    // Handed the batch's reading of the sector rather than the whole pass: presence is a question
+    // about who is in a system, which no weighting rule takes part in answering.
+    //
     // Asked of the marked systems the updated holders left unheld, as the full build asks it of
     // the unheld inhabited ones: presence is what spares a cell no bloc holds, so a system that
     // has just been given to somebody drops out of the set rather than being carried in it under
@@ -152,7 +155,7 @@ final class MarkedSystemRederive {
 
         var occupancy = territories.getOccupancy();
         var presentSystemIds = FilteredPolitics.findPresentSystemIds(
-            pass,
+            pass.holding(),
             territories.getSelectedBlocId(),
             occupancy.selectUnheldSystemIdsAmong(markedSystemIds));
 

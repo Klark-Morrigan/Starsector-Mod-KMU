@@ -75,8 +75,11 @@ A bloc's footprint always traces as one border. The fill is what varies per syst
 are three states - one default and two exceptions:
 
 - **Solid** - the default. Any owned system not listed as an exception fills solid.
-- **Hatched** (`contestedSystemIds`) - a spotlit bloc's contested systems: "mine, but contested",
-  drawn as a diagonal hatch.
+- **Hatched** (`contestedSystemIds`) - a spotlit bloc's presence in a system it does not hold
+  outright: "mine, but not only mine", drawn as a diagonal hatch. It states presence and nothing
+  finer, so it reads the same whether a rival holds the system or nobody does - the alternative
+  being a fourth state drawn for the handful of systems where a bloc's only colony is one no
+  mechanic could weigh.
 - **Unfilled** (`unfilledSystemIds`) - held for border and label, but painting nothing inside the
   border. This is how a claimed-but-unheld system looks on the faction and alliance layers.
 

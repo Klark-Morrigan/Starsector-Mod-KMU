@@ -147,17 +147,30 @@ public final class FilteredPolitics {
     }
 
     /**
-     * Which of {@code candidateSystemIds} the spotlighted bloc is present in, under the player's
-     * live settings - the presence read for systems this pass resolved <em>no</em> holder for.
+     * Which of {@code candidateSystemIds} the spotlighted bloc is present in - the presence read
+     * for systems this pass resolved <em>no</em> holder for.
      *
      * <p>The counterpart to {@link #resolveFilteredHolder} for cells the holder map never
      * reaches. That resolve keeps the bloc visible wherever it is present by rekeying the
      * system, which only works on a system somebody holds; a view whose holding rule admits
      * only some factions leaves settled systems with no holder at all, and the spotlit bloc can
-     * be living in one of them. On the claims view it routinely is, vanilla leaving a settled
+     * be living in one of them. On the claims views it routinely is, vanilla leaving a settled
      * system unclaimed for several reasons - see
      * {@link kmu.maplayers.politicalmap.base.politics.holders} - so a bloc's own unclaimed
-     * colonies land here.
+     * colonies land here. A view that resolves its holding through the resolve above has already
+     * kept every system the bloc is present in, so what reaches this read is what it was absent
+     * from and the answer comes back empty.
+     *
+     * <p>Presence is the set {@link #classifySelectedBlocPresence}'s absent arm reads, so a bloc
+     * counts as living in a system here exactly where the filter's own resolve would have kept it
+     * visible - including where it holds only colonies no mechanic weighed. It is asked directly
+     * rather than through that classification, because the classification's other two arms rank
+     * the system's footprints to tell dominant from contested, and a holderless system has no
+     * contest for the bloc to win or lose: the ranking would be a weighing of every candidate's
+     * colonies for a verdict this read discards.
+     *
+     * <p>So it takes the layer-generic reading of the sector rather than a dominance pass. Nothing
+     * here weighs a market, which means no weighting rule has to be sampled to answer it.
      *
      * <p>Answered over a caller-supplied candidate set rather than the whole sector, because the
      * only systems it can change anything for are the handful the holder map left out. Walking
@@ -168,65 +181,28 @@ public final class FilteredPolitics {
      *                          read shares; a pass over no sector yields an empty set
      * @param selectedBlocId    the spotlighted bloc's id; null yields an empty set (no filter)
      * @param candidateSystemIds the systems to test - those this pass resolved no holder for
-     * @return the candidates the spotlighted bloc owns a counted colony in
+     * @return the candidates the spotlighted bloc holds a colony the player may be shown in
      */
     public static Set<String> findPresentSystemIds(
             HolderPass pass,
             String selectedBlocId,
             Set<String> candidateSystemIds) {
 
-        // Nothing to answer for, so the weighting rule's settings read is skipped rather than paid
-        // to reach an overload that would return empty anyway. Only the two conditions this can
-        // decide cheaply are tested here; the null-sector contract is stated once, below.
-        if (selectedBlocId == null || candidateSystemIds.isEmpty()) {
-            return Set.of();
-        }
-        return findPresentSystemIds(
-            DominancePass.readRulesFromLunaSettings(pass),
-            selectedBlocId,
-            candidateSystemIds);
-    }
-
-    /**
-     * Which of {@code candidateSystemIds} the spotlighted bloc is present in under an explicit
-     * dominance pass, for a caller that has already sampled the player's settings.
-     *
-     * <p>Presence is {@link #classifySelectedBlocPresence}'s, read through that same
-     * classification, so a bloc counts as living in a system here exactly where the filter's own
-     * resolve would have kept it visible - including where it holds only colonies no mechanic
-     * weighed, which is the common shape among the systems a holding rule leaves out. Only whether
-     * it is present is asked: a holderless system has no contest for it to win or lose, so the
-     * dominant/contested split those cells are classified by means nothing here.
-     *
-     * @param pass              the rule, dev reveal, grouping, and sector walk this read resolves
-     *                          under; a pass over no sector yields an empty set
-     * @param selectedBlocId    the spotlighted bloc's id; null yields an empty set
-     * @param candidateSystemIds the systems to test - those this pass resolved no holder for
-     * @return the candidates the spotlighted bloc owns a counted colony in
-     */
-    public static Set<String> findPresentSystemIds(
-            DominancePass pass,
-            String selectedBlocId,
-            Set<String> candidateSystemIds) {
-
         var presentSystemIds = new LinkedHashSet<String>();
 
-        if (!pass.canReadEconomy() || selectedBlocId == null) {
+        // A read that can decide nothing returns before the walk: off filter there is no pick to
+        // look for, and with no candidates every system the walk reached would be discarded.
+        if (!pass.canReadEconomy() || selectedBlocId == null || candidateSystemIds.isEmpty()) {
             return presentSystemIds;
         }
         for (var system : pass.readSystems()) {
 
-            // Membership is tested before the economy read, so a system outside the candidate
-            // set costs a set probe rather than a walk of its markets.
+            // Membership is tested before the colony read, so a system outside the candidate
+            // set costs a set probe rather than a read of its colonies.
             if (!candidateSystemIds.contains(system.getId())) {
                 continue;
             }
-            var presence = classifySelectedBlocPresence(
-                pass.readBlocFootprints(system),
-                pass.readKnownColonyBlocIds(system),
-                selectedBlocId);
-
-            if (presence != SelectedBlocPresence.ABSENT) {
+            if (pass.readKnownColonyBlocIds(system).contains(selectedBlocId)) {
                 presentSystemIds.add(system.getId());
             }
         }

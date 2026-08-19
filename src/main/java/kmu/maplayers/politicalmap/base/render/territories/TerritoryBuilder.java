@@ -134,9 +134,13 @@ public final class TerritoryBuilder {
 
             // Where the spotlit bloc is living outside anything this build attributed to it, so
             // the factionless cells over its own colonies are spared the recede. Asked only of the
-            // inhabited systems the holding left out - on the faction and alliance views that is
-            // the dead worlds alone, which no bloc lives in, so the read comes back empty for the
-            // cost of the set arithmetic.
+            // inhabited systems the holding left out, and which view is painting decides whether
+            // that set holds anything for it: the claims views leave a system unheld whenever
+            // nobody claims it, so a bloc's own unclaimed colonies land here and this read is what
+            // spares their cells. The faction and alliance views resolve holding through
+            // FilteredPolitics, which already keys every system the bloc is present in and can be
+            // coloured for, so their leftovers are systems it is absent from and the read comes
+            // back empty for the cost of the set arithmetic.
             var spotlitPresenceSystemIds = measureSystemScan(
                 profiler,
                 "politicalMap.findSpotlitPresence",

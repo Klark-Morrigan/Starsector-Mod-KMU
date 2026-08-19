@@ -197,21 +197,10 @@ public record HolderPass(
      *
      * @param system the system to read; null yields an empty set
      * @return the ids of the blocs holding a colony the reveal admits, in the projection's own
-     *         order
+     *         order; an owner the grouping can name no bloc for is left out, as it is from every
+     *         other fold the grouping makes
      */
     public Set<String> readKnownColonyBlocIds(StarSystemAPI system) {
-
-        var blocIds = new LinkedHashSet<String>();
-        for (var factionId : readKnownColonyFactionIds(system)) {
-            var blocId = grouping.resolveBlocId(factionId);
-
-            // Left out on the same rule every per-bloc fold on the map applies: a nameless key
-            // would travel on as a bloc, and a surface asked to draw or name one has nothing to
-            // draw or name it by.
-            if (blocId != null) {
-                blocIds.add(blocId);
-            }
-        }
-        return blocIds;
+        return grouping.collectBlocIds(readKnownColonyFactionIds(system));
     }
 }

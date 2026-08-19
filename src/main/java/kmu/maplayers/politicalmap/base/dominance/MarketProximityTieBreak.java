@@ -126,6 +126,13 @@ public final class MarketProximityTieBreak {
                 shouldIncludeUndiscoveredMarkets)) {
 
             var blocId = grouping.resolveBlocId(market.getFaction().getId());
+
+            // Left out on the rule every per-bloc fold on the map applies. Nothing looks a
+            // nameless bloc up - the ranking that reaches this tie-break dropped it already - so
+            // what this prevents is one fold quietly keeping what the others discard.
+            if (blocId == null) {
+                continue;
+            }
             var distance =
                 EntityOrbits.computeOrbitalDistanceTo(market.getPrimaryEntity(), centremostStar);
 

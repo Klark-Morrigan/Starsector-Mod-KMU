@@ -9,6 +9,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
+import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.ribbon.HeldSystemRibbonPlanner;
@@ -51,6 +52,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>The system is wired so the two mechanics would disagree if either still counted for itself: a
  * station the economy does not list, which no weight can be computed from and no contest ever
  * scored, sits beside the colonies both do see.
+ *
+ * <p>The same wiring answers the other cross-surface question the band raises, so it is posed here
+ * too: whether the fill under a spotlight keeps the bloc the band is counting. That one is a band
+ * against a fill rather than a band against a band, but it fails the same way and only at a level
+ * that runs both.
  */
 final class ColonyCellRibbonsIntegrationTest {
 
@@ -110,6 +116,48 @@ final class ColonyCellRibbonsIntegrationTest {
             assertThat(claimedPlan)
                 .isEqualTo(heldPlan);
         }
+
+        @Test
+        void countsTheBlocWhoseFillTheSpotlightKeeps() {
+            // The band and the fill over one cell, asked together. Tri-Tachyon's only foothold is a
+            // station the economy never registered: it raises no dominance footprint, so before the
+            // presence read was widened the spotlight receded the very system whose band was drawing
+            // Tri-Tachyon a run. Posed here rather than in either surface's own suite for the reason
+            // the suite exists - each was self-consistent while disagreeing with the other.
+            var sector = buildSectorWhereTritachyonIsUnregistered();
+            var system = buildOnlySystem(sector);
+            var holding = HolderPass.over(sector, FOG_KEPT, HolderGrouping.identity());
+            var pass = DominancePass.over(
+                holding,
+                SectorPoliticsFixtures.buildStabilityWeightedRules());
+
+            var band = new HeldSystemRibbonPlanner(pass, buildInputsFor(holding))
+                .planSystemRibbon(system);
+
+            assertThat(band.segments())
+                .extracting(RibbonSegment::colour)
+                .contains(TRITACHYON_BRIGHT);
+            assertThat(FilteredPolitics.resolveFilteredHolder(pass, TRITACHYON).contestedSystemIds())
+                .contains(SYSTEM_ID);
+        }
+    }
+
+    // A system the Hegemony holds through the economy's own listing, with Tri-Tachyon's one
+    // foothold hung on an entity of the system that the listing never held. Both factions are
+    // resolvable by id, since the spotlight resolve colours its bloc off the faction's palette.
+    private static SectorAPI buildSectorWhereTritachyonIsUnregistered() {
+
+        var tritachyon = buildFaction(TRITACHYON, TRITACHYON_BRIGHT);
+        var sector = buildSectorWith(
+            SYSTEM_ID,
+            List.of(buildFaction(HEGEMONY, HEGEMONY_BRIGHT), tritachyon),
+            buildVisibleMarket(buildFaction(HEGEMONY), LARGER_COLONY));
+
+        placeMarketsOnSystemEntities(
+            buildOnlySystem(sector),
+            buildVisibleMarket(tritachyon, SMALLER_COLONY));
+
+        return sector;
     }
 
     // A system the Hegemony leads on both mechanics, with one of Tri-Tachyon's two colonies

@@ -2,8 +2,11 @@ package kmu.maplayers.politicalmap.base.dominance;
 
 import kmlib.text.KmlibStrings;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BinaryOperator;
 
 /**
@@ -123,6 +126,33 @@ public record HolderGrouping(
             }
         }
         return valueByBlocId;
+    }
+
+    /**
+     * The blocs a set of factions folds into under this grouping, each named once, so two allied
+     * members arrive as the one bloc they paint as. The id-level counterpart of
+     * {@link #regroupByBloc}, for a caller holding the factions themselves rather than values keyed
+     * by them.
+     *
+     * <p>Here rather than at each caller so the one rule the fold decides is decided once: a
+     * faction this grouping can name no bloc for is left out, on the same reasoning
+     * {@link #regroupByBloc} applies it. First-seen order is preserved, so a walk's own ordering
+     * flows through.
+     *
+     * @param factionIds the factions to fold, in the order they were read
+     * @return their blocs, in first-seen order
+     */
+    public Set<String> collectBlocIds(Collection<String> factionIds) {
+
+        var blocIds = new LinkedHashSet<String>();
+        for (var factionId : factionIds) {
+            var blocId = resolveBlocId(factionId);
+
+            if (blocId != null) {
+                blocIds.add(blocId);
+            }
+        }
+        return blocIds;
     }
 
     /**
