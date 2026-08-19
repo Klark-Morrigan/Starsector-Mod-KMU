@@ -13,6 +13,7 @@ import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 import kmlib.starsector.ui.render.gl.panel.NotchState;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.render.gl.tabs.TabPanelRenderer;
+import kmlib.starsector.ui.screen.VanillaScreen;
 import kmlib.starsector.ui.widgets.BoxBorder;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
@@ -162,7 +163,6 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             elapsedSeconds,
             HoverFade.DEFAULT_DURATIONS);
 
-        var settings = Global.getSettings();
         var opacity = KmuMapLayerSettings.getMapSidebarBackgroundOpacity();
 
         // Logged before the draw, with the resolved footprint / screen / opacity, so a panel gated in but
@@ -170,9 +170,9 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         logViewStateOnChange("showing; "
             + host.describeViewState()
             + "; screen="
-            + settings.getScreenWidth()
+            + VanillaScreen.resolveUiWidth()
             + "x"
-            + settings.getScreenHeight()
+            + VanillaScreen.resolveUiHeight()
             + " box="
             + formatRect(placement.body().box())
             + " opacity="

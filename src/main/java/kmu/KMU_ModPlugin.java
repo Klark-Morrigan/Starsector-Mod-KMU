@@ -10,8 +10,8 @@ import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
+import kmlib.starsector.ui.screen.VanillaScreen;
 import kmlib.starsector.ui.suppression.OffScreenWidgetSuppressor;
-import kmlib.starsector.ui.suppression.VanillaScreenBox;
 
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.hover.MapHoverPermission;
@@ -376,7 +376,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
         sector.addTransientScript(new OffScreenWidgetSuppressor(
             minimapSuppression::resolveSuppressibleMinimap,
-            VanillaScreenBox::resolveScreenBox));
+            VanillaScreen::resolveScreenBox));
     }
 
     // Registers the hover-tooltip dispatcher - the render listener that draws whichever tooltip the

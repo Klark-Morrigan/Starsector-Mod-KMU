@@ -1,7 +1,5 @@
 package kmu.maplayers.base.sidebar;
 
-import com.fs.starfarer.api.Global;
-
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.controls.ControlSpec;
@@ -11,6 +9,7 @@ import kmlib.starsector.ui.font.LineWidthMeasurer;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
+import kmlib.starsector.ui.screen.VanillaScreen;
 import kmlib.starsector.ui.widgets.BoxBorder;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelViewState;
@@ -143,7 +142,6 @@ public final class LiveSidebarPlacement {
         if (measurer == null) {
             return null;
         }
-        var settings = Global.getSettings();
         var layers = MapLayerRegistry.getLayers();
 
         // The active layer comes from the calling screen's own selection, not one shared value, so the lit
@@ -151,7 +149,9 @@ public final class LiveSidebarPlacement {
         var activeLayer = selection.getActiveLayer();
 
         var placement = TabPanelLayout.computePlacement(
-            settings.getScreenHeight(),
+            // The height alone: the panel hangs from a top edge stated as padding, so the layout
+            // measures down from the screen's top and never asks where its corner is.
+            VanillaScreen.resolveUiHeight(),
             padding,
             // The player's border width over the edges the host frames; a dropped edge collapses its
             // reserved inset so the box sits flush against the neighbour the host meant to blend into.
@@ -192,7 +192,7 @@ public final class LiveSidebarPlacement {
     private static Padding buildIntelPadding(Rectangle mapVisorRect) {
         return computeIntelPadding(
             mapVisorRect,
-            Global.getSettings().getScreenHeight(),
+            VanillaScreen.resolveUiHeight(),
             KmuMapLayerSettings.getMapIntelSidebarPaddingTop());
     }
 
