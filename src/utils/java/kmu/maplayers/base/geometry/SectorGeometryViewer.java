@@ -14,6 +14,7 @@ import java.awt.RenderingHints;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
@@ -146,6 +147,9 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     private SectorGeometry geometry;
     private long lastBuildMillis;
     private final ViewerSettings settings = new ViewerSettings();
+
+    // Opened with the window and emptied there, so a session's picks are its own.
+    private final ViewerPickLog picks = ViewerPickLog.startPickLog();
     private final VoidBridgesOverlay voidBridges = new VoidBridgesOverlay(settings);
     private final CoastlinesOverlay coastlines = new CoastlinesOverlay(settings);
 
@@ -332,10 +336,11 @@ final class SectorGeometryViewer implements ViewerRefreshes {
 
         canvas.statusLabel.setText(String.format(
             "<html>%d systems, %d owners<br>rebuilt in %d ms<br><br>"
-                + "drag to pan, wheel to zoom</html>",
+                + "drag to pan, wheel to zoom<br>right click to note a colour<br>%s</html>",
             fixture.getSystemIds().size(),
             geometry.ringsByOwner().size(),
-            lastBuildMillis));
+            lastBuildMillis,
+            picks.getFile()));
     }
 
     private final class MapCanvas extends JPanel {
@@ -366,10 +371,15 @@ final class SectorGeometryViewer implements ViewerRefreshes {
                 repaint();
             });
             addMouseListener(new java.awt.event.MouseAdapter() {
-                
+
                 @Override
                 public void mousePressed(java.awt.event.MouseEvent event) {
+
                     dragAnchor = event.getPoint();
+
+                    if (SwingUtilities.isRightMouseButton(event)) {
+                        writePick(event.getPoint());
+                    }
                 }
 
                 @Override
@@ -402,6 +412,14 @@ final class SectorGeometryViewer implements ViewerRefreshes {
         protected void paintComponent(Graphics g) {
 
             super.paintComponent(g);
+            paintMap((Graphics2D) g);
+            paintCursorReadout((Graphics2D) g);
+        }
+
+        // The map itself, without the readout drawn over it. Apart from the readout because a
+        // pick has to be able to paint the map alone: a label following the pointer around is
+        // the one thing certain to be near wherever a colour is being read.
+        private void paintMap(Graphics2D g) {
 
             var g2 = (Graphics2D) g.create();
 
@@ -421,8 +439,31 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             paintGeometry(g2);
 
             g2.dispose();
+        }
 
-            paintCursorReadout((Graphics2D) g);
+        // What was under the pointer, written down. Painted afresh into an image rather than
+        // grabbed off the screen, so what is read is this canvas at this moment - a screen
+        // grab reads whatever window happens to be over it, and a cached frame reads whatever
+        // the knobs were before the last move.
+        private void writePick(Point point) {
+
+            if (scale == 0 || getWidth() <= 0 || getHeight() <= 0) {
+                return;
+            }
+
+            var image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+            var g2 = image.createGraphics();
+
+            g2.setColor(getBackground());
+            g2.fillRect(0, 0, getWidth(), getHeight());
+
+            paintMap(g2);
+            g2.dispose();
+
+            var world = findWorldPoint(point);
+
+            picks.appendPick(
+                sectorName, world[0], world[1], new Color(image.getRGB(point.x, point.y)));
         }
 
         private void trackCursor(Point point) {
@@ -487,11 +528,19 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             if (cursorPoint == null || scale == 0) {
                 return " ";
             }
-            return String.format(
-                Locale.ROOT,
-                "%.0f, %.0f",
-                (cursorPoint.x - offsetX) / scale,
-                (offsetY - cursorPoint.y) / scale);
+            var world = findWorldPoint(cursorPoint);
+
+            return String.format(Locale.ROOT, "%.0f, %.0f", world[0], world[1]);
+        }
+
+        // Where a point on the canvas is in the sector's own coordinates - the inverse of the
+        // transform the map is drawn under, in one place, so what a pick writes down and what
+        // the readout says cannot come to disagree.
+        private double[] findWorldPoint(Point point) {
+
+            return new double[] {
+                (point.x - offsetX) / scale,
+                (offsetY - point.y) / scale};
         }
 
         private void paintGeometry(Graphics2D g2) {
