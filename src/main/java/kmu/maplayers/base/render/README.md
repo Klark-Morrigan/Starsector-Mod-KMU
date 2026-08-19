@@ -153,7 +153,11 @@ Three things about it are worth knowing before touching it:
 Exactly one embedded map may be suppressed, and for a different reason than the cover's confinement
 needs one: there a second map makes the hover unattributable, while here the mode names a mod, the
 widgets found carry no mod-owned class to match on, and with two of them there is no telling which
-one the player switched the mode on for.
+one the player switched the mode on for. The reasons are per-rule; the reading is not, and both take
+it from `SingleEmbeddedMapReader` in `base.hover`. Two copies of a count rule could be changed in
+one, leaving the cursor confined to a widget the other had already switched off - and each holding
+its own walk would descend the whole core UI twice a frame on exactly the installs these rules exist
+for, the finder walking afresh while it has found nothing.
 
 It runs as an `EveryFrameScript` answering `runWhilePaused`, which is what the mod's own panel
 script is - so the hook is known to fire in the states this matters in, a dialog or the menu among

@@ -3,11 +3,10 @@ package kmu.maplayers.base.render;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 
 import kmlib.starsector.ui.map.probes.EmbeddedMap;
-import kmlib.starsector.ui.map.probes.EmbeddedMapFinder;
 
 import kmu.maplayers.base.hover.RandomAssortmentOfThingsMode;
+import kmu.maplayers.base.hover.SingleEmbeddedMapReader;
 
-import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -17,15 +16,17 @@ import java.util.function.Supplier;
  * <p>The permission half of the suppression, and the only half that names a mod. What being parked
  * means, and what switching a widget off consists of, are stated over any widget at all -
  * {@code OffScreenWidgetSuppressor} reads a box against the screen and writes an opacity, and would
- * read a minimap docked by the next mod - or any other parked widget - exactly the same way. What cannot be stated generally is
- * whether writing into somebody else's widget is wanted at all, which is a per-mod question the
- * player answers with the mode.
+ * read a minimap docked by the next mod - or any other parked widget - exactly the same way. What
+ * cannot be stated generally is whether writing into somebody else's widget is wanted at all, which
+ * is a per-mod question the player answers with the mode.
  *
  * <p><b>Exactly one embedded map, and none of the reasons the confinement needs one.</b> There the
  * frame carries a single transform and a second map makes a hover unattributable. Here the mode
  * names a mod, the maps found carry no mod-owned class to match on - a minimap built entirely from
  * vanilla API has none - and with two of them there is no telling which one the mode was switched on
- * for. Suppressing both would act on a mod the player never mentioned.
+ * for. Suppressing both would act on a mod the player never mentioned. The reading itself is
+ * {@link SingleEmbeddedMapReader}'s and shared with that confinement, so the two cannot come to
+ * differ about which frame carries a surface worth acting on.
  *
  * <p><b>Nothing here reads whether a vanilla map is showing</b>, and the asymmetry with the cover
  * beside it is deliberate. That cover stands down on a frame a vanilla host owns because the cursor
@@ -39,40 +40,34 @@ import java.util.function.Supplier;
  */
 public final class RandomAssortmentOfThingsMinimapSuppression {
 
-    // The one embedded map a mode naming a single mod can be acted on. None leaves nothing to
-    // suppress, and more than one leaves no way to tell whose minimap the mode meant.
-    private static final int SUPPRESSIBLE_MAP_COUNT = 1;
-
-    // Every embedded map on screen, asked afresh each frame. A supplier rather than the finder
-    // itself so this class states its question and not where the answer is walked out of.
-    private final Supplier<List<EmbeddedMap>> findEmbeddedMaps;
+    // The single map surface on screen, asked afresh each frame, or null when there is not exactly
+    // one. A supplier rather than the reader itself so this class states its question and not where
+    // the answer is walked out of.
+    private final Supplier<EmbeddedMap> findSingleEmbeddedMap;
 
     private final RandomAssortmentOfThingsMode mode;
 
     /**
-     * @param mode             whether the player's compatibility mode is on and there is a minimap
-     *                         to suppress
-     * @param findEmbeddedMaps the map surfaces on screen that are not the one the player opened
+     * @param mode                  whether the player's compatibility mode is on and there is a
+     *                              minimap to suppress
+     * @param findSingleEmbeddedMap the one map surface on screen that is not the one the player
+     *                              opened, or null when there is not exactly one
      */
     public RandomAssortmentOfThingsMinimapSuppression(
             RandomAssortmentOfThingsMode mode,
-            Supplier<List<EmbeddedMap>> findEmbeddedMaps) {
+            Supplier<EmbeddedMap> findSingleEmbeddedMap) {
 
-        this.findEmbeddedMaps = findEmbeddedMaps;
+        this.findSingleEmbeddedMap = findSingleEmbeddedMap;
         this.mode = mode;
     }
 
     /**
-     * @return the permission over the mode and the widget walk a running game has. The finder is
-     *         held for the session, since it remembers the tree it walked and this is asked once a
-     *         frame
+     * @return the permission over the mode and the shared widget walk a running game has
      */
     public static RandomAssortmentOfThingsMinimapSuppression createForLiveScreen() {
-        var embeddedMapFinder = new EmbeddedMapFinder();
-
         return new RandomAssortmentOfThingsMinimapSuppression(
             RandomAssortmentOfThingsMode.createForLiveGame(),
-            embeddedMapFinder::findEmbeddedMaps);
+            SingleEmbeddedMapReader.INSTANCE::resolveSingleEmbeddedMap);
     }
 
     /**
@@ -86,10 +81,8 @@ public final class RandomAssortmentOfThingsMinimapSuppression {
         if (!mode.isEngaged()) {
             return null;
         }
-        var embeddedMaps = findEmbeddedMaps.get();
+        var minimap = findSingleEmbeddedMap.get();
 
-        return embeddedMaps.size() == SUPPRESSIBLE_MAP_COUNT
-            ? embeddedMaps.get(0).resolveComponent()
-            : null;
+        return minimap == null ? null : minimap.resolveComponent();
     }
 }

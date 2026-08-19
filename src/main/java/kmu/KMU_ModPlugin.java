@@ -331,11 +331,6 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
     }
 
-    // Registers the hover-tooltip dispatcher - the render listener that draws whichever tooltip the
-    // active map layer injects for the star system under the cursor. Transient, remove-then-add: it
-    // draws only, holds no save-relevant state, and its cached GL text must never enter a save, so it
-    // is re-added fresh each load and never duplicates. Mirrors the sidebar's contract so exactly one
-    // renders.
     // Registers the render listener the map surfaces read their frame boundary from, and clears what
     // the previous session left on it first. Transient, remove-then-add, for the dispatcher's
     // reasons: it holds live view state and none of it belongs in a save.
@@ -384,6 +379,11 @@ public class KMU_ModPlugin extends BaseModPlugin {
             VanillaScreenBox::resolveScreenBox));
     }
 
+    // Registers the hover-tooltip dispatcher - the render listener that draws whichever tooltip the
+    // active map layer injects for the star system under the cursor. Transient, remove-then-add: it
+    // draws only, holds no save-relevant state, and its cached GL text must never enter a save, so it
+    // is re-added fresh each load and never duplicates. Mirrors the sidebar's contract so exactly one
+    // renders.
     static void installMapLayerHoverTooltip(SectorAPI sector) {
         // Both live reads are supplied rather than built by the dispatcher, so a test can stand
         // stand-ins in their place and pin the step-aside and the on-screen gate. The map read is

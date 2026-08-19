@@ -236,7 +236,9 @@ about what the overlay means.
   `SidebarHosts`), `VanillaChromeMapCover` (the map's own tab strip and control bar, stated as
   "outside the map surface" since the chrome widgets are a fact about one game build), and
   `RandomAssortmentOfThingsMinimapCover` (everywhere that is *not* a docked minimap, on the frames
-  the mode from `RandomAssortmentOfThingsMode` is engaged and no vanilla map is showing). They are
+  the mode from `RandomAssortmentOfThingsMode` is engaged and no vanilla map is showing; which
+  surface that minimap is comes from `SingleEmbeddedMapReader`, the one walk it shares with the rule
+  that switches a parked surface off, so the two cannot act on different answers). They are
   held in ascending cost - a published one-call read, then a settled flag, then arithmetic over a box
   this mod laid out, then the two that walk the live widget tree - so the order is the composition's
   and each cover states only its own reading. All but the last fail open: what cannot be

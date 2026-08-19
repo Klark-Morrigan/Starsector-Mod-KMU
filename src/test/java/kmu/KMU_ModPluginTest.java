@@ -9,6 +9,7 @@ import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.map.presence.SectorMapState;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
+import kmlib.starsector.ui.suppression.OffScreenWidgetSuppressor;
 
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
@@ -351,6 +352,59 @@ class KMU_ModPluginTest {
                 KMU_ModPlugin.installStarscapeTerrainReseater(null);
 
             assertThatCode(reseaterInstallOnNullSector::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class InstallParkedMinimapSuppressor {
+
+        @Test
+        void installsTheSuppressorAsATransientScript() {
+            // addTransientScript, never addScript: this script writes into a widget another mod
+            // owns, so one restored from a save alongside the one added on load would have two of
+            // them racing to hold and hand back the same opacity - and would bake a library class's
+            // name into the file.
+            var sectorMock = mock(SectorAPI.class);
+
+            KMU_ModPlugin.installParkedMinimapSuppressor(sectorMock);
+
+            verify(sectorMock)
+                .addTransientScript(any(OffScreenWidgetSuppressor.class));
+            verify(sectorMock, never())
+                .addScript(any());
+        }
+
+        @Test
+        void installsAFreshSuppressorPerLoadSoNoWidgetIsCarriedAcross() {
+            // The script holds the widget it wrote to and the opacity that widget was found at, so
+            // one carried across loads would answer the newly loaded sector holding a widget from
+            // the sector just left - and would hand that dead widget an opacity on its first frame.
+            var firstLoadSectorMock = mock(SectorAPI.class);
+            var secondLoadSectorMock = mock(SectorAPI.class);
+
+            KMU_ModPlugin.installParkedMinimapSuppressor(firstLoadSectorMock);
+            KMU_ModPlugin.installParkedMinimapSuppressor(secondLoadSectorMock);
+
+            var firstSuppressor = ArgumentCaptor.forClass(OffScreenWidgetSuppressor.class);
+            var secondSuppressor = ArgumentCaptor.forClass(OffScreenWidgetSuppressor.class);
+
+            verify(firstLoadSectorMock)
+                .addTransientScript(firstSuppressor.capture());
+            verify(secondLoadSectorMock)
+                .addTransientScript(secondSuppressor.capture());
+
+            assertThat(secondSuppressor.getValue())
+                .isNotSameAs(firstSuppressor.getValue());
+        }
+
+        @Test
+        void toleratesANullSector() {
+
+            var suppressorInstallOnNullSector = (Runnable) () ->
+                KMU_ModPlugin.installParkedMinimapSuppressor(null);
+
+            assertThatCode(suppressorInstallOnNullSector::run)
                 .doesNotThrowAnyException();
         }
     }

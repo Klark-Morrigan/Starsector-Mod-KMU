@@ -85,7 +85,7 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
             assertThat(new RandomAssortmentOfThingsMinimapCover(
                         buildDisengagedMode(),
                         NO_MAP_SHOWING,
-                        () -> List.of(createMinimapAt(20f, 30f, 200f, 150f)),
+                        () -> createMinimapAt(20f, 30f, 200f, 150f),
                         cursorFake)
                     .isCoveringCursor())
                 .isFalse();
@@ -107,38 +107,19 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAnswersCoveredWithNoEmbeddedMapFound() {
-            // Failing closed. The walk can come back empty because the reach broke or because the
-            // panel is not built yet, and opening the whole screen up on either would restore the
-            // leak by way of the read meant to stop it.
+        void isCoveringCursorAnswersCoveredWithNoSingleEmbeddedMapOnScreen() {
+            // Failing closed. The shared reading answers nothing when the walk came back empty - the
+            // reach broke, or the panel is not built yet - and when it found more than one surface,
+            // which is the confinement's precondition: the frame carries one transform, so a hover
+            // over the first box could be answered through the second's zoom. Opening the whole
+            // screen up on either would restore the leak by way of the read meant to stop it.
             var cursorFake = new CursorPositionFake();
             cursorFake.restCursorAt(100f, 80f);
 
             assertThat(new RandomAssortmentOfThingsMinimapCover(
                         buildEngagedMode(),
                         NO_MAP_SHOWING,
-                        List::of,
-                        cursorFake)
-                    .isCoveringCursor())
-                .isTrue();
-        }
-
-        @Test
-        void isCoveringCursorAnswersCoveredWithMoreThanOneEmbeddedMapOnScreen() {
-            // The confinement's precondition. The frame carries one transform and the hover resolves
-            // through whichever pass drew last, so a hover over the first box could be answered
-            // through the second's zoom - a wrong answer rather than a missing one.
-            var cursorFake = new CursorPositionFake();
-            cursorFake.restCursorAt(100f, 80f);
-
-            var embeddedMaps = List.of(
-                createMinimapAt(20f, 30f, 200f, 150f),
-                createMinimapAt(400f, 30f, 200f, 150f));
-
-            assertThat(new RandomAssortmentOfThingsMinimapCover(
-                        buildEngagedMode(),
-                        NO_MAP_SHOWING,
-                        () -> embeddedMaps,
+                        () -> null,
                         cursorFake)
                     .isCoveringCursor())
                 .isTrue();
@@ -157,16 +138,16 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
             assertThat(new RandomAssortmentOfThingsMinimapCover(
                         buildEngagedMode(),
                         NO_MAP_SHOWING,
-                        () -> List.of(unplacedMap),
+                        () -> unplacedMap,
                         cursorFake)
                     .isCoveringCursor())
                 .isTrue();
         }
     }
 
-    // The ordinary arrangement: the mode engaged over exactly one embedded map, which is the only
-    // shape the confinement itself is stated for. The cases about the other shapes compose their
-    // own.
+    // The ordinary arrangement: the mode engaged over the one embedded map on screen, which is the
+    // only shape the confinement itself is stated for. The cases about the other shapes compose
+    // their own.
     private static RandomAssortmentOfThingsMinimapCover buildCover(
             CursorPositionFake cursorFake,
             BooleanSupplier isAnyMapShowing,
@@ -175,7 +156,7 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
         return new RandomAssortmentOfThingsMinimapCover(
             buildEngagedMode(),
             isAnyMapShowing,
-            () -> List.of(minimap),
+            () -> minimap,
             cursorFake);
     }
 

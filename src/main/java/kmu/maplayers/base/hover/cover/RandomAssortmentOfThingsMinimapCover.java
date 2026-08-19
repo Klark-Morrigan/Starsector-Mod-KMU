@@ -5,11 +5,10 @@ import kmlib.starsector.ui.input.CursorPosition;
 import kmlib.starsector.ui.input.VanillaCursorPosition;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMap;
-import kmlib.starsector.ui.map.probes.EmbeddedMapFinder;
 
 import kmu.maplayers.base.hover.RandomAssortmentOfThingsMode;
+import kmu.maplayers.base.hover.SingleEmbeddedMapReader;
 
-import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -43,7 +42,10 @@ import java.util.function.Supplier;
  * as none does. The frame carries one transform and the hover resolves through whichever pass drew
  * last, so a box can only be opened up while there is no question which pass it belongs to: two
  * embedded maps drawn in one frame would let a hover over the first resolve through the second's
- * transform, which is a wrong answer rather than a missing one.
+ * transform, which is a wrong answer rather than a missing one. That the surface is a single one is
+ * {@link SingleEmbeddedMapReader}'s reading rather than this cover's own, shared with the rule that
+ * switches such a surface off - the reason for needing one is per-rule and stated here, while two
+ * copies of the reading could answer differently about the same frame.
  *
  * <p><b>Fails closed</b>, against the rule every other cover here follows. Those must not be able to
  * switch the hover off, because there is a legitimate hover behind them to protect. Here there is
@@ -58,52 +60,47 @@ import java.util.function.Supplier;
  */
 public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
 
-    // The one embedded map the confinement can be stated over. Two surfaces in one frame make the
-    // frame's single transform ambiguous, and none makes the box unreadable; both cover.
-    private static final int CONFINABLE_MAP_COUNT = 1;
-
     private final CursorPosition cursor;
 
-    // Every embedded map on screen, asked afresh each frame. A supplier rather than the finder
-    // itself so this class states its question and not where the answer is walked out of.
-    private final Supplier<List<EmbeddedMap>> findEmbeddedMaps;
+    // The single map surface on screen, asked afresh each frame, or null when there is not exactly
+    // one. A supplier rather than the reader itself so this class states its question and not where
+    // the answer is walked out of.
+    private final Supplier<EmbeddedMap> findSingleEmbeddedMap;
 
     private final BooleanSupplier isAnyMapShowing;
 
     private final RandomAssortmentOfThingsMode mode;
 
     /**
-     * @param mode             whether the player's compatibility mode is on and there is a minimap
-     *                         to confine to
-     * @param isAnyMapShowing  whether either vanilla map host is showing, from
-     *                         {@code MapPresence#isAnyMapShowing}
-     * @param findEmbeddedMaps the map surfaces on screen that are not the one the player opened
-     * @param cursor           where the pointer is, in the UI units the boxes are laid out in
+     * @param mode                  whether the player's compatibility mode is on and there is a
+     *                              minimap to confine to
+     * @param isAnyMapShowing       whether either vanilla map host is showing, from
+     *                              {@code MapPresence#isAnyMapShowing}
+     * @param findSingleEmbeddedMap the one map surface on screen that is not the one the player
+     *                              opened, or null when there is not exactly one
+     * @param cursor                where the pointer is, in the UI units the boxes are laid out in
      */
     public RandomAssortmentOfThingsMinimapCover(
             RandomAssortmentOfThingsMode mode,
             BooleanSupplier isAnyMapShowing,
-            Supplier<List<EmbeddedMap>> findEmbeddedMaps,
+            Supplier<EmbeddedMap> findSingleEmbeddedMap,
             CursorPosition cursor) {
 
         this.cursor = cursor;
-        this.findEmbeddedMaps = findEmbeddedMaps;
+        this.findSingleEmbeddedMap = findSingleEmbeddedMap;
         this.isAnyMapShowing = isAnyMapShowing;
         this.mode = mode;
     }
 
     /**
-     * @return the cover over the mode, the presence read and the widget walk a running game has. The
-     *         finder is held for the session, since it remembers the tree it walked and a cover is
-     *         asked once a frame
+     * @return the cover over the mode, the presence read and the shared widget walk a running game
+     *         has
      */
     public static RandomAssortmentOfThingsMinimapCover createForLiveScreen() {
-        var embeddedMapFinder = new EmbeddedMapFinder();
-
         return new RandomAssortmentOfThingsMinimapCover(
             RandomAssortmentOfThingsMode.createForLiveGame(),
             new MapPresence()::isAnyMapShowing,
-            embeddedMapFinder::findEmbeddedMaps,
+            SingleEmbeddedMapReader.INSTANCE::resolveSingleEmbeddedMap,
             new VanillaCursorPosition());
     }
 
@@ -127,13 +124,11 @@ public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
     }
 
     // The box the cursor may be confined to, or null when no single box can stand for the frame -
-    // no map found, more than one found, or one found that is not drawn anywhere the player could
-    // point at. All three cover, which is this cover's failing closed.
+    // no single map on screen, or one that is not drawn anywhere the player could point at. Both
+    // cover, which is this cover's failing closed.
     private Rectangle resolveConfinableMinimapBox() {
-        var embeddedMaps = findEmbeddedMaps.get();
+        var minimap = findSingleEmbeddedMap.get();
 
-        return embeddedMaps.size() == CONFINABLE_MAP_COUNT
-            ? embeddedMaps.get(0).resolveDrawnBox()
-            : null;
+        return minimap == null ? null : minimap.resolveDrawnBox();
     }
 }

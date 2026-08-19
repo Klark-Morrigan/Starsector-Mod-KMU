@@ -21,9 +21,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins which widget this mod may switch off on another mod's behalf, and every state in which it may
  * switch off nothing at all.
  *
- * <p>The permission is deliberately narrow: the player's mode on, and exactly one map surface to
- * aim it at. Two of them leave no way to tell whose minimap the mode named, and the widgets carry no
- * mod-owned class to tell them apart by.
+ * <p>The permission is deliberately narrow: the player's mode on, and one map surface to aim it at.
+ * Which frames carry a single surface is the shared reading's to answer and is pinned beside it;
+ * what is pinned here is that this permission is withheld whenever it answers nothing.
  *
  * <p>Where this parts from the cover that shares its mode is pinned too. It asks nothing about
  * vanilla map hosts, those being the frames the suppression exists for rather than the frames it
@@ -38,7 +38,7 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
     // Faults if it is asked, so a case that must not reach the widget tree says so by construction.
     // The live walk costs a descent through the core UI, which an install without the mode must not
     // pay for.
-    private static final Supplier<List<EmbeddedMap>> MAPS_NOT_TO_BE_WALKED = () -> {
+    private static final Supplier<EmbeddedMap> MAP_NOT_TO_BE_WALKED_FOR = () -> {
         throw new AssertionError("the widget tree must not be walked while the mode is off");
     };
 
@@ -51,7 +51,7 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
             // for as long as its owner keeps it parked.
             var minimapFake = createMinimapWidget(FULLY_DRAWN);
 
-            assertThat(buildSuppression(() -> List.of(new EmbeddedMap(minimapFake, List.of())))
+            assertThat(buildSuppression(() -> new EmbeddedMap(minimapFake, List.of()))
                     .resolveSuppressibleMinimap())
                 .isSameAs(minimapFake);
         }
@@ -63,7 +63,7 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
             // reported and the minimap would be parked for good.
             var minimapFake = createMinimapWidget(DRAWN_TO_NOTHING);
 
-            assertThat(buildSuppression(() -> List.of(new EmbeddedMap(minimapFake, List.of())))
+            assertThat(buildSuppression(() -> new EmbeddedMap(minimapFake, List.of()))
                     .resolveSuppressibleMinimap())
                 .isSameAs(minimapFake);
         }
@@ -73,28 +73,18 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
             // Inert without the mode, and asked before the walk, so an install that never switched
             // the mode on pays one boolean.
             assertThat(new RandomAssortmentOfThingsMinimapSuppression(
-                        buildDisengagedMode(), MAPS_NOT_TO_BE_WALKED)
+                        buildDisengagedMode(), MAP_NOT_TO_BE_WALKED_FOR)
                     .resolveSuppressibleMinimap())
                 .isNull();
         }
 
         @Test
-        void resolveSuppressibleMinimapAnswersNothingWithNoEmbeddedMapFound() {
-            // The panel is not built yet, or the reach into the tree broke. Either way there is
-            // nothing on screen this mod has been given leave to write into.
-            assertThat(buildSuppression(List::of).resolveSuppressibleMinimap())
-                .isNull();
-        }
-
-        @Test
-        void resolveSuppressibleMinimapAnswersNothingWithMoreThanOneEmbeddedMap() {
-            // The mode names one mod and the widgets name none, so with two surfaces on screen
-            // there is no telling which the player switched it on for.
-            var embeddedMaps = List.of(
-                new EmbeddedMap(createMinimapWidget(FULLY_DRAWN), List.of()),
-                new EmbeddedMap(createMinimapWidget(FULLY_DRAWN), List.of()));
-
-            assertThat(buildSuppression(() -> embeddedMaps).resolveSuppressibleMinimap())
+        void resolveSuppressibleMinimapAnswersNothingWithNoSingleEmbeddedMapOnScreen() {
+            // The shared reading answers nothing when the panel is not built yet, when the reach
+            // into the tree broke, and when two surfaces are on screen - which for this rule is the
+            // case that matters, the mode naming one mod and the widgets naming none. All three
+            // leave nothing this mod has been given leave to write into.
+            assertThat(buildSuppression(() -> null).resolveSuppressibleMinimap())
                 .isNull();
         }
 
@@ -102,19 +92,19 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
         void resolveSuppressibleMinimapAnswersNothingForAMapThatIsNotAWidget() {
             // A map is recognised by the map interface alone, which promises nothing about being a
             // component - and a widget is what an opacity is written to.
-            var embeddedMaps = List.of(new EmbeddedMap(new SectorMapWidgetFake(), List.of()));
+            var embeddedMap = new EmbeddedMap(new SectorMapWidgetFake(), List.of());
 
-            assertThat(buildSuppression(() -> embeddedMaps).resolveSuppressibleMinimap())
+            assertThat(buildSuppression(() -> embeddedMap).resolveSuppressibleMinimap())
                 .isNull();
         }
     }
 
-    // The ordinary arrangement: the mode engaged over whichever surfaces a case puts on screen.
+    // The ordinary arrangement: the mode engaged over whichever surface a case puts on screen.
     private static RandomAssortmentOfThingsMinimapSuppression buildSuppression(
-            Supplier<List<EmbeddedMap>> findEmbeddedMaps) {
+            Supplier<EmbeddedMap> findSingleEmbeddedMap) {
 
         return new RandomAssortmentOfThingsMinimapSuppression(
-            buildEngagedMode(), findEmbeddedMaps);
+            buildEngagedMode(), findSingleEmbeddedMap);
     }
 
     // The player's switch on over a minimap standing in for the radar - both halves the mode ANDs.
