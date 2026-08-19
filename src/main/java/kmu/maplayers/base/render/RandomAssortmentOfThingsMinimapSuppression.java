@@ -16,8 +16,8 @@ import java.util.function.Supplier;
  *
  * <p>The permission half of the suppression, and the only half that names a mod. What being parked
  * means, and what switching a widget off consists of, are stated over any widget at all -
- * {@code OffScreenMapSuppressor} reads a box against the screen and writes an opacity, and would
- * read a minimap docked by the next mod exactly the same way. What cannot be stated generally is
+ * {@code OffScreenWidgetSuppressor} reads a box against the screen and writes an opacity, and would
+ * read a minimap docked by the next mod - or any other parked widget - exactly the same way. What cannot be stated generally is
  * whether writing into somebody else's widget is wanted at all, which is a per-mod question the
  * player answers with the mode.
  *

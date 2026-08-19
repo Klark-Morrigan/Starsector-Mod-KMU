@@ -10,8 +10,8 @@ import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
-import kmlib.starsector.ui.map.suppression.OffScreenMapSuppressor;
-import kmlib.starsector.ui.map.suppression.VanillaScreenBox;
+import kmlib.starsector.ui.suppression.OffScreenWidgetSuppressor;
+import kmlib.starsector.ui.suppression.VanillaScreenBox;
 
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.hover.MapHoverPermission;
@@ -379,7 +379,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         }
         var minimapSuppression = RandomAssortmentOfThingsMinimapSuppression.createForLiveScreen();
 
-        sector.addTransientScript(new OffScreenMapSuppressor(
+        sector.addTransientScript(new OffScreenWidgetSuppressor(
             minimapSuppression::resolveSuppressibleMinimap,
             VanillaScreenBox::resolveScreenBox));
     }

@@ -129,13 +129,13 @@ player opened the `M` map on carries two transforms, and which of them the curso
 is the engine's child order rather than anything promised. A widget that renders nothing contributes
 no pass, which leaves one transform and nothing for last-wins to arbitrate.
 
-That is what `RandomAssortmentOfThingsMinimapSuppression` and KMLib's `OffScreenMapSuppressor`
+That is what `RandomAssortmentOfThingsMinimapSuppression` and KMLib's `OffScreenWidgetSuppressor`
 between them do: hold the parked widget's own opacity at zero, and hand back the value it was found
 at when it comes back. The split is the compatibility mode's throughout. What being parked means -
 the widget's box meeting the screen at all - and what switching one off consists of are stated over
-any widget and are KMLib's; whether writing into another mod's panel is wanted is the per-mod
-question the player answers with the mode, and this package answers only that, plus the one map it
-may be aimed at.
+any widget at all and are KMLib's, which is why nothing there names a mod or a map; whether writing
+into another mod's panel is wanted is the per-mod question the player answers with the mode, and
+this package answers only that, plus the one map it may be aimed at.
 
 Three things about it are worth knowing before touching it:
 
