@@ -99,7 +99,6 @@ public record PoliticalMapSectorSnapshot(
         // O(1) lookup rather than rescanning hyperspace each time.
         var visibleStars = VisibleStars.scan(sector);
 
-        var hasEconomy = sector.getEconomy() != null;
         var visibility = 0;
         var ownerBySystemId = new LinkedHashMap<String, String>();
 
@@ -111,19 +110,27 @@ public record PoliticalMapSectorSnapshot(
 
         for (var system : sector.getStarSystems()) {
 
-            // One colony read per system, shared by both concerns: its emptiness
-            // is the inhabitation flag membership needs, and its footprints are
-            // what the dominance rule ranks. A null economy (early load) reads as
-            // no markets rather than faulting.
-            Map<String, MarketFootprint> footprintByFactionId = hasEconomy
-                ? KnownMarketFootprints.readByFaction(
-                    colonies.readColoniesIn(system),
-                    rules,
-                    visibilityOverrides.shouldIncludeUndiscoveredMarkets())
-                : Map.of();
+            // One colony read per system, shared by both concerns: membership asks it whether
+            // anybody lives here, the dominance rule ranks the footprints it weighs out of it. A
+            // null economy (early load) reads as no colonies rather than faulting.
+            var systemColonies = colonies.readColoniesIn(system);
+
+            // Asked through the shared rule rather than off the footprints below, which is the
+            // narrower question: a footprint is only ever weighed for an economy-listed colony,
+            // so a system settled by an unregistered one alone would read as empty here while the
+            // drawn set - which asks the rule - draws it. The fingerprint would then never move
+            // for it, and the map would go on showing whatever it last built there.
+            var isInhabited = MapVisibility.isInhabited(
+                systemColonies,
+                system,
+                visibilityOverrides);
+
+            Map<String, MarketFootprint> footprintByFactionId = KnownMarketFootprints.readByFaction(
+                systemColonies,
+                rules,
+                visibilityOverrides.shouldIncludeUndiscoveredMarkets());
 
             var hasRevealedDecivilised = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
-            var isInhabited = !footprintByFactionId.isEmpty() || hasRevealedDecivilised;
 
             if (!MapVisibility.shouldAppearOnMap(
                     system,

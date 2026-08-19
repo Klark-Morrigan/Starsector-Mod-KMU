@@ -7,6 +7,7 @@ import kmlib.math.hashing.Avalanche;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
+import kmlib.starsector.systems.SystemColonies;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -101,11 +102,14 @@ public final class MapVisibility {
     }
 
     /**
-     * Whether the system counts as inhabited - a discovered faction colony or a
+     * Whether the system counts as inhabited - a colony the player knows of or a
      * revealed decivilised planet, plus an undiscovered colony when the overrides widen
      * the read. Drives admission to the map independently of how (or whether) the
      * system can be reached. A revealed decivilised planet counts under any overrides -
      * it is always known once revealed.
+     *
+     * <p>Walks the system for its colonies, so a caller already holding them - a pass that
+     * read the system once for everything it asks of it - wants the form below instead.
      *
      * @param sector    the sector the system belongs to; null yields false
      * @param system    the system to test; null yields false
@@ -119,11 +123,35 @@ public final class MapVisibility {
             StarSystemAPI system,
             MapVisibilityOverrides overrides) {
 
-        return StarSystems.hasKnownOwnedMarket(
-                sector,
-                system,
-                overrides.shouldIncludeUndiscoveredMarkets())
-            || DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
+        return isInhabited(SystemColonies.readColoniesIn(sector, system), system, overrides);
+    }
+
+    /**
+     * Whether the system counts as inhabited, answered off a colony set the caller has
+     * already read rather than a walk of its own.
+     *
+     * <p>The rule itself, and the one the sector-taking form above resolves a set for. Stated
+     * over the shared colony set so that "somebody lives here" is the known projection being
+     * non-empty - the very set a ribbon counts runs from and a hover box names factions out of -
+     * with the revealed dead colony added, which no colony read answers. Two surfaces drawn from
+     * one system can then no longer disagree about whether it holds anybody.
+     *
+     * @param colonies  the system's colonies, as one walk of it reported; null or empty leaves
+     *                  the revealed-ruin arm as the only route to inhabitation
+     * @param system    the system to test; null yields false
+     * @param overrides the pass's reveal overrides; only the undiscovered-colony widening is
+     *                  read here, since forcing a system onto the map does not make it inhabited
+     * @return true when the system holds a colony or a known dead colony
+     */
+    public static boolean isInhabited(
+            SystemColonies colonies,
+            StarSystemAPI system,
+            MapVisibilityOverrides overrides) {
+
+        var hasKnownColony = colonies != null
+            && colonies.hasKnownColony(overrides.shouldIncludeUndiscoveredMarkets());
+
+        return hasKnownColony || DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
     }
 
     /**

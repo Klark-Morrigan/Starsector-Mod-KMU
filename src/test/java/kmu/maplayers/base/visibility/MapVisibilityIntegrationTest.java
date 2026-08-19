@@ -16,6 +16,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Tags;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
+import kmlib.starsector.systems.SystemColonies;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,12 +30,13 @@ import static org.mockito.Mockito.when;
 
 /**
  * Integration coverage for the on-map rule: {@link MapVisibility}
- * composing the real {@link StarSystems}, {@link VisibleStars}, and
- * {@link DecivilisedMarkets}. A reachable system appears; an unreachable one
- * appears once inhabited - a discovered colony or a revealed decivilised planet -
- * and otherwise stays off; and the fingerprint shifts when a system joins the
- * on-map set. Exercised together because the value is the composition: a mock of
- * each rule would hide whether they are wired in the right order.
+ * composing the real {@link StarSystems}, {@link SystemColonies}, {@link VisibleStars},
+ * and {@link DecivilisedMarkets}. A reachable system appears; an unreachable one
+ * appears once inhabited - a colony the player knows of, registered with the economy
+ * or not, or a revealed decivilised planet - and otherwise stays off; and the
+ * fingerprint shifts when a system joins the on-map set. Exercised together because
+ * the value is the composition: a mock of each rule would hide whether they are wired
+ * in the right order.
  */
 class MapVisibilityIntegrationTest {
 
@@ -186,6 +188,17 @@ class MapVisibilityIntegrationTest {
                     buildSectorWith(system, buildUndiscoveredColony()),
                     system))
                 .isFalse();
+        }
+
+        @Test
+        void isInhabitedIsTrueForAColonyTheEconomyDoesNotList() {
+            // Galatia Academy's shape: a real colony on a real station vanilla never registers.
+            // Reading the economy's listing alone would leave such a system classified as empty
+            // backdrop while every box drawn over it names the faction holding it.
+            var system = buildUnreachableSystemHoldingUnlistedColony("a");
+
+            assertThat(isInhabitedUnderNoReveal(buildSectorWith(system), system))
+                .isTrue();
         }
 
         @Test
@@ -517,6 +530,24 @@ class MapVisibilityIntegrationTest {
             .thenReturn(new Vector2f(2f, 2f));
         when(systemMock.getJumpPoints())
             .thenReturn(List.of());
+
+        return systemMock;
+    }
+
+    private static StarSystemAPI buildUnreachableSystemHoldingUnlistedColony(String id) {
+        // The colony hangs on one of the system's own entities and is absent from the economy's
+        // listing, so only the entity walk finds it. The market and its entity finish their own
+        // stubbing before the system's opens, so Mockito sees no nested stubbing.
+        var market = buildOwnedMarket();
+        var entity = market.getPrimaryEntity();
+
+        when(entity.getMarket())
+            .thenReturn(market);
+
+        var systemMock = buildUnreachableSystem(id);
+
+        when(systemMock.getAllEntities())
+            .thenReturn(List.of(entity));
 
         return systemMock;
     }

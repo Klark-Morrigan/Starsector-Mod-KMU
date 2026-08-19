@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.markets.DecivilisedMarkets;
-import kmlib.starsector.systems.StarSystems;
+import kmlib.starsector.systems.SystemColonies;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.CellTooltipRows;
@@ -39,11 +39,16 @@ public final class SystemStatusRow {
     /**
      * Resolves the status line for a system the player has found nobody living in.
      *
-     * <p>Gated on discovery rather than on a market being publicly listed. Emptiness is what the
-     * player has seen, so a base they have raided populates its system however concealed it
-     * stays - and, more importantly, one they have not found must not. Suppressing this line for
-     * an unfound colony would make its absence a reliable tell that something is hiding in the
-     * system, which is a spoiler drawn by not drawing anything.
+     * <p>Answered off the same known projection the cell beneath the box is classified on, so a
+     * system drawn as settled cannot be called unpopulated by the box over it. What parts that
+     * projection from a narrower "has the player been here" is the colony surfaced into the open
+     * ahead of being reached - publicly listed and unvisited. The cell counts it, so a narrower
+     * gate here would report two readings of one system inside a single hover.
+     *
+     * <p>The wider arm leaks nothing. A base that is concealed <em>and</em> unfound fails the
+     * projection too, so its system keeps its status line and the absence of one never becomes a
+     * tell that something is hiding there. All a discovery gate withholds beyond that is a colony
+     * the game itself lists on the star's own tooltip.
      *
      * @param sector                           the sector whose economy is read
      * @param system                           the hovered system
@@ -60,7 +65,9 @@ public final class SystemStatusRow {
             StarSystemAPI system,
             boolean shouldIncludeUndiscoveredMarkets) {
 
-        if (StarSystems.hasFoundOwnedMarket(sector, system, shouldIncludeUndiscoveredMarkets)) {
+        var colonies = SystemColonies.readColoniesIn(sector, system);
+
+        if (colonies.hasKnownColony(shouldIncludeUndiscoveredMarkets)) {
             return Optional.empty();
         }
         var statusKey = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system)

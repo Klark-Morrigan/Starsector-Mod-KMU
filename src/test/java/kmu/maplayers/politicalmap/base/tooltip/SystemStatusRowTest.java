@@ -34,10 +34,11 @@ import static org.mockito.Mockito.when;
 /**
  * Pins {@link SystemStatusRow}: a populated system yields no status at all, an empty one names itself
  * Decivilised or Unpopulated depending on whether the player has seen a dead colony there, and the
- * reveal decides whether an unfound colony already counts as populating the system. Both sides of the
- * discovery gate are pinned - a found base populates its system however concealed it stays, and a
- * listed colony does not until it is reached - because a filter reading hiddenness instead would
- * answer one of those two backwards. The row's
+ * reveal decides whether an undiscovered colony already counts as populating the system. Both arms of
+ * the known projection are pinned - a found base populates its system however concealed it stays, and
+ * an open colony does so before it is reached - along with the shape that satisfies neither, since a
+ * gate reading only one of the two would answer one of those cases backwards and either print
+ * "Unpopulated" over a settled cell or make a missing line the tell that a base is hiding. The row's
  * shape is pinned too - a banner set across the box, carrying its words and nothing else - since that
  * is what lets it read as a statement about the whole system rather than as an entry of a list.
  */
@@ -127,17 +128,28 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowNamesASystemEmptyWhileItsOnlyListedColonyIsUnfound() {
-            // The case parting a discovery gate from a known-to-player one, which would admit this
-            // colony on its un-hidden arm and quietly report a system the player has never reached.
+        void resolveStatusRowCountsAListedColonyThePlayerHasNotReached() {
+            // The case parting the known projection from a discovery gate. The colony is public -
+            // the game names it on the star's own tooltip and the cell beneath this box paints the
+            // system as settled - so a narrower gate here would print "Unpopulated" over a
+            // populated cell.
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingMarkets(system, buildUnfoundListedColony());
 
-            assertThat(readLabelTextRun(
-                    SystemStatusRow.resolveStatusRow(sector, system, false).orElseThrow(),
-                    STATUS_RUN)
-                    .text())
-                .isEqualTo("Unpopulated");
+            assertThat(SystemStatusRow.resolveStatusRow(sector, system, false))
+                .isEmpty();
+        }
+
+        @Test
+        void resolveStatusRowCountsAColonyTheEconomyDoesNotList() {
+            // Galatia Academy's shape: a real colony on a real station that vanilla never
+            // registers. Reading the economy's listing alone would call such a system empty while
+            // both breakdown boxes below the line name the faction holding it.
+            var system = buildSystemWithPlanets();
+            var sector = buildSectorHoldingUnlistedColony(system, buildUnlistedColony());
+
+            assertThat(SystemStatusRow.resolveStatusRow(sector, system, false))
+                .isEmpty();
         }
 
         @Test
@@ -167,6 +179,23 @@ final class SystemStatusRowTest {
             .thenReturn(economyMock);
 
         return sectorMock;
+    }
+
+    // A sector whose economy lists nothing in the system, the colony hanging on one of the
+    // system's own entities instead - what only the entity walk can find.
+    private static SectorAPI buildSectorHoldingUnlistedColony(
+            StarSystemAPI system,
+            MarketAPI colony) {
+
+        // The entity is read off the colony before the system's stubbing opens, so Mockito does
+        // not see one stubbing nested inside another.
+        var entities = List.of(colony.getPrimaryEntity());
+        var sector = buildSectorHoldingMarkets(system);
+
+        when(system.getAllEntities())
+            .thenReturn(entities);
+
+        return sector;
     }
 
     private static StarSystemAPI buildSystemWithPlanets(PlanetAPI... planets) {
@@ -206,6 +235,19 @@ final class SystemStatusRowTest {
     // awaiting discovery - the other half of the pair hiddenness and discovery come apart on.
     private static MarketAPI buildUnfoundListedColony() {
         return buildColonyOnEntity(true, false);
+    }
+
+    // An open colony wired both ways - the market names its entity, the entity carries the market
+    // - which is what lets the entity walk find a colony the economy never registered.
+    private static MarketAPI buildUnlistedColony() {
+
+        var colonyMock = buildColonyOnEntity(false, false);
+        var entityMock = colonyMock.getPrimaryEntity();
+
+        when(entityMock.getMarket())
+            .thenReturn(colonyMock);
+
+        return colonyMock;
     }
 
     // The two-axis shape the three named colonies above are points on, kept private so no case is

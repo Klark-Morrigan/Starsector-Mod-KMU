@@ -125,9 +125,11 @@ final class PoliticalMapInhabitationTest {
 
             PoliticalMapInhabitation.isSystemInhabited(sectorMock, systemMock);
 
+            // The sector-taking form is named explicitly: the rule is also asked off a colony set
+            // a caller already holds, and a bare matcher cannot say which of the two is meant.
             visibilityMock.verify(() -> MapVisibility.isInhabited(
-                any(),
-                any(),
+                any(SectorAPI.class),
+                any(StarSystemAPI.class),
                 eq(new MapVisibilityOverrides(true, false))));
         }
     }
