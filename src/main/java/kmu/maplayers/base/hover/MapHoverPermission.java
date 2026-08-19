@@ -44,7 +44,7 @@ public final class MapHoverPermission {
      * @return the permission over the screen reads a running game has
      */
     public static MapHoverPermission createForLiveScreen() {
-        
+
         var mapPresence = new MapPresence();
 
         return new MapHoverPermission(

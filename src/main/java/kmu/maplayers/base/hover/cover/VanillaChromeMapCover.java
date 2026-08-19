@@ -1,7 +1,11 @@
 package kmu.maplayers.base.hover.cover;
 
-import kmlib.starsector.ui.input.UiCursor;
+import kmlib.starsector.ui.input.CursorPosition;
+import kmlib.starsector.ui.input.VanillaCursorPosition;
+import kmlib.starsector.ui.map.probes.MapSurfaceArea;
 import kmlib.starsector.ui.map.probes.MapSurfaceBounds;
+
+import java.util.function.Supplier;
 
 /**
  * The cover the map's own chrome lays over it - the tab strip above it, the control bar below or
@@ -18,17 +22,38 @@ import kmlib.starsector.ui.map.probes.MapSurfaceBounds;
  * map", which merely restores the un-suppressed behaviour rather than silencing every hover on the
  * map. The absence is not silent: the surface read warns once when it cannot answer for a map tab
  * it did reach.
+ *
+ * <p>Both reads arrive as ports rather than as the statics behind them, so the failing-open rule
+ * above can be stated without a widget tree to make unreadable. The no-arg constructor is the
+ * pairing a running game gets.
  */
 public final class VanillaChromeMapCover implements MapCover {
+
+    private final CursorPosition cursor;
+
+    // Where the map is actually visible this frame, or null when no map tab is up or the rule no
+    // longer fits the build. Asked afresh each frame rather than held: the surface moves with the
+    // screen it was measured on, and the read behind this memoises that for itself.
+    private final Supplier<MapSurfaceArea> resolveSurfaceArea;
+
+    /** Reads the live widget tree and the live mouse - the pairing outside a test. */
+    public VanillaChromeMapCover() {
+        this(MapSurfaceBounds::resolveSurfaceArea, new VanillaCursorPosition());
+    }
+
+    VanillaChromeMapCover(Supplier<MapSurfaceArea> resolveSurfaceArea, CursorPosition cursor) {
+        this.cursor = cursor;
+        this.resolveSurfaceArea = resolveSurfaceArea;
+    }
 
     @Override
     public boolean isCoveringCursor() {
 
         // Costs a read into the live widget tree, so it is asked only once the three covers that
         // read a flag or a box this mod laid out have declined.
-        var surfaceArea = MapSurfaceBounds.resolveSurfaceArea();
-        
+        var surfaceArea = resolveSurfaceArea.get();
+
         return surfaceArea != null
-            && !surfaceArea.containsPoint(UiCursor.getUiX(), UiCursor.getUiY());
+            && !surfaceArea.containsPoint(cursor.getUiX(), cursor.getUiY());
     }
 }

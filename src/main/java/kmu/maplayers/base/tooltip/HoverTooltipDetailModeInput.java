@@ -3,10 +3,11 @@ package kmu.maplayers.base.tooltip;
 import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmu.maplayers.base.hover.MapHoverPermission;
+
 import org.lwjgl.input.Keyboard;
 
 import java.util.List;
-import java.util.function.BooleanSupplier;
 
 /**
  * Claims the key that flips how much detail hover boxes state, as a campaign input listener in the
@@ -53,18 +54,20 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
      */
     public static final String TOGGLE_KEY_NAME = Keyboard.getKeyName(TOGGLE_KEY);
 
-    // Whether the cursor can be located against the frame now running. Supplied rather than read
-    // here for the reason the dispatcher takes it supplied: the live read walks the running game's
-    // widget tree on the intel side, which no test can stand up.
-    private final BooleanSupplier isCursorLocatable;
+    // Which frames the cursor can be located against. Held as the shared type rather than as a
+    // boolean, for the reason the dispatcher holds it that way: the key must be claimed on exactly
+    // the frames the box can draw on, and two compositions of the same screen reads would be two
+    // chances to disagree about which those are. Handed in because the live reads walk the running
+    // game's widget tree on the intel side, which no test can stand up.
+    private final MapHoverPermission hoverPermission;
 
     /**
-     * @param isCursorLocatable whether the cursor can be located against the frame now running -
-     *                          host-blind because this listener is called for the whole campaign UI
-     *                          and is never told which screen is up
+     * @param hoverPermission which frames the cursor can be located against - host-blind because
+     *                        this listener is called for the whole campaign UI and is never told
+     *                        which screen is up
      */
-    public HoverTooltipDetailModeInput(BooleanSupplier isCursorLocatable) {
-        this.isCursorLocatable = isCursorLocatable;
+    public HoverTooltipDetailModeInput(MapHoverPermission hoverPermission) {
+        this.hoverPermission = hoverPermission;
     }
 
     @Override
@@ -77,7 +80,7 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
         // The one seam the drawing pass reads too, rather than a second copy of its conditions: off
         // it no box can be showing, so there is nothing for the key to switch and it must fall
         // through untouched.
-        if (!HoverTooltipGates.canAnyBoxDraw(isCursorLocatable)) {
+        if (!HoverTooltipGates.canAnyBoxDraw(hoverPermission)) {
             return;
         }
         for (var event : events) {

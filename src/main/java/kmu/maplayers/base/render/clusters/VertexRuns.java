@@ -44,7 +44,7 @@ public final class VertexRuns {
             if (edgeIsBoundary[i] != wantBoundary) {
                 continue;
             }
-            
+
             var start = polygon.get(i);
             var end = polygon.get((i + 1) % count);
 

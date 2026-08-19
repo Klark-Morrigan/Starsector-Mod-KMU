@@ -35,13 +35,11 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryLi
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuRetiredSettings;
-import kmu.spike.VanillaMapPanelProbe;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.ui.context.StarsectorMarketUiContextTracker;
 
 import org.apache.log4j.Logger;
 
-import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 /**
@@ -127,12 +125,6 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
         runGuardedStep("Failed to install KMU political map sidebar",
             () -> installPoliticalMapSidebar(Global.getSector()));
-
-        // TODO: throwaway. Remove with the kmu.spike package once the probe has answered whether
-        // vanilla widgets can be composed onto the map widget instead of drawn in GL.
-        runGuardedStep("Failed to install KMU vanilla map panel probe",
-            () -> installTransientListener(
-                Global.getSector(), VanillaMapPanelProbe.class, VanillaMapPanelProbe::new));
 
         // Open every sidebar at the fold this save was left at. Per load rather than at construction:
         // the hosts are process-lifetime singletons built before any sector exists, so this is the only
@@ -395,7 +387,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
             MapLayerCellTooltip.class,
             () -> new MapLayerCellTooltip(
                 new VanillaMapTooltipProbe(),
-                buildCursorLocatableRead()));
+                MapHoverPermission.createForLiveScreen()));
     }
 
     // Registers the input listener that reads the hover box's detail-mode toggle key. A separate
@@ -406,25 +398,15 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // save-relevant state, and a registration an older save carried would flip the mode twice per
     // press.
     static void installHoverTooltipDetailModeInput(SectorAPI sector) {
-        // Handed the same frame read the dispatcher is, so the key is claimed on exactly the screens
+        // Handed the same permission the dispatcher is, so the key is claimed on exactly the screens
         // and looks the box it switches can draw on - which is the whole of what makes the toggle
         // honest, and is pinned against this composition in MapLayerCellTooltipGateIntegrationTest.
+        // A permission each rather than one shared instance: it holds no state, both are built from
+        // the same factory, and a listener reaching for another's field would outlive it.
         installTransientListener(
             sector,
             HoverTooltipDetailModeInput.class,
-            () -> new HoverTooltipDetailModeInput(buildCursorLocatableRead()));
-    }
-
-    // The live "can the cursor be located against this frame" read the hover box and its toggle key
-    // both gate on. Built here rather than at each listener because the two must answer alike: a key
-    // claimed on a wider read than the box draws behind would be swallowed on a screen showing no
-    // box, and on a narrower one it would go dead exactly where the box is live.
-    //
-    // The same answer the map pass resolves its hover from, taken through the one class that states
-    // it, so a box is offered on exactly the frames a cell was lit - a permission the player grants
-    // reaches both or neither.
-    private static BooleanSupplier buildCursorLocatableRead() {
-        return MapHoverPermission.createForLiveScreen()::isCursorLocatable;
+            () -> new HoverTooltipDetailModeInput(MapHoverPermission.createForLiveScreen()));
     }
 
     // Adds one listener to the sector, clearing any registration of that class first, which a

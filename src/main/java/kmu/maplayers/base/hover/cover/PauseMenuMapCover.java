@@ -44,7 +44,7 @@ public final class PauseMenuMapCover implements MapCover {
     private static boolean readLiveMenuState() {
 
         var sector = Global.getSector();
-        
+
         if (sector == null || sector.getCampaignUI() == null) {
             return false;
         }

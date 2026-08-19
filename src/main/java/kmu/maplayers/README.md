@@ -195,29 +195,28 @@ about what the overlay means.
   parks its panel on exactly the conditions that end game space. `MapHoverPermission` is that rule
   bound to the two live screen reads, and is what a running game holds: the hover pass and the
   tooltip box both take their answer from it, so a permission the player grants reaches the lit cell
-  and the box naming it together rather than one without the other.
-  What that tick sounds like is `MapHoverCues` beside it - the map's own sample and the
-  player's own level, read live like the switches are, and no cue at all once that level reaches the
-  bottom of its slider. The cell rather than the cluster is what the tick is keyed by, so it answers
-  the same change the hover box does. `HoverHighlightGeometry` resolves the highlight geometry and
-  `HoverHighlightRenderer` burns the halo and the wash, both over a `HoverHighlightSource` - the
-  two questions only the layer that owns the clusters can answer: the loops the hovered cell might
-  sit inside, and the shade its fill draws in. Both seams extend `PaintedCellShapes`, the frame's
-  cell shapes themselves, so the halo can only trace an outline the cursor was actually hit-tested
-  against - one supplier, not two that must agree. `MapHoverGates` is the settings side:
-  hovering is switched at three tiers - a master over the whole map, a pair under it for the
-  effects and the box separately, and a pair of the layer's own - and this answers for the two that
-  reach every layer, which a layer ANDs its own into. So one layer's box can go dark while another's
-  stays up, and one row still silences them all. `RandomAssortmentOfThingsMode` is the same tab's
-  per-mod switch: whether the player has left that mod's compatibility mode on *and* the mod is
-  installed with its own minimap replacing the campaign radar, which is KMLib's `CampaignMinimap`
-  role to answer - the map surface `MapPresence` cannot report, since it stands in for the radar
-  rather than opening as a screen, and answered for that mod in KMLib's own
-  `rat` package. Both halves, ANDed,
-  so an install without that minimap reads one boolean and behaves as it always did. Named for the
-  mod because the switch is, while what it asks stays the mod-neutral question the role carries -
-  so a second mod replacing the radar arrives as its own switch rather than folded under this
-  one's name. It narrows
+  and the box naming it together rather than one without the other. It is what both of them hold,
+  rather than a boolean each composes for itself, so that sharing is the compiler's to keep.
+  What that tick sounds like is `MapHoverCues` beside it - the map's own sample and the player's own
+  level, read live like the switches are, and no cue at all once that level reaches the bottom of
+  its slider. The cell rather than the cluster is what the tick is keyed by, so it answers the same
+  change the hover box does. `HoverHighlightGeometry` resolves the highlight geometry and
+  `HoverHighlightRenderer` burns the halo and the wash, both over a `HoverHighlightSource` - the two
+  questions only the layer that owns the clusters can answer: the loops the hovered cell might sit
+  inside, and the shade its fill draws in. Both seams extend `PaintedCellShapes`, the frame's cell
+  shapes themselves, so the halo can only trace an outline the cursor was actually hit-tested
+  against - one supplier, not two that must agree. `MapHoverGates` is the settings side: hovering is
+  switched at three tiers - a master over the whole map, a pair under it for the effects and the box
+  separately, and a pair of the layer's own - and this answers for the two that reach every layer,
+  which a layer ANDs its own into. So one layer's box can go dark while another's stays up, and one
+  row still silences them all. `RandomAssortmentOfThingsMode` is the same tab's per-mod switch:
+  whether the player has left that mod's compatibility mode on *and* the mod is installed with its
+  own minimap replacing the campaign radar, which is KMLib's `CampaignMinimap` role to answer - the
+  map surface `MapPresence` cannot report, since it stands in for the radar rather than opening as a
+  screen, and answered for that mod in KMLib's own `rat` package. Both halves, ANDed, so an install
+  without that minimap reads one boolean and behaves as it always did. Named for the mod because the
+  switch is, while what it asks stays the mod-neutral question the role carries - so a second mod
+  replacing the radar arrives as its own switch rather than folded under this one's name. It narrows
   what the general switches beside it allow and never widens it: which frames may answer the cursor
   at all is theirs, and the mode only confines - within a frame they already allow - to the surface
   that minimap occupies. Those are written for the mods nobody here has met, and a per-mod mode able

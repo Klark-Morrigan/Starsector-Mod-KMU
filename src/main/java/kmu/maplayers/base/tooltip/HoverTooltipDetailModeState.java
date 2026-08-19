@@ -17,7 +17,7 @@ package kmu.maplayers.base.tooltip;
  * what is under the cursor: it selects which box a tooltip draws, which is a tooltip fact.
  */
 public final class HoverTooltipDetailModeState {
-    
+
     // The one shared holder the input pass toggles and the tooltip dispatcher reads.
     private static final HoverTooltipDetailModeState INSTANCE = new HoverTooltipDetailModeState();
 

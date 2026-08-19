@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmu.maplayers.base.hover.MapHoverPermissionFixture;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -30,7 +32,8 @@ import static org.mockito.Mockito.when;
  * shared gates the box it switches draws behind - the settings tiers above any layer, and a map on
  * screen - so a listener that read one and not the other would swallow F1 on a screen that could
  * show no box at all. What the live map read answers belongs to the seam itself and to the install
- * site; here it arrives as a supplier, so open and closed is the whole of what this level can say.
+ * site; here the permission is posed over fixed screen reads, so a vanilla host being up or not up
+ * is the whole of what this level can say.
  *
  * <p>Behind those gates the press is claimed only where the box under the cursor has a second amount
  * of detail to state, which is the other half of the same honesty: the mode is one shared fact that
@@ -46,7 +49,8 @@ final class HoverTooltipDetailModeInputTest {
     private static final int SIDEBAR_INPUT_PRIORITY = 1000;
 
     private final HoverTooltipDetailModeInput input =
-        new HoverTooltipDetailModeInput(() -> true);
+        new HoverTooltipDetailModeInput(
+            MapHoverPermissionFixture.buildPermissionOnAVanillaHost());
 
     private MockedStatic<HoveredBox> hoveredBoxMock;
 
@@ -60,7 +64,7 @@ final class HoverTooltipDetailModeInputTest {
 
     @AfterEach
     void dropTheDetailModeBackToNormal() {
-        
+
         hoveredBoxMock.close();
 
         // The mode holder is a process-wide singleton, so a flip left standing would reach the next
@@ -132,7 +136,8 @@ final class HoverTooltipDetailModeInputTest {
             // This listener is called for the whole campaign UI, so without the map gate F1 would be
             // swallowed on every screen the player is on - the refit, the intel list, the market.
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
-            var inputWithNoMapShowing = new HoverTooltipDetailModeInput(() -> false);
+            var inputWithNoMapShowing = new HoverTooltipDetailModeInput(
+                MapHoverPermissionFixture.buildPermissionOffEveryMap());
 
             runWithHoverTooltipSwitchOn(
                 () -> inputWithNoMapShowing.processCampaignInputPreCore(List.of(eventMock)));
@@ -265,7 +270,7 @@ final class HoverTooltipDetailModeInputTest {
 
             assertThat(HoverTooltipDetailModeState.getInstance().getMode())
                 .isEqualTo(HoverTooltipDetailMode.NORMAL);
-                
+
             verify(eventMock, never())
                 .consume();
         }

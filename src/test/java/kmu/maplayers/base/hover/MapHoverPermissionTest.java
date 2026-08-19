@@ -1,14 +1,11 @@
 package kmu.maplayers.base.hover;
 
-import kmu.settings.KmuMapLayerSettings;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.function.BooleanSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins that the binding hands the settings rule the two screen reads in the order the rule expects,
@@ -18,6 +15,11 @@ import static org.mockito.Mockito.mockStatic;
  * either order, and the two agree on most frames a player is ever on. Where they part - a map open
  * with a screen over the campaign, or the campaign itself with no map - is exactly where this
  * feature lives, so a swap would ship looking correct.
+ *
+ * <p>Driven through {@link HoverSwitchScopes} like every other hover case. Those scopes are named
+ * for the tooltip switch, which nothing here reads: what this suite needs from them is the rest of
+ * the tier they settle - the global permission withheld throughout, since granted it answers before
+ * either screen read is taken and no case below could observe which read reached which disjunct.
  */
 final class MapHoverPermissionTest {
 
@@ -33,7 +35,7 @@ final class MapHoverPermissionTest {
         void isCursorLocatableIsTrueOnAVanillaHostWithNoPermissionGranted() {
             // The map read reaching the rule's own map disjunct, which answers with no permission
             // granted at all - so a swap that fed it the game-space read would be false here.
-            runWithGameSpacePermission(false, () ->
+            HoverSwitchScopes.runWithHoverTooltipSwitchOn(() ->
                 assertThat(buildPermission(A_MAP_IS_SHOWING, NOT_IN_GAME_SPACE).isCursorLocatable())
                     .isTrue());
         }
@@ -42,7 +44,7 @@ final class MapHoverPermissionTest {
         void isCursorLocatableIsTrueInGameSpaceWithTheGameSpacePermissionGranted() {
             // The game-space read reaching the disjunct the permission guards. The other half of the
             // swap: fed the map read, this would be false.
-            runWithGameSpacePermission(true, () ->
+            HoverSwitchScopes.runWithHoverTooltipSwitchOnInGameSpace(() ->
                 assertThat(buildPermission(NO_MAP_SHOWING, IN_GAME_SPACE).isCursorLocatable())
                     .isTrue());
         }
@@ -51,7 +53,7 @@ final class MapHoverPermissionTest {
         void isCursorLocatableIsFalseInGameSpaceWithoutThatPermission() {
             // Game space alone is not a frame the cursor can be located on - the permission is what
             // admits it, and withholding it leaves the vanilla hosts answering alone.
-            runWithGameSpacePermission(false, () ->
+            HoverSwitchScopes.runWithHoverTooltipSwitchOn(() ->
                 assertThat(buildPermission(NO_MAP_SHOWING, IN_GAME_SPACE).isCursorLocatable())
                     .isFalse());
         }
@@ -59,7 +61,7 @@ final class MapHoverPermissionTest {
         @Test
         void isCursorLocatableIsFalseWithNoMapAndNoGameSpace() {
             // Some other screen with neither read open, which is most of the frames this is asked on.
-            runWithGameSpacePermission(true, () ->
+            HoverSwitchScopes.runWithHoverTooltipSwitchOnInGameSpace(() ->
                 assertThat(buildPermission(NO_MAP_SHOWING, NOT_IN_GAME_SPACE).isCursorLocatable())
                     .isFalse());
         }
@@ -70,25 +72,5 @@ final class MapHoverPermissionTest {
             BooleanSupplier isInGameSpace) {
 
         return new MapHoverPermission(isAnyMapShowing, isInGameSpace);
-    }
-
-    // Settles the two permissions the rule reads statically. The global one stays withheld
-    // throughout: granted, it answers before either screen read is taken and no case below could
-    // observe which read reached which disjunct.
-    private static void runWithGameSpacePermission(
-            boolean isGameSpacePermitted,
-            Runnable body) {
-
-        try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
-
-            settingsMock
-                .when(KmuMapLayerSettings::getMapLayerMouseoverIsGlobal)
-                .thenReturn(false);
-            settingsMock
-                .when(KmuMapLayerSettings::getMapLayerMouseoverIsEnabledInGameSpace)
-                .thenReturn(isGameSpacePermitted);
-
-            body.run();
-        }
     }
 }

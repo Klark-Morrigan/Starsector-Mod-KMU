@@ -1,6 +1,8 @@
 package kmu.maplayers.base.tooltip;
 
 import kmu.maplayers.base.hover.HoverSwitchScopes;
+import kmu.maplayers.base.hover.MapHoverPermission;
+import kmu.maplayers.base.hover.MapHoverPermissionFixture;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,7 +23,8 @@ final class HoverTooltipGatesTest {
         @Test
         void canAnyBoxDrawIsTrueWithTheSwitchOnAndAMapOnScreen() {
             HoverSwitchScopes.runWithHoverTooltipSwitchOn(() ->
-                assertThat(HoverTooltipGates.canAnyBoxDraw(() -> true))
+                assertThat(HoverTooltipGates.canAnyBoxDraw(
+                        MapHoverPermissionFixture.buildPermissionOnAVanillaHost()))
                     .isTrue());
         }
 
@@ -30,30 +33,35 @@ final class HoverTooltipGatesTest {
             // The listeners reading this are called for the whole campaign UI, so without the map
             // read a box would float over the refit screen and F1 would be swallowed there.
             HoverSwitchScopes.runWithHoverTooltipSwitchOn(() ->
-                assertThat(HoverTooltipGates.canAnyBoxDraw(() -> false))
+                assertThat(HoverTooltipGates.canAnyBoxDraw(
+                        MapHoverPermissionFixture.buildPermissionOffEveryMap()))
                     .isFalse());
         }
 
         @Test
         void canAnyBoxDrawIsFalseWhileHoverTooltipsAreSwitchedOff() {
             HoverSwitchScopes.runWithHoverTooltipSwitchOff(() ->
-                assertThat(HoverTooltipGates.canAnyBoxDraw(() -> true))
+                assertThat(HoverTooltipGates.canAnyBoxDraw(
+                        MapHoverPermissionFixture.buildPermissionOnAVanillaHost()))
                     .isFalse());
         }
 
         @Test
-        void canAnyBoxDrawSkipsTheMapReadWhileHoverTooltipsAreSwitchedOff() {
-            // The order is the point: the map read walks the live widget tree every frame, and there
-            // is nothing to ask it about once the player has switched the box off.
-            var mapReadCount = new int[1];
+        void canAnyBoxDrawSkipsTheScreenReadsWhileHoverTooltipsAreSwitchedOff() {
+            // The order is the point: the screen reads walk the live widget tree every frame, and
+            // there is nothing to ask them about once the player has switched the box off.
+            var screenReadCount = new int[1];
+            var countingPermission = new MapHoverPermission(
+                () -> {
+                    screenReadCount[0]++;
+                    return true;
+                },
+                () -> false);
 
             HoverSwitchScopes.runWithHoverTooltipSwitchOff(() ->
-                HoverTooltipGates.canAnyBoxDraw(() -> {
-                    mapReadCount[0]++;
-                    return true;
-                }));
+                HoverTooltipGates.canAnyBoxDraw(countingPermission));
 
-            assertThat(mapReadCount[0])
+            assertThat(screenReadCount[0])
                 .isZero();
         }
     }

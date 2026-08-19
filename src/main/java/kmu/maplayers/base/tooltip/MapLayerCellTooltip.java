@@ -5,7 +5,7 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 
-import java.util.function.BooleanSupplier;
+import kmu.maplayers.base.hover.MapHoverPermission;
 
 /**
  * The map's hover-tooltip dispatcher: a render listener that draws whichever {@link MapHoverTooltip}
@@ -24,9 +24,9 @@ import java.util.function.BooleanSupplier;
  * detail-mode key, plus its own two: a hovered cell, and stepping aside while the vanilla map draws
  * its own tooltip. It then resolves the hovered system and hands it to the injected tooltip. A
  * layer's own tooltip switch stays with the layer, which withholds its box by injecting none. The
- * pass is
- * read-only over the hover state and consumes no input, so the vanilla star-system tooltip keeps
- * drawing; the tooltip a layer injects owns its own content, look, and any further precondition.
+ * pass is read-only over the hover state and consumes no input, so the vanilla star-system tooltip
+ * keeps drawing; the tooltip a layer injects owns its own content, look, and any further
+ * precondition.
  *
  * <p>How much detail the drawn box states is settled here too, and by one shared fact rather than
  * per layer: the dispatcher reads {@link HoverTooltipDetailModeState} and draws the counterpart the
@@ -36,11 +36,12 @@ import java.util.function.BooleanSupplier;
  */
 public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 
-    // Whether the cursor can be located against the frame now running - a vanilla map host up, or a
-    // permission the player granted reaching further. Supplied rather than read here so a test can
-    // name the answer: the live read walks the running game's widget tree on the intel side, which
-    // no test can stand up.
-    private final BooleanSupplier isCursorLocatable;
+    // Which frames the cursor can be located against - a vanilla map host up, or a permission the
+    // player granted reaching further. Held as the shared type rather than as a boolean so this pass
+    // cannot come to compose the screen reads differently from the map pass that resolves the hover
+    // it reports; handed in so a test can name the answer, the live reads walking the running game's
+    // widget tree on the intel side.
+    private final MapHoverPermission hoverPermission;
 
     // The live read this dispatcher steps aside for. Supplied rather than built here: it is the one
     // collaborator whose answer changes what this draws, so a caller that can hand over a stub is
@@ -49,16 +50,17 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 
     /**
      * @param vanillaMapTooltipProbe the probe answering whether the map is drawing its own tooltip,
-     *                          which this box stands aside for
-     * @param isCursorLocatable whether the cursor can be located against the frame now running -
-     *                          host-blind because this listener is called for the whole campaign UI
-     *                          and is never told which screen is up
+     *                               which this box stands aside for
+     * @param hoverPermission        which frames the cursor can be located against - host-blind
+     *                               because this listener is called for the whole campaign UI and is
+     *                               never told which screen is up
      */
     public MapLayerCellTooltip(
             VanillaMapTooltipProbe vanillaMapTooltipProbe,
-            BooleanSupplier isCursorLocatable) {
+            MapHoverPermission hoverPermission) {
+
+        this.hoverPermission = hoverPermission;
         this.vanillaMapTooltipProbe = vanillaMapTooltipProbe;
-        this.isCursorLocatable = isCursorLocatable;
     }
 
     @Override
@@ -79,7 +81,7 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         // same answer the hover under it was resolved from. The layer's own tooltip switch is not
         // among them - it is the layer's to read, withheld by injecting no box at all, the same way
         // a layer with nothing to say about a cell does.
-        if (!HoverTooltipGates.canAnyBoxDraw(isCursorLocatable)) {
+        if (!HoverTooltipGates.canAnyBoxDraw(hoverPermission)) {
             return;
         }
         // Step aside when the vanilla map screen is drawing its own tooltip (the player is over a
@@ -101,7 +103,9 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         selectVariantFor(
                 hoveredBox.get().tooltip(),
                 HoverTooltipDetailModeState.getInstance().getMode())
-            .renderFor(hoveredBox.get().sector(), hoveredBox.get().system());
+            .renderFor(
+                hoveredBox.get().sector(),
+                hoveredBox.get().system());
     }
 
     // The box the current detail mode calls for: the tooltip's richer counterpart while the mode asks
@@ -110,10 +114,10 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
     // Descends exactly one level: a counterpart is never asked for a counterpart of its own, so the
     // model cannot recurse however deeply a layer nests its variants.
     static MapHoverTooltip selectVariantFor(MapHoverTooltip base, HoverTooltipDetailMode mode) {
+        
         if (mode != HoverTooltipDetailMode.EXPANDED) {
             return base;
         }
         return base.resolveExpandedVariant().orElse(base);
     }
-
 }

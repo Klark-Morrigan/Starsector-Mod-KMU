@@ -275,7 +275,7 @@ public final class MapLayerTerrainInstaller {
     private static void removeStaleMapLayerTerrain(
             LocationAPI hyperspace,
             MapLayerTerrainVariant variant) {
-                
+
         // getTerrainCopy hands back a copy, so removing while walking it is safe.
         for (var terrain : hyperspace.getTerrainCopy()) {
             if (variant.isStaleTerrain(terrain)) {

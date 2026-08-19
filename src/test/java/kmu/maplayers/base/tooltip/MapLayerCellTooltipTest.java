@@ -9,6 +9,7 @@ import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverPermissionFixture;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
@@ -46,9 +47,10 @@ import static org.mockito.Mockito.when;
  * stand-in tooltips: the decision is a pure read of the mode against what a tooltip offers, so it is
  * checkable without an engine even though drawing the chosen box is not.
  *
- * <p>The map gate is pinned as the supplier it is, open and closed, which is the whole of what this
- * level can say about it: what the live read answers, and that the installed one is the union
- * covering Starscape, belong to the seams themselves and to the install site's own test.
+ * <p>The frame gate is pinned over permissions posed against fixed screen reads, open and closed,
+ * which is the whole of what this level can say about it: what the live reads answer, and that the
+ * installed one is the union covering Starscape, belong to the seams themselves and to the install
+ * site's own test.
  */
 final class MapLayerCellTooltipTest {
 
@@ -117,7 +119,9 @@ final class MapLayerCellTooltipTest {
                 .thenReturn(true);
 
             runWithHoverTooltipSwitchOn(() -> {
-                new MapLayerCellTooltip(vanillaMapTooltipProbeMock, () -> true)
+                new MapLayerCellTooltip(
+                        vanillaMapTooltipProbeMock,
+                        MapHoverPermissionFixture.buildPermissionOnAVanillaHost())
                     .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
 
                 verifyNoInteractions(tooltipMock);
@@ -133,7 +137,9 @@ final class MapLayerCellTooltipTest {
             var vanillaMapTooltipProbeMock = mock(VanillaMapTooltipProbe.class);
 
             runWithHoverTooltipSwitchOn(() -> {
-                new MapLayerCellTooltip(vanillaMapTooltipProbeMock, () -> false)
+                new MapLayerCellTooltip(
+                        vanillaMapTooltipProbeMock,
+                        MapHoverPermissionFixture.buildPermissionOffEveryMap())
                     .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
 
                 verifyNoInteractions(vanillaMapTooltipProbeMock);
@@ -145,10 +151,10 @@ final class MapLayerCellTooltipTest {
         void drawsWhileAMapIsOnScreen() {
             // The open side of the same gate, all the way through to the injected box - the only
             // case that proves the dispatcher reaches its tooltip rather than that it declines to.
-            // Which map states open the gate is not this test's to say: the read arrives as a
-            // supplier, so "showing" is all this level can express. That the supplied read is the
-            // union covering Starscape is pinned against the real composition in
-            // MapLayerCellTooltipGateIntegrationTest.
+            // Which map states open the gate is not this test's to say: the permission is posed over
+            // fixed screen reads, so "a vanilla host is up" is all this level can express. That the
+            // live read behind it is the union covering Starscape is pinned against the real
+            // composition in MapLayerCellTooltipGateIntegrationTest.
             var vanillaMapTooltipProbeMock = mock(VanillaMapTooltipProbe.class);
             var sectorMock = mock(SectorAPI.class);
             var systemMock = mock(StarSystemAPI.class);
@@ -165,7 +171,9 @@ final class MapLayerCellTooltipTest {
                         .when(Global::getSector)
                         .thenReturn(sectorMock);
 
-                    new MapLayerCellTooltip(vanillaMapTooltipProbeMock, () -> true)
+                    new MapLayerCellTooltip(
+                            vanillaMapTooltipProbeMock,
+                            MapHoverPermissionFixture.buildPermissionOnAVanillaHost())
                         .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
 
                     verify(tooltipMock)
@@ -203,12 +211,14 @@ final class MapLayerCellTooltipTest {
                         .when(Global::getSector)
                         .thenReturn(sectorMock);
 
-                    new MapLayerCellTooltip(vanillaMapTooltipProbeMock, () -> true)
+                    new MapLayerCellTooltip(
+                            vanillaMapTooltipProbeMock,
+                            MapHoverPermissionFixture.buildPermissionOnAVanillaHost())
                         .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
 
                     verify(expandedTooltipMock)
                         .renderFor(sectorMock, systemMock);
-                        
+
                     // Drawn instead of the injected box, not alongside it: two boxes over one cell
                     // is the failure the swap exists to avoid.
                     verify(tooltipMock, never())
