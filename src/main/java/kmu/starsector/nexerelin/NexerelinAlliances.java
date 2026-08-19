@@ -1,6 +1,6 @@
 package kmu.starsector.nexerelin;
 
-import com.fs.starfarer.api.Global;
+import kmlib.starsector.nexerelin.NexerelinPresence;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
@@ -16,8 +16,6 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
  */
 public final class NexerelinAlliances {
 
-    private static final String NEXERELIN_MOD_ID = "nexerelin";
-
     // The fingerprint reported when Nexerelin is absent: a fixed value the watcher polls
     // steadily, so a Nex-free install never sees a change and never bumps the alliance
     // revision. Any constant works; it is only ever compared for equality against itself.
@@ -31,10 +29,14 @@ public final class NexerelinAlliances {
      * at all. Stable for a session (mod set does not change in play), so a caller may
      * compute it once.
      *
+     * <p>Asked through the library's own gate rather than through a mod id and a hop of
+     * this class's own: the id is the mod's, not KMU's, and the gate answers "not present"
+     * before the game has stood its settings up instead of throwing there.
+     *
      * @return true when Nexerelin is present
      */
     public static boolean isAvailable() {
-        return Global.getSettings().getModManager().isModEnabled(NEXERELIN_MOD_ID);
+        return NexerelinPresence.isModEnabled();
     }
 
     /**

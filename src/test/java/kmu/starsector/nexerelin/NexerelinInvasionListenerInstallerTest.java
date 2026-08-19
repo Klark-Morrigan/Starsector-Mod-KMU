@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import static kmlib.testfixtures.starsector.settings.StubbedModIds.NEXERELIN;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -30,8 +32,6 @@ import static org.mockito.Mockito.when;
  * is pinned alongside the install.
  */
 final class NexerelinInvasionListenerInstallerTest {
-
-    private static final String NEXERELIN_MOD_ID = "nexerelin";
 
     @Nested
     class InstallIfPresent {
@@ -93,6 +93,6 @@ final class NexerelinInvasionListenerInstallerTest {
         var modManagerMock = mock(ModManagerAPI.class);
         globalMock.when(Global::getSettings).thenReturn(settingsMock);
         when(settingsMock.getModManager()).thenReturn(modManagerMock);
-        when(modManagerMock.isModEnabled(NEXERELIN_MOD_ID)).thenReturn(isEnabled);
+        when(modManagerMock.isModEnabled(NEXERELIN)).thenReturn(isEnabled);
     }
 }

@@ -3,6 +3,7 @@ package kmu.starsector.consolecommands;
 import com.fs.starfarer.api.Global;
 
 import kmlib.logging.SessionWarning;
+import kmlib.starsector.settings.ModPresence;
 
 import org.apache.log4j.Logger;
 
@@ -120,8 +121,7 @@ public final class ConsoleCommandsOverlay implements ConsoleOverlay {
         
         if (isConsoleReadable == null) {
             try {
-                isConsoleReadable = Global.getSettings().getModManager()
-                    .isModEnabled(CONSOLE_COMMANDS_MOD_ID);
+                isConsoleReadable = ModPresence.isModEnabled(CONSOLE_COMMANDS_MOD_ID);
 
             } catch (Throwable cannotReadModState) {
 

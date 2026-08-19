@@ -1,7 +1,8 @@
 package kmu.starsector.nexerelin;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
+
+import kmlib.starsector.nexerelin.NexerelinPresence;
 
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapMarketTransferListener;
 
@@ -23,8 +24,6 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapMarketTrans
  */
 public final class NexerelinInvasionListenerInstaller {
 
-    private static final String NEXERELIN_MOD_ID = "nexerelin";
-
     private NexerelinInvasionListenerInstaller() {
     }
 
@@ -36,9 +35,11 @@ public final class NexerelinInvasionListenerInstaller {
      */
     public static void installIfPresent(SectorAPI sector) {
         // Short-circuit before touching Installer so a Nex-free install never
-        // loads the class that names the Nex InvasionListener.
-        if (sector == null
-                || !Global.getSettings().getModManager().isModEnabled(NEXERELIN_MOD_ID)) {
+        // loads the class that names the Nex InvasionListener. The gate is the
+        // library's rather than a mod-manager hop of this class's own: the id
+        // belongs to the mod, and an install being asked about before the game
+        // has stood its settings up answers rather than throwing.
+        if (sector == null || !NexerelinPresence.isModEnabled()) {
             return;
         }
         Installer.install(sector);
