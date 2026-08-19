@@ -26,8 +26,9 @@ import java.util.List;
  * stretch it grazes is narrow and lies where the bridge actually is. A reach of coast leaves
  * a cell along its TANGENT, so its line hugs the circle for most of a radian, nearly all of
  * it past where the reach stops - and unbounded, that whole stretch is claimed. A cell the
- * coast turns on then has the mouth it arrives by swallow the mouth it leaves by, and the
- * wall that would have closed the void behind it is refused for crowding.
+ * coast turns on then has the mouth it arrives by swallow the mouth it leaves by; the sweep
+ * makes sense of that by handing the boundary straight from one wall to the other, but only
+ * because the swallowing mouth is the size of a wall's end rather than the size of a radian.
  *
  * <p>The rounding at the ends is not a nicety either. Where a wall is laid across discs one
  * channel wider than the border it was built on, its end sits a channel inside the circle and

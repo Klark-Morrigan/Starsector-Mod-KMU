@@ -31,12 +31,16 @@ final class SectorSvgDump {
 
             var fixture = SectorFixture.loadSector(sectorName);
 
-            writeMap(fixture, sectorName, "", VoidPockets.PocketShaping.WITH_CHANNEL);
+            // Built once for both maps: the cells, their fills and their cluster rings are the
+            // same geometry either way, and only what is drawn of the VOID answers to the
+            // shaping. Building it twice would also invite the two maps to be built under
+            // knobs that had drifted apart.
+            var geometry = SectorGeometry.buildSectorGeometry(
+                fixture, SectorGeometryParameters.createDefaults());
+
+            writeMap(fixture, geometry, sectorName, VoidPockets.PocketShaping.WITH_CHANNEL);
             writeMap(
-                fixture,
-                sectorName,
-                TRUE_EXTENT_SUFFIX,
-                VoidPockets.PocketShaping.AT_TRUE_EXTENT);
+                fixture, geometry, sectorName, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
         }
     }
 
@@ -46,33 +50,28 @@ final class SectorSvgDump {
     // extent hides nothing at all.
     private static void writeMap(
             SectorFixture fixture,
+            SectorGeometry geometry,
             String sectorName,
-            String suffix,
             VoidPockets.PocketShaping shaping) {
 
-        {
-            var target = SVG_DIRECTORY.resolve(
-                sectorName.replace(CSV_EXTENSION, suffix + SVG_EXTENSION));
+        // Named after the shaping rather than told what to call itself, so the two maps cannot
+        // land on one name through a caller passing the wrong suffix.
+        var suffix = shaping.isAtTrueExtent() ? TRUE_EXTENT_SUFFIX : "";
+        var target = SVG_DIRECTORY.resolve(
+            sectorName.replace(CSV_EXTENSION, suffix + SVG_EXTENSION));
 
-            SectorSvgWriter.writeSectorSvg(
-                target,
-                fixture,
-                SectorGeometry.buildSectorGeometry(
-                    fixture,
-                    SectorGeometryParameters.createDefaults()),
-                shaping);
+        SectorSvgWriter.writeSectorSvg(target, fixture, geometry, shaping);
 
-            System.out.println("wrote " + target.toAbsolutePath());
+        System.out.println("wrote " + target.toAbsolutePath());
 
-            // Rendered from the SVG rather than drawn a second time, so the picture cannot
-            // disagree with the drawing it is a picture of. The SVG stays the artefact worth
-            // keeping - diffable and deterministic - and this is only what makes it viewable
-            // by anything that reads raster images.
-            var raster = SVG_DIRECTORY.resolve(
-                sectorName.replace(CSV_EXTENSION, suffix + PNG_EXTENSION));
-                
-            SvgRasteriser.rasteriseToPng(target, raster);
-            System.out.println("wrote " + raster.toAbsolutePath());
-        }
+        // Rendered from the SVG rather than drawn a second time, so the picture cannot
+        // disagree with the drawing it is a picture of. The SVG stays the artefact worth
+        // keeping - diffable and deterministic - and this is only what makes it viewable by
+        // anything that reads raster images.
+        var raster = SVG_DIRECTORY.resolve(
+            sectorName.replace(CSV_EXTENSION, suffix + PNG_EXTENSION));
+
+        SvgRasteriser.rasteriseToPng(target, raster);
+        System.out.println("wrote " + raster.toAbsolutePath());
     }
 }

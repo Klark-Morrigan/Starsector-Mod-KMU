@@ -27,10 +27,7 @@ final class ViewerPickLog {
     private static final Path PICK_FILE =
         Path.of("build", "reports", "political-map", "viewer-picks.txt");
 
-    private final Path file;
-
-    private ViewerPickLog(Path file) {
-        this.file = file;
+    private ViewerPickLog() {
     }
 
     /**
@@ -46,11 +43,20 @@ final class ViewerPickLog {
         } catch (IOException e) {
             throw new UncheckedIOException("cannot open " + PICK_FILE.toAbsolutePath(), e);
         }
-        return new ViewerPickLog(PICK_FILE);
+        return new ViewerPickLog();
     }
 
-    Path getFile() {
-        return file;
+    /**
+     * Where the picks are written, for a reader that wants to open them rather than add to
+     * them.
+     *
+     * <p>Static because a reader has no log to hold: the window owns the writing, and asking
+     * it for the path would mean holding a window open to read a file it wrote.
+     *
+     * @return the file, which need not exist yet
+     */
+    static Path getPickFile() {
+        return PICK_FILE;
     }
 
     /**
@@ -78,13 +84,14 @@ final class ViewerPickLog {
 
         try {
             Files.writeString(
-                file,
+                PICK_FILE,
                 line,
                 StandardCharsets.US_ASCII,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.APPEND);
         } catch (IOException e) {
-            throw new UncheckedIOException("cannot append to " + file.toAbsolutePath(), e);
+            throw new UncheckedIOException(
+                "cannot append to " + PICK_FILE.toAbsolutePath(), e);
         }
     }
 }

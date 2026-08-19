@@ -344,7 +344,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             fixture.getSystemIds().size(),
             geometry.ringsByOwner().size(),
             lastBuildMillis,
-            picks.getFile()));
+            ViewerPickLog.getPickFile()));
     }
 
     private final class MapCanvas extends JPanel {

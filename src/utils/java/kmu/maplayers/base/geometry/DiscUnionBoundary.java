@@ -370,12 +370,12 @@ final class DiscUnionBoundary {
     }
 
     /**
-     * Why one named wall was not laid, in the words of the rule that stopped it.
+     * Why one wall was not laid, as the rule that stopped it.
      *
      * <p>{@link #findAttachableChords} answers WHICH walls were laid, which is what the walk
      * needs and nothing at all to someone looking at a gap on screen and asking why the line
      * across it holds nothing back. The refusals are not interchangeable: a wall whose end is
-     * covered has cells that met without it, and one whose mouth was taken is competing with a
+     * covered has cells that met without it, and one crowded out is competing with a
      * neighbour - the first is geometry, the second is ordering.
      *
      * <p>Replays the greedy walk rather than testing the wall alone, because whether a mouth
@@ -383,56 +383,134 @@ final class DiscUnionBoundary {
      *
      * @param union the discs the walls are laid across
      * @param walls the walls on offer, in the order they are offered
-     * @param from  the circle the wall in question leaves
-     * @param to    the circle it lands on
-     * @return why it was refused, or that it was laid, or that no such wall was offered
+     * @param wall  the one to ask about, which must be among them
+     * @return what became of it
      */
-    static String describeChordRefusal(DiscUnion union, Walls walls, int from, int to) {
+    static ChordRefusal describeChordRefusal(DiscUnion union, Walls walls, Chord wall) {
 
         var takenByCircle = new LinkedHashMap<Integer, List<double[]>>();
-        var takers = new LinkedHashMap<Integer, List<Object[]>>();
-        var answer = "not offered";
+        var takers = new LinkedHashMap<Integer, List<TakenMouth>>();
+        var answer = new ChordRefusal(RefusalReason.NOT_OFFERED, null);
 
         for (var chord : walls.chords()) {
 
             var fromMouth = WallMouths.measureMouth(union, chord, chord.fromCircle(), walls.channel());
             var toMouth = WallMouths.measureMouth(union, chord, chord.toCircle(), walls.channel());
-            var mine = chord.fromCircle() == from && chord.toCircle() == to;
+            var refusal = judgeChord(union, chord, fromMouth, toMouth, takenByCircle, takers);
 
-            String refusal = null;
-
-            if (fromMouth == null || toMouth == null) {
-                refusal = "no mouth";
-            } else if (!isWallOnBoundary(union, chord, chord.fromCircle(), fromMouth)) {
-                refusal = "from side off the boundary";
-            } else if (!isWallOnBoundary(union, chord, chord.toCircle(), toMouth)) {
-                refusal = "to side off the boundary";
-            } else if (isCrowdedOut(takenByCircle, chord, fromMouth, toMouth)) {
-                refusal = "crowded out by "
-                    + describeTaker(takers, chord, fromMouth, toMouth);
-            }
-
-            if (refusal == null) {
+            if (refusal.reason() == RefusalReason.LAID) {
 
                 recordMouth(takenByCircle, chord.fromCircle(), fromMouth);
                 recordMouth(takenByCircle, chord.toCircle(), toMouth);
-                takers.computeIfAbsent(chord.fromCircle(), circle -> new ArrayList<>())
-                    .add(new Object[] {fromMouth, chord});
-                takers.computeIfAbsent(chord.toCircle(), circle -> new ArrayList<>())
-                    .add(new Object[] {toMouth, chord});
+                recordTaker(takers, chord.fromCircle(), fromMouth, chord);
+                recordTaker(takers, chord.toCircle(), toMouth, chord);
             }
 
-            if (mine) {
-                answer = refusal == null ? "laid" : refusal;
+            if (chord == wall) {
+                answer = refusal;
             }
         }
         return answer;
     }
 
-    // Which laid wall's mouth swallowed a refused one, so a crowding refusal names its rival
-    // rather than leaving it to be hunted for.
-    private static String describeTaker(
-            Map<Integer, List<Object[]>> takers,
+    // One wall's verdict, in the same order findAttachableChords asks its questions - the two
+    // read the same rules, and a verdict that disagreed with what was laid would be worse than
+    // no verdict at all.
+    private static ChordRefusal judgeChord(
+            DiscUnion union,
+            Chord chord,
+            double[] fromMouth,
+            double[] toMouth,
+            Map<Integer, List<double[]>> takenByCircle,
+            Map<Integer, List<TakenMouth>> takers) {
+
+        if (fromMouth == null || toMouth == null) {
+            return new ChordRefusal(RefusalReason.NO_MOUTH, null);
+        }
+
+        if (!isWallOnBoundary(union, chord, chord.fromCircle(), fromMouth)) {
+            return new ChordRefusal(
+                RefusalReason.OFF_BOUNDARY, "on cell " + chord.fromCircle());
+        }
+
+        if (!isWallOnBoundary(union, chord, chord.toCircle(), toMouth)) {
+            return new ChordRefusal(RefusalReason.OFF_BOUNDARY, "on cell " + chord.toCircle());
+        }
+
+        if (isCrowdedOut(takenByCircle, chord, fromMouth, toMouth)) {
+            return new ChordRefusal(
+                RefusalReason.CROWDED_OUT, nameTaker(takers, chord, fromMouth, toMouth));
+        }
+        return new ChordRefusal(RefusalReason.LAID, null);
+    }
+
+    /**
+     * What became of one wall the walk was offered.
+     *
+     * @param reason what the walk did with it
+     * @param detail which cell or which rival wall made that the answer, or null where the
+     *               reason says the whole of it
+     */
+    record ChordRefusal(RefusalReason reason, String detail) {
+
+        @Override
+        public String toString() {
+            return detail == null ? reason.describe() : reason.describe() + " " + detail;
+        }
+    }
+
+    /** The verdicts the walk can reach about a wall it was offered. */
+    enum RefusalReason {
+
+        /** Laid, and the boundary runs along it. */
+        LAID("laid"),
+
+        /** The wall passes too far from one of its circles to open a mouth on it at all. */
+        NO_MOUTH("no mouth"),
+
+        /** One of its sides lies inside another disc, so it is not on the boundary. */
+        OFF_BOUNDARY("off the boundary"),
+
+        /** A wall already laid holds the mouth this one would have left from or landed on. */
+        CROWDED_OUT("crowded out by"),
+
+        /** Not among the walls offered, so the walk never ruled on it. */
+        NOT_OFFERED("not offered");
+
+        private final String wording;
+
+        RefusalReason(String wording) {
+            this.wording = wording;
+        }
+
+        String describe() {
+            return wording;
+        }
+    }
+
+    /**
+     * A mouth a laid wall holds, and the wall holding it.
+     *
+     * @param mouth the stretch of circle taken, as {@code {start, width}}
+     * @param wall  the wall that took it
+     */
+    private record TakenMouth(double[] mouth, Chord wall) {
+    }
+
+    private static void recordTaker(
+            Map<Integer, List<TakenMouth>> takers,
+            int circle,
+            double[] mouth,
+            Chord chord) {
+
+        takers.computeIfAbsent(circle, key -> new ArrayList<>())
+            .add(new TakenMouth(mouth, chord));
+    }
+
+    // The laid wall whose mouth swallowed this one, named by its own cells so a crowding
+    // refusal points at its rival rather than leaving it to be hunted for.
+    private static String nameTaker(
+            Map<Integer, List<TakenMouth>> takers,
             Chord chord,
             double[] fromMouth,
             double[] toMouth) {
@@ -442,22 +520,17 @@ final class DiscUnionBoundary {
         return named != null ? named : nameTakerOn(takers, chord.toCircle(), toMouth);
     }
 
-    // The laid wall whose mouth swallowed one on the same circle, named by its own cells so a
-    // refusal points at its rival rather than leaving it to be hunted for.
     private static String nameTakerOn(
-            Map<Integer, List<Object[]>> takers,
+            Map<Integer, List<TakenMouth>> takers,
             int circle,
             double[] mouth) {
 
         for (var taken : takers.getOrDefault(circle, List.of())) {
 
-            if (isMouthTaken(
-                    Map.of(circle, List.of((double[]) taken[0])), circle, mouth)) {
+            if (isMouthTaken(Map.of(circle, List.of(taken.mouth())), circle, mouth)) {
 
-                var rival = (Chord) taken[1];
-
-                return rival.kind() + " " + rival.fromCircle() + "-" + rival.toCircle()
-                    + " on cell " + circle;
+                return taken.wall().kind() + " " + taken.wall().fromCircle()
+                    + "-" + taken.wall().toCircle() + " on cell " + circle;
             }
         }
         return "an earlier wall";

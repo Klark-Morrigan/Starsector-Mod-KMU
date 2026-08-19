@@ -194,7 +194,17 @@ final class CoastPockets {
     // Fillets are not reaches. A fillet runs along one cell's own border from where the coast
     // arrived to where it leaves, so both its ends sit on the same circle and there is no
     // second circle for a wall to run to; it also shuts nothing in, being boundary already.
-    private static List<DiscUnionBoundary.Chord> buildCoastWalls(
+    /**
+     * The coast's straight reaches as the walls they are laid as.
+     *
+     * <p>Shared rather than private because more than one reader wants the same line - what a
+     * pocket is bounded by, and what a check asks about - and a second construction of it is
+     * a second answer about where the coast runs.
+     *
+     * @param traced the coast
+     * @return one wall per reach, in walk order
+     */
+    static List<DiscUnionBoundary.Chord> buildCoastWalls(
             Coastlines.TracedCoasts traced) {
 
         var walls = new ArrayList<DiscUnionBoundary.Chord>();

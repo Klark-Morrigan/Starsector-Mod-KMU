@@ -167,19 +167,12 @@ final class CoastPocketFaults {
 
         var found = new ArrayList<Spill>();
 
-        for (var walled : pockets) {
-            for (var outline : walled.pocket().outlines()) {
-                for (var reach : walled.reaches()) {
+        collectRunsOutsideBounds(
+            pockets,
+            sites,
+            bounds -> List.of(bounds.landward()),
+            (run, depth) -> found.add(new Spill(run, depth)));
 
-                    var bounds = buildBounds(reach, sites, 0);
-
-                    if (bounds != null) {
-                        collectRunsOutside(outline, List.of(bounds.landward()), (run, depth) ->
-                            found.add(new Spill(run, depth)));
-                    }
-                }
-            }
-        }
         found.sort(java.util.Comparator.comparingDouble(Spill::depth).reversed());
 
         return found;
@@ -200,21 +193,12 @@ final class CoastPocketFaults {
 
         var found = new ArrayList<Overrun>();
 
-        for (var walled : pockets) {
-            for (var outline : walled.pocket().outlines()) {
-                for (var reach : walled.reaches()) {
+        collectRunsOutsideBounds(
+            pockets,
+            sites,
+            bounds -> List.of(bounds.afterStart(), bounds.beforeEnd()),
+            (run, depth) -> found.add(new Overrun(run, depth)));
 
-                    var bounds = buildBounds(reach, sites, 0);
-
-                    if (bounds != null) {
-                        collectRunsOutside(
-                            outline,
-                            List.of(bounds.afterStart(), bounds.beforeEnd()),
-                            (run, depth) -> found.add(new Overrun(run, depth)));
-                    }
-                }
-            }
-        }
         found.sort(java.util.Comparator.comparingDouble(Overrun::depth).reversed());
 
         return found;
@@ -268,6 +252,19 @@ final class CoastPocketFaults {
             List<double[]> sites,
             double channel) {
 
+        return clipToBounds(outline, reaches, sites, channel, ReachBounds::toList);
+    }
+
+    // One outline held inside whichever bounds a caller names, clipped against each in turn.
+    // Both cuts are this walk at a different choice of bounds and a different channel, and a
+    // second copy of it is a second answer about how a pocket is held.
+    private static List<double[]> clipToBounds(
+            List<double[]> outline,
+            List<DiscUnionBoundary.Chord> reaches,
+            List<double[]> sites,
+            double channel,
+            BoundsChoice choice) {
+
         var kept = outline;
 
         for (var reach : reaches) {
@@ -278,7 +275,7 @@ final class CoastPocketFaults {
                 continue;
             }
 
-            for (var bound : bounds.toList()) {
+            for (var bound : choice.chooseFrom(bounds)) {
 
                 if (kept.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                     return List.of();
@@ -318,6 +315,12 @@ final class CoastPocketFaults {
         }
     }
 
+    // Which of a reach's bounds one fault is about. Named rather than passed as a list, so
+    // the choice is made once beside the fault it belongs to instead of at every call.
+    private interface BoundsChoice {
+        List<HalfPlane> chooseFrom(ReachBounds bounds);
+    }
+
     // What to do with one run found outside a set of bounds: the run itself and how far the
     // worst of it went. A run is the same walk whichever fault it turns out to be, so the two
     // finders share the walk and differ only in what they build from it.
@@ -350,27 +353,8 @@ final class CoastPocketFaults {
             List<DiscUnionBoundary.Chord> reaches,
             List<double[]> sites) {
 
-        var kept = outline;
-
-        for (var reach : reaches) {
-
-            var bounds = buildBounds(reach, sites, 0);
-
-            if (bounds == null) {
-                continue;
-            }
-
-            if (kept.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
-                return List.of();
-            }
-            // Driven with one throwaway label, as any clip wanting no per-edge distinction
-            // is: a label says which cut made an edge, and nothing here asks.
-            kept = LabelledPolygon
-                .fromLabelledEdges(kept, new int[kept.size()])
-                .clipToHalfPlane(bounds.landward(), 0)
-                .getVertices();
-        }
-        return kept.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA ? List.of() : kept;
+        return clipToBounds(
+            outline, reaches, sites, 0, bounds -> List.of(bounds.landward()));
     }
 
     /**
@@ -467,6 +451,30 @@ final class CoastPocketFaults {
             point[1] - bound.pointY(),
             bound.normalX(),
             bound.normalY());
+    }
+
+    // Every pocket, every outline, every reach that walled it, against whichever bounds the
+    // fault in question is about. The walk over the map is the same for both faults and only
+    // the bounds differ, so it is stated once - two copies of it could come to disagree about
+    // which reaches judge which pocket, which is the pairing the whole check rests on.
+    private static void collectRunsOutsideBounds(
+            List<WalledPocket> pockets,
+            List<double[]> sites,
+            BoundsChoice choice,
+            RunHandler handler) {
+
+        for (var walled : pockets) {
+            for (var outline : walled.pocket().outlines()) {
+                for (var reach : walled.reaches()) {
+
+                    var bounds = buildBounds(reach, sites, 0);
+
+                    if (bounds != null) {
+                        collectRunsOutside(outline, choice.chooseFrom(bounds), handler);
+                    }
+                }
+            }
+        }
     }
 
     // Every maximal stretch of one outline lying outside the given bounds. Walked as runs
