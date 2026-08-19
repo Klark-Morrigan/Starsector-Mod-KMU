@@ -223,7 +223,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         var standing = contest.findStanding(claimantFactionId);
         var claimantLine = standing
             .map(found -> buildStandingLine(sector, found))
-            .orElseGet(() -> FactionTooltipEntry.buildFactionLine(
+            .orElseGet(() -> FactionTooltipLine.buildFactionLine(
                 sector,
                 claimantFactionId,
                 CellTooltipRows.NO_SCORE));
@@ -254,7 +254,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             SectorAPI sector,
             FactionClaimStanding standing) {
 
-        var standingLine = FactionTooltipEntry.buildFactionLine(
+        var standingLine = FactionTooltipLine.buildFactionLine(
             sector,
             standing.factionId(),
             KmlibNumbers.formatGroupedInteger(standing.score()));

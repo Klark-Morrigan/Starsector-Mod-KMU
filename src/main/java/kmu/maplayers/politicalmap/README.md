@@ -195,7 +195,7 @@ ANDed with the framework's, plus whether either kind of feedback still needs the
 mechanic its own fills were painted by into the framework's hover box: `SystemDominationTooltip` -
 the ranked standings behind a faction or alliance fill - and `SystemClaimTooltip` - the scored claim
 contest behind a claims fill, its claimant over the rivals who could have taken the system and the
-factions present that never could - plus what both are written from: `FactionTooltipEntry` (a faction
+factions present that never could - plus what both are written from: `FactionTooltipLine` (a faction
 as something a block lists) and `FactionTooltipBanner` (a faction as a verdict over the whole system),
 `StandingRowResolver` (the ranked groups as entries), and the core-territory heading
 (`CoreTerritoryHeading`) and status lines. All of

@@ -28,10 +28,11 @@ import static org.mockito.Mockito.verify;
  * construction to fail fast rather than deep in the walk under a less legible error.
  *
  * <p>What each per-system read <em>answers</em> - {@link DominancePass#readBlocFootprints},
- * {@link DominancePass#readBlocContributions}, and {@link DominancePass#tieBreakFor} - is covered
- * end to end by the {@link kmu.maplayers.politicalmap.base.politics.SectorPolitics},
- * {@link kmu.maplayers.politicalmap.base.politics.FilteredPolitics}, and stats-aggregation
- * integration suites, which exercise the pass over a stubbed economy.
+ * {@link DominancePass#readBlocContributions}, {@link DominancePass#readUnweighedColonyFactionIds},
+ * and {@link DominancePass#tieBreakFor} - is covered end to end by the
+ * {@link kmu.maplayers.politicalmap.base.politics.SectorPolitics},
+ * {@link kmu.maplayers.politicalmap.base.politics.FilteredPolitics}, the standings suites, and the
+ * stats aggregations, which exercise the pass over a stubbed economy.
  */
 class DominancePassTest {
 
@@ -79,6 +80,7 @@ class DominancePassTest {
 
             pass.readColoniesIn(system);
             pass.readFootprintsByFaction(system);
+            pass.readUnweighedColonyFactionIds(system);
             pass.readBlocFootprints(system);
             pass.readBlocContributions(system);
             pass.tieBreakFor(system);

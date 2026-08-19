@@ -16,11 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins how a faction appears wherever a hovered system's breakdown lists one: its long title beside its
- * crest, its bare id when the sector no longer knows it, and whatever the block counts it in. Also that
- * a faction listed on its own is an entry made up of nothing, which is what keeps a claim - where no
- * faction breaks down any further - flat.
+ * crest, its bare id when the sector no longer knows it, and whatever the block counts it in.
  */
-final class FactionTooltipEntryTest {
+final class FactionTooltipLineTest {
 
     private static final String HEGEMONY = "hegemony";
     private static final String HEGEMONY_CREST = "graphics/hegemony_crest.png";
@@ -33,7 +31,7 @@ final class FactionTooltipEntryTest {
         @Test
         void buildFactionLineNamesTheFactionWithItsCrestAndValue() {
 
-            var line = FactionTooltipEntry.buildFactionLine(
+            var line = FactionTooltipLine.buildFactionLine(
                 buildSectorKnowingHegemony(),
                 HEGEMONY,
                 "1,200");
@@ -49,7 +47,7 @@ final class FactionTooltipEntryTest {
         void buildFactionLineFallsBackToTheIdForAnUnknownFaction() {
             // A line naming one faction reads better as a bare id than as a blank where the name
             // belongs, and a faction with no crest simply draws its name alone.
-            var line = FactionTooltipEntry.buildFactionLine(
+            var line = FactionTooltipLine.buildFactionLine(
                 buildEmptySector(),
                 "ghost_faction",
                 CellTooltipRows.NO_SCORE);
@@ -58,28 +56,6 @@ final class FactionTooltipEntryTest {
                 .isEqualTo("ghost_faction");
             assertThat(line.mark())
                 .isNull();
-        }
-    }
-
-    @Nested
-    class BuildFactionEntry {
-
-        @Test
-        void buildFactionEntryListsTheFactionAsMadeUpOfNothing() {
-            // Every faction listed anywhere but under an alliance breaks down no further, so the entry
-            // carries the line alone - which is what leaves the claims box flat.
-            var entry = FactionTooltipEntry.buildFactionEntry(
-                buildSectorKnowingHegemony(),
-                HEGEMONY,
-                "1,200");
-
-            assertThat(entry.line())
-                .isEqualTo(CellTooltipEntryLine.createLine(
-                    HEGEMONY_MARK,
-                    "The Hegemony",
-                    "1,200"));
-            assertThat(entry.children())
-                .isEmpty();
         }
     }
 

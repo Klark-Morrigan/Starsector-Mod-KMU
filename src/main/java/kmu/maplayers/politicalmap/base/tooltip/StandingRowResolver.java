@@ -20,8 +20,9 @@ import java.util.List;
  * Resolves a hovered system's pure two-tier standings into the entries the tooltip's block lists,
  * turning each id into the name, crest, and number it presents as.
  *
- * <p>Separates "who ranks where" - {@code SystemStandings}, pure over footprints and a grouping -
- * from "how a group and its factions present", the Starsector and grouping lookups gathered here.
+ * <p>Separates "who ranks where" - {@code SystemStandings}, pure over the factions present and a
+ * grouping - from "how a group and its factions present", the Starsector and grouping lookups
+ * gathered here.
  * Confining {@link FactionAPI} and the grouping's label and crest reads to this resolver keeps the
  * render layer consuming plain entries, mirroring how {@code SectorPolitics} confines the holding
  * palette lookups.
@@ -183,7 +184,7 @@ public final class StandingRowResolver {
     // would read as one competed for and lost, inviting exactly the comparison it cannot bear.
     private static CellTooltipEntryLine buildMemberLine(SectorAPI sector, FactionStanding member) {
 
-        var memberLine = FactionTooltipEntry.buildFactionLine(
+        var memberLine = FactionTooltipLine.buildFactionLine(
             sector,
             member.factionId(),
             KmlibNumbers.formatGroupedInteger(member.score()));
