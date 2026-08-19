@@ -9,7 +9,6 @@ import kmlib.starsector.systems.SystemColoniesIndex;
 import kmu.maplayers.base.visibility.MapVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
-import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 
@@ -34,10 +33,13 @@ import java.util.Map;
  * feed the same targeted stale set the event listeners do, so a change a listener
  * already marked and the watcher's own diff dedupe to one reshape.
  *
- * <p>Both come from a single walk. Each system is read from the economy once - the
- * same footprint read sizes its dominance and tells whether it is inhabited - and
- * that one read feeds both outputs. The concerns stay separated: the visibility
- * contribution is {@link MapVisibility}'s and the dominant holder is
+ * <p>Both come from a single walk. Each system's colonies are selected once, and that
+ * one set answers both outputs: whether anybody lives there, which decides membership,
+ * and the footprints the dominance rule weighs. Inhabitation is asked of the set rather
+ * than read off those footprints, since a footprint is weighed only for a colony the
+ * economy lists - a system settled by an unregistered one alone lives, and would go
+ * missing from the fingerprint that notices it appear. The concerns stay separated: the
+ * visibility contribution is {@link MapVisibility}'s and the dominant holder is
  * {@link SystemDominance}'s; this coordinator only sequences the shared walk.
  */
 public record PoliticalMapSectorSnapshot(
@@ -115,6 +117,11 @@ public record PoliticalMapSectorSnapshot(
             // null economy (early load) reads as no colonies rather than faulting.
             var systemColonies = colonies.readColoniesIn(system);
 
+            // Read before inhabitation and handed to it, rather than left for that rule to
+            // re-derive: it is wanted here anyway, to salt a drawn system's fingerprint, and it
+            // walks every planet in the system.
+            var hasRevealedDecivilised = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
+
             // Asked through the shared rule rather than off the footprints below, which is the
             // narrower question: a footprint is only ever weighed for an economy-listed colony,
             // so a system settled by an unregistered one alone would read as empty here while the
@@ -122,15 +129,13 @@ public record PoliticalMapSectorSnapshot(
             // for it, and the map would go on showing whatever it last built there.
             var isInhabited = MapVisibility.isInhabited(
                 systemColonies,
-                system,
+                hasRevealedDecivilised,
                 visibilityOverrides);
 
-            Map<String, MarketFootprint> footprintByFactionId = KnownMarketFootprints.readByFaction(
+            var footprintByFactionId = KnownMarketFootprints.readByFaction(
                 systemColonies,
                 rules,
                 visibilityOverrides.shouldIncludeUndiscoveredMarkets());
-
-            var hasRevealedDecivilised = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
 
             if (!MapVisibility.shouldAppearOnMap(
                     system,

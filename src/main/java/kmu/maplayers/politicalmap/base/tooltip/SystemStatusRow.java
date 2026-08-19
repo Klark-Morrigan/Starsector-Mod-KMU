@@ -37,7 +37,7 @@ public final class SystemStatusRow {
     }
 
     /**
-     * Resolves the status line for a system the player has found nobody living in.
+     * Resolves the status line for a system the player knows of nobody living in.
      *
      * <p>Answered off the same known projection the cell beneath the box is classified on, so a
      * system drawn as settled cannot be called unpopulated by the box over it. What parts that
@@ -52,13 +52,13 @@ public final class SystemStatusRow {
      *
      * @param sector                           the sector whose economy is read
      * @param system                           the hovered system
-     * @param shouldIncludeUndiscoveredMarkets whether an unfound colony still counts as
+     * @param shouldIncludeUndiscoveredMarkets whether an undiscovered colony still counts as
      *                                         populating the system (the "show undiscovered
      *                                         markets" dev reveal); passed by the caller so the
      *                                         status agrees with whatever that caller's own reads
      *                                         admit, rather than calling a system empty that the
      *                                         body below it fills
-     * @return the Decivilised or Unpopulated row, or empty when the player has found a colony here
+     * @return the Decivilised or Unpopulated row, or empty when the player knows of a colony here
      */
     public static Optional<TooltipRow.CentredRow> resolveStatusRow(
             SectorAPI sector,

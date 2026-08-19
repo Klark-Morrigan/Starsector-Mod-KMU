@@ -103,6 +103,37 @@ class PoliticalMapSectorSnapshotTest {
         }
 
         @Test
+        void visibilityFingerprintCountsASystemSettledOnlyByAColonyTheEconomyDoesNotList() {
+            // Galatia Academy's shape, and the case that parts inhabitation from the footprint
+            // read: nothing is weighed for an unregistered colony, so a scan deriving
+            // inhabitation from the weights would leave this system off the drawn set it hashes
+            // - while the geometry, which asks the shared rule, draws a cell for it. The
+            // fingerprint would then never move when such a system appeared or vanished.
+            var before = scanUnderStabilityWeighting(buildSectorWith(buildSystem("a")))
+                    .visibilityFingerprint();
+
+            var after = scanUnderStabilityWeighting(
+                    buildSectorWithUnlistedColony(
+                        buildSystem("a"),
+                        buildOwnedMarket("independent", 3)))
+                    .visibilityFingerprint();
+
+            assertThat(after).isNotEqualTo(before);
+        }
+
+        @Test
+        void ownerMapOmitsASystemSettledOnlyByAColonyTheEconomyDoesNotList() {
+            // Drawn, yet unheld: dominance is economy-fed, so an unregistered colony takes no
+            // weight and confers no holder - the same shape a decivilised shell has.
+            var snapshot = scanUnderStabilityWeighting(
+                    buildSectorWithUnlistedColony(
+                        buildSystem("a"),
+                        buildOwnedMarket("independent", 3)));
+
+            assertThat(snapshot.ownerBySystemId()).isEmpty();
+        }
+
+        @Test
         void ownerMapOmitsADecivilisedShellThatStillCountsForVisibility() {
             // A revealed dead colony is drawn (visibility) but confers no holder, so
             // it is absent from the holder map - the mirror image of an owned system.
@@ -135,6 +166,22 @@ class PoliticalMapSectorSnapshotTest {
         when(sectorMock.getEconomy()).thenReturn(economyMock);
         when(sectorMock.getHyperspace()).thenReturn(hyperspaceMock);
         return sectorMock;
+    }
+
+    // A single-system sector whose economy lists nothing in that system, the colony hanging on
+    // one of the system's own entities instead - the off-economy shape vanilla builds Galatia
+    // Academy in, which only the entity walk finds.
+    private static SectorAPI buildSectorWithUnlistedColony(
+            StarSystemAPI system,
+            MarketAPI colony) {
+
+        // The entity is wired to carry its market before the system's stubbing opens, so
+        // Mockito sees no stubbing nested inside another.
+        var entityMock = colony.getPrimaryEntity();
+        when(entityMock.getMarket()).thenReturn(colony);
+        var sector = buildSectorWith(system);
+        when(system.getAllEntities()).thenReturn(List.of(entityMock));
+        return sector;
     }
 
     // An unreachable system: no jump point and its star not drawn, so it appears

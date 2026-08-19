@@ -54,6 +54,10 @@ class MapVisibilityIntegrationTest {
     // decided the system holds nothing, so admission rests on access or the force override.
     private static final boolean UNINHABITED = false;
 
+    // The ruin flag a caller that already read the system's planets hands to the inhabitation
+    // rule, so the colony set is the only other thing that could be answering.
+    private static final boolean IS_REVEALED_DECIVILISED = true;
+
     @Nested
     class ShouldAppearOnMap {
 
@@ -198,6 +202,19 @@ class MapVisibilityIntegrationTest {
             var system = buildUnreachableSystemHoldingUnlistedColony("a");
 
             assertThat(isInhabitedUnderNoReveal(buildSectorWith(system), system))
+                .isTrue();
+        }
+
+        @Test
+        void isInhabitedHonoursARevealedRuinTheCallerAlreadyRead() {
+            // The pre-read entry point: a caller that has the ruin flag in hand (the sector
+            // scan, which needs it to salt the fingerprint) hands it over rather than paying a
+            // second walk of every planet. A dropped argument would look identical everywhere
+            // else, every other case passing a colony set that answers on its own.
+            assertThat(MapVisibility.isInhabited(
+                    SystemColonies.NONE,
+                    IS_REVEALED_DECIVILISED,
+                    MapVisibilityOverrides.NONE))
                 .isTrue();
         }
 

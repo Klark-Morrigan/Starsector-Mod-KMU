@@ -18,8 +18,12 @@ import java.util.Set;
  *
  * <p>Two independent reasons put a system on the map, and reachability
  * ({@link StarSystems#isReachable}) is only one of them. A system appears when it
- * has a normal means of arrival OR when it is inhabited - a discovered faction
- * colony, or a revealed decivilised planet. The inhabitation path is what admits
+ * has a normal means of arrival OR when it is inhabited - a faction colony the
+ * player knows of, or a revealed decivilised planet. Knowing of a colony is wider
+ * than having been to it: one the game lists publicly counts before the player has
+ * reached it, which is what the cell and the box over it share.
+ *
+ * <p>The inhabitation path is what admits
  * an otherwise unreachable system: a transverse-only or abyssal world, hidden
  * from the map by its own design, still shows once it holds a colony or a known
  * dead colony, regardless of the star-hidden / abyssal tags it carries.
@@ -108,8 +112,9 @@ public final class MapVisibility {
      * system can be reached. A revealed decivilised planet counts under any overrides -
      * it is always known once revealed.
      *
-     * <p>Walks the system for its colonies, so a caller already holding them - a pass that
-     * read the system once for everything it asks of it - wants the form below instead.
+     * <p>Walks the system for its colonies and for its ruins, so a caller already holding
+     * either - a pass that read the system once for everything it asks of it - wants the
+     * form below instead.
      *
      * @param sector    the sector the system belongs to; null yields false
      * @param system    the system to test; null yields false
@@ -123,35 +128,42 @@ public final class MapVisibility {
             StarSystemAPI system,
             MapVisibilityOverrides overrides) {
 
-        return isInhabited(SystemColonies.readColoniesIn(sector, system), system, overrides);
+        return isInhabited(
+            SystemColonies.readColoniesIn(sector, system),
+            DecivilisedMarkets.hasRevealedDecivilisedPlanet(system),
+            overrides);
     }
 
     /**
-     * Whether the system counts as inhabited, answered off a colony set the caller has
-     * already read rather than a walk of its own.
+     * Whether the system counts as inhabited, answered off the two reads a caller may
+     * already have made rather than repeating either.
      *
-     * <p>The rule itself, and the one the sector-taking form above resolves a set for. Stated
-     * over the shared colony set so that "somebody lives here" is the known projection being
-     * non-empty - the very set a ribbon counts runs from and a hover box names factions out of -
-     * with the revealed dead colony added, which no colony read answers. Two surfaces drawn from
-     * one system can then no longer disagree about whether it holds anybody.
+     * <p>The rule itself, and the one the sector-taking form above resolves its inputs for.
+     * Stated over the shared colony set so that "somebody lives here" is the known projection
+     * being non-empty - the very set a ribbon counts runs from and a hover box names factions
+     * out of - with the revealed dead colony added, which no colony read answers. Two surfaces
+     * drawn from one system can then no longer disagree about whether it holds anybody.
      *
-     * @param colonies  the system's colonies, as one walk of it reported; null or empty leaves
-     *                  the revealed-ruin arm as the only route to inhabitation
-     * @param system    the system to test; null yields false
-     * @param overrides the pass's reveal overrides; only the undiscovered-colony widening is
-     *                  read here, since forcing a system onto the map does not make it inhabited
+     * <p>The ruin arrives as a flag for the same reason {@link #shouldAppearOnMap} takes
+     * inhabitation as one: the sector scan reads it anyway, to salt the drawn system's
+     * fingerprint, and re-deriving it here would walk every planet in the system a second time.
+     *
+     * @param colonies              the system's colonies, as one walk of it reported
+     * @param isRevealedDecivilised whether the system holds a dead colony the player has
+     *                              already seen; counts under any overrides, a revealed ruin
+     *                              being known for good
+     * @param overrides             the pass's reveal overrides; only the undiscovered-colony
+     *                              widening is read here, since forcing a system onto the map
+     *                              does not make it inhabited
      * @return true when the system holds a colony or a known dead colony
      */
     public static boolean isInhabited(
             SystemColonies colonies,
-            StarSystemAPI system,
+            boolean isRevealedDecivilised,
             MapVisibilityOverrides overrides) {
 
-        var hasKnownColony = colonies != null
-            && colonies.hasKnownColony(overrides.shouldIncludeUndiscoveredMarkets());
-
-        return hasKnownColony || DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
+        return colonies.hasKnownColony(overrides.shouldIncludeUndiscoveredMarkets())
+            || isRevealedDecivilised;
     }
 
     /**

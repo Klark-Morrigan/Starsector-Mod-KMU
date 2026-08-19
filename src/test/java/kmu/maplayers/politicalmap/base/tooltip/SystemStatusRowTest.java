@@ -74,9 +74,9 @@ final class SystemStatusRowTest {
         void resolveStatusRowIsEmptyForAPopulatedSystem() {
 
             var system = buildSystemWithPlanets();
-            var row = SystemStatusRow.resolveStatusRow(buildSectorHoldingMarkets(system, buildColony()), system, false);
+            var sector = buildSectorHoldingMarkets(system, buildColony());
 
-            assertThat(row)
+            assertThat(SystemStatusRow.resolveStatusRow(sector, system, false))
                 .isEmpty();
         }
 
