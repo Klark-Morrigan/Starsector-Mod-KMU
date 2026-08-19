@@ -25,7 +25,7 @@ public final class HoverSwitchScopes {
      * @param body the case to run inside the scope
      */
     public static void runWithHoverTooltipSwitchOff(Runnable body) {
-        runWithHoverSwitches(false, body);
+        runWithHoverSwitches(false, false, body);
     }
 
     /**

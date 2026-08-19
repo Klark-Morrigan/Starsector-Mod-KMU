@@ -10,6 +10,8 @@ import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
+import kmlib.starsector.ui.map.suppression.OffScreenMapSuppressor;
+import kmlib.starsector.ui.map.suppression.VanillaScreenBox;
 
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.hover.MapHoverPermission;
@@ -17,6 +19,7 @@ import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.render.MapFramePreparationClaim;
 import kmu.maplayers.base.render.MapLayerTerrainInstaller;
+import kmu.maplayers.base.render.RandomAssortmentOfThingsMinimapSuppression;
 import kmu.maplayers.base.sidebar.runtime.SidebarHosts;
 import kmu.maplayers.base.sidebar.runtime.SidebarInput;
 import kmu.maplayers.base.sidebar.runtime.SidebarRenderer;
@@ -159,6 +162,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // pass, so a late registration costs duplicated work rather than a wrong picture.
         runGuardedStep("Failed to install KMU map layer frame preparation claim",
             () -> installMapFramePreparationClaim(Global.getSector()));
+
+        runGuardedStep("Failed to install KMU parked minimap suppressor",
+            () -> installParkedMinimapSuppressor(Global.getSector()));
 
         runGuardedStep("Failed to install KMU map layer hover tooltip",
             () -> installMapLayerHoverTooltip(Global.getSector()));
@@ -349,6 +355,33 @@ public class KMU_ModPlugin extends BaseModPlugin {
             sector,
             MapFramePreparationClaim.class,
             MapFramePreparationClaim::getInstance);
+    }
+
+    // Registers the per-frame script that stops a docked minimap rendering while its owner has it
+    // parked off screen. A minimap nobody can see still renders a whole sector map and drives every
+    // terrain pass in the sector, so the frame a player opened a vanilla map on carries a second
+    // transform - and which of the two a cursor read resolves through is the engine's child order
+    // rather than a contract.
+    //
+    // The split is the same one the compatibility mode is built on. What parked means and how a
+    // widget is switched off are stated over any widget at all and are KMLib's; whether writing into
+    // somebody else's panel is wanted is a per-mod question, and the mode is where the player answers
+    // it. The screen the widget is compared against is a live read for the same reason the box is: a
+    // window resized mid-session moves both.
+    //
+    // Transient: pure runtime logic that must not enter a save, so it is re-added fresh each load.
+    // A fresh permission per load with it, so the widget walk behind it starts on this save's tree
+    // rather than holding the previous one's.
+    static void installParkedMinimapSuppressor(SectorAPI sector) {
+
+        if (sector == null) {
+            return;
+        }
+        var minimapSuppression = RandomAssortmentOfThingsMinimapSuppression.createForLiveScreen();
+
+        sector.addTransientScript(new OffScreenMapSuppressor(
+            minimapSuppression::resolveSuppressibleMinimap,
+            VanillaScreenBox::resolveScreenBox));
     }
 
     static void installMapLayerHoverTooltip(SectorAPI sector) {

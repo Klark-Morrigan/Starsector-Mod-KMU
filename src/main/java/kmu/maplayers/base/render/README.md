@@ -12,6 +12,7 @@ Part of [the map layers](../../README.md), in Klark Morrigan's Utilities; see th
 - [Who gets the frame](#who-gets-the-frame)
 - [Bands](#bands)
 - [One preparation per frame, one cursor read per pass](#one-preparation-per-frame-one-cursor-read-per-pass)
+- [Silencing a minimap parked off screen](#silencing-a-minimap-parked-off-screen)
 - [Three terrains, one draw](#three-terrains-one-draw)
 - [Where the Starscape surfaces sit in the draw order](#where-the-starscape-surfaces-sit-in-the-draw-order)
 - [What is not here](#what-is-not-here)
@@ -102,7 +103,9 @@ So `publishHoverForPass` runs on every pass the surface admits and the last writ
 the frame's answer on the surface that drew last. It costs one matrix read per extra pass - deferred
 rather than stalling under Fast Rendering - and leaves one residual case: a mod drawing a map
 surface *after* the map screen would win instead, which the `Map - Compatibility` hover permissions
-are the escape from: withhold both and only the vanilla hosts are read at all.
+are the escape from: withhold both and only the vanilla hosts are read at all. The same tab's
+compatibility mode narrows it further where the second surface is a parked minimap, by stopping that
+surface rendering at all - see [below](#silencing-a-minimap-parked-off-screen).
 
 Only the read moves, though. Everything *about* the read that does not turn on the pass stays in the
 preparation: whether any feedback still wants a hover, and whether something is drawn over the
@@ -115,6 +118,51 @@ different cells is exactly what a foreign transform produces, so a latch stepped
 report a crossing on every frame the pointer rests still. `MapHoverPublisher` therefore keeps what
 its passes settled on and answers the moment once, from the preparation - one frame behind the read,
 which is 16ms and inaudible.
+
+## Silencing a minimap parked off screen
+
+The last-wins rule above settles which pass a frame's hover comes from; it does not stop the pass.
+A mod that docks a minimap parks the panel off screen rather than taking it down, and a parked
+minimap goes on rendering a whole sector map every frame - driving every terrain pass in the sector
+while it does, ours among them, and taking the frame's preparation claim on the way. So a frame the
+player opened the `M` map on carries two transforms, and which of them the cursor resolves through
+is the engine's child order rather than anything promised. A widget that renders nothing contributes
+no pass, which leaves one transform and nothing for last-wins to arbitrate.
+
+That is what `RandomAssortmentOfThingsMinimapSuppression` and KMLib's `OffScreenMapSuppressor`
+between them do: hold the parked widget's own opacity at zero, and hand back the value it was found
+at when it comes back. The split is the compatibility mode's throughout. What being parked means -
+the widget's box meeting the screen at all - and what switching one off consists of are stated over
+any widget and are KMLib's; whether writing into another mod's panel is wanted is the per-mod
+question the player answers with the mode, and this package answers only that, plus the one map it
+may be aimed at.
+
+Three things about it are worth knowing before touching it:
+
+- **It reads where the widget is, never what shows of it.** The two are the same question until this
+  writes, and the write is what parts them: a read that sifted out widgets drawn to nothing would
+  stop reporting the very map it had just switched off, and the minimap would be parked for good.
+- **It is not what closes the hover leak**, which the game-space permission and the minimap cover
+  already close twice over on these frames - a cursor cannot fall inside an off-screen box. The
+  offset is the fault it answers, along with the work: a sector map rendered behind every screen the
+  player opens.
+- **The slide is left alone.** A panel partly on screen is one the player can see, so it stays drawn
+  and two maps render for as long as the slide lasts. Both faults last exactly that long, and
+  neither is what this is for.
+
+Exactly one embedded map may be suppressed, and for a different reason than the cover's confinement
+needs one: there a second map makes the hover unattributable, while here the mode names a mod, the
+widgets found carry no mod-owned class to match on, and with two of them there is no telling which
+one the player switched the mode on for.
+
+It runs as an `EveryFrameScript` answering `runWhilePaused`, which is what the mod's own panel
+script is - so the hook is known to fire in the states this matters in, a dialog or the menu among
+them. It cannot run in a render pass at all: the pass it suppresses is the last pass it would ever
+be asked from, which on a screen showing no map would strand the minimap invisible for the session.
+
+The residue is a session that ends parked. This writes into a widget another mod owns, so if it
+stops running - that mod disabled mid-save - the minimap stays invisible until its owner rebuilds
+the panel, which is the next location change or the next load.
 
 ## Three terrains, one draw
 

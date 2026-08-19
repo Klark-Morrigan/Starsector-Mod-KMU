@@ -144,6 +144,8 @@ about what the overlay means.
   one terrain surface can paint one frame, so the per-frame work behind a layer is claimed rather
   than assumed: `MapFramePreparationClaim` grants it to the first surface to reach each frame. The
   cursor read is the exception, being taken per pass so the surface that drew last owns the answer.
+  Where a second surface is a minimap its owner has parked off screen, the compatibility mode stops
+  it rendering rather than arbitrating between the two passes it would otherwise contribute.
 - **[Clusters](base/render/clusters/README.md)** - the shape work under that surface: turning shaped
   cells and opaque owner ids into borders, fills, and GL-ready runs. The cluster-border trace,
   the smoothing passes, the vertex packing, and the split fill that puts several fills inside one
@@ -219,7 +221,10 @@ about what the overlay means.
   what the general switches beside it allow and never widens it: which frames may answer the cursor
   at all is theirs, and the mode only confines - within a frame they already allow - to the surface
   that minimap occupies. Those are written for the mods nobody here has met, and a per-mod mode able
-  to override them would make them unreliable as general switches.
+  to override them would make them unreliable as general switches. The one thing it does outside
+  that hierarchy is not about the cursor at all: while the minimap is parked off screen it is
+  [switched off](base/render/README.md#silencing-a-minimap-parked-off-screen), a surface nobody can
+  see having no business rendering a sector map behind every screen the player opens.
 - **`base/hover/cover`** - whether anything is drawn over the map where the cursor rests, which a
   layer asks before resolving a hover at all. A hover reads a cell out of map geometry, which knows
   nothing of what is composited on top, so without this it lights cells and floats boxes under
