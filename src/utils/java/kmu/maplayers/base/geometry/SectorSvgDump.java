@@ -14,6 +14,10 @@ final class SectorSvgDump {
 
     private static final Path SVG_DIRECTORY = Path.of("build", "reports", "political-map");
 
+    // What the true-extent map's own files are called, so the two never overwrite each
+    // other and a reader can tell which map they opened from its name alone.
+    private static final String TRUE_EXTENT_SUFFIX = "-true-extent";
+
     private static final String CSV_EXTENSION = ".csv";
     private static final String SVG_EXTENSION = ".svg";
     private static final String PNG_EXTENSION = ".png";
@@ -26,15 +30,37 @@ final class SectorSvgDump {
         for (var sectorName : SectorFixture.listSectorNames()) {
 
             var fixture = SectorFixture.loadSector(sectorName);
+
+            writeMap(fixture, sectorName, "", VoidPockets.PocketShaping.WITH_CHANNEL);
+            writeMap(
+                fixture,
+                sectorName,
+                TRUE_EXTENT_SUFFIX,
+                VoidPockets.PocketShaping.AT_TRUE_EXTENT);
+        }
+    }
+
+    // One map, at one shaping of the void. Both are written every run because a change to the
+    // void answers differently in the two, and the one nobody looks at is where a fault sits
+    // unseen: the channel hides an outline that has strayed by cutting it back, and the true
+    // extent hides nothing at all.
+    private static void writeMap(
+            SectorFixture fixture,
+            String sectorName,
+            String suffix,
+            VoidPockets.PocketShaping shaping) {
+
+        {
             var target = SVG_DIRECTORY.resolve(
-                sectorName.replace(CSV_EXTENSION, SVG_EXTENSION));
+                sectorName.replace(CSV_EXTENSION, suffix + SVG_EXTENSION));
 
             SectorSvgWriter.writeSectorSvg(
                 target,
                 fixture,
                 SectorGeometry.buildSectorGeometry(
                     fixture,
-                    SectorGeometryParameters.createDefaults()));
+                    SectorGeometryParameters.createDefaults()),
+                shaping);
 
             System.out.println("wrote " + target.toAbsolutePath());
 
@@ -43,7 +69,7 @@ final class SectorSvgDump {
             // keeping - diffable and deterministic - and this is only what makes it viewable
             // by anything that reads raster images.
             var raster = SVG_DIRECTORY.resolve(
-                sectorName.replace(CSV_EXTENSION, PNG_EXTENSION));
+                sectorName.replace(CSV_EXTENSION, suffix + PNG_EXTENSION));
                 
             SvgRasteriser.rasteriseToPng(target, raster);
             System.out.println("wrote " + raster.toAbsolutePath());

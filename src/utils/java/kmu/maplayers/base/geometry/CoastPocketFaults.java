@@ -326,6 +326,54 @@ final class CoastPocketFaults {
     }
 
     /**
+     * The part of a pocket outline that is landward of the reaches that closed it, and
+     * nothing else - no channel taken off, no holding it within a reach's span.
+     *
+     * <p>What a pocket at its TRUE extent is held to. It is meant to run right up to the line
+     * that closed it, so there is no channel to cut back to; and it has every right to reach
+     * past where that line stops, since a reach is one straight piece of a coast that goes on
+     * either side of it. The one thing it may not do is cross to the seaward side, which is
+     * void that nothing shut in.
+     *
+     * <p>That case arises where two reaches meet on one cell and their lines cross: each wall
+     * is walked out to its own mouth, so each overshoots the other by the wedge between them.
+     * The overshoot is not pocket - it is the other reach's sea - and the half-plane is what
+     * says so.
+     *
+     * @param outline the pocket outline as traced
+     * @param reaches the coast reaches it closes on
+     * @param sites   the sites, to say which side of each reach the cells are on
+     * @return what is left, which is empty when the whole outline was over the line
+     */
+    static List<double[]> cutBehindReaches(
+            List<double[]> outline,
+            List<DiscUnionBoundary.Chord> reaches,
+            List<double[]> sites) {
+
+        var kept = outline;
+
+        for (var reach : reaches) {
+
+            var bounds = buildBounds(reach, sites, 0);
+
+            if (bounds == null) {
+                continue;
+            }
+
+            if (kept.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
+                return List.of();
+            }
+            // Driven with one throwaway label, as any clip wanting no per-edge distinction
+            // is: a label says which cut made an edge, and nothing here asks.
+            kept = LabelledPolygon
+                .fromLabelledEdges(kept, new int[kept.size()])
+                .clipToHalfPlane(bounds.landward(), 0)
+                .getVertices();
+        }
+        return kept.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA ? List.of() : kept;
+    }
+
+    /**
      * The three half-planes one reach of coast bounds a pocket with.
      *
      * <p>The one statement of what a reach bounds, and both things that need it read it from

@@ -357,8 +357,7 @@ final class DiscUnionBoundary {
                     || toMouth == null
                     || !isWallOnBoundary(union, chord, chord.fromCircle(), fromMouth)
                     || !isWallOnBoundary(union, chord, chord.toCircle(), toMouth)
-                    || isMouthTaken(takenByCircle, chord.fromCircle(), fromMouth)
-                    || isMouthTaken(takenByCircle, chord.toCircle(), toMouth)) {
+                    || isCrowdedOut(takenByCircle, chord, fromMouth, toMouth)) {
 
                 continue;
             }
@@ -391,6 +390,7 @@ final class DiscUnionBoundary {
     static String describeChordRefusal(DiscUnion union, Walls walls, int from, int to) {
 
         var takenByCircle = new LinkedHashMap<Integer, List<double[]>>();
+        var takers = new LinkedHashMap<Integer, List<Object[]>>();
         var answer = "not offered";
 
         for (var chord : walls.chords()) {
@@ -407,15 +407,19 @@ final class DiscUnionBoundary {
                 refusal = "from side off the boundary";
             } else if (!isWallOnBoundary(union, chord, chord.toCircle(), toMouth)) {
                 refusal = "to side off the boundary";
-            } else if (isMouthTaken(takenByCircle, chord.fromCircle(), fromMouth)) {
-                refusal = "from-mouth already taken";
-            } else if (isMouthTaken(takenByCircle, chord.toCircle(), toMouth)) {
-                refusal = "to-mouth already taken";
+            } else if (isCrowdedOut(takenByCircle, chord, fromMouth, toMouth)) {
+                refusal = "crowded out by "
+                    + describeTaker(takers, chord, fromMouth, toMouth);
             }
 
             if (refusal == null) {
+
                 recordMouth(takenByCircle, chord.fromCircle(), fromMouth);
                 recordMouth(takenByCircle, chord.toCircle(), toMouth);
+                takers.computeIfAbsent(chord.fromCircle(), circle -> new ArrayList<>())
+                    .add(new Object[] {fromMouth, chord});
+                takers.computeIfAbsent(chord.toCircle(), circle -> new ArrayList<>())
+                    .add(new Object[] {toMouth, chord});
             }
 
             if (mine) {
@@ -423,6 +427,40 @@ final class DiscUnionBoundary {
             }
         }
         return answer;
+    }
+
+    // Which laid wall's mouth swallowed a refused one, so a crowding refusal names its rival
+    // rather than leaving it to be hunted for.
+    private static String describeTaker(
+            Map<Integer, List<Object[]>> takers,
+            Chord chord,
+            double[] fromMouth,
+            double[] toMouth) {
+
+        var named = nameTakerOn(takers, chord.fromCircle(), fromMouth);
+
+        return named != null ? named : nameTakerOn(takers, chord.toCircle(), toMouth);
+    }
+
+    // The laid wall whose mouth swallowed one on the same circle, named by its own cells so a
+    // refusal points at its rival rather than leaving it to be hunted for.
+    private static String nameTakerOn(
+            Map<Integer, List<Object[]>> takers,
+            int circle,
+            double[] mouth) {
+
+        for (var taken : takers.getOrDefault(circle, List.of())) {
+
+            if (isMouthTaken(
+                    Map.of(circle, List.of((double[]) taken[0])), circle, mouth)) {
+
+                var rival = (Chord) taken[1];
+
+                return rival.kind() + " " + rival.fromCircle() + "-" + rival.toCircle()
+                    + " on cell " + circle;
+            }
+        }
+        return "an earlier wall";
     }
 
     /**
@@ -591,7 +629,8 @@ final class DiscUnionBoundary {
                 Angles.normalise(towards - halfWidth),
                 2 * halfWidth,
                 formatDiscTerminal(other, circle, sites.size()),
-                formatDiscTerminal(circle, other, sites.size())));
+                formatDiscTerminal(circle, other, sites.size()),
+                null));
         }
         return covers;
     }
@@ -625,7 +664,8 @@ final class DiscUnionBoundary {
                 mouth[0],
                 mouth[1],
                 formatChordTerminal(index, isFromSide ? TO_SIDE : FROM_SIDE),
-                formatChordTerminal(index, isFromSide ? FROM_SIDE : TO_SIDE)));
+                formatChordTerminal(index, isFromSide ? FROM_SIDE : TO_SIDE),
+                chord.kind()));
         }
         return covers;
     }
@@ -678,6 +718,26 @@ final class DiscUnionBoundary {
                 // outright, leaving this the only kind of overlap that reaches here.
                 arcs.add(new Arc(
                     circle, coveredTo, coveredTo, departingFrom, cover.arrival()));
+
+                // A mouth swallowed WHOLE reaches no further round the circle than the one
+                // that swallowed it, so the update below never runs for it and its far
+                // terminal is dropped - leaving that wall an arrival and no departure, which
+                // is a chain the walk runs off rather than a cycle. Handing the departure on
+                // makes the swallowed wall the one the next stretch of boundary leaves from,
+                // which is what the two of them do on the map: the boundary goes out along
+                // one wall and back along the other with nothing on the circle in between.
+                //
+                // A REACH OF COAST only. A coast leaves a cell along its tangent, so the
+                // mouth it arrives by swallows the mouth it leaves by wherever the coast
+                // turns on a cell, and both walls are real. A bridge crosses its circles
+                // squarely, so its mouth is swallowed only once the gap it spans has closed
+                // over - and a wall across a gap that is no longer there is exactly what must
+                // not be laid.
+                if (cover.kind() == WallKind.COAST_REACH
+                        && cover.start() + cover.width() <= coveredTo) {
+
+                    departingFrom = cover.departure();
+                }
             }
 
             if (cover.start() + cover.width() > coveredTo) {
@@ -936,6 +996,27 @@ final class DiscUnionBoundary {
         return true;
     }
 
+    // Whether an earlier wall's mouth leaves this one nowhere to attach.
+    //
+    // Not asked of a REACH OF COAST, because the sweep now hands a swallowed reach the
+    // boundary rather than dropping it. A coast leaves a cell along its tangent, so where the
+    // coast turns on a cell the mouth it arrives by swallows the mouth it leaves by - two
+    // real walls, one of which was being refused for the shape of the other.
+    //
+    // Still asked of a BRIDGE. A bridge crosses its circles squarely between its two sites,
+    // so its mouth is swallowed only where the gap it spans has closed over, and a wall laid
+    // across a gap that is no longer there cuts through cells that have already met.
+    private static boolean isCrowdedOut(
+            Map<Integer, List<double[]>> takenByCircle,
+            Chord chord,
+            double[] fromMouth,
+            double[] toMouth) {
+
+        return chord.kind() != WallKind.COAST_REACH
+            && (isMouthTaken(takenByCircle, chord.fromCircle(), fromMouth)
+                || isMouthTaken(takenByCircle, chord.toCircle(), toMouth));
+    }
+
     // A mouth is taken when an earlier wall's mouth swallows it whole, or is swallowed by it.
     // The sweep merges what overlaps and the merged cover keeps only the outer pair of
     // terminals, so a mouth wholly inside another loses both of its own: the wall it belongs
@@ -1079,12 +1160,16 @@ final class DiscUnionBoundary {
      * @param width     how far it runs
      * @param arrival   what an arc ending at {@code start} continues onto
      * @param departure what an arc beginning at the far end of it is named by
+     * @param kind      which sort of wall opened it, or null where a neighbouring disc
+     *                  swallowed the stretch and no wall is involved. Carried because one
+     *                  case turns on it: a mouth swallowed whole by another
      */
     private record Cover(
         double start,
         double width,
         long arrival,
-        long departure) {
+        long departure,
+        WallKind kind) {
     }
 
     /**

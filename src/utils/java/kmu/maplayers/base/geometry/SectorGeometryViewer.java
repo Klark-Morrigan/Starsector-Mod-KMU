@@ -267,7 +267,11 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             var target = SVG_DIRECTORY.resolve(
                 sectorName.replace(CSV_EXTENSION, SVG_EXTENSION));
 
-            SectorSvgWriter.writeSectorSvg(target, fixture, geometry);
+            // At whatever shaping the window is showing, which is what "of current shape"
+            // means: a button that saved the other one would hand back a picture of a map
+            // nobody was looking at.
+            SectorSvgWriter.writeSectorSvg(
+                target, fixture, geometry, ViewerPainting.resolvePocketShaping(settings));
 
             canvas.statusLabel.setText("<html>wrote<br>" + target.toAbsolutePath() + "</html>");
         });

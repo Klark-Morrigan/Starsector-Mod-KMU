@@ -286,6 +286,8 @@ final class VoidRegionsDump {
         var bridgeInset = VoidBridgePockets.findCapturedPockets(
             sites, bridges, parameters, VoidPockets.PocketShaping.WITH_CHANNEL);
 
+        reportCoastWallRefusals(traced, parameters);
+
         for (var pick : picks) {
 
             System.out.printf(
@@ -302,6 +304,86 @@ final class VoidRegionsDump {
                 describeHit(bridgeTrue, pick),
                 describeNearestStep(traced, parameters, pick));
         }
+    }
+
+    // Why the coast's own reaches are not laid, counted by reason at each reach. One gap on
+    // screen is a case; a count says whether it is the case or one of dozens, which is what
+    // decides whether the rule that refused it is worth changing.
+    private static void reportCoastWallRefusals(
+            Coastlines.TracedCoasts traced,
+            SectorGeometryParameters parameters) {
+
+        var sites = traced.union().sites();
+        var offered = buildCoastChords(traced);
+        var all = new ArrayList<>(offered);
+
+        all.addAll(traced.walls().chords());
+
+        var walls = new DiscUnionBoundary.Walls(all, traced.walls().channel());
+
+        System.out.printf(
+            Locale.ROOT,
+            "coast reaches offered %d: at the cells' own reach %s | a channel out %s%n",
+            offered.size(),
+            summariseRefusals(new DiscUnion(sites, parameters.cellRadius()), walls, offered),
+            summariseRefusals(
+                VoidPockets.buildDrawnUnion(sites, parameters), walls, offered));
+    }
+
+    private static String summariseRefusals(
+            DiscUnion union,
+            DiscUnionBoundary.Walls walls,
+            List<DiscUnionBoundary.Chord> offered) {
+
+        var laid = 0;
+        var offBoundary = 0;
+        var crowded = 0;
+        var noMouth = 0;
+
+        for (var chord : offered) {
+
+            var refusal = DiscUnionBoundary.describeChordRefusal(
+                union, walls, chord.fromCircle(), chord.toCircle());
+
+            if (refusal.equals("laid")) {
+                laid++;
+            } else if (refusal.startsWith("mouth on")) {
+                crowded++;
+            } else if (refusal.equals("no mouth")) {
+                noMouth++;
+            } else {
+                offBoundary++;
+            }
+        }
+        return String.format(
+            Locale.ROOT,
+            "%d laid, %d off the boundary, %d crowded out, %d with no mouth",
+            laid,
+            offBoundary,
+            crowded,
+            noMouth);
+    }
+
+    // The coast's straight reaches as the walls they are offered as, built the one way
+    // CoastPockets builds them so a count here describes the walls it actually lays.
+    private static List<DiscUnionBoundary.Chord> buildCoastChords(
+            Coastlines.TracedCoasts traced) {
+
+        var offered = new ArrayList<DiscUnionBoundary.Chord>();
+
+        for (var reach : Coastlines.collectStraightReaches(traced)) {
+
+            offered.add(new DiscUnionBoundary.Chord(
+                reach.from().circle(),
+                reach.to().circle(),
+                new kmlib.math.geometry.DirectedLine(
+                    reach.from().point()[0],
+                    reach.from().point()[1],
+                    reach.to().point()[0] - reach.from().point()[0],
+                    reach.to().point()[1] - reach.from().point()[1]),
+                DiscUnionBoundary.WallKind.COAST_REACH));
+        }
+        return offered;
     }
 
     // The coast step running nearest a picked point, and what became of it.

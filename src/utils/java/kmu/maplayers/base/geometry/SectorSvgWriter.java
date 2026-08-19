@@ -68,7 +68,11 @@ final class SectorSvgWriter {
      * @param fixture  the sector the geometry was built from
      * @param geometry the assembled geometry to draw
      */
-    static void writeSectorSvg(Path target, SectorFixture fixture, SectorGeometry geometry) {
+    static void writeSectorSvg(
+            Path target,
+            SectorFixture fixture,
+            SectorGeometry geometry,
+            VoidPockets.PocketShaping shaping) {
 
         var bounds = expandBy(Bounds.computeEnclosingBounds(fixture.getSites()), MARGIN);
         var svg = new StringBuilder();
@@ -81,7 +85,7 @@ final class SectorSvgWriter {
         appendRawCells(svg, geometry.cellEdgesByCellId());
         appendNeutralCells(svg, geometry);
         appendOwnerRings(svg, geometry.ringsByOwner());
-        appendCoastlines(svg, fixture.getSites());
+        appendCoastlines(svg, fixture.getSites(), shaping);
         appendSites(svg, fixture.getSites());
 
         svg.append("</g>\n</svg>\n");
@@ -205,14 +209,18 @@ final class SectorSvgWriter {
     // Over the cells rather than under them, because the question a coast is drawn to answer
     // is where it runs against the shapes it was traced from - and a coast passing INSIDE a
     // cell is the failure worth seeing, which a cell drawn over the top would hide.
-    private static void appendCoastlines(StringBuilder svg, List<double[]> sites) {
+    private static void appendCoastlines(
+            StringBuilder svg,
+            List<double[]> sites,
+            VoidPockets.PocketShaping shaping) {
 
         var parameters = SectorGeometryParameters.createDefaults();
 
         var traced = Coastlines.traceSectorCoasts(
             sites, parameters, Coastlines.DEFAULT_RULES);
 
-        appendTrappedVoid(svg, traced, sites, parameters);
+        appendCapturedVoid(svg, sites, parameters, shaping);
+        appendTrappedVoid(svg, traced, sites, parameters, shaping);
 
         for (var coast : traced.coasts()) {
 
@@ -229,10 +237,33 @@ final class SectorSvgWriter {
             CoastCrossings.findVisibleCrossings(traced, ViewerPainting.RING_STROKE));
     }
 
-    // The void the coast shut in, filled, under the line that shut it in. Drawn together
-    // because the question either one answers is about the other: a pocket is right only if
-    // it stops a channel short of the coast, and no number reads as an answer to that.
-    //
+    // The void the BRIDGES shut in, filled. Drawn beside the coast's own pockets because the
+    // two constructions divide the map's void between them: a picture holding one of them
+    // shows half the answer, and a change that empties the other leaves that half looking
+    // exactly as it did.
+    private static void appendCapturedVoid(
+            StringBuilder svg,
+            List<double[]> sites,
+            SectorGeometryParameters parameters,
+            VoidPockets.PocketShaping shaping) {
+
+        var bridges = VoidBridges.findVoidBridges(
+            sites,
+            parameters.cellRadius(),
+            parameters.cellRadius() * Coastlines.DEFAULT_RULES.bridgeReachMultiple());
+
+        for (var outline : VoidBridgePockets.findCapturedPockets(
+                sites, bridges, parameters, shaping)) {
+
+            appendPolygon(
+                svg,
+                outline,
+                formatColour(ViewerSettings.WIDE_VOID_DEFAULT),
+                formatColour(ViewerSettings.WIDE_VOID_DEFAULT),
+                ViewerPainting.RING_STROKE / TRAPPED_EDGE_STROKES);
+        }
+    }
+
     // The void the coast shut in, filled, under the line that shut it in. Drawn together
     // because the question either one answers is about the other: a pocket is right only if
     // it stops a channel short of the coast, and no number reads as an answer to that.
@@ -240,7 +271,8 @@ final class SectorSvgWriter {
             StringBuilder svg,
             Coastlines.TracedCoasts traced,
             List<double[]> sites,
-            SectorGeometryParameters parameters) {
+            SectorGeometryParameters parameters,
+            VoidPockets.PocketShaping shaping) {
 
         var sectionRules = new VoidSections.SectionRules(
             ViewerSettings.VOID_SPAN_DEFAULT * parameters.cellRadius(),
@@ -249,9 +281,7 @@ final class SectorSvgWriter {
         for (var pocket : CoastPockets.findCoastPockets(
                 traced,
                 CoastPockets.markEverySiteUnowned(sites),
-                new VoidPockets.PocketRules(
-                    parameters, sectionRules,
-                    VoidPockets.PocketShaping.WITH_CHANNEL))) {
+                new VoidPockets.PocketRules(parameters, sectionRules, shaping))) {
 
             for (var outline : pocket.pocket().outlines()) {
 
