@@ -9,13 +9,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Where a coast pocket has strayed to the wrong side of the coast, which is the one way its
- * outline can be wrong.
+ * Where a coast pocket has strayed outside the reaches that closed it.
  *
  * <p>A reach of coast has cells on one side and open sea on the other, and the void it shut in
  * is on the cells' side by definition. So a run of a pocket's outline that has crossed to the
  * seaward side of the very reach that closed it is not a matter of taste - it is void being
  * claimed where there is nothing to claim it.
+ *
+ * <p>Two faults, kept apart. A reach is a SEGMENT, so an outline can be on the wrong side of
+ * its line, or on the right side of it and past one of its ends. Only the first is void
+ * claimed out at sea; the second says a pocket is longer than the piece of coast that closed
+ * it, which is a fault where the outline was cut to that span and nothing at all where it was
+ * not. Reported as one number they cannot be told apart, and the harmless one is much the
+ * commoner - so the count that has to be zero stops meaning anything.
  *
  * <p><b>Only the offending run, not the pocket it belongs to.</b> A pocket with a sliver
  * shooting off one corner is almost entirely right, and marking the whole shape says the
@@ -30,10 +36,10 @@ import java.util.List;
 final class CoastPocketFaults {
 
     // A pocket's outline runs ALONG the reach that closed it for most of its length, held off
-    // by the channel, so it sits about a channel inside the line by design. Only a run that
-    // has crossed the line itself is over the edge, and the slack is what stops the sampling
-    // of a run lying flat against it reading as a fault every other vertex.
-    private static final double OVER_THE_LINE = 1;
+    // by the channel, so it sits about a channel inside each bound by design. Only a run that
+    // has crossed one is outside it, and the slack is what stops the sampling of a run lying
+    // flat against a bound reading as a fault every other vertex.
+    private static final double PAST_A_BOUND = 1;
 
     // Two, so a run is something drawable rather than a lone sample. One vertex over
     // the line is a rounding at a corner the outline is already turning on.
@@ -93,9 +99,13 @@ final class CoastPocketFaults {
 
                     var bounds = buildBounds(reach, sites, 0);
 
+                    if (bounds == null) {
+                        continue;
+                    }
+
                     for (var point : outline) {
 
-                        if (measureExcursionFrom(point, bounds) <= 0) {
+                        if (measureExcursionFrom(point, bounds.toList()) <= 0) {
                             closest = Math.min(
                                 closest, measureLandwardOffset(point, reach, sites));
                         }
@@ -120,12 +130,34 @@ final class CoastPocketFaults {
     }
 
     /**
+     * One run of a pocket's outline that stays landward of a reach and runs past its END.
+     *
+     * <p>Its own kind, not a spill. A reach is a segment, so a pocket that reaches beyond
+     * where it stops is on the right side of the coast the whole way and is simply longer
+     * than the piece of coast that closed it - which is only a fault where the outline was
+     * cut to the reach's span and evidently was not. Counted together with the spills, the
+     * one number that has to be zero stops meaning anything, because the commonest way to
+     * make it non-zero is the harmless one.
+     *
+     * @param run   the offending stretch, in the order the outline is drawn
+     * @param depth how far past the nearer end the worst of it reaches
+     */
+    record Overrun(
+        List<double[]> run,
+        double depth) {
+    }
+
+    /**
      * Finds every run of coast pocket outline lying seaward of the reach that closed it.
      *
      * <p>Judged against the reaches THIS pocket closes on rather than against every reach on
      * the map. A reach's line is unbounded, so a pocket half a sector away sits on one side of
      * it or the other for no reason worth reporting; what makes the test mean anything is that
      * the pocket and the line are two edges of one shape.
+     *
+     * <p>Against the LINE alone. Where a pocket ends up relative to a reach's two ends is
+     * {@link #findOverruns}' question, and a check that answered both at once would report
+     * void claimed out at sea and void running past the end of a short reach as one fault.
      *
      * @param pockets the pockets, each paired with the reaches that walled it
      * @param sites   the sites, to say which side of each reach the cells are on
@@ -139,11 +171,51 @@ final class CoastPocketFaults {
             for (var outline : walled.pocket().outlines()) {
                 for (var reach : walled.reaches()) {
 
-                    collectSpillsAlong(found, outline, reach, sites);
+                    var bounds = buildBounds(reach, sites, 0);
+
+                    if (bounds != null) {
+                        collectRunsOutside(outline, List.of(bounds.landward()), (run, depth) ->
+                            found.add(new Spill(run, depth)));
+                    }
                 }
             }
         }
         found.sort(java.util.Comparator.comparingDouble(Spill::depth).reversed());
+
+        return found;
+    }
+
+    /**
+     * Finds every run of coast pocket outline that runs past one of its reach's ends.
+     *
+     * <p>Only a fault where the outline was held to the reach's span in the first place. At a
+     * pocket's true extent nothing cuts it, and a hole is under no obligation to stop where a
+     * reach does - so a caller asking there is asking about the cut it did not run.
+     *
+     * @param pockets the pockets, each paired with the reaches that walled it
+     * @param sites   the sites, to say which side of each reach the cells are on
+     * @return one entry per offending run, deepest first
+     */
+    static List<Overrun> findOverruns(List<WalledPocket> pockets, List<double[]> sites) {
+
+        var found = new ArrayList<Overrun>();
+
+        for (var walled : pockets) {
+            for (var outline : walled.pocket().outlines()) {
+                for (var reach : walled.reaches()) {
+
+                    var bounds = buildBounds(reach, sites, 0);
+
+                    if (bounds != null) {
+                        collectRunsOutside(
+                            outline,
+                            List.of(bounds.afterStart(), bounds.beforeEnd()),
+                            (run, depth) -> found.add(new Overrun(run, depth)));
+                    }
+                }
+            }
+        }
+        found.sort(java.util.Comparator.comparingDouble(Overrun::depth).reversed());
 
         return found;
     }
@@ -199,7 +271,14 @@ final class CoastPocketFaults {
         var kept = outline;
 
         for (var reach : reaches) {
-            for (var bound : buildBounds(reach, sites, channel)) {
+
+            var bounds = buildBounds(reach, sites, channel);
+
+            if (bounds == null) {
+                continue;
+            }
+
+            for (var bound : bounds.toList()) {
 
                 if (kept.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                     return List.of();
@@ -213,6 +292,37 @@ final class CoastPocketFaults {
             }
         }
         return kept.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA ? List.of() : kept;
+    }
+
+    /**
+     * The three half-planes one reach of coast bounds a pocket with, each named.
+     *
+     * <p>Named rather than listed, because two of them mean something different from the
+     * third and the difference decides whether a breach is a fault. Handed round as a list,
+     * the only thing telling the line from the end caps is its position in it, and a check
+     * that wanted one of them had no way to say which without counting.
+     *
+     * @param landward   the cells' side of the reach's line, held off by the channel
+     * @param afterStart everything from the reach's start onward
+     * @param beforeEnd  everything up to the reach's end
+     */
+    private record ReachBounds(
+        HalfPlane landward,
+        HalfPlane afterStart,
+        HalfPlane beforeEnd) {
+
+        // All three as one list, for the callers that hold a pocket to a reach entirely
+        // rather than asking about one bound of it.
+        List<HalfPlane> toList() {
+            return List.of(landward, afterStart, beforeEnd);
+        }
+    }
+
+    // What to do with one run found outside a set of bounds: the run itself and how far the
+    // worst of it went. A run is the same walk whichever fault it turns out to be, so the two
+    // finders share the walk and differ only in what they build from it.
+    private interface RunHandler {
+        void acceptRun(List<double[]> run, double depth);
     }
 
     /**
@@ -235,9 +345,9 @@ final class CoastPocketFaults {
      * @param reach   the reach
      * @param sites   the sites, to find the cell it leaves from
      * @param channel how far the pocket holds back from its line
-     * @return the three bounds, or none where the reach is too short to have a direction
+     * @return the three bounds, or null where the reach is too short to have a direction
      */
-    private static List<HalfPlane> buildBounds(
+    private static ReachBounds buildBounds(
             DiscUnionBoundary.Chord reach,
             List<double[]> sites,
             double channel) {
@@ -245,12 +355,12 @@ final class CoastPocketFaults {
         var landward = buildLandwardNormal(reach, sites);
 
         if (landward == null) {
-            return List.of();
+            return null;
         }
         var line = reach.line();
         var unit = line.toUnitLine();
 
-        return List.of(
+        return new ReachBounds(
             new HalfPlane(
                 line.originX() + channel * landward[0],
                 line.originY() + channel * landward[1],
@@ -311,15 +421,15 @@ final class CoastPocketFaults {
             bound.normalY());
     }
 
-    // Every maximal stretch of one outline lying seaward of one reach. Walked as runs rather
-    // than reported per vertex, because a spike is one fault however many samples it took.
-    private static void collectSpillsAlong(
-            List<Spill> found,
+    // Every maximal stretch of one outline lying outside the given bounds. Walked as runs
+    // rather than reported per vertex, because a spike is one fault however many samples it
+    // took - and shared by both faults, since which bounds are asked about is the only thing
+    // that differs between them and a second walk could disagree about where a run began.
+    private static void collectRunsOutside(
             List<double[]> outline,
-            DiscUnionBoundary.Chord reach,
-            List<double[]> sites) {
+            List<HalfPlane> bounds,
+            RunHandler handler) {
 
-        var bounds = buildBounds(reach, sites, 0);
         var run = new ArrayList<double[]>();
         var deepest = 0.0;
 
@@ -327,24 +437,24 @@ final class CoastPocketFaults {
 
             var past = measureExcursionFrom(point, bounds);
 
-            if (past > OVER_THE_LINE) {
+            if (past > PAST_A_BOUND) {
 
                 run.add(point);
                 deepest = Math.max(deepest, past);
                 continue;
             }
-            deepest = closeRun(found, run, deepest);
+            deepest = closeRun(handler, run, deepest);
         }
-        closeRun(found, run, deepest);
+        closeRun(handler, run, deepest);
     }
 
     // Ends a run and hands back the depth to carry into the next one, which is none. Given
     // back rather than reset by the caller so that closing a run and forgetting how deep it
     // went are one statement and cannot come apart.
-    private static double closeRun(List<Spill> found, List<double[]> run, double deepest) {
+    private static double closeRun(RunHandler handler, List<double[]> run, double deepest) {
 
         if (run.size() >= MIN_RUN_VERTICES) {
-            found.add(new Spill(List.copyOf(run), deepest));
+            handler.acceptRun(List.copyOf(run), deepest);
         }
         run.clear();
 

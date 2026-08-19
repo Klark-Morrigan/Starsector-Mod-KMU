@@ -218,7 +218,8 @@ final class CoastPockets {
             walls.add(new DiscUnionBoundary.Chord(
                 from.circle(),
                 to.circle(),
-                new DirectedLine(from.point()[0], from.point()[1], alongX, alongY)));
+                new DirectedLine(from.point()[0], from.point()[1], alongX, alongY),
+                DiscUnionBoundary.WallKind.COAST_REACH));
         }
         return walls;
     }

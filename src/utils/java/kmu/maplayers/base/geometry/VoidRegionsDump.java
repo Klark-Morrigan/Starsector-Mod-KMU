@@ -73,6 +73,7 @@ final class VoidRegionsDump {
             reportChannelWidths(fixture);
             reportHolesAtReach(fixture);
             reportBoundSeams(fixture);
+            reportPickedPoints(fixture, sectorName);
             reportPockets(
                 VoidPockets.findVoidPockets(
                     sites,
@@ -244,6 +245,260 @@ final class VoidRegionsDump {
                 + "outline of the cell it sits on%n",
             seams.corners(),
             seams.worstCornerStray());
+    }
+
+    // What claims each point picked in the viewer, read from the pick log the window writes.
+    //
+    // The bridge between what a reader sees and what the constructions think they built. A
+    // patch of black raises one question - who was supposed to draw this - and answering it
+    // by eye means guessing which of two constructions owns the spot, at which of two reaches,
+    // and whether the void there is enclosed at all. Each of those is one line here.
+    //
+    // Driven by the log rather than by a list kept here, so a fresh set of clicks needs no
+    // edit: pick in the window, run this, read the answers.
+    private static void reportPickedPoints(SectorFixture fixture, String sectorName) {
+
+        var picks = readPicks(sectorName);
+
+        if (picks.isEmpty()) {
+            return;
+        }
+
+        var sites = fixture.getSites();
+        var parameters = new SectorGeometryParameters(4000, 24, 150, 200, 8);
+        var sectionRules = new VoidSections.SectionRules(1.5 * parameters.cellRadius(), 0.4);
+        var traced = Coastlines.traceSectorCoasts(
+            sites, parameters, new Coastlines.CoastRules(4, 1, 5));
+        var bridges = VoidBridges.findVoidBridges(
+            sites, parameters.cellRadius(), parameters.cellRadius() * 4);
+
+        var holes = DiscUnionBoundary.traceHoles(
+            new DiscUnion(sites, parameters.cellRadius()), parameters.boundSegments());
+        var drawnHoles = DiscUnionBoundary.traceHoles(
+            VoidPockets.buildDrawnUnion(sites, parameters), parameters.boundSegments());
+
+        var coastTrue = collectCoastOutlines(
+            traced, fixture, parameters, sectionRules, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
+        var coastInset = collectCoastOutlines(
+            traced, fixture, parameters, sectionRules, VoidPockets.PocketShaping.WITH_CHANNEL);
+        var bridgeTrue = VoidBridgePockets.findCapturedPockets(
+            sites, bridges, parameters, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
+        var bridgeInset = VoidBridgePockets.findCapturedPockets(
+            sites, bridges, parameters, VoidPockets.PocketShaping.WITH_CHANNEL);
+
+        for (var pick : picks) {
+
+            System.out.printf(
+                Locale.ROOT,
+                "  pick %.0f,%.0f: hole true %s inset %s | coast inset %s true %s "
+                    + "| bridge inset %s true %s | %s%n",
+                pick[0],
+                pick[1],
+                describeHoleAt(holes, pick),
+                describeHoleAt(drawnHoles, pick),
+                describeHit(coastInset, pick),
+                describeHit(coastTrue, pick),
+                describeHit(bridgeInset, pick),
+                describeHit(bridgeTrue, pick),
+                describeNearestStep(traced, parameters, pick));
+        }
+    }
+
+    // The coast step running nearest a picked point, and what became of it.
+    //
+    // A line drawn across a gap is not a wall laid across it. The coast draws every step it
+    // walks, while only a step long enough to hold a channel is offered as a reach, and only
+    // a reach whose ends are on the boundary is laid - so a gap can be closed on screen and
+    // open to the trace. Which of those three it is, is the whole question.
+    private static String describeNearestStep(
+            Coastlines.TracedCoasts traced,
+            SectorGeometryParameters parameters,
+            double[] pick) {
+
+        Coastlines.CoastVertex from = null;
+        Coastlines.CoastVertex to = null;
+        var nearest = Double.MAX_VALUE;
+
+        for (var coast : traced.coasts()) {
+            for (var index = 0; index < coast.size(); index++) {
+
+                var start = coast.get(index);
+                var end = coast.get((index + 1) % coast.size());
+                var away = kmlib.math.geometry.Segments.computeDistanceToPoint(
+                    start.point(), end.point(), pick);
+
+                if (away < nearest) {
+                    nearest = away;
+                    from = start;
+                    to = end;
+                }
+            }
+        }
+
+        if (from == null) {
+            return "no coast";
+        }
+
+        var length = kmlib.math.geometry.Points.computeDistance(from.point(), to.point());
+        var channel = traced.walls().channel();
+        var isReach = from.circle() != to.circle() && length >= channel;
+
+        if (!isReach) {
+            return String.format(
+                Locale.ROOT,
+                "nearest step %.0f away, cells %d-%d, %.0f long: not offered as a reach",
+                nearest,
+                from.circle(),
+                to.circle(),
+                length);
+        }
+
+        var sites = traced.union().sites();
+        var offered = new ArrayList<DiscUnionBoundary.Chord>();
+
+        for (var reach : Coastlines.collectStraightReaches(traced)) {
+            offered.add(new DiscUnionBoundary.Chord(
+                reach.from().circle(),
+                reach.to().circle(),
+                new kmlib.math.geometry.DirectedLine(
+                    reach.from().point()[0],
+                    reach.from().point()[1],
+                    reach.to().point()[0] - reach.from().point()[0],
+                    reach.to().point()[1] - reach.from().point()[1]),
+                DiscUnionBoundary.WallKind.COAST_REACH));
+        }
+
+        var mine = findChordFrom(offered, from, to);
+        var all = new ArrayList<>(offered);
+
+        all.addAll(traced.walls().chords());
+
+        var walls = new DiscUnionBoundary.Walls(all, channel);
+        var laidTrue = DiscUnionBoundary.findAttachableChords(
+            new DiscUnion(sites, parameters.cellRadius()), walls);
+        var laidInset = DiscUnionBoundary.findAttachableChords(
+            VoidPockets.buildDrawnUnion(sites, parameters), walls);
+
+        return String.format(
+            Locale.ROOT,
+            "nearest step %.0f away, cells %d-%d, %.0f long: reach, true [%s] inset [%s]",
+            nearest,
+            from.circle(),
+            to.circle(),
+            length,
+            laidTrue.contains(mine)
+                ? "laid"
+                : DiscUnionBoundary.describeChordRefusal(
+                    new DiscUnion(sites, parameters.cellRadius()),
+                    walls,
+                    from.circle(),
+                    to.circle()),
+            laidInset.contains(mine)
+                ? "laid"
+                : DiscUnionBoundary.describeChordRefusal(
+                    VoidPockets.buildDrawnUnion(sites, parameters),
+                    walls,
+                    from.circle(),
+                    to.circle()));
+    }
+
+    // The chord built from one coast step, found among the ones offered, so what is asked of
+    // the wall set is the wall this step became rather than one that merely joins the same two
+    // cells - a cell pair can be joined by more than one step of coast.
+    private static DiscUnionBoundary.Chord findChordFrom(
+            List<DiscUnionBoundary.Chord> offered,
+            Coastlines.CoastVertex from,
+            Coastlines.CoastVertex to) {
+
+        for (var chord : offered) {
+
+            if (chord.fromCircle() == from.circle()
+                    && chord.toCircle() == to.circle()
+                    && chord.line().originX() == from.point()[0]
+                    && chord.line().originY() == from.point()[1]) {
+                return chord;
+            }
+        }
+        return null;
+    }
+
+    // The picks for one sector, as the viewer wrote them down. Missing file and foreign
+    // sectors are ordinary: the log is emptied per session and holds whichever sectors were
+    // looked at.
+    private static List<double[]> readPicks(String sectorName) {
+
+        var file = java.nio.file.Path.of(
+            "build", "reports", "political-map", "viewer-picks.txt");
+        var picks = new ArrayList<double[]>();
+
+        if (!java.nio.file.Files.exists(file)) {
+            return picks;
+        }
+
+        try {
+            for (var line : java.nio.file.Files.readAllLines(file)) {
+
+                if (!line.startsWith(sectorName)) {
+                    continue;
+                }
+                var fields = line.substring(sectorName.length()).trim().split("[,\s]+");
+
+                picks.add(new double[] {
+                    Double.parseDouble(fields[0]), Double.parseDouble(fields[1])});
+            }
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException("cannot read " + file, e);
+        }
+        return picks;
+    }
+
+    // Every coast pocket's outline at one shaping, flattened, because what a pick asks is
+    // whether ANY of them holds the point rather than which pocket it belongs to.
+    private static List<List<double[]>> collectCoastOutlines(
+            Coastlines.TracedCoasts traced,
+            SectorFixture fixture,
+            SectorGeometryParameters parameters,
+            VoidSections.SectionRules sectionRules,
+            VoidPockets.PocketShaping shaping) {
+
+        var outlines = new ArrayList<List<double[]>>();
+
+        for (var walled : CoastPockets.findCoastPockets(
+                traced,
+                fixture.getOwnerBySite(),
+                new VoidPockets.PocketRules(parameters, sectionRules, shaping))) {
+
+            outlines.addAll(walled.pocket().outlines());
+        }
+        return outlines;
+    }
+
+    // Which hole of the union holds a point, if any. "None" is the answer that matters most:
+    // it says the void there is open to the rest of the map, so no construction was ever going
+    // to fill it and the question is why nothing enclosed it.
+    private static String describeHoleAt(List<VoidHole> holes, double[] pick) {
+
+        for (var index = 0; index < holes.size(); index++) {
+
+            if (PolygonRegions.isPointInsideRing(
+                    holes.get(index).boundary(), pick[0], pick[1])) {
+                return "#" + index + " (" + holes.get(index).ringing().size() + " cells)";
+            }
+        }
+        return "none";
+    }
+
+    // Which drawn outline holds a point, if any - asked once per construction and per reach,
+    // since a pocket can exist at one reach and not the other.
+    private static String describeHit(List<List<double[]>> outlines, double[] pick) {
+
+        for (var index = 0; index < outlines.size(); index++) {
+
+            if (PolygonRegions.isPointInsideRing(outlines.get(index), pick[0], pick[1])) {
+                return "#" + index;
+            }
+        }
+        return "no";
     }
 
     private static int countHolesAt(SectorFixture fixture, double reach) {
@@ -751,6 +1006,7 @@ final class VoidRegionsDump {
         spans.sort(Double::compare);
 
         var spills = CoastPocketFaults.findSpills(pockets, traced.union().sites());
+        var overruns = CoastPocketFaults.findOverruns(pockets, traced.union().sites());
 
         System.out.printf(
             Locale.ROOT,
@@ -758,12 +1014,19 @@ final class VoidRegionsDump {
             CoastPocketFaults.measureClosestApproach(pockets, traced.union().sites()),
             shipped.borderInset());
 
+        // Two numbers rather than one. Seaward of the line is void claimed out at sea; past a
+        // reach's end is a pocket longer than the piece of coast that closed it, which the cut
+        // is what holds in - so a run of them says the cut did not take rather than that the
+        // shape is out to sea.
         System.out.printf(
             Locale.ROOT,
             "%d runs of pocket outline sit seaward of the reach that closed them, worst by "
-                + "%.0f (has to be 0)%n",
+                + "%.0f (has to be 0); %d runs past a reach's end, worst by %.0f (has to be 0 "
+                + "once the cut has run)%n",
             spills.size(),
-            spills.isEmpty() ? 0 : spills.get(0).depth());
+            spills.isEmpty() ? 0 : spills.get(0).depth(),
+            overruns.size(),
+            overruns.isEmpty() ? 0 : overruns.get(0).depth());
 
         System.out.printf(
             Locale.ROOT,
@@ -774,6 +1037,39 @@ final class VoidRegionsDump {
             findPercentile(spans, REPORTED_PERCENTILES[0]),
             findPercentile(spans, REPORTED_PERCENTILES[1]),
             findPercentile(spans, REPORTED_PERCENTILES[2]));
+
+        reportTrappedVoidAtTrueExtent(sites, traced, shipped);
+    }
+
+    // The same void with nothing given up, which is the map the viewer opens on and the one
+    // step 5 moves everything to. Reported because the two faults answer differently here:
+    // nothing cuts a pocket at its true extent, so running past a reach's end is what a hole
+    // does and only the seaward count still has to be zero. One line is what keeps that from
+    // being rediscovered by eye every time a pocket is seen sticking out past a reach.
+    private static void reportTrappedVoidAtTrueExtent(
+            List<double[]> sites,
+            Coastlines.TracedCoasts traced,
+            SectorGeometryParameters shipped) {
+
+        var pockets = CoastPockets.findCoastPockets(
+            traced,
+            CoastPockets.markEverySiteUnowned(sites),
+            new VoidPockets.PocketRules(
+                shipped, SECTION_RULES, VoidPockets.PocketShaping.AT_TRUE_EXTENT));
+
+        var spills = CoastPocketFaults.findSpills(pockets, traced.union().sites());
+        var overruns = CoastPocketFaults.findOverruns(pockets, traced.union().sites());
+
+        System.out.printf(
+            Locale.ROOT,
+            "at their true extent: %d pockets, %d runs seaward of a reach, worst by %.0f "
+                + "(has to be 0); %d runs past a reach's end, worst by %.0f (expected - "
+                + "nothing cuts them here)%n",
+            pockets.size(),
+            spills.size(),
+            spills.isEmpty() ? 0 : spills.get(0).depth(),
+            overruns.size(),
+            overruns.isEmpty() ? 0 : overruns.get(0).depth());
     }
 
     // Each crossing as its depth beside one other number about it. Shared by every such
