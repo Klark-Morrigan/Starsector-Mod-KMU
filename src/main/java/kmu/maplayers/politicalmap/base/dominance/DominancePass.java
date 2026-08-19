@@ -218,6 +218,22 @@ public record DominancePass(
     }
 
     /**
+     * The blocs present in this system under the pass's reveal and grouping - the factions above
+     * folded into the blocs this view paints, whether or not this mechanic could weigh them.
+     *
+     * <p>The bloc-keyed counterpart of the read above, for a surface that decides per bloc rather
+     * than per faction. Beside {@link #readBlocFootprints} rather than derived from it, for the same
+     * reason: a bloc raising no footprint may still hold colonies here, and reading presence off the
+     * weights would drop it from the fill while the band went on counting it.
+     *
+     * @param system the system whose colonies are read
+     * @return the ids of the blocs present there; empty when the player knows of no colony
+     */
+    public Set<String> readKnownColonyBlocIds(StarSystemAPI system) {
+        return holding.readKnownColonyBlocIds(system);
+    }
+
+    /**
      * This system's per-bloc footprints under the pass's rule, reveal, and grouping: the per-faction
      * footprints regrouped into per-bloc footprints (a no-op fold under identity, a member-summing
      * merge under an alliance grouping). The one read shared by the holder resolve and the

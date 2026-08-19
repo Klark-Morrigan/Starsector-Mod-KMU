@@ -17,7 +17,7 @@ import java.util.Set;
 
 /**
  * Resolves who paints each star system while the filter spotlights one bloc, keeping the
- * selected bloc visible everywhere it owns a market rather than only where it wins.
+ * selected bloc visible everywhere it holds a colony rather than only where it wins.
  *
  * <p>The presence-aware sibling of {@link SectorPolitics}: the normal pass collapses each
  * system to its single dominant holder and discards the losers, which would erase the
@@ -77,35 +77,41 @@ public final class FilteredPolitics {
 
         /** The selected bloc holds the system outright: drawn solid, at full strength. */
         DOMINATES,
-        /** The selected bloc owns a market but a rival wins: drawn contested (hatched). */
+        /** The selected bloc lives here without winning the system: drawn contested (hatched). */
         PRESENT_BUT_DOMINATED,
         /** The selected bloc owns nothing here: the real dominant holder draws, receded. */
         ABSENT
     }
 
     /**
-     * Classifies how the selected bloc stands in one system from its per-bloc footprints - the
-     * pure rule the whole presence resolver turns on, testable on hand-built footprints.
+     * Classifies how the selected bloc stands in one system from the blocs present in it and their
+     * footprints - the pure rule the whole presence resolver turns on, testable on hand-built sets.
      *
-     * <p>Present means the selected bloc owns any market in the system (it has a footprint),
-     * under the same known-to-player, dominance-rules, and dev-reveal inputs the normal pass
-     * reads - so a bloc marks presence exactly where it could paint. A present bloc that also
-     * wins the dominance comparison dominates; a present bloc a rival outranks is present but
-     * dominated; a bloc with no footprint is absent. The comparison uses the same
-     * {@link SystemDominance} rule the normal pass does, breaking a tie by lowest id, so "does
-     * the selected bloc dominate" is judged against honest competition under the active
-     * grouping.
+     * <p>Presence and dominance are two questions, and this takes an answer to each rather than
+     * inferring the first from the second. A footprint is economy-fed in every term, so a bloc whose
+     * only colony here is one the economy does not list raises none - and a spotlight that read
+     * presence off the footprints would dim the very system the player picked that bloc to see,
+     * while the band inside the same cell drew its run. A present bloc that also wins the dominance
+     * comparison dominates; a present bloc that does not - outranked, or holding nothing anybody
+     * weighed - is present but dominated; a bloc absent from the presence set is absent. The
+     * comparison uses the same {@link SystemDominance} rule the normal pass does, breaking a tie by
+     * lowest id, so "does the selected bloc dominate" is judged against honest competition under the
+     * active grouping.
      *
      * @param footprintByBlocId each bloc's footprint in the system, already regrouped under the
-     *                          active view's grouping; empty means no owned markets
+     *                          active view's grouping; empty means nothing here was weighed
+     * @param presentBlocIds    the blocs holding a colony the player may be shown, which the
+     *                          footprints are a subset of
      * @param selectedBlocId    the spotlighted bloc's id (a faction id, or an alliance id)
      * @return where the selected bloc stands in this system
      */
     public static SelectedBlocPresence classifySelectedBlocPresence(
             Map<String, MarketFootprint> footprintByBlocId,
+            Set<String> presentBlocIds,
             String selectedBlocId) {
         return classifySelectedBlocPresence(
             footprintByBlocId,
+            presentBlocIds,
             selectedBlocId,
             Comparator.naturalOrder());
     }
@@ -117,7 +123,9 @@ public final class FilteredPolitics {
      * uses, so a tied system is drawn solid or hatched consistently with the base layers.
      *
      * @param footprintByBlocId each bloc's footprint in the system, already regrouped under the
-     *                          active view's grouping; empty means no owned markets
+     *                          active view's grouping; empty means nothing here was weighed
+     * @param presentBlocIds    the blocs holding a colony the player may be shown, which the
+     *                          footprints are a subset of
      * @param selectedBlocId    the spotlighted bloc's id (a faction id, or an alliance id)
      * @param tieBreak          consulted only when the selected bloc ties a rival on every
      *                          weight level; the id it orders first dominates the system
@@ -125,10 +133,11 @@ public final class FilteredPolitics {
      */
     public static SelectedBlocPresence classifySelectedBlocPresence(
             Map<String, MarketFootprint> footprintByBlocId,
+            Set<String> presentBlocIds,
             String selectedBlocId,
             Comparator<String> tieBreak) {
 
-        if (!footprintByBlocId.containsKey(selectedBlocId)) {
+        if (!presentBlocIds.contains(selectedBlocId)) {
             return SelectedBlocPresence.ABSENT;
         }
         var dominantBlocId = SystemDominance.resolveDominantFactionId(footprintByBlocId, tieBreak);
@@ -182,10 +191,12 @@ public final class FilteredPolitics {
      * Which of {@code candidateSystemIds} the spotlighted bloc is present in under an explicit
      * dominance pass, for a caller that has already sampled the player's settings.
      *
-     * <p>Presence is {@link #classifySelectedBlocPresence}'s, so a bloc counts as living in a
-     * system here exactly where the filter's own resolve would have kept it visible. Only
-     * whether it is present is asked: a holderless system has no contest for it to win or lose,
-     * so the dominant/contested split those cells are classified by means nothing here.
+     * <p>Presence is {@link #classifySelectedBlocPresence}'s, read through that same
+     * classification, so a bloc counts as living in a system here exactly where the filter's own
+     * resolve would have kept it visible - including where it holds only colonies no mechanic
+     * weighed, which is the common shape among the systems a holding rule leaves out. Only whether
+     * it is present is asked: a holderless system has no contest for it to win or lose, so the
+     * dominant/contested split those cells are classified by means nothing here.
      *
      * @param pass              the rule, dev reveal, grouping, and sector walk this read resolves
      *                          under; a pass over no sector yields an empty set
@@ -210,7 +221,12 @@ public final class FilteredPolitics {
             if (!candidateSystemIds.contains(system.getId())) {
                 continue;
             }
-            if (pass.readBlocFootprints(system).containsKey(selectedBlocId)) {
+            var presence = classifySelectedBlocPresence(
+                pass.readBlocFootprints(system),
+                pass.readKnownColonyBlocIds(system),
+                selectedBlocId);
+
+            if (presence != SelectedBlocPresence.ABSENT) {
                 presentSystemIds.add(system.getId());
             }
         }
@@ -322,6 +338,13 @@ public final class FilteredPolitics {
     // otherwise the system's real dominant holder unchanged (flagged to recede by the caller,
     // which sees a key isSpotlitBloc rejects). Reads and regroups the footprints once and shares
     // them with both the classification and the real-holder fallback.
+    //
+    // Presence is read beside them rather than taken off them: the footprints answer who wins the
+    // system, and every term of that arithmetic is economy-fed, so a bloc whose only colony here is
+    // unregistered wins nothing and is still living in the system. Widening the footprints instead
+    // would put such a bloc into the map the dominant-holder rank is taken over, where an
+    // all-weightless system would hand it the system outright - a spotlight moving a fill, which
+    // it must never do.
     private static DominantHolder resolveHolder(
             StarSystemAPI system,
             DominancePass pass,
@@ -329,6 +352,7 @@ public final class FilteredPolitics {
             Set<String> contestedSystemIds) {
 
         var footprintByBlocId = pass.readBlocFootprints(system);
+        var presentBlocIds = pass.readKnownColonyBlocIds(system);
 
         // The proximity tie-break the normal pass uses, so both the "does the selected bloc
         // dominate" call and the receded real-holder fallback settle a tie the same way the base
@@ -336,7 +360,11 @@ public final class FilteredPolitics {
         var tieBreak = pass.tieBreakFor(system);
         var sector = pass.sector();
         var grouping = pass.grouping();
-        var presence = classifySelectedBlocPresence(footprintByBlocId, selectedBlocId, tieBreak);
+        var presence = classifySelectedBlocPresence(
+            footprintByBlocId,
+            presentBlocIds,
+            selectedBlocId,
+            tieBreak);
 
         if (presence == SelectedBlocPresence.ABSENT) {
             return resolveRealHolder(sector, grouping, footprintByBlocId, tieBreak);

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.dominance.MarketFootprintFixtures.buildWeightedFootprint;
 import static kmu.maplayers.politicalmap.base.dominance.MarketFootprintFixtures.listOrderedFootprints;
@@ -14,9 +15,10 @@ import static kmu.maplayers.politicalmap.base.dominance.MarketFootprintFixtures.
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins {@link FilteredPolitics}'s pure rules on hand-built footprints: the three-way presence
- * classification that decides how a spotlighted bloc draws in each system, and the group-key
- * helper the render layer reads to tell a spotlit cell from a receding one. The presence-aware
+ * Pins {@link FilteredPolitics}'s pure rules on hand-built footprints and presence sets: the
+ * three-way classification that decides how a spotlighted bloc draws in each system - including
+ * that a bloc living in a system nothing weighed for it still draws - and the group-key helper the
+ * render layer reads to tell a spotlit cell from a receding one. The presence-aware
  * holder assembly - the synthetic key, palette reuse, the contested set, and the real-holder
  * fallback - reads the live economy, so it is covered in {@link FilteredPoliticsIntegrationTest}.
  */
@@ -26,20 +28,23 @@ class FilteredPoliticsTest {
     class ClassifySelectedBlocPresence {
 
         @Test
-        void returnsAbsentWhenTheSelectedBlocHasNoFootprint() {
+        void returnsAbsentWhenTheSelectedBlocHoldsNothingInTheSystem() {
             // A rival holds the system and the selected bloc owns nothing here, so its real
             // holder draws (receded) rather than the spotlighted bloc.
             var footprints = listOrderedFootprints("hegemony", buildWeightedFootprint(9, 5, 5));
 
-            assertThat(FilteredPolitics.classifySelectedBlocPresence(footprints, "tritachyon"))
+            assertThat(FilteredPolitics.classifySelectedBlocPresence(
+                    footprints,
+                    Set.of("hegemony"),
+                    "tritachyon"))
                 .isEqualTo(SelectedBlocPresence.ABSENT);
         }
 
         @Test
-        void returnsAbsentForEmptyFootprints() {
-            // An uninhabited system has no footprint for any bloc, so the selected bloc is
-            // absent there like everywhere it owns nothing.
-            assertThat(FilteredPolitics.classifySelectedBlocPresence(Map.of(), "hegemony"))
+        void returnsAbsentForAnEmptySystem() {
+            // An uninhabited system holds nobody's colony, so the selected bloc is absent there
+            // like everywhere it owns nothing.
+            assertThat(FilteredPolitics.classifySelectedBlocPresence(Map.of(), Set.of(), "hegemony"))
                 .isEqualTo(SelectedBlocPresence.ABSENT);
         }
 
@@ -52,7 +57,10 @@ class FilteredPoliticsTest {
                 "tritachyon",
                 buildWeightedFootprint(3, 3, 0));
 
-            assertThat(FilteredPolitics.classifySelectedBlocPresence(footprints, "hegemony"))
+            assertThat(FilteredPolitics.classifySelectedBlocPresence(
+                    footprints,
+                    Set.of("hegemony", "tritachyon"),
+                    "hegemony"))
                 .isEqualTo(SelectedBlocPresence.DOMINATES);
         }
 
@@ -66,7 +74,10 @@ class FilteredPoliticsTest {
                 "tritachyon",
                 buildWeightedFootprint(3, 3, 0));
 
-            assertThat(FilteredPolitics.classifySelectedBlocPresence(footprints, "tritachyon"))
+            assertThat(FilteredPolitics.classifySelectedBlocPresence(
+                    footprints,
+                    Set.of("hegemony", "tritachyon"),
+                    "tritachyon"))
                 .isEqualTo(SelectedBlocPresence.PRESENT_BUT_DOMINATED);
         }
 
@@ -76,8 +87,37 @@ class FilteredPoliticsTest {
             // selected bloc dominates a cell it holds alone even at zero weight.
             var footprints = listOrderedFootprints("hegemony", MarketFootprint.EMPTY);
 
-            assertThat(FilteredPolitics.classifySelectedBlocPresence(footprints, "hegemony"))
+            assertThat(FilteredPolitics.classifySelectedBlocPresence(
+                    footprints,
+                    Set.of("hegemony"),
+                    "hegemony"))
                 .isEqualTo(SelectedBlocPresence.DOMINATES);
+        }
+
+        @Test
+        void returnsPresentButDominatedForABlocPresentWithNoFootprintBesideAHolder() {
+            // The step's own case: the selected bloc's only colony here is one the mechanic never
+            // weighed, so it raises no footprint and loses the system - but it lives here, so it
+            // draws hatched in its own palette rather than sinking into the rival's receded fill.
+            var footprints = listOrderedFootprints("hegemony", buildWeightedFootprint(9, 5, 5));
+
+            assertThat(FilteredPolitics.classifySelectedBlocPresence(
+                    footprints,
+                    Set.of("hegemony", "tritachyon"),
+                    "tritachyon"))
+                .isEqualTo(SelectedBlocPresence.PRESENT_BUT_DOMINATED);
+        }
+
+        @Test
+        void returnsPresentButDominatedForABlocPresentInASystemNobodyHolds() {
+            // Nothing here was weighed at all, so there is no dominant bloc to compare against and
+            // the system takes no holder. The spotlit bloc still lives in it, which is exactly what
+            // the contested arm records - so the cell draws hatched rather than receding.
+            assertThat(FilteredPolitics.classifySelectedBlocPresence(
+                    Map.of(),
+                    Set.of("pirates"),
+                    "pirates"))
+                .isEqualTo(SelectedBlocPresence.PRESENT_BUT_DOMINATED);
         }
     }
 

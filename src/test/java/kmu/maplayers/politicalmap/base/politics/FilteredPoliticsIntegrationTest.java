@@ -5,12 +5,16 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.ribbon.ColonyCellRibbons;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
@@ -18,12 +22,16 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.PE
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildDarkTheme;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHolderPassOver;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildPassOver;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWithSystems;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStabilityWeightedRules;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildUndiscoveredHiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,6 +43,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * present-but-dominated system carries that same key yet is reported contested, an absent system
  * keeps its real (receding) holder, and the whole spotlit footprint keys alike so it fuses into one
  * territory. The stubbed economy is wired through the shared {@link SectorPoliticsFixtures} fixture.
+ *
+ * <p>It is also where the widening of presence past the weights is posed, since only a live economy
+ * can hold the colony that makes the two part company: a station the economy does not list, which
+ * raises no footprint and still puts its bloc in the system.
  *
  * <p>Covers the same class's read for systems the holder assembly never reaches - the ones a
  * narrow holding rule leaves unattributed - since that read answers presence off the same
@@ -198,6 +210,140 @@ class FilteredPoliticsIntegrationTest {
         }
 
         @Test
+        void keepsTheSpotlitBlocWhoseOnlyColonyHereTheEconomyDoesNotList() {
+            // The step's own case. Tri-Tachyon's one foothold is a station the economy never
+            // registered, so no weight can be computed from it and the bloc raises no footprint -
+            // yet it lives here, so its cell keys spotlit and is reported contested (hatched)
+            // rather than falling back to hegemony's holder and receding.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony, tritachyon),
+                buildVisibleMarket(hegemony, 5));
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                buildVisibleMarket(tritachyon, 3));
+
+            var filtered = resolveFor(sector, "tritachyon");
+            var holder = filtered.ownerBySystemId().get("owned-system");
+
+            assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId()))
+                .isTrue();
+            assertThat(filtered.contestedSystemIds())
+                .contains("owned-system");
+            assertThat(holder.primaryColour())
+                .isEqualTo(TRITACHYON_BRIGHT);
+        }
+
+        @Test
+        void keepsTheSpotlitBlocInASystemNobodyHolds() {
+            // Every colony here is unregistered, so nothing was weighed and the system has no
+            // dominant holder at all. The spotlit bloc still lives in it, which is what the
+            // contested arm records - so the cell draws in its colours instead of leaving the
+            // holder map and taking the factionless recede.
+            var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
+            var sector = buildSectorWith("haven", List.of(pirates));
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                buildVisibleMarket(pirates, 4));
+
+            var filtered = resolveFor(sector, "pirates");
+            var holder = filtered.ownerBySystemId().get("haven");
+
+            assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId()))
+                .isTrue();
+            assertThat(filtered.contestedSystemIds())
+                .contains("haven");
+        }
+
+        @Test
+        void withholdsABlocWhoseOnlyUnregisteredColonyHereThePlayerHasNotFound() {
+            // The fog reaches the widened presence like any other read of the projection: an
+            // unfound station names nobody, so the cell keeps hegemony's holder and recedes - and
+            // the dev reveal restores the bloc to the spotlight, as it does everywhere else.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony, tritachyon),
+                buildVisibleMarket(hegemony, 5));
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                buildUndiscoveredHiddenMarket(tritachyon, 3));
+
+            assertThat(FilteredPolitics.isSpotlitBloc(
+                    resolveFor(sector, "tritachyon")
+                        .ownerBySystemId()
+                        .get("owned-system")
+                        .factionId()))
+                .isFalse();
+            assertThat(FilteredPolitics.isSpotlitBloc(
+                    resolveRevealedFor(sector, "tritachyon")
+                        .ownerBySystemId()
+                        .get("owned-system")
+                        .factionId()))
+                .isTrue();
+        }
+
+        @Test
+        void leavesASystemNothingWasWeighedInWithNoHolderWhereTheSpotlitBlocIsAbsent() {
+            // The widening is the spotlight's alone: a system whose every colony is unregistered
+            // still resolves no dominant holder, so an unspotlit one is left out of the holder map
+            // exactly as before. Presence keeps a bloc drawn; it never hands anybody a system.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
+            var sector = buildSectorWithSystems(
+                List.of(hegemony, pirates),
+                listSystemMarkets("hegemony-system", buildVisibleMarket(hegemony, 5)),
+                listSystemMarkets("haven"));
+
+            placeMarketsOnSystemEntities(
+                sector.getStarSystems().get(1),
+                buildVisibleMarket(pirates, 4));
+
+            assertThat(resolveFor(sector, "hegemony").ownerBySystemId())
+                .doesNotContainKey("haven");
+        }
+
+        @Test
+        void keepsTheFillAndTheBandBeneathItNamingTheSameBloc() {
+            // One hover, one answer. The band counts the known projection, so it draws Tri-Tachyon
+            // a run off the unregistered station; before this step the fill read the same system
+            // off the weights and receded the bloc the band was reporting.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony, tritachyon),
+                buildVisibleMarket(hegemony, 5));
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                buildVisibleMarket(tritachyon, 3));
+
+            var holding = buildHolderPassOver(sector);
+            var band = ColonyCellRibbons.planCellRibbon(
+                Optional.of("hegemony"),
+                buildOnlySystem(sector),
+                List.of("hegemony"),
+                RibbonPlanFixtures.buildInputsFor(holding));
+
+            assertThat(band.segments())
+                .extracting(RibbonSegment::colour)
+                .contains(RibbonPlanFixtures.TRITACHYON_BRIGHT);
+            assertThat(FilteredPolitics
+                    .resolveFilteredHolder(
+                        DominancePass.over(holding, STABILITY_WEIGHTED),
+                        "tritachyon")
+                    .contestedSystemIds())
+                .contains("owned-system");
+        }
+
+        @Test
         void isEmptyWhenNoBlocIsSelected() {
 
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
@@ -252,6 +398,25 @@ class FilteredPoliticsIntegrationTest {
                 List.of(pirates, independent),
                 buildVisibleMarket(pirates, 2),
                 buildVisibleMarket(independent, 6));
+
+            assertThat(FilteredPolitics.findPresentSystemIds(
+                    buildPassOver(sector),
+                    "pirates",
+                    Set.of("haven")))
+                .containsExactly("haven");
+        }
+
+        @Test
+        void reportsACandidateTheSelectedBlocOnlyHoldsAnUnregisteredColonyIn() {
+            // The shape this read exists for, now that presence is read off the colonies rather
+            // than off the weights: a haven whose one station the economy never registered, which
+            // is why nothing holds the system and why it reached this read at all.
+            var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
+            var sector = buildSectorWith("haven", List.of(pirates));
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                buildVisibleMarket(pirates, 4));
 
             assertThat(FilteredPolitics.findPresentSystemIds(
                     buildPassOver(sector),
@@ -323,9 +488,21 @@ class FilteredPoliticsIntegrationTest {
     private static FilteredPolitics.FilteredHolder resolveFor(
             SectorAPI sector,
             String selectedBlocId) {
-                
+
         return FilteredPolitics.resolveFilteredHolder(
             buildPassOver(sector),
+            selectedBlocId);
+    }
+
+    // The same resolve with the dev reveal lifting the fog, for the one case that poses a colony
+    // the player has not found: the reveal is a knob on the reading of the sector rather than on
+    // the weighting rule, so it cannot be reached through the shared pass builder.
+    private static FilteredPolitics.FilteredHolder resolveRevealedFor(
+            SectorAPI sector,
+            String selectedBlocId) {
+
+        return FilteredPolitics.resolveFilteredHolder(
+            DominancePass.over(sector, STABILITY_WEIGHTED, true, HolderGrouping.identity()),
             selectedBlocId);
     }
 }

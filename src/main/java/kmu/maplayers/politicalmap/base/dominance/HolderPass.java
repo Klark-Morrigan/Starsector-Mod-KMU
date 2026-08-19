@@ -184,4 +184,34 @@ public record HolderPass(
         }
         return factionIds;
     }
+
+    /**
+     * The blocs present in one system - the owners above folded under this pass's grouping, so two
+     * allies in one system arrive as the one bloc they paint as.
+     *
+     * <p>What a bloc-keyed surface asks when it needs presence rather than a verdict, and it is
+     * read here rather than off whatever the mechanic scored. A mechanic's own numbers are a
+     * narrower set than presence - a dominance weight is economy-fed throughout, so a bloc holding
+     * nothing the economy lists raises no footprint - and a surface reading presence off them calls
+     * such a bloc absent while the band inside the same cell counts its colonies.
+     *
+     * @param system the system to read; null yields an empty set
+     * @return the ids of the blocs holding a colony the reveal admits, in the projection's own
+     *         order
+     */
+    public Set<String> readKnownColonyBlocIds(StarSystemAPI system) {
+
+        var blocIds = new LinkedHashSet<String>();
+        for (var factionId : readKnownColonyFactionIds(system)) {
+            var blocId = grouping.resolveBlocId(factionId);
+
+            // Left out on the same rule every per-bloc fold on the map applies: a nameless key
+            // would travel on as a bloc, and a surface asked to draw or name one has nothing to
+            // draw or name it by.
+            if (blocId != null) {
+                blocIds.add(blocId);
+            }
+        }
+        return blocIds;
+    }
 }

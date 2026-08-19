@@ -87,8 +87,13 @@ path, so a view that never contests or unfills pays nothing for the split.
 
 - **`DefaultHolderProvider`** - held territory from the live economy. Off filter, each system
   goes to its single dominant owner, with no exceptions. Under a spotlight it switches to the
-  presence-aware resolver: the chosen bloc stays drawn wherever it owns a market - solid where it
-  wins, hatched where a rival wins. This is the source the pipeline was carved out of.
+  presence-aware resolver: the chosen bloc stays drawn wherever it holds a colony - solid where it
+  wins, hatched where it does not. Presence there is read off the colonies rather than off the
+  weights, because every term of a weight is economy-fed: a bloc whose only foothold in a system is
+  a station the economy does not list wins nothing and still lives there, so it draws hatched
+  instead of dimming with the background the player picked it out of. The weights are left alone -
+  widening *them* would put such a bloc into the ranking that hands out systems, and a spotlight
+  must never move a fill. This is the source the pipeline was carved out of.
 - **`ClaimAugmentedHolderProvider`** - the faction and alliance default. It takes held territory
   from the source above, then folds in each claimed-but-unheld system as an *unfilled* extension of
   its claimant. The claim carries the same bloc key as that faction's held systems, so the geometry

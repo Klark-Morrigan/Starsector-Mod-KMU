@@ -103,8 +103,9 @@ keeps a spotlit bloc visible by, so "the pick lives here" means one thing across
 asked only of the inhabited systems the holding left out, since a system somebody holds already
 draws in that bloc's territory; on the faction and alliance views that candidate set is the systems
 dominance weighs nothing in - the dead worlds, and those settled only by a colony the economy does
-not list - and presence is weighed off the same footprints, so the read costs the set arithmetic
-and returns empty.
+not list. Presence over them is read off the colonies rather than off the weights, so the second
+kind answers yes: a bloc whose only foothold there is an unregistered station lives in the system,
+and its cell keeps the strength the spotlight was turned on to give it.
 
 Both sets sit with the holder map in **`SystemOccupancy`** - who is in each system - rather than
 beside the `FilterSnapshot` the spotlight's fixed answers live in, because all three move between

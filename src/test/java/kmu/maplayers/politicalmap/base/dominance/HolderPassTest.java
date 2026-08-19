@@ -10,14 +10,16 @@ import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 /**
- * Unit coverage for {@link HolderPass}: the construction guard, the two reads of the known
- * projection, and that the pass names the sector its own walk was opened over rather than one
- * carried beside it.
+ * Unit coverage for {@link HolderPass}: the construction guard, the reads of the known projection,
+ * and that the pass names the sector its own walk was opened over rather than one carried beside
+ * it.
  *
  * <p>The naming matters because every resolver behind the holder seam takes its sector from here.
  * A pass that could report one sector while answering colonies out of another would let a resolver
@@ -38,6 +40,15 @@ final class HolderPassTest {
     // The size every posed colony carries. The projection reads ownership and discovery, so a case
     // varying size would vary nothing it can see.
     private static final int COLONY_SIZE = 5;
+
+    // The bloc the two posed owners fold into where a case reads presence per bloc rather than per
+    // faction.
+    private static final String ALLIANCE_ID = "alliance-1";
+
+    private static final HolderGrouping ALLIED_HEGEMONY_AND_TRITACHYON = new HolderGrouping(
+        Map.of("hegemony", ALLIANCE_ID, "tritachyon", ALLIANCE_ID),
+        Map.of(ALLIANCE_ID, "hegemony"),
+        Map.of(ALLIANCE_ID, "Allied Powers"));
 
     @Nested
     class Constructor {
@@ -185,6 +196,45 @@ final class HolderPassTest {
                     .over(mock(SectorAPI.class), false, HolderGrouping.identity())
                     .readKnownColonyFactionIds(null))
                 .isEmpty();
+        }
+    }
+
+    @Nested
+    class ReadKnownColonyBlocIds {
+
+        @Test
+        void foldsAlliedOwnersIntoTheOneBlocTheyPaintAs() {
+            // Presence is asked by surfaces that decide per bloc - the spotlight's fill, the band's
+            // runs - so two allies in one system are one bloc present there, not two.
+            var sector = SectorPoliticsFixtures.buildSectorWith(
+                SYSTEM_ID,
+                SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE),
+                SectorPoliticsFixtures.buildVisibleMarket(
+                    SectorPoliticsFixtures.buildFaction("tritachyon"),
+                    COLONY_SIZE));
+
+            assertThat(HolderPass
+                    .over(sector, false, ALLIED_HEGEMONY_AND_TRITACHYON)
+                    .readKnownColonyBlocIds(SectorPoliticsFixtures.buildOnlySystem(sector)))
+                .containsExactly(ALLIANCE_ID);
+        }
+
+        @Test
+        void leavesOutAnOwnerNoBlocCanBeNamedFor() {
+            // A colony a mod hung on a faction with no id. The same rule every per-bloc fold on the
+            // map applies: a nameless key would travel on as a bloc, and a surface asked to paint
+            // or grey one has nothing to name it by.
+            var sector = SectorPoliticsFixtures.buildSectorWith(
+                SYSTEM_ID,
+                SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE),
+                SectorPoliticsFixtures.buildVisibleMarket(
+                    SectorPoliticsFixtures.buildFaction(null),
+                    COLONY_SIZE));
+
+            assertThat(HolderPass
+                    .over(sector, false, HolderGrouping.identity())
+                    .readKnownColonyBlocIds(SectorPoliticsFixtures.buildOnlySystem(sector)))
+                .containsExactly("hegemony");
         }
     }
 
