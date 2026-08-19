@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.dominance;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.entities.EntityOrbits;
 import kmlib.starsector.systems.StarSystems;
 
 import java.util.Comparator;
@@ -126,7 +127,7 @@ public final class MarketProximityTieBreak {
 
             var blocId = grouping.resolveBlocId(market.getFaction().getId());
             var distance =
-                StarSystems.getOrbitalDistanceTo(market.getPrimaryEntity(), centremostStar);
+                EntityOrbits.computeOrbitalDistanceTo(market.getPrimaryEntity(), centremostStar);
 
             minDistanceByBlocId.merge(blocId, distance, Math::min);
         }

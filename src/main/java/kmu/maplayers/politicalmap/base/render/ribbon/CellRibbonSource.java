@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.math.geometry.RingPath;
-import kmlib.starsector.systems.StarSystems;
+import kmlib.starsector.systems.SectorStarSystems;
 
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -168,7 +168,7 @@ public final class CellRibbonSource {
             viewGrouping.view().resolveRibbonPlanner(inputs),
             style,
             inhabitedSystemIds,
-            StarSystems.indexById(sector),
+            SectorStarSystems.indexById(sector),
             siteBySystemId,
             nameBoxes,
             ringPathCache);

@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.StarSystems;
+import kmlib.starsector.systems.SectorStarSystems;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
@@ -66,7 +66,7 @@ final class MarkedSystemRederive {
             DominancePass pass,
             Set<String> markedSystemIds) {
 
-        var systemById = StarSystems.indexById(pass.sector());
+        var systemById = SectorStarSystems.indexById(pass.sector());
         var disturbance = new StalePoliticsDisturbance();
 
         for (var systemId : markedSystemIds) {

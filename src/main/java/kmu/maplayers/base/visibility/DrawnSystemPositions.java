@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.map.VisibleStars;
-import kmlib.starsector.systems.StarSystems;
+import kmlib.starsector.systems.SectorStarSystems;
 
 import java.util.Map;
 import java.util.function.Predicate;
@@ -63,7 +63,7 @@ public final class DrawnSystemPositions {
             SectorAPI sector,
             MapVisibilityOverrides overrides) {
 
-        return StarSystems.collectPositionsById(
+        return SectorStarSystems.collectPositionsById(
             sector,
             buildDrawnSystemPredicate(sector, overrides));
     }
