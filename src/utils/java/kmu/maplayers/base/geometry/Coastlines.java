@@ -190,7 +190,7 @@ final class Coastlines {
         var union = new DiscUnion(sites, parameters.cellRadius());
 
         var silhouettes = DiscUnionBoundary.traceSilhouetteCoasts(
-            union, walls, parameters.measureArcSegments());
+            union, walls, parameters.boundSegments());
 
         var smoothed = smoothSilhouettes(
             silhouettes,

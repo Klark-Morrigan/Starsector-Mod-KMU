@@ -182,10 +182,10 @@ final class VoidPockets {
             PocketRules rules) {
 
         var parameters = rules.parameters();
-        var arcSegments = parameters.measureArcSegments();
+        var boundSegments = parameters.boundSegments();
 
         var trueHoles = DiscUnionBoundary.traceHoles(
-            new DiscUnion(sites, parameters.cellRadius()), arcSegments);
+            new DiscUnion(sites, parameters.cellRadius()), boundSegments);
 
         // Traced only where an outline is going to come off them. At the true extent a pocket
         // IS its hole, and these two are the expensive half of the call.
@@ -193,12 +193,12 @@ final class VoidPockets {
 
         var withChannel = isAtTrueExtent
             ? List.<VoidHole>of()
-            : DiscUnionBoundary.traceHoles(buildDrawnUnion(sites, parameters), arcSegments);
+            : DiscUnionBoundary.traceHoles(buildDrawnUnion(sites, parameters), boundSegments);
 
         var atFills = isAtTrueExtent
             ? List.<VoidHole>of()
             : DiscUnionBoundary.traceHoles(
-                new DiscUnion(sites, parameters.measureFilledReach()), arcSegments);
+                new DiscUnion(sites, parameters.measureFilledReach()), boundSegments);
 
         var pockets = new ArrayList<VoidPocket>(trueHoles.size());
 

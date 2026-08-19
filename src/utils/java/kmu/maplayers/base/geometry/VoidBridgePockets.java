@@ -129,20 +129,19 @@ final class VoidBridgePockets {
      * held apart by the same gap that holds a pocket off the cells around it, and every
      * section reads as its own shape rather than as part of one mass.
      *
-     * @param sites       the sites
-     * @param bridges     the bridges, as {@link VoidBridges} found them
-     * @param parameters  the knobs the cells are built under
-     * @param arcSegments how finely a half-turn of arc is sampled
-     * @param shaping     how much of the channel each pocket takes out of its own outline.
-     *                    Taken by walking the discs at a moved reach rather than by offsetting
-     *                    afterwards, so at its true extent it is the discs that move
+     * @param sites      the sites
+     * @param bridges    the bridges, as {@link VoidBridges} found them
+     * @param parameters the knobs the cells are built under, which are also what the arcs are
+     *                   flattened onto: the bound the cells' own vertices sit at
+     * @param shaping    how much of the channel each pocket takes out of its own outline.
+     *                   Taken by walking the discs at a moved reach rather than by offsetting
+     *                   afterwards, so at its true extent it is the discs that move
      * @return one outline per captured pocket
      */
     static List<List<double[]>> findCapturedPockets(
             List<double[]> sites,
             List<CellGaps.CellGap> bridges,
             SectorGeometryParameters parameters,
-            int arcSegments,
             VoidPockets.PocketShaping shaping) {
 
         var outlines = new ArrayList<List<double[]>>();
@@ -154,7 +153,7 @@ final class VoidBridgePockets {
         for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
                 union,
                 buildWalls(bridges, parameters),
-                arcSegments)) {
+                parameters.boundSegments())) {
 
             outlines.add(hole.boundary());
         }

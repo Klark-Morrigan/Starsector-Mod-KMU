@@ -47,7 +47,6 @@ final class VoidBridgesOverlay {
                 fixture.getSites(),
                 bridges,
                 settings.parameters,
-                settings.parameters.measureArcSegments(),
                 ViewerPainting.resolvePocketShaping(settings));
     }
 

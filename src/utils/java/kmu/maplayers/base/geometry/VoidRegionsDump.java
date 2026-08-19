@@ -23,7 +23,6 @@ import java.util.Locale;
 final class VoidRegionsDump {
 
     private static final double PERCENT_SCALE = 100.0;
-    private static final int CELL_BOUND_SEGMENTS = 24;
 
     // One cell across, which is the size a section of void is cut to: a piece of void the
     // size of a system's own cell is comparable to what surrounds it, and a longer one is
@@ -73,6 +72,7 @@ final class VoidRegionsDump {
             reportCells(cells);
             reportChannelWidths(fixture);
             reportHolesAtReach(fixture);
+            reportBoundSeams(fixture);
             reportPockets(
                 VoidPockets.findVoidPockets(
                     sites,
@@ -87,8 +87,13 @@ final class VoidRegionsDump {
         }
     }
 
+    // Built at the shipped knobs rather than at a count of its own, so what is counted here
+    // is the map as it is drawn. The bound's resolution is also the set of angles everything
+    // traced against these cells is flattened onto, so a second value for it here would be a
+    // second convention rather than a coarser picture.
     private static List<VoronoiCellBuilder.LabelledCell> buildCells(List<double[]> sites) {
 
+        var shipped = SectorGeometryParameters.createDefaults();
         var cells = new ArrayList<VoronoiCellBuilder.LabelledCell>(sites.size());
 
         for (var index = 0; index < sites.size(); index++) {
@@ -96,8 +101,8 @@ final class VoidRegionsDump {
             cells.add(VoronoiCellBuilder.buildLabelledCell(
                 index,
                 sites,
-                SectorGeometryParameters.DEFAULT_CELL_RADIUS,
-                CELL_BOUND_SEGMENTS));
+                shipped.cellRadius(),
+                shipped.boundSegments()));
         }
         return cells;
     }
@@ -204,6 +209,41 @@ final class VoidRegionsDump {
             countHolesAt(fixture, shipped.measureDrawnReach()),
             shipped.measureFilledReach(),
             countHolesAt(fixture, shipped.measureFilledReach()));
+    }
+
+    // Whether the void and the cells agree about where they meet - the one thing that has to
+    // hold before a piece of void can be handed to machinery built for cells.
+    //
+    // Traced at the cells' OWN reach, beside whatever the map is drawn from. A shape drawn a
+    // channel out of position agrees with nothing at all, and the question here is about the
+    // convention the two are flattened under rather than about what is drawn.
+    private static void reportBoundSeams(SectorFixture fixture) {
+
+        var shipped = SectorGeometryParameters.createDefaults();
+
+        var seams = CellBoundSeams.measureSeamsAgainstCells(
+            DiscUnionBoundary.traceHoles(
+                new DiscUnion(fixture.getSites(), shipped.cellRadius()),
+                shipped.boundSegments()),
+            fixture.getSites(),
+            shipped);
+
+        System.out.printf(
+            Locale.ROOT,
+            "void outline against the cells' own bound: %d of %d samples sit on a vertex of "
+                + "the cell under them, worst stray %.6f (has to be 0), neighbouring samples "
+                + "at worst %d vertices apart (has to be 1)%n",
+            seams.onBoundVertex(),
+            seams.samples(),
+            seams.worstSampleStray(),
+            seams.worstVertexStep());
+
+        System.out.printf(
+            Locale.ROOT,
+            "its %d arc corners are crossings rather than vertices: worst stands %.1f off the "
+                + "outline of the cell it sits on%n",
+            seams.corners(),
+            seams.worstCornerStray());
     }
 
     private static int countHolesAt(SectorFixture fixture, double reach) {
@@ -594,7 +634,6 @@ final class VoidRegionsDump {
             sites,
             bridges,
             shipped,
-            CELL_BOUND_SEGMENTS / 2,
             VoidPockets.PocketShaping.WITH_CHANNEL);
 
         System.out.printf(

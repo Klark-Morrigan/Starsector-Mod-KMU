@@ -42,6 +42,14 @@ import java.util.Map;
  * every vertex of every shape is a point of some circle, arrived at by arithmetic rather than
  * by finding the nearest sample on a finished outline.
  *
+ * <p>Flattened onto the cells' own bound. A cell's radius bound is a regular polygon whose
+ * vertices sit at ABSOLUTE angles - the same set of angles on every circle - and an arc is
+ * sampled at exactly those angles and at no others. A stretch of boundary and the stretch of
+ * cell bound it runs along are then ONE chain of points rather than two chains of the same
+ * density at a different phase, which is what lets a piece of traced void be handed to the
+ * machinery that shapes and clusters cells: two outlines sharing no vertex cannot be told to
+ * abut.
+ *
  * <p>Shared because the reach is a parameter rather than a fact: run at the true reach it
  * finds the pockets, run at the reach plus the channel it finds what is left of them once the
  * channel is taken out, and run at the reach minus it, what they become when the cells fill
@@ -49,10 +57,6 @@ import java.util.Map;
  * now more than one of them.
  */
 final class DiscUnionBoundary {
-
-    // Enough to keep a short arc from collapsing to a chord once the sampling is scaled down
-    // in proportion to how little of the circle it covers.
-    private static final int MIN_ARC_SAMPLES = 2;
 
     // Stands in for a neighbouring circle where there is none: a disc that overlaps nothing
     // contributes its whole circle as one arc, with no disc entered or left at either end.
@@ -168,12 +172,13 @@ final class DiscUnionBoundary {
      * swallowed drops out of it, and a pocket can pinch in two. Redrawing in place cannot
      * express either, and reads both as the pocket having closed.
      *
-     * @param union       the discs to trace
-     * @param arcSegments how finely a half-turn of arc is sampled
+     * @param union         the discs to trace
+     * @param boundSegments sides of the cells' own radius bound, whose vertex angles every
+     *                      arc is flattened onto
      * @return the holes, wound the way any other filled shape is
      */
-    static List<VoidHole> traceHoles(DiscUnion union, int arcSegments) {
-        return traceHolesAcrossWalls(union, NO_WALLS, arcSegments);
+    static List<VoidHole> traceHoles(DiscUnion union, int boundSegments) {
+        return traceHolesAcrossWalls(union, NO_WALLS, boundSegments);
     }
 
     /**
@@ -193,19 +198,20 @@ final class DiscUnionBoundary {
      * and is dropped. That is what becomes of one whose two cells have already closed over
      * at this reach, so a bridge too short to still be a gap costs nothing to offer.
      *
-     * @param union       the discs to trace
-     * @param walls       the walls to lay across the void
-     * @param arcSegments how finely a half-turn of arc is sampled
+     * @param union         the discs to trace
+     * @param walls         the walls to lay across the void
+     * @param boundSegments sides of the cells' own radius bound, whose vertex angles every
+     *                      arc is flattened onto
      * @return the holes, wound the way any other filled shape is
      */
     static List<VoidHole> traceHolesAcrossWalls(
             DiscUnion union,
             Walls walls,
-            int arcSegments) {
+            int boundSegments) {
 
         var holes = new ArrayList<VoidHole>();
 
-        for (var cycle : traceCycles(union, walls, arcSegments)) {
+        for (var cycle : traceCycles(union, walls, boundSegments)) {
 
             // A cycle is a hole when it winds the opposite way to a silhouette. Each arc is
             // walked anticlockwise on its own circle, which keeps the discs' interior to the
@@ -243,20 +249,21 @@ final class DiscUnionBoundary {
      * working out which sample belongs to which cell, which is the kind of finding that
      * strays.
      *
-     * @param union       the discs to trace
-     * @param walls       the walls to lay across the void
-     * @param arcSegments how finely a half-turn of arc is sampled, to tell a silhouette from
-     *                    a hole by the area it comes out with
+     * @param union         the discs to trace
+     * @param walls         the walls to lay across the void
+     * @param boundSegments sides of the cells' own radius bound, whose vertex angles every
+     *                      arc is flattened onto, to tell a silhouette from a hole by the
+     *                      area it comes out with
      * @return one run of marks per silhouette, in walk order
      */
     static List<List<CoastMark>> traceSilhouetteCoasts(
             DiscUnion union,
             Walls walls,
-            int arcSegments) {
+            int boundSegments) {
 
         var coasts = new ArrayList<List<CoastMark>>();
 
-        for (var cycle : traceCycles(union, walls, arcSegments)) {
+        for (var cycle : traceCycles(union, walls, boundSegments)) {
 
             if (isHole(cycle)) {
                 continue;
@@ -392,7 +399,7 @@ final class DiscUnionBoundary {
     private static List<TracedCycle> traceCycles(
             DiscUnion union,
             Walls walls,
-            int arcSegments) {
+            int boundSegments) {
 
         var laid = new Walls(findAttachableChords(union, walls), walls.channel());
         var arcs = findUncoveredArcs(union, laid);
@@ -407,7 +414,7 @@ final class DiscUnionBoundary {
                 continue;
             }
 
-            var built = buildHole(cycle, arcs, union, laid.chords(), arcSegments);
+            var built = buildHole(cycle, arcs, union, laid.chords(), boundSegments);
             if (built != null) {
                 cycles.add(new TracedCycle(collectArcs(cycle, arcs), built));
             }
@@ -654,7 +661,7 @@ final class DiscUnionBoundary {
             List<Arc> arcs,
             DiscUnion union,
             List<Chord> laid,
-            int arcSegments) {
+            int boundSegments) {
 
         var boundary = new ArrayList<double[]>();
         var corners = new ArrayList<double[]>(cycle.size());
@@ -672,7 +679,7 @@ final class DiscUnionBoundary {
                 union.reach(),
                 arc.fromAngle(),
                 arc.toAngle(),
-                arcSegments);
+                boundSegments);
 
             corners.add(points.get(0));
             boundary.addAll(points);
@@ -698,34 +705,69 @@ final class DiscUnionBoundary {
             boundary, corners, List.copyOf(ringing), union.reach(), List.copyOf(walledBy));
     }
 
-    // Sampled in proportion to how much of the circle the arc covers, so a long arc is not
-    // left coarser than a short one merely because both got the same number of points.
+    // Sampled at the angles the cells' own radius bound has its vertices at, and at no others,
+    // so an arc and the run of cell bound beneath it are the same chain of points. Sampling at
+    // its own even spacing instead put the two chains half a step out of phase, sharing no
+    // vertex at all, and left every stretch of them a sagitta apart - which is what stopped a
+    // traced piece of void being handed to machinery built for cells.
+    //
+    // The arc's own ends are not samples and are not moved onto that set. Each is a crossing
+    // the walk names rather than a point it chose: an end is where this circle enters or
+    // leaves a neighbour's disc, and the next arc round the cycle picks the boundary up from
+    // the same crossing on the other circle. Snapping either would part the two.
     private static List<double[]> sampleArc(
             double[] centre,
             double reach,
             double fromAngle,
             double toAngle,
-            int arcSegments) {
+            int boundSegments) {
 
-        var sweep = toAngle - fromAngle;
+        var points = new ArrayList<double[]>();
 
-        // A stretch of no width is still a join - it is where two walls meet at a point on
-        // this circle - and the single point they share is the whole of it.
-        if (sweep <= 0) {
-            return List.of(findPointOnCircle(centre, reach, fromAngle));
-        }
-        var steps = Math.max(
-            MIN_ARC_SAMPLES,
-            (int) Math.ceil(arcSegments * sweep / Angles.HALF_TURN));
+        // The near end is the arc's own, and the far end is left off: the next arc round the
+        // cycle begins on it. A stretch of no width is still a join - it is where two walls
+        // meet at a point on this circle - and that one point is the whole of it.
+        points.add(findPointOnCircle(centre, reach, fromAngle));
 
-        var points = new ArrayList<double[]>(steps);
+        var firstVertex = (int) Math.floor(fromAngle * boundSegments / Angles.FULL_TURN) + 1;
 
-        // The far end is left off: the next arc round the cycle begins on it.
-        for (var step = 0; step < steps; step++) {
+        // Counted rather than walked until the far end is reached, because no arc sweeps more
+        // than one turn: a turn holds one bound vertex per side, the arc's own start stands in
+        // for the one it begins at, and a full-turn arc whose end lands a rounding past its
+        // start would otherwise close on a repeat of that start.
+        for (var offset = 0; offset < boundSegments - 1; offset++) {
 
-            points.add(findPointOnCircle(centre, reach, fromAngle + sweep * step / steps));
+            var vertex = firstVertex + offset;
+
+            if (measureBoundVertexAngle(vertex, boundSegments) >= toAngle) {
+                break;
+            }
+            points.add(findBoundVertexOnCircle(centre, reach, vertex, boundSegments));
         }
         return points;
+    }
+
+    // Where a cell's radius bound puts vertex number {@code vertex}. Absolute rather than
+    // measured from anything the arc knows: the same angles on every circle, which is the
+    // whole of what makes two shapes on one circle land on each other.
+    private static double measureBoundVertexAngle(int vertex, int boundSegments) {
+        return Angles.FULL_TURN * vertex / boundSegments;
+    }
+
+    // One of those vertices as a point, with the count taken back into the first turn before
+    // the angle is worked out. A vertex a turn along is the same vertex, but the angle naming
+    // it that way is a turn's worth of rounding away from the one the cell's own bound was
+    // built at - and the two shapes then land near each other rather than on each other.
+    private static double[] findBoundVertexOnCircle(
+            double[] centre,
+            double reach,
+            int vertex,
+            int boundSegments) {
+
+        return findPointOnCircle(
+            centre,
+            reach,
+            measureBoundVertexAngle(Math.floorMod(vertex, boundSegments), boundSegments));
     }
 
     // A mouth sits on the boundary when no disc but its own circle's swallows either edge of

@@ -85,7 +85,7 @@ final class CoastPockets {
         var pockets = new ArrayList<CoastPocketFaults.WalledPocket>();
 
         for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
-                union, walls, parameters.measureArcSegments())) {
+                union, walls, parameters.boundSegments())) {
 
             var walling = findWallingReaches(hole, reaches);
 
