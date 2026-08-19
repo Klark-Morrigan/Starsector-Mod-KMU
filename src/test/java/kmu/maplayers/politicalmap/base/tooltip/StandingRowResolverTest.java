@@ -3,9 +3,10 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
-import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.PresenceOnlyFactionStanding;
+import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Also that whether a group breaks down at all is settled here, which is the one place that knows a
  * group's kind: a lone faction resolves to an entry made up of nothing and an alliance to one carrying
  * its members however few it holds, so the box below simply lays out what it is handed.
+ *
+ * <p>And how loudly a score is drawn, which follows from the standing's own kind at both tiers: a
+ * faction the pass weighed nothing for carries its nought in the quiet shade, and so does a bloc no
+ * member of which was weighed.
  *
  * <p>And that a bloc's members are gathered as its peers rather than subordinated as its account, which
  * is the one relation this resolver is in a position to state - membership - and what keeps a faction's
@@ -55,7 +60,7 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/hegemony_crest.png");
 
             var standings = List.of(
-                new GroupStanding("hegemony", 7, List.of(new FactionStanding("hegemony", 7))));
+                new GroupStanding("hegemony", 7, List.of(new WeighedFactionStanding("hegemony", 7))));
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
@@ -83,7 +88,7 @@ final class StandingRowResolverTest {
             var standings = List.of(new GroupStanding(
                 "hegemony",
                 1200,
-                List.of(new FactionStanding("hegemony", 1200))));
+                List.of(new WeighedFactionStanding("hegemony", 1200))));
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
@@ -104,7 +109,7 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "hegemony", "The Hegemony", "");
 
             var standings = List.of(
-                new GroupStanding("hegemony", 7, List.of(new FactionStanding("hegemony", 7))));
+                new GroupStanding("hegemony", 7, List.of(new WeighedFactionStanding("hegemony", 7))));
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
@@ -126,8 +131,8 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
             var standings = List.of(new GroupStanding("alliance-1", 11, List.of(
-                new FactionStanding("hegemony", 8),
-                new FactionStanding("astral_armada", 3))));
+                new WeighedFactionStanding("hegemony", 8),
+                new WeighedFactionStanding("astral_armada", 3))));
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
@@ -165,8 +170,8 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
             var standings = List.of(new GroupStanding("alliance-1", 11, List.of(
-                new FactionStanding("hegemony", 8),
-                new FactionStanding("astral_armada", 3))));
+                new WeighedFactionStanding("hegemony", 8),
+                new WeighedFactionStanding("astral_armada", 3))));
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
@@ -207,11 +212,11 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "tritachyon", "Tri-Tachyon", "graphics/tt.png");
 
             var standings = List.of(
-                new GroupStanding("hegemony", 9, List.of(new FactionStanding("hegemony", 9))),
+                new GroupStanding("hegemony", 9, List.of(new WeighedFactionStanding("hegemony", 9))),
                 new GroupStanding(
                     "tritachyon",
                     4,
-                    List.of(new FactionStanding("tritachyon", 4))));
+                    List.of(new WeighedFactionStanding("tritachyon", 4))));
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
@@ -231,7 +236,7 @@ final class StandingRowResolverTest {
             // to the stand-in band the picker uses for a null name. Its crest resolves absent.
             var sectorMock = buildEmptySector();
             var standings = List.of(
-                new GroupStanding("ghost", 5, List.of(new FactionStanding("ghost", 5))));
+                new GroupStanding("ghost", 5, List.of(new WeighedFactionStanding("ghost", 5))));
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
@@ -256,7 +261,7 @@ final class StandingRowResolverTest {
             var standings = List.of(new GroupStanding(
                 "alliance-1",
                 8,
-                List.of(new FactionStanding("hegemony", 8))));
+                List.of(new WeighedFactionStanding("hegemony", 8))));
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
@@ -287,8 +292,8 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
             var standings = List.of(new GroupStanding("alliance-1", 11, List.of(
-                new FactionStanding("hegemony", 8),
-                new FactionStanding("astral_armada", 3))));
+                new WeighedFactionStanding("hegemony", 8),
+                new WeighedFactionStanding("astral_armada", 3))));
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
@@ -313,8 +318,8 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
             var standings = List.of(new GroupStanding("alliance-1", 11, List.of(
-                new FactionStanding("hegemony", 8),
-                new FactionStanding("astral_armada", 3))));
+                new WeighedFactionStanding("hegemony", 8),
+                new WeighedFactionStanding("astral_armada", 3))));
 
             var memberEntries = StandingRowResolver
                 .resolveRows(sectorMock, standings, buildAllianceGrouping(), FACTION_ACCOUNTS)
@@ -339,7 +344,7 @@ final class StandingRowResolverTest {
             var standings = List.of(new GroupStanding(
                 "alliance-1",
                 8,
-                List.of(new FactionStanding("hegemony", 8))));
+                List.of(new WeighedFactionStanding("hegemony", 8))));
 
             var groupEntry = StandingRowResolver
                 .resolveRows(sectorMock, standings, buildAllianceGrouping(), FACTION_ACCOUNTS)
@@ -361,7 +366,7 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
 
             var standings = List.of(
-                new GroupStanding("hegemony", 7, List.of(new FactionStanding("hegemony", 7))));
+                new GroupStanding("hegemony", 7, List.of(new WeighedFactionStanding("hegemony", 7))));
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
@@ -377,6 +382,109 @@ final class StandingRowResolverTest {
                         "7"))
                     .nesting(List.of(CellTooltipEntry.createEntry(
                         CellTooltipEntryLine.createLine(null, "hegemony colony", "1")))));
+        }
+
+        @Test
+        void resolveRowsDrawsAPresenceOnlyFactionsNoughtQuiet() {
+            // The nought is what the pass recorded for a faction it weighed nothing for, not a
+            // weight the faction competed with - so only the number quietens, the faction being
+            // named as loudly as the holders around it.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "tritachyon", "Tri-Tachyon", "graphics/tt.png");
+
+            var standings = List.of(new GroupStanding(
+                "tritachyon",
+                0,
+                List.of(new PresenceOnlyFactionStanding("tritachyon"))));
+
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                HolderGrouping.identity(),
+                NO_ACCOUNT);
+
+            assertThat(entries.get(0).line().isValueUncounted())
+                .isTrue();
+            assertThat(entries.get(0).line().labelText())
+                .isEqualTo("Tri-Tachyon");
+            assertThat(entries.get(0).line().valueText())
+                .isEqualTo("0");
+        }
+
+        @Test
+        void resolveRowsDrawsAWeighedNoughtAsAScoreLikeAnyOther() {
+            // A colony weighed and found to be worth nothing is a number the arithmetic arrived at,
+            // so it reads as loudly as a large one - which is the whole of what parts the two kinds
+            // of nought.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
+
+            var standings = List.of(
+                new GroupStanding("hegemony", 0, List.of(new WeighedFactionStanding("hegemony", 0))));
+
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                HolderGrouping.identity(),
+                NO_ACCOUNT);
+
+            assertThat(entries.get(0).line().isValueUncounted())
+                .isFalse();
+        }
+
+        @Test
+        void resolveRowsDrawsAnUnweighedBlocsAggregateQuietOverItsMembers() {
+            // A bloc present through unregistered colonies alone: the aggregate is a nought nobody
+            // worked out, so the bloc's own line quietens with the member lines beneath it rather
+            // than reading as a sum competed for.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
+            stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
+
+            var standings = List.of(new GroupStanding("alliance-1", 0, List.of(
+                new PresenceOnlyFactionStanding("hegemony"),
+                new PresenceOnlyFactionStanding("astral_armada"))));
+
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                buildAllianceGrouping(),
+                NO_ACCOUNT);
+
+            assertThat(entries.get(0).line().isValueUncounted())
+                .isTrue();
+            assertThat(entries.get(0).children())
+                .allMatch(member -> member.line().isValueUncounted());
+        }
+
+        @Test
+        void resolveRowsDrawsABlocsAggregateLoudWhereOneMemberWasWeighed() {
+            // One weighed member makes the aggregate a sum somebody worked out, so the bloc's line
+            // stays a finding however many of its allies are merely present - and the ally's own
+            // line still quietens beneath it.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
+            stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
+
+            var standings = List.of(new GroupStanding("alliance-1", 8, List.of(
+                new WeighedFactionStanding("hegemony", 8),
+                new PresenceOnlyFactionStanding("astral_armada"))));
+
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                standings,
+                buildAllianceGrouping(),
+                NO_ACCOUNT);
+
+            assertThat(entries.get(0).line().isValueUncounted())
+                .isFalse();
+            assertThat(entries.get(0).children())
+                .extracting(member -> member.line().isValueUncounted())
+                .containsExactly(false, true);
         }
     }
 

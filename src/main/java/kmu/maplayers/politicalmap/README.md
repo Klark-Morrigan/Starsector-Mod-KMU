@@ -269,9 +269,18 @@ mechanic never counted, and a name with a glyph cannot be summed into anything. 
 other colony - it being the only trace of such a colony the player has beside the name - at nought in
 the quiet shade, and breaks down into no factors - the same sentence the claims box speaks for a
 market its own mechanic never weighed, and for the same reason: the colony is there and it moved
-nothing, which is the whole of what the account has to say about it. A faction whose only colony in
-the system is one of these still goes unnamed - it takes no contribution, so it takes no standing,
-and there is no line to hang the colony under.
+nothing, which is the whole of what the account has to say about it.
+A faction whose only colony in the system is one of these is listed all the same, at a nought of its
+own. Presence and weight are two questions: the ranking (`SystemStandings`) takes the owners of those
+colonies (`KnownMarketFootprints.readUnweighedColonyFactionIds`, the same selection the account is
+read from without paying for its names) beside the footprints, and gives each a
+`PresenceOnlyFactionStanding` - the sealed other half of `FactionStanding` - so the box names every
+faction the band beneath the cell counts. Nothing about the fill moves: holding is resolved off the
+footprints, which such a faction raises none of, so its nought can neither take a system nor tie for
+one. The nought reads in the quiet shade at both tiers (`statesUncountedValue` again, and
+`GroupStanding.hasWeighedMember` for the bloc line over it) - a bloc counts as weighed where any one
+member was, so an alliance holding one registered colony beside two unregistered ones keeps an
+aggregate somebody worked out.
 The claims box has a counterpart of its own on the same terms - `ExpandedSystemClaimTooltip`, which
 opens every faction the contest names into the markets it holds the system with and each market
 into the terms its claim score is built from. Both claim boxes sit on `SystemClaimContestTooltip`,

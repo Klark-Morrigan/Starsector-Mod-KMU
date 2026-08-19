@@ -31,4 +31,25 @@ public record GroupStanding(
     public GroupStanding {
         members = List.copyOf(members);
     }
+
+    /**
+     * Whether the pass weighed anything at all for this group - one member with a footprint is
+     * enough, the aggregate then being a sum somebody worked out.
+     *
+     * <p>Read off the members rather than carried beside the aggregate, so what the group's number
+     * means and what it is the sum of cannot come to disagree. A group with none is a bloc present
+     * through unregistered colonies alone: its nought is the box's statement about it rather than a
+     * weight it competed with, which is the one thing a reader drawing that number has to know.
+     *
+     * @return true where at least one member's score was weighed
+     */
+    public boolean hasWeighedMember() {
+
+        for (var member : members) {
+            if (member instanceof WeighedFactionStanding) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

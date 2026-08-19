@@ -1,20 +1,37 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
 /**
- * One faction's ranked place in a single hovered system: the faction and the domination score it
- * holds there. The lower tier of the two-tier standings the cell tooltip shows - a group's member
- * factions, each with its own score, ranked beneath the group.
+ * One faction's ranked place in a single hovered system, of which there are exactly two kinds: a
+ * presence the pass weighed, and a presence it never weighed. The lower tier of the two-tier
+ * standings the cell tooltip shows - a group's member factions, each with its own score, ranked
+ * beneath the group.
  *
- * <p>The score is the faction's {@link MarketFootprint#totalWeight()} in the system, so a member's
- * ranking uses the same stability-scaled dominance weight the map paints its fills by rather than a
- * second measure. Kept to plain ids and an int with no Starsector types, so the ranking is
- * unit-testable on hand-built inputs; turning the id into a crest and a display name is a later,
- * separate step's job.
+ * <p>Sealed because the two differ in what their number means. A weighed standing's score is the
+ * faction's {@link MarketFootprint#totalWeight()}, worked out from the colonies the economy lists;
+ * a presence-only standing's is a nought nobody computed, the faction holding nothing the pass had
+ * anything to weigh. Both are ranked, listed and counted alike, so the ranking walks one list - and
+ * only a reader stating how loudly the number is to be read routes on the kind, which the seal
+ * makes exhaustive.
  *
- * @param factionId the faction holding markets in the hovered system
- * @param score     the faction's summed domination weight in that system
+ * <p>Stated in the type rather than as a flag beside the score, so a presence-only standing carrying
+ * a weight it was never given cannot be written. Kept to plain ids and an int with no Starsector
+ * types, so the ranking is unit-testable on hand-built inputs; turning the id into a crest and a
+ * display name is a later, separate step's job.
+ *
+ * <p>A presence-only standing can never take a system: dominance holding is resolved off footprints
+ * rather than off standings, and an unweighed colony raises none. Carrying one therefore widens what
+ * a hover reports without moving any fill.
  */
-public record FactionStanding(
-    String factionId,
-    int score) {
+public sealed interface FactionStanding
+    permits WeighedFactionStanding, PresenceOnlyFactionStanding {
+
+    /**
+     * @return the id of the faction this standing belongs to
+     */
+    String factionId();
+
+    /**
+     * @return the faction's summed domination weight in the hovered system
+     */
+    int score();
 }

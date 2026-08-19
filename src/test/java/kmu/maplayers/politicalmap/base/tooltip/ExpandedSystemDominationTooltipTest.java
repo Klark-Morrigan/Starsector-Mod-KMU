@@ -10,9 +10,10 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
+import kmu.maplayers.politicalmap.base.dominance.PresenceOnlyFactionStanding;
+import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -92,8 +93,10 @@ final class ExpandedSystemDominationTooltipTest {
         DominancePass.over(null, ANY_RULES, true, VIEW_GROUPING);
 
     // Two factions of one bloc, so a case can tell "the faction's own colonies" from "the bloc's".
-    private static final FactionStanding LEAD_MEMBER = new FactionStanding("hegemony", 6000);
-    private static final FactionStanding OTHER_MEMBER = new FactionStanding("tritachyon", 3000);
+    private static final WeighedFactionStanding LEAD_MEMBER =
+        new WeighedFactionStanding("hegemony", 6000);
+    private static final WeighedFactionStanding OTHER_MEMBER =
+        new WeighedFactionStanding("tritachyon", 3000);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final ExpandedSystemDominationTooltip tooltip =
@@ -205,6 +208,24 @@ final class ExpandedSystemDominationTooltipTest {
             assertThat(accountResolver.resolveAccountEntries(LEAD_MEMBER))
                 .isEmpty();
             assertThat(readLabelTexts(accountResolver.resolveAccountEntries(OTHER_MEMBER)))
+                .containsExactly("Galatia Academy");
+        }
+
+        @Test
+        void createFactionAccountResolverAccountsForAFactionPresentThroughUnlistedColoniesAlone() {
+            // A faction the weighing never reached: its every colony here is one the economy does
+            // not list, so its whole account is the unlisted read. The colonies were always carried
+            // - what they lacked was a line to hang from, which the ranking now gives them.
+            stubBreakdowns(Map.of());
+            stubUnweighedColonies(Map.of(
+                "tritachyon",
+                List.of(UNLISTED_COLONY)));
+
+            var accountResolver =
+                tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
+
+            assertThat(readLabelTexts(accountResolver.resolveAccountEntries(
+                    new PresenceOnlyFactionStanding("tritachyon"))))
                 .containsExactly("Galatia Academy");
         }
 

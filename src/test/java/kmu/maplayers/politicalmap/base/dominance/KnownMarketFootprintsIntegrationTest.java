@@ -1513,9 +1513,10 @@ class KnownMarketFootprintsIntegrationTest {
 
         @Test
         void readUnweighedColoniesByFactionLeavesAFactionHoldingOnlyOneOutOfThePassEntirely() {
-            // A faction whose only colony here is unlisted takes no contribution, so it takes no
-            // standing and the box has no line to hang the colony under. That is deliberate: giving
-            // it one would mean synthesising a rank the pass never produced.
+            // A faction whose only colony here is unlisted takes no contribution, and that is
+            // deliberate: a weight synthesised for it is a weight nobody worked out, and it could
+            // move a fill. Naming the faction is a listing's job and answered beside the pass, off
+            // the owners the read below reports.
             var sector = buildSectorWith(
                 "galatia",
                 withName(buildVisibleMarket(buildFaction("hegemony"), 5), "Chicomoztoc"));
@@ -1581,6 +1582,92 @@ class KnownMarketFootprintsIntegrationTest {
             // Every colony the projection holds, named once between the two reads.
             assertThat(colonies)
                 .containsExactlyInAnyOrder("Chicomoztoc", "Galatia Academy");
+        }
+    }
+
+    @Nested
+    class ReadUnweighedColonyFactionIds {
+
+        @Test
+        void readUnweighedColonyFactionIdsNamesTheOwnersTheColonyReadWouldName() {
+            // The two answer one question at two levels of detail - who is present, and what they
+            // hold -
+            // so a ranking listing the owners and a box listing their colonies cannot part company
+            // over who is in the system.
+            var independent = buildFaction("independent");
+            var listedColony = withName(buildVisibleMarket(buildFaction("hegemony"), 5), "Ancyra");
+            var sector = buildSectorWith("galatia", listedColony);
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                listedColony,
+                withName(buildVisibleMarket(independent, 3), "Galatia Academy"));
+
+            var systemColonies = readColoniesIn(sector);
+
+            assertThat(KnownMarketFootprints.readUnweighedColonyFactionIds(systemColonies, false))
+                .containsExactlyElementsOf(KnownMarketFootprints
+                    .readUnweighedColoniesByFaction(systemColonies, false)
+                    .keySet());
+            assertThat(KnownMarketFootprints.readUnweighedColonyFactionIds(systemColonies, false))
+                .containsExactly("independent");
+        }
+
+        @Test
+        void readUnweighedColonyFactionIdsYieldsNothingForASystemTheEconomyListsWhole() {
+            // The ordinary system: every colony present is one the weighed walk accounts for, so
+            // there is nobody the ranking has to admit beside the footprints.
+            var listedColony = withName(
+                buildVisibleMarket(buildFaction("hegemony"), 5),
+                "Chicomoztoc");
+            var sector = buildSectorWith("hegemony-system", listedColony);
+
+            placeMarketsOnSystemEntities(buildOnlySystem(sector), listedColony);
+
+            assertThat(KnownMarketFootprints.readUnweighedColonyFactionIds(
+                    readColoniesIn(sector),
+                    false))
+                .isEmpty();
+        }
+
+        @Test
+        void readUnweighedColonyFactionIdsNamesAnOwnerOnceHoweverManyUnlistedColoniesItHolds() {
+            // The ranking lists a faction once, so the owners come back as a set: a faction with
+            // two unregistered stations here is one faction present, not two.
+            var independent = buildFaction("independent");
+            var sector = buildSectorWith("galatia");
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                withName(buildVisibleMarket(independent, 3), "Tibicena"),
+                withName(buildVisibleMarket(independent, 4), "Galatia Academy"));
+
+            assertThat(KnownMarketFootprints.readUnweighedColonyFactionIds(
+                    readColoniesIn(sector),
+                    false))
+                .containsExactly("independent");
+        }
+
+        @Test
+        void readUnweighedColonyFactionIdsWithholdsAnUndiscoveredOwnerUntilTheRevealIsOn() {
+            // The fog reaches the listing as it reaches the account: naming a faction over a base
+            // the player has not found is the one thing the projection exists to prevent.
+            var sector = buildSectorWith("hidden-system");
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                withName(
+                    buildUndiscoveredHiddenMarket(buildFaction("pirates"), 3),
+                    "Selkie Station"));
+
+            assertThat(KnownMarketFootprints.readUnweighedColonyFactionIds(
+                    readColoniesIn(sector),
+                    false))
+                .isEmpty();
+            assertThat(KnownMarketFootprints.readUnweighedColonyFactionIds(
+                    readColoniesIn(sector),
+                    true))
+                .containsExactly("pirates");
         }
     }
 

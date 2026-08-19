@@ -15,7 +15,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
+import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -197,7 +197,7 @@ final class SystemDominationTooltipTest {
             // The account behind those scores is the counterpart's, an F1 away.
             assertThat(tooltip
                     .createFactionAccountResolver(systemMock, ANY_PASS)
-                    .resolveAccountEntries(new FactionStanding(CORE_FACTION, 900)))
+                    .resolveAccountEntries(new WeighedFactionStanding(CORE_FACTION, 900)))
                 .isEmpty();
         }
     }

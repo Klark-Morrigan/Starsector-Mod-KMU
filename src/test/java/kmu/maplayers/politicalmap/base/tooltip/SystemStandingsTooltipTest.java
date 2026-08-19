@@ -19,9 +19,9 @@ import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
+import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -155,7 +155,7 @@ final class SystemStandingsTooltipTest {
             // overrides nothing and every faction it lists reads as its line alone.
             assertThat(tooltip
                     .createFactionAccountResolver(systemMock, ANY_PASS)
-                    .resolveAccountEntries(new FactionStanding("hegemony", 900)))
+                    .resolveAccountEntries(new WeighedFactionStanding("hegemony", 900)))
                 .isEmpty();
         }
     }

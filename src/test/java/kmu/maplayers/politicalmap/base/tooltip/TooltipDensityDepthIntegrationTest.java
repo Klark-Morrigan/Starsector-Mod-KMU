@@ -7,12 +7,12 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
-import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
+import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -167,7 +167,7 @@ final class TooltipDensityDepthIntegrationTest {
             List.of(new GroupStanding(
                 FACTION_ID,
                 7,
-                List.of(new FactionStanding(FACTION_ID, 7)))),
+                List.of(new WeighedFactionStanding(FACTION_ID, 7)))),
             HolderGrouping.identity(),
             standing -> MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildPatrolledColony()),

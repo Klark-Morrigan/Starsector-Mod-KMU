@@ -18,9 +18,11 @@ import kmu.settings.HiddenMarketScalingChoice;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Weighs one star system's colonies into the per-faction footprints the dominance rule
@@ -47,7 +49,9 @@ import java.util.Optional;
  * <p>Beside those two sits a third read that weighs nothing:
  * {@link #readUnweighedColoniesByFaction}, the colonies present in the system that the economy
  * does not list. They reach a caller describing the system and no caller computing it, so they
- * come back as nameplates alone. The two sets partition the projection - every colony is either
+ * come back as nameplates alone - or, for a caller that has only to know who is present rather
+ * than what they hold, as the owners alone ({@link #readUnweighedColonyFactionIds}). The two sets
+ * partition the projection - every colony is either
  * economy-listed and weighed or unlisted and merely named - which is what a colony being read
  * once and sorted, rather than sought by two walks, buys: neither set can gain a colony the
  * other keeps, nor lose one both pass over.
@@ -280,6 +284,36 @@ public final class KnownMarketFootprints {
                 .add(Markets.readNameplate(market));
         }
         return coloniesByFactionId;
+    }
+
+    /**
+     * The factions holding a colony in one system that the economy does not list - who the read
+     * above would name, without naming anything.
+     *
+     * <p>Its projection rather than a walk of its own, so the two cannot disagree about who is
+     * present: what a box lists beneath a faction and what a ranking lists the faction for are
+     * selected out of the one colony set on the one fact. Kept apart from it because identifying a
+     * colony costs a nameplate - a name and an icon-spec read per colony - and a caller that only
+     * has to rank the owners would be paying for names it discards.
+     *
+     * @param colonies                         the system's colony set, as one walk of it reported;
+     *                                         empty yields an empty set
+     * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
+     *                                         still counts (the "show undiscovered markets" dev
+     *                                         reveal); false applies the normal known-to-player
+     *                                         filter
+     * @return the ids of the factions holding an unlisted colony in the system, in the system's own
+     *         entity order; empty when every colony present is one the economy lists
+     */
+    public static Set<String> readUnweighedColonyFactionIds(
+            SystemColonies colonies,
+            boolean shouldIncludeUndiscoveredMarkets) {
+
+        var factionIds = new LinkedHashSet<String>();
+        for (var market : readUnweighedColonies(colonies, shouldIncludeUndiscoveredMarkets)) {
+            factionIds.add(market.getFaction().getId());
+        }
+        return factionIds;
     }
 
     /**

@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * One dominance pass over the sector: a rebuild's reading of it, plus the weighting rule that
@@ -195,6 +196,26 @@ public record DominancePass(
         return KnownMarketFootprints.readByFaction(
             readColoniesIn(system),
             rules,
+            shouldIncludeUndiscoveredMarkets());
+    }
+
+    /**
+     * The factions present in this system through colonies the economy does not list, under the
+     * pass's reveal - who the read above cannot see, every term of a dominance weight being
+     * economy-fed.
+     *
+     * <p>Beside the footprints rather than folded into them, and that is the whole of the
+     * separation: a faction here has nothing that could be summed, so what it reaches is a listing
+     * and never an arithmetic. A caller ranking a system asks for both and states the difference
+     * itself.
+     *
+     * @param system the system whose colonies are read
+     * @return the ids of the factions holding an unlisted colony there; empty when every colony
+     *         present is one the economy lists
+     */
+    public Set<String> readUnweighedColonyFactionIds(StarSystemAPI system) {
+        return KnownMarketFootprints.readUnweighedColonyFactionIds(
+            readColoniesIn(system),
             shouldIncludeUndiscoveredMarkets());
     }
 

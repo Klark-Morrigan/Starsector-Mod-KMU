@@ -11,6 +11,7 @@ import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,11 @@ import java.util.List;
  * faction, and it is settled here because this is the only side that knows the kind. A blank or absent
  * crest resolves to a null path the render layer draws around, so a group or member with no authored
  * crest still shows its name and score.
+ *
+ * <p>How loudly a score is drawn is settled here too, on the standing's own kind: a faction or a bloc
+ * the pass weighed nothing for carries its nought in the quiet shade. The distinction is the
+ * standing's rather than the resolver's - what it adds is that the same distinction is drawn at both
+ * tiers, so a bloc cannot read as weighed over members that were not.
  *
  * <p>What accounts for a faction's score is not this resolver's to know, so it is asked for
  * ({@link FactionAccountResolver}) and hung beneath the faction it was resolved for. Asking here rather
@@ -92,7 +98,6 @@ public final class StandingRowResolver {
 
         var memberEntries = resolveMemberEntries(sector, standing.members(), accountResolver);
         var blocId = standing.blocId();
-        var aggregateScoreText = KmlibNumbers.formatGroupedInteger(standing.aggregateScore());
 
         if (!grouping.isAlliance(blocId)) {
             // A lone-faction group has one member, so the group is exactly that member: reuse both the
@@ -103,20 +108,20 @@ public final class StandingRowResolver {
             var groupMemberEntry = memberEntries.get(0);
 
             return CellTooltipEntry
-                .createEntry(CellTooltipEntryLine.createLine(
+                .createEntry(buildGroupLine(
                     groupMemberEntry.line().mark(),
                     groupMemberEntry.line().labelText(),
-                    aggregateScoreText))
+                    standing))
                 .nesting(groupMemberEntry.children());
         }
         // An alliance carries the alliance's own name and its lead (colour) member's crest - the same
         // name and crest the alliances view paints the bloc's cluster by - over the factions in it.
-        var allianceLine = CellTooltipEntryLine.createLine(
+        var allianceLine = buildGroupLine(
             CellTooltipMark.resolveMarkAsAuthored(FactionPresentation
                 .resolvePresentation(sector, grouping.resolveColourFactionId(blocId))
                 .crestSpritePath()),
             grouping.resolveAllianceName(blocId),
-            aggregateScoreText);
+            standing);
 
         // Gathered rather than subordinated: a bloc's line and the factions inside it are one answer to
         // who holds the system, stated at two granularities, so the members read inset beneath the bloc
@@ -126,6 +131,27 @@ public final class StandingRowResolver {
         return CellTooltipEntry
             .createEntry(allianceLine)
             .grouping(memberEntries);
+    }
+
+    // One group's line, whichever kind of group it is: whatever names it, over the score its members
+    // add up to.
+    //
+    // A group the pass weighed nothing for carries its nought in the quiet shade, under the same
+    // treatment its members' lines and the claims box's own presence lines take. Read off the group
+    // rather than off the member line it may have been built from, because a bloc is weighed where
+    // any one member is: an alliance holding one weighed colony beside two unregistered ones has an
+    // aggregate somebody worked out.
+    private static CellTooltipEntryLine buildGroupLine(
+            CellTooltipMark mark,
+            String labelText,
+            GroupStanding standing) {
+
+        var groupLine = CellTooltipEntryLine.createLine(
+            mark,
+            labelText,
+            KmlibNumbers.formatGroupedInteger(standing.aggregateScore()));
+
+        return standing.hasWeighedMember() ? groupLine : groupLine.statesUncountedValue();
     }
 
     // Resolves each ranked member standing into the entry it is listed as, preserving the ranking order,
@@ -141,13 +167,29 @@ public final class StandingRowResolver {
         var entries = new ArrayList<CellTooltipEntry>(members.size());
 
         for (var member : members) {
-            entries.add(FactionTooltipEntry
-                .buildFactionEntry(
-                    sector,
-                    member.factionId(),
-                    KmlibNumbers.formatGroupedInteger(member.score()))
+            entries.add(CellTooltipEntry
+                .createEntry(buildMemberLine(sector, member))
                 .nesting(accountResolver.resolveAccountEntries(member)));
         }
         return entries;
+    }
+
+    // One member's line: its crest, its name, and what the pass weighed it at.
+    //
+    // A presence-only standing's nought is drawn quiet, under the same treatment an unweighed colony
+    // line takes beneath it. The pass weighed nothing for that faction - every term of a dominance
+    // weight being economy-fed and its colonies unregistered - so the nought is the box's statement
+    // about it rather than a weight it competed with. Drawn as loudly as the scores around it, it
+    // would read as one competed for and lost, inviting exactly the comparison it cannot bear.
+    private static CellTooltipEntryLine buildMemberLine(SectorAPI sector, FactionStanding member) {
+
+        var memberLine = FactionTooltipEntry.buildFactionLine(
+            sector,
+            member.factionId(),
+            KmlibNumbers.formatGroupedInteger(member.score()));
+
+        return member instanceof WeighedFactionStanding
+            ? memberLine
+            : memberLine.statesUncountedValue();
     }
 }
