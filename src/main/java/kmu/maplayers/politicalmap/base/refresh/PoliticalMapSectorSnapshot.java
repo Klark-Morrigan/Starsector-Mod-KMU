@@ -135,7 +135,7 @@ public record PoliticalMapSectorSnapshot(
             var footprintByFactionId = KnownMarketFootprints.readByFaction(
                 systemColonies,
                 rules,
-                visibilityOverrides.shouldIncludeUndiscoveredMarkets());
+                visibilityOverrides.colonyVisibility());
 
             if (!MapVisibility.shouldAppearOnMap(
                     system,

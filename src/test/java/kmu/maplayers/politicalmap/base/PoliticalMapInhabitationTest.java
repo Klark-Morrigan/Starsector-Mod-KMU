@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
+
 import kmu.maplayers.base.visibility.MapVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 import kmu.settings.KmuMapLayerSettings;
@@ -37,6 +39,11 @@ import static org.mockito.Mockito.mockStatic;
  * what each case reads is which rule was reached and what reveal was handed to it.
  */
 final class PoliticalMapInhabitationTest {
+
+    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
+    // is the widest rule any surface reads under.
+    private static final ColonyVisibility UNDER_THE_REVEAL =
+        new ColonyVisibility(true, Set.of());
 
     private static final String SETTLED_SYSTEM = "settled";
 
@@ -93,7 +100,7 @@ final class PoliticalMapInhabitationTest {
 
             visibilityMock.verify(() -> MapVisibility.findInhabitedSystemIds(
                 any(),
-                eq(new MapVisibilityOverrides(true, false))));
+                eq(new MapVisibilityOverrides(UNDER_THE_REVEAL, false))));
         }
     }
 
@@ -130,7 +137,7 @@ final class PoliticalMapInhabitationTest {
             visibilityMock.verify(() -> MapVisibility.isInhabited(
                 any(SectorAPI.class),
                 any(StarSystemAPI.class),
-                eq(new MapVisibilityOverrides(true, false))));
+                eq(new MapVisibilityOverrides(UNDER_THE_REVEAL, false))));
         }
     }
 }

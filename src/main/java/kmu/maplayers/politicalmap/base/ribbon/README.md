@@ -44,13 +44,17 @@ side's question, which is what lets this whole package be exercised on literals.
 `ColonyCellRibbons` counts every cell on every layer: the pass's **known projection** of the
 system's colonies, folded into a count per bloc under the pass's grouping.
 
-That projection is the one filter, and it is the fog - `Markets.isCountedAsColony` under the pass's
-`shouldIncludeUndiscoveredMarkets`, which is the same arm the cell classification paints on and the
-same override, sampled once per bake, that the fills are resolved under. So a colony the player has
-not found is left out, and the dev reveal puts it back on band and fill together.
+That projection is the pass's `ColonyVisibility` and nothing besides: the fog -
+`MarketVisibility.isCountedAsColony` - plus the gates holding back the shapes a bare fog would
+leak. It is the same rule the cell classification paints on, sampled once per bake, so a colony the
+player has not found is left out of band and fill together and the dev reveal puts it back on both.
 
-Past it, nothing about a colony is asked: hidden, unlisted by the economy, weighed or never weighed,
-each counts as the one colony it is.
+The rule is threaded rather than re-read because it is more than one bit now. A counter handed the
+reveal and not the gates would count a derelict the fill declines to draw, which is the drift the
+one shared value makes unexpressible.
+
+Past the projection, nothing about a colony is asked: unlisted by the economy, weighed or never
+weighed, each counts as the one colony it is.
 
 It is here rather than beside each mechanic because a band reports how a system splits, which is a
 fact about the system rather than about the mechanic reading it. Counted per mechanic, the two

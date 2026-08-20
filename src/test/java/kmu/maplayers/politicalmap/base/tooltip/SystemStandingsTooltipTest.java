@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.text.ImageSpan;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.LABEL_RUN;
@@ -61,6 +63,11 @@ import static org.mockito.Mockito.when;
  */
 final class SystemStandingsTooltipTest {
 
+    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
+    // is the widest rule any surface reads under.
+    private static final ColonyVisibility UNDER_THE_REVEAL =
+        new ColonyVisibility(true, Set.of());
+
     private static final String SYSTEM_ID = "askonia";
 
     private static final String BLOC_CREST = "graphics/rebel_pact_crest.png";
@@ -87,7 +94,7 @@ final class SystemStandingsTooltipTest {
     // Opened over no sector: the shared shape reads no colonies of its own, so the set behind the
     // pass is nothing any case here has an opinion about.
     private static final DominancePass ANY_PASS =
-        DominancePass.over(null, ANY_RULES, false, VIEW_GROUPING);
+        DominancePass.over(null, ANY_RULES, ColonyVisibility.BASE_FOG, VIEW_GROUPING);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final SystemStandingsTooltip tooltip =
@@ -326,13 +333,13 @@ final class SystemStandingsTooltipTest {
                 ANY_RULES,
                 new HolderPass(
                     HolderGrouping.identity(),
-                    true,
+                    UNDER_THE_REVEAL,
                     new SystemColoniesIndex(null))));
 
             tooltip.buildBodySections(sectorMock, systemMock);
 
             StandingsTooltipSeamsFake
-                .verifyStatusJudgedUnderReveal(sectorMock, systemMock, true);
+                .verifyStatusJudgedUnderVisibility(sectorMock, systemMock, UNDER_THE_REVEAL);
         }
 
         @Test

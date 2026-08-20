@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.dominance;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.entities.EntityOrbits;
 import kmlib.starsector.systems.StarSystems;
 
@@ -55,23 +56,20 @@ public final class MarketProximityTieBreak {
      * the lowest colour-faction id when two nearest markets orbit at the same depth. Reads no
      * geometry until first compared, so a system that never ties costs nothing.
      *
-     * @param system                           the system the tie is decided within
-     * @param colonies                         the system's colony set, as the pass's one walk of
-     *                                         it reported - the same colonies every other surface
-     *                                         reads, so a dead heat cannot be settled among a set
-     *                                         of markets nothing else in the pass saw
-     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count, matching the
-     *                                         pass's own projection so the tie weighs the markets
-     *                                         the ranking above it did
-     * @param grouping                         the active grouping, so a market's bloc and the
-     *                                         colour-faction backstop resolve as the pass
-     *                                         grouped them
+     * @param system           the system the tie is decided within
+     * @param colonies         the system's colony set, as the pass's one walk of it reported -
+     *                         the same colonies every other surface reads, so a dead heat cannot
+     *                         be settled among a set of markets nothing else in the pass saw
+     * @param colonyVisibility what the player may be shown of a colony, matching the pass's own
+     *                         projection so the tie weighs the markets the ranking above it did
+     * @param grouping         the active grouping, so a market's bloc and the colour-faction
+     *                         backstop resolve as the pass grouped them
      * @return a comparator ordering the closer-to-centre bloc first
      */
     public static Comparator<String> forSystem(
             StarSystemAPI system,
             Colonies colonies,
-            boolean shouldIncludeUndiscoveredMarkets,
+            ColonyVisibility colonyVisibility,
             HolderGrouping grouping) {
 
         return new Comparator<>() {
@@ -85,7 +83,7 @@ public final class MarketProximityTieBreak {
                     minDistanceByBlocId = computeMinDistanceByBlocId(
                         system,
                         colonies,
-                        shouldIncludeUndiscoveredMarkets,
+                        colonyVisibility,
                         grouping);
                 }
                 // Primitive doubles so the comparison below is by value; a boxed Double would
@@ -115,7 +113,7 @@ public final class MarketProximityTieBreak {
     private static Map<String, Double> computeMinDistanceByBlocId(
             StarSystemAPI system,
             Colonies colonies,
-            boolean shouldIncludeUndiscoveredMarkets,
+            ColonyVisibility colonyVisibility,
             HolderGrouping grouping) {
 
         var centremostStar = StarSystems.getCentremostStar(system);
@@ -123,7 +121,7 @@ public final class MarketProximityTieBreak {
 
         for (var market : KnownMarketFootprints.readWeighedColonies(
                 colonies,
-                shouldIncludeUndiscoveredMarkets)) {
+                colonyVisibility)) {
 
             var blocId = grouping.resolveBlocId(market.getFaction().getId());
 

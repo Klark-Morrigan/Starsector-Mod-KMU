@@ -7,6 +7,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
@@ -31,6 +32,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.Set;
 
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 
@@ -192,7 +194,9 @@ final class PoliticalMapStatusRevealIntegrationTest {
     private void setReveal(boolean shouldIncludeUndiscoveredMarkets) {
         visibilityOverridesMock
             .when(MapVisibilityOverrides::readFromLunaSettings)
-            .thenReturn(new MapVisibilityOverrides(shouldIncludeUndiscoveredMarkets, false));
+            .thenReturn(new MapVisibilityOverrides(
+                new ColonyVisibility(shouldIncludeUndiscoveredMarkets, Set.of()),
+                false));
     }
 
     private SectorAPI buildSectorHolding(MarketAPI market) {

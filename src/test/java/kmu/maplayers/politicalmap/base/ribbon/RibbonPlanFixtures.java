@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.ribbon;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -11,6 +12,7 @@ import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import java.awt.Color;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
@@ -112,10 +114,10 @@ public final class RibbonPlanFixtures {
      */
     public static final Optional<String> NO_PAINTER = Optional.empty();
 
-    // Whether the pass lifts the fog off colonies the player has not found. Named at both settings
-    // because a suite posing the reveal is posing the one thing the counting rule's input reads.
-    public static final boolean FOG_LIFTED = true;
-    public static final boolean FOG_KEPT = false;
+    // What the pass shows of a colony. Named at both settings because a suite posing the reveal
+    // is posing the one thing the counting rule's input reads.
+    public static final ColonyVisibility FOG_LIFTED = new ColonyVisibility(true, Set.of());
+    public static final ColonyVisibility FOG_KEPT = ColonyVisibility.BASE_FOG;
 
     // The size every colony these fixtures build carries. A band counts holdings rather than
     // weighing them, so a suite about counting or ordering varies nothing by varying this.
@@ -169,18 +171,18 @@ public final class RibbonPlanFixtures {
      * The bake's inputs over a stubbed sector: a pass opening its own walk of it, the shared
      * palettes, and the design's proportions.
      *
-     * @param sector                           the stubbed sector the colonies are read from
-     * @param grouping                         the grouping the counts are folded under
-     * @param shouldIncludeUndiscoveredMarkets whether the dev reveal lifts the fog
+     * @param sector           the stubbed sector the colonies are read from
+     * @param grouping         the grouping the counts are folded under
+     * @param colonyVisibility what the pass shows of a colony
      * @return the inputs a planner is posed with
      */
     public static RibbonPlanInputs buildInputsOver(
             SectorAPI sector,
             HolderGrouping grouping,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
 
         return buildInputsFor(
-            HolderPass.over(sector, shouldIncludeUndiscoveredMarkets, grouping));
+            HolderPass.over(sector, colonyVisibility, grouping));
     }
 
     /**

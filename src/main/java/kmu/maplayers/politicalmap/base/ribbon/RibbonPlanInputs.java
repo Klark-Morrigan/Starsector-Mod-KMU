@@ -20,12 +20,12 @@ import java.util.List;
  * of each system rather than each opening a pass of its own.
  *
  * <p>The pass is what makes the counting rule the same rule on every layer. It names the sector,
- * the grouping factions fold into blocs under, and the dev reveal - so a band cannot be counted
- * under a different fog or a different fold from the fill it sits inside, and no counter needs a
- * settings read of its own to find out which.
+ * the grouping factions fold into blocs under, and the whole visibility rule - so a band cannot be
+ * counted under a different fog or a different fold from the fill it sits inside, and no counter
+ * needs a settings read of its own to find out which.
  *
- * @param pass     the bake's reading of the sector: which sector, the grouping, the reveal, and the
- *                 one walk of each system every count is folded from
+ * @param pass     the bake's reading of the sector: which sector, the grouping, the visibility
+ *                 rule, and the one walk of each system every count is folded from
  * @param palettes where each present bloc's two shades are read from
  * @param rules    how a band is laid: the run lengths, and how far they reach on a cell nobody
  *                 contests
@@ -72,7 +72,7 @@ public record RibbonPlanInputs(
      * could reach a sector is one that could walk a system the bake has already walked.
      *
      * @param system the system to count; null yields an empty list
-     * @return the system's colonies the bake's reveal admits, in the set's own order
+     * @return the system's colonies the bake's visibility rule admits, in the set's own order
      */
     public List<Colony> readKnownColoniesIn(StarSystemAPI system) {
         return pass.readKnownColoniesIn(system);

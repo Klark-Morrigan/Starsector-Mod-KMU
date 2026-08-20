@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.SystemCellTooltip;
@@ -35,9 +34,13 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
      * The reader every political-map tooltip runs on in game. Stateless, so the boxes share one
      * rather than each minting its own, and named in a single place so a change of binding cannot
      * reach one view and miss the other.
+     *
+     * <p>It resolves the player's visibility rule per read rather than holding one, since a box
+     * lives for the whole session while that rule is a setting the player may move between two
+     * hovers.
      */
     static final ClaimBreakdownReader VANILLA_CLAIM_BREAKDOWN_READER =
-        new VanillaClaimBreakdownReader();
+        new LiveVisibilityClaimBreakdownReader();
 
     /**
      * The claim read a body draws on - the whole scored contest, or the decree alone, whichever it

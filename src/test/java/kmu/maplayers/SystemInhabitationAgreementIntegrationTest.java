@@ -10,6 +10,8 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 
+import kmlib.starsector.colonies.ColonyVisibility;
+
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.visibility.MapVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
@@ -21,6 +23,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 
@@ -52,10 +55,11 @@ final class SystemInhabitationAgreementIntegrationTest {
     private static final int STATUS_RUN = 0;
 
     // The player's dev reveal off, which is how the map is read in an ordinary game.
-    private static final boolean UNDER_THE_FOG = false;
+    private static final ColonyVisibility UNDER_THE_FOG = ColonyVisibility.BASE_FOG;
 
     // The "show all factions" reveal on, widening both reads at once.
-    private static final boolean UNDER_THE_REVEAL = true;
+    private static final ColonyVisibility UNDER_THE_REVEAL =
+        new ColonyVisibility(true, Set.of());
 
     @BeforeEach
     void installStringsAndColours() {
@@ -168,12 +172,12 @@ final class SystemInhabitationAgreementIntegrationTest {
     private static boolean isInhabited(
             SectorAPI sector,
             StarSystemAPI system,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
 
         return MapVisibility.isInhabited(
             sector,
             system,
-            new MapVisibilityOverrides(shouldIncludeUndiscoveredMarkets, false));
+            new MapVisibilityOverrides(colonyVisibility, false));
     }
 
     // The status line's words. Read through orElseThrow rather than defended, since a case
@@ -181,10 +185,10 @@ final class SystemInhabitationAgreementIntegrationTest {
     private static String readStatus(
             SectorAPI sector,
             StarSystemAPI system,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
 
         var row = SystemStatusRow
-            .resolveStatusRow(sector, system, shouldIncludeUndiscoveredMarkets)
+            .resolveStatusRow(sector, system, colonyVisibility)
             .orElseThrow();
 
         return readLabelTextRun(row, STATUS_RUN).text();

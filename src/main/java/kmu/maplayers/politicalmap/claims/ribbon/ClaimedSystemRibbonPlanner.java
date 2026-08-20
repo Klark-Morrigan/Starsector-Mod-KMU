@@ -58,7 +58,9 @@ public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
     public static ClaimedSystemRibbonPlanner createForPass(RibbonPlanInputs inputs) {
 
         return new ClaimedSystemRibbonPlanner(
-            new VanillaClaimBreakdownReader(inputs.pass().colonies()),
+            new VanillaClaimBreakdownReader(
+                inputs.pass().colonyVisibility(),
+                inputs.pass().colonies()),
             inputs);
     }
 

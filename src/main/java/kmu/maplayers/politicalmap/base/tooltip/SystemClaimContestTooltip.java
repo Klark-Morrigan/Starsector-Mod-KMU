@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
@@ -69,18 +70,18 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // Read once for the whole box and applied to both questions it settles - whether the system
         // counts as populated, and which standings the player may be shown - since a banner calling a
         // system empty over a list naming who lives there is the one pairing the box cannot make.
-        var isListingUnfoundMarkets = isListingUnfoundMarkets();
+        var colonyVisibility = readColonyVisibility();
 
         // One read for the whole box: the claimant, the override behind it, and every standing the
         // projection leaves it free to name are all taken from a single pass, so no two lines can
         // describe different states of the system.
         var contest = ListedClaimContest.selectFrom(
             claimBreakdownReader.readBreakdown(system),
-            isListingUnfoundMarkets);
+            colonyVisibility.shouldIncludeUndiscoveredMarkets());
 
         // Why the system holds nobody comes before who claims it, so a dead system names its state
         // first and the claim below reads as a hold over an empty system rather than over a colony.
-        var statusRow = SystemStatusRow.resolveStatusRow(sector, system, isListingUnfoundMarkets);
+        var statusRow = SystemStatusRow.resolveStatusRow(sector, system, colonyVisibility);
 
         CellTooltipSections.appendBannerSection(sections, statusRow);
 
@@ -126,7 +127,9 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // draw as empty - which the fog alone can produce, a faction present only through colonies
         // the player has not found leaving a standing the box may not state.
         if (!ListedClaimContest
-                .selectFrom(claimBreakdownReader.readBreakdown(system), isListingUnfoundMarkets())
+                .selectFrom(
+                    claimBreakdownReader.readBreakdown(system),
+                    readColonyVisibility().shouldIncludeUndiscoveredMarkets())
                 .hasListedStanding()) {
 
             return Optional.empty();
@@ -170,19 +173,22 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     }
 
     /**
-     * Whether a colony the player has not found may be shown - the dev reveal, read live off the
-     * same toggle the faction layer's pass samples, so crossing between the two layers cannot make
-     * one call a system empty that the other calls held.
+     * What this family may show of a colony - read live off the same settings the faction layer's
+     * pass samples, so crossing between the two layers cannot make one call a system empty that
+     * the other calls held.
      *
      * <p>Named here rather than spelled at each of the three places this family asks it - the
      * listing, the key hint's gate, and the account beneath a faction - because those three have to
      * agree. A box naming a faction whose every colony its own account then withholds is the shape
      * one read exists to rule out.
      *
-     * @return true while the reveal is on
+     * <p>The whole rule rather than the reveal alone, so a reader taking one term of it cannot be
+     * drawing under a rule the rest of the box is not.
+     *
+     * @return the visibility rule the player's live settings describe
      */
-    protected static boolean isListingUnfoundMarkets() {
-        return MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets();
+    protected static ColonyVisibility readColonyVisibility() {
+        return MapVisibilityOverrides.readFromLunaSettings().colonyVisibility();
     }
 
     // What the claim block lists: the one line naming whoever holds the system, and nothing at all

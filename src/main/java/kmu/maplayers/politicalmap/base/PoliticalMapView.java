@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
@@ -193,21 +194,19 @@ public interface PoliticalMapView {
      * <p>There is no new per-bloc seam behind the list: a view decides which of its blocs are
      * targets (every faction, or only the alliance blocs) by handing that one test to
      * {@link #buildSelectableBlocs}, which assembles the options the same way for every view. The
-     * convenience overload reads the player's live dominance and dev-reveal toggles so a caller with
-     * no pass of its own need not thread them.
+     * convenience overload reads the player's live dominance and visibility settings so a caller
+     * with no pass of its own need not thread them.
      *
      * <p>The spotlight is optional: the default offers an empty picker, so a view with no list to
      * spotlight inherits one rather than overriding with three arguments it would ignore. A view
      * opts into the spotlight by overriding this, the same way it opts into its own body controls.
      *
-     * @param sector                           the sector whose economy the visibility gate reads; null
-     *                                         yields an empty picker
-     * @param rules                            the dominance-weighting rules for this read, so selectable
-     *                                         blocs are gated under the same rule the map paints under
-     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward a bloc's
-     *                                         visibility (the "show undiscovered markets" dev
-     *                                         reveal); false applies the normal known-to-player
-     *                                         filter
+     * @param sector           the sector whose economy the visibility gate reads; null yields an
+     *                         empty picker
+     * @param rules            the dominance-weighting rules for this read, so selectable blocs are
+     *                         gated under the same rule the map paints under
+     * @param colonyVisibility what the player may be shown of a colony, so a bloc is offered on
+     *                         the strength of the very colonies the map paints it for
      * @return this view's picker - its blocs in the order the source walk surfaces them, and the
      *         vocabulary ranking them; empty when no bloc qualifies, and empty by default for a view
      *         with no spotlight
@@ -215,12 +214,12 @@ public interface PoliticalMapView {
     default ListPicker<?> resolveBlocPicker(
             SectorAPI sector,
             DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
         return ListPicker.empty();
     }
 
     /**
-     * This view's picker under the player's current dominance and dev-reveal settings - the live
+     * This view's picker under the player's current dominance and visibility settings - the live
      * entry the sidebar and the stale-selection heal call, so neither has to read the toggles a
      * running pass would already hold.
      *
@@ -231,7 +230,7 @@ public interface PoliticalMapView {
         return resolveBlocPicker(
             sector,
             DominanceRules.readFromLunaSettings(),
-            MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets());
+            MapVisibilityOverrides.readFromLunaSettings().colonyVisibility());
     }
 
     /**

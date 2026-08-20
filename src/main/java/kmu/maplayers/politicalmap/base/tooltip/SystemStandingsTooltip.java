@@ -70,12 +70,12 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         var sections = new ArrayList<TooltipSection>();
 
         // What the system is comes before who holds it, so the standings below read as a contest over
-        // a known system. The status resolves under this pass's reveal, the same filter the standings
+        // a known system. The status resolves under this pass's rule, the same filter the standings
         // were ranked through, so the system counts as empty here exactly when the ranking found
         // nothing to show - the two can never describe different systems.
         CellTooltipSections.appendBannerSection(
             sections,
-            SystemStatusRow.resolveStatusRow(sector, system, pass.shouldIncludeUndiscoveredMarkets()));
+            SystemStatusRow.resolveStatusRow(sector, system, pass.colonyVisibility()));
 
         // The account is settled once for the whole box, before any group is named, so a box reading
         // the economy to build one reads it once however many groups hold the system - and every
@@ -105,7 +105,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         // unpopulated - which reading the economy a second way here would eventually allow.
         var pass = DominancePass.readFromLunaSettings(sector, activeView.resolveGrouping());
         if (SystemStatusRow
-                .resolveStatusRow(sector, system, pass.shouldIncludeUndiscoveredMarkets())
+                .resolveStatusRow(sector, system, pass.colonyVisibility())
                 .isPresent()) {
             return Optional.empty();
         }

@@ -20,9 +20,9 @@ import java.util.Set;
  * <p>Two independent reasons put a system on the map, and reachability
  * ({@link StarSystems#isReachable}) is only one of them. A system appears when it
  * has a normal means of arrival OR when it is inhabited - a faction colony the
- * player knows of, or a revealed decivilised planet. Knowing of a colony is wider
- * than having been to it: one the game lists publicly counts before the player has
- * reached it, which is what the cell and the box over it share.
+ * player knows of, or a revealed decivilised planet. What "knows of" admits is the
+ * pass's own colony rule rather than anything decided here, so the cell, the band
+ * inside it and the box over it are all reading the one rule.
  *
  * <p>The inhabitation path is what admits
  * an otherwise unreachable system: a transverse-only or abyssal world, hidden
@@ -119,9 +119,8 @@ public final class MapVisibility {
      *
      * @param sector    the sector the system belongs to; null yields false
      * @param system    the system to test; null yields false
-     * @param overrides the pass's reveal overrides; only the undiscovered-colony
-     *                  widening is read here, since forcing a system onto the map does
-     *                  not make it inhabited
+     * @param overrides the pass's visibility state; only the colony rule is read here,
+     *                  since forcing a system onto the map does not make it inhabited
      * @return true when the system holds a colony or a known dead colony
      */
     public static boolean isInhabited(
@@ -153,9 +152,9 @@ public final class MapVisibility {
      * @param isRevealedDecivilised whether the system holds a dead colony the player has
      *                              already seen; counts under any overrides, a revealed ruin
      *                              being known for good
-     * @param overrides             the pass's reveal overrides; only the undiscovered-colony
-     *                              widening is read here, since forcing a system onto the map
-     *                              does not make it inhabited
+     * @param overrides             the pass's visibility state; only the colony rule is read
+     *                              here, since forcing a system onto the map does not make it
+     *                              inhabited
      * @return true when the system holds a colony or a known dead colony
      */
     public static boolean isInhabited(
@@ -163,7 +162,7 @@ public final class MapVisibility {
             boolean isRevealedDecivilised,
             MapVisibilityOverrides overrides) {
 
-        return colonies.hasKnownColony(overrides.shouldIncludeUndiscoveredMarkets())
+        return colonies.hasKnownColony(overrides.colonyVisibility())
             || isRevealedDecivilised;
     }
 

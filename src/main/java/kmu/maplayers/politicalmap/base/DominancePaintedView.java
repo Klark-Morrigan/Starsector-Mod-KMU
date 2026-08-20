@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -60,27 +61,25 @@ public interface DominancePaintedView extends PoliticalMapView {
      * a view's blocs carry, so offering any other vocabulary would rank rows by numbers they do not
      * hold.
      *
-     * @param sector                           the sector whose economy the visibility gate reads;
-     *                                         null yields an empty picker
-     * @param rules                            the dominance-weighting rules for this read, so
-     *                                         selectable blocs are gated under the same rule the map
-     *                                         paints under
-     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward a bloc's
-     *                                         visibility (the "show undiscovered markets" dev
-     *                                         reveal)
+     * @param sector           the sector whose economy the visibility gate reads; null yields an
+     *                         empty picker
+     * @param rules            the dominance-weighting rules for this read, so selectable blocs are
+     *                         gated under the same rule the map paints under
+     * @param colonyVisibility what the player may be shown of a colony, so a bloc is offered on
+     *                         the strength of the very colonies the map paints it for
      * @return this view's picker, its blocs in the order the economy walk surfaces them
      */
     @Override
     default ListPicker<RankedBloc<DominanceStats>> resolveBlocPicker(
             SectorAPI sector,
             DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
 
         // The grouping is resolved once and handed to both halves, so the numbers, the crest, and
         // the gate all read against the one snapshot rather than three live samples of a set that
         // moves (the alliances view samples Nexerelin).
         var grouping = resolveGrouping();
-        var pass = DominancePass.over(sector, rules, shouldIncludeUndiscoveredMarkets, grouping);
+        var pass = DominancePass.over(sector, rules, colonyVisibility, grouping);
 
         return new ListPicker<>(
             buildSelectableBlocs(

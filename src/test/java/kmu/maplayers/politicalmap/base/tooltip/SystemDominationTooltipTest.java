@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
@@ -95,7 +96,7 @@ final class SystemDominationTooltipTest {
     // Opened over no sector: this box reads no colonies of its own, so the set behind the pass is
     // nothing any case here has an opinion about.
     private static final DominancePass ANY_PASS =
-        DominancePass.over(null, ANY_RULES, false, VIEW_GROUPING);
+        DominancePass.over(null, ANY_RULES, ColonyVisibility.BASE_FOG, VIEW_GROUPING);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final SystemDominationTooltip tooltip =

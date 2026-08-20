@@ -99,15 +99,17 @@ final class CoastPockets {
             // ended up is the result of a chain of angles, while the side of the line it has
             // to stay on is one fact that holds whatever the wall did.
             //
-            // Cut differently at the true extent, not left uncut. There is no channel to
-            // hold it back from - the outline is meant to reach the reach itself - and a
-            // pocket there may run past where a reach stops, since a reach is one straight
-            // piece of a coast that goes on either side of it. What it may not do is cross to
-            // the seaward side of a line that closed it, which is what two reaches meeting on
-            // one cell make it do: each is walked out to its own mouth and overshoots the
-            // other by the wedge between their lines.
+            // Not cut at the true extent, where there is no channel to hold it back from:
+            // the outline is meant to reach the reach itself, and the pockets the cut would
+            // empty are the ones that map exists to show.
+            //
+            // Nor is there anything to correct there. No laid wall crosses another on either
+            // fixture, so no outline overshoots one wall past another; and a pocket that lies
+            // on the far side of a reach's LINE, beyond where that reach stops, is not out at
+            // sea - there is no coast out there to be seaward of. A cut against the line held
+            // exactly such a pocket to nothing, which is a hole found and a fill missing.
             var legal = isAtTrueExtent
-                ? CoastPocketFaults.cutBehindReaches(hole.boundary(), walling, sites)
+                ? hole.boundary()
                 : CoastPocketFaults.cutToLandward(
                     hole.boundary(), walling, sites, walls.channel());
 

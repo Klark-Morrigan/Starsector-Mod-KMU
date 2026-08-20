@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
@@ -30,6 +31,7 @@ import org.mockito.Mockito;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
@@ -37,7 +39,6 @@ import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -60,6 +61,11 @@ import static org.mockito.Mockito.when;
  * the shape both boxes share ({@link SystemStandingsTooltipTest}).
  */
 final class ExpandedSystemDominationTooltipTest {
+
+    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
+    // is the widest rule any surface reads under.
+    private static final ColonyVisibility UNDER_THE_REVEAL =
+        new ColonyVisibility(true, Set.of());
 
     private static final String SYSTEM_ID = "askonia";
 
@@ -85,12 +91,12 @@ final class ExpandedSystemDominationTooltipTest {
     // Opened over no sector, so every pass here answers the empty colony set: what these cases are
     // about is which set the box hands on and under which knobs, not what a walk would have found.
     private static final DominancePass ANY_PASS =
-        DominancePass.over(null, ANY_RULES, false, VIEW_GROUPING);
+        DominancePass.over(null, ANY_RULES, ColonyVisibility.BASE_FOG, VIEW_GROUPING);
 
     // The same pass with the dev reveal on, so a case can tell a read that carries the pass's own
     // reveal from one that hardcodes the ordinary answer - which every other case would agree with.
     private static final DominancePass REVEALED_PASS =
-        DominancePass.over(null, ANY_RULES, true, VIEW_GROUPING);
+        DominancePass.over(null, ANY_RULES, UNDER_THE_REVEAL, VIEW_GROUPING);
 
     // Two factions of one bloc, so a case can tell "the faction's own colonies" from "the bloc's".
     private static final WeighedFactionStanding LEAD_MEMBER =
@@ -241,7 +247,7 @@ final class ExpandedSystemDominationTooltipTest {
                 () -> KnownMarketFootprints.readBreakdownByFaction(
                     Colonies.NONE,
                     ANY_RULES,
-                    false));
+                    ColonyVisibility.BASE_FOG));
         }
 
         @Test
@@ -263,7 +269,7 @@ final class ExpandedSystemDominationTooltipTest {
                 () -> KnownMarketFootprints.readBreakdownByFaction(
                     Colonies.NONE,
                     ANY_RULES,
-                    false),
+                    ColonyVisibility.BASE_FOG),
                 Mockito.times(1));
         }
 
@@ -280,7 +286,7 @@ final class ExpandedSystemDominationTooltipTest {
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
                     Colonies.NONE,
-                    true));
+                    UNDER_THE_REVEAL));
         }
 
         @Test
@@ -304,7 +310,7 @@ final class ExpandedSystemDominationTooltipTest {
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
                     Colonies.NONE,
-                    false),
+                    ColonyVisibility.BASE_FOG),
                 Mockito.times(1));
         }
     }
@@ -337,7 +343,7 @@ final class ExpandedSystemDominationTooltipTest {
             .when(() -> KnownMarketFootprints.readBreakdownByFaction(
                 any(),
                 any(),
-                anyBoolean()))
+                any()))
             .thenReturn(breakdownsByFactionId);
     }
 
@@ -348,7 +354,7 @@ final class ExpandedSystemDominationTooltipTest {
         footprintsMock
             .when(() -> KnownMarketFootprints.readUnweighedColoniesByFaction(
                 any(),
-                anyBoolean()))
+                any()))
             .thenReturn(coloniesByFactionId);
     }
 

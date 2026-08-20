@@ -14,6 +14,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
 import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.lwjgl.util.vector.Vector2f;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -42,13 +44,18 @@ class MapVisibilityIntegrationTest {
 
     // The force override on, so the rule admits a system regardless of access or
     // inhabitation - the widening the pre-computed entry point reads off the value.
+    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
+    // is the widest rule any surface reads under.
+    private static final ColonyVisibility UNDER_THE_REVEAL =
+        new ColonyVisibility(true, Set.of());
+
     private static final MapVisibilityOverrides FORCED_ONTO_MAP =
-        new MapVisibilityOverrides(false, true);
+        new MapVisibilityOverrides(ColonyVisibility.BASE_FOG, true);
 
     // The undiscovered-colony widening on, the other component of the same value: an
     // undiscovered colony counts as inhabitation.
     private static final MapVisibilityOverrides INCLUDING_UNDISCOVERED_MARKETS =
-        new MapVisibilityOverrides(true, false);
+        new MapVisibilityOverrides(UNDER_THE_REVEAL, false);
 
     // The inhabitation the pre-computed entry point is handed when the caller has already
     // decided the system holds nothing, so admission rests on access or the force override.

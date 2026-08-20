@@ -312,6 +312,65 @@ final class DiscUnionBoundary {
     }
 
     /**
+     * Where two laid walls cross each other, which the walk does not yet know about.
+     *
+     * <p>Each wall is walked from its mouth on one circle to its mouth on the other, so where
+     * two of them cross, each runs on past the crossing into space the other closes. That
+     * overshoot is the wedge between their lines, and it is the one shape on this map bounded
+     * by something the trace never asks about.
+     *
+     * <p>Counted before it is fixed: a handful of crossings is a case to teach the walk, and
+     * hundreds would be a different construction.
+     *
+     * @param union the discs the walls are laid across
+     * @param walls the walls on offer
+     * @return one entry per crossing pair, as {@code {fromA, toA, fromB, toB}} cells
+     */
+    static List<int[]> findWallCrossings(DiscUnion union, Walls walls) {
+
+        var laid = findAttachableChords(union, walls);
+        var crossings = new ArrayList<int[]>();
+
+        for (var one = 0; one < laid.size(); one++) {
+            for (var other = one + 1; other < laid.size(); other++) {
+
+                if (doWallsCross(laid.get(one), laid.get(other))) {
+
+                    crossings.add(new int[] {
+                        laid.get(one).fromCircle(),
+                        laid.get(one).toCircle(),
+                        laid.get(other).fromCircle(),
+                        laid.get(other).toCircle()});
+                }
+            }
+        }
+        return crossings;
+    }
+
+    // Whether two walls cross within both of their own runs, rather than on the lines they
+    // lie along - a wall bounds void only where it actually runs.
+    private static boolean doWallsCross(Chord one, Chord other) {
+
+        var oneFrom = new double[] {one.line().originX(), one.line().originY()};
+        var oneTo = new double[] {
+            one.line().originX() + one.line().directionX(),
+            one.line().originY() + one.line().directionY()};
+        var otherFrom = new double[] {other.line().originX(), other.line().originY()};
+        var otherTo = new double[] {
+            other.line().originX() + other.line().directionX(),
+            other.line().originY() + other.line().directionY()};
+
+        return turnsLeft(oneFrom, oneTo, otherFrom) != turnsLeft(oneFrom, oneTo, otherTo)
+            && turnsLeft(otherFrom, otherTo, oneFrom) != turnsLeft(otherFrom, otherTo, oneTo);
+    }
+
+    private static boolean turnsLeft(double[] from, double[] to, double[] point) {
+
+        return (to[0] - from[0]) * (point[1] - from[1])
+            - (to[1] - from[1]) * (point[0] - from[0]) > 0;
+    }
+
+    /**
      * Where the walk runs off the end of the boundary instead of closing.
      *
      * <p>Every arc names the terminal it runs on to, and that terminal is another arc's

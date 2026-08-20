@@ -52,6 +52,6 @@ public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip 
         return ClaimScoreRowResolver.resolveMarketRows(
             breakdown,
             standing,
-            isListingUnfoundMarkets());
+            readColonyVisibility().shouldIncludeUndiscoveredMarkets());
     }
 }

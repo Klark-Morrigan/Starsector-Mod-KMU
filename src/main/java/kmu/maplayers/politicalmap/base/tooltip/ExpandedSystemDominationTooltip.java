@@ -57,7 +57,7 @@ public final class ExpandedSystemDominationTooltip extends SystemStandingsToolti
         var breakdownsByFactionId = KnownMarketFootprints.readBreakdownByFaction(
             colonies,
             pass.rules(),
-            pass.shouldIncludeUndiscoveredMarkets());
+            pass.colonyVisibility());
 
         // The colonies the pass could not weigh, selected beside the ones it did. They stay a
         // separate read rather than becoming a second kind of breakdown because the pass must go on
@@ -65,7 +65,7 @@ public final class ExpandedSystemDominationTooltip extends SystemStandingsToolti
         // to weigh, and one admitted there would hand its owner weight nobody worked out.
         var unweighedColoniesByFactionId = KnownMarketFootprints.readUnweighedColoniesByFaction(
             colonies,
-            pass.shouldIncludeUndiscoveredMarkets());
+            pass.colonyVisibility());
 
         // A faction the reads found nothing for is listed as its line alone rather than as a heading
         // over an empty account, which is what an empty answer means to the shape above.

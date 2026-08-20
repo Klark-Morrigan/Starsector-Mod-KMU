@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.testfixtures.starsector.systems.claims.ClaimReaderFake;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -84,7 +85,7 @@ final class SectorClaimsIntegrationTest {
             claimReaderFake.setClaim("claimed", "hegemony");
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemId(
-                    HolderPass.over(sectorMock, false, grouping), claimReaderFake))
+                    HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, grouping), claimReaderFake))
                     .containsExactly(Map.entry("claimed",
                             new DominantHolder("alliance-1", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }

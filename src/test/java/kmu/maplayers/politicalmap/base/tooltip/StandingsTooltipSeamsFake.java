@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
@@ -167,7 +168,7 @@ public final class StandingsTooltipSeamsFake {
         var statusRow = CellTooltipRows.buildBannerRow(null, statusText);
 
         statusRowMock
-            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any(Boolean.class)))
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any(ColonyVisibility.class)))
             .thenReturn(Optional.of(statusRow));
 
         return statusRow;
@@ -199,31 +200,30 @@ public final class StandingsTooltipSeamsFake {
     }
 
     /**
-     * Asserts the system's status was judged under a given dev reveal - the same filter the standings
-     * beside it were ranked through.
+     * Asserts the system's status was judged under a given visibility rule - the same filter the
+     * standings beside it were ranked through.
      *
-     * @param sector                           the sector the box was drawn for
-     * @param system                           the hovered system
-     * @param shouldIncludeUndiscoveredMarkets the reveal the status is expected to have been judged
-     *                                         under
+     * @param sector           the sector the box was drawn for
+     * @param system           the hovered system
+     * @param colonyVisibility the rule the status is expected to have been judged under
      */
-    public static void verifyStatusJudgedUnderReveal(
+    public static void verifyStatusJudgedUnderVisibility(
             SectorAPI sector,
             StarSystemAPI system,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
 
         statusRowMock.verify(
             () -> SystemStatusRow.resolveStatusRow(
                 sector,
                 system,
-                shouldIncludeUndiscoveredMarkets));
+                colonyVisibility));
     }
 
     // A system with nothing to say about itself beyond its standings, which is the ordinary case and
     // what keeps the line above the contest out of the way of cases about the contest.
     private static void stubNoStatus() {
         statusRowMock
-            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any(Boolean.class)))
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any(ColonyVisibility.class)))
             .thenReturn(Optional.empty());
     }
 }

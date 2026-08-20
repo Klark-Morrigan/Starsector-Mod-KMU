@@ -24,6 +24,18 @@ import java.util.Locale;
  */
 final class PickedPointCheck {
 
+    // How far out to look for the gap a piece of void is leaking through, in cell radii. Wide
+    // enough to reach past the ring of cells around a pocket, narrow enough that a sector's
+    // far side cannot answer for a spot on this one.
+    private static final double NEARBY_CELLS_WITHIN = 6;
+
+    // How many ways out to try, how big a stride to take, and how far counts as out. The
+    // stride is well under a cell so a walk cannot step over one, and the range is wider than
+    // either fixture, so a walk that runs the whole way has genuinely left the sector.
+    private static final int ESCAPE_DIRECTIONS = 72;
+    private static final double ESCAPE_STEP = 250;
+    private static final double ESCAPE_RANGE = 250_000;
+
     private PickedPointCheck() {
     }
 
@@ -72,13 +84,63 @@ final class PickedPointCheck {
 
         var sites = traced.union().sites();
 
+        var atCells = new DiscUnion(sites, parameters.cellRadius());
+
         System.out.printf(
             Locale.ROOT,
             "coast reaches offered %d: at the cells' own reach %s | a channel out %s%n",
             offered.size(),
-            summariseRefusals(new DiscUnion(sites, parameters.cellRadius()), walls, offered),
+            summariseRefusals(atCells, walls, offered),
             summariseRefusals(
                 VoidPockets.buildDrawnUnion(sites, parameters), walls, offered));
+
+        reportEachRefusal(atCells, walls, offered);
+        reportWallCrossings(atCells, VoidPockets.buildDrawnUnion(sites, parameters), walls);
+    }
+
+    // Every reach the walk turned down at the cells' own reach, one line each, with where it
+    // runs. A count says how many; a coast ring left open by one of them is found by knowing
+    // WHICH, and there are few enough of these to name them all.
+    private static void reportEachRefusal(
+            DiscUnion union,
+            DiscUnionBoundary.Walls walls,
+            List<DiscUnionBoundary.Chord> offered) {
+
+        for (var chord : offered) {
+
+            var refusal = DiscUnionBoundary.describeChordRefusal(union, walls, chord);
+
+            if (refusal.reason() == DiscUnionBoundary.RefusalReason.LAID) {
+                continue;
+            }
+            var line = chord.line();
+
+            System.out.printf(
+                Locale.ROOT,
+                "  reach %d-%d from %.0f,%.0f to %.0f,%.0f: %s%n",
+                chord.fromCircle(),
+                chord.toCircle(),
+                line.originX(),
+                line.originY(),
+                line.originX() + line.directionX(),
+                line.originY() + line.directionY(),
+                refusal);
+        }
+    }
+
+    // How many laid walls cross another, which is the one thing on this map bounded by
+    // something the walk never asks about. Counted at both reaches, since a pair that misses
+    // at one can meet at the other.
+    private static void reportWallCrossings(
+            DiscUnion atCells,
+            DiscUnion atDrawn,
+            DiscUnionBoundary.Walls walls) {
+
+        System.out.printf(
+            Locale.ROOT,
+            "walls crossing another wall: %d at the cells' own reach, %d a channel out%n",
+            DiscUnionBoundary.findWallCrossings(atCells, walls).size(),
+            DiscUnionBoundary.findWallCrossings(atDrawn, walls).size());
     }
 
     // Each pick against every construction at both shapings, so which of them was meant to
@@ -103,6 +165,13 @@ final class PickedPointCheck {
 
         var holes = DiscUnionBoundary.traceHoles(
             new DiscUnion(sites, parameters.cellRadius()), parameters.boundSegments());
+
+        // The void as the walk sees it with EVERY wall down - bridges and coast reaches
+        // together. Neither construction asks this question: one lays bridges alone and the
+        // other keeps only the holes a coast reach walled, so a hole the two kinds close
+        // between them belongs to neither of their answers and shows as nothing at all.
+        var walledHoles = DiscUnionBoundary.traceHolesAcrossWalls(
+            new DiscUnion(sites, parameters.cellRadius()), walls, parameters.boundSegments());
         var drawnHoles = DiscUnionBoundary.traceHoles(
             VoidPockets.buildDrawnUnion(sites, parameters), parameters.boundSegments());
 
@@ -115,21 +184,41 @@ final class PickedPointCheck {
         var bridgeInset = VoidBridgePockets.findCapturedPockets(
             sites, bridges, parameters, VoidPockets.PocketShaping.WITH_CHANNEL);
 
+        // A block per pick rather than one long line. The columns answer four different
+        // questions - who drew it, whether it is enclosed, what the coast did there, and where
+        // the walk broke - and a reader following one of them along a 400-character line reads
+        // the wrong column as often as the right one.
         for (var pick : picks) {
+
+            System.out.printf(Locale.ROOT, "  pick %.0f,%.0f%n", pick[0], pick[1]);
 
             System.out.printf(
                 Locale.ROOT,
-                "  pick %.0f,%.0f: hole true %s inset %s | coast inset %s true %s "
-                    + "| bridge inset %s true %s | %s%n",
-                pick[0],
-                pick[1],
-                describeHoleAt(holes, pick),
-                describeHoleAt(drawnHoles, pick),
+                "    drawn by: coast inset %s true %s | bridge inset %s true %s%n",
                 describeHit(coastInset, pick),
                 describeHit(coastTrue, pick),
                 describeHit(bridgeInset, pick),
-                describeHit(bridgeTrue, pick),
+                describeHit(bridgeTrue, pick));
+
+            System.out.printf(
+                Locale.ROOT,
+                "    enclosed: hole true %s inset %s | with every wall %s | %s%n",
+                describeHoleAt(holes, pick),
+                describeHoleAt(drawnHoles, pick),
+                describeWalledHoleAt(walledHoles, pick),
+                describeEscape(traced, parameters, walls, pick));
+
+            System.out.printf(
+                Locale.ROOT,
+                "    coast: %s, %s%n",
+                describeCoastSide(traced, pick),
                 describeNearestStep(traced, parameters, offered, walls, pick));
+
+            System.out.printf(
+                Locale.ROOT,
+                "    walk: %s | %s%n",
+                describeNearestBrokenLink(traced, parameters, walls, pick),
+                describeNearestOpening(traced, parameters, walls, pick));
         }
     }
 
@@ -209,6 +298,285 @@ final class PickedPointCheck {
                 new DiscUnion(sites, parameters.cellRadius()), walls, wall),
             DiscUnionBoundary.describeChordRefusal(
                 VoidPockets.buildDrawnUnion(sites, parameters), walls, wall));
+    }
+
+    // The nearest place the walk ran off the end of the boundary. Void that cannot be walked
+    // out of and yet comes back as no pocket has to have lost its cycle somewhere, and a
+    // broken link is the one way that happens - so this says where to look rather than that
+    // something is wrong.
+    private static String describeNearestBrokenLink(
+            Coastlines.TracedCoasts traced,
+            SectorGeometryParameters parameters,
+            DiscUnionBoundary.Walls walls,
+            double[] pick) {
+
+        var broken = DiscUnionBoundary.findBrokenLinks(
+            new DiscUnion(traced.union().sites(), parameters.cellRadius()), walls);
+
+        if (broken.isEmpty()) {
+            return "no broken links";
+        }
+
+        double[] nearest = null;
+        var away = Double.MAX_VALUE;
+
+        for (var point : broken) {
+
+            var reach = kmlib.math.geometry.Points.computeDistance(point, pick);
+
+            if (reach < away) {
+                away = reach;
+                nearest = point;
+            }
+        }
+        return String.format(
+            Locale.ROOT,
+            "%d broken links, nearest %.0f away at %.0f,%.0f",
+            broken.size(),
+            away,
+            nearest[0],
+            nearest[1]);
+    }
+
+    // A way out of the void a point sits in, if there is one.
+    //
+    // Proof rather than inference. Whether a patch of void is enclosed is exactly whether
+    // something can walk out of it, so this walks: straight lines in every direction, each
+    // stopped by a cell it enters or a wall it crosses. One line that reaches open space is a
+    // leak, and it names the direction and the gap it went through - which is a place to look
+    // at rather than a claim about one. None getting out says only that none of THESE lines
+    // did, so the answer is worded as it is measured.
+    private static String describeEscape(
+            Coastlines.TracedCoasts traced,
+            SectorGeometryParameters parameters,
+            DiscUnionBoundary.Walls walls,
+            double[] pick) {
+
+        var sites = traced.union().sites();
+        var laid = DiscUnionBoundary.findAttachableChords(
+            new DiscUnion(sites, parameters.cellRadius()), walls);
+
+        for (var step = 0; step < ESCAPE_DIRECTIONS; step++) {
+
+            var angle = kmlib.math.geometry.Angles.FULL_TURN * step / ESCAPE_DIRECTIONS;
+            var away = walkOut(pick, angle, sites, laid, parameters.cellRadius());
+
+            if (away > 0) {
+                return String.format(
+                    Locale.ROOT,
+                    "escapes %.0f degrees, clear after %.0f",
+                    Math.toDegrees(angle),
+                    away);
+            }
+        }
+        return "no way out in " + ESCAPE_DIRECTIONS + " directions";
+    }
+
+    // How far a straight walk from a point gets before a cell or a wall stops it, or zero
+    // where it got all the way out. Stepped rather than solved: what is being asked is whether
+    // a way out exists, and a step short enough to fall inside any cell it passes through
+    // answers that without intersecting circles by hand.
+    private static double walkOut(
+            double[] from,
+            double angle,
+            List<double[]> sites,
+            List<DiscUnionBoundary.Chord> laid,
+            double reach) {
+
+        var alongX = Math.cos(angle);
+        var alongY = Math.sin(angle);
+        var at = from;
+
+        for (var step = 1; step * ESCAPE_STEP <= ESCAPE_RANGE; step++) {
+
+            var next = new double[] {
+                from[0] + alongX * step * ESCAPE_STEP,
+                from[1] + alongY * step * ESCAPE_STEP};
+
+            if (isInsideAnyCell(next, sites, reach) || crossesAnyWall(at, next, laid)) {
+                return 0;
+            }
+            at = next;
+        }
+        return ESCAPE_RANGE;
+    }
+
+    private static boolean isInsideAnyCell(double[] point, List<double[]> sites, double reach) {
+
+        for (var site : sites) {
+
+            if (kmlib.math.geometry.Points.computeDistance(point, site) < reach) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Whether one step of a walk crosses a laid wall. The wall is the stretch between its two
+    // ends, not the line it lies on, because a wall bounds void only where it actually runs.
+    private static boolean crossesAnyWall(
+            double[] from,
+            double[] to,
+            List<DiscUnionBoundary.Chord> laid) {
+
+        for (var chord : laid) {
+
+            var line = chord.line();
+            var start = new double[] {line.originX(), line.originY()};
+            var end = new double[] {
+                line.originX() + line.directionX(), line.originY() + line.directionY()};
+
+            if (doSegmentsCross(from, to, start, end)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Two segments cross when each straddles the other's line, read off the sign of the four
+    // turns. No intersection point is wanted, so none is worked out.
+    private static boolean doSegmentsCross(
+            double[] oneFrom,
+            double[] oneTo,
+            double[] otherFrom,
+            double[] otherTo) {
+
+        var a = turnsLeft(oneFrom, oneTo, otherFrom);
+        var b = turnsLeft(oneFrom, oneTo, otherTo);
+        var c = turnsLeft(otherFrom, otherTo, oneFrom);
+        var d = turnsLeft(otherFrom, otherTo, oneTo);
+
+        return a != b && c != d;
+    }
+
+    private static boolean turnsLeft(double[] from, double[] to, double[] point) {
+
+        return (to[0] - from[0]) * (point[1] - from[1])
+            - (to[1] - from[1]) * (point[0] - from[0]) > 0;
+    }
+
+    // Whether the walk finds a closed cycle round a point once every wall is laid, and what
+    // walled it. The question that tells a leak from a filing error: enclosed here and drawn
+    // by nobody means the two constructions disagree about whose hole it is, while not
+    // enclosed at all means the void really does run out to sea.
+    private static String describeWalledHoleAt(List<VoidHole> holes, double[] pick) {
+
+        for (var index = 0; index < holes.size(); index++) {
+
+            var hole = holes.get(index);
+
+            if (!kmlib.math.geometry.PolygonRegions.isPointInsideRing(
+                    hole.boundary(), pick[0], pick[1])) {
+
+                continue;
+            }
+            var kinds = new java.util.LinkedHashSet<DiscUnionBoundary.WallKind>();
+
+            for (var wall : hole.walledBy()) {
+                kinds.add(wall.kind());
+            }
+            return "#" + index + " walled by " + kinds;
+        }
+        return "none";
+    }
+
+    // The nearest gap between two cells that nothing closes - the hole in the fence.
+    //
+    // Void that looks shut in and is not has to be leaking somewhere, and every leak is one
+    // pair of cells whose discs do not meet with no wall laid between them. Naming the nearest
+    // one turns "why is this not a pocket" into a place to look, which is the difference
+    // between a measurement and a hunt.
+    private static String describeNearestOpening(
+            Coastlines.TracedCoasts traced,
+            SectorGeometryParameters parameters,
+            DiscUnionBoundary.Walls walls,
+            double[] pick) {
+
+        var sites = traced.union().sites();
+        var laid = DiscUnionBoundary.findAttachableChords(
+            new DiscUnion(sites, parameters.cellRadius()), walls);
+
+        CellGaps.CellGap nearest = null;
+        var away = Double.MAX_VALUE;
+
+        for (var from = 0; from < sites.size(); from++) {
+
+            if (kmlib.math.geometry.Points.computeDistance(sites.get(from), pick)
+                    > NEARBY_CELLS_WITHIN * parameters.cellRadius()) {
+                continue;
+            }
+
+            for (var to = from + 1; to < sites.size(); to++) {
+
+                var gap = CellGaps.findGapBetween(sites, from, to, parameters.cellRadius());
+
+                // A corridor every other site keeps clear of, which is what makes it a way
+                // OUT rather than a line between two cells with a third sitting across it.
+                // Without this the nearest answer is a pair on opposite sides of the sector
+                // whose corridor happens to pass by.
+                if (gap == null
+                        || !CellGaps.isGapClear(gap, sites, parameters.cellRadius())
+                        || isWalled(laid, from, to)) {
+
+                    continue;
+                }
+                var reach = kmlib.math.geometry.Segments.computeDistanceToPoint(
+                    gap.start(), gap.end(), pick);
+
+                if (reach < away) {
+                    away = reach;
+                    nearest = gap;
+                }
+            }
+        }
+
+        if (nearest == null) {
+            return "no open gap near";
+        }
+        return String.format(
+            Locale.ROOT,
+            "open gap %.0f away between cells %d-%d, %.0f wide",
+            away,
+            nearest.fromSite(),
+            nearest.toSite(),
+            nearest.width());
+    }
+
+    // Whether any laid wall runs between one pair of cells, in either direction - a wall names
+    // its two circles, and which of them it calls "from" is the walk's business rather than
+    // the caller's.
+    private static boolean isWalled(
+            List<DiscUnionBoundary.Chord> laid,
+            int from,
+            int to) {
+
+        for (var chord : laid) {
+
+            if ((chord.fromCircle() == from && chord.toCircle() == to)
+                    || (chord.fromCircle() == to && chord.toCircle() == from)) {
+
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Which side of the drawn coast a point is on. The question that separates "nothing
+    // enclosed this" from "the line enclosed it and the trace did not": inside the coast, a
+    // patch of black is void the map claims to have shut in, and the walls under that line are
+    // where to look. Outside it, the void is open sea and no construction was ever going to
+    // fill it.
+    private static String describeCoastSide(Coastlines.TracedCoasts traced, double[] pick) {
+
+        for (var coast : traced.coasts()) {
+
+            if (kmlib.math.geometry.PolygonRegions.isPointInsideRing(
+                    Coastlines.collectPoints(coast), pick[0], pick[1])) {
+
+                return "inside the coast";
+            }
+        }
+        return "out at sea";
     }
 
     // Every wall the coast trace lays, which is its own reaches and the bridges it was walled

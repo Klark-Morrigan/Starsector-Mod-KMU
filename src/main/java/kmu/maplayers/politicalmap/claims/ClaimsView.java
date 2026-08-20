@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.claims;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.hashing.Fingerprints;
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimReader;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
@@ -167,26 +168,25 @@ public final class ClaimsView implements PoliticalMapView {
      * lives in are spared the recede, so the pick still shows where the faction is while showing
      * that it claims none of it. Re-picking the lit row clears it as any other pick does.
      *
-     * @param sector                           the sector whose systems and economy the claim stats are
-     *                                         read from; null yields an empty picker
-     * @param rules                            the dominance-weighting rules for this read; carried by
-     *                                         the shared pass, which the market-size half of the stats
-     *                                         reads its economy through
-     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count toward a bloc's
-     *                                         market size (the "show undiscovered markets" dev
-     *                                         reveal)
+     * @param sector           the sector whose systems and economy the claim stats are read from;
+     *                         null yields an empty picker
+     * @param rules            the dominance-weighting rules for this read; carried by the shared
+     *                         pass, which the market-size half of the stats reads its economy
+     *                         through
+     * @param colonyVisibility what the player may be shown of a colony, so a bloc's market size
+     *                         counts the very colonies the map paints it for
      * @return this view's picker, its blocs in the order the sector walk surfaces them
      */
     @Override
     public ListPicker<RankedBloc<ClaimStats>> resolveBlocPicker(
             SectorAPI sector,
             DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
 
         // The grouping is resolved once and handed to both halves, so the numbers, the crest, and the
         // name all read against one snapshot rather than three live samples.
         var grouping = resolveGrouping();
-        var pass = DominancePass.over(sector, rules, shouldIncludeUndiscoveredMarkets, grouping);
+        var pass = DominancePass.over(sector, rules, colonyVisibility, grouping);
 
         // The claim half reads through the pass's own colony walk, so the two metrics cost one
         // traversal of each system between them rather than one apiece - and are answered off the

@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.dominance;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.markets.Markets;
 
@@ -44,25 +45,6 @@ public final class KnownMarketFootprints {
     }
 
     /**
-     * Folds each faction's known markets in one system into the footprint the
-     * dominance rule compares, under the normal known-to-player filter.
-     *
-     * @param colonies the system's colony set, as one walk of it reported; empty yields an
-     *                 empty map
-     * @param rules    the dominance-weighting rules for this pass
-     * @return each faction's footprint in the system, keyed by faction id; empty
-     *         when the system holds no known owned market
-     */
-    public static Map<String, MarketFootprint> readByFaction(
-            Colonies colonies,
-            DominanceRules rules) {
-        return readByFaction(
-            colonies,
-            rules,
-            false); // Undiscovered markets are not included.
-    }
-
-    /**
      * Folds each faction's markets in one system into the footprint the dominance
      * rule compares.
      *
@@ -75,26 +57,22 @@ public final class KnownMarketFootprints {
      * carries for hazard and atmosphere conditions) never reach here: the colony set is
      * already selected on ownership, which is the rule that rejects them.
      *
-     * @param colonies                         the system's colony set, as one walk of it
-     *                                         reported; empty yields an empty map
-     * @param rules                            the dominance-weighting rules for this pass -
-     *                                         whether stability scales each rating and
-     *                                         whether an attached station lifts it. The
-     *                                         player's LunaLib toggles, read once per pass
-     *                                         by the caller so a whole pass resolves under
-     *                                         one rule
-     * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
-     *                                         still folds in (the "show undiscovered markets" dev
-     *                                         override); false applies the normal known-to-player
-     *                                         filter, true drops it so an undiscovered colony
-     *                                         counts too
+     * @param colonies         the system's colony set, as one walk of it reported; empty yields
+     *                         an empty map
+     * @param rules            the dominance-weighting rules for this pass - whether stability
+     *                         scales each rating and whether an attached station lifts it. The
+     *                         player's LunaLib toggles, read once per pass by the caller so a
+     *                         whole pass resolves under one rule
+     * @param colonyVisibility what the player may be shown of a colony, read once per pass by
+     *                         the caller; the fold runs over the known projection, so a colony
+     *                         the rule withholds hands its owner no weight
      * @return each faction's footprint in the system, keyed by faction id; empty
      *         when the system holds no folded market
      */
     public static Map<String, MarketFootprint> readByFaction(
             Colonies colonies,
             DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
 
         // The dominance-only projection of the fuller contribution read: a footprint-only caller
         // (the dominance resolve, the watcher's diff) drops the raw market size the picker's stats
@@ -104,7 +82,7 @@ public final class KnownMarketFootprints {
         for (var entry : readContributionsByFaction(
                     colonies,
                     rules,
-                    shouldIncludeUndiscoveredMarkets)
+                    colonyVisibility)
                 .entrySet()) {
 
             footprintByFactionId.put(
@@ -124,24 +102,22 @@ public final class KnownMarketFootprints {
      * one walk means the colony filter and the weight read are defined once, not duplicated per
      * caller.
      *
-     * @param colonies                         the system's colony set, as one walk of it reported;
-     *                                         empty yields an empty map
-     * @param rules                            the dominance-weighting rules for this pass, read once per
-     *                                         pass by the caller so a whole pass resolves under one rule
-     * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
-     *                                         still folds in (the "show undiscovered markets" dev
-     *                                         reveal); false applies the normal known-to-player
-     *                                         filter
+     * @param colonies         the system's colony set, as one walk of it reported; empty yields
+     *                         an empty map
+     * @param rules            the dominance-weighting rules for this pass, read once per pass by
+     *                         the caller so a whole pass resolves under one rule
+     * @param colonyVisibility what the player may be shown of a colony, read once per pass by the
+     *                         caller so every fold in the pass runs over the one set of colonies
      * @return each faction's contribution in the system, keyed by faction id; empty when the system
      *         holds no folded market
      */
     public static Map<String, FactionMarketContribution> readContributionsByFaction(
             Colonies colonies,
             DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
 
         var contributionByFactionId = new LinkedHashMap<String, FactionMarketContribution>();
-        for (var market : readWeighedColonies(colonies, shouldIncludeUndiscoveredMarkets)) {
+        for (var market : readWeighedColonies(colonies, colonyVisibility)) {
             var factionId = market.getFaction().getId();
             var breakdown = MarketWeights.readBreakdown(market, rules);
             var contribution = contributionByFactionId.getOrDefault(
@@ -170,15 +146,12 @@ public final class KnownMarketFootprints {
      * instead of summed away. What paints the map reads the totals; what has to justify a
      * painted system to the player reads the parts those totals are made of.
      *
-     * @param colonies                         the system's colony set, as one walk of it reported;
-     *                                         empty yields an empty map
-     * @param rules                            the dominance-weighting rules for this pass, read
-     *                                         once per pass by the caller so a whole pass resolves
-     *                                         under one rule
-     * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
-     *                                         still counts (the "show undiscovered markets" dev
-     *                                         reveal); false applies the normal known-to-player
-     *                                         filter
+     * @param colonies         the system's colony set, as one walk of it reported; empty yields
+     *                         an empty map
+     * @param rules            the dominance-weighting rules for this pass, read once per pass by
+     *                         the caller so a whole pass resolves under one rule
+     * @param colonyVisibility what the player may be shown of a colony, the same rule the totals
+     *                         this explains were folded under
      * @return each faction's counted markets in the system with the breakdown of each market's
      *         weight, keyed by faction id and in the economy's own market order; empty when the
      *         system holds no counted market
@@ -186,10 +159,10 @@ public final class KnownMarketFootprints {
     public static Map<String, List<MarketWeightBreakdown>> readBreakdownByFaction(
             Colonies colonies,
             DominanceRules rules,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
 
         var breakdownsByFactionId = new LinkedHashMap<String, List<MarketWeightBreakdown>>();
-        for (var market : readWeighedColonies(colonies, shouldIncludeUndiscoveredMarkets)) {
+        for (var market : readWeighedColonies(colonies, colonyVisibility)) {
             breakdownsByFactionId
                 .computeIfAbsent(market.getFaction().getId(), factionId -> new ArrayList<>())
                 .add(MarketWeights.readBreakdown(market, rules));
@@ -220,22 +193,20 @@ public final class KnownMarketFootprints {
      * forgotten branch away from painting a system for a faction the mechanic never counted. A name
      * and a glyph cannot be summed into anything.
      *
-     * @param colonies                         the system's colony set, as one walk of it reported;
-     *                                         empty yields an empty map
-     * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
-     *                                         still counts (the "show undiscovered markets" dev
-     *                                         reveal); false applies the normal known-to-player
-     *                                         filter
+     * @param colonies         the system's colony set, as one walk of it reported; empty yields
+     *                         an empty map
+     * @param colonyVisibility what the player may be shown of a colony, the same rule the weighed
+     *                         half is selected under so the two stay exact complements
      * @return each faction's unlisted colonies in the system, identified and nothing more, keyed by
      *         faction id and in the system's own entity order; empty when every colony present is
      *         one the economy lists
      */
     public static Map<String, List<EntityNameplate>> readUnweighedColoniesByFaction(
             Colonies colonies,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
 
         var coloniesByFactionId = new LinkedHashMap<String, List<EntityNameplate>>();
-        for (var market : readUnweighedColonies(colonies, shouldIncludeUndiscoveredMarkets)) {
+        for (var market : readUnweighedColonies(colonies, colonyVisibility)) {
             coloniesByFactionId
                 .computeIfAbsent(market.getFaction().getId(), factionId -> new ArrayList<>())
                 .add(Markets.readNameplate(market));
@@ -252,45 +223,43 @@ public final class KnownMarketFootprints {
      * reader ordering the blocs this class ranked has to be ranking them over the same colonies,
      * or it can settle a contest among markets the weights were never folded from.
      *
-     * @param colonies                         the system's colony set, as one walk of it reported;
-     *                                         empty yields an empty list
-     * @param shouldIncludeUndiscoveredMarkets whether a market the player has not yet discovered
-     *                                         still counts (the "show undiscovered markets" dev
-     *                                         reveal); false applies the normal known-to-player
-     *                                         filter
+     * @param colonies         the system's colony set, as one walk of it reported; empty yields
+     *                         an empty list
+     * @param colonyVisibility what the player may be shown of a colony, so a reader ordering the
+     *                         blocs this class ranked reads the very colonies they were ranked on
      * @return the weighed colonies' markets, in the economy's own order
      */
     public static List<MarketAPI> readWeighedColonies(
             Colonies colonies,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
 
-        return selectMarkets(colonies, shouldIncludeUndiscoveredMarkets, true);
+        return selectMarkets(colonies, colonyVisibility, true);
     }
 
     // The colonies present that the economy does not list - what the weighed read passes over, and
     // nothing it takes, the two dividing the projection between them.
     private static List<MarketAPI> readUnweighedColonies(
             Colonies colonies,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
 
-        return selectMarkets(colonies, shouldIncludeUndiscoveredMarkets, false);
+        return selectMarkets(colonies, colonyVisibility, false);
     }
 
     // One side of the known projection's one division, the flag naming which. Written once with
     // the side as a parameter rather than twice with the test negated, so the two sides cannot
     // drift into overlapping or into leaving a colony out between them.
     //
-    // The projection is taken here rather than by the caller because the fog is per-read: the same
-    // system is read under the player's filter for the map and under the dev reveal for a box, and
-    // a projection cached across the pair would answer one of them wrongly.
+    // The projection is taken here rather than by the caller because the rule is per-read: the
+    // same system is read under the player's own rule for the map and under a widened one for a
+    // box, and a projection cached across the pair would answer one of them wrongly.
     private static List<MarketAPI> selectMarkets(
             Colonies colonies,
-            boolean shouldIncludeUndiscoveredMarkets,
+            ColonyVisibility colonyVisibility,
             boolean shouldSelectListedByEconomy) {
 
         var markets = new ArrayList<MarketAPI>();
 
-        for (var colony : colonies.readKnownColonies(shouldIncludeUndiscoveredMarkets)) {
+        for (var colony : colonies.readKnownColonies(colonyVisibility)) {
             if (colony.isListedByEconomy() == shouldSelectListedByEconomy) {
                 markets.add(colony.market());
             }

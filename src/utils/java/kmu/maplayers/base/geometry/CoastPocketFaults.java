@@ -170,7 +170,7 @@ final class CoastPocketFaults {
         collectRunsOutsideBounds(
             pockets,
             sites,
-            bounds -> List.of(bounds.landward()),
+            CoastPocketFaults::measureSeawardDepth,
             (run, depth) -> found.add(new Spill(run, depth)));
 
         found.sort(java.util.Comparator.comparingDouble(Spill::depth).reversed());
@@ -196,7 +196,7 @@ final class CoastPocketFaults {
         collectRunsOutsideBounds(
             pockets,
             sites,
-            bounds -> List.of(bounds.afterStart(), bounds.beforeEnd()),
+            CoastPocketFaults::measurePastEndDepth,
             (run, depth) -> found.add(new Overrun(run, depth)));
 
         found.sort(java.util.Comparator.comparingDouble(Overrun::depth).reversed());
@@ -252,7 +252,7 @@ final class CoastPocketFaults {
             List<double[]> sites,
             double channel) {
 
-        return clipToBounds(outline, reaches, sites, channel, ReachBounds::toList);
+        return clipToBounds(outline, reaches, sites, channel);
     }
 
     // One outline held inside whichever bounds a caller names, clipped against each in turn.
@@ -262,8 +262,7 @@ final class CoastPocketFaults {
             List<double[]> outline,
             List<DiscUnionBoundary.Chord> reaches,
             List<double[]> sites,
-            double channel,
-            BoundsChoice choice) {
+            double channel) {
 
         var kept = outline;
 
@@ -275,7 +274,7 @@ final class CoastPocketFaults {
                 continue;
             }
 
-            for (var bound : choice.chooseFrom(bounds)) {
+            for (var bound : bounds.toList()) {
 
                 if (kept.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                     return List.of();
@@ -315,10 +314,39 @@ final class CoastPocketFaults {
         }
     }
 
-    // Which of a reach's bounds one fault is about. Named rather than passed as a list, so
-    // the choice is made once beside the fault it belongs to instead of at every call.
-    private interface BoundsChoice {
-        List<HalfPlane> chooseFrom(ReachBounds bounds);
+    // How deep one point is into one fault, at most zero where it is not at fault at all.
+    //
+    // A predicate rather than a choice of bounds, because the two faults are not each "outside
+    // one of these": being out at sea means being past the line AND beside the reach at once,
+    // and a list of half-planes can only say "outside any of them".
+    private interface PointFault {
+        double measureDepthAt(double[] point, ReachBounds bounds);
+    }
+
+    // How far out to sea a point is, which is nothing at all unless it is BESIDE the reach.
+    //
+    // A reach is a segment and its line runs on forever. A pocket that reaches past the end of
+    // one straight piece of coast and curves round sits on the far side of that line without
+    // ever being seaward of the coast - there is no coast out there to be seaward of. Asking
+    // the line alone calls that void claimed at sea, which condemns a correct shape and, worse,
+    // invites a cut that deletes it.
+    private static double measureSeawardDepth(double[] point, ReachBounds bounds) {
+
+        if (measureOffsetFrom(point, bounds.afterStart()) < 0
+                || measureOffsetFrom(point, bounds.beforeEnd()) < 0) {
+
+            return 0;
+        }
+        return -measureOffsetFrom(point, bounds.landward());
+    }
+
+    // How far past one of a reach's ends a point is, which is what the cut holds a pocket
+    // within wherever a cut runs at all.
+    private static double measurePastEndDepth(double[] point, ReachBounds bounds) {
+
+        return Math.max(
+            -measureOffsetFrom(point, bounds.afterStart()),
+            -measureOffsetFrom(point, bounds.beforeEnd()));
     }
 
     // What to do with one run found outside a set of bounds: the run itself and how far the
@@ -326,35 +354,6 @@ final class CoastPocketFaults {
     // finders share the walk and differ only in what they build from it.
     private interface RunHandler {
         void acceptRun(List<double[]> run, double depth);
-    }
-
-    /**
-     * The part of a pocket outline that is landward of the reaches that closed it, and
-     * nothing else - no channel taken off, no holding it within a reach's span.
-     *
-     * <p>What a pocket at its TRUE extent is held to. It is meant to run right up to the line
-     * that closed it, so there is no channel to cut back to; and it has every right to reach
-     * past where that line stops, since a reach is one straight piece of a coast that goes on
-     * either side of it. The one thing it may not do is cross to the seaward side, which is
-     * void that nothing shut in.
-     *
-     * <p>That case arises where two reaches meet on one cell and their lines cross: each wall
-     * is walked out to its own mouth, so each overshoots the other by the wedge between them.
-     * The overshoot is not pocket - it is the other reach's sea - and the half-plane is what
-     * says so.
-     *
-     * @param outline the pocket outline as traced
-     * @param reaches the coast reaches it closes on
-     * @param sites   the sites, to say which side of each reach the cells are on
-     * @return what is left, which is empty when the whole outline was over the line
-     */
-    static List<double[]> cutBehindReaches(
-            List<double[]> outline,
-            List<DiscUnionBoundary.Chord> reaches,
-            List<double[]> sites) {
-
-        return clipToBounds(
-            outline, reaches, sites, 0, bounds -> List.of(bounds.landward()));
     }
 
     /**
@@ -460,7 +459,7 @@ final class CoastPocketFaults {
     private static void collectRunsOutsideBounds(
             List<WalledPocket> pockets,
             List<double[]> sites,
-            BoundsChoice choice,
+            PointFault fault,
             RunHandler handler) {
 
         for (var walled : pockets) {
@@ -470,7 +469,7 @@ final class CoastPocketFaults {
                     var bounds = buildBounds(reach, sites, 0);
 
                     if (bounds != null) {
-                        collectRunsOutside(outline, choice.chooseFrom(bounds), handler);
+                        collectRunsOutside(outline, bounds, fault, handler);
                     }
                 }
             }
@@ -483,7 +482,8 @@ final class CoastPocketFaults {
     // that differs between them and a second walk could disagree about where a run began.
     private static void collectRunsOutside(
             List<double[]> outline,
-            List<HalfPlane> bounds,
+            ReachBounds bounds,
+            PointFault fault,
             RunHandler handler) {
 
         var run = new ArrayList<double[]>();
@@ -491,7 +491,7 @@ final class CoastPocketFaults {
 
         for (var point : outline) {
 
-            var past = measureExcursionFrom(point, bounds);
+            var past = fault.measureDepthAt(point, bounds);
 
             if (past > PAST_A_BOUND) {
 

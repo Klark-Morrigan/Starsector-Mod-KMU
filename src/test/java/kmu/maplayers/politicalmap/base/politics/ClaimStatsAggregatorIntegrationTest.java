@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.testfixtures.starsector.systems.claims.ClaimReaderFake;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -136,7 +137,7 @@ final class ClaimStatsAggregatorIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    DominancePass.over(sectorMock, STABILITY_WEIGHTED, false, grouping),
+                    DominancePass.over(sectorMock, STABILITY_WEIGHTED, ColonyVisibility.BASE_FOG, grouping),
                     claimReaderFake))
                 .containsExactly(entry("alliance-1", new ClaimStats(1, 3)));
         }

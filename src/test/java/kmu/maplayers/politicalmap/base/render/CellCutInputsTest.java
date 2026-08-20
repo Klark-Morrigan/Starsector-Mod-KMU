@@ -1,10 +1,14 @@
 package kmu.maplayers.politicalmap.base.render;
 
+import kmlib.starsector.colonies.ColonyVisibility;
+
 import kmu.maplayers.base.geometry.CellSeedInputs;
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,10 +26,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class CellCutInputsTest {
 
     // The reading two cuts share where the case is about one of the other inputs.
+    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
+    // is the widest rule any surface reads under.
+    private static final ColonyVisibility UNDER_THE_REVEAL =
+        new ColonyVisibility(true, Set.of());
+
     private static final int GEOMETRY_REVISION = 7;
     private static final CellSeedInputs SEED_INPUTS = new CellSeedInputs(48, 4000.0);
     private static final MapVisibilityOverrides DEV_TOGGLES =
-        new MapVisibilityOverrides(false, false);
+        new MapVisibilityOverrides(ColonyVisibility.BASE_FOG, false);
 
     @Nested
     class Equality {
@@ -77,7 +86,7 @@ final class CellCutInputsTest {
                 .isNotEqualTo(new CellCutInputs(
                     GEOMETRY_REVISION,
                     SEED_INPUTS,
-                    new MapVisibilityOverrides(false, true)));
+                    new MapVisibilityOverrides(ColonyVisibility.BASE_FOG, true)));
         }
 
         @Test
@@ -88,7 +97,7 @@ final class CellCutInputsTest {
                 .isNotEqualTo(new CellCutInputs(
                     GEOMETRY_REVISION,
                     SEED_INPUTS,
-                    new MapVisibilityOverrides(true, false)));
+                    new MapVisibilityOverrides(UNDER_THE_REVEAL, false)));
         }
     }
 }

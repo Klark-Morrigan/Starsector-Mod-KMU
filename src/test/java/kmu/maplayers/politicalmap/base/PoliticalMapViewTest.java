@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
+
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 
@@ -154,7 +156,7 @@ final class PoliticalMapViewTest {
             // test is the seam's default and not that view's choice to keep it.
             var viewFake = new PoliticalMapViewFake(Map.of());
 
-            assertThat(viewFake.resolveBlocPicker(mock(SectorAPI.class), null, false).items())
+            assertThat(viewFake.resolveBlocPicker(mock(SectorAPI.class), null, ColonyVisibility.BASE_FOG).items())
                 .isEmpty();
         }
     }

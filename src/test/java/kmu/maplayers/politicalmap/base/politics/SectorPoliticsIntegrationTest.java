@@ -5,6 +5,8 @@ import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
+
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -300,7 +302,7 @@ class SectorPoliticsIntegrationTest {
                     new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemId(
-                    DominancePass.over(sector, STABILITY_WEIGHTED, false, grouping)))
+                    DominancePass.over(sector, STABILITY_WEIGHTED, ColonyVisibility.BASE_FOG, grouping)))
                 .containsEntry(
                     "rama",
                     new DominantHolder(
@@ -363,7 +365,7 @@ class SectorPoliticsIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemId(
-                    DominancePass.over(sector, STABILITY_WEIGHTED, false, grouping)))
+                    DominancePass.over(sector, STABILITY_WEIGHTED, ColonyVisibility.BASE_FOG, grouping)))
                 .containsEntry(
                     "contested-system",
                     new DominantHolder("alliance-1", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));

@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
@@ -16,8 +17,8 @@ import java.util.Set;
 
 /**
  * One rebuild's reading of a sector, as any owner-painted map layer needs it: which sector, how
- * factions fold into blocs, how far the fog is lifted, and the one walk of each system all three
- * are answered from.
+ * factions fold into blocs, what the player may be shown of a colony, and the one walk of each
+ * system all three are answered from.
  *
  * <p>What every layer that paints somebody's territory has in common, and no more than that.
  * The mechanic deciding <em>who</em> paints - dominance weights, a claim, a diplomatic relation -
@@ -36,60 +37,66 @@ import java.util.Set;
  * <p>The sector is the index's rather than a field of its own, so a pass cannot be built naming
  * one sector while answering out of another.
  *
- * @param grouping                         the grouping that folds factions into blocs before any
- *                                         mechanic compares them; the identity grouping resolves
- *                                         the plain faction view
- * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count (the "show
- *                                         undiscovered markets" dev reveal); false applies the
- *                                         normal known-to-player filter
- * @param colonies                         the pass's one walk of each system, shared by every
- *                                         read made through it
+ * @param grouping         the grouping that folds factions into blocs before any mechanic
+ *                         compares them; the identity grouping resolves the plain faction view
+ * @param colonyVisibility the rule every read through this pass shows colonies under - the dev
+ *                         reveal, and the gates holding back what a bare fog would leak
+ * @param colonies         the pass's one walk of each system, shared by every read made through
+ *                         it
  */
 public record HolderPass(
     HolderGrouping grouping,
-    boolean shouldIncludeUndiscoveredMarkets,
+    ColonyVisibility colonyVisibility,
     SystemColoniesIndex colonies) {
 
     public HolderPass {
         Objects.requireNonNull(grouping, "grouping");
         Objects.requireNonNull(colonies, "colonies");
+
+        // An unstated rule is the fog alone, matching how the projections themselves read one.
+        // A pass is threaded through every surface a layer draws, so a null reaching one of them
+        // as "no rule at all" would be a leak rather than a fault anybody sees.
+        colonyVisibility = colonyVisibility == null ? ColonyVisibility.BASE_FOG : colonyVisibility;
     }
 
     /**
-     * A pass over one sector under explicit knobs, opening the colony index its reads share.
+     * A pass over one sector under an explicit visibility rule, opening the colony index its
+     * reads share.
      *
-     * @param sector                           the sector this pass reads; null yields a pass
-     *                                         answering an empty colony set for every system,
-     *                                         matching how the reads treat an unreachable sector
-     * @param shouldIncludeUndiscoveredMarkets whether undiscovered colonies count
-     * @param grouping                         the grouping this pass folds factions into blocs
-     *                                         under
+     * @param sector           the sector this pass reads; null yields a pass answering an empty
+     *                         colony set for every system, matching how the reads treat an
+     *                         unreachable sector
+     * @param colonyVisibility the rule this pass shows colonies under
+     * @param grouping         the grouping this pass folds factions into blocs under
      * @return a pass over that sector carrying those knobs
      */
     public static HolderPass over(
             SectorAPI sector,
-            boolean shouldIncludeUndiscoveredMarkets,
+            ColonyVisibility colonyVisibility,
             HolderGrouping grouping) {
 
         return new HolderPass(
             grouping,
-            shouldIncludeUndiscoveredMarkets,
+            colonyVisibility,
             new SystemColoniesIndex(sector));
     }
 
     /**
-     * A pass reading the player's live dev reveal under an explicit grouping: the reveal is
-     * sampled once here so the whole rebuild resolves under the setting in force when it began,
-     * even if the player flips the toggle mid-walk.
+     * A pass reading the player's live visibility settings under an explicit grouping: the rule
+     * is sampled once here so the whole rebuild resolves under the settings in force when it
+     * began, even if the player flips a toggle mid-walk.
+     *
+     * <p>The whole rule is taken rather than the reveal alone, so a surface reading through this
+     * pass cannot be handed one gate and not the other.
      *
      * @param sector   the sector this pass reads
      * @param grouping the grouping this pass folds factions into blocs under
-     * @return a pass carrying the live reveal paired with the grouping
+     * @return a pass carrying the live rule paired with the grouping
      */
     public static HolderPass readFromLunaSettings(SectorAPI sector, HolderGrouping grouping) {
         return over(
             sector,
-            MapVisibilityOverrides.readFromLunaSettings().shouldIncludeUndiscoveredMarkets(),
+            MapVisibilityOverrides.readFromLunaSettings().colonyVisibility(),
             grouping);
     }
 
@@ -148,18 +155,35 @@ public record HolderPass(
 
     /**
      * The colonies in one system the player may be shown - the known projection over this pass's
-     * one walk of it, taken under the reveal the pass was opened with.
+     * one walk of it, taken under the rule the pass was opened with.
      *
      * <p>Named here rather than composed at each display reader, because the fill painting a cell,
      * the band counting inside it and the box over it all have to withhold the same colonies. Two
-     * of them applying the fog separately is two chances for a band to count out a colony the fill
-     * declines to draw.
+     * of them applying the rule separately is two chances for a band to count out a colony the
+     * fill declines to draw.
      *
      * @param system the system to read; null yields an empty list
-     * @return the system's colonies the reveal admits, in the set's own order
+     * @return the system's colonies the rule admits, in the set's own order
      */
     public List<Colony> readKnownColoniesIn(StarSystemAPI system) {
-        return readColoniesIn(system).readKnownColonies(shouldIncludeUndiscoveredMarkets);
+        return readColoniesIn(system).readKnownColonies(colonyVisibility);
+    }
+
+    /**
+     * The colonies in one system that amount to people living there - the habitation projection
+     * over this pass's one walk of it, under the same rule the known listing takes.
+     *
+     * <p>Beside the listing rather than in place of it, because a reader answering "who may be
+     * named here" and a reader answering "is anybody living here" are asking different questions
+     * of the one system: a derelict somebody has seen belongs in the first answer and settles
+     * nothing in the second. Offering both off the pass means neither reader has to know which
+     * shapes of colony the difference turns on.
+     *
+     * @param system the system to read; null yields an empty list
+     * @return the system's known colonies somebody lives on, in the set's own order
+     */
+    public List<Colony> readInhabitingColoniesIn(StarSystemAPI system) {
+        return readColoniesIn(system).readInhabitingColonies(colonyVisibility);
     }
 
     /**
@@ -173,7 +197,7 @@ public record HolderPass(
      * other lacks.
      *
      * @param system the system to read; null yields an empty set
-     * @return the ids of the factions holding a colony the reveal admits, in the projection's own
+     * @return the ids of the factions holding a colony the rule admits, in the projection's own
      *         order
      */
     public Set<String> readKnownColonyFactionIds(StarSystemAPI system) {
@@ -196,7 +220,7 @@ public record HolderPass(
      * such a bloc absent while the band inside the same cell counts its colonies.
      *
      * @param system the system to read; null yields an empty set
-     * @return the ids of the blocs holding a colony the reveal admits, in the projection's own
+     * @return the ids of the blocs holding a colony the rule admits, in the projection's own
      *         order; an owner the grouping can name no bloc for is left out, as it is from every
      *         other fold the grouping makes
      */

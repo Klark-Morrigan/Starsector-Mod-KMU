@@ -116,7 +116,9 @@ final class ClaimPresenceReadoutIntegrationTest {
 
             // One reader for both surfaces, over the one walk of the system, exactly as a live bake
             // and the hover above it read a claim.
-            var claimBreakdownReader = new VanillaClaimBreakdownReader(inputs.pass().colonies());
+            var claimBreakdownReader = new VanillaClaimBreakdownReader(
+                inputs.pass().colonyVisibility(),
+                inputs.pass().colonies());
 
             var band = new ClaimedSystemRibbonPlanner(claimBreakdownReader, inputs)
                 .planSystemRibbon(system);

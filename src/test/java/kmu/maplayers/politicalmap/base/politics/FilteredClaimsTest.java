@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.politics;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -51,7 +52,7 @@ final class FilteredClaimsTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, false, grouping);
+            var pass = HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
@@ -80,7 +81,7 @@ final class FilteredClaimsTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, false, grouping);
+            var pass = HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
@@ -118,7 +119,7 @@ final class FilteredClaimsTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, false, grouping);
+            var pass = HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
@@ -151,7 +152,7 @@ final class FilteredClaimsTest {
         void resolveFilteredClaimsPassesThePlainClaimResolveThroughWithNoSector() {
 
             var claimReaderMock = mock(ClaimReader.class);
-            var pass = HolderPass.over(null, false, HolderGrouping.identity());
+            var pass = HolderPass.over(null, ColonyVisibility.BASE_FOG, HolderGrouping.identity());
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 

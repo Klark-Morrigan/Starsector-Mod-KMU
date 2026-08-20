@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
@@ -26,6 +27,7 @@ import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildPresenceOnlyStanding;
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildStandingOnOneMarket;
@@ -47,7 +49,6 @@ import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFac
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -66,6 +67,11 @@ import static org.mockito.Mockito.when;
  * lines is {@link ExpandedSystemClaimTooltipTest}'s.
  */
 final class SystemClaimTooltipTest {
+
+    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
+    // is the widest rule any surface reads under.
+    private static final ColonyVisibility UNDER_THE_REVEAL =
+        new ColonyVisibility(true, Set.of());
 
     private static final String SYSTEM_ID = "askonia";
 
@@ -119,7 +125,7 @@ final class SystemClaimTooltipTest {
         // stood in as absent - a populated system - for every case but the one about it.
         statusRowMock = Mockito.mockStatic(SystemStatusRow.class);
         statusRowMock
-            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), anyBoolean()))
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any()))
             .thenReturn(Optional.empty());
 
         // The reveal is a live LunaLib read, unreachable from the test JVM; stood in as off, the
@@ -288,7 +294,7 @@ final class SystemClaimTooltipTest {
             // about the box.
             visibilityOverridesMock
                 .when(MapVisibilityOverrides::readFromLunaSettings)
-                .thenReturn(new MapVisibilityOverrides(true, false));
+                .thenReturn(new MapVisibilityOverrides(UNDER_THE_REVEAL, false));
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -581,7 +587,7 @@ final class SystemClaimTooltipTest {
             tooltip.buildBodySections(sectorMock, systemMock);
 
             statusRowMock.verify(
-                () -> SystemStatusRow.resolveStatusRow(sectorMock, systemMock, false));
+                () -> SystemStatusRow.resolveStatusRow(sectorMock, systemMock, ColonyVisibility.BASE_FOG));
         }
 
         @Test
@@ -590,14 +596,14 @@ final class SystemClaimTooltipTest {
             // has turned it on is not told two different things by two layers about one system.
             visibilityOverridesMock
                 .when(MapVisibilityOverrides::readFromLunaSettings)
-                .thenReturn(new MapVisibilityOverrides(true, false));
+                .thenReturn(new MapVisibilityOverrides(UNDER_THE_REVEAL, false));
 
             stubBreakdown(SystemClaimBreakdown.NONE);
 
             tooltip.buildBodySections(sectorMock, systemMock);
 
             statusRowMock.verify(
-                () -> SystemStatusRow.resolveStatusRow(sectorMock, systemMock, true));
+                () -> SystemStatusRow.resolveStatusRow(sectorMock, systemMock, UNDER_THE_REVEAL));
         }
 
         @Test
@@ -712,7 +718,7 @@ final class SystemClaimTooltipTest {
         var statusRow = CellTooltipRows.buildBannerRow(null, "Unpopulated");
 
         statusRowMock
-            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), anyBoolean()))
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any()))
             .thenReturn(Optional.of(statusRow));
 
         return statusRow;

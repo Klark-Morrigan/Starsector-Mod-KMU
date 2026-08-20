@@ -8,7 +8,9 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
-import kmlib.starsector.markets.Markets;
+import kmlib.starsector.colonies.ColonyKind;
+import kmlib.starsector.colonies.ColonyVisibility;
+import kmlib.starsector.markets.MarketVisibility;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import org.mockito.MockedStatic;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOrbitingEntity;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStarAt;
@@ -47,6 +50,11 @@ class MarketProximityTieBreakTest {
 
     // Orbit radii the tests place bodies at, one clearly nearer the star than the other so the
     // closer bloc wins.
+    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
+    // is the widest rule any surface reads under.
+    private static final ColonyVisibility UNDER_THE_REVEAL =
+        new ColonyVisibility(true, Set.of());
+
     private static final float ORBIT_CLOSE = 100.0f;
     private static final float ORBIT_FAR = 200.0f;
 
@@ -62,7 +70,7 @@ class MarketProximityTieBreakTest {
 
         @Test
         void ordersTheBlocWhoseNearestMarketOrbitsCloserToTheCentreFirst() {
-            try (var marketsMock = mockStatic(Markets.class)) {
+            try (var marketsMock = mockStatic(MarketVisibility.class)) {
 
                 stubEveryMarketOwnedAndKnown(marketsMock);
 
@@ -75,7 +83,7 @@ class MarketProximityTieBreakTest {
                 var comparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    false,
+                    ColonyVisibility.BASE_FOG,
                     HolderGrouping.identity());
 
                 // hegemony's market orbits nearer the star, so it is ordered before blackrock.
@@ -88,7 +96,7 @@ class MarketProximityTieBreakTest {
 
         @Test
         void fallsBackToLowestColourFactionIdWhenNearestMarketsOrbitAtTheSameDepth() {
-            try (var marketsMock = mockStatic(Markets.class)) {
+            try (var marketsMock = mockStatic(MarketVisibility.class)) {
 
                 stubEveryMarketOwnedAndKnown(marketsMock);
 
@@ -101,7 +109,7 @@ class MarketProximityTieBreakTest {
                 var comparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    false,
+                    ColonyVisibility.BASE_FOG,
                     GREATER_HEGEMONY);
 
                 // Equal distance: the colour-faction id decides - the alliance colours by
@@ -116,7 +124,7 @@ class MarketProximityTieBreakTest {
 
         @Test
         void resolvesTheSameWinnerUnderFactionAndAllianceGrouping() {
-            try (var marketsMock = mockStatic(Markets.class)) {
+            try (var marketsMock = mockStatic(MarketVisibility.class)) {
 
                 stubEveryMarketOwnedAndKnown(marketsMock);
 
@@ -133,13 +141,13 @@ class MarketProximityTieBreakTest {
                 var factionComparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    false,
+                    ColonyVisibility.BASE_FOG,
                     HolderGrouping.identity());
 
                 var allianceComparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    false,
+                    ColonyVisibility.BASE_FOG,
                     GREATER_HEGEMONY);
 
                 assertThat(factionComparator.compare("hegemony", "blackrock"))
@@ -151,7 +159,7 @@ class MarketProximityTieBreakTest {
 
         @Test
         void readsNoGeometryUntilFirstCompared() {
-            try (var marketsMock = mockStatic(Markets.class)) {
+            try (var marketsMock = mockStatic(MarketVisibility.class)) {
 
                 stubEveryMarketOwnedAndKnown(marketsMock);
 
@@ -164,7 +172,7 @@ class MarketProximityTieBreakTest {
                 var comparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    false,
+                    ColonyVisibility.BASE_FOG,
                     HolderGrouping.identity());
 
                 // Building the comparator reads nothing; only the first compare - the first tie -
@@ -182,7 +190,7 @@ class MarketProximityTieBreakTest {
 
         @Test
         void ignoresAColonyTheEconomyDoesNotListHoweverCloseItOrbits() {
-            try (var marketsMock = mockStatic(Markets.class)) {
+            try (var marketsMock = mockStatic(MarketVisibility.class)) {
 
                 stubEveryMarketOwnedAndKnown(marketsMock);
 
@@ -200,7 +208,7 @@ class MarketProximityTieBreakTest {
                 var comparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    false,
+                    ColonyVisibility.BASE_FOG,
                     HolderGrouping.identity());
 
                 assertThat(comparator.compare("hegemony", "blackrock"))
@@ -213,7 +221,7 @@ class MarketProximityTieBreakTest {
             // The tie-break reads the pass's own projection rather than a filter of its own, so a
             // colony the player has not found is out of the tie exactly while it is out of the
             // weights - and back in the moment the dev reveal admits it to both.
-            try (var marketsMock = mockStatic(Markets.class)) {
+            try (var marketsMock = mockStatic(MarketVisibility.class)) {
 
                 stubEveryMarketOwnedAndKnown(marketsMock);
 
@@ -231,14 +239,14 @@ class MarketProximityTieBreakTest {
                 // Without the reveal blackrock's nearer colony is not counted, so it is placeless
                 // and hegemony's farther one decides.
                 assertThat(MarketProximityTieBreak
-                        .forSystem(systemMock, colonies, false, HolderGrouping.identity())
+                        .forSystem(systemMock, colonies, ColonyVisibility.BASE_FOG, HolderGrouping.identity())
                         .compare("hegemony", "blackrock"))
                     .isNegative();
 
                 // Under the reveal the same colony counts, and being the nearer one it takes the
                 // tie.
                 assertThat(MarketProximityTieBreak
-                        .forSystem(systemMock, colonies, true, HolderGrouping.identity())
+                        .forSystem(systemMock, colonies, UNDER_THE_REVEAL, HolderGrouping.identity())
                         .compare("hegemony", "blackrock"))
                     .isPositive();
             }
@@ -246,7 +254,7 @@ class MarketProximityTieBreakTest {
 
         @Test
         void treatsAMarketWithNoPrimaryEntityAsFarthestFromTheCentre() {
-            try (var marketsMock = mockStatic(Markets.class)) {
+            try (var marketsMock = mockStatic(MarketVisibility.class)) {
 
                 stubEveryMarketOwnedAndKnown(marketsMock);
 
@@ -262,7 +270,7 @@ class MarketProximityTieBreakTest {
                 var comparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    false,
+                    ColonyVisibility.BASE_FOG,
                     HolderGrouping.identity());
 
                 assertThat(comparator.compare("hegemony", "blackrock"))
@@ -273,20 +281,20 @@ class MarketProximityTieBreakTest {
 
     // Stubs the colony filter open for every market, so the read turns on the bloc mapping over
     // the real orbit geometry rather than on which markets count as colonies.
-    private static void stubEveryMarketOwnedAndKnown(MockedStatic<Markets> marketsMock) {
+    private static void stubEveryMarketOwnedAndKnown(MockedStatic<MarketVisibility> marketsMock) {
         marketsMock
-            .when(() -> Markets.isCountedAsColony(any(), anyBoolean()))
+            .when(() -> MarketVisibility.isCountedAsColony(any(), anyBoolean()))
             .thenReturn(true);
     }
 
     // Narrows the open filter for one colony: counted under the dev reveal and not without it,
     // which is what an undiscovered colony reads as.
     private static void stubColonyUndiscovered(
-            MockedStatic<Markets> marketsMock,
+            MockedStatic<MarketVisibility> marketsMock,
             Colony colony) {
 
         marketsMock
-            .when(() -> Markets.isCountedAsColony(same(colony.market()), eq(false)))
+            .when(() -> MarketVisibility.isCountedAsColony(same(colony.market()), eq(false)))
             .thenReturn(false);
     }
 
@@ -334,7 +342,10 @@ class MarketProximityTieBreakTest {
             String factionId,
             SectorEntityToken primaryEntity) {
 
-        return new Colony(buildMarketOwnedBy(factionId, primaryEntity), true);
+        return new Colony(
+            buildMarketOwnedBy(factionId, primaryEntity),
+            ColonyKind.COLONY,
+            true);
     }
 
     // A colony present in the system that the economy does not list - named by a box, weighed by
@@ -343,6 +354,9 @@ class MarketProximityTieBreakTest {
             String factionId,
             SectorEntityToken primaryEntity) {
 
-        return new Colony(buildMarketOwnedBy(factionId, primaryEntity), false);
+        return new Colony(
+            buildMarketOwnedBy(factionId, primaryEntity),
+            ColonyKind.COLONY,
+            false);
     }
 }

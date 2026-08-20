@@ -8,6 +8,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
+
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -97,7 +99,7 @@ public final class SectorPoliticsFixtures {
     public static HolderPass buildHolderPassOver(SectorAPI sector) {
         return HolderPass.over(
             sector,
-            false, // Undiscovered markets are not included.
+            ColonyVisibility.BASE_FOG, // Undiscovered markets are not included.
             HolderGrouping.identity());
     }
 

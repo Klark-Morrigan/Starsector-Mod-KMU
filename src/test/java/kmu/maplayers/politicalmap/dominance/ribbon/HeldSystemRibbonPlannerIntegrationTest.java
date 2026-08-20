@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
+
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -49,8 +51,8 @@ final class HeldSystemRibbonPlannerIntegrationTest {
 
     private static final String SYSTEM_ID = "corvus";
 
-    // Undiscovered colonies left out, which is the shipped reveal; no case here turns on it.
-    private static final boolean WITHOUT_DEV_REVEAL = false;
+    // Undiscovered colonies left out, which is the shipped rule; no case here turns on it.
+    private static final ColonyVisibility WITHOUT_DEV_REVEAL = ColonyVisibility.BASE_FOG;
 
     // Colony sizes chosen so the two blocs cannot tie on weight. A tie would send the resolve to
     // the proximity tie-break, which reads orbit geometry none of these systems is wired with -

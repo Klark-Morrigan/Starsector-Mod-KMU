@@ -8,6 +8,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.memory.SectorMemoryAccess;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
@@ -395,7 +396,7 @@ final class AlliancesViewTest {
                     .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY));
 
-                assertThat(view.resolveBlocPicker(sectorMock, ANY_RULES, false).items())
+                assertThat(view.resolveBlocPicker(sectorMock, ANY_RULES, ColonyVisibility.BASE_FOG).items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc(
                             "rebel_pact",
@@ -423,7 +424,7 @@ final class AlliancesViewTest {
                     .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(Map.of());
 
-                assertThat(view.resolveBlocPicker(mock(SectorAPI.class), ANY_RULES, false)
+                assertThat(view.resolveBlocPicker(mock(SectorAPI.class), ANY_RULES, ColonyVisibility.BASE_FOG)
                         .sortModes())
                     .isEqualTo(DominanceSortMode.MODES);
             }

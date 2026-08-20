@@ -806,12 +806,21 @@ final class VoidRegionsDump {
         var spills = CoastPocketFaults.findSpills(pockets, traced.union().sites());
         var overruns = CoastPocketFaults.findOverruns(pockets, traced.union().sites());
 
+        var drawn = 0;
+
+        for (var walled : pockets) {
+            if (!walled.pocket().outlines().isEmpty()) {
+                drawn++;
+            }
+        }
+
         System.out.printf(
             Locale.ROOT,
-            "at their true extent: %d pockets, %d runs seaward of a reach, worst by %.0f "
-                + "(has to be 0); %d runs past a reach's end, worst by %.0f (expected - "
-                + "nothing cuts them here)%n",
+            "at their true extent: %d pockets, %d of them drawn, %d runs seaward of a reach, "
+                + "worst by %.0f (has to be 0); %d runs past a reach's end, worst by %.0f "
+                + "(expected - nothing cuts them here)%n",
             pockets.size(),
+            drawn,
             spills.size(),
             spills.isEmpty() ? 0 : spills.get(0).depth(),
             overruns.size(),

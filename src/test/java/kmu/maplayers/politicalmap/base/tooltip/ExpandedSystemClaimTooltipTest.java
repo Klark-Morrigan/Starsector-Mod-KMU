@@ -43,7 +43,6 @@ import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFac
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -115,7 +114,7 @@ final class ExpandedSystemClaimTooltipTest {
         // stood in as absent - a populated system - for every case but the one about it.
         statusRowMock = Mockito.mockStatic(SystemStatusRow.class);
         statusRowMock
-            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), anyBoolean()))
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any()))
             .thenReturn(Optional.empty());
 
         // The reveal is a live LunaLib read, unreachable from the test JVM; stood in as off, the state
@@ -335,7 +334,7 @@ final class ExpandedSystemClaimTooltipTest {
         var statusRow = CellTooltipRows.buildBannerRow(null, "Unpopulated");
 
         statusRowMock
-            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), anyBoolean()))
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any()))
             .thenReturn(Optional.of(statusRow));
 
         return statusRow;

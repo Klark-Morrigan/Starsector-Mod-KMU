@@ -7,6 +7,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
+
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
 import org.junit.jupiter.api.Nested;
@@ -36,7 +38,7 @@ class MovingSystemsTest {
     // the map - the shortest route to a tracked system without also staging an economy that
     // owns it.
     private static final MapVisibilityOverrides FORCED_ONTO_MAP =
-            new MapVisibilityOverrides(false, true);
+            new MapVisibilityOverrides(ColonyVisibility.BASE_FOG, true);
 
     @Nested
     class GetInstance {

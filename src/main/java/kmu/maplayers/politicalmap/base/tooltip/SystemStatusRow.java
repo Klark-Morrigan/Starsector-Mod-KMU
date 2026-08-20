@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
@@ -40,34 +41,29 @@ public final class SystemStatusRow {
      * Resolves the status line for a system the player knows of nobody living in.
      *
      * <p>Answered off the same known projection the cell beneath the box is classified on, so a
-     * system drawn as settled cannot be called unpopulated by the box over it. What parts that
-     * projection from a narrower "has the player been here" is the colony surfaced into the open
-     * ahead of being reached - publicly listed and unvisited. The cell counts it, so a narrower
-     * gate here would report two readings of one system inside a single hover.
+     * system drawn as settled cannot be called unpopulated by the box over it. The rule arrives
+     * from the caller rather than being read here, which is what makes that true: a status
+     * resolved under a rule of its own would eventually call a system empty that the body below
+     * it goes on to fill.
      *
-     * <p>The wider arm leaks nothing. A base that is concealed <em>and</em> unfound fails the
-     * projection too, so its system keeps its status line and the absence of one never becomes a
-     * tell that something is hiding there. All a discovery gate withholds beyond that is a colony
-     * the game itself lists on the star's own tooltip.
+     * <p>Withholding a colony never leaks. A colony the rule holds back fails the projection
+     * outright, so its system keeps its status line and the absence of one never becomes a tell
+     * that something is hiding there.
      *
-     * @param sector                           the sector whose economy is read
-     * @param system                           the hovered system
-     * @param shouldIncludeUndiscoveredMarkets whether an undiscovered colony still counts as
-     *                                         populating the system (the "show undiscovered
-     *                                         markets" dev reveal); passed by the caller so the
-     *                                         status agrees with whatever that caller's own reads
-     *                                         admit, rather than calling a system empty that the
-     *                                         body below it fills
+     * @param sector           the sector whose economy is read
+     * @param system           the hovered system
+     * @param colonyVisibility what the player may be shown of a colony, passed by the caller so
+     *                         the status agrees with whatever that caller's own reads admit
      * @return the Decivilised or Unpopulated row, or empty when the player knows of a colony here
      */
     public static Optional<TooltipRow.CentredRow> resolveStatusRow(
             SectorAPI sector,
             StarSystemAPI system,
-            boolean shouldIncludeUndiscoveredMarkets) {
+            ColonyVisibility colonyVisibility) {
 
         var colonies = SystemColonies.readColoniesIn(sector, system);
 
-        if (colonies.hasKnownColony(shouldIncludeUndiscoveredMarkets)) {
+        if (colonies.hasKnownColony(colonyVisibility)) {
             return Optional.empty();
         }
         var statusKey = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system)
