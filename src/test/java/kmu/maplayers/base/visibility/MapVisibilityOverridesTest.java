@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mockStatic;
 
 /**
@@ -23,6 +24,10 @@ import static org.mockito.Mockito.mockStatic;
  * <p>And the gates, which no toggle reaches yet: a read that quietly dropped them would leave
  * every derelict in the sector on the map the moment its entity was found, with nothing in the
  * settings screen to explain it.
+ *
+ * <p>The construction guard is here on the same grounds. Every failure this value can carry
+ * shows up as a map drawing the wrong amount rather than as anything that announces itself, so
+ * refusing a rule nobody stated is worth pinning rather than trusting.
  */
 class MapVisibilityOverridesTest {
 
@@ -38,6 +43,20 @@ class MapVisibilityOverridesTest {
                 .isEqualTo(ColonyVisibility.BASE_FOG);
             assertThat(overrides.isForcedOntoMap())
                 .isFalse();
+        }
+    }
+
+    @Nested
+    class Constructor {
+
+        @Test
+        void rejectsAnUnstatedColonyRule() {
+            // Every value of this record is built from the settings or from a rule its caller
+            // already holds, so a null is that construction having gone wrong. Standing the fog
+            // in would answer it with a map that draws less than it should, and nothing on screen
+            // would report it.
+            assertThatThrownBy(() -> new MapVisibilityOverrides(null, false))
+                .isInstanceOf(NullPointerException.class);
         }
     }
 

@@ -49,14 +49,14 @@ public record HolderPass(
     ColonyVisibility colonyVisibility,
     SystemColoniesIndex colonies) {
 
+    // The rule is required on the same terms the grouping and the walk are: a pass is opened
+    // where a rebuild begins, from a value the opener already holds, so a null is a fault at that
+    // one place rather than a caller with no rule to state. Standing the fog in for it would turn
+    // that fault into a map that quietly draws less, which nothing on screen would report.
     public HolderPass {
         Objects.requireNonNull(grouping, "grouping");
+        Objects.requireNonNull(colonyVisibility, "colonyVisibility");
         Objects.requireNonNull(colonies, "colonies");
-
-        // An unstated rule is the fog alone, matching how the projections themselves read one.
-        // A pass is threaded through every surface a layer draws, so a null reaching one of them
-        // as "no rule at all" would be a leak rather than a fault anybody sees.
-        colonyVisibility = colonyVisibility == null ? ColonyVisibility.BASE_FOG : colonyVisibility;
     }
 
     /**

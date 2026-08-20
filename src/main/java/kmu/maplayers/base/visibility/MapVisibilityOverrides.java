@@ -6,6 +6,7 @@ import kmlib.starsector.colonies.RevelationGate;
 import kmu.settings.KmuMapLayerSettings;
 
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -58,16 +59,26 @@ public record MapVisibilityOverrides(
     // once the toggles ship would have the map contradict itself across a version, while holding
     // one back costs nothing but a colony the player can still reach and find.
     //
+    // Copied into an immutable set once here rather than left as the EnumSet. The rule takes its
+    // own defensive copy of whatever it is handed, and that copy is free for a set already known
+    // immutable - which matters because the live read below runs per hover box, not per pass.
+    //
     // TODO: resolve each gate from its own player setting once the two spoiler toggles ship.
     private static final Set<RevelationGate> HELD_REVELATION_GATES =
-        EnumSet.allOf(RevelationGate.class);
+        Set.copyOf(EnumSet.allOf(RevelationGate.class));
 
     /**
-     * Reads an unset colony rule as the fog alone, so a pass built without one narrows nothing
-     * and - far more importantly - reveals nothing the player has not found.
+     * Rejects an unstated colony rule rather than standing one in.
+     *
+     * <p>Every value of this record is built either from the player's settings or from a rule the
+     * caller already holds, so a null is a construction fault rather than a caller with nothing to
+     * say. Standing in the fog would hide that fault behind a map that merely draws less than it
+     * should, which is the hardest kind of wrong to notice. A caller genuinely stating no rule has
+     * {@link #NONE} to pass, and the projections themselves read an absent rule as the fog - so
+     * nothing is lost by refusing one here.
      */
     public MapVisibilityOverrides {
-        colonyVisibility = colonyVisibility == null ? ColonyVisibility.BASE_FOG : colonyVisibility;
+        Objects.requireNonNull(colonyVisibility, "colonyVisibility");
     }
 
     /**

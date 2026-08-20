@@ -75,6 +75,17 @@ final class HolderPassTest {
         }
 
         @Test
+        void rejectsNullColonyVisibility() {
+            // Required on the same terms as the other two, and for the same reason: the rule is
+            // resolved once where the rebuild begins, so a null here is that one resolve having
+            // gone wrong. Standing the fog in would answer it with a map that draws less than it
+            // should and says nothing about why.
+            assertThatThrownBy(() ->
+                    new HolderPass(HolderGrouping.identity(), null, new SystemColoniesIndex(null)))
+                .isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
         void rejectsNullColonies() {
             // A pass with no walk behind it would fault on the first system it read rather than
             // here, and a pass over a sector that cannot be reached is a different thing entirely -
