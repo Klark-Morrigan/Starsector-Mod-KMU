@@ -262,7 +262,7 @@ public final class KmuMapLayerSettings {
     // visible directly. Both meaningful only while the anchors themselves draw, which is
     // the drawing layer's own toggle.
     // Visibility overrides (Map - Dev tab): two toggles that widen what every map layer draws,
-    // each bypassing a gate the visibility rule would otherwise hold. Show-undiscovered-markets
+    // each bypassing a gate the visibility rules would otherwise hold. Show-undiscovered-markets
     // drops the known-to-player filter so a colony the player has not found still counts as
     // inhabitation - and, on a layer that weighs colonies, toward what it weighs;
     // show-hidden-systems bypasses the rule outright so every star system seeds a cell. Both off
@@ -856,7 +856,7 @@ public final class KmuMapLayerSettings {
 
     /**
      * @return whether a star system the map would otherwise omit still seeds a cell - bypasses
-     *         the visibility rule, so a system that is unreachable, unseen or uninhabited gets
+     *         the map's own admission rule, so a system that is unreachable, unseen or uninhabited gets
      *         geometry like any other; off by default, a reveal aid for inspecting the full cell
      *         partition
      */

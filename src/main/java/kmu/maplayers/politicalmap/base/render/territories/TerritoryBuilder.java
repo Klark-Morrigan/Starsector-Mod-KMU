@@ -69,7 +69,7 @@ public final class TerritoryBuilder {
             var grouping = view.resolveGrouping();
 
             // The rebuild's own reading of the sector, opened here because this is where the
-            // rebuild begins: the dev reveal is sampled once, and every reader below shares one
+            // rebuild begins: the colony rule is sampled once, and every reader below shares one
             // walk of each system rather than taking a walk apiece. Discarded with this build, so
             // nothing goes on answering off a sector that has since moved on.
             var pass = HolderPass.readFromLunaSettings(sector, grouping);

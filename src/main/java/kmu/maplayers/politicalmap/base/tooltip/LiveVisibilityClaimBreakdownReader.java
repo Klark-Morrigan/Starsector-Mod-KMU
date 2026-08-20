@@ -14,7 +14,7 @@ import kmu.maplayers.base.visibility.MapVisibilityRules;
  * moment of the read.
  *
  * <p>Exists because the two halves keep different time. A hover box is one shared instance that
- * outlives every pass, while the visibility rule is a live setting the player may move between
+ * outlives every pass, while the colony rule is a live setting the player may move between
  * one hover and the next - so a reader built once around a rule sampled at start-up would go on
  * reporting a derelict as known long after the player asked for it to be hidden, and would do so
  * silently, since a claim breakdown reports knowledge as a flag on a market rather than by
@@ -33,7 +33,7 @@ import kmu.maplayers.base.visibility.MapVisibilityRules;
  */
 public final class LiveVisibilityClaimBreakdownReader implements ClaimBreakdownReader {
 
-    // The decree read consults no visibility rule: it answers off the system's own memory flag,
+    // The decree read consults no colony rule: it answers off the system's own memory flag,
     // and reaches no colony for a rule to be applied to. So one reader serves every ask of it,
     // and the rule it was opened under is never read.
     //

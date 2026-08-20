@@ -17,7 +17,7 @@ import java.util.Optional;
  * <p>The whole of what this adds to the rule is the weight read and the winner the band is ordered
  * around, both taken through the same {@link DominancePass} the fills are resolved under - so a
  * band opens on the bloc its own cell's colour was decided for, under the same weighting rule and
- * the same dev reveal, rather than a second sample taken a moment later under a knob the player has
+ * the same colony rule, rather than a second sample taken a moment later under a knob the player has
  * since moved.
  *
  * <p>The footprints come off the pass's own walk of the system, which the counting beneath them
@@ -29,7 +29,7 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
     private final RibbonPlanInputs inputs;
 
     /**
-     * @param pass   the sector walk, weighting rule, dev reveal, and grouping this build resolves
+     * @param pass   the sector walk, weighting rule, colony rule, and grouping this build resolves
      *               under, sampled once so every band is ranked under the settings the fills were
      * @param inputs the pass the colonies are counted from, where a bloc's shades come from, and
      *               how far its runs go

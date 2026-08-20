@@ -129,7 +129,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
      * with nothing further to say overrides nothing.
      *
      * @param system the star system under the cursor
-     * @param pass   the weighting rule, dev reveal, grouping and colony walk the ranking resolved
+     * @param pass   the weighting rule, colony rule, grouping and colony walk the ranking resolved
      *               under, so a box reading further into the system reads it under the same knobs
      *               and off the same walk rather than repeating it
      * @return what to hang beneath each listed faction; {@link FactionAccountResolver#NO_ACCOUNT}

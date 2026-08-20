@@ -60,7 +60,7 @@ public record HolderPass(
     }
 
     /**
-     * A pass over one sector under an explicit visibility rule, opening the colony index its
+     * A pass over one sector under an explicit colony rule, opening the colony index its
      * reads share.
      *
      * @param sector           the sector this pass reads; null yields a pass answering an empty

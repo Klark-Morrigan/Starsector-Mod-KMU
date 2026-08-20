@@ -35,7 +35,7 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
      * rather than each minting its own, and named in a single place so a change of binding cannot
      * reach one view and miss the other.
      *
-     * <p>It resolves the player's visibility rule per read rather than holding one, since a box
+     * <p>It resolves the player's colony rule per read rather than holding one, since a box
      * lives for the whole session while that rule is a setting the player may move between two
      * hovers.
      */

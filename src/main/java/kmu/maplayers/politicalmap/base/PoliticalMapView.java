@@ -111,7 +111,7 @@ public interface PoliticalMapView {
      * score never saw.
      *
      * @param inputs everything one bake's bands are settled from, sampled once by the bake: the
-     *               reading of the sector the counts are folded from - grouping and dev reveal
+     *               reading of the sector the counts are folded from - grouping and colony rule
      *               included, so a band folds factions into blocs exactly as the fill did - the
      *               palette source, and the proportions every cell's band is laid at
      * @return the planner this view's bands are counted through

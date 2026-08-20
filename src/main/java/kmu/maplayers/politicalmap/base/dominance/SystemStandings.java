@@ -70,7 +70,7 @@ public final class SystemStandings {
      * company.
      *
      * @param system the hovered system whose colonies are ranked
-     * @param pass   the weighting rule, dev reveal, grouping and colony walk this ranking resolves
+     * @param pass   the weighting rule, colony rule, grouping and colony walk this ranking resolves
      *               under, sampled once by the caller so the whole ranking uses one set of knobs
      * @return the system's groups ranked descending by summed score, each with its members ranked
      *         within; empty when the player knows of no colony there

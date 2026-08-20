@@ -37,9 +37,10 @@ public final class DominanceStatsAggregator {
      * one also a domination count). The order follows the economy walk, which each view then maps into
      * its own picker options.
      *
-     * @param pass the sector walk, rule, dev reveal, and grouping this read resolves under, sampled
-     *             once by the caller so the whole read resolves under one set of knobs; a pass over
-     *             no sector (or one whose sector has no economy) yields an empty map
+     * @param pass the sector walk, weighting rule, colony rule, and grouping this read resolves
+     *             under, sampled once by the caller so the whole read resolves under one set of
+     *             knobs; a pass over no sector (or one whose sector has no economy) yields an
+     *             empty map
      * @return each present bloc's stats, keyed by bloc id in economy-walk order; empty when no bloc
      *         holds a visible market
      */

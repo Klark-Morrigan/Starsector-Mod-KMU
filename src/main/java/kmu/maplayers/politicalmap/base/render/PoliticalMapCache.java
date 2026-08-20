@@ -42,7 +42,7 @@ import java.util.Objects;
  *
  * <p>System positions in hyperspace are fixed for the life of a save, so the raw cells are built
  * once and cached; they are reseeded only when the reachable-system set changes, the
- * frontier-resolution or cell-reach setting changes (either seeds every cell), or a dev reveal
+ * frontier-resolution or cell-reach setting changes (either seeds every cell), or a visibility setting
  * override flips (each changes which systems seed a cell). The territories are rebuilt in full
  * only when KMU's LunaLib settings change (detected off LunaLib's change event via
  * {@link KmuLunaSettings#getSettingsRevision()}) or when the geometry itself was rebuilt; between

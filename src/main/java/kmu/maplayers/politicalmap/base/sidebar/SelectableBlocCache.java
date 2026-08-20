@@ -55,7 +55,7 @@ public final class SelectableBlocCache {
     }
 
     // The revision the memoised list is valid for: the economy-weighting settings (the dominance
-    // rules and the dev reveal both move settingsRevision) and the view's own live grouping inputs
+    // rules and the visibility settings both move settingsRevision) and the view's own live grouping inputs
     // (the alliance set, for the alliances view; a constant for the faction view). The filter
     // selection is absent by design - it changes which bloc is lit, never which blocs are listed.
     private static int computeRevision(PoliticalMapView view) {

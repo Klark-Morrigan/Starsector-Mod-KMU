@@ -253,8 +253,8 @@ public final class FilteredPolitics {
      * returned contested set, the only place the dominant/contested split lives now that both
      * share a key. A system with no owned markets is absent, exactly as in the normal pass.
      *
-     * @param pass           the rule, dev reveal, grouping, and sector walk this pass resolves
-     *                       under; a pass over no sector yields empty holding
+     * @param pass           the weighting rule, colony rule, grouping, and sector walk this pass
+     *                       resolves under; a pass over no sector yields empty holding
      * @param selectedBlocId the spotlighted bloc's id; null yields empty holding
      * @return the presence-aware holders: the holder per system and the contested spotlit systems
      */

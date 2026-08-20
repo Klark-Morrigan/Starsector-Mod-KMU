@@ -185,7 +185,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      * <p>The whole rule rather than the reveal alone, so a reader taking one term of it cannot be
      * drawing under a rule the rest of the box is not.
      *
-     * @return the visibility rule the player's live settings describe
+     * @return the colony rule the player's live settings describe
      */
     protected static ColonyVisibility readColonyVisibility() {
         return MapVisibilityRules.readFromLunaSettings().colonyVisibility();

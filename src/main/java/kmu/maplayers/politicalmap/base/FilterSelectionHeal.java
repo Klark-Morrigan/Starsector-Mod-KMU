@@ -31,7 +31,7 @@ public final class FilterSelectionHeal {
      * when no view is selected or the stored bloc is still selectable. Runs on game load and on a view
      * switch, before the overlay repaints, so it clears without requesting a refresh - the load or the
      * switch already repaints, so there is nothing extra to invalidate. Reads the live sector and the
-     * player's current dominance and dev-reveal settings, the same gate the picker lists blocs under,
+     * player's current dominance and visibility settings, the same gate the picker lists blocs under,
      * so a bloc is healed away exactly when it would no longer appear in the picker.
      */
     public static void healStaleSelectionAgainstActiveView() {

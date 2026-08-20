@@ -21,7 +21,7 @@ import java.util.Set;
  * scores each market.
  *
  * <p>The rule is the whole of what dominance adds to {@link HolderPass}. What the two halves have
- * in common - the sector, the grouping, the visibility rule, and the one walk of each system - is
+ * in common - the sector, the grouping, the colony rule, and the one walk of each system - is
  * what any owner-painted layer needs, and it is carried apart so the holder seam can take it
  * without naming this mechanic. What is here is what only a layer painted by market weights needs.
  *
@@ -33,7 +33,7 @@ import java.util.Set;
  *
  * @param rules   the weighting rule scoring each market's dominance worth
  * @param holding the rebuild's reading of the sector every layer shares - which sector, the
- *                grouping, the visibility rule, and the one walk of each system
+ *                grouping, the colony rule, and the one walk of each system
  */
 public record DominancePass(
     DominanceRules rules,
@@ -94,12 +94,12 @@ public record DominancePass(
 
     /**
      * A pass reading the player's live LunaLib settings under an explicit grouping: the weighting
-     * rule and the visibility rule are sampled once here, so the whole pass resolves
-     * under the settings in force when it began even if the player moves a toggle mid-walk.
+     * rule and the colony rule are sampled once here, so the whole pass resolves under the
+     * settings in force when it began even if the player moves a toggle mid-walk.
      *
      * @param sector   the sector this pass reads
      * @param grouping the grouping this pass folds factions into blocs under
-     * @return a pass carrying the live weighting and visibility rules paired with the grouping
+     * @return a pass carrying the live weighting and colony rules paired with the grouping
      */
     public static DominancePass readFromLunaSettings(SectorAPI sector, HolderGrouping grouping) {
         return readRulesFromLunaSettings(HolderPass.readFromLunaSettings(sector, grouping));
@@ -110,7 +110,7 @@ public record DominancePass(
      * faction its own bloc - for the plain faction view.
      *
      * @param sector the sector this pass reads
-     * @return a pass carrying the live weighting and visibility rules under the identity grouping
+     * @return a pass carrying the live weighting and colony rules under the identity grouping
      */
     public static DominancePass readFromLunaSettings(SectorAPI sector) {
         return readFromLunaSettings(sector, HolderGrouping.identity());
@@ -138,7 +138,7 @@ public record DominancePass(
      * The rule this pass shows colonies under, so a read taken beside a pass read - a box
      * accounting for what the map painted - applies the very rule the painting did.
      *
-     * @return the visibility rule the pass was opened with
+     * @return the colony rule the pass was opened with
      */
     public ColonyVisibility colonyVisibility() {
         return holding.colonyVisibility();
@@ -185,7 +185,7 @@ public record DominancePass(
     }
 
     /**
-     * This system's per-faction footprints under the pass's weighting and visibility rules,
+     * This system's per-faction footprints under the pass's weighting and colony rules,
      * before any grouping: each faction's known markets folded into its own footprint. The
      * unowned read the per-bloc
      * read below builds on, and the one a two-tier standings breakdown needs whole so it can rank a
@@ -204,7 +204,7 @@ public record DominancePass(
     }
 
     /**
-     * This system's per-faction weight breakdowns under the pass's weighting and visibility rules:
+     * This system's per-faction weight breakdowns under the pass's weighting and colony rules:
      * the same fold {@link #readFootprintsByFaction} sums away, kept whole so a caller can state
      * the parts a score was made of.
      *
@@ -233,7 +233,7 @@ public record DominancePass(
      * <p>The complement of the weighed read above, taken under the same rule off the same walk,
      * which is what makes the two exact complements: no colony can be admitted by one and refused
      * by the other. Offered here so a box accounting for a system reads both through the pass that
-     * painted it rather than assembling the weighting rule and the visibility rule by hand.
+     * painted it rather than assembling the weighting rule and the colony rule by hand.
      *
      * @param system the system whose colonies are read
      * @return each faction's unlisted colonies there, identified and nothing more; empty when
@@ -248,7 +248,7 @@ public record DominancePass(
     }
 
     /**
-     * The factions present in this system under the pass's visibility rule - everyone holding a
+     * The factions present in this system under the pass's colony rule - everyone holding a
      * colony the player may be shown, whether or not this mechanic could weigh it.
      *
      * <p>Beside the footprints rather than derived from them, and that is the whole of the
@@ -266,7 +266,7 @@ public record DominancePass(
     }
 
     /**
-     * The blocs present in this system under the pass's visibility rule and grouping - the
+     * The blocs present in this system under the pass's colony rule and grouping - the
      * factions above folded into the blocs this view paints, whether or not this mechanic could
      * weigh them.
      *
@@ -283,7 +283,7 @@ public record DominancePass(
     }
 
     /**
-     * This system's per-bloc footprints under the pass's weighting rule, visibility rule and
+     * This system's per-bloc footprints under the pass's weighting rule, colony rule and
      * grouping: the per-faction footprints regrouped into per-bloc footprints (a no-op fold
      * under identity, a member-summing
      * merge under an alliance grouping). The one read shared by the holder resolve and the
@@ -300,14 +300,14 @@ public record DominancePass(
     }
 
     /**
-     * This system's per-bloc contributions under the pass's weighting rule, visibility rule and
+     * This system's per-bloc contributions under the pass's weighting rule, colony rule and
      * grouping: each faction's markets folded into its dominance footprint and raw colony size,
      * then regrouped so
      * an alliance's members sum into the alliance's one contribution.
      *
      * <p>The whole read {@link #readBlocFootprints} projects down to, for the stats aggregations
      * that also need raw colony size. Held here rather than at each aggregation because assembling
-     * it means naming the weighting rule, the visibility rule, the grouping, and the fold
+     * it means naming the weighting rule, the colony rule, the grouping, and the fold
      * identity together - four knobs a caller would otherwise thread by hand, and four chances
      * for one aggregation to read
      * the economy under a different set than another.
@@ -328,7 +328,7 @@ public record DominancePass(
     }
 
     /**
-     * The market-proximity tie-break for this system under the pass's visibility rule and grouping,
+     * The market-proximity tie-break for this system under the pass's colony rule and grouping,
      * consulted only when blocs tie on every weight level so it resolves a dead heat by who holds
      * the market nearest the system centre. Lazy - it reads no geometry unless a tie forces it - so
      * every pass shares one on-demand tie-break rather than each resolver building its own.

@@ -31,10 +31,13 @@ import java.util.Set;
  * mechanic ranked - one present through colonies no score was ever computed from - falls to the end
  * in id order, so it draws its run without a place it never earned.
  *
- * <p>The counts come off the pass's known projection, so a band never counts out a colony the fog
- * is keeping back and never omits one the reveal is showing. Nothing here asks what kind of colony
- * it is counting: hidden, unlisted by the economy, or weighed and open all count as the one colony
- * each of them is.
+ * <p>The counts come off the pass's known projection, so a band never counts out a colony the
+ * pass's colony rule is keeping back and never omits one it is showing. What that rule admits is
+ * settled there and not here - a concealed colony reaches this count where the player has seen it
+ * and not otherwise, and a derelict the same - so nothing about a colony is asked twice.
+ *
+ * <p>Past the projection, nothing at all is asked: a colony the economy never listed and one it
+ * weighed at full size both count as the one colony each of them is.
  *
  * <p>Pure over the pass it is handed, with the two live reads - the walk of a system and a bloc's
  * shades - reached through {@link RibbonPlanInputs}, so every case is posed on hand-built sets.

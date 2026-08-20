@@ -96,7 +96,7 @@ public final class PoliticalMapLayer implements MapLayer {
             var viewId = selectedView.getId();
 
             // The picker is the selected view's own - its selectable blocs under the player's live
-            // dominance and dev-reveal settings, bundled with the vocabulary that ranks them, so this
+            // dominance and visibility settings, bundled with the vocabulary that ranks them, so this
             // layer names neither the metrics a view's blocs carry nor the modes that sort them and a
             // view painted by another mechanic needs no edit here. Empty (no present bloc)
             // contributes no picker. Read through the memo so this per-frame body build reads a cached

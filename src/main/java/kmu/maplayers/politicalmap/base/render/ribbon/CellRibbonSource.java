@@ -147,7 +147,7 @@ public final class CellRibbonSource {
         var style = RibbonStyleReader.readRibbonStyle();
 
         // The bake's own reading of the sector, opened here so both mechanics of a composed planner
-        // count off one walk of each system, under one sampling of the dev reveal - a band read
+        // count off one walk of each system, under one sampling of the colony rule - a band read
         // under a reveal the player moved mid-bake would count out colonies the fills are hiding.
         //
         // Its own pass rather than the rebuild's, because a bake runs whenever a cluster name may

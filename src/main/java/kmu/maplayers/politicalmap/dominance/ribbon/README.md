@@ -18,7 +18,7 @@ Part of [the political map](../../README.md), in Klark Morrigan's Utilities; see
 `HeldCellRibbons` performs no walk and states no count. What it reads off the footprints the map
 already ranked the system by is their order, and `HeldSystemRibbonPlanner` is the live read behind
 it - taking both the weights and the winner through the same `DominancePass` the fills were resolved
-under, so a band cannot be ordered under a weighting rule or a dev reveal the player has since moved.
+under, so a band cannot be ordered under a weighting rule or a visibility setting the player has since moved.
 
 The bloc the cell was **painted for** leads, whatever settled that. The dominance rule can hand a
 system to a bloc that leads on none of the weights - a tie settled by the market nearest the system

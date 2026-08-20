@@ -27,7 +27,7 @@ import java.util.Map;
  * {@link DominanceStatsAggregator}'s job, walking the same economy through the same
  * {@link DominancePass} so the two never drift on which blocs hold territory.
  *
- * <p>The rule, dev reveal, and grouping a pass resolves under travel together as a
+ * <p>The weighting rule, colony rule, and grouping a pass resolves under travel together as a
  * {@link DominancePass}: the live entry points read the player's settings into one,
  * and every explicit caller hands its own down, so a whole pass resolves under one
  * consistent set of knobs.
@@ -56,7 +56,7 @@ public final class SectorPolitics {
      * Builds the dominant holder for every inhabited star system under an explicit
      * dominance pass, for a caller that has already sampled the player's settings.
      *
-     * @param pass the rule, dev reveal, grouping, and sector walk this pass resolves under
+     * @param pass the weighting rule, colony rule, grouping, and sector walk this pass resolves under
      * @return the dominant holder keyed by system id; a system with no folded
      *         markets is absent from the map (uninhabited)
      */
@@ -80,7 +80,7 @@ public final class SectorPolitics {
      * <p>The view-aware single-system entry point: the incremental refresh path
      * hands in the active view's grouping so a re-derived system resolves the same
      * winning bloc the bulk pass would under that view, reading the dominance rule
-     * and dev reveal live like the parameterless entry.
+     * and colony rule live like the parameterless entry.
      *
      * @param sector   the sector whose economy is read; null (or a null economy)
      *                 yields null
@@ -109,8 +109,8 @@ public final class SectorPolitics {
      * faction id and its colour faction is itself, so the result is the plain faction holder.
      *
      * @param system the system to resolve; null yields null
-     * @param pass   the rule, dev reveal, grouping, and sector walk this pass resolves under; a
-     *               pass over no sector (or one whose sector has no economy) yields null
+     * @param pass   the weighting rule, colony rule, grouping, and sector walk this pass resolves
+     *               under; a pass over no sector (or one whose sector has no economy) yields null
      * @return the dominant holder, or null when the system holds no folded market
      *         (uninhabited)
      */

@@ -54,9 +54,8 @@ public final class MapVisibility {
 
     /**
      * Decides map membership by reading the system's inhabitation itself, under the
-     * pass's visibility rules: the inhabitation read widens to undiscovered colonies
-     * when the rules ask for it, and the force override then admits a system the
-     * normal rule would omit.
+     * pass's visibility rules: the inhabitation read follows their colony half, and the
+     * force override then admits a system that half would leave off.
      *
      * @param sector          the sector the system belongs to; supplies the economy read
      * @param system          the system to test

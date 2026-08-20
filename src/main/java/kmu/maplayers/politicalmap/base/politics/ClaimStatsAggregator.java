@@ -44,9 +44,9 @@ public final class ClaimStatsAggregator {
      * anything - so a caller listing every entry lists everyone who paints or holds something rather
      * than every faction in the sector.
      *
-     * @param pass        the sector walk, rule, dev reveal, and grouping this read resolves under,
-     *                    sampled once by the caller so the whole read resolves under one set of
-     *                    knobs; a pass over no sector yields an empty map
+     * @param pass        the sector walk, weighting rule, colony rule, and grouping this read
+     *                    resolves under, sampled once by the caller so the whole read resolves
+     *                    under one set of knobs; a pass over no sector yields an empty map
      * @param claimReader the claim source, read once per system
      * @return each claiming or colony-holding bloc's stats, keyed by bloc id in star-system walk
      *         order; empty when the sector holds neither

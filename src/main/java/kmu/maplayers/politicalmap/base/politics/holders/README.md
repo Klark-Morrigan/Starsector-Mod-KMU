@@ -51,8 +51,8 @@ single question - *who owns each star system?* To let it answer, the drawing cod
 inputs:
 
 - the rebuild's own reading of the sector - a `HolderPass`, carrying which sector is being drawn,
-  the grouping (whether factions stand alone or merge into alliances), how far the dev reveal
-  lifts the fog, and the one walk of each system every reader shares,
+  the grouping (whether factions stand alone or merge into alliances), the colony rule saying
+  what the player may be shown of a colony, and the one walk of each system every reader shares,
 - which faction or alliance, if any, the filter is currently highlighting.
 
 The pass is opened where the rebuild begins and handed down, so a provider that answers through
