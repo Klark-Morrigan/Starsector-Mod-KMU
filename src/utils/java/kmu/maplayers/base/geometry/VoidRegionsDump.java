@@ -5,6 +5,8 @@ import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.VoronoiCellBuilder;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 
@@ -22,25 +24,21 @@ import java.util.Locale;
  */
 final class VoidRegionsDump {
 
+    // A share printed as a percentage rather than a fraction, which is how every share in
+    // this report reads.
     private static final double PERCENT_SCALE = 100.0;
 
-    // One cell across, which is the size a section of void is cut to: a piece of void the
-    // size of a system's own cell is comparable to what surrounds it, and a longer one is
-    // a corridor rather than a place.
-    private static final double SECTION_LENGTH =
-        2 * SectorGeometryParameters.DEFAULT_CELL_RADIUS;
+    // The knobs the map is shipped at, once for the whole report. Every measure below is
+    // about the map a reader would open, so re-deriving them per measure buys nothing and
+    // costs the one guarantee worth having: that no two numbers here describe different
+    // geometry. The same reasoning the sites get, applied to the other half of the pair.
+    private static final SectorGeometryParameters SHIPPED = ShippedMap.KNOBS;
 
-    // What the viewer opens on, so the table below describes the division a reader would see
-    // if they opened it. The sweep at the end of the report is what that choice rests on.
-    private static final double MIN_SECTION_SHARE = 0.4;
+    private static final double SECTION_LENGTH = ShippedMap.SECTION_LENGTH;
 
-    private static final VoidSections.SectionRules SECTION_RULES =
-        new VoidSections.SectionRules(SECTION_LENGTH, MIN_SECTION_SHARE);
+    private static final VoidSections.SectionRules SECTION_RULES = ShippedMap.SECTION_RULES;
 
-    // What the viewer opens on, so this report describes what a reader would see there -
-    // read off that setting rather than restated, which is the only way the two stay equal.
-    private static final double BRIDGE_REACH_MULTIPLE =
-        Coastlines.DEFAULT_RULES.bridgeReachMultiple();
+    private static final double BRIDGE_REACH_MULTIPLE = ShippedMap.BRIDGE_REACH_MULTIPLE;
 
     // Shares to sweep the division across, so the knob has a starting range instead of being
     // a bare slider. Spread over the whole span rather than clustered near the default,
@@ -59,6 +57,12 @@ final class VoidRegionsDump {
     private VoidRegionsDump() {
     }
 
+    /**
+     * Reports every fixture in turn.
+     *
+     * @param args ignored - which sectors are described is a property of the fixtures on
+     *             disk, so there is nothing to choose here
+     */
     public static void main(String[] args) {
 
         for (var sectorName : SectorFixture.listSectorNames()) {
@@ -69,14 +73,12 @@ final class VoidRegionsDump {
 
             System.out.println("=== " + sectorName + " ===");
 
-            var shipped = SectorGeometryParameters.createDefaults();
-
             // One laying of the coast for the whole sector. Everything below asks what the
             // walk did with a wall, and the walk answers about the walls it was handed - so a
             // second laying is a second map, however equal the lines look.
             var laid = LaidCoast.layCoast(
-                Coastlines.traceSectorCoasts(sites, shipped, Coastlines.DEFAULT_RULES),
-                shipped);
+                Coastlines.traceSectorCoasts(sites, SHIPPED, Coastlines.DEFAULT_RULES),
+                SHIPPED);
 
             reportCells(cells);
             reportChannelWidths(fixture);
@@ -84,12 +86,13 @@ final class VoidRegionsDump {
             reportBoundSeams(fixture);
             CoastWallReport.reportCoastWalls(laid);
             PickedPointCheck.reportPickedPoints(fixture, sectorName, laid);
+            CoastVoidReport.reportCoastlines(laid);
             reportPockets(
                 VoidPockets.findVoidPockets(
                     sites,
                     fixture.getOwnerBySite(),
                     new VoidPockets.PocketRules(
-                        shipped,
+                        SHIPPED,
                         SECTION_RULES,
                         VoidPockets.PocketShaping.WITH_CHANNEL)),
                 fixture,
@@ -105,7 +108,6 @@ final class VoidRegionsDump {
     // second convention rather than a coarser picture.
     private static List<VoronoiCellBuilder.LabelledCell> buildCells(List<double[]> sites) {
 
-        var shipped = SectorGeometryParameters.createDefaults();
         var cells = new ArrayList<VoronoiCellBuilder.LabelledCell>(sites.size());
 
         for (var index = 0; index < sites.size(); index++) {
@@ -113,12 +115,15 @@ final class VoidRegionsDump {
             cells.add(VoronoiCellBuilder.buildLabelledCell(
                 index,
                 sites,
-                shipped.cellRadius(),
-                shipped.boundSegments()));
+                SHIPPED.cellRadius(),
+                SHIPPED.boundSegments()));
         }
         return cells;
     }
 
+    // How much of the map faces void at all. The population every count below is read
+    // against: a fault touching one cell in three hundred and one touching one in three are
+    // the same number and not the same problem.
     private static void reportCells(List<VoronoiCellBuilder.LabelledCell> cells) {
 
         var touching = 0;
@@ -145,8 +150,7 @@ final class VoidRegionsDump {
     // the void beside it is painted a bright colour instead of the backdrop's black.
     private static void reportChannelWidths(SectorFixture fixture) {
 
-        var parameters = SectorGeometryParameters.createDefaults();
-        var geometry = SectorGeometry.buildSectorGeometry(fixture, parameters);
+        var geometry = SectorGeometry.buildSectorGeometry(fixture, SHIPPED);
         var reachFacing = new ArrayList<Double>();
         var cellFacing = new ArrayList<Double>();
 
@@ -185,22 +189,10 @@ final class VoidRegionsDump {
             Locale.ROOT,
             "fill pulled back from its own cell edge: facing another cell p50 %.0f "
                 + "(%d edges), facing the reach bound p50 %.0f (%d edges)%n",
-            findMedian(cellFacing),
+            ReportFigures.findMedian(cellFacing),
             cellFacing.size(),
-            findMedian(reachFacing),
+            ReportFigures.findMedian(reachFacing),
             reachFacing.size());
-    }
-
-    private static double findMedian(List<Double> values) {
-
-        if (values.isEmpty()) {
-            return 0;
-        }
-
-        var sorted = new ArrayList<>(values);
-        sorted.sort(Double::compare);
-
-        return findPercentile(sorted, MEDIAN_FRACTION);
     }
 
     // How many holes there are at the reach the channel is taken at, against how many
@@ -209,18 +201,16 @@ final class VoidRegionsDump {
     // of it, and reshaping its ring in place cannot express that.
     private static void reportHolesAtReach(SectorFixture fixture) {
 
-        var shipped = SectorGeometryParameters.createDefaults();
-
         System.out.printf(
             Locale.ROOT,
             "holes at reach %.0f: %d, at %.0f (channel taken out): %d, at %.0f "
                 + "(fills' own reach): %d%n",
-            shipped.cellRadius(),
-            countHolesAt(fixture, shipped.cellRadius()),
-            shipped.measureDrawnReach(),
-            countHolesAt(fixture, shipped.measureDrawnReach()),
-            shipped.measureFilledReach(),
-            countHolesAt(fixture, shipped.measureFilledReach()));
+            SHIPPED.cellRadius(),
+            countHolesAt(fixture, SHIPPED.cellRadius()),
+            SHIPPED.measureDrawnReach(),
+            countHolesAt(fixture, SHIPPED.measureDrawnReach()),
+            SHIPPED.measureFilledReach(),
+            countHolesAt(fixture, SHIPPED.measureFilledReach()));
     }
 
     // Whether the void and the cells agree about where they meet - the one thing that has to
@@ -231,14 +221,12 @@ final class VoidRegionsDump {
     // convention the two are flattened under rather than about what is drawn.
     private static void reportBoundSeams(SectorFixture fixture) {
 
-        var shipped = SectorGeometryParameters.createDefaults();
-
         var seams = CellBoundSeams.measureSeamsAgainstCells(
             DiscUnionBoundary.traceHoles(
-                new DiscUnion(fixture.getSites(), shipped.cellRadius()),
-                shipped.boundSegments()),
+                new DiscUnion(fixture.getSites(), SHIPPED.cellRadius()),
+                SHIPPED.boundSegments()),
             fixture.getSites(),
-            shipped);
+            SHIPPED);
 
         System.out.printf(
             Locale.ROOT,
@@ -258,9 +246,9 @@ final class VoidRegionsDump {
             seams.worstCornerStray());
     }
 
+    // How many pockets the cells close around at one reach, which is the count the line
+    // above compares across three of them.
     private static int countHolesAt(SectorFixture fixture, double reach) {
-
-        var shipped = SectorGeometryParameters.createDefaults();
 
         return VoidPockets.findVoidPockets(
             fixture.getSites(),
@@ -268,10 +256,10 @@ final class VoidRegionsDump {
             new VoidPockets.PocketRules(
                 new SectorGeometryParameters(
                     reach,
-                    shipped.boundSegments(),
+                    SHIPPED.boundSegments(),
                     0,
-                    shipped.weldTolerance(),
-                    shipped.miterSpikeLimit()),
+                    SHIPPED.weldTolerance(),
+                    SHIPPED.miterSpikeLimit()),
                 SECTION_RULES,
                 VoidPockets.PocketShaping.WITH_CHANNEL)).size();
     }
@@ -289,92 +277,6 @@ final class VoidRegionsDump {
         return false;
     }
 
-    // Every pocket, one line each. A summary count says how many pockets came out one way
-    // or another; it cannot say WHICH, and every question worth asking of this map so far has
-    // turned out to be about a particular pocket.
-    private static void reportEachPocket(List<VoidPockets.VoidPocket> pockets) {
-
-        System.out.println(
-            "  pocket        at          span  cells  cuts   shaping     "
-                + "sections            cut widths");
-
-        for (var index = 0; index < pockets.size(); index++) {
-
-            var pocket = pockets.get(index);
-            var centre = pocket.centre();
-
-            System.out.printf(
-                Locale.ROOT,
-                "  %-6d %7.0f,%-7.0f %6.0f %4d %5d   %-10s  %-18s  %s%n",
-                index,
-                centre[0],
-                centre[1],
-                pocket.span(),
-                pocket.adjacentCells().size(),
-                pocket.division().cuts().size(),
-                describeShaping(pocket),
-                describeSections(pocket),
-                describeCutWidths(pocket));
-        }
-    }
-
-    // The longest way across any one of a pocket's sections. Sections come back largest by
-    // area, which is what they are chosen by, and largest by area is not always longest.
-    private static double measureLongestSection(VoidPockets.VoidPocket pocket) {
-
-        var longest = 0.0;
-
-        for (var section : pocket.division().sections()) {
-            longest = Math.max(longest, VoidSections.measureWidestSpan(section));
-        }
-        return longest;
-    }
-
-    // Every section's span, largest section first. The shape of the list is the answer: a run of
-    // similar numbers is an even division, and one large number followed by small ones is a
-    // pocket that had slivers taken off it rather than being divided.
-    private static String describeSections(VoidPockets.VoidPocket pocket) {
-
-        var spans = new StringBuilder();
-
-        for (var section : pocket.division().sections()) {
-
-            var span = VoidSections.measureWidestSpan(section);
-
-            if (spans.length() > 0) {
-                spans.append(" ");
-            }
-            spans.append(String.format(Locale.ROOT, "%.0f", span));
-        }
-        return spans.toString();
-    }
-
-    // How wide the corridor is at each cut. The number that says whether a cut is a pinch
-    // or a jump: a cut across a genuine neck is a small fraction of a section, and one that
-    // reads as leaping across open void is a large one.
-    private static String describeCutWidths(VoidPockets.VoidPocket pocket) {
-
-        var widths = new StringBuilder();
-
-        for (var cut : pocket.division().cuts()) {
-
-            if (widths.length() > 0) {
-                widths.append(" ");
-            }
-            widths.append(String.format(Locale.ROOT, "%.0f", cut.width()));
-        }
-        return widths.toString();
-    }
-
-    private static String describeShaping(VoidPockets.VoidPocket pocket) {
-
-        var drawn = pocket.outlines().isEmpty()
-            ? "mark"
-            : "x" + pocket.outlines().size();
-
-        return (pocket.absorbingOwner() != null ? "owned/" : "void/") + drawn;
-    }
-
     // Why a pocket did or did not close into one owner. Zero absorbed says nothing on
     // its own: a pocket ringed by six cells of six different owners and a pocket ringed by
     // one owner plus a single unowned neighbour both report the same, and only one of those
@@ -389,7 +291,7 @@ final class VoidRegionsDump {
 
         for (var pocket : pockets) {
 
-            var owners = new java.util.LinkedHashSet<String>();
+            var owners = new LinkedHashSet<String>();
             var hasUnowned = false;
 
             for (var site : pocket.adjacentCells()) {
@@ -451,7 +353,7 @@ final class VoidRegionsDump {
             cellWidth,
             pockets.size() - wide);
 
-        reportSectioning(pockets);
+        VoidDivisionReport.reportSectioning(pockets);
 
         var absorbed = 0;
         var closedOver = 0;
@@ -478,8 +380,8 @@ final class VoidRegionsDump {
             pinched);
 
         reportRingingOwners(pockets, fixture);
-        reportEachPocket(pockets);
-        reportShareSweep(fixture);
+        VoidDivisionReport.reportEachPocket(pockets);
+        VoidDivisionReport.reportShareSweep(fixture);
         reportBridges(fixture, pockets, laid);
 
         var shares = new ArrayList<Double>(pockets.size());
@@ -498,100 +400,15 @@ final class VoidRegionsDump {
         System.out.printf(
             Locale.ROOT,
             "pocket span, in cell widths: p50 %.2f / p90 %.2f / max %.2f%n",
-            findPercentile(shares, REPORTED_PERCENTILES[0]),
-            findPercentile(shares, REPORTED_PERCENTILES[1]),
-            findPercentile(shares, REPORTED_PERCENTILES[2]));
+            ReportFigures.findPercentile(shares, REPORTED_PERCENTILES[0]),
+            ReportFigures.findPercentile(shares, REPORTED_PERCENTILES[1]),
+            ReportFigures.findPercentile(shares, REPORTED_PERCENTILES[2]));
         System.out.printf(
             Locale.ROOT,
             "cells ringing a pocket: p50 %.0f / p90 %.0f / max %.0f%n",
-            findPercentile(sections, REPORTED_PERCENTILES[0]),
-            findPercentile(sections, REPORTED_PERCENTILES[1]),
-            findPercentile(sections, REPORTED_PERCENTILES[2]));
-    }
-
-    // Whether the division actually divides. A pocket is cut until nothing in it is longer
-    // than a section, so the count of cuts says nothing on its own - what matters is what is
-    // left. A section still over length is a piece the cells offered nowhere to cut, which is
-    // the one failure this construction can have.
-    private static void reportSectioning(List<VoidPockets.VoidPocket> pockets) {
-
-        var summary = summariseDivision(pockets);
-
-        System.out.printf(
-            Locale.ROOT,
-            "%d pockets want dividing into sections of %.0f, no cut leaving under %.0f%% of "
-                + "one: %d cuts taken, %d still hold a section over length, longest %.0f%n",
-            summary.toDivide(),
-            SECTION_LENGTH,
-            MIN_SECTION_SHARE * PERCENT_SCALE,
-            summary.cuts(),
-            summary.overLength(),
-            summary.longestSection());
-    }
-
-    // How the division answers to the one knob that decides it. Three numbers say the whole
-    // story: how many cuts were taken, how wide the worst of them was, and how long the worst
-    // section left over was. A low share takes many narrow cuts and still leaves one huge
-    // piece, because it is shaving the tips; a high share takes few wide ones, because
-    // nothing but a chord across the open middle can leave that much on both sides. Where
-    // those two failures stop overlapping is where the knob wants to sit.
-    private static void reportShareSweep(SectorFixture fixture) {
-
-        System.out.println("  share   cuts   widest cut   longest section");
-
-        for (var share : SWEPT_SHARES) {
-
-            var summary = summariseDivision(VoidPockets.findVoidPockets(
-                fixture.getSites(),
-                fixture.getOwnerBySite(),
-                new VoidPockets.PocketRules(
-                    SectorGeometryParameters.createDefaults(),
-                    new VoidSections.SectionRules(SECTION_LENGTH, share),
-                    VoidPockets.PocketShaping.WITH_CHANNEL)));
-
-            System.out.printf(
-                Locale.ROOT,
-                "  %4.0f%%  %5d   %10.0f   %15.0f%n",
-                share * PERCENT_SCALE,
-                summary.cuts(),
-                summary.widestCut(),
-                summary.longestSection());
-        }
-    }
-
-    // One walk over the pockets that want dividing, for both the line above and every row of
-    // the sweep. Shared rather than written twice because the sweep's row at the share the
-    // rest of the report runs at IS that line, and two walks could report it two ways.
-    private static DivisionSummary summariseDivision(List<VoidPockets.VoidPocket> pockets) {
-
-        var toDivide = 0;
-        var cuts = 0;
-        var overLength = 0;
-        var widestCut = 0.0;
-        var longestSection = 0.0;
-
-        for (var pocket : pockets) {
-
-            if (pocket.span() <= SECTION_LENGTH) {
-                continue;
-            }
-
-            toDivide++;
-            cuts += pocket.division().cuts().size();
-
-            for (var cut : pocket.division().cuts()) {
-                widestCut = Math.max(widestCut, cut.width());
-            }
-
-            var longestHere = measureLongestSection(pocket);
-
-            if (longestHere > SECTION_LENGTH) {
-                overLength++;
-            }
-
-            longestSection = Math.max(longestSection, longestHere);
-        }
-        return new DivisionSummary(toDivide, cuts, overLength, widestCut, longestSection);
+            ReportFigures.findPercentile(sections, REPORTED_PERCENTILES[0]),
+            ReportFigures.findPercentile(sections, REPORTED_PERCENTILES[1]),
+            ReportFigures.findPercentile(sections, REPORTED_PERCENTILES[2]));
     }
 
     // What the other construction over the same void finds, and the one number that says
@@ -608,12 +425,11 @@ final class VoidRegionsDump {
         // One site list and one set of knobs for every question asked below, so no two of
         // them can quietly measure against different geometry.
         var sites = fixture.getSites();
-        var shipped = SectorGeometryParameters.createDefaults();
 
         var bridges = VoidBridges.findVoidBridges(
             sites,
-            shipped.cellRadius(),
-            shipped.cellRadius() * BRIDGE_REACH_MULTIPLE);
+            SHIPPED.cellRadius(),
+            SHIPPED.cellRadius() * BRIDGE_REACH_MULTIPLE);
 
         if (bridges.isEmpty()) {
             System.out.println("void bridges: none");
@@ -634,7 +450,7 @@ final class VoidRegionsDump {
         widths.sort(Double::compare);
 
         var capturing = VoidBridgePockets.findCapturingBridges(
-            sites, bridges, shipped.cellRadius());
+            sites, bridges, SHIPPED.cellRadius());
 
         System.out.printf(
             Locale.ROOT,
@@ -647,25 +463,24 @@ final class VoidRegionsDump {
         var captured = VoidBridgePockets.findCapturedPockets(
             sites,
             bridges,
-            shipped,
+            SHIPPED,
             VoidPockets.PocketShaping.WITH_CHANNEL);
 
         System.out.printf(
             Locale.ROOT,
-            "%d of them are drawn as walls (the rest have closed over or crowd a mouth "
+            "%d of ALL %d are drawn as walls (the rest have closed over or crowd a mouth "
                 + "already taken)%n",
-            VoidBridgePockets.findLaidChords(sites, bridges, shipped).size());
+            VoidBridgePockets.findLaidChords(sites, bridges, SHIPPED).size(),
+            bridges.size());
 
-        reportBridgeRefusals(sites, bridges, shipped);
+        reportBridgeRefusals(sites, bridges);
 
         System.out.printf(
             Locale.ROOT,
             "walking the cells' borders with those bridges laid across them closes %d "
                 + "pockets; worst fill edge strays %.1f from its bridge (has to be 0)%n",
             captured.size(),
-            VoidBridgePockets.measureWorstChordStray(captured, sites, bridges, shipped));
-
-        reportCoastlines(laid);
+            VoidBridgePockets.measureWorstChordStray(captured, sites, bridges, SHIPPED));
 
         System.out.printf(
             Locale.ROOT,
@@ -674,9 +489,9 @@ final class VoidRegionsDump {
             BRIDGE_REACH_MULTIPLE,
             bridges.size(),
             outsideEveryPocket,
-            findPercentile(widths, REPORTED_PERCENTILES[0]),
-            findPercentile(widths, REPORTED_PERCENTILES[1]),
-            findPercentile(widths, REPORTED_PERCENTILES[2]));
+            ReportFigures.findPercentile(widths, REPORTED_PERCENTILES[0]),
+            ReportFigures.findPercentile(widths, REPORTED_PERCENTILES[1]),
+            ReportFigures.findPercentile(widths, REPORTED_PERCENTILES[2]));
     }
 
     // Why each bridge that is not drawn was turned down, at both reaches. The count above
@@ -684,254 +499,21 @@ final class VoidRegionsDump {
     // cells have genuinely closed and a wall the drawing's own inset refused.
     private static void reportBridgeRefusals(
             List<double[]> sites,
-            List<CellGaps.CellGap> bridges,
-            SectorGeometryParameters shipped) {
+            List<CellGaps.CellGap> bridges) {
 
-        var walls = VoidBridgePockets.buildBridgeWalls(bridges, shipped);
+        var walls = VoidBridgePockets.buildBridgeWalls(bridges, SHIPPED);
 
         System.out.printf(
             Locale.ROOT,
             "bridges offered %d: at the cells' own reach %s | a channel out %s%n",
             walls.chords().size(),
             WallRefusals.summariseRefusals(
-                new DiscUnion(sites, shipped.cellRadius()), walls, walls.chords()),
+                new DiscUnion(sites, SHIPPED.cellRadius()), walls, walls.chords()),
             WallRefusals.summariseRefusals(
-                VoidPockets.buildDrawnUnion(sites, shipped), walls, walls.chords()));
+                VoidPockets.buildDrawnUnion(sites, SHIPPED), walls, walls.chords()));
 
         WallRefusals.reportEachRefusal(
-            VoidPockets.buildDrawnUnion(sites, shipped), walls, walls.chords(), "bridge");
-    }
-
-    // What the smoothing takes out, as the two counts that say whether it did anything. Marks
-    // is how many stretches of coast the cells actually make; points is how many the smoothed
-    // line passes through. Equal counts mean the skip rules refused every candidate, which
-    // reads on screen exactly like the smoothing being switched off.
-    private static void reportCoastlines(LaidCoast laid) {
-
-        var traced = laid.traced();
-        var points = 0;
-
-        for (var coast : traced.coasts()) {
-            points += coast.size();
-        }
-
-        System.out.printf(
-            Locale.ROOT,
-            "smoothed outer edges: %d, over %d stretches of coast, drawn through %d points; "
-                + "%d runs visibly cross a cell, worst reach in %.1f (both have to be 0)%n",
-            traced.coasts().size(),
-            CoastMeasures.countCoastMarks(traced),
-            points,
-            CoastCrossings.findVisibleCrossings(traced, ViewerPainting.RING_STROKE).size(),
-            CoastCrossings.measureDeepestIncursion(traced));
-
-        System.out.printf(
-            Locale.ROOT,
-            "how deep each one goes, worst first: %s%n",
-            formatPenetrationDepths(CoastCrossings.findPenetrations(traced)));
-
-        var frontages = new ArrayList<>(CoastMeasures.measureFrontages(traced));
-        frontages.sort(Double::compare);
-
-        System.out.printf(
-            Locale.ROOT,
-            "frontage offered, over every stretch: p10 %.0f / p50 %.0f / p90 %.0f%n",
-            findPercentile(frontages, FRONTAGE_PERCENTILES[0]),
-            findPercentile(frontages, FRONTAGE_PERCENTILES[1]),
-            findPercentile(frontages, FRONTAGE_PERCENTILES[2]));
-
-        System.out.printf(
-            Locale.ROOT,
-            "each crossing as depth/frontage of the cell crossed: %s%n",
-            formatAgainstDepth(CoastMeasures.measureCrossingFrontages(traced)));
-
-        System.out.printf(
-            Locale.ROOT,
-            "each crossing as depth/stretches skipped across it (0 = neighbours): %s%n",
-            formatAgainstDepth(CoastMeasures.measureCrossingGaps(traced)));
-
-        reportTrappedVoid(laid);
-    }
-
-    // What the smoothing shut in behind it, as the pockets it becomes. A coast that traps
-    // nothing has bought no pocket space and is only redrawing the cells' own outline, so the
-    // count is the number that says whether the smoothing did the thing it exists to do -
-    // and how many of them survive the channel is the number that says they can be drawn.
-    private static void reportTrappedVoid(LaidCoast laid) {
-
-        var traced = laid.traced();
-        var sites = laid.sites();
-        var shipped = laid.parameters();
-
-        var pockets = CoastPockets.findCoastPockets(
-            traced,
-            CoastPockets.markEverySiteUnowned(sites),
-            new VoidPockets.PocketRules(
-                shipped, SECTION_RULES, VoidPockets.PocketShaping.WITH_CHANNEL));
-
-        if (pockets.isEmpty()) {
-            System.out.println("the coast traps no void at all");
-            return;
-        }
-
-        var spans = new ArrayList<Double>(pockets.size());
-        var closedOver = 0;
-
-        for (var pocket : pockets) {
-
-            spans.add(pocket.pocket().span());
-
-            if (!pocket.pocket().outlines().isEmpty()) {
-                continue;
-            }
-            closedOver++;
-
-            // Named rather than only counted. A pocket wider than the channel that still has
-            // nothing to draw is a hole in the map, and which one it was is what says whether
-            // the channel really closed it or the cut against a reach threw it away.
-            System.out.printf(
-                Locale.ROOT,
-                "  nothing left to draw for the pocket at %.0f,%.0f, %.0f across, "
-                    + "walled by %d reaches%n",
-                pocket.pocket().centre()[0],
-                pocket.pocket().centre()[1],
-                pocket.pocket().span(),
-                pocket.reaches().size());
-        }
-        spans.sort(Double::compare);
-
-        var spills = CoastPocketFaults.findSpills(
-            pockets, Coastlines.collectCoastRings(traced));
-
-        System.out.printf(
-            Locale.ROOT,
-            "closest a pocket comes to the reach that closed it: %.0f (the channel, %.0f)%n",
-            CoastPocketFaults.measureClosestApproach(pockets, traced.union().sites()),
-            shipped.borderInset());
-
-        System.out.printf(
-            Locale.ROOT,
-            "%d runs of pocket outline lie outside the drawn coast, worst by %.0f "
-                + "(has to be 0)%n",
-            spills.size(),
-            spills.isEmpty() ? 0 : spills.get(0).depth());
-
-        reportEachSpill(spills);
-
-        System.out.printf(
-            Locale.ROOT,
-            "void the coast traps: %d pockets, %d of them drawn once the channel is taken "
-                + "out; span p50 %.0f / p90 %.0f / max %.0f%n",
-            pockets.size(),
-            pockets.size() - closedOver,
-            findPercentile(spans, REPORTED_PERCENTILES[0]),
-            findPercentile(spans, REPORTED_PERCENTILES[1]),
-            findPercentile(spans, REPORTED_PERCENTILES[2]));
-
-        reportTrappedVoidAtTrueExtent(laid);
-    }
-
-    // The same void with nothing given up, which is the map the viewer opens on and the one
-    // step 5 moves everything to. Reported because the two faults answer differently here:
-    // nothing cuts a pocket at its true extent, so running past a reach's end is what a hole
-    // does and only the count of outline outside the coast still has to be zero.
-    private static void reportTrappedVoidAtTrueExtent(LaidCoast laid) {
-
-        var traced = laid.traced();
-
-        var pockets = CoastPockets.findCoastPockets(
-            traced,
-            CoastPockets.markEverySiteUnowned(laid.sites()),
-            new VoidPockets.PocketRules(
-                laid.parameters(), SECTION_RULES, VoidPockets.PocketShaping.AT_TRUE_EXTENT));
-
-        var spills = CoastPocketFaults.findSpills(
-            pockets, Coastlines.collectCoastRings(traced));
-        var drawn = 0;
-
-        for (var walled : pockets) {
-            if (!walled.pocket().outlines().isEmpty()) {
-                drawn++;
-            }
-        }
-
-        System.out.printf(
-            Locale.ROOT,
-            "at their true extent: %d pockets, %d of them drawn, %d runs outside the drawn "
-                + "coast, worst by %.0f (has to be 0)%n",
-            pockets.size(),
-            drawn,
-            spills.size(),
-            spills.isEmpty() ? 0 : spills.get(0).depth());
-
-        reportEachSpill(spills);
-        reportUndrawnVoid(laid);
-    }
-
-    // The patches of map that nothing draws, which is the fault a reader sees first and the
-    // one no construction can report on its own.
-    //
-    // Asked of the shaping the viewer opens on, because that is the picture being complained
-    // about: the bands a fill gives up against the coast and against the cells are taken out
-    // of the question, so what is left is ground inside the coast that should have been
-    // painted and was not.
-    private static void reportUndrawnVoid(LaidCoast laid) {
-
-        var unfilled = UndrawnVoid.findUnfilledVoid(
-            laid, SECTION_RULES, VoidPockets.PocketShaping.WITH_CHANNEL);
-
-        System.out.printf(
-            Locale.ROOT,
-            "%d patches inside the coast that nothing draws (has to be 0)%n",
-            unfilled.size());
-
-        for (var patch : unfilled) {
-            System.out.printf(Locale.ROOT, "  unfilled %s%n", patch);
-        }
-    }
-
-    // Every spilling run named, since one is a case to look at and a count is not: where it
-    // starts, how many points of outline are out there, and how far out the worst of them is.
-    private static void reportEachSpill(List<CoastPocketFaults.Spill> spills) {
-
-        for (var spill : spills) {
-            System.out.printf(Locale.ROOT, "  spill %s%n", spill);
-        }
-    }
-
-    // Each crossing as its depth beside one other number about it. Shared by every such
-    // report, because what varies between them is which number is asked for, not how a list
-    // of them reads.
-    private static String formatAgainstDepth(List<double[]> rows) {
-
-        var listed = new StringBuilder();
-
-        for (var row : rows) {
-            listed.append(listed.isEmpty() ? "" : " ").append(String.format(
-                Locale.ROOT, "%.0f/%.0f", row[0], row[1]));
-        }
-        return listed.isEmpty() ? "none" : listed.toString();
-    }
-
-    // Every one of them rather than a summary, because the question is whether they are one
-    // population or two - a graze along a border the run is already leaving from, against a
-    // run cutting a cell in half - and a mean or a worst case cannot tell those apart.
-    private static String formatPenetrationDepths(List<CoastCrossings.Penetration> penetrations) {
-
-        var depths = new ArrayList<Double>(penetrations.size());
-
-        for (var penetration : penetrations) {
-            depths.add(penetration.depth());
-        }
-        depths.sort(java.util.Comparator.reverseOrder());
-
-        var listed = new StringBuilder();
-
-        for (var depth : depths) {
-            listed.append(listed.isEmpty() ? "" : " ").append(String.format(
-                Locale.ROOT, "%.0f", depth));
-        }
-        return listed.isEmpty() ? "none" : listed.toString();
+            VoidPockets.buildDrawnUnion(sites, SHIPPED), walls, walls.chords(), "bridge");
     }
 
     // Against the sections rather than the pockets' own outlines, because the sections are
@@ -952,37 +534,13 @@ final class VoidRegionsDump {
         return false;
     }
 
+    // The middle of a bridge, which is the point asked of the pockets when deciding whether
+    // that bridge spans void any of them encloses. The middle rather than either end: an end
+    // sits on a cell's own border, where every pocket has already given up the channel.
     private static double[] findMidpoint(CellGaps.CellGap bridge) {
 
         return new double[] {
             (bridge.start()[0] + bridge.end()[0]) / 2,
             (bridge.start()[1] + bridge.end()[1]) / 2};
-    }
-
-    private static double findPercentile(List<Double> sorted, double fraction) {
-
-        var index = (int) Math.min(
-            sorted.size() - 1.0,
-            Math.floor(fraction * (sorted.size() - 1)));
-            
-        return sorted.get(index);
-    }
-
-    /**
-     * What one run of the division came to, across every pocket long enough to want it.
-     *
-     * @param toDivide       how many pockets spanned more than a section
-     * @param cuts           how many cuts were taken across all of them
-     * @param overLength     how many still hold a section longer than one
-     * @param widestCut      the widest corridor any cut crossed - the number that says
-     *                       whether cuts landed at pinches or were thrown across open void
-     * @param longestSection the longest way across any section left
-     */
-    private record DivisionSummary(
-        int toDivide,
-        int cuts,
-        int overLength,
-        double widestCut,
-        double longestSection) {
     }
 }

@@ -94,17 +94,13 @@ final class CoastWallReport {
             if (chord.kind() != DiscUnionBoundary.WallKind.COAST_REACH) {
                 continue;
             }
-            var line = chord.line();
-            var start = new double[] {line.originX(), line.originY()};
-            var end = new double[] {
-                line.originX() + line.directionX(), line.originY() + line.directionY()};
-
             for (var side : DiscUnionBoundary.findChordSides(
                     union, chord, parameters.borderInset())) {
 
                 for (var point : side) {
 
-                    var away = Segments.computeDistanceToPoint(start, end, point);
+                    var away = Segments.computeDistanceToPoint(
+                        chord.findStart(), chord.findEnd(), point);
 
                     if (away > worst) {
                         worst = away;
@@ -157,7 +153,7 @@ final class CoastWallReport {
                 turns++;
 
                 var apart = Points.computeDistance(
-                    findEndOn(laid.get(one), shared), findEndOn(laid.get(other), shared));
+                    laid.get(one).findEndOn(shared), laid.get(other).findEndOn(shared));
 
                 if (apart < TIGHT_TURN_WITHIN) {
 
@@ -197,15 +193,5 @@ final class CoastWallReport {
             return one.toCircle();
         }
         return -1;
-    }
-
-    private static double[] findEndOn(DiscUnionBoundary.Chord chord, int circle) {
-
-        var line = chord.line();
-
-        return chord.fromCircle() == circle
-            ? new double[] {line.originX(), line.originY()}
-            : new double[] {
-                line.originX() + line.directionX(), line.originY() + line.directionY()};
     }
 }

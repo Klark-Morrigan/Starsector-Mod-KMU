@@ -283,12 +283,8 @@ final class WallMouths {
             int circle,
             double[] centre) {
 
-        var line = chord.line();
-        var isFromSide = circle == chord.fromCircle();
+        var end = chord.findEndOn(circle);
 
-        var endX = isFromSide ? line.originX() : line.originX() + line.directionX();
-        var endY = isFromSide ? line.originY() : line.originY() + line.directionY();
-
-        return Math.atan2(endY - centre[1], endX - centre[0]);
+        return Math.atan2(end[1] - centre[1], end[0] - centre[0]);
     }
 }

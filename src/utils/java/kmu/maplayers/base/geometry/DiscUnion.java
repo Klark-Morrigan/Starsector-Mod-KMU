@@ -47,6 +47,28 @@ record DiscUnion(
     static final double TOUCHING_TOLERANCE = 1;
 
     /**
+     * Whether a point lies inside the union rather than in the void.
+     *
+     * <p>The definition of void, asked directly: a point is void when its nearest site is
+     * further off than the reach. Everything that walks the void, samples it or probes it asks
+     * this, and the reach it is asked at is the whole of what distinguishes the map's own void
+     * from the void a shape is drawn against.
+     *
+     * @param point the {x, y} point to place
+     * @return whether any disc holds it
+     */
+    boolean isPointInside(double[] point) {
+
+        for (var site : sites) {
+
+            if (Points.computeDistance(point, site) < reach) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * How far inside one disc a point lies.
      *
      * <p>Asked of the point rather than of an angle, because being inside a disc is what

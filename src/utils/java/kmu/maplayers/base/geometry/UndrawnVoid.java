@@ -177,6 +177,7 @@ final class UndrawnVoid {
         // site - and a grid stopping at the sites would call that ground swept without ever
         // having looked at it.
         var sites = laid.sites();
+        var cells = new DiscUnion(sites, clearOfCells);
         var box = BoxedFill.boxPoints(sites);
         var bare = new ArrayList<double[]>();
 
@@ -189,7 +190,7 @@ final class UndrawnVoid {
                     box[0] - clearOfCells + across * SAMPLE_STEP,
                     box[1] - clearOfCells + down * SAMPLE_STEP};
 
-                if (isInsideAnyCell(sites, at, clearOfCells)
+                if (cells.isPointInside(at)
                         || !isWellInsideCoast(coasts, at, clearOfCoast)
                         || isBesideAnyWall(laid, at, clearOfCoast)
                         || isCoveredByAny(fills, at)) {
@@ -301,26 +302,8 @@ final class UndrawnVoid {
 
         for (var chord : laid.walls().chords()) {
 
-            var line = chord.line();
-            var from = new double[] {line.originX(), line.originY()};
-            var to = new double[] {
-                line.originX() + line.directionX(), line.originY() + line.directionY()};
-
-            if (Segments.computeDistanceToPoint(from, to, at) <= clearBy) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean isInsideAnyCell(
-            List<double[]> sites,
-            double[] at,
-            double reach) {
-
-        for (var site : sites) {
-
-            if (Points.computeDistance(at, site) < reach) {
+            if (Segments.computeDistanceToPoint(
+                    chord.findStart(), chord.findEnd(), at) <= clearBy) {
                 return true;
             }
         }
@@ -344,6 +327,8 @@ final class UndrawnVoid {
         return false;
     }
 
+    // Whether any fill on the map covers a point, which is the last and dearest of the
+    // tests - and so the one asked only of ground that has already turned out to be bare.
     private static boolean isCoveredByAny(List<BoxedFill> fills, double[] at) {
 
         for (var fill : fills) {
@@ -369,10 +354,13 @@ final class UndrawnVoid {
         List<double[]> outline,
         double[] box) {
 
+        // One fill with its box worked out, which is how every fill enters the sweep.
         static BoxedFill boxFill(List<double[]> outline) {
             return new BoxedFill(outline, boxPoints(outline));
         }
 
+        // The box a set of points lies within, as {lowX, lowY, highX, highY}. Shared with
+        // the sweep itself, which wants the same answer about the sites.
         static double[] boxPoints(List<double[]> points) {
 
             var box = new double[] {
@@ -388,6 +376,8 @@ final class UndrawnVoid {
             return box;
         }
 
+        // Whether this fill covers a point - the box first, since almost every fill on the
+        // map is nowhere near any given sample and a box rejects those in four comparisons.
         boolean holds(double[] at) {
 
             return at[0] >= box[0]

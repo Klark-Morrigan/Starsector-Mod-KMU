@@ -20,9 +20,10 @@ import java.util.List;
  * cycles, tells a hole from a silhouette by its winding, and gives a hole at any reach asked
  * for; a coast reach is another line to hand it. Every vertex that comes back is a crossing
  * worked out in closed form - circle against circle, or circle against the wall - and the
- * inset against the cells is a fresh walk at a moved reach rather than a shape edited
- * afterwards. Against the COAST it is a cut, because a reach is a line and a line does
- * not move when a reach does - see {@link CoastPocketFaults}.
+ * inset is a fresh walk at a moved reach rather than a shape edited afterwards. Against the
+ * COAST too: a wall holds its own two sides half a channel off its line, so what the trace
+ * hands back is already inset from the reach that closed it. Nothing is cut, and
+ * {@link CoastPocketFaults} measures rather than corrects.
  *
  * <p>Which holes are the coast's is read off {@link VoidHole#walledBy}. Bridges and coast
  * reaches are walls of one kind and the trace closes both in one walk, so the wall a hole
@@ -39,9 +40,9 @@ final class CoastPockets {
      * @param traced       the coast, as {@link Coastlines#traceSectorCoasts} handed it back,
      *                     which carries the sites everything here is measured against and the
      *                     bridges it was walled by
-     * @param ownerBySite  each site's owner, index-aligned with {@code sites} and null where
-     *                     the site is unowned, to decide which pockets sit inside one owner's
-     *                     area rather than between owners
+     * @param ownerBySite  each site's owner, index-aligned with the coast's own sites and
+     *                     null where the site is unowned, to decide which pockets sit inside
+     *                     one owner's area rather than between owners
      * @param rules        the knobs to build them under. At its true extent the trace
      *                     itself moves to the cell radius, since a coast pocket takes the
      *                     channel from the discs it is walked against rather than from a
@@ -70,9 +71,7 @@ final class CoastPockets {
         // A coast pocket gives up the channel against the cells by being WALKED a channel
         // outside them, so at its true extent the discs move rather than the outline: walked
         // at the cell radius, the pocket runs up to the border itself.
-        var union = rules.shaping().isAtTrueExtent()
-            ? new DiscUnion(sites, parameters.cellRadius())
-            : VoidPockets.buildDrawnUnion(sites, parameters);
+        var union = VoidPockets.buildUnionFor(sites, parameters, rules.shaping());
 
         // ONE trace, and what it hands back is what gets drawn - the same thing
         // VoidBridgePockets does with its own walls. A pocket found among the cells can
@@ -194,19 +193,21 @@ final class CoastPockets {
         return unowned;
     }
 
-    // Every straight reach of coast, as the wall it is. A reach runs from a point on one
-    // cell's border to a point on another's, so the line through those two points is the line
-    // it lies on - and that is all a wall needs to be found again at any reach.
-    //
-    // There is only one coast to take them from, and that is the point: the line the map
-    // draws and the line a pocket insets from are the same line, so a fill cannot come to sit
-    // outside the border that defines it.
-    //
-    // Fillets are not reaches. A fillet runs along one cell's own border from where the coast
-    // arrived to where it leaves, so both its ends sit on the same circle and there is no
-    // second circle for a wall to run to; it also shuts nothing in, being boundary already.
     /**
      * The coast's straight reaches as the walls they are laid as.
+     *
+     * <p>A reach runs from a point on one cell's border to a point on another's, so the line
+     * through those two points is the line it lies on - and that is all a wall needs to be
+     * found again at any reach.
+     *
+     * <p>There is only one coast to take them from, and that is the point: the line the map
+     * draws and the line a pocket insets from are the same line, so a fill cannot come to sit
+     * outside the border that defines it.
+     *
+     * <p><b>Fillets are not reaches.</b> A fillet runs along one cell's own border from where
+     * the coast arrived to where it leaves, so both its ends sit on the same circle and there
+     * is no second circle for a wall to run to; it also shuts nothing in, being boundary
+     * already.
      *
      * <p>Shared rather than private because more than one reader wants the same line - what a
      * pocket is bounded by, and what a check asks about - and a second construction of it is

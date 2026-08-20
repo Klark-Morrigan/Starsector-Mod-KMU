@@ -261,6 +261,29 @@ final class VoidPockets {
     }
 
     /**
+     * The discs a shape is traced against at one shaping.
+     *
+     * <p>The one statement of what a shaping MEANS to a trace: at its true extent the void
+     * runs up to the cells' own border, and a channel out it stops short of it. Both ways of
+     * arriving at a pocket make that choice, and made separately the two can come to differ
+     * without either of them saying so.
+     *
+     * @param sites      the sites
+     * @param parameters the knobs the cells are built under
+     * @param shaping    which of the two to build
+     * @return the discs
+     */
+    static DiscUnion buildUnionFor(
+            List<double[]> sites,
+            SectorGeometryParameters parameters,
+            PocketShaping shaping) {
+
+        return shaping.isAtTrueExtent()
+            ? new DiscUnion(sites, parameters.cellRadius())
+            : buildDrawnUnion(sites, parameters);
+    }
+
+    /**
      * The discs a pocket is drawn against: the cells at the reach that leaves the channel.
      *
      * <p>Traced one channel out from the cells' own border rather than inset afterwards, so a

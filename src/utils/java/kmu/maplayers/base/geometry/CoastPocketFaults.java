@@ -5,7 +5,9 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Where a coast pocket has strayed outside the coast that shut it in.
@@ -55,9 +57,8 @@ final class CoastPocketFaults {
      * How far a point lies on the cells' side of one reach of coast.
      *
      * <p>The signed distance itself, which is what says the inset against the coast is there
-     * at all. Only meaningful along the stretch the reach actually covers - a pocket past a
-     * reach's end is not near that piece of coast at all - so {@link #buildBounds} says where
-     * that stretch begins and ends.
+     * at all. Only meaningful alongside the reach - a pocket past a reach's end is not near
+     * that piece of coast at all - so {@link #isBesideReach} is asked first.
      *
      * @param point the point to place
      * @param reach the reach to place it against
@@ -99,18 +100,16 @@ final class CoastPocketFaults {
         for (var walled : pockets) {
             for (var outline : walled.pocket().outlines()) {
                 for (var reach : walled.reaches()) {
-
-                    var bounds = buildBounds(reach, sites, 0);
-
-                    if (bounds == null) {
-                        continue;
-                    }
-
                     for (var point : outline) {
 
-                        if (measureExcursionFrom(point, bounds.toList()) <= 0) {
-                            closest = Math.min(
-                                closest, measureLandwardOffset(point, reach, sites));
+                        var landward = measureLandwardOffset(point, reach, sites);
+
+                        // Beside the reach, and on the cells' side of it. A point out past
+                        // either end is not near this piece of coast at all, and one on the
+                        // seaward side has not left a gap against it - it has crossed it,
+                        // which is a spill and is measured against the coast rather than here.
+                        if (landward >= 0 && isBesideReach(point, reach)) {
+                            closest = Math.min(closest, landward);
                         }
                     }
                 }
@@ -134,7 +133,7 @@ final class CoastPocketFaults {
         @Override
         public String toString() {
             return String.format(
-                java.util.Locale.ROOT,
+                Locale.ROOT,
                 "%.0f out to sea over %d points from %.0f,%.0f",
                 depth,
                 run.size(),
@@ -167,7 +166,7 @@ final class CoastPocketFaults {
                 collectRunsAtSea(outline, coasts, found);
             }
         }
-        found.sort(java.util.Comparator.comparingDouble(Spill::depth).reversed());
+        found.sort(Comparator.comparingDouble(Spill::depth).reversed());
 
         return found;
     }
@@ -236,77 +235,28 @@ final class CoastPocketFaults {
         List<DiscUnionBoundary.Chord> reaches) {
     }
 
-    /**
-     * The three half-planes one reach of coast bounds a pocket with, each named.
-     *
-     * <p>Named rather than listed, because two of them mean something different from the
-     * third and the difference decides whether a breach is a fault. Handed round as a list,
-     * the only thing telling the line from the end caps is its position in it, and a check
-     * that wanted one of them had no way to say which without counting.
-     *
-     * @param landward   the cells' side of the reach's line, held off by the channel
-     * @param afterStart everything from the reach's start onward
-     * @param beforeEnd  everything up to the reach's end
-     */
-    private record ReachBounds(
-        HalfPlane landward,
-        HalfPlane afterStart,
-        HalfPlane beforeEnd) {
+    // Whether a point lies alongside a reach rather than off one of its ends.
+    //
+    // A reach is a SEGMENT. The channel it holds a pocket off by means nothing out past where
+    // it stops: a pocket walled by this reach at one end and a bridge at the other runs on out
+    // there legitimately, and measuring its distance from this reach's LINE out there would
+    // report the gap against a piece of coast that is not beside it.
+    private static boolean isBesideReach(double[] point, DiscUnionBoundary.Chord reach) {
 
-        // All three as one list, for the callers that hold a pocket to a reach entirely
-        // rather than asking about one bound of it.
-        List<HalfPlane> toList() {
-            return List.of(landward, afterStart, beforeEnd);
+        var unit = reach.line().toUnitLine();
+
+        if (unit == null) {
+            return false;
         }
-    }
+        var start = reach.findStart();
 
-    /**
-     * The three half-planes one reach of coast bounds a pocket with.
-     *
-     * <p>The one statement of what a reach bounds. Nothing is clipped to them - what the
-     * trace hands back is what gets drawn - but the channel a pocket keeps against a reach is
-     * only meaningful along the stretch that reach actually covers, so the measure of it has
-     * to know where that stretch begins and ends.
-     *
-     * <p>Three, because a reach is a SEGMENT. Landward of its line is the obvious one; past
-     * either of its two ends is the one a single side test misses - a pair of near-parallel
-     * reaches bounds a slab, and a slab is not a shape.
-     *
-     * <p>The channel holds off the line only, not the ends. A pocket stops a channel short of
-     * the coast because the coast is a border it must not touch; at a reach's ends it meets
-     * the cells' own arcs, which the reach it was traced at already holds it off.
-     *
-     * @param reach   the reach
-     * @param sites   the sites, to find the cell it leaves from
-     * @param channel how far the pocket holds back from its line
-     * @return the three bounds, or null where the reach is too short to have a direction
-     */
-    private static ReachBounds buildBounds(
-            DiscUnionBoundary.Chord reach,
-            List<double[]> sites,
-            double channel) {
+        var along = Points.projectPointOnto(
+            point[0] - start[0],
+            point[1] - start[1],
+            unit.directionX(),
+            unit.directionY());
 
-        var landward = buildLandwardNormal(reach, sites);
-
-        if (landward == null) {
-            return null;
-        }
-        var line = reach.line();
-        var unit = line.toUnitLine();
-
-        return new ReachBounds(
-            new HalfPlane(
-                line.originX() + channel * landward[0],
-                line.originY() + channel * landward[1],
-                landward[0],
-                landward[1]),
-            new HalfPlane(
-                line.originX(), line.originY(), unit.directionX(), unit.directionY()),
-            new HalfPlane(
-                line.originX() + line.directionX(),
-                line.originY() + line.directionY(),
-                -unit.directionX(),
-                -unit.directionY()));
+        return along >= 0 && along <= Points.computeDistance(start, reach.findEnd());
     }
 
     // Which way is landward from one reach, as a unit normal. The single reading of which
@@ -331,20 +281,6 @@ final class CoastPocketFaults {
         return new double[] {towardsCells * normalX, towardsCells * normalY};
     }
 
-    // How far outside the bounds a point lies, at most zero while it is within all of them.
-    private static double measureExcursionFrom(double[] point, List<HalfPlane> bounds) {
-
-        if (bounds.isEmpty()) {
-            return 0;
-        }
-        var worst = -Double.MAX_VALUE;
-
-        for (var bound : bounds) {
-            worst = Math.max(worst, -measureOffsetFrom(point, bound));
-        }
-        return worst;
-    }
-
     // How far a point sits on the kept side of one bound, negative out past it.
     private static double measureOffsetFrom(double[] point, HalfPlane bound) {
 
@@ -354,5 +290,4 @@ final class CoastPocketFaults {
             bound.normalX(),
             bound.normalY());
     }
-
 }

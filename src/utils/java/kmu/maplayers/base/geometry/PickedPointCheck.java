@@ -1,5 +1,10 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Angles;
+import kmlib.math.geometry.Points;
+import kmlib.math.geometry.PolygonRegions;
+import kmlib.math.geometry.Segments;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -23,6 +28,10 @@ import java.util.Locale;
  * a person put their cursor on, and the two grow in different directions.
  */
 final class PickedPointCheck {
+
+    // No ring in the set holds the point, which is a verdict rather than a failure: void with
+    // nothing round it is exactly what several of the questions here are looking for.
+    private static final int NOTHING_HOLDS_IT = -1;
 
     // How many ways out to try, how big a stride to take, and how far counts as out. The
     // stride is well under a cell so a walk cannot step over one, and the range is wider than
@@ -64,46 +73,33 @@ final class PickedPointCheck {
             LaidCoast laid) {
 
         var traced = laid.traced();
-        var parameters = laid.parameters();
         var walls = laid.walls();
-        var sites = fixture.getSites();
-        var sectionRules = new VoidSections.SectionRules(
-            ViewerSettings.VOID_SPAN_DEFAULT * parameters.cellRadius(),
-            ViewerSettings.MIN_SECTION_DEFAULT / ViewerSettings.MIN_SECTION_SCALE);
+        var segments = laid.parameters().boundSegments();
 
-        var bridges = VoidBridges.findVoidBridges(
-            sites,
-            parameters.cellRadius(),
-            parameters.cellRadius() * Coastlines.DEFAULT_RULES.bridgeReachMultiple());
-
-        var holes = DiscUnionBoundary.traceHoles(
-            new DiscUnion(sites, parameters.cellRadius()), parameters.boundSegments());
+        var holes = DiscUnionBoundary.traceHoles(laid.atCells(), segments);
+        var drawnHoles = DiscUnionBoundary.traceHoles(laid.atDrawnReach(), segments);
 
         // The void as the walk sees it with EVERY wall down - bridges and coast reaches
         // together. Neither construction asks this question: one lays bridges alone and the
         // other keeps only the holes a coast reach walled, so a hole the two kinds close
         // between them belongs to neither of their answers and shows as nothing at all.
-        var walledHoles = DiscUnionBoundary.traceHolesAcrossWalls(
-            new DiscUnion(sites, parameters.cellRadius()), walls, parameters.boundSegments());
-
-        // The same walk at the reach a shape is DRAWN at, which is the one that decides what a
-        // reader sees. A hole at the cells' own reach with nothing to show for it a channel
+        //
+        // At both reaches, because the reach a shape is DRAWN at is the one that decides what
+        // a reader sees: a hole at the cells' own reach with nothing to show for it a channel
         // out is a wall the drawing's own inset refused, and no other column says so.
+        var walledHoles = DiscUnionBoundary.traceHolesAcrossWalls(
+            laid.atCells(), walls, segments);
         var drawnWalledHoles = DiscUnionBoundary.traceHolesAcrossWalls(
-            VoidPockets.buildDrawnUnion(sites, parameters),
-            walls,
-            parameters.boundSegments());
-        var drawnHoles = DiscUnionBoundary.traceHoles(
-            VoidPockets.buildDrawnUnion(sites, parameters), parameters.boundSegments());
+            laid.atDrawnReach(), walls, segments);
 
         var coastTrue = collectCoastOutlines(
-            traced, fixture, parameters, sectionRules, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
+            laid, fixture, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
         var coastInset = collectCoastOutlines(
-            traced, fixture, parameters, sectionRules, VoidPockets.PocketShaping.WITH_CHANNEL);
-        var bridgeTrue = VoidBridgePockets.findCapturedPockets(
-            sites, bridges, parameters, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
-        var bridgeInset = VoidBridgePockets.findCapturedPockets(
-            sites, bridges, parameters, VoidPockets.PocketShaping.WITH_CHANNEL);
+            laid, fixture, VoidPockets.PocketShaping.WITH_CHANNEL);
+        var bridgeTrue = collectBridgeOutlines(
+            laid, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
+        var bridgeInset = collectBridgeOutlines(
+            laid, VoidPockets.PocketShaping.WITH_CHANNEL);
 
         // A block per pick rather than one long line. The columns answer four different
         // questions - who drew it, whether it is enclosed, what the coast did there, and where
@@ -164,7 +160,7 @@ final class PickedPointCheck {
 
         for (var hole : holes) {
 
-            if (!kmlib.math.geometry.PolygonRegions.isPointInsideRing(
+            if (!PolygonRegions.isPointInsideRing(
                     hole.boundary(), pick[0], pick[1])) {
 
                 continue;
@@ -247,7 +243,7 @@ final class PickedPointCheck {
 
         for (var link : broken) {
 
-            var reach = kmlib.math.geometry.Points.computeDistance(link.at(), pick);
+            var reach = Points.computeDistance(link.at(), pick);
 
             if (reach < away) {
                 away = reach;
@@ -286,8 +282,8 @@ final class PickedPointCheck {
 
         for (var step = 0; step < ESCAPE_DIRECTIONS; step++) {
 
-            var angle = kmlib.math.geometry.Angles.FULL_TURN * step / ESCAPE_DIRECTIONS;
-            var away = walkOut(pick, angle, sites, laid, union.reach());
+            var angle = Angles.FULL_TURN * step / ESCAPE_DIRECTIONS;
+            var away = walkOut(pick, angle, union, laid);
 
             if (away > 0) {
                 return String.format(
@@ -307,9 +303,8 @@ final class PickedPointCheck {
     private static double walkOut(
             double[] from,
             double angle,
-            List<double[]> sites,
-            List<DiscUnionBoundary.Chord> laid,
-            double reach) {
+            DiscUnion union,
+            List<DiscUnionBoundary.Chord> laid) {
 
         var alongX = Math.cos(angle);
         var alongY = Math.sin(angle);
@@ -321,23 +316,12 @@ final class PickedPointCheck {
                 from[0] + alongX * step * ESCAPE_STEP,
                 from[1] + alongY * step * ESCAPE_STEP};
 
-            if (isInsideAnyCell(next, sites, reach) || crossesAnyWall(at, next, laid)) {
+            if (union.isPointInside(next) || crossesAnyWall(at, next, laid)) {
                 return 0;
             }
             at = next;
         }
         return ESCAPE_RANGE;
-    }
-
-    private static boolean isInsideAnyCell(double[] point, List<double[]> sites, double reach) {
-
-        for (var site : sites) {
-
-            if (kmlib.math.geometry.Points.computeDistance(point, site) < reach) {
-                return true;
-            }
-        }
-        return false;
     }
 
     // Whether one step of a walk crosses a laid wall. The wall is the stretch between its two
@@ -349,38 +333,17 @@ final class PickedPointCheck {
 
         for (var chord : laid) {
 
-            var line = chord.line();
-            var start = new double[] {line.originX(), line.originY()};
-            var end = new double[] {
-                line.originX() + line.directionX(), line.originY() + line.directionY()};
+            // The library's reading, not a local one. Written out here it came with a strict
+            // sign test, which reports a walk grazing a wall exactly at one of its ends as
+            // NOT crossing - so the one direction that slips past a wall's end is the one
+            // direction the escape walk believes in, and enclosed void reads as leaking.
+            if (Segments.intersectSegments(
+                    from, to, chord.findStart(), chord.findEnd()) != null) {
 
-            if (doSegmentsCross(from, to, start, end)) {
                 return true;
             }
         }
         return false;
-    }
-
-    // Two segments cross when each straddles the other's line, read off the sign of the four
-    // turns. No intersection point is wanted, so none is worked out.
-    private static boolean doSegmentsCross(
-            double[] oneFrom,
-            double[] oneTo,
-            double[] otherFrom,
-            double[] otherTo) {
-
-        var a = turnsLeft(oneFrom, oneTo, otherFrom);
-        var b = turnsLeft(oneFrom, oneTo, otherTo);
-        var c = turnsLeft(otherFrom, otherTo, oneFrom);
-        var d = turnsLeft(otherFrom, otherTo, oneTo);
-
-        return a != b && c != d;
-    }
-
-    private static boolean turnsLeft(double[] from, double[] to, double[] point) {
-
-        return (to[0] - from[0]) * (point[1] - from[1])
-            - (to[1] - from[1]) * (point[0] - from[0]) > 0;
     }
 
     // Whether the walk finds a closed cycle round a point once every wall is laid, and what
@@ -389,33 +352,27 @@ final class PickedPointCheck {
     // enclosed at all means the void really does run out to sea.
     private static String describeWalledHoleAt(List<VoidHole> holes, double[] pick) {
 
-        for (var index = 0; index < holes.size(); index++) {
+        var index = findRingHolding(collectHoleBoundaries(holes), pick);
 
-            var hole = holes.get(index);
-
-            if (!kmlib.math.geometry.PolygonRegions.isPointInsideRing(
-                    hole.boundary(), pick[0], pick[1])) {
-
-                continue;
-            }
-            var walling = new StringBuilder();
-
-            // Each wall named rather than only its kind. Which wall closed a hole here and
-            // failed to close it a channel out is the whole of the question, and a kind cannot
-            // be looked up in the refusal census.
-            for (var wall : hole.walledBy()) {
-
-                walling
-                    .append(walling.isEmpty() ? "" : ", ")
-                    .append(wall.kind())
-                    .append(' ')
-                    .append(wall.fromCircle())
-                    .append('-')
-                    .append(wall.toCircle());
-            }
-            return "#" + index + " walled by " + walling;
+        if (index == NOTHING_HOLDS_IT) {
+            return "none";
         }
-        return "none";
+        var walling = new StringBuilder();
+
+        // Each wall named rather than only its kind. Which wall closed a hole here and failed
+        // to close it a channel out is the whole of the question, and a kind cannot be looked
+        // up in the refusal census.
+        for (var wall : holes.get(index).walledBy()) {
+
+            walling
+                .append(walling.isEmpty() ? "" : ", ")
+                .append(wall.kind())
+                .append(' ')
+                .append(wall.fromCircle())
+                .append('-')
+                .append(wall.toCircle());
+        }
+        return "#" + index + " walled by " + walling;
     }
 
     // Which side of the drawn coast a point is on. The question that separates "nothing
@@ -442,7 +399,7 @@ final class PickedPointCheck {
 
                 var from = coast.get(index);
                 var to = coast.get((index + 1) % coast.size());
-                var away = kmlib.math.geometry.Segments.computeDistanceToPoint(
+                var away = Segments.computeDistanceToPoint(
                     from.point(), to.point(), pick);
 
                 if (nearest == null || away < nearest.away()) {
@@ -477,22 +434,48 @@ final class PickedPointCheck {
     // Every coast pocket's outline at one shaping, flattened, because what a pick asks is
     // whether ANY of them holds the point rather than which pocket it belongs to.
     private static List<List<double[]>> collectCoastOutlines(
-            Coastlines.TracedCoasts traced,
+            LaidCoast laid,
             SectorFixture fixture,
-            SectorGeometryParameters parameters,
-            VoidSections.SectionRules sectionRules,
             VoidPockets.PocketShaping shaping) {
 
         var outlines = new ArrayList<List<double[]>>();
 
         for (var walled : CoastPockets.findCoastPockets(
-                traced,
+                laid.traced(),
                 fixture.getOwnerBySite(),
-                new VoidPockets.PocketRules(parameters, sectionRules, shaping))) {
+                new VoidPockets.PocketRules(
+                    laid.parameters(), buildViewerSections(laid), shaping))) {
 
             outlines.addAll(walled.pocket().outlines());
         }
         return outlines;
+    }
+
+    // Every bridge-captured pocket at one shaping, which is the other half of what the map
+    // fills void with.
+    private static List<List<double[]>> collectBridgeOutlines(
+            LaidCoast laid,
+            VoidPockets.PocketShaping shaping) {
+
+        var parameters = laid.parameters();
+
+        return VoidBridgePockets.findCapturedPockets(
+            laid.sites(),
+            VoidBridges.findVoidBridges(
+                laid.sites(),
+                parameters.cellRadius(),
+                parameters.cellRadius() * Coastlines.DEFAULT_RULES.bridgeReachMultiple()),
+            parameters,
+            shaping);
+    }
+
+    // How a pocket is divided, as the viewer has those sliders set - so a verdict here
+    // describes the shapes a reader would see in the window rather than a second division.
+    private static VoidSections.SectionRules buildViewerSections(LaidCoast laid) {
+
+        return new VoidSections.SectionRules(
+            ViewerSettings.VOID_SPAN_DEFAULT * laid.parameters().cellRadius(),
+            ViewerSettings.MIN_SECTION_DEFAULT / ViewerSettings.MIN_SECTION_SCALE);
     }
 
     // Which hole of the union holds a point, if any. "None" is the answer that matters most:
@@ -500,30 +483,45 @@ final class PickedPointCheck {
     // to fill it and the question is why nothing enclosed it.
     private static String describeHoleAt(List<VoidHole> holes, double[] pick) {
 
-        for (var index = 0; index < holes.size(); index++) {
+        var index = findRingHolding(collectHoleBoundaries(holes), pick);
 
-            if (kmlib.math.geometry.PolygonRegions.isPointInsideRing(
-                    holes.get(index).boundary(), pick[0], pick[1])) {
-
-                return "#" + index + " (" + holes.get(index).ringing().size() + " cells)";
-            }
-        }
-        return "none";
+        return index == NOTHING_HOLDS_IT
+            ? "none"
+            : "#" + index + " (" + holes.get(index).ringing().size() + " cells)";
     }
 
     // Which drawn outline holds a point, if any - asked once per construction and per reach,
     // since a pocket can exist at one reach and not the other.
     private static String describeHit(List<List<double[]>> outlines, double[] pick) {
 
-        for (var index = 0; index < outlines.size(); index++) {
+        var index = findRingHolding(outlines, pick);
 
-            if (kmlib.math.geometry.PolygonRegions.isPointInsideRing(
-                    outlines.get(index), pick[0], pick[1])) {
+        return index == NOTHING_HOLDS_IT ? "no" : "#" + index;
+    }
 
-                return "#" + index;
+    // Which of a set of rings holds a point, by position, or none. Every verdict here is a
+    // wording put round this one scan, and each of them written out separately is a chance for
+    // one to answer about the first ring that holds the point and another about the last.
+    private static int findRingHolding(List<List<double[]>> rings, double[] pick) {
+
+        for (var index = 0; index < rings.size(); index++) {
+
+            if (PolygonRegions.isPointInsideRing(rings.get(index), pick[0], pick[1])) {
+                return index;
             }
         }
-        return "no";
+        return NOTHING_HOLDS_IT;
+    }
+
+    // The holes as plain rings, which is what the scan above takes.
+    private static List<List<double[]>> collectHoleBoundaries(List<VoidHole> holes) {
+
+        var rings = new ArrayList<List<double[]>>(holes.size());
+
+        for (var hole : holes) {
+            rings.add(hole.boundary());
+        }
+        return rings;
     }
 
     // The picks for one sector, as the viewer wrote them down. A missing file and picks from
@@ -569,7 +567,7 @@ final class PickedPointCheck {
 
         // How long the step is, which is what decides whether it could be a reach at all.
         double length() {
-            return kmlib.math.geometry.Points.computeDistance(from.point(), to.point());
+            return Points.computeDistance(from.point(), to.point());
         }
     }
 }

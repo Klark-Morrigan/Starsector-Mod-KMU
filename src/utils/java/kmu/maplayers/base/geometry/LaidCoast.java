@@ -44,6 +44,8 @@ record LaidCoast(
             traced, parameters, offered, CoastPockets.layCoastWalls(traced, offered));
     }
 
+    // The sites the coast was walked against, taken off the coast rather than carried
+    // beside it - a second list is a list that can belong to another construction.
     List<double[]> sites() {
         return traced.union().sites();
     }

@@ -146,9 +146,7 @@ final class VoidBridgePockets {
 
         var outlines = new ArrayList<List<double[]>>();
 
-        var union = shaping.isAtTrueExtent()
-            ? new DiscUnion(sites, parameters.cellRadius())
-            : VoidPockets.buildDrawnUnion(sites, parameters);
+        var union = VoidPockets.buildUnionFor(sites, parameters, shaping);
 
         for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
                 union,
@@ -222,8 +220,8 @@ final class VoidBridgePockets {
             SectorGeometryParameters parameters) {
 
         var union = VoidPockets.buildDrawnUnion(sites, parameters);
-        var capturing = Set.copyOf(
-            DiscUnionBoundary.buildChordsFrom(findCapturingBridges(sites, bridges, parameters.cellRadius())));
+        var capturing = Set.copyOf(DiscUnionBoundary.buildChordsFrom(
+            findCapturingBridges(sites, bridges, parameters.cellRadius())));
 
         var worst = 0.0;
 
@@ -281,6 +279,9 @@ final class VoidBridgePockets {
             DiscUnionBoundary.buildChordsFrom(bridges), parameters.borderInset());
     }
 
+    // How far a point sits from the nearest vertex of any outline. What a bridge's drawn end
+    // is measured against: the fill is a run of points, so "the fill reaches this end" means
+    // one of those points is at it.
     private static double measureDistanceToNearestVertex(
             List<List<double[]>> outlines,
             double[] point) {

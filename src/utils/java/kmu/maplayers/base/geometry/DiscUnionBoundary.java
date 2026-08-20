@@ -7,6 +7,7 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -110,6 +111,25 @@ final class DiscUnionBoundary {
         int toCircle,
         DirectedLine line,
         WallKind kind) {
+
+        // Where the wall begins and ends, which is the stretch of its line that is actually a
+        // wall. Asked of the wall itself because everything that draws one, measures to one or
+        // walks across one needs the same two points, and rebuilding them from the origin and
+        // the direction is four arithmetic expressions that can each be got wrong.
+        double[] findStart() {
+            return new double[] {line.originX(), line.originY()};
+        }
+
+        double[] findEnd() {
+            return new double[] {
+                line.originX() + line.directionX(), line.originY() + line.directionY()};
+        }
+
+        // Whichever of the two ends sits on the named circle. A wall runs between two, and
+        // which end is on which is fixed when the wall is built.
+        double[] findEndOn(int circle) {
+            return circle == fromCircle ? findStart() : findEnd();
+        }
     }
 
     /**
@@ -255,7 +275,7 @@ final class DiscUnionBoundary {
 
                 // Reversed so a hole reads the same way round as any other filled shape.
                 var boundary = new ArrayList<>(shape.boundary());
-                java.util.Collections.reverse(boundary);
+                Collections.reverse(boundary);
 
                 holes.add(new VoidHole(
                     boundary,
@@ -478,7 +498,8 @@ final class DiscUnionBoundary {
 
         for (var chord : walls.chords()) {
 
-            var fromMouth = WallMouths.measureMouth(union, chord, chord.fromCircle(), walls.channel());
+            var fromMouth = WallMouths.measureMouth(
+                union, chord, chord.fromCircle(), walls.channel());
             var toMouth = WallMouths.measureMouth(union, chord, chord.toCircle(), walls.channel());
 
             if (fromMouth == null
@@ -522,7 +543,8 @@ final class DiscUnionBoundary {
 
         for (var chord : walls.chords()) {
 
-            var fromMouth = WallMouths.measureMouth(union, chord, chord.fromCircle(), walls.channel());
+            var fromMouth = WallMouths.measureMouth(
+                union, chord, chord.fromCircle(), walls.channel());
             var toMouth = WallMouths.measureMouth(union, chord, chord.toCircle(), walls.channel());
             var refusal = judgeChord(union, chord, fromMouth, toMouth, takenByCircle, takers);
 
@@ -1170,7 +1192,7 @@ final class DiscUnionBoundary {
             double[] mouth) {
 
         if (chord.kind() == WallKind.COAST_REACH) {
-            return List.of(findWallEnd(chord, circle));
+            return List.of(chord.findEndOn(circle));
         }
 
         return List.of(
@@ -1262,18 +1284,6 @@ final class DiscUnionBoundary {
                 circle,
                 deepest[1],
                 (int) deepest[0]);
-    }
-
-    // Where a wall meets one of its circles, which for a bridge is a gap's own end and for a
-    // reach of coast is the point the smoothing put down.
-    private static double[] findWallEnd(Chord chord, int circle) {
-
-        var line = chord.line();
-        var isFromSide = circle == chord.fromCircle();
-
-        return new double[] {
-            isFromSide ? line.originX() : line.originX() + line.directionX(),
-            isFromSide ? line.originY() : line.originY() + line.directionY()};
     }
 
     // Whether an earlier wall's mouth leaves this one nowhere to attach.

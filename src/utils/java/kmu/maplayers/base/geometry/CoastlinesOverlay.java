@@ -22,6 +22,9 @@ final class CoastlinesOverlay {
 
     private final ViewerSettings settings;
 
+    // What the last trace found, held rather than recomputed while painting: a frame that
+    // rebuilt any of these would be drawing marks measured against geometry the rest of the
+    // frame is not being drawn from.
     private List<CoastCrossings.Penetration> penetrations = List.of();
     private List<CoastPocketFaults.WalledPocket> pockets = List.of();
     private List<CoastPocketFaults.Spill> spills = List.of();
@@ -138,9 +141,9 @@ final class CoastlinesOverlay {
         paintSpills(g2);
     }
 
-    // Only the stretch of a pocket outline that is outside a reach, not the pocket it belongs
-    // to. A pocket with a sliver off one corner is almost all correct, and marking the whole
-    // shape points at the right part as loudly as at the wrong one.
+    // Only the stretch of a pocket outline that is outside the drawn coast, not the pocket it
+    // belongs to. A pocket with a sliver off one corner is almost all correct, and marking the
+    // whole shape points at the right part as loudly as at the wrong one.
     private void paintSpills(Graphics2D g2) {
 
         g2.setStroke(new BasicStroke(ViewerPainting.CROSSING_STROKE));
