@@ -59,6 +59,14 @@ class MapVisibilityIntegrationTest {
     private static final MapVisibilityRules INCLUDING_UNDISCOVERED_MARKETS =
         new MapVisibilityRules(UNDER_THE_REVEAL, false);
 
+    // The size every colony these cases stage carries. Nothing the visibility rule reads weighs a
+    // colony, so a case varying this would vary nothing the rule can see.
+    private static final int COLONY_SIZE = 5;
+
+    // The faction behind every colony staged here. Which faction holds a colony reaches no answer
+    // the rule gives, so one name serves them all and no case reads as being about whose it is.
+    private static final String OWNING_FACTION = "hegemony";
+
     // The inhabitation the pre-computed entry point is handed when the caller has already
     // decided the system holds nothing, so admission rests on access or the force override.
     private static final boolean UNINHABITED = false;
@@ -424,25 +432,7 @@ class MapVisibilityIntegrationTest {
     // Wires a single-system sector whose economy returns the given markets for
     // that system - the read the inhabitation rule makes when judging colonies.
     private static SectorAPI buildSectorWith(StarSystemAPI system, MarketAPI... markets) {
-
-        var economyMock = mock(EconomyAPI.class);
-
-        when(economyMock.getMarkets(system))
-            .thenReturn(List.of(markets));
-
-        // The hyperspace mock is built before the getHyperspace() stubbing so its
-        // own stubbing is not nested inside this one.
-        var hyperspaceMock = buildHyperspaceWithVisibleStarAnchorFor(system);
-        var sectorMock = mock(SectorAPI.class);
-
-        when(sectorMock.getStarSystems())
-            .thenReturn(List.of(system));
-        when(sectorMock.getEconomy())
-            .thenReturn(economyMock);
-        when(sectorMock.getHyperspace())
-            .thenReturn(hyperspaceMock);
-
-        return sectorMock;
+        return buildSector(system, buildHyperspaceWithVisibleStarAnchorFor(system), markets);
     }
 
     // A two-system sector where only the first holds markets, for the sector-wide scan: the
@@ -474,13 +464,33 @@ class MapVisibilityIntegrationTest {
     // case stages - none of them, so the inhabited path cannot admit it either, unless the case is
     // about which markets that path reads.
     private static SectorAPI buildSectorWithHiddenStar(StarSystemAPI system, MarketAPI... markets) {
+        return buildSector(system, buildHyperspaceWithHiddenStarAnchorFor(system), markets);
+    }
 
+    // A sector whose hyperspace holds no star anchor, so no system reads as
+    // star-visible: the route onto the map is the nebula draw or inhabitation.
+    private static SectorAPI buildSectorWithoutStarAnchors(StarSystemAPI system) {
+        return buildSector(system, buildHyperspaceHolding());
+    }
+
+    // The single-system sector the three above are each one hyperspace of: an economy listing the
+    // staged markets for that system, and whatever the vanilla map draws around it.
+    //
+    // One wiring rather than three, since what a case varies is the hyperspace and the markets and
+    // never the sector itself - three copies of that stubbing is three chances for a case to be
+    // posed against a sector its neighbours are not.
+    private static SectorAPI buildSector(
+            StarSystemAPI system,
+            LocationAPI hyperspace,
+            MarketAPI... markets) {
+
+        // The economy finishes its own stubbing before the sector's opens, as the hyperspace the
+        // caller passes already has, so Mockito sees no stubbing nested inside another.
         var economyMock = mock(EconomyAPI.class);
 
         when(economyMock.getMarkets(system))
             .thenReturn(List.of(markets));
 
-        var hyperspaceMock = buildHyperspaceWithHiddenStarAnchorFor(system);
         var sectorMock = mock(SectorAPI.class);
 
         when(sectorMock.getStarSystems())
@@ -488,7 +498,7 @@ class MapVisibilityIntegrationTest {
         when(sectorMock.getEconomy())
             .thenReturn(economyMock);
         when(sectorMock.getHyperspace())
-            .thenReturn(hyperspaceMock);
+            .thenReturn(hyperspace);
 
         return sectorMock;
     }
@@ -497,27 +507,24 @@ class MapVisibilityIntegrationTest {
     // draws no star and the system reads as map-invisible.
     private static LocationAPI buildHyperspaceWithHiddenStarAnchorFor(StarSystemAPI system) {
 
-        var anchorMock = mock(JumpPointAPI.class);
+        var anchorMock = buildStarAnchorTo(system);
 
-        when(anchorMock.isStarAnchor())
-            .thenReturn(true);
         when(anchorMock.hasTag(Tags.STAR_HIDDEN_ON_MAP))
             .thenReturn(true);
-        when(anchorMock.getDestinationStarSystem())
-            .thenReturn(system);
 
-        var hyperspaceMock = mock(LocationAPI.class);
-
-        when(hyperspaceMock.getEntities(JumpPointAPI.class))
-            .thenReturn(List.of(anchorMock));
-
-        return hyperspaceMock;
+        return buildHyperspaceHolding(anchorMock);
     }
 
     // A visible (untagged) star anchor leading into the system, so a reachable
     // system reads as map-visible. A system with no jump point stays off the map
     // regardless, so its anchor cannot wrongly admit it.
     private static LocationAPI buildHyperspaceWithVisibleStarAnchorFor(StarSystemAPI system) {
+        return buildHyperspaceHolding(buildStarAnchorTo(system));
+    }
+
+    // A star anchor leading into the system, drawn on the map until a case tags it otherwise -
+    // which is what makes the hidden variant above read as the one thing it changes.
+    private static JumpPointAPI buildStarAnchorTo(StarSystemAPI system) {
 
         var anchorMock = mock(JumpPointAPI.class);
 
@@ -526,38 +533,19 @@ class MapVisibilityIntegrationTest {
         when(anchorMock.getDestinationStarSystem())
             .thenReturn(system);
 
-        var hyperspaceMock = mock(LocationAPI.class);
-
-        when(hyperspaceMock.getEntities(JumpPointAPI.class))
-            .thenReturn(List.of(anchorMock));
-
-        return hyperspaceMock;
+        return anchorMock;
     }
 
-    // A sector whose hyperspace holds no star anchor, so no system reads as
-    // star-visible: the route onto the map is the nebula draw or inhabitation.
-    private static SectorAPI buildSectorWithoutStarAnchors(StarSystemAPI system) {
-
-        var economyMock = mock(EconomyAPI.class);
-
-        when(economyMock.getMarkets(system))
-            .thenReturn(List.of());
+    // Hyperspace holding the given anchors, and none is the case where no system reads as
+    // star-visible at all.
+    private static LocationAPI buildHyperspaceHolding(JumpPointAPI... anchors) {
 
         var hyperspaceMock = mock(LocationAPI.class);
 
         when(hyperspaceMock.getEntities(JumpPointAPI.class))
-            .thenReturn(List.of());
+            .thenReturn(List.of(anchors));
 
-        var sectorMock = mock(SectorAPI.class);
-
-        when(sectorMock.getStarSystems())
-            .thenReturn(List.of(system));
-        when(sectorMock.getEconomy())
-            .thenReturn(economyMock);
-        when(sectorMock.getHyperspace())
-            .thenReturn(hyperspaceMock);
-
-        return sectorMock;
+        return hyperspaceMock;
     }
 
     private static StarSystemAPI buildReachableSystem(String id) {
@@ -654,33 +642,10 @@ class MapVisibilityIntegrationTest {
     }
 
     // A discovered, openly owned colony: faction set, not condition-only, its
-    // entity no longer discoverable - what StarSystems counts as a known colony.
+    // entity no longer discoverable - what the colony read counts as a colony the player has
+    // found.
     private static MarketAPI buildOwnedMarket() {
-
-        var entityMock = mock(SectorEntityToken.class);
-
-        when(entityMock.isDiscoverable())
-            .thenReturn(false);
-
-        var factionMock = mock(FactionAPI.class);
-
-        when(factionMock.getId())
-            .thenReturn("hegemony");
-
-        var marketMock = mock(MarketAPI.class);
-
-        when(marketMock.getFaction())
-            .thenReturn(factionMock);
-        when(marketMock.getSize())
-            .thenReturn(5);
-        when(marketMock.isPlanetConditionMarketOnly())
-            .thenReturn(false);
-        when(marketMock.isHidden())
-            .thenReturn(false);
-        when(marketMock.getPrimaryEntity())
-            .thenReturn(entityMock);
-
-        return marketMock;
+        return buildColonyOnEntity(false, false);
     }
 
     // A derelict hulk's market: an ordinary owned market in every respect the fog can see - open,
@@ -701,27 +666,35 @@ class MapVisibilityIntegrationTest {
     // discoverable entity, so it fails the normal known-to-player gate and confers
     // presence only under the show-undiscovered-markets reveal.
     private static MarketAPI buildUndiscoveredColony() {
+        return buildColonyOnEntity(true, true);
+    }
 
+    // The two-axis shape the named colonies above are points on, kept private so no case poses
+    // itself as a pair of bare booleans - which axis a case varies is the whole of what it says.
+    private static MarketAPI buildColonyOnEntity(boolean isEntityDiscoverable, boolean isHidden) {
+
+        // The entity and the faction each finish their own stubbing before the market's opens, so
+        // Mockito sees no stubbing nested inside another.
         var entityMock = mock(SectorEntityToken.class);
 
         when(entityMock.isDiscoverable())
-            .thenReturn(true);
+            .thenReturn(isEntityDiscoverable);
 
         var factionMock = mock(FactionAPI.class);
 
         when(factionMock.getId())
-            .thenReturn("hegemony");
+            .thenReturn(OWNING_FACTION);
 
         var marketMock = mock(MarketAPI.class);
 
         when(marketMock.getFaction())
             .thenReturn(factionMock);
         when(marketMock.getSize())
-            .thenReturn(5);
+            .thenReturn(COLONY_SIZE);
         when(marketMock.isPlanetConditionMarketOnly())
             .thenReturn(false);
         when(marketMock.isHidden())
-            .thenReturn(true);
+            .thenReturn(isHidden);
         when(marketMock.getPrimaryEntity())
             .thenReturn(entityMock);
 
