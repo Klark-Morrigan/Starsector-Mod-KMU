@@ -4,6 +4,7 @@ import kmlib.math.geometry.HalfPlane;
 import kmlib.math.geometry.LabelledPolygon;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
+import kmlib.math.geometry.PolygonRegions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -127,6 +128,17 @@ final class CoastPocketFaults {
     record Spill(
         List<double[]> run,
         double depth) {
+
+        @Override
+        public String toString() {
+            return String.format(
+                java.util.Locale.ROOT,
+                "%.0f out to sea over %d points from %.0f,%.0f",
+                depth,
+                run.size(),
+                run.get(0)[0],
+                run.get(0)[1]);
+        }
     }
 
     /**
@@ -163,19 +175,70 @@ final class CoastPocketFaults {
      * @param sites   the sites, to say which side of each reach the cells are on
      * @return one entry per offending run, deepest first
      */
-    static List<Spill> findSpills(List<WalledPocket> pockets, List<double[]> sites) {
+    static List<Spill> findSpills(
+            List<WalledPocket> pockets,
+            List<List<double[]>> coasts) {
 
         var found = new ArrayList<Spill>();
 
-        collectRunsOutsideBounds(
-            pockets,
-            sites,
-            CoastPocketFaults::measureSeawardDepth,
-            (run, depth) -> found.add(new Spill(run, depth)));
+        for (var walled : pockets) {
+            for (var outline : walled.pocket().outlines()) {
 
+                collectRunsAtSea(outline, coasts, found);
+            }
+        }
         found.sort(java.util.Comparator.comparingDouble(Spill::depth).reversed());
 
         return found;
+    }
+
+    // Every maximal stretch of one outline lying outside the drawn coast, with how far out the
+    // worst of it went.
+    private static void collectRunsAtSea(
+            List<double[]> outline,
+            List<List<double[]>> coasts,
+            List<Spill> found) {
+
+        var run = new ArrayList<double[]>();
+        var deepest = 0.0;
+
+        for (var point : outline) {
+
+            var out = measureDepthAtSea(point, coasts);
+
+            if (out > PAST_A_BOUND) {
+
+                run.add(point);
+                deepest = Math.max(deepest, out);
+                continue;
+            }
+
+            if (run.size() >= MIN_RUN_VERTICES) {
+                found.add(new Spill(List.copyOf(run), deepest));
+            }
+            run.clear();
+            deepest = 0;
+        }
+
+        if (run.size() >= MIN_RUN_VERTICES) {
+            found.add(new Spill(List.copyOf(run), deepest));
+        }
+    }
+
+    // How far outside the drawn coast a point lies, which is nothing while it is inside any
+    // of the coast's rings.
+    private static double measureDepthAtSea(double[] point, List<List<double[]>> coasts) {
+
+        var nearest = Double.MAX_VALUE;
+
+        for (var coast : coasts) {
+
+            if (PolygonRegions.isPointInsideRing(coast, point[0], point[1])) {
+                return 0;
+            }
+            nearest = Math.min(nearest, PolygonRegions.computeDistanceToBoundary(coast, point));
+        }
+        return nearest == Double.MAX_VALUE ? 0 : nearest;
     }
 
     /**
@@ -197,7 +260,7 @@ final class CoastPocketFaults {
             pockets,
             sites,
             CoastPocketFaults::measurePastEndDepth,
-            (run, depth) -> found.add(new Overrun(run, depth)));
+            (run, depth, reach) -> found.add(new Overrun(run, depth)));
 
         found.sort(java.util.Comparator.comparingDouble(Overrun::depth).reversed());
 
@@ -323,22 +386,6 @@ final class CoastPocketFaults {
         double measureDepthAt(double[] point, ReachBounds bounds);
     }
 
-    // How far out to sea a point is, which is nothing at all unless it is BESIDE the reach.
-    //
-    // A reach is a segment and its line runs on forever. A pocket that reaches past the end of
-    // one straight piece of coast and curves round sits on the far side of that line without
-    // ever being seaward of the coast - there is no coast out there to be seaward of. Asking
-    // the line alone calls that void claimed at sea, which condemns a correct shape and, worse,
-    // invites a cut that deletes it.
-    private static double measureSeawardDepth(double[] point, ReachBounds bounds) {
-
-        if (measureOffsetFrom(point, bounds.afterStart()) < 0
-                || measureOffsetFrom(point, bounds.beforeEnd()) < 0) {
-
-            return 0;
-        }
-        return -measureOffsetFrom(point, bounds.landward());
-    }
 
     // How far past one of a reach's ends a point is, which is what the cut holds a pocket
     // within wherever a cut runs at all.
@@ -353,8 +400,10 @@ final class CoastPocketFaults {
     // worst of it went. A run is the same walk whichever fault it turns out to be, so the two
     // finders share the walk and differ only in what they build from it.
     private interface RunHandler {
-        void acceptRun(List<double[]> run, double depth);
+        void acceptRun(List<double[]> run, double depth, DiscUnionBoundary.Chord reach);
     }
+
+
 
     /**
      * The three half-planes one reach of coast bounds a pocket with.
@@ -469,7 +518,7 @@ final class CoastPocketFaults {
                     var bounds = buildBounds(reach, sites, 0);
 
                     if (bounds != null) {
-                        collectRunsOutside(outline, bounds, fault, handler);
+                        collectRunsOutside(outline, bounds, reach, fault, handler);
                     }
                 }
             }
@@ -483,6 +532,7 @@ final class CoastPocketFaults {
     private static void collectRunsOutside(
             List<double[]> outline,
             ReachBounds bounds,
+            DiscUnionBoundary.Chord reach,
             PointFault fault,
             RunHandler handler) {
 
@@ -499,18 +549,22 @@ final class CoastPocketFaults {
                 deepest = Math.max(deepest, past);
                 continue;
             }
-            deepest = closeRun(handler, run, deepest);
+            deepest = closeRun(handler, run, deepest, reach);
         }
-        closeRun(handler, run, deepest);
+        closeRun(handler, run, deepest, reach);
     }
 
     // Ends a run and hands back the depth to carry into the next one, which is none. Given
     // back rather than reset by the caller so that closing a run and forgetting how deep it
     // went are one statement and cannot come apart.
-    private static double closeRun(RunHandler handler, List<double[]> run, double deepest) {
+    private static double closeRun(
+            RunHandler handler,
+            List<double[]> run,
+            double deepest,
+            DiscUnionBoundary.Chord reach) {
 
         if (run.size() >= MIN_RUN_VERTICES) {
-            handler.acceptRun(List.copyOf(run), deepest);
+            handler.acceptRun(List.copyOf(run), deepest, reach);
         }
         run.clear();
 

@@ -24,14 +24,14 @@ import java.util.Locale;
  */
 final class PickedPointCheck {
 
-    // How far out to look for the gap a piece of void is leaking through, in cell radii. Wide
-    // enough to reach past the ring of cells around a pocket, narrow enough that a sector's
-    // far side cannot answer for a spot on this one.
-    private static final double NEARBY_CELLS_WITHIN = 6;
-
     // How many ways out to try, how big a stride to take, and how far counts as out. The
     // stride is well under a cell so a walk cannot step over one, and the range is wider than
     // either fixture, so a walk that runs the whole way has genuinely left the sector.
+    // How near two of the coast's landings on one cell must be to count as a tight turn: a
+    // mouth's width, which is how far round a circle a tangent wall must go to be a channel
+    // clear of its own line.
+    private static final double TIGHT_TURN_WITHIN = 2000;
+
     private static final int ESCAPE_DIRECTIONS = 72;
     private static final double ESCAPE_STEP = 250;
     private static final double ESCAPE_RANGE = 250_000;
@@ -96,6 +96,9 @@ final class PickedPointCheck {
 
         reportEachRefusal(atCells, walls, offered);
         reportWallCrossings(atCells, VoidPockets.buildDrawnUnion(sites, parameters), walls);
+        reportWallSideStray(atCells, walls, parameters);
+        reportCoastTurns(atCells, walls);
+
     }
 
     // Every reach the walk turned down at the cells' own reach, one line each, with where it
@@ -141,6 +144,147 @@ final class PickedPointCheck {
             "walls crossing another wall: %d at the cells' own reach, %d a channel out%n",
             DiscUnionBoundary.findWallCrossings(atCells, walls).size(),
             DiscUnionBoundary.findWallCrossings(atDrawn, walls).size());
+    }
+
+    // How far a laid wall's two drawn sides sit from the wall itself.
+    //
+    // A wall's drawn ends are taken from the edges of the mouth it opens, and a mouth is as
+    // wide as the channel is - measured round the circle. Across a wall that leaves a cell
+    // along its tangent, being a channel clear of the line means travelling a long way round,
+    // so those edges can sit far from the wall while being the right distance from its line.
+    // The pocket then closes on a line that is nowhere near the coast it is supposed to close
+    // on, which is what a spike out to sea is.
+    //
+    // The bridges have this check already and read 0 - a bridge crosses its circles steeply,
+    // so its mouth edges are where the bridge is. This is the same question asked of the other
+    // kind of wall.
+    private static void reportWallSideStray(
+            DiscUnion union,
+            DiscUnionBoundary.Walls walls,
+            SectorGeometryParameters parameters) {
+
+        var worst = 0.0;
+        double[] worstAt = null;
+
+        for (var chord : DiscUnionBoundary.findAttachableChords(union, walls)) {
+
+            if (chord.kind() != DiscUnionBoundary.WallKind.COAST_REACH) {
+                continue;
+            }
+            var line = chord.line();
+            var start = new double[] {line.originX(), line.originY()};
+            var end = new double[] {
+                line.originX() + line.directionX(), line.originY() + line.directionY()};
+
+            for (var side : DiscUnionBoundary.findChordSides(
+                    union, chord, parameters.borderInset())) {
+
+                for (var point : side) {
+
+                    var away = kmlib.math.geometry.Segments.computeDistanceToPoint(
+                        start, end, point);
+
+                    if (away > worst) {
+                        worst = away;
+                        worstAt = point;
+                    }
+                }
+            }
+        }
+
+        System.out.printf(
+            Locale.ROOT,
+            "worst coast wall side strays %.0f from its own reach%s (the channel is %.0f)%n",
+            worst,
+            worstAt == null
+                ? ""
+                : String.format(Locale.ROOT, ", at %.0f,%.0f", worstAt[0], worstAt[1]),
+            parameters.borderInset());
+    }
+
+    // How tightly the coast turns on the cells it turns on.
+    //
+    // Two reaches leaving one cell land on it somewhere, and how far apart those landings are
+    // is what decides whether their mouths nest - a mouth is a channel wide measured round the
+    // circle, which for a tangent reach is a thousand units and more. A pair landing closer
+    // than that is a cell the coast barely touches, kept as a corner it then has to cut.
+    private static void reportCoastTurns(
+            DiscUnion union,
+            DiscUnionBoundary.Walls walls) {
+
+        var laid = new ArrayList<DiscUnionBoundary.Chord>();
+
+        for (var chord : DiscUnionBoundary.findAttachableChords(union, walls)) {
+
+            if (chord.kind() == DiscUnionBoundary.WallKind.COAST_REACH) {
+                laid.add(chord);
+            }
+        }
+
+        var turns = 0;
+        var tight = 0;
+
+        for (var one = 0; one < laid.size(); one++) {
+            for (var other = one + 1; other < laid.size(); other++) {
+
+                var shared = findSharedCell(laid.get(one), laid.get(other));
+
+                if (shared < 0) {
+                    continue;
+                }
+                turns++;
+
+                var apart = kmlib.math.geometry.Points.computeDistance(
+                    findEndOn(laid.get(one), shared), findEndOn(laid.get(other), shared));
+
+                if (apart < TIGHT_TURN_WITHIN) {
+
+                    tight++;
+                    System.out.printf(
+                        Locale.ROOT,
+                        "  coast turns on cell %d: reaches %d-%d and %d-%d land %.0f apart%n",
+                        shared,
+                        laid.get(one).fromCircle(),
+                        laid.get(one).toCircle(),
+                        laid.get(other).fromCircle(),
+                        laid.get(other).toCircle(),
+                        apart);
+                }
+            }
+        }
+
+        System.out.printf(
+            Locale.ROOT,
+            "the coast turns on a cell %d times, %d of them within %.0f%n",
+            turns,
+            tight,
+            TIGHT_TURN_WITHIN);
+    }
+
+    // The cell two walls share, or none. Two reaches of one coast meet on the cell the coast
+    // turned on, which is the only pair worth measuring.
+    private static int findSharedCell(
+            DiscUnionBoundary.Chord one,
+            DiscUnionBoundary.Chord other) {
+
+        if (one.fromCircle() == other.fromCircle() || one.fromCircle() == other.toCircle()) {
+            return one.fromCircle();
+        }
+
+        if (one.toCircle() == other.fromCircle() || one.toCircle() == other.toCircle()) {
+            return one.toCircle();
+        }
+        return -1;
+    }
+
+    private static double[] findEndOn(DiscUnionBoundary.Chord chord, int circle) {
+
+        var line = chord.line();
+
+        return chord.fromCircle() == circle
+            ? new double[] {line.originX(), line.originY()}
+            : new double[] {
+                line.originX() + line.directionX(), line.originY() + line.directionY()};
     }
 
     // Each pick against every construction at both shapings, so which of them was meant to
@@ -216,9 +360,8 @@ final class PickedPointCheck {
 
             System.out.printf(
                 Locale.ROOT,
-                "    walk: %s | %s%n",
-                describeNearestBrokenLink(traced, parameters, walls, pick),
-                describeNearestOpening(traced, parameters, walls, pick));
+                "    walk: %s%n",
+                describeNearestBrokenLink(traced, parameters, walls, pick));
         }
     }
 
@@ -478,87 +621,6 @@ final class PickedPointCheck {
             return "#" + index + " walled by " + kinds;
         }
         return "none";
-    }
-
-    // The nearest gap between two cells that nothing closes - the hole in the fence.
-    //
-    // Void that looks shut in and is not has to be leaking somewhere, and every leak is one
-    // pair of cells whose discs do not meet with no wall laid between them. Naming the nearest
-    // one turns "why is this not a pocket" into a place to look, which is the difference
-    // between a measurement and a hunt.
-    private static String describeNearestOpening(
-            Coastlines.TracedCoasts traced,
-            SectorGeometryParameters parameters,
-            DiscUnionBoundary.Walls walls,
-            double[] pick) {
-
-        var sites = traced.union().sites();
-        var laid = DiscUnionBoundary.findAttachableChords(
-            new DiscUnion(sites, parameters.cellRadius()), walls);
-
-        CellGaps.CellGap nearest = null;
-        var away = Double.MAX_VALUE;
-
-        for (var from = 0; from < sites.size(); from++) {
-
-            if (kmlib.math.geometry.Points.computeDistance(sites.get(from), pick)
-                    > NEARBY_CELLS_WITHIN * parameters.cellRadius()) {
-                continue;
-            }
-
-            for (var to = from + 1; to < sites.size(); to++) {
-
-                var gap = CellGaps.findGapBetween(sites, from, to, parameters.cellRadius());
-
-                // A corridor every other site keeps clear of, which is what makes it a way
-                // OUT rather than a line between two cells with a third sitting across it.
-                // Without this the nearest answer is a pair on opposite sides of the sector
-                // whose corridor happens to pass by.
-                if (gap == null
-                        || !CellGaps.isGapClear(gap, sites, parameters.cellRadius())
-                        || isWalled(laid, from, to)) {
-
-                    continue;
-                }
-                var reach = kmlib.math.geometry.Segments.computeDistanceToPoint(
-                    gap.start(), gap.end(), pick);
-
-                if (reach < away) {
-                    away = reach;
-                    nearest = gap;
-                }
-            }
-        }
-
-        if (nearest == null) {
-            return "no open gap near";
-        }
-        return String.format(
-            Locale.ROOT,
-            "open gap %.0f away between cells %d-%d, %.0f wide",
-            away,
-            nearest.fromSite(),
-            nearest.toSite(),
-            nearest.width());
-    }
-
-    // Whether any laid wall runs between one pair of cells, in either direction - a wall names
-    // its two circles, and which of them it calls "from" is the walk's business rather than
-    // the caller's.
-    private static boolean isWalled(
-            List<DiscUnionBoundary.Chord> laid,
-            int from,
-            int to) {
-
-        for (var chord : laid) {
-
-            if ((chord.fromCircle() == from && chord.toCircle() == to)
-                    || (chord.fromCircle() == to && chord.toCircle() == from)) {
-
-                return true;
-            }
-        }
-        return false;
     }
 
     // Which side of the drawn coast a point is on. The question that separates "nothing
