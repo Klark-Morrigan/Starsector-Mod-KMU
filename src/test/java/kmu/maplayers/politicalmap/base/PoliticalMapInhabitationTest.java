@@ -7,7 +7,7 @@ import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.colonies.RevelationGate;
 
 import kmu.maplayers.base.visibility.MapVisibility;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -43,20 +43,20 @@ import static org.mockito.Mockito.mockStatic;
 final class PoliticalMapInhabitationTest {
 
     // What the live read hands down when the player has touched nothing: the fog alone, with
-    // every gate the rule knows of held. Not MapVisibilityOverrides.NONE - that names the value
+    // every gate the rule knows of held. Not MapVisibilityRules.BASE - that names the value
     // a caller with nothing to override passes, and the shipped state is not that value, because
     // holding a gate is something the read actively does.
     //
     // Stated against the enum's own constants so a gate added later has to reach this read
     // rather than quietly stopping at it.
-    private static final MapVisibilityOverrides UNDER_THE_SHIPPED_SETTINGS =
-        new MapVisibilityOverrides(
+    private static final MapVisibilityRules UNDER_THE_SHIPPED_SETTINGS =
+        new MapVisibilityRules(
             new ColonyVisibility(false, EnumSet.allOf(RevelationGate.class)),
             false);
 
     // The same, with the "show all factions" reveal on - the one toggle each case below raises.
-    private static final MapVisibilityOverrides UNDER_THE_REVEAL =
-        new MapVisibilityOverrides(
+    private static final MapVisibilityRules UNDER_THE_REVEAL =
+        new MapVisibilityRules(
             new ColonyVisibility(true, EnumSet.allOf(RevelationGate.class)),
             false);
 

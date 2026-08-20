@@ -26,7 +26,7 @@ public final class ColonyVisibilityFixtures {
      *
      * <p>Not what the player's live read returns with the toggle on - that holds every gate,
      * since a gate has no setting of its own yet. A case wanting the shipped state has to say so
-     * itself, and {@code MapVisibilityOverridesTest} is where that state is pinned.
+     * itself, and {@code MapVisibilityRulesTest} is where that state is pinned.
      */
     public static final ColonyVisibility UNDER_THE_REVEAL =
         new ColonyVisibility(true, Set.of());

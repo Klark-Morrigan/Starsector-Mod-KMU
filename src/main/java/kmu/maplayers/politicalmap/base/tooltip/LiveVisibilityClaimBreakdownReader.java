@@ -7,7 +7,7 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 /**
  * The vanilla claim breakdown, read under whatever the player's visibility settings say at the
@@ -59,6 +59,6 @@ public final class LiveVisibilityClaimBreakdownReader implements ClaimBreakdownR
     private static ClaimBreakdownReader openReaderUnderLiveVisibility() {
 
         return new VanillaClaimBreakdownReader(
-            MapVisibilityOverrides.readFromLunaSettings().colonyVisibility());
+            MapVisibilityRules.readFromLunaSettings().colonyVisibility());
     }
 }

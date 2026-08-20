@@ -9,7 +9,7 @@ import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
@@ -230,7 +230,7 @@ public interface PoliticalMapView {
         return resolveBlocPicker(
             sector,
             DominanceRules.readFromLunaSettings(),
-            MapVisibilityOverrides.readFromLunaSettings().colonyVisibility());
+            MapVisibilityRules.readFromLunaSettings().colonyVisibility());
     }
 
     /**

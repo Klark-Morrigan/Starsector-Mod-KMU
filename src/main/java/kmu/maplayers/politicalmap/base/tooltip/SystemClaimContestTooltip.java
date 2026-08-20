@@ -17,7 +17,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -188,7 +188,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      * @return the visibility rule the player's live settings describe
      */
     protected static ColonyVisibility readColonyVisibility() {
-        return MapVisibilityOverrides.readFromLunaSettings().colonyVisibility();
+        return MapVisibilityRules.readFromLunaSettings().colonyVisibility();
     }
 
     // What the claim block lists: the one line naming whoever holds the system, and nothing at all

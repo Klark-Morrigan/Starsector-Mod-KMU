@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.systems.SystemMotionTracker;
 
 import kmu.maplayers.base.visibility.DrawnSystemPositions;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import java.util.Set;
 
@@ -74,21 +74,21 @@ public final class MovingSystems {
     }
 
     /**
-     * Observes every drawn system's live position under the pass's reveal overrides,
+     * Observes every drawn system's live position under the pass's visibility rules,
      * republishes the moving set, and reports whether that set changed.
      *
-     * @param sector    the sector to walk; null observes nothing and reports no change
-     * @param overrides the pass's reveal overrides, matching the set the geometry cache
+     * @param sector          the sector to walk; null observes nothing and reports no change
+     * @param visibilityRules the pass's visibility rules, matching the set the geometry cache
      *                  draws, so both agree on which systems are on the map
      * @return true when the moving set gained or lost a member this poll, so the caller
      *         requests a geometry refresh; false while it is steady
      */
-    public boolean updateMovingSystems(SectorAPI sector, MapVisibilityOverrides overrides) {
+    public boolean updateMovingSystems(SectorAPI sector, MapVisibilityRules visibilityRules) {
         if (sector == null) {
             return false;
         }
         return systemMotionTracker.updateMovingSystems(
             sector,
-            DrawnSystemPositions.buildDrawnSystemPredicate(sector, overrides));
+            DrawnSystemPositions.buildDrawnSystemPredicate(sector, visibilityRules));
     }
 }

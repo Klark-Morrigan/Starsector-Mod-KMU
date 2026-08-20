@@ -14,7 +14,7 @@ import kmlib.starsector.colonies.ColonyVisibility;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.visibility.MapVisibility;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.tooltip.SystemStatusRow;
 
 import org.junit.jupiter.api.AfterEach;
@@ -174,7 +174,7 @@ final class SystemInhabitationAgreementIntegrationTest {
         return MapVisibility.isInhabited(
             sector,
             system,
-            new MapVisibilityOverrides(colonyVisibility, false));
+            new MapVisibilityRules(colonyVisibility, false));
     }
 
     // The status line's words. Read through orElseThrow rather than defended, since a case

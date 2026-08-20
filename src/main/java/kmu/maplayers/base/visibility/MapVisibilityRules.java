@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * The visibility state in force for one map-layer pass: the rule the pass reads colonies under,
+ * The visibility rules in force for one map-layer pass: the rule the pass reads colonies under,
  * and the override that puts a star system on the map whatever that rule says about it.
  *
  * <p>The colony rule is carried whole rather than as the loose flags it is made of, because a
@@ -29,7 +29,7 @@ import java.util.Set;
  *
  * <p>The pair travels as one value because the coordinators that seed and rebuild a layer need
  * both while the leaves that apply them need one each. Resolving it once at the entry point also
- * fixes it for the whole pass, so every system is admitted under the same state even if the
+ * fixes it for the whole pass, so every system is admitted under the same rules even if the
  * player moves a toggle mid-walk.
  *
  * <p>The components are named for what each does to the map, while the settings the read below
@@ -41,16 +41,20 @@ import java.util.Set;
  * @param isForcedOntoMap  whether a star system is admitted to the map regardless of access or
  *                         inhabitation
  */
-public record MapVisibilityOverrides(
+public record MapVisibilityRules(
     ColonyVisibility colonyVisibility,
     boolean isForcedOntoMap) {
 
     /**
-     * The no-override view: the fog alone and nothing forced, so the map admits exactly what the
-     * normal gates admit. The default a caller with no override to apply passes.
+     * The rules with nothing widened and nothing forced: the fog alone, and a system on the map
+     * only where the ordinary gates admit it. What a caller stating no rules of its own passes.
+     *
+     * <p>Not what the live read below returns - that holds every revelation gate, since no gate
+     * has a toggle of its own yet - so a caller asserting the shipped behaviour wants that read
+     * rather than this value.
      */
-    public static final MapVisibilityOverrides NONE =
-        new MapVisibilityOverrides(ColonyVisibility.BASE_FOG, false);
+    public static final MapVisibilityRules BASE =
+        new MapVisibilityRules(ColonyVisibility.BASE_FOG, false);
 
     // Every gate the rule knows of, which is what the player's live read below applies until each
     // gate has a toggle of its own.
@@ -74,25 +78,25 @@ public record MapVisibilityOverrides(
      * caller already holds, so a null is a construction fault rather than a caller with nothing to
      * say. Standing in the fog would hide that fault behind a map that merely draws less than it
      * should, which is the hardest kind of wrong to notice. A caller genuinely stating no rule has
-     * {@link #NONE} to pass, and the projections themselves read an absent rule as the fog - so
+     * {@link #BASE} to pass, and the projections themselves read an absent rule as the fog - so
      * nothing is lost by refusing one here.
      */
-    public MapVisibilityOverrides {
+    public MapVisibilityRules {
         Objects.requireNonNull(colonyVisibility, "colonyVisibility");
     }
 
     /**
-     * Reads the player's current visibility state into one pass-wide value.
+     * Reads the player's current visibility settings into one pass-wide value.
      *
      * <p>Called once per pass at the entry points, so every system in the pass is admitted under
      * the toggles in force when it began even if the player moves one mid-walk. Isolating the
      * settings read here keeps the rule and everything that threads this value free of settings
      * access.
      *
-     * @return the visibility state the player's live settings describe
+     * @return the rules the player's live settings describe
      */
-    public static MapVisibilityOverrides readFromLunaSettings() {
-        return new MapVisibilityOverrides(
+    public static MapVisibilityRules readFromLunaSettings() {
+        return new MapVisibilityRules(
             new ColonyVisibility(
                 KmuMapLayerSettings.shouldShowUndiscoveredMarkets(),
                 HELD_REVELATION_GATES),

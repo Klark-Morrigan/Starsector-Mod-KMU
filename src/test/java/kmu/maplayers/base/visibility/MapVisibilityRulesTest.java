@@ -14,9 +14,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the framework's "no overrides" value, which is what every caller with no override to
- * apply passes. A widening defaulting to on would open the map up with nothing at the call
- * site to show it, so the default is worth asserting rather than assuming.
+ * Pins the framework's base value, which is what every caller stating no rules of its own
+ * passes. A widening defaulting to on would open the map up with nothing at the call site to
+ * show it, so the default is worth asserting rather than assuming.
  *
  * <p>Beside it, the settings read: the two toggles in the same order, so a transposed mapping
  * would compile and read correctly while silently trading one for the other. Each case raises
@@ -30,19 +30,19 @@ import static org.mockito.Mockito.mockStatic;
  * shows up as a map drawing the wrong amount rather than as anything that announces itself, so
  * refusing a rule nobody stated is worth pinning rather than trusting.
  */
-class MapVisibilityOverridesTest {
+class MapVisibilityRulesTest {
 
     @Nested
-    class None {
+    class Base {
 
         @Test
-        void appliesNeitherWidening() {
+        void widensNothingAndForcesNothing() {
 
-            var overrides = MapVisibilityOverrides.NONE;
+            var visibilityRules = MapVisibilityRules.BASE;
 
-            assertThat(overrides.colonyVisibility())
+            assertThat(visibilityRules.colonyVisibility())
                 .isEqualTo(BASE_FOG);
-            assertThat(overrides.isForcedOntoMap())
+            assertThat(visibilityRules.isForcedOntoMap())
                 .isFalse();
         }
     }
@@ -56,7 +56,7 @@ class MapVisibilityOverridesTest {
             // already holds, so a null is that construction having gone wrong. Standing the fog
             // in would answer it with a map that draws less than it should, and nothing on screen
             // would report it.
-            assertThatThrownBy(() -> new MapVisibilityOverrides(null, false))
+            assertThatThrownBy(() -> new MapVisibilityRules(null, false))
                 .isInstanceOf(NullPointerException.class);
         }
     }
@@ -76,11 +76,11 @@ class MapVisibilityOverridesTest {
                     .when(KmuMapLayerSettings::shouldShowHiddenSystems)
                     .thenReturn(false);
 
-                var overrides = MapVisibilityOverrides.readFromLunaSettings();
+                var visibilityRules = MapVisibilityRules.readFromLunaSettings();
 
-                assertThat(overrides.colonyVisibility().shouldIncludeUndiscoveredMarkets())
+                assertThat(visibilityRules.colonyVisibility().shouldIncludeUndiscoveredMarkets())
                     .isTrue();
-                assertThat(overrides.isForcedOntoMap())
+                assertThat(visibilityRules.isForcedOntoMap())
                     .isFalse();
             }
         }
@@ -97,11 +97,11 @@ class MapVisibilityOverridesTest {
                     .when(KmuMapLayerSettings::shouldShowHiddenSystems)
                     .thenReturn(true);
 
-                var overrides = MapVisibilityOverrides.readFromLunaSettings();
+                var visibilityRules = MapVisibilityRules.readFromLunaSettings();
 
-                assertThat(overrides.isForcedOntoMap())
+                assertThat(visibilityRules.isForcedOntoMap())
                     .isTrue();
-                assertThat(overrides.colonyVisibility().shouldIncludeUndiscoveredMarkets())
+                assertThat(visibilityRules.colonyVisibility().shouldIncludeUndiscoveredMarkets())
                     .isFalse();
             }
         }
@@ -123,9 +123,9 @@ class MapVisibilityOverridesTest {
                         .when(KmuMapLayerSettings::shouldShowHiddenSystems)
                         .thenReturn(false);
 
-                    var overrides = MapVisibilityOverrides.readFromLunaSettings();
+                    var visibilityRules = MapVisibilityRules.readFromLunaSettings();
 
-                    assertThat(overrides.colonyVisibility().revelationGates())
+                    assertThat(visibilityRules.colonyVisibility().revelationGates())
                         .containsExactlyInAnyOrder(RevelationGate.values());
                 }
             }

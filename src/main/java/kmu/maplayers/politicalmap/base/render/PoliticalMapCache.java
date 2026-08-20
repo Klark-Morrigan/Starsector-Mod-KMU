@@ -16,7 +16,7 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.render.debug.DebugBorderTracingBuilder;
@@ -217,7 +217,7 @@ final class PoliticalMapCache {
             new CellSeedInputs(
                 KmuPoliticalMapSettings.getPoliticalMapCellBoundSegments(),
                 KmuPoliticalMapSettings.getPoliticalMapCellRadius()),
-            MapVisibilityOverrides.readFromLunaSettings());
+            MapVisibilityRules.readFromLunaSettings());
 
         if (!cellCut.equals(lastCellCut)) {
 
@@ -226,7 +226,7 @@ final class PoliticalMapCache {
             LOG.debug("Political map geometry stale; rebuilding cut " + cellGeometry.revision()
                 + " from " + lastCellCut + " to " + cellCut);
 
-            rebuildGeometry(cellCut.seedInputs(), cellCut.visibilityOverrides());
+            rebuildGeometry(cellCut.seedInputs(), cellCut.visibilityRules());
 
             // A fresh cut number the moment the cells are recut, whichever of the four inputs
             // drove it - so work derived from the previous cut can never read as derived from
@@ -406,7 +406,7 @@ final class PoliticalMapCache {
     // system joins the drawn set.
     private void rebuildGeometry(
             CellSeedInputs seedInputs,
-            MapVisibilityOverrides visibilityOverrides) {
+            MapVisibilityRules visibilityRules) {
 
         var movingSystemIds = MovingSystems.getInstance().getMovingSystemIds();
         KmuProfiling
@@ -417,6 +417,6 @@ final class PoliticalMapCache {
                     Global.getSector(),
                     movingSystemIds,
                     seedInputs,
-                    visibilityOverrides));
+                    visibilityRules));
     }
 }

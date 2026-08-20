@@ -46,13 +46,13 @@ class MapVisibilityIntegrationTest {
 
     // The force override on, so the rule admits a system regardless of access or
     // inhabitation - the widening the pre-computed entry point reads off the value.
-    private static final MapVisibilityOverrides FORCED_ONTO_MAP =
-        new MapVisibilityOverrides(BASE_FOG, true);
+    private static final MapVisibilityRules FORCED_ONTO_MAP =
+        new MapVisibilityRules(BASE_FOG, true);
 
     // The undiscovered-colony widening on, the other component of the same value: an
     // undiscovered colony counts as inhabitation.
-    private static final MapVisibilityOverrides INCLUDING_UNDISCOVERED_MARKETS =
-        new MapVisibilityOverrides(UNDER_THE_REVEAL, false);
+    private static final MapVisibilityRules INCLUDING_UNDISCOVERED_MARKETS =
+        new MapVisibilityRules(UNDER_THE_REVEAL, false);
 
     // The inhabitation the pre-computed entry point is handed when the caller has already
     // decided the system holds nothing, so admission rests on access or the force override.
@@ -151,7 +151,7 @@ class MapVisibilityIntegrationTest {
                     system,
                     visibleStars,
                     UNINHABITED,
-                    MapVisibilityOverrides.NONE))
+                    MapVisibilityRules.BASE))
                 .isFalse();
         }
     }
@@ -218,7 +218,7 @@ class MapVisibilityIntegrationTest {
             assertThat(MapVisibility.isInhabited(
                     Colonies.NONE,
                     IS_REVEALED_DECIVILISED,
-                    MapVisibilityOverrides.NONE))
+                    MapVisibilityRules.BASE))
                 .isTrue();
         }
 
@@ -249,7 +249,7 @@ class MapVisibilityIntegrationTest {
 
             assertThat(MapVisibility.findInhabitedSystemIds(
                     buildSectorWithMarketsFor(settled, buildOwnedMarket(), empty),
-                    MapVisibilityOverrides.NONE))
+                    MapVisibilityRules.BASE))
                 .containsExactly("settled");
         }
 
@@ -263,19 +263,19 @@ class MapVisibilityIntegrationTest {
 
             assertThat(MapVisibility.findInhabitedSystemIds(
                     buildSectorWithMarketsFor(colonised, buildOwnedMarket(), ruined),
-                    MapVisibilityOverrides.NONE))
+                    MapVisibilityRules.BASE))
                 .containsExactlyInAnyOrder("colonised", "ruined");
         }
 
         @Test
         void findInhabitedSystemIdsHonoursTheUndiscoveredColonyReveal() {
-            // The roll-up hands its overrides down rather than judging inhabitation itself, and a
+            // The roll-up hands its rules down rather than judging inhabitation itself, and a
             // dropped argument would look identical at every other case here - all of which pass
             // the no-reveal value. Only a system that flips on the reveal catches it.
             var system = buildUnreachableSystem("undiscovered");
             var sector = buildSectorWith(system, buildUndiscoveredColony());
 
-            assertThat(MapVisibility.findInhabitedSystemIds(sector, MapVisibilityOverrides.NONE))
+            assertThat(MapVisibility.findInhabitedSystemIds(sector, MapVisibilityRules.BASE))
                 .isEmpty();
 
             assertThat(MapVisibility.findInhabitedSystemIds(
@@ -286,7 +286,7 @@ class MapVisibilityIntegrationTest {
 
         @Test
         void findInhabitedSystemIdsIsEmptyForANullSector() {
-            assertThat(MapVisibility.findInhabitedSystemIds(null, MapVisibilityOverrides.NONE))
+            assertThat(MapVisibility.findInhabitedSystemIds(null, MapVisibilityRules.BASE))
                 .isEmpty();
         }
     }
@@ -363,7 +363,7 @@ class MapVisibilityIntegrationTest {
             sector,
             system,
             VisibleStars.scan(sector),
-            MapVisibilityOverrides.NONE);
+            MapVisibilityRules.BASE);
     }
 
     // The inhabitation read with no reveal applied, so the normal known-to-player gate
@@ -373,7 +373,7 @@ class MapVisibilityIntegrationTest {
             SectorAPI sector,
             StarSystemAPI system) {
 
-        return MapVisibility.isInhabited(sector, system, MapVisibilityOverrides.NONE);
+        return MapVisibility.isInhabited(sector, system, MapVisibilityRules.BASE);
     }
 
     // Wires a single-system sector whose economy returns the given markets for

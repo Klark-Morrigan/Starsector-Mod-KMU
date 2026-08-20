@@ -7,7 +7,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -37,8 +37,8 @@ class MovingSystemsTest {
     // The force override on, so the drawn-set rule admits a system nothing else would put on
     // the map - the shortest route to a tracked system without also staging an economy that
     // owns it.
-    private static final MapVisibilityOverrides FORCED_ONTO_MAP =
-            new MapVisibilityOverrides(BASE_FOG, true);
+    private static final MapVisibilityRules FORCED_ONTO_MAP =
+            new MapVisibilityRules(BASE_FOG, true);
 
     @Nested
     class GetInstance {
@@ -126,12 +126,12 @@ class MovingSystemsTest {
             var sectorFake = new MovableSystemSectorFake();
             var movingSystems = new MovingSystems();
             movingSystems.updateMovingSystems(
-                    sectorFake.getSector(), MapVisibilityOverrides.NONE);
+                    sectorFake.getSector(), MapVisibilityRules.BASE);
 
             sectorFake.moveSystemClearOfItsLastPosition();
 
             assertThat(movingSystems.updateMovingSystems(
-                    sectorFake.getSector(), MapVisibilityOverrides.NONE)).isFalse();
+                    sectorFake.getSector(), MapVisibilityRules.BASE)).isFalse();
             assertThat(movingSystems.getMovingSystemIds()).isEmpty();
         }
     }
@@ -166,7 +166,7 @@ class MovingSystemsTest {
     // count is the tracker's business, not something these tests should encode.
     //
     // Hyperspace carries no star anchor and the system no jump point, so nothing here is
-    // drawn on the normal gates; each test decides admission through the overrides it passes.
+    // drawn on the normal gates; each test decides admission through the rules it passes.
     private static final class MovableSystemSectorFake {
         // Comfortably past the tracker's one-unit noise floor, so each move is unambiguous
         // motion rather than something that could read as float jitter.

@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.base.visibility.MapVisibility;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import java.util.Set;
 
@@ -41,7 +41,7 @@ public final class PoliticalMapInhabitation {
     public static Set<String> readInhabitedSystemIds(SectorAPI sector) {
         return MapVisibility.findInhabitedSystemIds(
             sector,
-            MapVisibilityOverrides.readFromLunaSettings());
+            MapVisibilityRules.readFromLunaSettings());
     }
 
     /**
@@ -62,6 +62,6 @@ public final class PoliticalMapInhabitation {
         return MapVisibility.isInhabited(
             sector,
             system,
-            MapVisibilityOverrides.readFromLunaSettings());
+            MapVisibilityRules.readFromLunaSettings());
     }
 }

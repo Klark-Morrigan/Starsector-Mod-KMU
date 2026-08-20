@@ -13,7 +13,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
 import kmlib.math.geometry.VoronoiCellBuilder;
 
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -59,12 +59,12 @@ final class CellGeometryCacheTest {
 
     // No reveal widening in the diff tests: each fixture decides admission through the normal
     // gates, so a cell appearing or vanishing is the access diff and never an override flip.
-    private static final MapVisibilityOverrides NO_REVEAL = MapVisibilityOverrides.NONE;
+    private static final MapVisibilityRules NO_REVEAL = MapVisibilityRules.BASE;
 
     // The force override on, which admits every system whatever the normal gates say - the one
     // widening that needs no economy staged behind it to change the participating set.
-    private static final MapVisibilityOverrides FORCED_ONTO_MAP =
-            new MapVisibilityOverrides(BASE_FOG, true);
+    private static final MapVisibilityRules FORCED_ONTO_MAP =
+            new MapVisibilityRules(BASE_FOG, true);
 
     @Nested
     class UpdateFromSector {
@@ -85,7 +85,7 @@ final class CellGeometryCacheTest {
 
         @Test
         void updateSeedsACellForAnInaccessibleSystemWhenTheOverridesForceItOntoTheMap() {
-            // The overrides reach the partition through the drawn-set walk, so the system the
+            // The rules reach the partition through the drawn-set walk, so the system the
             // test above proves is skipped has to participate here - and its neighbour has to
             // be clipped by it, since a site that seeds a cell also takes area from the cells
             // around it. Nothing else in this class passes a widening, so without this the

@@ -6,7 +6,7 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import org.apache.log4j.Logger;
@@ -66,13 +66,13 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     public void markChangesSinceLastPoll() {
         var sector = Global.getSector();
 
-        // Read the visibility overrides once and share them across both walks, so the
+        // Read the visibility rules once and share them across both walks, so the
         // snapshot's drawn set and the motion tracker's drawn set agree even if the
         // player flips a toggle between the two - and, crucially, so the motion walk
         // observes the same revealed systems the geometry draws, not just the normally
         // visible ones.
-        var visibilityOverrides = MapVisibilityOverrides.readFromLunaSettings();
-        var snapshot = PoliticalMapSectorSnapshot.scan(sector, visibilityOverrides);
+        var visibilityRules = MapVisibilityRules.readFromLunaSettings();
+        var snapshot = PoliticalMapSectorSnapshot.scan(sector, visibilityRules);
 
         // Observe positions every poll so a system that starts or stops moving is
         // taken out of, or returned to, the partition. Only a change to the moving set
@@ -80,7 +80,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         // reports no change and never churns the map.
         var hasMovingSetChanged = MovingSystems.getInstance().updateMovingSystems(
             sector,
-            visibilityOverrides);
+            visibilityRules);
 
         // One call per axis, each handed the same first-poll flag and each owning its own
         // baseline, so no axis can be read without seeing how it treats a baseline poll.

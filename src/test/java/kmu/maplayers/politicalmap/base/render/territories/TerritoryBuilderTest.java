@@ -8,7 +8,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewFake;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -55,7 +55,7 @@ final class TerritoryBuilderTest {
 
     private static final Color NEUTRAL = new Color(150, 150, 150);
 
-    private MockedStatic<MapVisibilityOverrides> visibilityOverridesMock;
+    private MockedStatic<MapVisibilityRules> visibilityRulesMock;
     private MockedStatic<FilterSelection> filterSelectionMock;
     private MockedStatic<PoliticalMapInhabitation> inhabitationMock;
     private MockedStatic<FilteredPolitics> filteredPoliticsMock;
@@ -69,7 +69,7 @@ final class TerritoryBuilderTest {
     @BeforeEach
     void openTheLiveSeams() {
 
-        visibilityOverridesMock = mockStatic(MapVisibilityOverrides.class);
+        visibilityRulesMock = mockStatic(MapVisibilityRules.class);
         filterSelectionMock = mockStatic(FilterSelection.class);
         inhabitationMock = mockStatic(PoliticalMapInhabitation.class);
         filteredPoliticsMock = mockStatic(FilteredPolitics.class);
@@ -77,9 +77,9 @@ final class TerritoryBuilderTest {
         factionColoursMock = mockStatic(StarsectorFactionColours.class);
         palettesMock = mockStatic(MapPalettes.class);
 
-        visibilityOverridesMock
-            .when(MapVisibilityOverrides::readFromLunaSettings)
-            .thenReturn(MapVisibilityOverrides.NONE);
+        visibilityRulesMock
+            .when(MapVisibilityRules::readFromLunaSettings)
+            .thenReturn(MapVisibilityRules.BASE);
         filterSelectionMock
             .when(() -> FilterSelection.getSelectedIdOf(any()))
             .thenReturn(null);
@@ -111,7 +111,7 @@ final class TerritoryBuilderTest {
         filteredPoliticsMock.close();
         inhabitationMock.close();
         filterSelectionMock.close();
-        visibilityOverridesMock.close();
+        visibilityRulesMock.close();
     }
 
     // One style bundle for every category: nothing here turns on how a cell paints, only on what

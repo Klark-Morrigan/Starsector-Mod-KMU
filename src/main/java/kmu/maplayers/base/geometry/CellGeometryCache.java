@@ -8,7 +8,7 @@ import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.profiling.Timings;
 
 import kmu.maplayers.base.visibility.DrawnSystemPositions;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.apache.log4j.Logger;
 
@@ -103,7 +103,7 @@ public final class CellGeometryCache {
      * partition - including a system that entered or left it by starting or stopping
      * moving. A no-op when the participating set is unchanged.
      *
-     * <p>The reveal overrides widen the participating set: a forced system seeds a cell
+     * <p>The visibility rules widen the participating set: a forced system seeds a cell
      * whatever the normal gates say, and a system inhabited only by an undiscovered
      * colony is admitted. A change to either shifts the participating set, so it reads
      * through the same add/remove diff as an access change - the caller forces this
@@ -116,18 +116,18 @@ public final class CellGeometryCache {
      * @param seedInputs      what to seed each cell with - its frontier resolution and its
      *                        reach; a change from the last update reseeds every cell, and
      *                        the reach also sets how far the diff scans
-     * @param overrides       the pass's reveal overrides, applied to the drawn set
+     * @param visibilityRules the pass's visibility rules, applied to the drawn set
      */
     public void updateFromSector(
             SectorAPI sector,
             Set<String> movingSystemIds,
             CellSeedInputs seedInputs,
-            MapVisibilityOverrides overrides) {
+            MapVisibilityRules visibilityRules) {
 
         // Timed independently of the profiler so the per-update cost (the whole
         // diff, or a full rebuild) reads straight from the log.
         var start = System.nanoTime();
-        var newSites = collectAccessibleSites(sector, movingSystemIds, overrides);
+        var newSites = collectAccessibleSites(sector, movingSystemIds, visibilityRules);
 
         // The seed inputs are what every cell is cut from, so a change to either of them
         // invalidates all cached cells regardless of the access diff. Drop them so the diff
@@ -255,14 +255,14 @@ public final class CellGeometryCache {
     // The live sites the partition is built from: every drawn system's position,
     // minus the ones currently moving. A mover is left out so it seeds no cell and
     // clips no neighbour; the cells around it fill the space as if it were absent.
-    // The reveal overrides pass through to the drawn-set walk, so a forced or
+    // The visibility rules pass through to the drawn-set walk, so a forced or
     // undiscovered-colony system enters the partition like any other site.
     private static Map<String, double[]> collectAccessibleSites(
             SectorAPI sector,
             Set<String> movingSystemIds,
-            MapVisibilityOverrides overrides) {
+            MapVisibilityRules visibilityRules) {
 
-        var sites = DrawnSystemPositions.collectLivePositions(sector, overrides);
+        var sites = DrawnSystemPositions.collectLivePositions(sector, visibilityRules);
         sites.keySet().removeAll(movingSystemIds);
         return sites;
     }

@@ -6,7 +6,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import org.apache.log4j.Logger;
@@ -233,7 +233,7 @@ final class PoliticalMapStalenessSourceTest {
     private static RefreshOutcome pollThenReadRefreshOutcome(PollInputs inputs, int pollCount) {
 
         try (var globalMock = mockStatic(Global.class);
-                var overridesMock = mockStatic(MapVisibilityOverrides.class);
+                var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
                 var snapshotMock = mockStatic(PoliticalMapSectorSnapshot.class);
                 var alliancesMock = mockStatic(NexerelinAlliances.class);
                 var movingStaticMock = mockStatic(MovingSystems.class)) {
@@ -247,14 +247,14 @@ final class PoliticalMapStalenessSourceTest {
 
             // The source reads the reveal toggles itself; stub them to the no-reveal view
             // so the scan and motion walks resolve the normal drawn set.
-            overridesMock
-                .when(MapVisibilityOverrides::readFromLunaSettings)
-                .thenReturn(MapVisibilityOverrides.NONE);
+            visibilityRulesMock
+                .when(MapVisibilityRules::readFromLunaSettings)
+                .thenReturn(MapVisibilityRules.BASE);
 
             snapshotMock
                 .when(() -> PoliticalMapSectorSnapshot.scan(
                     nullable(SectorAPI.class),
-                    any(MapVisibilityOverrides.class)))
+                    any(MapVisibilityRules.class)))
                 .thenReturn(inputs.firstSnapshot(), inputs.secondSnapshot());
 
             alliancesMock
@@ -271,7 +271,7 @@ final class PoliticalMapStalenessSourceTest {
             // ambiguous).
             when(movingSystemsMock.updateMovingSystems(
                     nullable(SectorAPI.class),
-                    any(MapVisibilityOverrides.class)))
+                    any(MapVisibilityRules.class)))
                 .thenReturn(false, inputs.hasMovingSetChangedOnSecondPoll());
 
             movingStaticMock

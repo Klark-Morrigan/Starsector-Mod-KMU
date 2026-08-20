@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.base.geometry.CellSeedInputs;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,8 +28,8 @@ final class CellCutInputsTest {
     // The reading two cuts share where the case is about one of the other inputs.
     private static final int GEOMETRY_REVISION = 7;
     private static final CellSeedInputs SEED_INPUTS = new CellSeedInputs(48, 4000.0);
-    private static final MapVisibilityOverrides DEV_TOGGLES =
-        new MapVisibilityOverrides(BASE_FOG, false);
+    private static final MapVisibilityRules DEV_TOGGLES =
+        new MapVisibilityRules(BASE_FOG, false);
 
     @Nested
     class Equality {
@@ -81,7 +81,7 @@ final class CellCutInputsTest {
                 .isNotEqualTo(new CellCutInputs(
                     GEOMETRY_REVISION,
                     SEED_INPUTS,
-                    new MapVisibilityOverrides(BASE_FOG, true)));
+                    new MapVisibilityRules(BASE_FOG, true)));
         }
 
         @Test
@@ -92,7 +92,7 @@ final class CellCutInputsTest {
                 .isNotEqualTo(new CellCutInputs(
                     GEOMETRY_REVISION,
                     SEED_INPUTS,
-                    new MapVisibilityOverrides(UNDER_THE_REVEAL, false)));
+                    new MapVisibilityRules(UNDER_THE_REVEAL, false)));
         }
     }
 }

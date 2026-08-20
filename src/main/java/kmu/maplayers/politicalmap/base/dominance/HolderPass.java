@@ -8,7 +8,7 @@ import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -96,7 +96,7 @@ public record HolderPass(
     public static HolderPass readFromLunaSettings(SectorAPI sector, HolderGrouping grouping) {
         return over(
             sector,
-            MapVisibilityOverrides.readFromLunaSettings().colonyVisibility(),
+            MapVisibilityRules.readFromLunaSettings().colonyVisibility(),
             grouping);
     }
 

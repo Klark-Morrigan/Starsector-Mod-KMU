@@ -15,7 +15,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -110,7 +110,7 @@ final class SystemClaimTooltipTest {
     private final SectorAPI sectorMock = mock(SectorAPI.class);
 
     private MockedStatic<SystemStatusRow> statusRowMock;
-    private MockedStatic<MapVisibilityOverrides> visibilityOverridesMock;
+    private MockedStatic<MapVisibilityRules> visibilityRulesMock;
 
     @BeforeEach
     void installColoursAndTheSystemStatusSeam() {
@@ -125,10 +125,10 @@ final class SystemClaimTooltipTest {
 
         // The reveal is a live LunaLib read, unreachable from the test JVM; stood in as off, the
         // state every case but the reveal's own is posed under.
-        visibilityOverridesMock = Mockito.mockStatic(MapVisibilityOverrides.class);
-        visibilityOverridesMock
-            .when(MapVisibilityOverrides::readFromLunaSettings)
-            .thenReturn(MapVisibilityOverrides.NONE);
+        visibilityRulesMock = Mockito.mockStatic(MapVisibilityRules.class);
+        visibilityRulesMock
+            .when(MapVisibilityRules::readFromLunaSettings)
+            .thenReturn(MapVisibilityRules.BASE);
 
         when(systemMock.getId())
             .thenReturn(SYSTEM_ID);
@@ -140,7 +140,7 @@ final class SystemClaimTooltipTest {
 
     @AfterEach
     void clearColoursAndTheSystemStatusSeam() {
-        visibilityOverridesMock.close();
+        visibilityRulesMock.close();
         statusRowMock.close();
         CellTooltipPaletteFake.clearPalette();
     }
@@ -287,9 +287,9 @@ final class SystemClaimTooltipTest {
             // The reveal is the state a player has asked to be shown everything in, so the same
             // faction is listed in full - the withholding is about what they have found rather than
             // about the box.
-            visibilityOverridesMock
-                .when(MapVisibilityOverrides::readFromLunaSettings)
-                .thenReturn(new MapVisibilityOverrides(UNDER_THE_REVEAL, false));
+            visibilityRulesMock
+                .when(MapVisibilityRules::readFromLunaSettings)
+                .thenReturn(new MapVisibilityRules(UNDER_THE_REVEAL, false));
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -589,9 +589,9 @@ final class SystemClaimTooltipTest {
         void buildBodySectionsJudgesTheSystemEmptyUnderTheDevRevealWhileItIsOn() {
             // The reveal is read live off the same toggle the faction layer samples, so a player who
             // has turned it on is not told two different things by two layers about one system.
-            visibilityOverridesMock
-                .when(MapVisibilityOverrides::readFromLunaSettings)
-                .thenReturn(new MapVisibilityOverrides(UNDER_THE_REVEAL, false));
+            visibilityRulesMock
+                .when(MapVisibilityRules::readFromLunaSettings)
+                .thenReturn(new MapVisibilityRules(UNDER_THE_REVEAL, false));
 
             stubBreakdown(SystemClaimBreakdown.NONE);
 

@@ -7,7 +7,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -82,7 +82,7 @@ final class DominancePresenceReadoutIntegrationTest {
     private static final int COLONY_RUN = 3;
     private static final int PARTING_RUN = 1;
 
-    private MockedStatic<MapVisibilityOverrides> visibilityOverridesMock;
+    private MockedStatic<MapVisibilityRules> visibilityRulesMock;
     private MockedStatic<PoliticalMapViewRegistry> viewRegistryMock;
     private MockedStatic<DominanceRules> rulesMock;
 
@@ -93,10 +93,10 @@ final class DominancePresenceReadoutIntegrationTest {
 
         // The reveal is a live LunaLib read, unreachable from the test JVM; stood in as off, which
         // is the state the case is posed under - both colonies here are ones the player has found.
-        visibilityOverridesMock = Mockito.mockStatic(MapVisibilityOverrides.class);
-        visibilityOverridesMock
-            .when(MapVisibilityOverrides::readFromLunaSettings)
-            .thenReturn(MapVisibilityOverrides.NONE);
+        visibilityRulesMock = Mockito.mockStatic(MapVisibilityRules.class);
+        visibilityRulesMock
+            .when(MapVisibilityRules::readFromLunaSettings)
+            .thenReturn(MapVisibilityRules.BASE);
 
         // The weighting rule is the box's other live settings read, stood in as the shared
         // stability-only rule the band beside it is planned under - the two have to weigh alike or
@@ -114,7 +114,7 @@ final class DominancePresenceReadoutIntegrationTest {
 
         rulesMock.close();
         viewRegistryMock.close();
-        visibilityOverridesMock.close();
+        visibilityRulesMock.close();
         CellTooltipPaletteFake.clearPalette();
     }
 

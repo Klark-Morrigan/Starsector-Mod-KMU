@@ -7,7 +7,7 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.base.visibility.MapVisibility;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -47,7 +47,7 @@ public record PoliticalMapSectorSnapshot(
     Map<String, String> ownerBySystemId) {
 
     /**
-     * Walks the sector once under visibility overrides the caller has already read,
+     * Walks the sector once under visibility rules the caller has already read,
      * reading the dominance-weighting rules itself so the whole walk resolves every
      * system under one rule even if the player applies a settings change mid-scan. Lets
      * a caller that shares one toggle read across several walks (the staleness poll,
@@ -55,35 +55,35 @@ public record PoliticalMapSectorSnapshot(
      * toggles in while leaving weighting - which only this scan needs - encapsulated
      * here.
      *
-     * @param sector              the sector to scan; null yields an empty snapshot
-     * @param visibilityOverrides the widenings in force for this pass - undiscovered markets
-     *                            fold into dominance and inhabitation, hidden systems are
-     *                            admitted to the drawn set
+     * @param sector          the sector to scan; null yields an empty snapshot
+     * @param visibilityRules the rules in force for this pass - what may be shown of a
+     *                        colony, which the dominance fold and the inhabitation read
+     *                        both take, and whether a system is forced onto the drawn set
      * @return the visibility fingerprint and the dominant holder (by faction id) of each
      *         owned on-map system; a drawn-but-unowned system (a decivilised shell) is
      *         absent from the holder map
      */
     public static PoliticalMapSectorSnapshot scan(
             SectorAPI sector,
-            MapVisibilityOverrides visibilityOverrides) {
+            MapVisibilityRules visibilityRules) {
         return scan(
             sector,
             DominanceRules.readFromLunaSettings(),
-            visibilityOverrides);
+            visibilityRules);
     }
 
     /**
-     * Walks the sector once under an explicit weighting rule and visibility overrides,
+     * Walks the sector once under an explicit weighting rule and visibility rules,
      * for a caller that resolves both itself rather than letting this class read the
      * live settings.
      *
-     * @param sector              the sector to scan; null yields an empty snapshot
-     * @param rules               the dominance-weighting rules for this pass - whether
+     * @param sector          the sector to scan; null yields an empty snapshot
+     * @param rules           the dominance-weighting rules for this pass - whether
      *                            stability scales each rating and whether an attached station
      *                            lifts it - before dominance is compared
-     * @param visibilityOverrides the widenings in force for this pass - undiscovered markets
-     *                            fold into dominance and inhabitation, hidden systems are
-     *                            admitted to the drawn set
+     * @param visibilityRules the rules in force for this pass - what may be shown of a
+     *                        colony, which the dominance fold and the inhabitation read
+     *                        both take, and whether a system is forced onto the drawn set
      * @return the visibility fingerprint and the dominant holder (by faction id) of
      *         each owned on-map system; a drawn-but-unowned system (a decivilised
      *         shell) is absent from the holder map
@@ -91,7 +91,7 @@ public record PoliticalMapSectorSnapshot(
     public static PoliticalMapSectorSnapshot scan(
             SectorAPI sector,
             DominanceRules rules,
-            MapVisibilityOverrides visibilityOverrides) {
+            MapVisibilityRules visibilityRules) {
 
         if (sector == null) {
             return new PoliticalMapSectorSnapshot(0, Map.of());
@@ -130,18 +130,18 @@ public record PoliticalMapSectorSnapshot(
             var isInhabited = MapVisibility.isInhabited(
                 systemColonies,
                 hasRevealedDecivilised,
-                visibilityOverrides);
+                visibilityRules);
 
             var footprintByFactionId = KnownMarketFootprints.readByFaction(
                 systemColonies,
                 rules,
-                visibilityOverrides.colonyVisibility());
+                visibilityRules.colonyVisibility());
 
             if (!MapVisibility.shouldAppearOnMap(
                     system,
                     visibleStars,
                     isInhabited,
-                    visibilityOverrides)) {
+                    visibilityRules)) {
                 continue;
             }
             var systemId = system.getId();

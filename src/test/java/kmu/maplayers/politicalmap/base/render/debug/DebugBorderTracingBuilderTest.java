@@ -14,7 +14,7 @@ import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -130,7 +130,7 @@ final class DebugBorderTracingBuilderTest {
     private MockedStatic<SectorPolitics> politicsMock;
     private MockedStatic<PoliticalMapInhabitation> inhabitationMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
-    private MockedStatic<MapVisibilityOverrides> visibilityOverridesMock;
+    private MockedStatic<MapVisibilityRules> visibilityRulesMock;
 
     @BeforeEach
     void openTheSectorAndSettingsSeams() {
@@ -144,14 +144,14 @@ final class DebugBorderTracingBuilderTest {
             .thenReturn(MITER_SPIKE_LIMIT);
 
         politicsMock = mockStatic(SectorPolitics.class);
-        visibilityOverridesMock = mockStatic(MapVisibilityOverrides.class);
+        visibilityRulesMock = mockStatic(MapVisibilityRules.class);
         inhabitationMock = mockStatic(PoliticalMapInhabitation.class);
 
         // This overlay opens its own pass, which samples the reveal toggles; no LunaLib answers
         // outside the game, so the no-reveal view stands in for the read.
-        visibilityOverridesMock
-            .when(MapVisibilityOverrides::readFromLunaSettings)
-            .thenReturn(MapVisibilityOverrides.NONE);
+        visibilityRulesMock
+            .when(MapVisibilityRules::readFromLunaSettings)
+            .thenReturn(MapVisibilityRules.BASE);
         styleReaderMock = mockStatic(RenderStyleReader.class);
 
         // An empty sector by default, so a case names only the cells it is about.
@@ -164,7 +164,7 @@ final class DebugBorderTracingBuilderTest {
     void closeTheSectorAndSettingsSeams() {
         styleReaderMock.close();
         inhabitationMock.close();
-        visibilityOverridesMock.close();
+        visibilityRulesMock.close();
         politicsMock.close();
         settingsMock.close();
     }

@@ -13,7 +13,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -79,7 +79,7 @@ final class PoliticalMapStatusRevealIntegrationTest {
 
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
 
-    private MockedStatic<MapVisibilityOverrides> visibilityOverridesMock;
+    private MockedStatic<MapVisibilityRules> visibilityRulesMock;
     private MockedStatic<DominanceRules> dominanceRulesMock;
     private MockedStatic<PoliticalMapViewRegistry> viewRegistryMock;
     private MockedStatic<SystemStandings> standingsMock;
@@ -98,7 +98,7 @@ final class PoliticalMapStatusRevealIntegrationTest {
             .when(DominanceRules::readFromLunaSettings)
             .thenReturn(ANY_RULES);
 
-        visibilityOverridesMock = Mockito.mockStatic(MapVisibilityOverrides.class);
+        visibilityRulesMock = Mockito.mockStatic(MapVisibilityRules.class);
         setReveal(false);
 
         var viewMock = mock(PoliticalMapView.class);
@@ -128,7 +128,7 @@ final class PoliticalMapStatusRevealIntegrationTest {
     void clearSettingsAndTheLunaReads() {
         standingsMock.close();
         viewRegistryMock.close();
-        visibilityOverridesMock.close();
+        visibilityRulesMock.close();
         dominanceRulesMock.close();
         CellTooltipPaletteFake.clearPalette();
     }
@@ -192,9 +192,9 @@ final class PoliticalMapStatusRevealIntegrationTest {
     }
 
     private void setReveal(boolean shouldIncludeUndiscoveredMarkets) {
-        visibilityOverridesMock
-            .when(MapVisibilityOverrides::readFromLunaSettings)
-            .thenReturn(new MapVisibilityOverrides(
+        visibilityRulesMock
+            .when(MapVisibilityRules::readFromLunaSettings)
+            .thenReturn(new MapVisibilityRules(
                 new ColonyVisibility(shouldIncludeUndiscoveredMarkets, Set.of()),
                 false));
     }

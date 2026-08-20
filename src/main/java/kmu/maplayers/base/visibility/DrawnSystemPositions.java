@@ -30,15 +30,14 @@ public final class DrawnSystemPositions {
      * geometry sites, the motion tracker) shares it rather than re-deriving it and
      * drifting.
      *
-     * @param sector    the sector whose hyperspace is scanned for visible stars
-     * @param overrides the pass's reveal overrides - each widens what the rule admits,
-     *                  resolved once by the caller
-     * @return a predicate accepting exactly the systems the map draws under these
-     *         overrides
+     * @param sector          the sector whose hyperspace is scanned for visible stars
+     * @param visibilityRules the pass's visibility rules - the colony rule and the force
+     *                        override, resolved once by the caller
+     * @return a predicate accepting exactly the systems the map draws under those rules
      */
     public static Predicate<StarSystemAPI> buildDrawnSystemPredicate(
             SectorAPI sector,
-            MapVisibilityOverrides overrides) {
+            MapVisibilityRules visibilityRules) {
 
         // Scanned once here so the predicate's per-system check is an O(1) lookup
         // rather than a per-system hyperspace rescan.
@@ -47,24 +46,24 @@ public final class DrawnSystemPositions {
             sector,
             system,
             visibleStars,
-            overrides);
+            visibilityRules);
     }
 
     /**
      * Walks the sector once under the drawn-set rule and records the live
      * {@code {x, y}} position of every on-map system, keyed by system id.
      *
-     * @param sector    the sector to read; null yields an empty map
-     * @param overrides the pass's reveal overrides applied by the drawn-set rule
+     * @param sector          the sector to read; null yields an empty map
+     * @param visibilityRules the pass's visibility rules applied by the drawn-set rule
      * @return each drawn system's live hyperspace position keyed by id; a system with
      *         no location is skipped, since it has no site to place a cell at
      */
     public static Map<String, double[]> collectLivePositions(
             SectorAPI sector,
-            MapVisibilityOverrides overrides) {
+            MapVisibilityRules visibilityRules) {
 
         return SectorStarSystems.collectPositionsById(
             sector,
-            buildDrawnSystemPredicate(sector, overrides));
+            buildDrawnSystemPredicate(sector, visibilityRules));
     }
 }

@@ -7,7 +7,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures;
@@ -78,7 +78,7 @@ final class ClaimPresenceReadoutIntegrationTest {
     private static final int COLONY_RUN = 3;
     private static final int PARTING_RUN = 1;
 
-    private MockedStatic<MapVisibilityOverrides> visibilityOverridesMock;
+    private MockedStatic<MapVisibilityRules> visibilityRulesMock;
 
     @BeforeEach
     void installColoursAndTheRevealSeam() {
@@ -87,16 +87,16 @@ final class ClaimPresenceReadoutIntegrationTest {
 
         // The reveal is a live LunaLib read, unreachable from the test JVM; stood in as off, which
         // is the state the case is posed under - both colonies here are ones the player has found.
-        visibilityOverridesMock = Mockito.mockStatic(MapVisibilityOverrides.class);
-        visibilityOverridesMock
-            .when(MapVisibilityOverrides::readFromLunaSettings)
-            .thenReturn(MapVisibilityOverrides.NONE);
+        visibilityRulesMock = Mockito.mockStatic(MapVisibilityRules.class);
+        visibilityRulesMock
+            .when(MapVisibilityRules::readFromLunaSettings)
+            .thenReturn(MapVisibilityRules.BASE);
     }
 
     @AfterEach
     void clearColoursAndTheRevealSeam() {
 
-        visibilityOverridesMock.close();
+        visibilityRulesMock.close();
         CellTooltipPaletteFake.clearPalette();
     }
 

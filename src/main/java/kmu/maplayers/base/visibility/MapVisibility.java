@@ -54,28 +54,28 @@ public final class MapVisibility {
 
     /**
      * Decides map membership by reading the system's inhabitation itself, under the
-     * pass's reveal overrides: the inhabitation read widens to undiscovered colonies
-     * when the overrides ask for it, and the force override then admits a system the
+     * pass's visibility rules: the inhabitation read widens to undiscovered colonies
+     * when the rules ask for it, and the force override then admits a system the
      * normal rule would omit.
      *
-     * @param sector       the sector the system belongs to; supplies the economy read
-     * @param system       the system to test
-     * @param visibleStars the index of systems whose star the map draws, scanned once
+     * @param sector          the sector the system belongs to; supplies the economy read
+     * @param system          the system to test
+     * @param visibleStars    the index of systems whose star the map draws, scanned once
      *                     by the caller
-     * @param overrides    the pass's reveal overrides, resolved once by the caller
+     * @param visibilityRules the pass's visibility rules, resolved once by the caller
      * @return true when the system should seed a map cell
      */
     public static boolean shouldAppearOnMap(
             SectorAPI sector,
             StarSystemAPI system,
             VisibleStars visibleStars,
-            MapVisibilityOverrides overrides) {
+            MapVisibilityRules visibilityRules) {
 
         return shouldAppearOnMap(
             system,
             visibleStars,
-            isInhabited(sector, system, overrides),
-            overrides);
+            isInhabited(sector, system, visibilityRules),
+            visibilityRules);
     }
 
     /**
@@ -85,53 +85,54 @@ public final class MapVisibility {
      * <p>The single-walk fingerprint scan reads each system's markets once - to size
      * dominance and to know if it is inhabited - so it passes that flag straight in
      * here instead of paying for a second economy read through {@link #isInhabited}.
-     * Only the force override is read off the overrides here: the widening half is
-     * already folded into the flag by whoever computed it.
+     * Only the force override is read off the rules here: the colony half is already
+     * folded into the flag by whoever computed it.
      *
-     * @param system       the system to test
-     * @param visibleStars the index of systems whose star the map draws
-     * @param isInhabited  whether the system holds a folded colony or a revealed
+     * @param system          the system to test
+     * @param visibleStars    the index of systems whose star the map draws
+     * @param isInhabited     whether the system holds a folded colony or a revealed
      *                     dead colony, decided by the caller
-     * @param overrides    the pass's reveal overrides, resolved once by the caller
+     * @param visibilityRules the pass's visibility rules, resolved once by the caller
      * @return true when the system should seed a map cell
      */
     public static boolean shouldAppearOnMap(
             StarSystemAPI system,
             VisibleStars visibleStars,
             boolean isInhabited,
-            MapVisibilityOverrides overrides) {
+            MapVisibilityRules visibilityRules) {
 
-        return overrides.isForcedOntoMap()
+        return visibilityRules.isForcedOntoMap()
             || hasVisibleMapAccess(system, visibleStars)
             || isInhabited;
     }
 
     /**
      * Whether the system counts as inhabited - a colony the player knows of or a
-     * revealed decivilised planet, plus an undiscovered colony when the overrides widen
-     * the read. Drives admission to the map independently of how (or whether) the
-     * system can be reached. A revealed decivilised planet counts under any overrides -
-     * it is always known once revealed.
+     * revealed decivilised planet, the first of those judged by the rules' colony half.
+     * Drives admission to the map independently of how (or whether) the system can be
+     * reached. A revealed decivilised planet counts under any rules - it is always known
+     * once revealed.
      *
      * <p>Walks the system for its colonies and for its ruins, so a caller already holding
      * either - a pass that read the system once for everything it asks of it - wants the
      * form below instead.
      *
-     * @param sector    the sector the system belongs to; null yields false
-     * @param system    the system to test; null yields false
-     * @param overrides the pass's visibility state; only the colony rule is read here,
-     *                  since forcing a system onto the map does not make it inhabited
+     * @param sector          the sector the system belongs to; null yields false
+     * @param system          the system to test; null yields false
+     * @param visibilityRules the pass's visibility rules; only the colony half is read
+     *                        here, since forcing a system onto the map does not make it
+     *                        inhabited
      * @return true when the system holds a colony or a known dead colony
      */
     public static boolean isInhabited(
             SectorAPI sector,
             StarSystemAPI system,
-            MapVisibilityOverrides overrides) {
+            MapVisibilityRules visibilityRules) {
 
         return isInhabited(
             SystemColonies.readColoniesIn(sector, system),
             DecivilisedMarkets.hasRevealedDecivilisedPlanet(system),
-            overrides);
+            visibilityRules);
     }
 
     /**
@@ -150,19 +151,19 @@ public final class MapVisibility {
      *
      * @param colonies              the system's colonies, as one walk of it reported
      * @param isRevealedDecivilised whether the system holds a dead colony the player has
-     *                              already seen; counts under any overrides, a revealed ruin
+     *                              already seen; counts under any rules, a revealed ruin
      *                              being known for good
-     * @param overrides             the pass's visibility state; only the colony rule is read
-     *                              here, since forcing a system onto the map does not make it
-     *                              inhabited
+     * @param visibilityRules       the pass's visibility rules; only the colony half is
+     *                              read here, since forcing a system onto the map does not
+     *                              make it inhabited
      * @return true when the system holds a colony or a known dead colony
      */
     public static boolean isInhabited(
             Colonies colonies,
             boolean isRevealedDecivilised,
-            MapVisibilityOverrides overrides) {
+            MapVisibilityRules visibilityRules) {
 
-        return colonies.hasKnownColony(overrides.colonyVisibility())
+        return colonies.hasKnownColony(visibilityRules.colonyVisibility())
             || isRevealedDecivilised;
     }
 
@@ -178,20 +179,20 @@ public final class MapVisibility {
      * inhabited system with nobody holding it - which is not the same state as empty space,
      * however alike the two look to a holder lookup that came back null.
      *
-     * @param sector    the sector to scan; null yields an empty set
-     * @param overrides the pass's reveal overrides, resolved once by the caller
+     * @param sector          the sector to scan; null yields an empty set
+     * @param visibilityRules the pass's visibility rules, resolved once by the caller
      * @return the ids of every inhabited system
      */
     public static Set<String> findInhabitedSystemIds(
             SectorAPI sector,
-            MapVisibilityOverrides overrides) {
+            MapVisibilityRules visibilityRules) {
 
         var systemIds = new HashSet<String>();
         if (sector == null) {
             return systemIds;
         }
         for (var system : sector.getStarSystems()) {
-            if (isInhabited(sector, system, overrides)) {
+            if (isInhabited(sector, system, visibilityRules)) {
                 systemIds.add(system.getId());
             }
         }

@@ -7,7 +7,7 @@ import com.fs.starfarer.api.impl.campaign.ids.MemFlags;
 import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -55,12 +55,12 @@ class LiveVisibilityClaimBreakdownReaderTest {
 
             var openedRules = new ArrayList<ColonyVisibility>();
 
-            try (var overridesMock = mockStatic(MapVisibilityOverrides.class);
+            try (var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
                     var ignoredReaders = captureOpenedRules(openedRules)) {
 
-                overridesMock
-                    .when(MapVisibilityOverrides::readFromLunaSettings)
-                    .thenReturn(new MapVisibilityOverrides(UNDER_THE_REVEAL, false));
+                visibilityRulesMock
+                    .when(MapVisibilityRules::readFromLunaSettings)
+                    .thenReturn(new MapVisibilityRules(UNDER_THE_REVEAL, false));
 
                 new LiveVisibilityClaimBreakdownReader().readBreakdown(mock(StarSystemAPI.class));
 
@@ -75,20 +75,20 @@ class LiveVisibilityClaimBreakdownReaderTest {
             // read has to see the toggle the player moved between the two hovers.
             var openedRules = new ArrayList<ColonyVisibility>();
 
-            try (var overridesMock = mockStatic(MapVisibilityOverrides.class);
+            try (var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
                     var ignoredReaders = captureOpenedRules(openedRules)) {
 
                 var reader = new LiveVisibilityClaimBreakdownReader();
                 var systemMock = mock(StarSystemAPI.class);
 
-                overridesMock
-                    .when(MapVisibilityOverrides::readFromLunaSettings)
-                    .thenReturn(new MapVisibilityOverrides(BASE_FOG, false));
+                visibilityRulesMock
+                    .when(MapVisibilityRules::readFromLunaSettings)
+                    .thenReturn(new MapVisibilityRules(BASE_FOG, false));
                 reader.readBreakdown(systemMock);
 
-                overridesMock
-                    .when(MapVisibilityOverrides::readFromLunaSettings)
-                    .thenReturn(new MapVisibilityOverrides(UNDER_THE_REVEAL, false));
+                visibilityRulesMock
+                    .when(MapVisibilityRules::readFromLunaSettings)
+                    .thenReturn(new MapVisibilityRules(UNDER_THE_REVEAL, false));
                 reader.readBreakdown(systemMock);
 
                 assertThat(openedRules)
@@ -113,12 +113,12 @@ class LiveVisibilityClaimBreakdownReaderTest {
         void readCoreFactionIdReadsNoVisibilitySettingAtAll() {
             // The port promises a decree costs one memory read, and a box heads itself with one on
             // every draw. A settings lookup in front of it would be invisible in the answer.
-            try (var overridesMock = mockStatic(MapVisibilityOverrides.class)) {
+            try (var visibilityRulesMock = mockStatic(MapVisibilityRules.class)) {
 
                 new LiveVisibilityClaimBreakdownReader()
                     .readCoreFactionId(buildSystemDecreedTo(DECREED_FACTION_ID));
 
-                overridesMock.verifyNoInteractions();
+                visibilityRulesMock.verifyNoInteractions();
             }
         }
 

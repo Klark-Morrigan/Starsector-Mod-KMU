@@ -24,7 +24,7 @@ import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.base.visibility.MapVisibilityOverrides;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -209,7 +209,7 @@ final class ClusterAnchorsBuilderTest {
     private MockedStatic<LabelFonts> fontsMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
     private MockedStatic<SectorPolitics> politicsMock;
-    private MockedStatic<MapVisibilityOverrides> visibilityOverridesMock;
+    private MockedStatic<MapVisibilityRules> visibilityRulesMock;
 
     @BeforeEach
     void openTheSettingsHolderAndFontSeams() {
@@ -221,13 +221,13 @@ final class ClusterAnchorsBuilderTest {
         fontsMock = mockStatic(LabelFonts.class);
         styleReaderMock = mockStatic(RenderStyleReader.class);
         politicsMock = mockStatic(SectorPolitics.class);
-        visibilityOverridesMock = mockStatic(MapVisibilityOverrides.class);
+        visibilityRulesMock = mockStatic(MapVisibilityRules.class);
 
         // The debug path opens its own pass, which samples the reveal toggles; no LunaLib
         // answers outside the game, so the no-reveal view stands in for the read.
-        visibilityOverridesMock
-            .when(MapVisibilityOverrides::readFromLunaSettings)
-            .thenReturn(MapVisibilityOverrides.NONE);
+        visibilityRulesMock
+            .when(MapVisibilityRules::readFromLunaSettings)
+            .thenReturn(MapVisibilityRules.BASE);
 
         // The live tuning and name styling arrive as the data the rebuild reads them into, so a
         // case states its gate and its styling and nothing about the dozens of knobs behind them.
@@ -271,7 +271,7 @@ final class ClusterAnchorsBuilderTest {
     @AfterEach
     void closeTheSettingsHolderAndFontSeams() {
 
-        visibilityOverridesMock.close();
+        visibilityRulesMock.close();
         politicsMock.close();
         styleReaderMock.close();
         fontsMock.close();
