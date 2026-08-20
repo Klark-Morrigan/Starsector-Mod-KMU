@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.dominance;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
@@ -19,9 +20,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 /**
- * Unit coverage for {@link HolderPass}: the construction guard, the reads of the known projection,
- * and that the pass names the sector its own walk was opened over rather than one carried beside
- * it.
+ * Unit coverage for {@link HolderPass}: the construction guard, the two projections it offers over
+ * one walk, and that the pass names the sector its own walk was opened over rather than one carried
+ * beside it.
+ *
+ * <p>What each projection admits is settled in KMLib, where the rule lives. What is read here is
+ * that the pass reaches the right one of them and holds both to the rule it was opened with - a
+ * habitation read wired to the known listing would answer identically for every system holding no
+ * derelict, which is nearly all of them.
  *
  * <p>The naming matters because every resolver behind the holder seam takes its sector from here.
  * A pass that could report one sector while answering colonies out of another would let a resolver
@@ -99,7 +105,7 @@ final class HolderPassTest {
                 .readKnownColoniesIn(SectorPoliticsFixtures.buildOnlySystem(sector));
 
             assertThat(knownColonies)
-                .extracting(colony -> colony.market().getFaction().getId())
+                .extracting(HolderPassTest::readColonyFactionId)
                 .containsExactly("hegemony");
         }
 
@@ -127,6 +133,91 @@ final class HolderPassTest {
             assertThat(HolderPass
                     .over(mock(SectorAPI.class), ColonyVisibility.BASE_FOG, HolderGrouping.identity())
                     .readKnownColoniesIn(null))
+                .isEmpty();
+        }
+    }
+
+    @Nested
+    class ReadInhabitingColoniesIn {
+
+        @Test
+        void leavesOutADerelictTheKnownListingNames() {
+            // The one case that can tell the two reads apart. Both run over the same walk under
+            // the same rule, so a habitation read that had been wired to the known projection -
+            // a copy-paste away - would pass every other case in this class.
+            var colony = SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE);
+            var derelict = SectorPoliticsFixtures.buildAbandonedStationMarket(
+                SectorPoliticsFixtures.buildFaction("neutral"),
+                COLONY_SIZE);
+
+            var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID, colony);
+            var system = SectorPoliticsFixtures.buildOnlySystem(sector);
+
+            // The derelict reaches the walk through the entity side, as a vanilla hulk does: the
+            // economy never lists one, so posing it in the economy would pose a market the sector
+            // does not hold.
+            SectorPoliticsFixtures.placeMarketsOnSystemEntities(system, colony, derelict);
+
+            var pass = HolderPass
+                .over(sector, ColonyVisibility.BASE_FOG, HolderGrouping.identity());
+
+            assertThat(pass.readKnownColoniesIn(system))
+                .extracting(HolderPassTest::readColonyFactionId)
+                .containsExactlyInAnyOrder("hegemony", "neutral");
+            assertThat(pass.readInhabitingColoniesIn(system))
+                .extracting(HolderPassTest::readColonyFactionId)
+                .containsExactly("hegemony");
+        }
+
+        @Test
+        void withholdsAColonyThePlayerHasNotFound() {
+            // Habitation is the known projection minus the derelicts, so it is held to the pass's
+            // rule exactly as the listing is. A read that reached past the fog would settle a cell
+            // on a colony the box beside it may not name.
+            var sector = SectorPoliticsFixtures.buildSectorWith(
+                SYSTEM_ID,
+                SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE),
+                SectorPoliticsFixtures.buildUndiscoveredHiddenMarket(
+                    SectorPoliticsFixtures.buildFaction("tritachyon"),
+                    COLONY_SIZE));
+
+            var inhabitingColonies = HolderPass
+                .over(sector, ColonyVisibility.BASE_FOG, HolderGrouping.identity())
+                .readInhabitingColoniesIn(SectorPoliticsFixtures.buildOnlySystem(sector));
+
+            assertThat(inhabitingColonies)
+                .extracting(HolderPassTest::readColonyFactionId)
+                .containsExactly("hegemony");
+        }
+
+        @Test
+        void reportsAnUnfoundColonyWhereTheRevealLiftsTheFog() {
+            // The same knob the listing reads, so a map showing every faction cannot draw a cell
+            // as settled on one read and empty on the other.
+            var sector = SectorPoliticsFixtures.buildSectorWith(
+                SYSTEM_ID,
+                SectorPoliticsFixtures.buildUndiscoveredHiddenMarket(
+                    HEGEMONY_FACTION,
+                    COLONY_SIZE));
+
+            var inhabitingColonies = HolderPass
+                .over(sector, UNDER_THE_REVEAL, HolderGrouping.identity())
+                .readInhabitingColoniesIn(SectorPoliticsFixtures.buildOnlySystem(sector));
+
+            assertThat(inhabitingColonies)
+                .hasSize(1);
+        }
+
+        @Test
+        void reportsNoColoniesForASystemThatIsNotThere() {
+            // The null-system answer every read on the pass holds to, stated here too so the newer
+            // read cannot be the one that faults where its siblings answer.
+            assertThat(HolderPass
+                    .over(
+                        mock(SectorAPI.class),
+                        ColonyVisibility.BASE_FOG,
+                        HolderGrouping.identity())
+                    .readInhabitingColoniesIn(null))
                 .isEmpty();
         }
     }
@@ -264,5 +355,12 @@ final class HolderPassTest {
             assertThat(HolderPass.over(null, ColonyVisibility.BASE_FOG, HolderGrouping.identity()).sector())
                 .isNull();
         }
+    }
+
+    // A colony's owner, which is what every projection case here asserts on. Named once rather
+    // than spelled at each assertion so a case reads as the set of owners it expects rather than
+    // as the walk down to an id.
+    private static String readColonyFactionId(Colony colony) {
+        return colony.market().getFaction().getId();
     }
 }

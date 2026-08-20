@@ -7,6 +7,7 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 
 import kmlib.starsector.colonies.ColonyVisibility;
 
@@ -211,6 +212,29 @@ public final class SectorPoliticsFixtures {
      */
     public static MarketAPI buildUndiscoveredHiddenMarket(FactionAPI faction, int size) {
         return buildMarket(faction, size, false, true, true, FULL_STABILITY);
+    }
+
+    /**
+     * A derelict station's market: un-hidden, on a found entity, and carrying vanilla's
+     * abandoned-station condition - the shape Sentinel Gantries and every other hulk wears.
+     *
+     * <p>The condition is what parts it from a colony, and it is the only thing that does: nobody
+     * lives aboard, but the market is owned, sized and stable exactly as a settlement's is. A
+     * suite reading habitation therefore cannot pose this shape by varying anything else.
+     *
+     * @param faction the faction the hulk is attributed to, which for a vanilla derelict is the
+     *                neutral one every station without an owner falls to
+     * @param size    the colony size
+     * @return the market mock
+     */
+    public static MarketAPI buildAbandonedStationMarket(FactionAPI faction, int size) {
+
+        var marketMock = buildMarket(faction, size, false, false, false, FULL_STABILITY);
+
+        when(marketMock.hasCondition(Conditions.ABANDONED_STATION))
+            .thenReturn(true);
+
+        return marketMock;
     }
 
     /**
