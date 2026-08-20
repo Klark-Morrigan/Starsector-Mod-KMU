@@ -83,6 +83,8 @@ class DominancePassTest {
 
             pass.readColoniesIn(system);
             pass.readFootprintsByFaction(system);
+            pass.readWeightBreakdownsByFaction(system);
+            pass.readUnweighedColoniesByFaction(system);
             pass.readKnownColonyFactionIds(system);
             pass.readKnownColonyBlocIds(system);
             pass.readBlocFootprints(system);

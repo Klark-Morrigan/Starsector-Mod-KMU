@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 
 import java.util.List;
 
@@ -26,10 +25,11 @@ import java.util.List;
  * members' - so a reader following the arithmetic upward reads each sum beneath the thing it is the sum
  * of, and the grouping the alliances view exists to show survives being explained.
  *
- * <p>The parts are read from the very arithmetic the scores above them were summed over
- * ({@link KnownMarketFootprints#readBreakdownByFaction}), so the lines always add up to the number the
- * ordinary box and the map's own fills show. A breakdown computed beside the weight rather than under
- * it could drift from it, and a box explaining a number it disagrees with is worse than no box.
+ * <p>The parts are read from the very arithmetic the scores above them were summed over, and
+ * through the very pass that ranked them ({@link DominancePass#readWeightBreakdownsByFaction}), so
+ * the lines always add up to the number the ordinary box and the map's own fills show. A breakdown
+ * computed beside the weight rather than under it could drift from it, and a box explaining a
+ * number it disagrees with is worse than no box.
  *
  * <p>One kind of colony is listed that no score above it accounts for: one the economy does not list,
  * which the weight read has nothing to weigh and so passes over entirely. It is named at nought
@@ -50,22 +50,21 @@ public final class ExpandedSystemDominationTooltip extends SystemStandingsToolti
             StarSystemAPI system,
             DominancePass pass) {
 
-        // Read once for the whole box rather than per faction: every colony in the system comes out of
-        // the pass's one walk of it, which is what guarantees no two factions are explained from
-        // different reads of it - and the walk is the most expensive thing a hover does.
-        var colonies = pass.readColoniesIn(system);
-        var breakdownsByFactionId = KnownMarketFootprints.readBreakdownByFaction(
-            colonies,
-            pass.rules(),
-            pass.colonyVisibility());
+        // Read once for the whole box rather than per faction: read per faction, two of them could
+        // be explained from different selections over the system, and the walk behind them is the
+        // most expensive thing a hover does. Both reads share it - the pass remembers each system
+        // it walks - so the pair costs one traversal between them.
+        //
+        // Taken off the pass rather than assembled here: the weighting rule and the visibility
+        // rule are the pass's, and a box that named them itself could explain a system under a
+        // rule the map did not paint it under.
+        var breakdownsByFactionId = pass.readWeightBreakdownsByFaction(system);
 
         // The colonies the pass could not weigh, selected beside the ones it did. They stay a
         // separate read rather than becoming a second kind of breakdown because the pass must go on
         // seeing exactly the markets it sees today: a colony the economy does not list has nothing
         // to weigh, and one admitted there would hand its owner weight nobody worked out.
-        var unweighedColoniesByFactionId = KnownMarketFootprints.readUnweighedColoniesByFaction(
-            colonies,
-            pass.colonyVisibility());
+        var unweighedColoniesByFactionId = pass.readUnweighedColoniesByFaction(system);
 
         // A faction the reads found nothing for is listed as its line alone rather than as a heading
         // over an empty account, which is what an empty answer means to the shape above.

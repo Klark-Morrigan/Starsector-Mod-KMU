@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.ColonyVisibility;
+import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -20,9 +21,9 @@ import java.util.Set;
  * scores each market.
  *
  * <p>The rule is the whole of what dominance adds to {@link HolderPass}. What the two halves have
- * in common - the sector, the grouping, the visibility rule, and the one walk of each system - is what
- * any owner-painted layer needs, and it is carried apart so the holder seam can take it without
- * naming this mechanic. What is here is what only a layer painted by market weights needs.
+ * in common - the sector, the grouping, the visibility rule, and the one walk of each system - is
+ * what any owner-painted layer needs, and it is carried apart so the holder seam can take it
+ * without naming this mechanic. What is here is what only a layer painted by market weights needs.
  *
  * <p>Bundled rather than threaded loose because the knobs always travel together: read once by
  * whoever opens the pass and handed down, so no system in the walk can drift onto a different rule
@@ -184,8 +185,9 @@ public record DominancePass(
     }
 
     /**
-     * This system's per-faction footprints under the pass's weighting and visibility rules, before any grouping:
-     * each faction's known markets folded into its own footprint. The unowned read the per-bloc
+     * This system's per-faction footprints under the pass's weighting and visibility rules,
+     * before any grouping: each faction's known markets folded into its own footprint. The
+     * unowned read the per-bloc
      * read below builds on, and the one a two-tier standings breakdown needs whole so it can rank a
      * bloc's members individually - both taking the read from the pass rather than re-deriving it
      * from the loose knobs.
@@ -202,8 +204,52 @@ public record DominancePass(
     }
 
     /**
-     * The factions present in this system under the pass's visibility rule - everyone holding a colony the
-     * player may be shown, whether or not this mechanic could weigh it.
+     * This system's per-faction weight breakdowns under the pass's weighting and visibility rules:
+     * the same fold {@link #readFootprintsByFaction} sums away, kept whole so a caller can state
+     * the parts a score was made of.
+     *
+     * <p>Beside the footprints rather than derived from them, because a footprint is the total
+     * and a total cannot be taken apart again. Both come off the one walk under the one rule, so
+     * the parts a box lists always add up to the number the map painted with.
+     *
+     * @param system the system whose markets are folded
+     * @return each faction's weighed colonies with the breakdown of each colony's weight, keyed by
+     *         faction id and in the economy's own market order; empty when the system holds no
+     *         weighed colony
+     */
+    public Map<String, List<MarketWeightBreakdown>> readWeightBreakdownsByFaction(
+            StarSystemAPI system) {
+
+        return KnownMarketFootprints.readBreakdownByFaction(
+            readColoniesIn(system),
+            rules,
+            colonyVisibility());
+    }
+
+    /**
+     * The colonies in this system the economy does not list, per faction - the ones no weight was
+     * ever worked out for, so they arrive as nameplates and nothing more.
+     *
+     * <p>The complement of the weighed read above, taken under the same rule off the same walk,
+     * which is what makes the two exact complements: no colony can be admitted by one and refused
+     * by the other. Offered here so a box accounting for a system reads both through the pass that
+     * painted it rather than assembling the weighting rule and the visibility rule by hand.
+     *
+     * @param system the system whose colonies are read
+     * @return each faction's unlisted colonies there, identified and nothing more; empty when
+     *         every colony present is one the economy lists
+     */
+    public Map<String, List<EntityNameplate>> readUnweighedColoniesByFaction(
+            StarSystemAPI system) {
+
+        return KnownMarketFootprints.readUnweighedColoniesByFaction(
+            readColoniesIn(system),
+            colonyVisibility());
+    }
+
+    /**
+     * The factions present in this system under the pass's visibility rule - everyone holding a
+     * colony the player may be shown, whether or not this mechanic could weigh it.
      *
      * <p>Beside the footprints rather than derived from them, and that is the whole of the
      * separation: every term of a dominance weight is economy-fed, so a faction holding nothing the
@@ -220,8 +266,9 @@ public record DominancePass(
     }
 
     /**
-     * The blocs present in this system under the pass's visibility rule and grouping - the factions above
-     * folded into the blocs this view paints, whether or not this mechanic could weigh them.
+     * The blocs present in this system under the pass's visibility rule and grouping - the
+     * factions above folded into the blocs this view paints, whether or not this mechanic could
+     * weigh them.
      *
      * <p>The bloc-keyed counterpart of the read above, for a surface that decides per bloc rather
      * than per faction. Beside {@link #readBlocFootprints} rather than derived from it, for the same
@@ -236,8 +283,9 @@ public record DominancePass(
     }
 
     /**
-     * This system's per-bloc footprints under the pass's weighting rule, visibility rule and grouping: the per-faction
-     * footprints regrouped into per-bloc footprints (a no-op fold under identity, a member-summing
+     * This system's per-bloc footprints under the pass's weighting rule, visibility rule and
+     * grouping: the per-faction footprints regrouped into per-bloc footprints (a no-op fold
+     * under identity, a member-summing
      * merge under an alliance grouping). The one read shared by the holder resolve and the
      * filter's presence resolve, so both rank the same footprints.
      *
@@ -252,14 +300,16 @@ public record DominancePass(
     }
 
     /**
-     * This system's per-bloc contributions under the pass's weighting rule, visibility rule and grouping: each
-     * faction's markets folded into its dominance footprint and raw colony size, then regrouped so
+     * This system's per-bloc contributions under the pass's weighting rule, visibility rule and
+     * grouping: each faction's markets folded into its dominance footprint and raw colony size,
+     * then regrouped so
      * an alliance's members sum into the alliance's one contribution.
      *
      * <p>The whole read {@link #readBlocFootprints} projects down to, for the stats aggregations
      * that also need raw colony size. Held here rather than at each aggregation because assembling
-     * it means naming the weighting rule, the visibility rule, the grouping, and the fold identity together - four
-     * knobs a caller would otherwise thread by hand, and four chances for one aggregation to read
+     * it means naming the weighting rule, the visibility rule, the grouping, and the fold
+     * identity together - four knobs a caller would otherwise thread by hand, and four chances
+     * for one aggregation to read
      * the economy under a different set than another.
      *
      * @param system the system whose markets are folded
