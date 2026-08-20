@@ -38,13 +38,13 @@ public final class SystemStatusRow {
     }
 
     /**
-     * Resolves the status line for a system the player knows of nobody living in.
+     * Resolves the status line for a system holding nobody the player may be told about.
      *
-     * <p>Answered off the same known projection the cell beneath the box is classified on, so a
-     * system drawn as settled cannot be called unpopulated by the box over it. The rule arrives
-     * from the caller rather than being read here, which is what makes that true: a status
-     * resolved under a rule of its own would eventually call a system empty that the body below
-     * it goes on to fill.
+     * <p>Answered off the known listing - everybody the box may name - so the line appears exactly
+     * where the breakdown beneath it would have nothing to say, and never over a box that goes on
+     * to name somebody. The rule arrives from the caller rather than being read here, which is
+     * what keeps the two in step: a status resolved under a rule of its own would eventually call
+     * a system empty that the body below it goes on to fill.
      *
      * <p>Withholding a colony never leaks. A colony the rule holds back fails the projection
      * outright, so its system keeps its status line and the absence of one never becomes a tell
