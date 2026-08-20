@@ -87,7 +87,7 @@ final class VoidSections {
      *                 not cut at all
      */
     record VoidDivision(
-        List<CellGaps.CellGap> cuts,
+        List<CellGap> cuts,
         List<List<double[]>> sections) {
     }
 
@@ -173,9 +173,9 @@ final class VoidSections {
         // sites break ties, and only so that two equally narrow crossings are always offered
         // in the same order.
         candidates.sort(Comparator
-            .comparingDouble(CellGaps.CellGap::width)
-            .thenComparingInt(CellGaps.CellGap::fromSite)
-            .thenComparingInt(CellGaps.CellGap::toSite));
+            .comparingDouble(CellGap::width)
+            .thenComparingInt(CellGap::fromSite)
+            .thenComparingInt(CellGap::toSite));
 
         var pocketArea = measureArea(hole.boundary());
 
@@ -190,12 +190,12 @@ final class VoidSections {
     // spanning it. The pair is the cut: with one reach for every cell, the narrowest crossing
     // between two of them is the one along the line joining their sites, so there is one
     // candidate per pair and no shorter one to look for.
-    private static List<CellGaps.CellGap> findCrossings(
+    private static List<CellGap> findCrossings(
             List<Integer> ringing,
             List<double[]> sites,
             double trueReach) {
 
-        var crossings = new ArrayList<CellGaps.CellGap>();
+        var crossings = new ArrayList<CellGap>();
 
         for (var first = 0; first < ringing.size(); first++) {
             for (var second = first + 1; second < ringing.size(); second++) {
@@ -217,7 +217,7 @@ final class VoidSections {
     // Takes cuts in the order offered, keeping the ones that leave a section's worth on both
     // sides of them.
     private static VoidDivision takeDividingCuts(
-            List<CellGaps.CellGap> candidates,
+            List<CellGap> candidates,
             List<double[]> boundary,
             int wantedCuts,
             double leastSectionArea) {
@@ -225,7 +225,7 @@ final class VoidSections {
         var pieces = new ArrayList<List<double[]>>();
         pieces.add(boundary);
 
-        var cuts = new ArrayList<CellGaps.CellGap>(wantedCuts);
+        var cuts = new ArrayList<CellGap>(wantedCuts);
         var snapDistance = PolygonChords.measureSnapDistance(boundary);
 
         for (var candidate : candidates) {

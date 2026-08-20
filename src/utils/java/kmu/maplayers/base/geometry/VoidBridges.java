@@ -56,7 +56,7 @@ final class VoidBridges {
      *                       them, centre to centre
      * @return the bridges, narrowest first, none of them crossing another
      */
-    static List<CellGaps.CellGap> findVoidBridges(
+    static List<CellGap> findVoidBridges(
             List<double[]> sites,
             double reach,
             double maxSeparation) {
@@ -66,11 +66,11 @@ final class VoidBridges {
         // Narrowest first, which is the whole selection rule. The sites break ties, and only
         // so that two equally narrow gaps are always offered in the same order.
         candidates.sort(Comparator
-            .comparingDouble(CellGaps.CellGap::width)
-            .thenComparingInt(CellGaps.CellGap::fromSite)
-            .thenComparingInt(CellGaps.CellGap::toSite));
+            .comparingDouble(CellGap::width)
+            .thenComparingInt(CellGap::fromSite)
+            .thenComparingInt(CellGap::toSite));
 
-        var kept = new ArrayList<CellGaps.CellGap>();
+        var kept = new ArrayList<CellGap>();
 
         for (var candidate : candidates) {
 
@@ -81,12 +81,12 @@ final class VoidBridges {
         return kept;
     }
 
-    private static List<CellGaps.CellGap> findHeldGaps(
+    private static List<CellGap> findHeldGaps(
             List<double[]> sites,
             double reach,
             double widestGap) {
 
-        var held = new ArrayList<CellGaps.CellGap>();
+        var held = new ArrayList<CellGap>();
 
         for (var first = 0; first < sites.size(); first++) {
             for (var second = first + 1; second < sites.size(); second++) {
@@ -108,8 +108,8 @@ final class VoidBridges {
     }
 
     private static boolean doesCrossAny(
-            CellGaps.CellGap bridge,
-            List<CellGaps.CellGap> kept) {
+            CellGap bridge,
+            List<CellGap> kept) {
 
         for (var held : kept) {
 

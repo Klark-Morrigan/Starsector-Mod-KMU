@@ -67,9 +67,9 @@ final class VoidBridgePockets {
      * @param reach   how far a cell reaches, to know which cells already touch
      * @return the bridges that complete a ring, in the order they were offered
      */
-    static List<CellGaps.CellGap> findCapturingBridges(
+    static List<CellGap> findCapturingBridges(
             List<double[]> sites,
-            List<CellGaps.CellGap> bridges,
+            List<CellGap> bridges,
             double reach) {
 
         var reachedFrom = new int[sites.size()];
@@ -89,7 +89,7 @@ final class VoidBridgePockets {
             }
         }
 
-        var capturing = new ArrayList<CellGaps.CellGap>();
+        var capturing = new ArrayList<CellGap>();
 
         for (var bridge : bridges) {
 
@@ -140,7 +140,7 @@ final class VoidBridgePockets {
      */
     static List<List<double[]>> findCapturedPockets(
             List<double[]> sites,
-            List<CellGaps.CellGap> bridges,
+            List<CellGap> bridges,
             SectorGeometryParameters parameters,
             VoidPockets.PocketShaping shaping) {
 
@@ -174,7 +174,7 @@ final class VoidBridgePockets {
      */
     static List<DiscUnionBoundary.Chord> findLaidChords(
             List<double[]> sites,
-            List<CellGaps.CellGap> bridges,
+            List<CellGap> bridges,
             SectorGeometryParameters parameters) {
 
         return DiscUnionBoundary.findAttachableChords(
@@ -216,7 +216,7 @@ final class VoidBridgePockets {
     static double measureWorstChordStray(
             List<List<double[]>> captured,
             List<double[]> sites,
-            List<CellGaps.CellGap> bridges,
+            List<CellGap> bridges,
             SectorGeometryParameters parameters) {
 
         var union = VoidPockets.buildDrawnUnion(sites, parameters);
@@ -272,7 +272,7 @@ final class VoidBridgePockets {
      * @return the walls, at the channel a pocket keeps against them
      */
     static DiscUnionBoundary.Walls buildBridgeWalls(
-            List<CellGaps.CellGap> bridges,
+            List<CellGap> bridges,
             SectorGeometryParameters parameters) {
 
         return new DiscUnionBoundary.Walls(

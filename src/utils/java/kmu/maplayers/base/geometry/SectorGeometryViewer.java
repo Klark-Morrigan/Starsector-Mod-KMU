@@ -149,7 +149,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     private final ViewerSettings settings = new ViewerSettings();
 
     // Opened with the window and emptied there, so a session's picks are its own.
-    private final ViewerPickLog picks = ViewerPickLog.startPickLog();
+    private final PickLog picks = PickLog.startPickLog();
     private final VoidBridgesOverlay voidBridges = new VoidBridgesOverlay(settings);
     private final CoastlinesOverlay coastlines = new CoastlinesOverlay(settings);
 
@@ -271,7 +271,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             // means: a button that saved the other one would hand back a picture of a map
             // nobody was looking at.
             SectorSvgWriter.writeSectorSvg(
-                target, fixture, geometry, ViewerPainting.resolvePocketShaping(settings));
+                target, fixture, geometry, settings.resolvePocketShaping());
 
             canvas.statusLabel.setText("<html>wrote<br>" + target.toAbsolutePath() + "</html>");
         });
@@ -344,7 +344,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             fixture.getSystemIds().size(),
             geometry.ringsByOwner().size(),
             lastBuildMillis,
-            ViewerPickLog.getPickFile()));
+            PickLog.getPickFile()));
     }
 
     private final class MapCanvas extends JPanel {
@@ -559,9 +559,9 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             g2.setStroke(new BasicStroke(CELL_STROKE));
 
             for (var cell : unboundedCells) {
-                ViewerPainting.paintFilledShape(
+                MapPainting.paintFilledShape(
                     g2,
-                    ViewerPainting.buildPath(cell),
+                    MapPainting.buildPath(cell),
                     settings.unboundedCellColour,
                     settings.unboundedCellOpacity,
                     settings.unboundedCellEdge);
@@ -580,11 +580,11 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             // contour, stroked below once the fills are down.
             for (var cell : geometry.cellEdgesByCellId().values()) {
 
-                g2.setColor(ViewerPainting.applyAlpha(settings.channelColour, settings.channelOpacity));
-                g2.fill(ViewerPainting.buildPath(convertEdgesToRing(cell)));
+                g2.setColor(MapPainting.applyAlpha(settings.channelColour, settings.channelOpacity));
+                g2.fill(MapPainting.buildPath(convertEdgesToRing(cell)));
             }
 
-            g2.setStroke(new BasicStroke(ViewerPainting.RING_STROKE));
+            g2.setStroke(new BasicStroke(MapLook.RING_STROKE));
 
             // Unowned per the geometry's own keys, not the fixture's: a cell the build
             // grouped or unowned must be drawn as the build left it.
@@ -595,11 +595,11 @@ final class SectorGeometryViewer implements ViewerRefreshes {
                             < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                     continue;
                 }
-                ViewerPainting.paintFilledShape(
+                MapPainting.paintFilledShape(
                     g2,
-                    ViewerPainting.buildPath(entry.getValue().fillPolygon()),
+                    MapPainting.buildPath(entry.getValue().fillPolygon()),
                     settings.jitterUnowned
-                        ? ViewerPainting.jitterBrightness(settings.unownedCellColour,
+                        ? MapPainting.jitterBrightness(settings.unownedCellColour,
                             entry.getKey().hashCode(),
                             settings.jitterStrength)
                         : settings.unownedCellColour,
@@ -615,12 +615,12 @@ final class SectorGeometryViewer implements ViewerRefreshes {
                 var cluster = new Path2D.Double(Path2D.WIND_EVEN_ODD);
 
                 for (var ring : entry.getValue()) {
-                    cluster.append(ViewerPainting.buildPath(ring), false);
+                    cluster.append(MapPainting.buildPath(ring), false);
                 }
-                ViewerPainting.paintFilledShape(
+                MapPainting.paintFilledShape(
                     g2,
                     cluster,
-                    ViewerPainting.resolveOwnedColour(settings, entry.getKey()),
+                    settings.resolveOwnedColour(entry.getKey()),
                     settings.ownedCellOpacity,
                     settings.ownedCellEdge);
             }
@@ -703,7 +703,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
                     var from = fill.get(index);
                     var to = fill.get((index + 1) % fill.size());
 
-                    g2.setColor(ViewerPainting.applyAlpha(
+                    g2.setColor(MapPainting.applyAlpha(
                         doesFaceAnotherCell(trueEdges, from, to)
                             ? settings.channelEdge
                             : cellEdge,
@@ -721,7 +721,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
         // silhouette, and belongs to the cell's own outline colour.
         private void paintCentrelines(Graphics2D g2) {
 
-            g2.setColor(ViewerPainting.applyAlpha(settings.centrelineColour, OPAQUE_ALPHA));
+            g2.setColor(MapPainting.applyAlpha(settings.centrelineColour, OPAQUE_ALPHA));
 
             for (var edges : geometry.cellEdgesByCellId().values()) {
                 for (var edge : edges) {

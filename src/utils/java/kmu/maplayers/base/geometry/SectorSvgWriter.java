@@ -158,7 +158,7 @@ final class SectorSvgWriter {
             if (geometry.ownerByCellId().containsKey(entry.getKey())) {
                 continue;
             }
-            appendPolygon(svg, entry.getValue().fillPolygon(), "none", NEUTRAL_COLOUR, ViewerPainting.RING_STROKE);
+            appendPolygon(svg, entry.getValue().fillPolygon(), "none", NEUTRAL_COLOUR, MapLook.RING_STROKE);
         }
     }
 
@@ -201,7 +201,7 @@ final class SectorSvgWriter {
                 .append("\" stroke=\"")
                 .append(colour)
                 .append("\" stroke-width=\"")
-                .append(fmt(ViewerPainting.RING_STROKE))
+                .append(fmt(MapLook.RING_STROKE))
                 .append("\"/>\n");
         }
     }
@@ -228,13 +228,13 @@ final class SectorSvgWriter {
                 svg,
                 Coastlines.collectPoints(coast),
                 "none",
-                formatColour(ViewerSettings.COASTLINE_DEFAULT),
-                ViewerPainting.RING_STROKE);
+                formatColour(MapLook.COASTLINE),
+                MapLook.RING_STROKE);
         }
         appendPenetrations(
             svg,
             traced.union(),
-            CoastCrossings.findVisibleCrossings(traced, ViewerPainting.RING_STROKE));
+            CoastCrossings.findVisibleCrossings(traced, MapLook.RING_STROKE));
     }
 
     // The void the BRIDGES shut in, filled. Drawn beside the coast's own pockets because the
@@ -258,9 +258,9 @@ final class SectorSvgWriter {
             appendPolygon(
                 svg,
                 outline,
-                formatColour(ViewerSettings.WIDE_VOID_DEFAULT),
-                formatColour(ViewerSettings.WIDE_VOID_DEFAULT),
-                ViewerPainting.RING_STROKE / TRAPPED_EDGE_STROKES);
+                formatColour(MapLook.WIDE_VOID),
+                formatColour(MapLook.WIDE_VOID),
+                MapLook.RING_STROKE / TRAPPED_EDGE_STROKES);
         }
     }
 
@@ -274,23 +274,20 @@ final class SectorSvgWriter {
             SectorGeometryParameters parameters,
             VoidPockets.PocketShaping shaping) {
 
-        var sectionRules = new VoidSections.SectionRules(
-            ViewerSettings.VOID_SPAN_DEFAULT * parameters.cellRadius(),
-            ViewerSettings.MIN_SECTION_DEFAULT / ViewerSettings.MIN_SECTION_SCALE);
-
         for (var pocket : CoastPockets.findCoastPockets(
                 traced,
                 CoastPockets.markEverySiteUnowned(sites),
-                new VoidPockets.PocketRules(parameters, sectionRules, shaping))) {
+                new VoidPockets.PocketRules(
+                    parameters, ShippedMap.SECTION_RULES, shaping))) {
 
             for (var outline : pocket.pocket().outlines()) {
 
                 appendPolygon(
                     svg,
                     outline,
-                    formatColour(ViewerSettings.COASTLINE_DEFAULT),
-                    formatColour(ViewerSettings.COASTLINE_DEFAULT),
-                    ViewerPainting.RING_STROKE / TRAPPED_EDGE_STROKES);
+                    formatColour(MapLook.COASTLINE),
+                    formatColour(MapLook.COASTLINE),
+                    MapLook.RING_STROKE / TRAPPED_EDGE_STROKES);
             }
         }
     }
@@ -311,8 +308,8 @@ final class SectorSvgWriter {
                     svg,
                     union.sites().get(circle),
                     union.reach(),
-                    formatColour(ViewerSettings.PIERCED_CELL_DEFAULT),
-                    ViewerPainting.RING_STROKE);
+                    formatColour(MapLook.PIERCED_CELL),
+                    MapLook.RING_STROKE);
             }
         }
 
@@ -321,8 +318,8 @@ final class SectorSvgWriter {
             appendPolyline(
                 svg,
                 List.of(penetration.from().point(), penetration.to().point()),
-                formatColour(ViewerSettings.COAST_CROSSING_DEFAULT),
-                ViewerPainting.CROSSING_STROKE);
+                formatColour(MapLook.COAST_CROSSING),
+                MapLook.CROSSING_STROKE);
         }
     }
 

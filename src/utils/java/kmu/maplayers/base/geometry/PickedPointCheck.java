@@ -444,7 +444,7 @@ final class PickedPointCheck {
                 laid.traced(),
                 fixture.getOwnerBySite(),
                 new VoidPockets.PocketRules(
-                    laid.parameters(), buildViewerSections(laid), shaping))) {
+                    laid.parameters(), ShippedMap.SECTION_RULES, shaping))) {
 
             outlines.addAll(walled.pocket().outlines());
         }
@@ -467,15 +467,6 @@ final class PickedPointCheck {
                 parameters.cellRadius() * Coastlines.DEFAULT_RULES.bridgeReachMultiple()),
             parameters,
             shaping);
-    }
-
-    // How a pocket is divided, as the viewer has those sliders set - so a verdict here
-    // describes the shapes a reader would see in the window rather than a second division.
-    private static VoidSections.SectionRules buildViewerSections(LaidCoast laid) {
-
-        return new VoidSections.SectionRules(
-            ViewerSettings.VOID_SPAN_DEFAULT * laid.parameters().cellRadius(),
-            ViewerSettings.MIN_SECTION_DEFAULT / ViewerSettings.MIN_SECTION_SCALE);
     }
 
     // Which hole of the union holds a point, if any. "None" is the answer that matters most:
@@ -529,7 +520,7 @@ final class PickedPointCheck {
     // sectors were looked at.
     private static List<double[]> readPicks(String sectorName) {
 
-        var file = ViewerPickLog.getPickFile();
+        var file = PickLog.getPickFile();
         var picks = new ArrayList<double[]>();
 
         if (!Files.exists(file)) {

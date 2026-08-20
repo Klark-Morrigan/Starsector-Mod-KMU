@@ -220,21 +220,6 @@ final class CoastPocketFaults {
         return nearest == Double.MAX_VALUE ? 0 : nearest;
     }
 
-    /**
-     * One coast pocket and the reaches of coast that closed it.
-     *
-     * <p>Paired because neither judges the other on its own: a run of outline is only over the
-     * line when it is over the line THIS pocket closes on, and a reach only accuses the pocket
-     * it actually walled.
-     *
-     * @param pocket  the pocket
-     * @param reaches the coast reaches it closes on
-     */
-    record WalledPocket(
-        VoidPockets.VoidPocket pocket,
-        List<DiscUnionBoundary.Chord> reaches) {
-    }
-
     // Whether a point lies alongside a reach rather than off one of its ends.
     //
     // A reach is a SEGMENT. The channel it holds a pocket off by means nothing out past where

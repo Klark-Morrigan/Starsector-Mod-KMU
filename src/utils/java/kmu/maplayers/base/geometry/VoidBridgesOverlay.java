@@ -20,7 +20,7 @@ final class VoidBridgesOverlay {
 
     private final ViewerSettings settings;
 
-    private List<CellGaps.CellGap> bridges = List.of();
+    private List<CellGap> bridges = List.of();
     private List<List<double[]>> captured = List.of();
 
     VoidBridgesOverlay(ViewerSettings settings) {
@@ -47,7 +47,7 @@ final class VoidBridgesOverlay {
                 fixture.getSites(),
                 bridges,
                 settings.parameters,
-                ViewerPainting.resolvePocketShaping(settings));
+                settings.resolvePocketShaping());
     }
 
     /**
@@ -60,13 +60,13 @@ final class VoidBridgesOverlay {
      */
     void paintFills(Graphics2D g2) {
 
-        g2.setStroke(new BasicStroke(ViewerPainting.FILL_EDGE_STROKE));
+        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
 
         for (var outline : captured) {
 
-            ViewerPainting.paintFilledShape(
+            MapPainting.paintFilledShape(
                 g2,
-                ViewerPainting.buildPath(outline),
+                MapPainting.buildPath(outline),
                 settings.wideVoidColour,
                 settings.voidCellOpacity,
                 settings.wideVoidEdge);
@@ -83,12 +83,12 @@ final class VoidBridgesOverlay {
      */
     void paintSpans(Graphics2D g2) {
 
-        g2.setStroke(new BasicStroke(ViewerPainting.SPAN_STROKE));
-        g2.setColor(ViewerPainting.applyAlpha(
-            settings.sectionCutColour, ViewerPainting.OPAQUE_ALPHA));
+        g2.setStroke(new BasicStroke(MapLook.SPAN_STROKE));
+        g2.setColor(MapPainting.applyAlpha(
+            settings.sectionCutColour, MapLook.OPAQUE_ALPHA));
 
         for (var bridge : bridges) {
-            g2.draw(ViewerPainting.buildTrimmedSpan(bridge, 0));
+            g2.draw(MapPainting.buildTrimmedSpan(bridge, 0));
         }
     }
 }

@@ -499,7 +499,7 @@ final class VoidRegionsDump {
     // cells have genuinely closed and a wall the drawing's own inset refused.
     private static void reportBridgeRefusals(
             List<double[]> sites,
-            List<CellGaps.CellGap> bridges) {
+            List<CellGap> bridges) {
 
         var walls = VoidBridgePockets.buildBridgeWalls(bridges, SHIPPED);
 
@@ -537,7 +537,7 @@ final class VoidRegionsDump {
     // The middle of a bridge, which is the point asked of the pockets when deciding whether
     // that bridge spans void any of them encloses. The middle rather than either end: an end
     // sits on a cell's own border, where every pocket has already given up the channel.
-    private static double[] findMidpoint(CellGaps.CellGap bridge) {
+    private static double[] findMidpoint(CellGap bridge) {
 
         return new double[] {
             (bridge.start()[0] + bridge.end()[0]) / 2,

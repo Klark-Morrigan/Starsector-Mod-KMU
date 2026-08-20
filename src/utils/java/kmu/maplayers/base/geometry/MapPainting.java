@@ -10,42 +10,18 @@ import java.util.List;
 /**
  * How this package puts a shape on screen: the handful of Java2D moves every drawing shares.
  *
- * <p>Gathered because the map is drawn by more than one thing now - the cells and clusters
- * by the viewer itself, and each rival void construction by its own overlay - and all of
- * them build a path from a ring, fill it under an opaque outline, and tint an owner. Left
- * with whichever class happened to need them first, the overlays would have had to reach
- * back into the viewer for them, which is the wrong way round: an overlay is drawn by the
- * window, not the other way about.
+ * <p>Gathered because the map is drawn by more than one thing - the cells and clusters by the
+ * viewer itself, each rival void construction by its own overlay, and the whole map again by
+ * the rasteriser that turns the SVG into a picture - and all of them build a path from a ring,
+ * fill it under an opaque outline, and tint a colour. Left with whichever class happened to
+ * need them first, every other drawing would have had to reach back into the window for them,
+ * which is the wrong way round.
  *
- * <p>A setting is read in two places only, and both are questions every overlay has to answer
- * the same way within one frame: an owner's colour, which needs to know whether jitter is on
- * and how far it spreads, and which map of the void is being drawn. Two overlays disagreeing
- * about either would put two different sectors on screen at once.
+ * <p>Named for the map rather than for the window for the same reason: nothing here knows what
+ * the sliders are set to. What a setting comes to mean is {@link ViewerSettings}' own business,
+ * and what the map is painted WITH is {@link MapLook}'s.
  */
-final class ViewerPainting {
-
-    // Wider than a cell edge, because a span is read against a fill rather than against the
-    // black, and it has to stay findable at the zoom where a whole pocket fits on screen.
-    static final float SPAN_STROKE = 120f;
-
-    // How wide the mark on a run that crosses a cell is drawn. Heavier than any other line
-    // here, because it has to be findable at the zoom where a whole sector fits on screen -
-    // and shared, because two drawings marking the same fault at two weights read as two
-    // different findings.
-    static final float CROSSING_STROKE = 240f;
-
-    // How wide a cell's own border is drawn. Shared because both drawings of this map use it
-    // and because it is not only a look: it is how far either side of the true edge the drawn
-    // edge reaches, which decides what a reader can see being on the wrong side of it.
-    // A fill's own outline is read against the fill rather than against the black, so it
-    // wants a fraction of the weight a line crossing open void needs. Here rather than on
-    // each overlay that draws one: two copies of a stroke width is how two shapes come to be
-    // drawn at weights that were meant to match and quietly do not.
-    static final float FILL_EDGE_STROKE = SPAN_STROKE / 4f;
-
-    static final float RING_STROKE = 90f;
-
-    static final int OPAQUE_ALPHA = 255;
+final class MapPainting {
 
     private static final int HUE_RANGE = 360;
 
@@ -57,26 +33,7 @@ final class ViewerPainting {
     // its value.
     private static final int HASH_MIX_MULTIPLIER = 0x9E3779B9;
 
-    private ViewerPainting() {
-    }
-
-    // One chosen colour for every owner, optionally spread in brightness so neighbours can
-    // still be told apart. Brightness rather than hue on purpose: a hue jitter makes each
-    // owner look like a different faction, which is what the shipped palette means, while a
-    // brightness jitter reads as one thing seen in several places.
-    static Color resolveOwnedColour(ViewerSettings settings, String ownerId) {
-        return settings.jitterOwned
-            ? jitterBrightness(settings.ownedCellColour, ownerId.hashCode(), settings.jitterStrength)
-            : settings.ownedCellColour;
-    }
-
-    // Which map of the void the overlays are asking for. Shared rather than read at each of
-    // them, because the two constructions drawn together have to be asked the same question
-    // within one frame or they are describing different maps.
-    static VoidPockets.PocketShaping resolvePocketShaping(ViewerSettings settings) {
-        return settings.showPocketsAtTrueExtent
-            ? VoidPockets.PocketShaping.AT_TRUE_EXTENT
-            : VoidPockets.PocketShaping.WITH_CHANNEL;
+    private MapPainting() {
     }
 
     static Color jitterBrightness(Color base, int seed, float strength) {
@@ -106,7 +63,7 @@ final class ViewerPainting {
 
         g2.setColor(applyAlpha(fill, fillAlpha));
         g2.fill(shape);
-        g2.setColor(applyAlpha(edge, OPAQUE_ALPHA));
+        g2.setColor(applyAlpha(edge, MapLook.OPAQUE_ALPHA));
         g2.draw(shape);
     }
 
@@ -168,7 +125,7 @@ final class ViewerPainting {
      *             needs
      * @return the line to draw
      */
-    static Line2D buildTrimmedSpan(CellGaps.CellGap span, double trim) {
+    static Line2D buildTrimmedSpan(CellGap span, double trim) {
 
         var runX = span.end()[0] - span.start()[0];
         var runY = span.end()[1] - span.start()[1];

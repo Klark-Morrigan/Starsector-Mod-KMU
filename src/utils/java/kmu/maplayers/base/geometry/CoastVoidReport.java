@@ -53,7 +53,7 @@ final class CoastVoidReport {
             traced.coasts().size(),
             CoastMeasures.countCoastMarks(traced),
             points,
-            CoastCrossings.findVisibleCrossings(traced, ViewerPainting.RING_STROKE).size(),
+            CoastCrossings.findVisibleCrossings(traced, MapLook.RING_STROKE).size(),
             CoastCrossings.measureDeepestIncursion(traced));
 
         System.out.printf(
@@ -161,7 +161,7 @@ final class CoastVoidReport {
 
     // The coast's pockets at one shaping, with every site taken as unowned - a report about
     // the SHAPES, which move with a colouring if one is handed in.
-    private static List<CoastPocketFaults.WalledPocket> findTrappedPockets(
+    private static List<WalledPocket> findTrappedPockets(
             LaidCoast laid,
             VoidPockets.PocketShaping shaping) {
 
@@ -175,14 +175,14 @@ final class CoastVoidReport {
     // rings the map actually draws, which is the only line that answers the question.
     private static List<CoastPocketFaults.Spill> findSpillsOf(
             LaidCoast laid,
-            List<CoastPocketFaults.WalledPocket> pockets) {
+            List<WalledPocket> pockets) {
 
         return CoastPocketFaults.findSpills(
             pockets, Coastlines.collectCoastRings(laid.traced()));
     }
 
     // How many pockets have anything to draw, which the channel is what decides.
-    private static int countDrawn(List<CoastPocketFaults.WalledPocket> pockets) {
+    private static int countDrawn(List<WalledPocket> pockets) {
 
         var drawn = 0;
 
@@ -198,7 +198,7 @@ final class CoastVoidReport {
     // Every pocket the channel left nothing to draw for, named rather than only counted. One
     // wider than the channel would be a hole in the map, so the span beside it is what says
     // whether the channel really closed it over.
-    private static void reportEachEmptyPocket(List<CoastPocketFaults.WalledPocket> pockets) {
+    private static void reportEachEmptyPocket(List<WalledPocket> pockets) {
 
         for (var walled : pockets) {
 

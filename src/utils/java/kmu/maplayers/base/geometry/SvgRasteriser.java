@@ -289,7 +289,7 @@ final class SvgRasteriser {
         var centreY = Double.parseDouble(findAttribute(CENTRE_Y, attributes, "0"));
         var radius = Double.parseDouble(findAttribute(RADIUS, attributes, "0"));
 
-        return ViewerPainting.buildCircle(new double[] {centreX, centreY}, radius);
+        return MapPainting.buildCircle(new double[] {centreX, centreY}, radius);
     }
 
     // The three notations the writer uses: a short hex, a long hex, and the hsl the owner

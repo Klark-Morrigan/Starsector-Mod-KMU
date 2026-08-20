@@ -41,30 +41,6 @@ final class CellGaps {
     }
 
     /**
-     * One corridor of void between two cells.
-     *
-     * <p>The single currency for a straight run across void between two cells, whatever is
-     * being done with it - offered as somewhere to divide a pocket, kept as void a pair
-     * holds, or drawn. Those are the same line measured the same way, so they are the same
-     * value; naming them apart per construction only invites two of them to drift.
-     *
-     * @param fromSite which cell it leaves
-     * @param toSite   which cell it meets
-     * @param start    where it meets the first cell's reach
-     * @param end      where it meets the second's
-     * @param width    how far apart the two cells are across it, at the reach that defines
-     *                 the void rather than any reach something is drawn at, so two gaps stay
-     *                 comparable when the channel width changes
-     */
-    record CellGap(
-        int fromSite,
-        int toSite,
-        double[] start,
-        double[] end,
-        double width) {
-    }
-
-    /**
      * The corridor between two cells, at their common reach.
      *
      * @param sites    the sites

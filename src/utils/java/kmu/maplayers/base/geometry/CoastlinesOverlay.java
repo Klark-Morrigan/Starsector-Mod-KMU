@@ -26,7 +26,7 @@ final class CoastlinesOverlay {
     // rebuilt any of these would be drawing marks measured against geometry the rest of the
     // frame is not being drawn from.
     private List<CoastCrossings.Penetration> penetrations = List.of();
-    private List<CoastPocketFaults.WalledPocket> pockets = List.of();
+    private List<WalledPocket> pockets = List.of();
     private List<CoastPocketFaults.Spill> spills = List.of();
 
     // Held from the last trace so the marks are drawn against the same discs the coast was
@@ -63,7 +63,7 @@ final class CoastlinesOverlay {
 
         penetrations = CoastCrossings.findVisibleCrossings(
             traced,
-            ViewerPainting.RING_STROKE);
+            MapLook.RING_STROKE);
 
         pockets = CoastPockets.findCoastPockets(
             traced,
@@ -73,7 +73,7 @@ final class CoastlinesOverlay {
                 new VoidSections.SectionRules(
                     settings.voidSpanMultiple * settings.parameters.cellRadius(),
                     settings.minSectionShare),
-                ViewerPainting.resolvePocketShaping(settings)));
+                settings.resolvePocketShaping()));
 
         spills = CoastPocketFaults.findSpills(
             pockets,
@@ -103,14 +103,14 @@ final class CoastlinesOverlay {
      */
     void paintPocketFills(Graphics2D g2) {
 
-        g2.setStroke(new BasicStroke(ViewerPainting.FILL_EDGE_STROKE));
+        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
 
         for (var walled : pockets) {
             for (var outline : walled.pocket().outlines()) {
 
-                ViewerPainting.paintFilledShape(
+                MapPainting.paintFilledShape(
                     g2,
-                    ViewerPainting.buildPath(outline),
+                    MapPainting.buildPath(outline),
                     settings.coastlineColour,
                     settings.voidCellOpacity,
                     settings.coastlineColour);
@@ -129,13 +129,13 @@ final class CoastlinesOverlay {
             return;
         }
 
-        g2.setStroke(new BasicStroke(ViewerPainting.SPAN_STROKE));
-        g2.setColor(ViewerPainting.applyAlpha(
+        g2.setStroke(new BasicStroke(MapLook.SPAN_STROKE));
+        g2.setColor(MapPainting.applyAlpha(
             settings.coastlineColour,
-            ViewerPainting.OPAQUE_ALPHA));
+            MapLook.OPAQUE_ALPHA));
 
         for (var coast : traced.coasts()) {
-            g2.draw(ViewerPainting.buildPath(Coastlines.collectPoints(coast)));
+            g2.draw(MapPainting.buildPath(Coastlines.collectPoints(coast)));
         }
         paintPenetrations(g2);
         paintSpills(g2);
@@ -146,13 +146,13 @@ final class CoastlinesOverlay {
     // whole shape points at the right part as loudly as at the wrong one.
     private void paintSpills(Graphics2D g2) {
 
-        g2.setStroke(new BasicStroke(ViewerPainting.CROSSING_STROKE));
-        g2.setColor(ViewerPainting.applyAlpha(
+        g2.setStroke(new BasicStroke(MapLook.CROSSING_STROKE));
+        g2.setColor(MapPainting.applyAlpha(
             settings.coastCrossingColour,
-            ViewerPainting.OPAQUE_ALPHA));
+            MapLook.OPAQUE_ALPHA));
 
         for (var spill : spills) {
-            g2.draw(ViewerPainting.buildPath(spill.run()));
+            g2.draw(MapPainting.buildPath(spill.run()));
         }
     }
 
@@ -165,23 +165,23 @@ final class CoastlinesOverlay {
             return;
         }
 
-        g2.setStroke(new BasicStroke(ViewerPainting.SPAN_STROKE));
-        g2.setColor(ViewerPainting.applyAlpha(
+        g2.setStroke(new BasicStroke(MapLook.SPAN_STROKE));
+        g2.setColor(MapPainting.applyAlpha(
             settings.piercedCellColour,
-            ViewerPainting.OPAQUE_ALPHA));
+            MapLook.OPAQUE_ALPHA));
 
         for (var penetration : penetrations) {
             for (var circle : penetration.circles()) {
 
-                g2.draw(ViewerPainting.buildCircle(
+                g2.draw(MapPainting.buildCircle(
                     traced.union().sites().get(circle), traced.union().reach()));
             }
         }
 
-        g2.setStroke(new BasicStroke(ViewerPainting.CROSSING_STROKE));
-        g2.setColor(ViewerPainting.applyAlpha(
+        g2.setStroke(new BasicStroke(MapLook.CROSSING_STROKE));
+        g2.setColor(MapPainting.applyAlpha(
             settings.coastCrossingColour,
-            ViewerPainting.OPAQUE_ALPHA));
+            MapLook.OPAQUE_ALPHA));
 
         for (var penetration : penetrations) {
 

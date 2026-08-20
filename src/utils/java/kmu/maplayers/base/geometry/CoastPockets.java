@@ -49,7 +49,7 @@ final class CoastPockets {
      *                     reach applied afterwards
      * @return the pockets, each with a closed outline and the reaches that walled it
      */
-    static List<CoastPocketFaults.WalledPocket> findCoastPockets(
+    static List<WalledPocket> findCoastPockets(
             Coastlines.TracedCoasts traced,
             List<String> ownerBySite,
             VoidPockets.PocketRules rules) {
@@ -79,7 +79,7 @@ final class CoastPockets {
         // spans a real gap and is still on the boundary at a wider reach. A reach of coast is
         // tangent to the fills and is not, so the two traces lay different walls, their holes
         // do not correspond, and the match silently drops the ones that fail.
-        var pockets = new ArrayList<CoastPocketFaults.WalledPocket>();
+        var pockets = new ArrayList<WalledPocket>();
 
         for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
                 union, walls, parameters.boundSegments())) {
@@ -91,7 +91,6 @@ final class CoastPockets {
             }
 
             // What the trace hands back is what gets drawn. Nothing is cut afterwards.
-            //
             //
             // The channel against the reach is not something to correct for: the wall holds
             // its two sides half a channel off its own line, so the outline comes back inset
@@ -114,7 +113,7 @@ final class CoastPockets {
             // and the cells around it. That is what an empty outline already means here, and
             // dropping the pocket instead would hide the one thing worth knowing: that the
             // channel closed it over.
-            pockets.add(new CoastPocketFaults.WalledPocket(
+            pockets.add(new WalledPocket(
                 VoidPockets.shapeVoidPocket(
                     hole,
                     outline.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA

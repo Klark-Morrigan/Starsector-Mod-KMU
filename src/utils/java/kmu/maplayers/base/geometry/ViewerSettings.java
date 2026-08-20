@@ -21,29 +21,18 @@ import java.awt.Color;
  */
 final class ViewerSettings {
 
-    static final Color OWNED_CELL_DEFAULT = new Color(0x4a, 0x8a, 0xd0);
-    static final Color UNOWNED_CELL_DEFAULT = new Color(0x55, 0x55, 0x55);
-    static final Color UNBOUNDED_CELL_DEFAULT = new Color(0x30, 0x30, 0x38);
-    static final Color VOID_CELL_DEFAULT = new Color(0xb0, 0x8a, 0x30);
-    static final Color WIDE_VOID_DEFAULT = new Color(0x30, 0xa0, 0xb0);
-    static final Color CHANNEL_DEFAULT = new Color(0x22, 0x22, 0x26);
-
-    // The line down the middle of a channel: the true border two neighbouring cells share,
-    // which each of them insets away from by the same distance. Its own colour because it is
-    // its own thing - not the edge of anything drawn, but the line those edges were measured
-    // from, and the only place the partition itself is visible once the fills are in.
-    static final Color CENTRELINE_DEFAULT = new Color(0x50, 0x50, 0x58);
-
-    // Where a long pocket is cut into sections. Deliberately unlike anything else on the map:
-    // the cut is a proposal about where a division could go, not a thing that has been
-    // divided, and reading it as an existing border is the one mistake that would make the
-    // shape look right when it is not.
-    static final Color SECTION_CUT_DEFAULT = new Color(0xff, 0xd0, 0x40);
-
-    // The smoothed outer edge. Unlike anything else drawn, because it is a proposal about
-    // where the edge could be rather than an edge anything has: reading it as one of the
-    // shapes underneath is the one mistake that would make it look right when it is not.
-    static final Color COASTLINE_DEFAULT = new Color(0x70, 0xe0, 0x90);
+    // Read off the map's own look rather than restated. A colour written here as well is a
+    // second answer to "what is a coastline drawn in", and the window and the SVG then mark
+    // the same thing two different ways.
+    static final Color OWNED_CELL_DEFAULT = MapLook.OWNED_CELL;
+    static final Color UNOWNED_CELL_DEFAULT = MapLook.UNOWNED_CELL;
+    static final Color UNBOUNDED_CELL_DEFAULT = MapLook.UNBOUNDED_CELL;
+    static final Color VOID_CELL_DEFAULT = MapLook.VOID_CELL;
+    static final Color WIDE_VOID_DEFAULT = MapLook.WIDE_VOID;
+    static final Color CHANNEL_DEFAULT = MapLook.CHANNEL;
+    static final Color CENTRELINE_DEFAULT = MapLook.CENTRELINE;
+    static final Color SECTION_CUT_DEFAULT = MapLook.SECTION_CUT;
+    static final Color COASTLINE_DEFAULT = MapLook.COASTLINE;
 
     // Read off the coast's own defaults rather than restated here. What each of them means is
     // documented where it is declared; restating the NUMBER is how the sliders come to open
@@ -53,29 +42,25 @@ final class ViewerSettings {
 
     static final double COAST_MAX_SKIPS_DEFAULT = Coastlines.DEFAULT_RULES.maxSkips();
 
-    // The two halves of a coast crossing a cell, in colours nothing else on the map uses: the
-    // run that goes where it should not, and the cell it goes into. Diagnostic rather than
-    // decorative - when the construction is right, neither is ever drawn.
-    static final Color COAST_CROSSING_DEFAULT = new Color(0xff, 0x20, 0x50);
-    static final Color PIERCED_CELL_DEFAULT = new Color(0xff, 0x90, 0x20);
+    static final Color COAST_CROSSING_DEFAULT = MapLook.COAST_CROSSING;
+    static final Color PIERCED_CELL_DEFAULT = MapLook.PIERCED_CELL;
 
-    static final Color SITE_COLOUR = new Color(0x88, 0x88, 0x88);
+    static final Color SITE_COLOUR = MapLook.SITE;
 
-    // One cell across. A pocket no wider than a single cell has no two sides far enough
-    // apart for anything to reach between them, so there is nothing in it to divide.
-    static final double VOID_SPAN_DEFAULT = 2;
+    // Read off the shipped map rather than restated. These two and the report's own were
+    // the same pair of numbers written twice, which is how a window comes to divide the void
+    // differently from the report describing it, with neither of them saying so.
+    static final double VOID_SPAN_DEFAULT = ShippedMap.SECTION_LENGTH_IN_RADII;
     static final double VOID_SPAN_STEP_SCALE = 100.0;
 
     static final double BRIDGE_REACH_DEFAULT =
         Coastlines.DEFAULT_RULES.bridgeReachMultiple();
     static final double BRIDGE_REACH_STEP_SCALE = 100.0;
 
-    // Settled by eye against the sweep at the end of the void regions dump. Above it the
-    // only crossings leaving that much on both sides are chords over the open middle, which
-    // read as thrown across a pocket rather than dividing it; below it the tips come back
-    // into range, win on being narrowest, and leave one long piece uncut behind them.
-    static final double MIN_SECTION_DEFAULT = 40;
+    // The slider reads in per cent, so the shipped share is scaled up to meet it. Why that
+    // share is the one it is belongs with the share itself.
     static final double MIN_SECTION_SCALE = 100.0;
+    static final double MIN_SECTION_DEFAULT = ShippedMap.MIN_SECTION_SHARE * MIN_SECTION_SCALE;
 
     static final float JITTER_DEFAULT = 35;
     static final double JITTER_SCALE = 100.0;
@@ -137,4 +122,24 @@ final class ViewerSettings {
     boolean showUnboundedCells;
     
     SectorGeometryParameters parameters = SectorGeometryParameters.createDefaults();
+
+    // One chosen colour for every owner, optionally spread in brightness so neighbours can
+    // still be told apart. Brightness rather than hue on purpose: a hue jitter makes each
+    // owner look like a different faction, which is what the shipped palette means, while a
+    // brightness jitter reads as one thing seen in several places.
+    Color resolveOwnedColour(String ownerId) {
+        return jitterOwned
+            ? MapPainting.jitterBrightness(
+                ownedCellColour, ownerId.hashCode(), jitterStrength)
+            : ownedCellColour;
+    }
+
+    // Which map of the void the overlays are asking for. Asked of the settings rather than
+    // worked out at each overlay, because the two constructions drawn together have to be
+    // asked the same question within one frame or they are describing different maps.
+    VoidPockets.PocketShaping resolvePocketShaping() {
+        return showPocketsAtTrueExtent
+            ? VoidPockets.PocketShaping.AT_TRUE_EXTENT
+            : VoidPockets.PocketShaping.WITH_CHANNEL;
+    }
 }

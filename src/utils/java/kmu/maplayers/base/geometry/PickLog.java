@@ -22,12 +22,12 @@ import java.util.Locale;
  * that session, and a file that accumulated across runs would put yesterday's answers beside
  * today's with nothing to tell them apart.
  */
-final class ViewerPickLog {
+final class PickLog {
 
     private static final Path PICK_FILE =
         Path.of("build", "reports", "political-map", "viewer-picks.txt");
 
-    private ViewerPickLog() {
+    private PickLog() {
     }
 
     /**
@@ -35,7 +35,7 @@ final class ViewerPickLog {
      *
      * @return the log
      */
-    static ViewerPickLog startPickLog() {
+    static PickLog startPickLog() {
 
         try {
             Files.createDirectories(PICK_FILE.getParent());
@@ -43,7 +43,7 @@ final class ViewerPickLog {
         } catch (IOException e) {
             throw new UncheckedIOException("cannot open " + PICK_FILE.toAbsolutePath(), e);
         }
-        return new ViewerPickLog();
+        return new PickLog();
     }
 
     /**

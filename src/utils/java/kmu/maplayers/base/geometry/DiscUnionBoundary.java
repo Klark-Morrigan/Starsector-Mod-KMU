@@ -170,7 +170,7 @@ final class DiscUnionBoundary {
      * @param bridges the bridges, as {@link VoidBridges} found them
      * @return one chord per bridge, in the order they were offered
      */
-    static List<Chord> buildChordsFrom(List<CellGaps.CellGap> bridges) {
+    static List<Chord> buildChordsFrom(List<CellGap> bridges) {
 
         var chords = new ArrayList<Chord>(bridges.size());
 
