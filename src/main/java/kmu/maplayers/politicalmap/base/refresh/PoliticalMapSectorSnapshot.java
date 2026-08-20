@@ -127,10 +127,13 @@ public record PoliticalMapSectorSnapshot(
             // so a system settled by an unregistered one alone would read as empty here while the
             // drawn set - which asks the rule - draws it. The fingerprint would then never move
             // for it, and the map would go on showing whatever it last built there.
+            //
+            // Both arms are read here and handed over, the rule owning the composition alone: the
+            // ruin is in hand for the fingerprint salt anyway, and the habitation read comes off
+            // the one walk of the system above rather than off a second one inside the rule.
             var isInhabited = MapVisibility.isInhabited(
-                systemColonies,
-                hasRevealedDecivilised,
-                visibilityRules);
+                systemColonies.hasInhabitingColony(visibilityRules.colonyVisibility()),
+                hasRevealedDecivilised);
 
             var footprintByFactionId = KnownMarketFootprints.readByFaction(
                 systemColonies,

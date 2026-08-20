@@ -241,23 +241,11 @@ class MapVisibilityIntegrationTest {
 
         @Test
         void isInhabitedHonoursARevealedRuinTheCallerAlreadyRead() {
-            // The pre-read entry point: a caller that has the ruin flag in hand (the sector
-            // scan, which needs it to salt the fingerprint) hands it over rather than paying a
-            // second walk of every planet. A dropped argument would look identical everywhere
-            // else, every other case passing a colony set that answers on its own.
-            assertThat(MapVisibility.isInhabited(
-                    Colonies.NONE,
-                    IS_REVEALED_DECIVILISED,
-                    MapVisibilityRules.BASE))
-                .isTrue();
-        }
-
-        @Test
-        void isInhabitedHonoursTheRuinArmForACallerThatResolvedHabitationItself() {
-            // The composed entry a layer takes when its own pass already answered habitation. The
-            // ruin is the arm that answer cannot carry - nobody owns a dead world, so no colony
-            // read reports one - and a layer left to compose the two itself would be the one place
-            // it could be dropped.
+            // The composed entry, taken by every caller that read both facts for itself - the
+            // sector scan, which holds the ruin flag anyway to salt the fingerprint, and a render
+            // pass, which answers habitation off its own walk. The ruin is the arm no colony read
+            // can carry, nobody owning a dead world, so this is the one place it could be dropped
+            // and the only place the composition is stated.
             assertThat(MapVisibility.isInhabited(false, IS_REVEALED_DECIVILISED))
                 .isTrue();
             assertThat(MapVisibility.isInhabited(false, false))

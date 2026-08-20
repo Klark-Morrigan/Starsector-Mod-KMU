@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.math.hashing.Avalanche;
-import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
@@ -109,15 +108,12 @@ public final class MapVisibility {
     }
 
     /**
-     * Whether the system counts as inhabited - a colony somebody lives on that the player
-     * knows of, or a revealed decivilised planet, the first of those judged by the rules'
-     * colony half. Drives admission to the map independently of how (or whether) the system
-     * can be reached. A revealed decivilised planet counts under any rules - it is always
-     * known once revealed.
+     * Whether the system counts as inhabited, walking it for both facts - the form for a caller
+     * with a sector and a system and nothing else read yet.
      *
-     * <p>Walks the system for its colonies and for its ruins, so a caller already holding
-     * either - a pass that read the system once for everything it asks of it - wants the
-     * form below instead.
+     * <p>Two walks: the colony selection, and every planet in the system for a ruin. A caller
+     * that has already made either - a pass that read the system once for everything it asks of
+     * it - states the composition through the form below instead of paying for them again.
      *
      * @param sector          the sector the system belongs to; null yields false
      * @param system          the system to test; null yields false
@@ -132,58 +128,29 @@ public final class MapVisibility {
             MapVisibilityRules visibilityRules) {
 
         return isInhabited(
-            SystemColonies.readColoniesIn(sector, system),
-            DecivilisedMarkets.hasRevealedDecivilisedPlanet(system),
-            visibilityRules);
+            SystemColonies
+                .readColoniesIn(sector, system)
+                .hasInhabitingColony(visibilityRules.colonyVisibility()),
+            DecivilisedMarkets.hasRevealedDecivilisedPlanet(system));
     }
 
     /**
-     * Whether the system counts as inhabited, answered off the two reads a caller may
-     * already have made rather than repeating either.
+     * Whether the system counts as inhabited: somebody the player knows of lives there, or a dead
+     * colony the player has already seen does. The rule itself, and the only statement of it.
      *
-     * <p>The rule itself, and the one the sector-taking form above resolves its inputs for.
-     * Stated over the shared colony set so that "somebody lives here" is the habitation
-     * projection being non-empty - the very set a ribbon counts runs from - with the revealed
-     * dead colony added, which no colony read answers. Two surfaces drawn from one system can
-     * then no longer disagree about whether it holds anybody.
+     * <p>A disjunction because the two are two ways a system holds people rather than two
+     * requirements - and the ruin is the arm no colony read can answer, nobody owning a dead
+     * world, which is why it has to be composed rather than looked up.
      *
      * <p>Habitation rather than the wider known listing, which is what a hover box names its
      * factions out of. The two part over the derelict: a hulk somebody has seen belongs in a
      * listing of what the player may be told about, and nobody has ever lived on it, so a
      * system holding one and nothing else is empty space with a wreck in it.
      *
-     * <p>The ruin arrives as a flag for the same reason {@link #shouldAppearOnMap} takes
-     * inhabitation as one: the sector scan reads it anyway, to salt the drawn system's
-     * fingerprint, and re-deriving it here would walk every planet in the system a second time.
-     *
-     * @param colonies              the system's colonies, as one walk of it reported
-     * @param isRevealedDecivilised whether the system holds a dead colony the player has
-     *                              already seen; counts under any rules, a revealed ruin
-     *                              being known for good
-     * @param visibilityRules       the pass's visibility rules; only the colony half is
-     *                              read here, since forcing a system onto the map does not
-     *                              make it inhabited
-     * @return true when the system holds a colony somebody lives on or a known dead colony
-     */
-    public static boolean isInhabited(
-            Colonies colonies,
-            boolean isRevealedDecivilised,
-            MapVisibilityRules visibilityRules) {
-
-        return isInhabited(
-            colonies.hasInhabitingColony(visibilityRules.colonyVisibility()),
-            isRevealedDecivilised);
-    }
-
-    /**
-     * Whether the system counts as inhabited, composed from the two facts a caller holding a
-     * pass's own reading of the system already has - so a layer that resolved habitation off its
-     * pass states the composition through this rather than restating it beside it.
-     *
-     * <p>The composition is the whole of what this owns, and it is a disjunction because the two
-     * facts are two ways a system holds people rather than two requirements: a live colony is one,
-     * and a ruin the player has already seen is the other, which no colony read answers because
-     * nobody owns a dead world.
+     * <p>Both arrive as facts already read rather than as a colony set and a system to walk. Every
+     * caller with a pass has them - the sector scan reads the ruin anyway, to salt a drawn
+     * system's fingerprint, and a render pass answers habitation off its own one walk - so taking
+     * the answers is what keeps this from being a second walk hidden inside a rule.
      *
      * @param hasInhabitingColony   whether the system holds a colony somebody lives on that the
      *                              player may be shown, as the caller's own habitation read
