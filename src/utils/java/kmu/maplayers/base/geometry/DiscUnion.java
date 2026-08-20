@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segments;
 
 import java.util.List;
@@ -23,6 +24,46 @@ import java.util.List;
 record DiscUnion(
     List<double[]> sites,
     double reach) {
+
+    /**
+     * How far inside a disc something may reach and still count as touching it rather than
+     * entering it.
+     *
+     * <p>Zero slack is not an option here, because the interesting points are exactly ON a
+     * circle. Two discs cross at a point that lies on both of them, and every line the coast
+     * draws begins and ends on a border - so without a hair of slack each of those lands a
+     * rounding error inside its neighbour and is read as buried. The wall under such a line is
+     * then thrown away while the line itself is still drawn, which is a fill missing under a
+     * coast that says the void was shut in.
+     *
+     * <p>One number for every such question rather than one per asker. Whether a run may be
+     * drawn and whether a wall under it is on the boundary are the same question asked from
+     * two sides, and at different slacks the first approves precisely what the second refuses -
+     * a disagreement neither can detect, because each is consistent with itself.
+     *
+     * <p>A unit against a reach of thousands: far too small to admit anything that genuinely
+     * overlaps, far too large for any rounding to cross.
+     */
+    static final double TOUCHING_TOLERANCE = 1;
+
+    /**
+     * How far inside one disc a point lies.
+     *
+     * <p>Asked of the point rather than of an angle, because being inside a disc is what
+     * "buried" means and needs no interval arithmetic to agree with.
+     *
+     * @param point  the {x, y} point to measure
+     * @param site   which disc to measure against
+     * @param toEdge how far out that disc's edge is taken to be. The union's own reach for
+     *               anything sitting on it, and the point's own distance from its cell for a
+     *               landing that sits on a NARROWER circle than the one being traced - which
+     *               is what a coast's reaches do, their ends being points on the cells' own
+     *               borders wherever the trace is running
+     * @return how far past that edge the point sits, negative when it is outside
+     */
+    double measureCoverOf(double[] point, int site, double toEdge) {
+        return toEdge - Points.computeDistance(point, sites.get(site));
+    }
 
     /**
      * How far a straight segment reaches inside one disc.

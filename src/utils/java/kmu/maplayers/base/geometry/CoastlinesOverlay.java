@@ -25,7 +25,6 @@ final class CoastlinesOverlay {
     private List<CoastCrossings.Penetration> penetrations = List.of();
     private List<CoastPocketFaults.WalledPocket> pockets = List.of();
     private List<CoastPocketFaults.Spill> spills = List.of();
-    private List<CoastPocketFaults.Overrun> overruns = List.of();
 
     // Held from the last trace so the marks are drawn against the same discs the coast was
     // measured against, rather than against whatever the sliders have been moved to since.
@@ -51,7 +50,6 @@ final class CoastlinesOverlay {
             penetrations = List.of();
             pockets = List.of();
             spills = List.of();
-            overruns = List.of();
             return;
         }
 
@@ -77,14 +75,6 @@ final class CoastlinesOverlay {
         spills = CoastPocketFaults.findSpills(
             pockets,
             Coastlines.collectCoastRings(traced));
-
-        // Only where the outline was held to each reach's span in the first place. At a
-        // pocket's true extent nothing cuts it, so running past the end of a reach is what a
-        // hole does rather than a fault to mark - and marking it there put the heaviest stroke
-        // on the map through a pocket sitting a channel and more inside the coast.
-        overruns = ViewerPainting.resolvePocketShaping(settings).isAtTrueExtent()
-            ? List.of()
-            : CoastPocketFaults.findOverruns(pockets, traced.union().sites());
     }
 
     // The knobs as the sliders currently stand. Read once per refresh rather than rebuilt at
@@ -160,10 +150,6 @@ final class CoastlinesOverlay {
 
         for (var spill : spills) {
             g2.draw(ViewerPainting.buildPath(spill.run()));
-        }
-
-        for (var overrun : overruns) {
-            g2.draw(ViewerPainting.buildPath(overrun.run()));
         }
     }
 

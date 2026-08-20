@@ -27,11 +27,6 @@ final class PickedPointCheck {
     // How many ways out to try, how big a stride to take, and how far counts as out. The
     // stride is well under a cell so a walk cannot step over one, and the range is wider than
     // either fixture, so a walk that runs the whole way has genuinely left the sector.
-    // How near two of the coast's landings on one cell must be to count as a tight turn: a
-    // mouth's width, which is how far round a circle a tangent wall must go to be a channel
-    // clear of its own line.
-    private static final double TIGHT_TURN_WITHIN = 2000;
-
     private static final int ESCAPE_DIRECTIONS = 72;
     private static final double ESCAPE_STEP = 250;
     private static final double ESCAPE_RANGE = 250_000;
@@ -42,249 +37,23 @@ final class PickedPointCheck {
     /**
      * Reports what the constructions make of every point picked on one sector.
      *
-     * <p>Run at the shipped knobs, which the header line states, so that a verdict here and a
-     * number in the rest of the report describe one map. A pick taken with the viewer's
-     * sliders moved can therefore disagree with the window, and the knobs printed beside it
-     * are what says so.
+     * <p>Run at the shipped knobs, which the rest of the report states, so that a verdict here
+     * and a number elsewhere in it describe one map. A pick taken with the viewer's sliders
+     * moved can therefore disagree with the window.
      *
      * @param fixture    the sector the picks were taken on
      * @param sectorName its name, which the log records against every pick
+     * @param laid       the coast with its walls down, as the rest of the report has them.
+     *                   Handed in rather than laid again here, because the walk answers about
+     *                   the walls it was given and a second laying is a second answer
      */
-    static void reportPickedPoints(SectorFixture fixture, String sectorName) {
+    static void reportPickedPoints(SectorFixture fixture, String sectorName, LaidCoast laid) {
 
         var picks = readPicks(sectorName);
 
-        if (picks.isEmpty()) {
-            return;
+        if (!picks.isEmpty()) {
+            reportEachPick(picks, fixture, laid);
         }
-
-        var parameters = SectorGeometryParameters.createDefaults();
-        var sites = fixture.getSites();
-        var traced = Coastlines.traceSectorCoasts(
-            sites, parameters, Coastlines.DEFAULT_RULES);
-
-        // Built once and passed down. Every verdict below asks what the walk did with ONE
-        // wall, and the walk answers about the wall it was handed - so a second build of the
-        // same lines is a set of walls that no verdict can be about, however equal they look.
-        var offered = CoastPockets.buildCoastWalls(traced);
-        var walls = layWalls(traced, offered);
-
-        reportCoastWallRefusals(traced, parameters, offered, walls);
-        reportEachPick(picks, fixture, traced, parameters, offered, walls);
-    }
-
-    // Why the coast's own reaches are not laid, counted by reason at each reach. One gap on
-    // screen is a case; a count says whether it is the case or one of dozens, which is what
-    // decides whether the rule that refused it is worth changing.
-    private static void reportCoastWallRefusals(
-            Coastlines.TracedCoasts traced,
-            SectorGeometryParameters parameters,
-            List<DiscUnionBoundary.Chord> offered,
-            DiscUnionBoundary.Walls walls) {
-
-        var sites = traced.union().sites();
-
-        var atCells = new DiscUnion(sites, parameters.cellRadius());
-
-        System.out.printf(
-            Locale.ROOT,
-            "coast reaches offered %d: at the cells' own reach %s | a channel out %s%n",
-            offered.size(),
-            summariseRefusals(atCells, walls, offered),
-            summariseRefusals(
-                VoidPockets.buildDrawnUnion(sites, parameters), walls, offered));
-
-        reportEachRefusal(atCells, walls, offered);
-        reportWallCrossings(atCells, VoidPockets.buildDrawnUnion(sites, parameters), walls);
-        reportWallSideStray(atCells, walls, parameters);
-        reportCoastTurns(atCells, walls);
-
-    }
-
-    // Every reach the walk turned down at the cells' own reach, one line each, with where it
-    // runs. A count says how many; a coast ring left open by one of them is found by knowing
-    // WHICH, and there are few enough of these to name them all.
-    private static void reportEachRefusal(
-            DiscUnion union,
-            DiscUnionBoundary.Walls walls,
-            List<DiscUnionBoundary.Chord> offered) {
-
-        for (var chord : offered) {
-
-            var refusal = DiscUnionBoundary.describeChordRefusal(union, walls, chord);
-
-            if (refusal.reason() == DiscUnionBoundary.RefusalReason.LAID) {
-                continue;
-            }
-            var line = chord.line();
-
-            System.out.printf(
-                Locale.ROOT,
-                "  reach %d-%d from %.0f,%.0f to %.0f,%.0f: %s%n",
-                chord.fromCircle(),
-                chord.toCircle(),
-                line.originX(),
-                line.originY(),
-                line.originX() + line.directionX(),
-                line.originY() + line.directionY(),
-                refusal);
-        }
-    }
-
-    // How many laid walls cross another, which is the one thing on this map bounded by
-    // something the walk never asks about. Counted at both reaches, since a pair that misses
-    // at one can meet at the other.
-    private static void reportWallCrossings(
-            DiscUnion atCells,
-            DiscUnion atDrawn,
-            DiscUnionBoundary.Walls walls) {
-
-        System.out.printf(
-            Locale.ROOT,
-            "walls crossing another wall: %d at the cells' own reach, %d a channel out%n",
-            DiscUnionBoundary.findWallCrossings(atCells, walls).size(),
-            DiscUnionBoundary.findWallCrossings(atDrawn, walls).size());
-    }
-
-    // How far a laid wall's two drawn sides sit from the wall itself.
-    //
-    // A wall's drawn ends are taken from the edges of the mouth it opens, and a mouth is as
-    // wide as the channel is - measured round the circle. Across a wall that leaves a cell
-    // along its tangent, being a channel clear of the line means travelling a long way round,
-    // so those edges can sit far from the wall while being the right distance from its line.
-    // The pocket then closes on a line that is nowhere near the coast it is supposed to close
-    // on, which is what a spike out to sea is.
-    //
-    // The bridges have this check already and read 0 - a bridge crosses its circles steeply,
-    // so its mouth edges are where the bridge is. This is the same question asked of the other
-    // kind of wall.
-    private static void reportWallSideStray(
-            DiscUnion union,
-            DiscUnionBoundary.Walls walls,
-            SectorGeometryParameters parameters) {
-
-        var worst = 0.0;
-        double[] worstAt = null;
-
-        for (var chord : DiscUnionBoundary.findAttachableChords(union, walls)) {
-
-            if (chord.kind() != DiscUnionBoundary.WallKind.COAST_REACH) {
-                continue;
-            }
-            var line = chord.line();
-            var start = new double[] {line.originX(), line.originY()};
-            var end = new double[] {
-                line.originX() + line.directionX(), line.originY() + line.directionY()};
-
-            for (var side : DiscUnionBoundary.findChordSides(
-                    union, chord, parameters.borderInset())) {
-
-                for (var point : side) {
-
-                    var away = kmlib.math.geometry.Segments.computeDistanceToPoint(
-                        start, end, point);
-
-                    if (away > worst) {
-                        worst = away;
-                        worstAt = point;
-                    }
-                }
-            }
-        }
-
-        System.out.printf(
-            Locale.ROOT,
-            "worst coast wall side strays %.0f from its own reach%s (the channel is %.0f)%n",
-            worst,
-            worstAt == null
-                ? ""
-                : String.format(Locale.ROOT, ", at %.0f,%.0f", worstAt[0], worstAt[1]),
-            parameters.borderInset());
-    }
-
-    // How tightly the coast turns on the cells it turns on.
-    //
-    // Two reaches leaving one cell land on it somewhere, and how far apart those landings are
-    // is what decides whether their mouths nest - a mouth is a channel wide measured round the
-    // circle, which for a tangent reach is a thousand units and more. A pair landing closer
-    // than that is a cell the coast barely touches, kept as a corner it then has to cut.
-    private static void reportCoastTurns(
-            DiscUnion union,
-            DiscUnionBoundary.Walls walls) {
-
-        var laid = new ArrayList<DiscUnionBoundary.Chord>();
-
-        for (var chord : DiscUnionBoundary.findAttachableChords(union, walls)) {
-
-            if (chord.kind() == DiscUnionBoundary.WallKind.COAST_REACH) {
-                laid.add(chord);
-            }
-        }
-
-        var turns = 0;
-        var tight = 0;
-
-        for (var one = 0; one < laid.size(); one++) {
-            for (var other = one + 1; other < laid.size(); other++) {
-
-                var shared = findSharedCell(laid.get(one), laid.get(other));
-
-                if (shared < 0) {
-                    continue;
-                }
-                turns++;
-
-                var apart = kmlib.math.geometry.Points.computeDistance(
-                    findEndOn(laid.get(one), shared), findEndOn(laid.get(other), shared));
-
-                if (apart < TIGHT_TURN_WITHIN) {
-
-                    tight++;
-                    System.out.printf(
-                        Locale.ROOT,
-                        "  coast turns on cell %d: reaches %d-%d and %d-%d land %.0f apart%n",
-                        shared,
-                        laid.get(one).fromCircle(),
-                        laid.get(one).toCircle(),
-                        laid.get(other).fromCircle(),
-                        laid.get(other).toCircle(),
-                        apart);
-                }
-            }
-        }
-
-        System.out.printf(
-            Locale.ROOT,
-            "the coast turns on a cell %d times, %d of them within %.0f%n",
-            turns,
-            tight,
-            TIGHT_TURN_WITHIN);
-    }
-
-    // The cell two walls share, or none. Two reaches of one coast meet on the cell the coast
-    // turned on, which is the only pair worth measuring.
-    private static int findSharedCell(
-            DiscUnionBoundary.Chord one,
-            DiscUnionBoundary.Chord other) {
-
-        if (one.fromCircle() == other.fromCircle() || one.fromCircle() == other.toCircle()) {
-            return one.fromCircle();
-        }
-
-        if (one.toCircle() == other.fromCircle() || one.toCircle() == other.toCircle()) {
-            return one.toCircle();
-        }
-        return -1;
-    }
-
-    private static double[] findEndOn(DiscUnionBoundary.Chord chord, int circle) {
-
-        var line = chord.line();
-
-        return chord.fromCircle() == circle
-            ? new double[] {line.originX(), line.originY()}
-            : new double[] {
-                line.originX() + line.directionX(), line.originY() + line.directionY()};
     }
 
     // Each pick against every construction at both shapings, so which of them was meant to
@@ -292,11 +61,11 @@ final class PickedPointCheck {
     private static void reportEachPick(
             List<double[]> picks,
             SectorFixture fixture,
-            Coastlines.TracedCoasts traced,
-            SectorGeometryParameters parameters,
-            List<DiscUnionBoundary.Chord> offered,
-            DiscUnionBoundary.Walls walls) {
+            LaidCoast laid) {
 
+        var traced = laid.traced();
+        var parameters = laid.parameters();
+        var walls = laid.walls();
         var sites = fixture.getSites();
         var sectionRules = new VoidSections.SectionRules(
             ViewerSettings.VOID_SPAN_DEFAULT * parameters.cellRadius(),
@@ -316,6 +85,14 @@ final class PickedPointCheck {
         // between them belongs to neither of their answers and shows as nothing at all.
         var walledHoles = DiscUnionBoundary.traceHolesAcrossWalls(
             new DiscUnion(sites, parameters.cellRadius()), walls, parameters.boundSegments());
+
+        // The same walk at the reach a shape is DRAWN at, which is the one that decides what a
+        // reader sees. A hole at the cells' own reach with nothing to show for it a channel
+        // out is a wall the drawing's own inset refused, and no other column says so.
+        var drawnWalledHoles = DiscUnionBoundary.traceHolesAcrossWalls(
+            VoidPockets.buildDrawnUnion(sites, parameters),
+            walls,
+            parameters.boundSegments());
         var drawnHoles = DiscUnionBoundary.traceHoles(
             VoidPockets.buildDrawnUnion(sites, parameters), parameters.boundSegments());
 
@@ -346,11 +123,14 @@ final class PickedPointCheck {
 
             System.out.printf(
                 Locale.ROOT,
-                "    enclosed: hole true %s inset %s | with every wall %s | %s%n",
+                "    enclosed: hole true %s inset %s | with every wall, true %s inset %s "
+                    + "| %s%n",
                 describeHoleAt(holes, pick),
                 describeHoleAt(drawnHoles, pick),
                 describeWalledHoleAt(walledHoles, pick),
-                describeEscape(traced, parameters, walls, pick));
+                describeWalledHoleAt(drawnWalledHoles, pick),
+                describeEscape(laid.atCells(), walls, pick)
+                    + ", inset " + describeEscape(laid.atDrawnReach(), walls, pick));
 
             System.out.printf(
                 Locale.ROOT,
@@ -360,41 +140,53 @@ final class PickedPointCheck {
 
             System.out.printf(
                 Locale.ROOT,
-                "    walk: %s%n",
-                describeNearestBrokenLink(traced, parameters, walls, pick));
+                "    walls: %s%n",
+                describeWallsHolding(walledHoles, laid, pick));
+
+            System.out.printf(
+                Locale.ROOT,
+                "    walk: true %s | inset %s%n",
+                describeNearestBrokenLink(laid.atCells(), walls, pick),
+                describeNearestBrokenLink(laid.atDrawnReach(), walls, pick));
         }
     }
 
-    // One walk over the offered reaches, sorted into the reasons the walk had for each. Asked
-    // of the verdict rather than of its wording, so a rule that renames a refusal cannot
-    // quietly move a count into the wrong column.
-    private static String summariseRefusals(
-            DiscUnion union,
-            DiscUnionBoundary.Walls walls,
-            List<DiscUnionBoundary.Chord> offered) {
+    // What the walk made, at each reach, of every wall that closed the void a point sits in.
+    //
+    // The question a missing fill comes down to once the void is known to be enclosed at the
+    // cells' own reach: which of the walls that closed it was not laid a channel out. Asked of
+    // the hole's OWN walls rather than of whatever runs nearest, because a wall that closed
+    // this void is the only one whose refusal could have opened it.
+    private static String describeWallsHolding(
+            List<VoidHole> holes,
+            LaidCoast laid,
+            double[] pick) {
 
-        var laid = 0;
-        var offBoundary = 0;
-        var crowded = 0;
-        var noMouth = 0;
+        for (var hole : holes) {
 
-        for (var chord : offered) {
+            if (!kmlib.math.geometry.PolygonRegions.isPointInsideRing(
+                    hole.boundary(), pick[0], pick[1])) {
 
-            switch (DiscUnionBoundary.describeChordRefusal(union, walls, chord).reason()) {
-                case LAID -> laid++;
-                case OFF_BOUNDARY -> offBoundary++;
-                case CROWDED_OUT -> crowded++;
-                case NO_MOUTH -> noMouth++;
-                default -> { }
+                continue;
             }
+            var verdicts = new StringBuilder();
+
+            for (var wall : hole.walledBy()) {
+
+                verdicts.append(verdicts.isEmpty() ? "" : " | ").append(String.format(
+                    Locale.ROOT,
+                    "%s %d-%d true [%s] inset [%s]",
+                    wall.kind(),
+                    wall.fromCircle(),
+                    wall.toCircle(),
+                    DiscUnionBoundary.describeChordRefusal(
+                        laid.atCells(), laid.walls(), wall),
+                    DiscUnionBoundary.describeChordRefusal(
+                        laid.atDrawnReach(), laid.walls(), wall)));
+            }
+            return verdicts.isEmpty() ? "the cells closed it unaided" : verdicts.toString();
         }
-        return String.format(
-            Locale.ROOT,
-            "%d laid, %d off the boundary, %d crowded out, %d with no mouth",
-            laid,
-            offBoundary,
-            crowded,
-            noMouth);
+        return "nothing walls it";
     }
 
     // The coast step running nearest a picked point, and what became of it.
@@ -440,37 +232,37 @@ final class PickedPointCheck {
     // broken link is the one way that happens - so this says where to look rather than that
     // something is wrong.
     private static String describeNearestBrokenLink(
-            Coastlines.TracedCoasts traced,
-            SectorGeometryParameters parameters,
+            DiscUnion union,
             DiscUnionBoundary.Walls walls,
             double[] pick) {
 
-        var broken = DiscUnionBoundary.findBrokenLinks(
-            new DiscUnion(traced.union().sites(), parameters.cellRadius()), walls);
+        var broken = DiscUnionBoundary.findBrokenLinks(union, walls);
 
         if (broken.isEmpty()) {
             return "no broken links";
         }
 
-        double[] nearest = null;
+        DiscUnionBoundary.BrokenLink nearest = null;
         var away = Double.MAX_VALUE;
 
-        for (var point : broken) {
+        for (var link : broken) {
 
-            var reach = kmlib.math.geometry.Points.computeDistance(point, pick);
+            var reach = kmlib.math.geometry.Points.computeDistance(link.at(), pick);
 
             if (reach < away) {
                 away = reach;
-                nearest = point;
+                nearest = link;
             }
         }
         return String.format(
             Locale.ROOT,
-            "%d broken links, nearest %.0f away at %.0f,%.0f",
+            "%d broken links, nearest %.0f away at %.0f,%.0f on cell %d, ran on to %s",
             broken.size(),
             away,
-            nearest[0],
-            nearest[1]);
+            nearest.at()[0],
+            nearest.at()[1],
+            nearest.circle(),
+            nearest.endedOn());
     }
 
     // A way out of the void a point sits in, if there is one.
@@ -481,20 +273,21 @@ final class PickedPointCheck {
     // leak, and it names the direction and the gap it went through - which is a place to look
     // at rather than a claim about one. None getting out says only that none of THESE lines
     // did, so the answer is worded as it is measured.
+    // Asked at whichever reach the caller is asking about, since the two can differ: void
+    // enclosed at the cells' own reach and open a channel out is exactly the case where a
+    // pocket exists and nothing is drawn for it.
     private static String describeEscape(
-            Coastlines.TracedCoasts traced,
-            SectorGeometryParameters parameters,
+            DiscUnion union,
             DiscUnionBoundary.Walls walls,
             double[] pick) {
 
-        var sites = traced.union().sites();
-        var laid = DiscUnionBoundary.findAttachableChords(
-            new DiscUnion(sites, parameters.cellRadius()), walls);
+        var sites = union.sites();
+        var laid = DiscUnionBoundary.findAttachableChords(union, walls);
 
         for (var step = 0; step < ESCAPE_DIRECTIONS; step++) {
 
             var angle = kmlib.math.geometry.Angles.FULL_TURN * step / ESCAPE_DIRECTIONS;
-            var away = walkOut(pick, angle, sites, laid, parameters.cellRadius());
+            var away = walkOut(pick, angle, sites, laid, union.reach());
 
             if (away > 0) {
                 return String.format(
@@ -605,12 +398,22 @@ final class PickedPointCheck {
 
                 continue;
             }
-            var kinds = new java.util.LinkedHashSet<DiscUnionBoundary.WallKind>();
+            var walling = new StringBuilder();
 
+            // Each wall named rather than only its kind. Which wall closed a hole here and
+            // failed to close it a channel out is the whole of the question, and a kind cannot
+            // be looked up in the refusal census.
             for (var wall : hole.walledBy()) {
-                kinds.add(wall.kind());
+
+                walling
+                    .append(walling.isEmpty() ? "" : ", ")
+                    .append(wall.kind())
+                    .append(' ')
+                    .append(wall.fromCircle())
+                    .append('-')
+                    .append(wall.toCircle());
             }
-            return "#" + index + " walled by " + kinds;
+            return "#" + index + " walled by " + walling;
         }
         return "none";
     }
@@ -625,21 +428,6 @@ final class PickedPointCheck {
         return Coastlines.isInsideCoast(Coastlines.collectCoastRings(traced), pick)
             ? "inside the coast"
             : "out at sea";
-    }
-
-    // Every wall the coast trace lays, which is its own reaches and the bridges it was walled
-    // by. Taken together because a reach can be crowded out by a bridge as easily as by
-    // another reach, and asking about one kind alone would answer about a wall set nothing
-    // uses.
-    private static DiscUnionBoundary.Walls layWalls(
-            Coastlines.TracedCoasts traced,
-            List<DiscUnionBoundary.Chord> offered) {
-
-        var all = new ArrayList<>(offered);
-
-        all.addAll(traced.walls().chords());
-
-        return new DiscUnionBoundary.Walls(all, traced.walls().channel());
     }
 
     // The step of coast whose own run comes closest to a picked point. Measured to the step as

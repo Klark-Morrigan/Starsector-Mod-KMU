@@ -137,7 +137,7 @@ final class CoastCrossings {
 
             var depth = union.measureIncursionInto(from.point(), to.point(), site);
 
-            if (depth > Coastlines.TOUCHING_TOLERANCE) {
+            if (depth > DiscUnion.TOUCHING_TOLERANCE) {
                 pierced.add(new Pierce(site, depth));
             }
         }

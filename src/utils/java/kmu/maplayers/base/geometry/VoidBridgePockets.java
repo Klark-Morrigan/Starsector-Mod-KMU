@@ -152,7 +152,7 @@ final class VoidBridgePockets {
 
         for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
                 union,
-                buildWalls(bridges, parameters),
+                buildBridgeWalls(bridges, parameters),
                 parameters.boundSegments())) {
 
             outlines.add(hole.boundary());
@@ -181,7 +181,7 @@ final class VoidBridgePockets {
 
         return DiscUnionBoundary.findAttachableChords(
             VoidPockets.buildDrawnUnion(sites, parameters),
-            buildWalls(bridges, parameters));
+            buildBridgeWalls(bridges, parameters));
     }
 
     /**
@@ -259,14 +259,26 @@ final class VoidBridgePockets {
         return worst;
     }
 
-    // The walls the bridges become. The channel is the same border inset the cells keep, so
-    // two pockets meeting across a bridge are held apart by the same gap that holds a pocket
-    // off the cells around it.
-    private static DiscUnionBoundary.Walls buildWalls(
+    /**
+     * The walls the bridges become.
+     *
+     * <p>The channel is the same border inset the cells keep, so two pockets meeting across a
+     * bridge are held apart by the same gap that holds a pocket off the cells around it.
+     *
+     * <p>Shared rather than private because what the walk did with these walls is a question
+     * asked from outside, and the walk answers about the walls it was handed - so a second
+     * build of the same lines is a set of walls no verdict can be about.
+     *
+     * @param bridges    the bridges, as {@link VoidBridges} found them
+     * @param parameters the knobs the cells are built under
+     * @return the walls, at the channel a pocket keeps against them
+     */
+    static DiscUnionBoundary.Walls buildBridgeWalls(
             List<CellGaps.CellGap> bridges,
             SectorGeometryParameters parameters) {
 
-        return new DiscUnionBoundary.Walls(DiscUnionBoundary.buildChordsFrom(bridges), parameters.borderInset());
+        return new DiscUnionBoundary.Walls(
+            DiscUnionBoundary.buildChordsFrom(bridges), parameters.borderInset());
     }
 
     private static double measureDistanceToNearestVertex(

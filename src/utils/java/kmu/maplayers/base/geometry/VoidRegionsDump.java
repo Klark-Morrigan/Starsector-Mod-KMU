@@ -69,20 +69,31 @@ final class VoidRegionsDump {
 
             System.out.println("=== " + sectorName + " ===");
 
+            var shipped = SectorGeometryParameters.createDefaults();
+
+            // One laying of the coast for the whole sector. Everything below asks what the
+            // walk did with a wall, and the walk answers about the walls it was handed - so a
+            // second laying is a second map, however equal the lines look.
+            var laid = LaidCoast.layCoast(
+                Coastlines.traceSectorCoasts(sites, shipped, Coastlines.DEFAULT_RULES),
+                shipped);
+
             reportCells(cells);
             reportChannelWidths(fixture);
             reportHolesAtReach(fixture);
             reportBoundSeams(fixture);
-            PickedPointCheck.reportPickedPoints(fixture, sectorName);
+            CoastWallReport.reportCoastWalls(laid);
+            PickedPointCheck.reportPickedPoints(fixture, sectorName, laid);
             reportPockets(
                 VoidPockets.findVoidPockets(
                     sites,
                     fixture.getOwnerBySite(),
                     new VoidPockets.PocketRules(
-                        SectorGeometryParameters.createDefaults(),
+                        shipped,
                         SECTION_RULES,
                         VoidPockets.PocketShaping.WITH_CHANNEL)),
-                fixture);
+                fixture,
+                laid);
 
             System.out.println();
         }
@@ -408,7 +419,8 @@ final class VoidRegionsDump {
 
     private static void reportPockets(
             List<VoidPockets.VoidPocket> pockets,
-            SectorFixture fixture) {
+            SectorFixture fixture,
+            LaidCoast laid) {
 
         // Against a cell's full width, because that is the threshold the design uses: a
         // pocket no wider than one cell has nothing to connect across it.
@@ -468,7 +480,7 @@ final class VoidRegionsDump {
         reportRingingOwners(pockets, fixture);
         reportEachPocket(pockets);
         reportShareSweep(fixture);
-        reportBridges(fixture, pockets);
+        reportBridges(fixture, pockets, laid);
 
         var shares = new ArrayList<Double>(pockets.size());
         var sections = new ArrayList<Double>(pockets.size());
@@ -590,7 +602,8 @@ final class VoidRegionsDump {
     // where to draw, not about what there is.
     private static void reportBridges(
             SectorFixture fixture,
-            List<VoidPockets.VoidPocket> pockets) {
+            List<VoidPockets.VoidPocket> pockets,
+            LaidCoast laid) {
 
         // One site list and one set of knobs for every question asked below, so no two of
         // them can quietly measure against different geometry.
@@ -643,6 +656,8 @@ final class VoidRegionsDump {
                 + "already taken)%n",
             VoidBridgePockets.findLaidChords(sites, bridges, shipped).size());
 
+        reportBridgeRefusals(sites, bridges, shipped);
+
         System.out.printf(
             Locale.ROOT,
             "walking the cells' borders with those bridges laid across them closes %d "
@@ -650,7 +665,7 @@ final class VoidRegionsDump {
             captured.size(),
             VoidBridgePockets.measureWorstChordStray(captured, sites, bridges, shipped));
 
-        reportCoastlines(sites, bridges, shipped);
+        reportCoastlines(laid);
 
         System.out.printf(
             Locale.ROOT,
@@ -664,16 +679,36 @@ final class VoidRegionsDump {
             findPercentile(widths, REPORTED_PERCENTILES[2]));
     }
 
-    // What the smoothing takes out, as the two counts that say whether it did anything. Marks
-    // is how many stretches of coast the cells actually make; points is how many the smoothed
-    // line passes through. Equal counts mean the skip rules refused every candidate, which
-    // reads on screen exactly like the smoothing being switched off.
-    private static void reportCoastlines(
+    // Why each bridge that is not drawn was turned down, at both reaches. The count above
+    // says how many went; this says what took them, which is the difference between a gap the
+    // cells have genuinely closed and a wall the drawing's own inset refused.
+    private static void reportBridgeRefusals(
             List<double[]> sites,
             List<CellGaps.CellGap> bridges,
             SectorGeometryParameters shipped) {
 
-        var traced = Coastlines.traceSectorCoasts(sites, shipped, Coastlines.DEFAULT_RULES);
+        var walls = VoidBridgePockets.buildBridgeWalls(bridges, shipped);
+
+        System.out.printf(
+            Locale.ROOT,
+            "bridges offered %d: at the cells' own reach %s | a channel out %s%n",
+            walls.chords().size(),
+            WallRefusals.summariseRefusals(
+                new DiscUnion(sites, shipped.cellRadius()), walls, walls.chords()),
+            WallRefusals.summariseRefusals(
+                VoidPockets.buildDrawnUnion(sites, shipped), walls, walls.chords()));
+
+        WallRefusals.reportEachRefusal(
+            VoidPockets.buildDrawnUnion(sites, shipped), walls, walls.chords(), "bridge");
+    }
+
+    // What the smoothing takes out, as the two counts that say whether it did anything. Marks
+    // is how many stretches of coast the cells actually make; points is how many the smoothed
+    // line passes through. Equal counts mean the skip rules refused every candidate, which
+    // reads on screen exactly like the smoothing being switched off.
+    private static void reportCoastlines(LaidCoast laid) {
+
+        var traced = laid.traced();
         var points = 0;
 
         for (var coast : traced.coasts()) {
@@ -715,17 +750,18 @@ final class VoidRegionsDump {
             "each crossing as depth/stretches skipped across it (0 = neighbours): %s%n",
             formatAgainstDepth(CoastMeasures.measureCrossingGaps(traced)));
 
-        reportTrappedVoid(sites, traced, shipped);
+        reportTrappedVoid(laid);
     }
 
     // What the smoothing shut in behind it, as the pockets it becomes. A coast that traps
     // nothing has bought no pocket space and is only redrawing the cells' own outline, so the
     // count is the number that says whether the smoothing did the thing it exists to do -
     // and how many of them survive the channel is the number that says they can be drawn.
-    private static void reportTrappedVoid(
-            List<double[]> sites,
-            Coastlines.TracedCoasts traced,
-            SectorGeometryParameters shipped) {
+    private static void reportTrappedVoid(LaidCoast laid) {
+
+        var traced = laid.traced();
+        var sites = laid.sites();
+        var shipped = laid.parameters();
 
         var pockets = CoastPockets.findCoastPockets(
             traced,
@@ -745,15 +781,27 @@ final class VoidRegionsDump {
 
             spans.add(pocket.pocket().span());
 
-            if (pocket.pocket().outlines().isEmpty()) {
-                closedOver++;
+            if (!pocket.pocket().outlines().isEmpty()) {
+                continue;
             }
+            closedOver++;
+
+            // Named rather than only counted. A pocket wider than the channel that still has
+            // nothing to draw is a hole in the map, and which one it was is what says whether
+            // the channel really closed it or the cut against a reach threw it away.
+            System.out.printf(
+                Locale.ROOT,
+                "  nothing left to draw for the pocket at %.0f,%.0f, %.0f across, "
+                    + "walled by %d reaches%n",
+                pocket.pocket().centre()[0],
+                pocket.pocket().centre()[1],
+                pocket.pocket().span(),
+                pocket.reaches().size());
         }
         spans.sort(Double::compare);
 
         var spills = CoastPocketFaults.findSpills(
             pockets, Coastlines.collectCoastRings(traced));
-        var overruns = CoastPocketFaults.findOverruns(pockets, traced.union().sites());
 
         System.out.printf(
             Locale.ROOT,
@@ -761,19 +809,12 @@ final class VoidRegionsDump {
             CoastPocketFaults.measureClosestApproach(pockets, traced.union().sites()),
             shipped.borderInset());
 
-        // Two numbers rather than one. Outside the drawn coast is void claimed where nothing
-        // shut anything in; past a reach's end is a pocket longer than the piece of coast that
-        // closed it, which the cut is what holds in - so a run of them says the cut did not
-        // take rather than that the shape is out at sea.
         System.out.printf(
             Locale.ROOT,
-            "%d runs of pocket outline lie outside the drawn coast, worst by %.0f (has to be "
-                + "0); %d runs past a reach's end, worst by %.0f (has to be 0 once the cut has "
-                + "run)%n",
+            "%d runs of pocket outline lie outside the drawn coast, worst by %.0f "
+                + "(has to be 0)%n",
             spills.size(),
-            spills.isEmpty() ? 0 : spills.get(0).depth(),
-            overruns.size(),
-            overruns.isEmpty() ? 0 : overruns.get(0).depth());
+            spills.isEmpty() ? 0 : spills.get(0).depth());
 
         reportEachSpill(spills);
 
@@ -787,27 +828,25 @@ final class VoidRegionsDump {
             findPercentile(spans, REPORTED_PERCENTILES[1]),
             findPercentile(spans, REPORTED_PERCENTILES[2]));
 
-        reportTrappedVoidAtTrueExtent(sites, traced, shipped);
+        reportTrappedVoidAtTrueExtent(laid);
     }
 
     // The same void with nothing given up, which is the map the viewer opens on and the one
     // step 5 moves everything to. Reported because the two faults answer differently here:
     // nothing cuts a pocket at its true extent, so running past a reach's end is what a hole
     // does and only the count of outline outside the coast still has to be zero.
-    private static void reportTrappedVoidAtTrueExtent(
-            List<double[]> sites,
-            Coastlines.TracedCoasts traced,
-            SectorGeometryParameters shipped) {
+    private static void reportTrappedVoidAtTrueExtent(LaidCoast laid) {
+
+        var traced = laid.traced();
 
         var pockets = CoastPockets.findCoastPockets(
             traced,
-            CoastPockets.markEverySiteUnowned(sites),
+            CoastPockets.markEverySiteUnowned(laid.sites()),
             new VoidPockets.PocketRules(
-                shipped, SECTION_RULES, VoidPockets.PocketShaping.AT_TRUE_EXTENT));
+                laid.parameters(), SECTION_RULES, VoidPockets.PocketShaping.AT_TRUE_EXTENT));
 
         var spills = CoastPocketFaults.findSpills(
             pockets, Coastlines.collectCoastRings(traced));
-        var overruns = CoastPocketFaults.findOverruns(pockets, traced.union().sites());
         var drawn = 0;
 
         for (var walled : pockets) {
@@ -819,16 +858,36 @@ final class VoidRegionsDump {
         System.out.printf(
             Locale.ROOT,
             "at their true extent: %d pockets, %d of them drawn, %d runs outside the drawn "
-                + "coast, worst by %.0f (has to be 0); %d runs past a reach's end, worst by "
-                + "%.0f (expected - nothing cuts them here)%n",
+                + "coast, worst by %.0f (has to be 0)%n",
             pockets.size(),
             drawn,
             spills.size(),
-            spills.isEmpty() ? 0 : spills.get(0).depth(),
-            overruns.size(),
-            overruns.isEmpty() ? 0 : overruns.get(0).depth());
+            spills.isEmpty() ? 0 : spills.get(0).depth());
 
         reportEachSpill(spills);
+        reportUndrawnVoid(laid);
+    }
+
+    // The patches of map that nothing draws, which is the fault a reader sees first and the
+    // one no construction can report on its own.
+    //
+    // Asked of the shaping the viewer opens on, because that is the picture being complained
+    // about: the bands a fill gives up against the coast and against the cells are taken out
+    // of the question, so what is left is ground inside the coast that should have been
+    // painted and was not.
+    private static void reportUndrawnVoid(LaidCoast laid) {
+
+        var unfilled = UndrawnVoid.findUnfilledVoid(
+            laid, SECTION_RULES, VoidPockets.PocketShaping.WITH_CHANNEL);
+
+        System.out.printf(
+            Locale.ROOT,
+            "%d patches inside the coast that nothing draws (has to be 0)%n",
+            unfilled.size());
+
+        for (var patch : unfilled) {
+            System.out.printf(Locale.ROOT, "  unfilled %s%n", patch);
+        }
     }
 
     // Every spilling run named, since one is a case to look at and a count is not: where it

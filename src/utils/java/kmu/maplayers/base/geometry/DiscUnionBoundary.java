@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -383,14 +384,14 @@ final class DiscUnionBoundary {
      *
      * @param union the discs to trace
      * @param walls the walls to lay across the void
-     * @return one point per broken link, where the arc ended
+     * @return one entry per broken link, where the arc ended and what it ended on
      */
-    static List<double[]> findBrokenLinks(DiscUnion union, Walls walls) {
+    static List<BrokenLink> findBrokenLinks(DiscUnion union, Walls walls) {
 
         var laid = new Walls(findAttachableChords(union, walls), walls.channel());
         var arcs = findUncoveredArcs(union, laid);
         var successors = linkArcsIntoCycles(arcs);
-        var broken = new ArrayList<double[]>();
+        var broken = new ArrayList<BrokenLink>();
 
         for (var index = 0; index < arcs.size(); index++) {
 
@@ -398,11 +399,44 @@ final class DiscUnionBoundary {
 
                 var arc = arcs.get(index);
 
-                broken.add(findPointOnCircle(
-                    union.sites().get(arc.circle()), union.reach(), arc.toAngle()));
+                broken.add(new BrokenLink(
+                    findPointOnCircle(
+                        union.sites().get(arc.circle()), union.reach(), arc.toAngle()),
+                    arc.circle(),
+                    describeTerminal(arc.endsAt(), laid)));
             }
         }
         return broken;
+    }
+
+    /**
+     * One place the walk ran off the end of the boundary.
+     *
+     * @param at      where the arc ended
+     * @param circle  whose cell's border it ran along
+     * @param endedOn what it ran on to, which is the name nothing began at
+     */
+    record BrokenLink(
+        double[] at,
+        int circle,
+        String endedOn) {
+    }
+
+    // What a terminal is, in words: a wall's own end, or a crossing between two discs. The one
+    // thing a broken link needs said about it - which of the two kinds of join failed to pair
+    // decides where to look for the reason.
+    private static String describeTerminal(long terminal, Walls laid) {
+
+        if (terminal == NO_TERMINAL) {
+            return "nothing at all";
+        }
+
+        if (!isChordTerminal(terminal)) {
+            return "a crossing between discs";
+        }
+        var chord = laid.chords().get(readChordFrom(terminal));
+
+        return chord.kind() + " " + chord.fromCircle() + "-" + chord.toCircle();
     }
 
     /**
@@ -524,11 +558,14 @@ final class DiscUnionBoundary {
 
         if (!isWallOnBoundary(union, chord, chord.fromCircle(), fromMouth)) {
             return new ChordRefusal(
-                RefusalReason.OFF_BOUNDARY, "on cell " + chord.fromCircle());
+                RefusalReason.OFF_BOUNDARY,
+                describeCover(union, chord, chord.fromCircle(), fromMouth));
         }
 
         if (!isWallOnBoundary(union, chord, chord.toCircle(), toMouth)) {
-            return new ChordRefusal(RefusalReason.OFF_BOUNDARY, "on cell " + chord.toCircle());
+            return new ChordRefusal(
+                RefusalReason.OFF_BOUNDARY,
+                describeCover(union, chord, chord.toCircle(), toMouth));
         }
 
         if (isCrowdedOut(takenByCircle, chord, fromMouth, toMouth)) {
@@ -796,8 +833,7 @@ final class DiscUnionBoundary {
                 Angles.normalise(towards - halfWidth),
                 2 * halfWidth,
                 formatDiscTerminal(other, circle, sites.size()),
-                formatDiscTerminal(circle, other, sites.size()),
-                null));
+                formatDiscTerminal(circle, other, sites.size())));
         }
         return covers;
     }
@@ -831,8 +867,7 @@ final class DiscUnionBoundary {
                 mouth[0],
                 mouth[1],
                 formatChordTerminal(index, isFromSide ? TO_SIDE : FROM_SIDE),
-                formatChordTerminal(index, isFromSide ? FROM_SIDE : TO_SIDE),
-                chord.kind()));
+                formatChordTerminal(index, isFromSide ? FROM_SIDE : TO_SIDE)));
         }
         return covers;
     }
@@ -886,23 +921,25 @@ final class DiscUnionBoundary {
                 arcs.add(new Arc(
                     circle, coveredTo, coveredTo, departingFrom, cover.arrival()));
 
-                // A mouth swallowed WHOLE reaches no further round the circle than the one
-                // that swallowed it, so the update below never runs for it and its far
-                // terminal is dropped - leaving that wall an arrival and no departure, which
-                // is a chain the walk runs off rather than a cycle. Handing the departure on
-                // makes the swallowed wall the one the next stretch of boundary leaves from,
-                // which is what the two of them do on the map: the boundary goes out along
-                // one wall and back along the other with nothing on the circle in between.
+                // A mouth swallowed WHOLE reaches no further round the circle than what is
+                // already covered, so the update below never runs for it and its far terminal
+                // is dropped - leaving that wall an arrival and no departure, which is a chain
+                // the walk runs off rather than a cycle. Handing the departure on makes the
+                // swallowed wall the one the next stretch of boundary leaves from, which is
+                // what the two of them do on the map: the boundary goes out along one wall and
+                // back along the other with nothing on the circle in between.
                 //
-                // A REACH OF COAST only. A coast leaves a cell along its tangent, so the
-                // mouth it arrives by swallows the mouth it leaves by wherever the coast
-                // turns on a cell, and both walls are real. A bridge crosses its circles
-                // squarely, so its mouth is swallowed only once the gap it spans has closed
-                // over - and a wall across a gap that is no longer there is exactly what must
-                // not be laid.
-                if (cover.kind() == WallKind.COAST_REACH
-                        && cover.start() + cover.width() <= coveredTo) {
-
+                // Whatever KIND of wall it is. Reaching here already means the swallowing was
+                // done by other walls' mouths - a stretch a neighbouring DISC swallows is off
+                // the boundary and its wall was refused outright - and two walls leaving one
+                // cell within a mouth of each other is the same situation whether they are
+                // coast reaches or bridges.
+                //
+                // Nor is a swallowed mouth the same as a crowded-out one. Crowding is a
+                // pairwise test against each earlier mouth; what is covered here is the merged
+                // extent of every cover so far, so a mouth no single wall nests can still be
+                // buried by two of them between them - laid, and with nowhere to depart from.
+                if (cover.start() + cover.width() <= coveredTo) {
                     departingFrom = cover.departure();
                 }
             }
@@ -1088,48 +1125,143 @@ final class DiscUnionBoundary {
             measureBoundVertexAngle(Math.floorMod(vertex, boundSegments), boundSegments));
     }
 
-    // Whether a wall still reaches the boundary at this circle - asked of whichever part of it
-    // carries the answer for the kind of wall it is.
+    // Whether a wall still reaches the boundary at this circle - asked of whichever part of
+    // it carries the answer for the kind of wall it is, and against whichever circle that part
+    // actually sits on.
     //
-    // A BRIDGE is asked about its mouth's two edges. Its line runs through both sites, so it
-    // crosses squarely between them and its mouth lies where the gap it spans lies: buried,
-    // and the two cells have closed over the gap, which is exactly when the bridge must go.
+    // A BRIDGE is asked about its mouth's two EDGES, at the reach being traced. Its line runs
+    // through both sites, so it crosses squarely between them and its mouth lies where the gap
+    // it spans lies: buried, and the two cells have closed over the gap, which is exactly when
+    // the bridge must go.
     //
-    // A COAST REACH is asked about its own END. It leaves a cell along a tangent and can end
-    // exactly where two circles cross, and a mouth is a channel wide by construction - so half
-    // of it is inside the neighbouring disc whatever the reach did, and the mouth test refuses
-    // a wall that is on the boundary. That refusal is what left the void behind a coast's own
-    // reach open to the sea, with the line drawn across the gap and no wall laid under it.
-    //
-    // The two agree at the cells' own reach and part company a channel outside it, where a
-    // wall's end sits inside its own circle rather than on it. One rule serves both once
-    // nothing is traced out there.
+    // A COAST REACH is asked about its own END, against the circle that end sits on. It leaves
+    // a cell along a tangent and can end exactly where two circles cross, and a mouth is a
+    // channel wide by construction - so half of it is inside the neighbouring disc whatever the
+    // reach did, and the mouth test refuses a wall that is on the boundary. That refusal is
+    // what left the void behind a coast's own reach open to the sea, with the line drawn across
+    // the gap and no wall laid under it.
     private static boolean isWallOnBoundary(
             DiscUnion union,
             Chord chord,
             int circle,
             double[] mouth) {
 
-        return chord.kind() == WallKind.COAST_REACH
-            ? isPointOnBoundary(union, circle, findWallEnd(chord, circle))
-            : isMouthOnBoundary(union, circle, mouth);
-    }
+        for (var point : collectBoundaryTests(union, chord, circle, mouth)) {
 
-    // A mouth sits on the boundary when no disc but its own circle's swallows either edge of
-    // it. A third disc reaching into the middle of a mouth without touching an edge changes
-    // nothing: its cover nests inside the mouth's, so the merged sweep still opens the arcs at
-    // the mouth's own edges.
-    private static boolean isMouthOnBoundary(DiscUnion union, int circle, double[] mouth) {
-
-        for (var edge : List.of(mouth[0], mouth[0] + mouth[1])) {
-
-            if (!isPointOnBoundary(union, circle, findPointOnCircle(
-                    union.sites().get(circle), union.reach(), edge))) {
-
+            if (findDeepestCover(union, chord, circle, point) != null) {
                 return false;
             }
         }
         return true;
+    }
+
+    // The points on one circle that carry the answer for the kind of wall this is: a coast
+    // reach's own end, or a bridge's two mouth edges. One list, so the verdict and the account
+    // of it below are about the same points - an account of a different point is how a refusal
+    // comes to be explained by a cell that had nothing to do with it.
+    //
+    // A mouth is judged at its EDGES. A third disc reaching into the middle of one without
+    // touching an edge changes nothing: its cover nests inside the mouth's, so the merged sweep
+    // still opens the arcs at the mouth's own edges.
+    private static List<double[]> collectBoundaryTests(
+            DiscUnion union,
+            Chord chord,
+            int circle,
+            double[] mouth) {
+
+        if (chord.kind() == WallKind.COAST_REACH) {
+            return List.of(findWallEnd(chord, circle));
+        }
+
+        return List.of(
+            findPointOnCircle(union.sites().get(circle), union.reach(), mouth[0]),
+            findPointOnCircle(union.sites().get(circle), union.reach(), mouth[0] + mouth[1]));
+    }
+
+    // How far out the circle a landing sits on reaches, which is not always the union's.
+    //
+    // A bridge's mouth edge is a point on the circle BEING TRACED, so the union's reach is the
+    // edge it is on. A coast reach's end is a point on the cells' OWN border, wherever the
+    // trace is running - it was put there by the smoothing, which walks at the reach that
+    // defines void, and no later trace moves it. Out at the reach a shape is drawn at, every
+    // disc has grown by the channel, so such an end lies inside each neighbour by as much as
+    // that neighbour grew: judged against the union's reach it is refused for the drawing's own
+    // inset, and the void behind it goes unclaimed on the very map a reader is looking at.
+    //
+    // Its own distance from its own site IS that reach, so nothing has to carry it: the end is
+    // on that circle by construction, and asking against it is asking whether the end's nearest
+    // site is still its own cell - the same question at any reach.
+    private static double measureLandingReach(
+            DiscUnion union,
+            Chord chord,
+            int circle,
+            double[] point) {
+
+        return chord.kind() == WallKind.COAST_REACH
+            ? Points.computeDistance(point, union.sites().get(circle))
+            : union.reach();
+    }
+
+    // The disc that covers one of a wall's landings deepest, as {site, depth}, or null where
+    // none does. The one reading the verdict and the account of it are both taken from, so a
+    // refusal is never explained by a cell that did not cause it.
+    private static double[] findDeepestCover(
+            DiscUnion union,
+            Chord chord,
+            int circle,
+            double[] point) {
+
+        var sites = union.sites();
+        var toEdge = measureLandingReach(union, chord, circle, point);
+        double[] deepest = null;
+
+        for (var site = 0; site < sites.size(); site++) {
+
+            if (site == circle) {
+                continue;
+            }
+            var under = union.measureCoverOf(point, site, toEdge);
+
+            if (under > DiscUnion.TOUCHING_TOLERANCE
+                    && (deepest == null || under > deepest[1])) {
+
+                deepest = new double[] {site, under};
+            }
+        }
+        return deepest;
+    }
+
+    // Which disc covers one of a wall's landings, and by how far it reaches over it.
+    //
+    // The depth is the whole of the diagnosis. A landing a whole cell deep inside a neighbour
+    // is geometry - the cells met without the wall, and refusing it is right. A landing under
+    // it by a rounding error is a wall the map draws and the trace throws away, and the two
+    // read as the same verdict without a number beside them.
+    private static String describeCover(
+            DiscUnion union,
+            Chord chord,
+            int circle,
+            double[] mouth) {
+
+        double[] deepest = null;
+
+        for (var point : collectBoundaryTests(union, chord, circle, mouth)) {
+
+            var cover = findDeepestCover(union, chord, circle, point);
+
+            if (cover != null && (deepest == null || cover[1] > deepest[1])) {
+                deepest = cover;
+            }
+        }
+
+        return deepest == null
+            ? "on cell " + circle
+            : String.format(
+                Locale.ROOT,
+                "on cell %d, %.3f inside cell %d",
+                circle,
+                deepest[1],
+                (int) deepest[0]);
     }
 
     // Where a wall meets one of its circles, which for a bridge is a gap's own end and for a
@@ -1142,25 +1274,6 @@ final class DiscUnionBoundary {
         return new double[] {
             isFromSide ? line.originX() : line.originX() + line.directionX(),
             isFromSide ? line.originY() : line.originY() + line.directionY()};
-    }
-
-    // Whether a point is on the union's boundary rather than inside it, which is the one
-    // reading both tests above are built out of. Asked of the point rather than of an angle,
-    // because that is the definition of the boundary and needs no interval arithmetic to
-    // agree with.
-    private static boolean isPointOnBoundary(DiscUnion union, int circle, double[] point) {
-
-        var sites = union.sites();
-
-        for (var site = 0; site < sites.size(); site++) {
-
-            if (site != circle
-                    && Points.computeDistance(point, sites.get(site)) < union.reach()) {
-
-                return false;
-            }
-        }
-        return true;
     }
 
     // Whether an earlier wall's mouth leaves this one nowhere to attach.
@@ -1327,16 +1440,12 @@ final class DiscUnionBoundary {
      * @param width     how far it runs
      * @param arrival   what an arc ending at {@code start} continues onto
      * @param departure what an arc beginning at the far end of it is named by
-     * @param kind      which sort of wall opened it, or null where a neighbouring disc
-     *                  swallowed the stretch and no wall is involved. Carried because one
-     *                  case turns on it: a mouth swallowed whole by another
      */
     private record Cover(
         double start,
         double width,
         long arrival,
-        long departure,
-        WallKind kind) {
+        long departure) {
     }
 
     /**

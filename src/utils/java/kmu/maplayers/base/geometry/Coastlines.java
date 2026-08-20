@@ -78,11 +78,6 @@ final class Coastlines {
     // and the worst case - every cell kept - is the unsmoothed coast rather than a wrong one.
     private static final int REPAIR_PASSES = 4;
 
-    // How far inside a cell a straight run may reach and still count as touching it rather
-    // than crossing it. A run begins and ends ON two borders, so without a hair of slack
-    // every one of them would count itself as crossing the two cells it runs between.
-    static final double TOUCHING_TOLERANCE = 1;
-
     // No stretch stands between two kept ones, or none of those that do is in anything's way.
     private static final int NOTHING_BLOCKING = -1;
 
@@ -190,8 +185,8 @@ final class Coastlines {
         // reading of a border under which those are two numbers.
         var union = new DiscUnion(sites, parameters.cellRadius());
 
-        var silhouettes = DiscUnionBoundary.traceSilhouetteCoasts(
-            union, walls, parameters.boundSegments());
+        var silhouettes = dropLoneIslands(DiscUnionBoundary.traceSilhouetteCoasts(
+            union, walls, parameters.boundSegments()));
 
         var smoothed = smoothSilhouettes(
             silhouettes,
@@ -246,10 +241,10 @@ final class Coastlines {
      * Traces the smoothed outer edge of every run of connected cells.
      *
      * <p>Judged on the points that came out rather than on the cells that went in. A cell
-     * contributes a whole run of border rather than a single point, so one cell alone in the
-     * void encloses an area perfectly well - its own - and two that touch enclose the pair.
-     * Only a run that came out too small to be a shape at all is dropped, which after the
-     * winding is settled means one that could not be built.
+     * contributes a whole run of border rather than a single point, so two cells that touch
+     * enclose the pair perfectly well. Only a run that came out too small to be a shape at all
+     * is dropped, which after the winding is settled means one that could not be built. Runs
+     * of one cell never arrive here at all - a lone island is not a coast.
      *
      * @param silhouettes the stretches of coast the cells make, in walk order
      * @param union       the discs to draw against
@@ -389,6 +384,48 @@ final class Coastlines {
             points.add(vertex.point());
         }
         return points;
+    }
+
+    // A cell alone in the void has no coast.
+    //
+    // A coast is where settled space ends along a run of cells that hold something BETWEEN
+    // them. A cell touching nothing, joined to nothing, holds only itself: the line traced
+    // round it is the cell's own border a second time, and there is no void it encloses that
+    // the cell does not already draw. Kept, it is an edge drawn twice on screen, a stretch of
+    // frontage in every coast measure that no reach can ever be laid along, and a ring that
+    // answers "inside the coast" for points the cell already claims.
+    //
+    // Read off the run itself: cells that touch, and cells a laid bridge joins, are walked
+    // into ONE run - so a run naming a single circle is exactly the degenerate case, with no
+    // separate test for touching or for bridges to fall out of step with the walk.
+    private static List<List<DiscUnionBoundary.CoastMark>> dropLoneIslands(
+            List<List<DiscUnionBoundary.CoastMark>> silhouettes) {
+
+        var joined = new ArrayList<List<DiscUnionBoundary.CoastMark>>(silhouettes.size());
+
+        for (var silhouette : silhouettes) {
+
+            if (!isLoneIsland(silhouette)) {
+                joined.add(silhouette);
+            }
+        }
+        return joined;
+    }
+
+    // Whether a run of coast is one cell's own border and nothing else.
+    private static boolean isLoneIsland(List<DiscUnionBoundary.CoastMark> silhouette) {
+
+        if (silhouette.isEmpty()) {
+            return true;
+        }
+
+        for (var mark : silhouette) {
+
+            if (mark.circle() != silhouette.get(0).circle()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // The cells a laid wall attaches to. Asked of the laid chords rather than of every bridge
@@ -549,7 +586,7 @@ final class Coastlines {
             if (jump.isRunBetween(coast.get(index).circle())) {
                 continue;
             }
-            if (jump.measureIncursion(edge, coast.get(index).circle()) > TOUCHING_TOLERANCE) {
+            if (jump.measureIncursion(edge, coast.get(index).circle()) > DiscUnion.TOUCHING_TOLERANCE) {
                 return index;
             }
         }
@@ -698,7 +735,7 @@ final class Coastlines {
 
         for (var circle = 0; circle < run.union().sites().size(); circle++) {
 
-            if (run.measureIncursion(edge, circle) > TOUCHING_TOLERANCE) {
+            if (run.measureIncursion(edge, circle) > DiscUnion.TOUCHING_TOLERANCE) {
                 return false;
             }
         }

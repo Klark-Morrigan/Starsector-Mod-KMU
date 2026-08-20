@@ -70,9 +70,7 @@ final class CoastPockets {
         // A coast pocket gives up the channel against the cells by being WALKED a channel
         // outside them, so at its true extent the discs move rather than the outline: walked
         // at the cell radius, the pocket runs up to the border itself.
-        var isAtTrueExtent = rules.shaping().isAtTrueExtent();
-
-        var union = isAtTrueExtent
+        var union = rules.shaping().isAtTrueExtent()
             ? new DiscUnion(sites, parameters.cellRadius())
             : VoidPockets.buildDrawnUnion(sites, parameters);
 
@@ -93,36 +91,36 @@ final class CoastPockets {
                 continue;
             }
 
-            // Held to the landward side of every reach that closed it, before the fill is
-            // measured from it. A reach has open sea beyond it, so an outline that has
-            // strayed there is claiming void that is not the pocket's - and where the wall
-            // ended up is the result of a chain of angles, while the side of the line it has
-            // to stay on is one fact that holds whatever the wall did.
+            // What the trace hands back is what gets drawn. Nothing is cut afterwards.
             //
-            // Not cut at the true extent, where there is no channel to hold it back from:
-            // the outline is meant to reach the reach itself, and the pockets the cut would
-            // empty are the ones that map exists to show.
             //
-            // Nor is there anything to correct there. No laid wall crosses another on either
-            // fixture, so no outline overshoots one wall past another; and a pocket that lies
-            // on the far side of a reach's LINE, beyond where that reach stops, is not out at
-            // sea - there is no coast out there to be seaward of. A cut against the line held
-            // exactly such a pocket to nothing, which is a hole found and a fill missing.
-            var legal = isAtTrueExtent
-                ? hole.boundary()
-                : CoastPocketFaults.cutToLandward(
-                    hole.boundary(), walling, sites, walls.channel());
+            // The channel against the reach is not something to correct for: the wall holds
+            // its two sides half a channel off its own line, so the outline comes back inset
+            // already, and the report's closest-approach reads the channel exactly at both
+            // shapings with no cut in the way.
+            //
+            // A cut against the reach's own half-planes was worse than nothing. A reach is a
+            // SEGMENT, and a pocket walled by one reach and a bridge runs past that reach's
+            // ends by however far the bridge takes it - which is not out at sea, since there
+            // is no coast out there to be seaward of. Held to the slab between one reach's
+            // ends, such a pocket was clipped to nothing: a hole found, and a fill missing on
+            // the very map that exists to show it.
+            //
+            // What guards the rule the cut was meant to enforce is a measure, not a clip: no
+            // run of any outline lies outside the drawn coast, on either fixture, at either
+            // shaping.
+            var outline = hole.boundary();
 
-            // A pocket the cut leaves nothing of is still a pocket - it keeps its extent,
-            // its span and the cells around it, and only loses what there was to draw. That
-            // is exactly what the primitive already says an empty outline means, and dropping
-            // it instead would hide the one thing worth knowing: that the cut emptied it.
+            // A pocket with nothing to draw is still a pocket - it keeps its extent, its span
+            // and the cells around it. That is what an empty outline already means here, and
+            // dropping the pocket instead would hide the one thing worth knowing: that the
+            // channel closed it over.
             pockets.add(new CoastPocketFaults.WalledPocket(
                 VoidPockets.shapeVoidPocket(
                     hole,
-                    legal.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA
+                    outline.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA
                         ? List.of()
-                        : List.of(legal),
+                        : List.of(outline),
                     VoidPockets.resolveAbsorbingOwner(hole.ringing(), ownerBySite),
                     sites,
                     rules.sectionRules()),
@@ -131,18 +129,29 @@ final class CoastPockets {
         return pockets;
     }
 
-    // The coast's reaches laid alongside the bridges the coast itself was walled by, at the
-    // channel it was walled at.
-    //
-    // The bridges have to be there, though nothing here reports what they close: void a
-    // bridge already holds is that construction's, and a trace that cannot see the bridge
-    // runs a coast pocket straight across it and paints the same emptiness twice. Taken from
-    // the coast rather than found again, because a second search is a second answer, and a
-    // reach was walked round the bridges the first one found.
-    //
-    // At the coast's channel for the same reason: a pocket has to give up against a reach
-    // exactly what the coast gave up against a bridge.
-    private static DiscUnionBoundary.Walls layCoastWalls(
+    /**
+     * The coast's reaches laid alongside the bridges the coast itself was walled by, at the
+     * channel it was walled at.
+     *
+     * <p>The bridges have to be there, though nothing here reports what they close: void a
+     * bridge already holds is that construction's, and a trace that cannot see the bridge runs
+     * a coast pocket straight across it and paints the same emptiness twice. Taken from the
+     * coast rather than found again, because a second search is a second answer, and a reach
+     * was walked round the bridges the first one found.
+     *
+     * <p>At the coast's channel for the same reason: a pocket has to give up against a reach
+     * exactly what the coast gave up against a bridge.
+     *
+     * <p>Shared rather than private because a reader asking what the walk did has to ask it of
+     * the wall set the walk was given. Laid again elsewhere, the same lines in another order
+     * can have a different one of them crowded out of a mouth - so the answer would be about a
+     * map nobody drew.
+     *
+     * @param traced  the coast, which carries the bridges it was walled by
+     * @param reaches its own straight reaches, as the walls they are offered as
+     * @return the two sets laid together, at the coast's channel
+     */
+    static DiscUnionBoundary.Walls layCoastWalls(
             Coastlines.TracedCoasts traced,
             List<DiscUnionBoundary.Chord> reaches) {
 
