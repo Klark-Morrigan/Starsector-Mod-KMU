@@ -356,7 +356,7 @@ final class PickedPointCheck {
                 Locale.ROOT,
                 "    coast: %s, %s%n",
                 describeCoastSide(traced, pick),
-                describeNearestStep(traced, parameters, offered, walls, pick));
+                describeNearestStep(laid, pick));
 
             System.out.printf(
                 Locale.ROOT,
@@ -403,20 +403,15 @@ final class PickedPointCheck {
     // walks, while only a step long enough to hold a channel is offered as a reach, and only a
     // reach the walk can attach is laid - so a gap can be closed on screen and open to the
     // trace. Which of those three it is, is the whole question.
-    private static String describeNearestStep(
-            Coastlines.TracedCoasts traced,
-            SectorGeometryParameters parameters,
-            List<DiscUnionBoundary.Chord> offered,
-            DiscUnionBoundary.Walls walls,
-            double[] pick) {
+    private static String describeNearestStep(LaidCoast laid, double[] pick) {
 
-        var step = findNearestStep(traced, pick);
+        var step = findNearestStep(laid.traced(), pick);
 
         if (step == null) {
             return "no coast";
         }
 
-        var wall = findWallFor(offered, step);
+        var wall = findWallFor(laid.offered(), step);
 
         if (wall == null) {
             return String.format(
@@ -428,8 +423,6 @@ final class PickedPointCheck {
                 step.length());
         }
 
-        var sites = traced.union().sites();
-
         return String.format(
             Locale.ROOT,
             "nearest step %.0f away, cells %d-%d, %.0f long: reach, true [%s] inset [%s]",
@@ -437,10 +430,9 @@ final class PickedPointCheck {
             step.from().circle(),
             step.to().circle(),
             step.length(),
+            DiscUnionBoundary.describeChordRefusal(laid.atCells(), laid.walls(), wall),
             DiscUnionBoundary.describeChordRefusal(
-                new DiscUnion(sites, parameters.cellRadius()), walls, wall),
-            DiscUnionBoundary.describeChordRefusal(
-                VoidPockets.buildDrawnUnion(sites, parameters), walls, wall));
+                laid.atDrawnReach(), laid.walls(), wall));
     }
 
     // The nearest place the walk ran off the end of the boundary. Void that cannot be walked
@@ -630,15 +622,9 @@ final class PickedPointCheck {
     // fill it.
     private static String describeCoastSide(Coastlines.TracedCoasts traced, double[] pick) {
 
-        for (var coast : traced.coasts()) {
-
-            if (kmlib.math.geometry.PolygonRegions.isPointInsideRing(
-                    Coastlines.collectPoints(coast), pick[0], pick[1])) {
-
-                return "inside the coast";
-            }
-        }
-        return "out at sea";
+        return Coastlines.isInsideCoast(Coastlines.collectCoastRings(traced), pick)
+            ? "inside the coast"
+            : "out at sea";
     }
 
     // Every wall the coast trace lays, which is its own reaches and the bridges it was walled

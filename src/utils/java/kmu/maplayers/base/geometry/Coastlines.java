@@ -3,6 +3,7 @@ package kmu.maplayers.base.geometry;
 import kmlib.math.geometry.Angles;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
+import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.ranges.Ranges;
 
 import java.util.ArrayList;
@@ -333,6 +334,45 @@ final class Coastlines {
             }
         }
         return reaches;
+    }
+
+    /**
+     * The whole drawn coast as plain rings.
+     *
+     * <p>What a shape is judged against, and what the map puts on screen, are the same line:
+     * void outside it is void nothing shut in, whatever any single reach's line says. Built
+     * here rather than by each reader, since three readers building it three ways is three
+     * answers to one question.
+     *
+     * @param traced the coast
+     * @return one ring per stretch of coast, in the order they were traced
+     */
+    static List<List<double[]>> collectCoastRings(TracedCoasts traced) {
+
+        var rings = new ArrayList<List<double[]>>(traced.coasts().size());
+
+        for (var coast : traced.coasts()) {
+            rings.add(collectPoints(coast));
+        }
+        return rings;
+    }
+
+    /**
+     * Whether a point lies inside the drawn coast.
+     *
+     * @param coasts the coast's rings
+     * @param point  the {x, y} point to place
+     * @return whether any ring holds it
+     */
+    static boolean isInsideCoast(List<List<double[]>> coasts, double[] point) {
+
+        for (var coast : coasts) {
+
+            if (PolygonRegions.isPointInsideRing(coast, point[0], point[1])) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

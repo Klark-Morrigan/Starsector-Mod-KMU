@@ -56,10 +56,13 @@ final class CoastlinesOverlay {
         }
 
         traced = Coastlines.traceSectorCoasts(
-            fixture.getSites(), settings.parameters, coastRules());
+            fixture.getSites(),
+            settings.parameters,
+            coastRules());
 
         penetrations = CoastCrossings.findVisibleCrossings(
-            traced, ViewerPainting.RING_STROKE);
+            traced,
+            ViewerPainting.RING_STROKE);
 
         pockets = CoastPockets.findCoastPockets(
             traced,
@@ -71,7 +74,9 @@ final class CoastlinesOverlay {
                     settings.minSectionShare),
                 ViewerPainting.resolvePocketShaping(settings)));
 
-        spills = CoastPocketFaults.findSpills(pockets, collectCoastRings(traced));
+        spills = CoastPocketFaults.findSpills(
+            pockets,
+            Coastlines.collectCoastRings(traced));
 
         // Only where the outline was held to each reach's span in the first place. At a
         // pocket's true extent nothing cuts it, so running past the end of a reach is what a
@@ -82,25 +87,15 @@ final class CoastlinesOverlay {
             : CoastPocketFaults.findOverruns(pockets, traced.union().sites());
     }
 
-    // The drawn coast as plain rings, which is what a pocket is judged against: void outside
-    // the line the map draws is void nothing shut in, whatever any single reach's line says.
-    private static List<List<double[]>> collectCoastRings(Coastlines.TracedCoasts traced) {
-
-        var rings = new java.util.ArrayList<List<double[]>>(traced.coasts().size());
-
-        for (var coast : traced.coasts()) {
-            rings.add(Coastlines.collectPoints(coast));
-        }
-        return rings;
-    }
-
     // The knobs as the sliders currently stand. Read once per refresh rather than rebuilt at
     // each place that wants them, so the coast and the pockets it shut in cannot be traced
     // under two different settings within one frame.
     private Coastlines.CoastRules coastRules() {
 
         return new Coastlines.CoastRules(
-            settings.bridgeReachMultiple, settings.coastSkipMultiple, settings.coastMaxSkips);
+            settings.bridgeReachMultiple,
+            settings.coastSkipMultiple,
+            settings.coastMaxSkips);
     }
 
     /**
@@ -143,7 +138,8 @@ final class CoastlinesOverlay {
 
         g2.setStroke(new BasicStroke(ViewerPainting.SPAN_STROKE));
         g2.setColor(ViewerPainting.applyAlpha(
-            settings.coastlineColour, ViewerPainting.OPAQUE_ALPHA));
+            settings.coastlineColour,
+            ViewerPainting.OPAQUE_ALPHA));
 
         for (var coast : traced.coasts()) {
             g2.draw(ViewerPainting.buildPath(Coastlines.collectPoints(coast)));
@@ -159,7 +155,8 @@ final class CoastlinesOverlay {
 
         g2.setStroke(new BasicStroke(ViewerPainting.CROSSING_STROKE));
         g2.setColor(ViewerPainting.applyAlpha(
-            settings.coastCrossingColour, ViewerPainting.OPAQUE_ALPHA));
+            settings.coastCrossingColour,
+            ViewerPainting.OPAQUE_ALPHA));
 
         for (var spill : spills) {
             g2.draw(ViewerPainting.buildPath(spill.run()));
@@ -181,7 +178,8 @@ final class CoastlinesOverlay {
 
         g2.setStroke(new BasicStroke(ViewerPainting.SPAN_STROKE));
         g2.setColor(ViewerPainting.applyAlpha(
-            settings.piercedCellColour, ViewerPainting.OPAQUE_ALPHA));
+            settings.piercedCellColour,
+            ViewerPainting.OPAQUE_ALPHA));
 
         for (var penetration : penetrations) {
             for (var circle : penetration.circles()) {
@@ -193,7 +191,8 @@ final class CoastlinesOverlay {
 
         g2.setStroke(new BasicStroke(ViewerPainting.CROSSING_STROKE));
         g2.setColor(ViewerPainting.applyAlpha(
-            settings.coastCrossingColour, ViewerPainting.OPAQUE_ALPHA));
+            settings.coastCrossingColour,
+            ViewerPainting.OPAQUE_ALPHA));
 
         for (var penetration : penetrations) {
 

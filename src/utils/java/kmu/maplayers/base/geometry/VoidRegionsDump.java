@@ -751,7 +751,8 @@ final class VoidRegionsDump {
         }
         spans.sort(Double::compare);
 
-        var spills = CoastPocketFaults.findSpills(pockets, collectCoastRings(traced));
+        var spills = CoastPocketFaults.findSpills(
+            pockets, Coastlines.collectCoastRings(traced));
         var overruns = CoastPocketFaults.findOverruns(pockets, traced.union().sites());
 
         System.out.printf(
@@ -760,19 +761,21 @@ final class VoidRegionsDump {
             CoastPocketFaults.measureClosestApproach(pockets, traced.union().sites()),
             shipped.borderInset());
 
-        // Two numbers rather than one. Seaward of the line is void claimed out at sea; past a
-        // reach's end is a pocket longer than the piece of coast that closed it, which the cut
-        // is what holds in - so a run of them says the cut did not take rather than that the
-        // shape is out to sea.
+        // Two numbers rather than one. Outside the drawn coast is void claimed where nothing
+        // shut anything in; past a reach's end is a pocket longer than the piece of coast that
+        // closed it, which the cut is what holds in - so a run of them says the cut did not
+        // take rather than that the shape is out at sea.
         System.out.printf(
             Locale.ROOT,
-            "%d runs of pocket outline sit seaward of the reach that closed them, worst by "
-                + "%.0f (has to be 0); %d runs past a reach's end, worst by %.0f (has to be 0 "
-                + "once the cut has run)%n",
+            "%d runs of pocket outline lie outside the drawn coast, worst by %.0f (has to be "
+                + "0); %d runs past a reach's end, worst by %.0f (has to be 0 once the cut has "
+                + "run)%n",
             spills.size(),
             spills.isEmpty() ? 0 : spills.get(0).depth(),
             overruns.size(),
             overruns.isEmpty() ? 0 : overruns.get(0).depth());
+
+        reportEachSpill(spills);
 
         System.out.printf(
             Locale.ROOT,
@@ -787,44 +790,10 @@ final class VoidRegionsDump {
         reportTrappedVoidAtTrueExtent(sites, traced, shipped);
     }
 
-    // Every spilling run named, since one is a case to look at and a count is not. Where it
-    // runs, how deep, which reach it offends against, and how far from that reach it actually
-    // lies - the last of those tells a real overshoot from a slab that reaches too far.
-    private static void reportEachSpill(
-            List<CoastPocketFaults.Spill> spills,
-            Coastlines.TracedCoasts traced) {
-
-        for (var spill : spills) {
-
-            System.out.printf(Locale.ROOT, "  spill %s%n", spill);
-
-            var previous = (double[]) null;
-
-            for (var point : spill.run()) {
-
-                System.out.printf(
-                    Locale.ROOT,
-                    "      at %.0f,%.0f%s%n",
-                    point[0],
-                    point[1],
-                    describeAgainstCoast(traced, point)
-                        + (previous == null
-                            ? ""
-                            : String.format(
-                                Locale.ROOT,
-                                ", %.0f from the point before",
-                                kmlib.math.geometry.Points.computeDistance(previous, point))));
-
-                previous = point;
-            }
-        }
-    }
-
     // The same void with nothing given up, which is the map the viewer opens on and the one
     // step 5 moves everything to. Reported because the two faults answer differently here:
     // nothing cuts a pocket at its true extent, so running past a reach's end is what a hole
-    // does and only the seaward count still has to be zero. One line is what keeps that from
-    // being rediscovered by eye every time a pocket is seen sticking out past a reach.
+    // does and only the count of outline outside the coast still has to be zero.
     private static void reportTrappedVoidAtTrueExtent(
             List<double[]> sites,
             Coastlines.TracedCoasts traced,
@@ -836,9 +805,9 @@ final class VoidRegionsDump {
             new VoidPockets.PocketRules(
                 shipped, SECTION_RULES, VoidPockets.PocketShaping.AT_TRUE_EXTENT));
 
-        var spills = CoastPocketFaults.findSpills(pockets, collectCoastRings(traced));
+        var spills = CoastPocketFaults.findSpills(
+            pockets, Coastlines.collectCoastRings(traced));
         var overruns = CoastPocketFaults.findOverruns(pockets, traced.union().sites());
-
         var drawn = 0;
 
         for (var walled : pockets) {
@@ -849,9 +818,9 @@ final class VoidRegionsDump {
 
         System.out.printf(
             Locale.ROOT,
-            "at their true extent: %d pockets, %d of them drawn, %d runs seaward of a reach, "
-                + "worst by %.0f (has to be 0); %d runs past a reach's end, worst by %.0f "
-                + "(expected - nothing cuts them here)%n",
+            "at their true extent: %d pockets, %d of them drawn, %d runs outside the drawn "
+                + "coast, worst by %.0f (has to be 0); %d runs past a reach's end, worst by "
+                + "%.0f (expected - nothing cuts them here)%n",
             pockets.size(),
             drawn,
             spills.size(),
@@ -859,36 +828,16 @@ final class VoidRegionsDump {
             overruns.size(),
             overruns.isEmpty() ? 0 : overruns.get(0).depth());
 
-        reportEachSpill(spills, traced);
+        reportEachSpill(spills);
     }
 
-    // The drawn coast as plain rings, which is what a pocket is judged against.
-    private static List<List<double[]>> collectCoastRings(Coastlines.TracedCoasts traced) {
+    // Every spilling run named, since one is a case to look at and a count is not: where it
+    // starts, how many points of outline are out there, and how far out the worst of them is.
+    private static void reportEachSpill(List<CoastPocketFaults.Spill> spills) {
 
-        var rings = new ArrayList<List<double[]>>(traced.coasts().size());
-
-        for (var coast : traced.coasts()) {
-            rings.add(Coastlines.collectPoints(coast));
+        for (var spill : spills) {
+            System.out.printf(Locale.ROOT, "  spill %s%n", spill);
         }
-        return rings;
-    }
-
-    // Which side of the DRAWN coast a point is on, which is the only reading of "out at sea"
-    // that holds for a pocket closed by more than one kind of wall: past one reach's line is
-    // not past the coast when a bridge shuts the space beyond it.
-    private static String describeAgainstCoast(
-            Coastlines.TracedCoasts traced,
-            double[] point) {
-
-        for (var coast : traced.coasts()) {
-
-            if (PolygonRegions.isPointInsideRing(
-                    Coastlines.collectPoints(coast), point[0], point[1])) {
-
-                return " inside the coast";
-            }
-        }
-        return " OUT AT SEA";
     }
 
     // Each crossing as its depth beside one other number about it. Shared by every such
