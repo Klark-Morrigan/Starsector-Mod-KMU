@@ -208,20 +208,14 @@ public record HolderPass(
     }
 
     /**
-     * What one system's habitation amounts to - the colonies somebody lives on, and the blocs
-     * folded from those very colonies - as the one value the surfaces answering about habitation
-     * share.
+     * What one system's habitation amounts to, off this pass's one walk of it - the value every
+     * surface answering about habitation shares, and {@link SystemHabitation} says why it is one
+     * value rather than two reads.
      *
-     * <p>Offered as a value rather than as two reads because the cell classification asks its
-     * emptiness while the filter's spotlight asks its bloc set, and a cell painted as empty space
-     * under a fill the spotlight kept over it is the one pairing those two must not be able to
-     * make. Folding the blocs here, from the same colonies the emptiness is asked of, is what makes
-     * presence a partition of that set rather than a second read two call sites happen to have
-     * chosen alike.
-     *
-     * <p>Habitation rather than the wider listing, and the difference is the derelict: a hulk
-     * somebody has seen is named in a box and settles nothing, so no bloc is living in a system
-     * holding one alone and none is spared the recede there.
+     * <p>Habitation rather than the wider listing {@link #readKnownColonyFactionIds} answers, and
+     * the difference is the derelict: a hulk somebody has seen is named in a box and settles
+     * nothing, so no bloc is living in a system holding one alone and none is spared the recede
+     * there.
      *
      * @param system the system to read; null yields an empty habitation
      * @return the system's habitation under this pass's rule and grouping
