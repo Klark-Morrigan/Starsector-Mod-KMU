@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.ColonyVisibility;
+import kmlib.starsector.colonies.RevelationGate;
 
 import kmu.maplayers.base.visibility.MapVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import java.util.EnumSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,10 +42,23 @@ import static org.mockito.Mockito.mockStatic;
  */
 final class PoliticalMapInhabitationTest {
 
-    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
-    // is the widest rule any surface reads under.
-    private static final ColonyVisibility UNDER_THE_REVEAL =
-        new ColonyVisibility(true, Set.of());
+    // What the live read hands down when the player has touched nothing: the fog alone, with
+    // every gate the rule knows of held. Not MapVisibilityOverrides.NONE - that names the value
+    // a caller with nothing to override passes, and the shipped state is not that value, because
+    // holding a gate is something the read actively does.
+    //
+    // Stated against the enum's own constants so a gate added later has to reach this read
+    // rather than quietly stopping at it.
+    private static final MapVisibilityOverrides UNDER_THE_SHIPPED_SETTINGS =
+        new MapVisibilityOverrides(
+            new ColonyVisibility(false, EnumSet.allOf(RevelationGate.class)),
+            false);
+
+    // The same, with the "show all factions" reveal on - the one toggle each case below raises.
+    private static final MapVisibilityOverrides UNDER_THE_REVEAL =
+        new MapVisibilityOverrides(
+            new ColonyVisibility(true, EnumSet.allOf(RevelationGate.class)),
+            false);
 
     private static final String SETTLED_SYSTEM = "settled";
 
@@ -81,7 +96,7 @@ final class PoliticalMapInhabitationTest {
             visibilityMock
                 .when(() -> MapVisibility.findInhabitedSystemIds(
                     same(sectorMock),
-                    eq(MapVisibilityOverrides.NONE)))
+                    eq(UNDER_THE_SHIPPED_SETTINGS)))
                 .thenReturn(Set.of(SETTLED_SYSTEM));
 
             assertThat(PoliticalMapInhabitation.readInhabitedSystemIds(sectorMock))
@@ -100,7 +115,7 @@ final class PoliticalMapInhabitationTest {
 
             visibilityMock.verify(() -> MapVisibility.findInhabitedSystemIds(
                 any(),
-                eq(new MapVisibilityOverrides(UNDER_THE_REVEAL, false))));
+                eq(UNDER_THE_REVEAL)));
         }
     }
 
@@ -114,7 +129,7 @@ final class PoliticalMapInhabitationTest {
                 .when(() -> MapVisibility.isInhabited(
                     same(sectorMock),
                     same(systemMock),
-                    eq(MapVisibilityOverrides.NONE)))
+                    eq(UNDER_THE_SHIPPED_SETTINGS)))
                 .thenReturn(true);
 
             assertThat(PoliticalMapInhabitation.isSystemInhabited(sectorMock, systemMock))
@@ -137,7 +152,7 @@ final class PoliticalMapInhabitationTest {
             visibilityMock.verify(() -> MapVisibility.isInhabited(
                 any(SectorAPI.class),
                 any(StarSystemAPI.class),
-                eq(new MapVisibilityOverrides(UNDER_THE_REVEAL, false))));
+                eq(UNDER_THE_REVEAL)));
         }
     }
 }

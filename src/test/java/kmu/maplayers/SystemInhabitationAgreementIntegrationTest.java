@@ -77,16 +77,18 @@ final class SystemInhabitationAgreementIntegrationTest {
     class ClassifyAndReportOneSystem {
 
         @Test
-        void anOpenColonyThePlayerHasNotReachedSettlesTheCellAndSilencesTheStatus() {
-            // The case the two reads part company on: publicly listed and unvisited. The cell
-            // counts it, so anything narrower over that cell contradicts what is drawn beneath.
+        void anOpenColonyThePlayerHasNotReachedLeavesTheCellEmptyAndTheStatusSpoken() {
+            // Being publicly listed does not make a colony known, so this withholds exactly as a
+            // concealed base does - and the point of the case is that both surfaces withhold it
+            // together. A cell drawn as settled over a box saying "Unpopulated" would be the
+            // disagreement this suite exists to catch, whichever way the fog had drifted.
             var system = buildSystem();
             var sector = buildSectorListing(system, buildOpenUnreachedColony());
 
             assertThat(isInhabited(sector, system, UNDER_THE_FOG))
-                .isTrue();
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, UNDER_THE_FOG))
-                .isEmpty();
+                .isFalse();
+            assertThat(readStatus(sector, system, UNDER_THE_FOG))
+                .isEqualTo("Unpopulated");
         }
 
         @Test
@@ -251,8 +253,8 @@ final class SystemInhabitationAgreementIntegrationTest {
         return buildColonyOnEntity(false, false);
     }
 
-    // A colony surfaced into the open ahead of being reached - the shape the known projection
-    // admits and a discovery gate does not.
+    // A colony surfaced into the open ahead of being reached: nothing concealed about the market,
+    // its entity still awaiting discovery.
     private static MarketAPI buildOpenUnreachedColony() {
         return buildColonyOnEntity(true, false);
     }

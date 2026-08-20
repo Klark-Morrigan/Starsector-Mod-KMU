@@ -204,21 +204,24 @@ class SectorPoliticsIntegrationTest {
         }
 
         @Test
-        void resolveDominantHolderPaintsRevealedColonyAwaitingApproach() {
+        void resolveDominantHolderExcludesAnUnfoundColonyHoweverPubliclyItIsListed() {
             // A colony surfaced ahead of its entity being physically found - the
             // market un-hidden but the entity still discoverable, as FSF's DWR43
-            // colonies sit between first entry and the fleet closing in. It is
-            // public knowledge, so it claims its system at once.
+            // colonies sit between first entry and the fleet closing in. Being
+            // publicly listed somewhere the player cannot see does not make it
+            // known, so it paints nothing until the entity is found.
+            //
+            // Beside the case above rather than folded into it: that one is
+            // concealed as well as unfound, so it would go on passing under a fog
+            // that had quietly regained an "or it is listed" arm.
             var fsf = buildFaction("aEP_FSF", HEGEMONY_BRIGHT);
             var sector = buildSectorWith(
                 "revealed-system",
                 List.of(fsf),
-                buildRevealedColonyAwaitingApproach(fsf, 5));
+                buildUnfoundColonyAwaitingApproach(fsf, 5));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
-                .containsEntry(
-                    "revealed-system",
-                    new DominantHolder("aEP_FSF", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
+                .doesNotContainKey("revealed-system");
         }
 
         @Test
@@ -448,10 +451,9 @@ class SectorPoliticsIntegrationTest {
         return marketMock;
     }
 
-    // A colony surfaced ahead of its entity being physically found: the market un-hidden but the
-    // entity still discoverable. Public knowledge already, so it counts as presence (FSF's DWR43
-    // colonies between entry and approach). Local to this suite.
-    private static MarketAPI buildRevealedColonyAwaitingApproach(FactionAPI faction, int size) {
+    // A colony whose entity is still to be found, with nothing concealed about the market itself
+    // (FSF's DWR43 colonies between entry and approach). Local to this suite.
+    private static MarketAPI buildUnfoundColonyAwaitingApproach(FactionAPI faction, int size) {
         return buildMarket(faction, size, false, false, true);
     }
 

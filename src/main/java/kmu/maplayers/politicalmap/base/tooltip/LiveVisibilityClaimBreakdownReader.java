@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
@@ -26,22 +27,36 @@ import kmu.maplayers.base.visibility.MapVisibilityOverrides;
  * <p>The reader beneath is minted per read for the same reason, and it is the pass-less one on
  * purpose: it holds no colony index, so there is no snapshot of the sector to go stale between
  * hovers. A reader that walks afresh is what a surface with no pass behind it must have.
+ *
+ * <p>Only the breakdown is resolved that way. The decree is a rule-free question - see below -
+ * and the port promises it stays a single memory read, so nothing is put in front of it here.
  */
 public final class LiveVisibilityClaimBreakdownReader implements ClaimBreakdownReader {
 
+    // The decree read consults no visibility rule: it answers off the system's own memory flag,
+    // and reaches no colony for a rule to be applied to. So one reader serves every ask of it,
+    // and the rule it was opened under is never read.
+    //
+    // Held rather than opened per ask because the port undertakes that this question stays a
+    // single memory read - a caller heading a box with a decree is promised it does not pay for
+    // the scoring - and a settings lookup and an allocation in front of it would quietly make
+    // that untrue for every box drawn.
+    private static final ClaimBreakdownReader DECREE_READER =
+        new VanillaClaimBreakdownReader(ColonyVisibility.BASE_FOG);
+
     @Override
     public SystemClaimBreakdown readBreakdown(StarSystemAPI system) {
-        return openReader().readBreakdown(system);
+        return openReaderUnderLiveVisibility().readBreakdown(system);
     }
 
     @Override
     public String readCoreFactionId(StarSystemAPI system) {
-        return openReader().readCoreFactionId(system);
+        return DECREE_READER.readCoreFactionId(system);
     }
 
     // The underlying reader under the rule in force right now. Opened per ask rather than held,
     // so the rule can never be older than the answer given under it.
-    private static ClaimBreakdownReader openReader() {
+    private static ClaimBreakdownReader openReaderUnderLiveVisibility() {
 
         return new VanillaClaimBreakdownReader(
             MapVisibilityOverrides.readFromLunaSettings().colonyVisibility());

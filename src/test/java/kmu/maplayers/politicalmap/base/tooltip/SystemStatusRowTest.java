@@ -138,16 +138,20 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowCountsAListedColonyThePlayerHasNotReached() {
-            // The case parting the known projection from a discovery gate. The colony is public -
-            // the game names it on the star's own tooltip and the cell beneath this box paints the
-            // system as settled - so a narrower gate here would print "Unpopulated" over a
-            // populated cell.
+        void resolveStatusRowCallsASystemEmptyWhereItsOnlyColonyIsUnfoundHoweverPubliclyListed() {
+            // The pair above and this one are the two halves hiddenness and discovery come apart
+            // on, and the fog reads only the second: a raided base stays concealed and counts,
+            // while a colony the game lists publicly does not until its entity is found. The cell
+            // beneath the box withholds it on the same rule, so the two still agree.
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingMarkets(system, buildUnfoundListedColony());
 
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, ColonyVisibility.BASE_FOG))
-                .isEmpty();
+            var row = SystemStatusRow
+                .resolveStatusRow(sector, system, ColonyVisibility.BASE_FOG)
+                .orElseThrow();
+
+            assertThat(readLabelTextRun(row, STATUS_RUN).text())
+                .isEqualTo("Unpopulated");
         }
 
         @Test
