@@ -38,6 +38,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -408,11 +409,15 @@ final class DebugBorderTracingBuilderTest {
     // overlay's own pass is read - and opening one reaches LunaLib for the colony rule, which the
     // test JVM cannot load.
     //
-    // Matched on the pass by type rather than by identity: the overlay opens its own, so no case
-    // here holds the instance the seam is called with.
+    // Matched on the sector the pass was opened over rather than on the pass itself, the overlay
+    // opening its own so no case here holds the instance. That is the half worth pinning: the
+    // overlay resolves its holding and its inhabitation from one pass, and one opened over a
+    // second sector would classify cells against a sector the trace above never read. A stub
+    // matching any pass at all would go on answering for it.
     private void stubInhabitedSystems(String... systemIds) {
         inhabitationMock
-            .when(() -> PoliticalMapInhabitation.readInhabitedSystemIds(any(HolderPass.class)))
+            .when(() -> PoliticalMapInhabitation.readInhabitedSystemIds(
+                argThat(pass -> pass != null && pass.sector() == sectorMock)))
             .thenReturn(Set.of(systemIds));
     }
 
