@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.testfixtures.starsector.systems.claims.ClaimReaderFake;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -11,6 +10,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildDarkTheme;
@@ -85,7 +86,7 @@ final class SectorClaimsIntegrationTest {
             claimReaderFake.setClaim("claimed", "hegemony");
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemId(
-                    HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, grouping), claimReaderFake))
+                    HolderPass.over(sectorMock, BASE_FOG, grouping), claimReaderFake))
                     .containsExactly(Map.entry("claimed",
                             new DominantHolder("alliance-1", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }

@@ -12,7 +12,6 @@ import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
 import kmlib.math.geometry.VoronoiCellBuilder;
-import kmlib.starsector.colonies.ColonyVisibility;
 
 import kmu.maplayers.base.visibility.MapVisibilityOverrides;
 
@@ -24,6 +23,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -63,7 +64,7 @@ final class CellGeometryCacheTest {
     // The force override on, which admits every system whatever the normal gates say - the one
     // widening that needs no economy staged behind it to change the participating set.
     private static final MapVisibilityOverrides FORCED_ONTO_MAP =
-            new MapVisibilityOverrides(ColonyVisibility.BASE_FOG, true);
+            new MapVisibilityOverrides(BASE_FOG, true);
 
     @Nested
     class UpdateFromSector {

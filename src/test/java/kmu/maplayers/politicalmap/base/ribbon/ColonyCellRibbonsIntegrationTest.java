@@ -19,12 +19,13 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.FOG_KEPT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
@@ -89,7 +90,7 @@ final class ColonyCellRibbonsIntegrationTest {
             // depend on which layer they are looking at.
             var sector = buildContestedSector();
             var system = buildOnlySystem(sector);
-            var holding = HolderPass.over(sector, FOG_KEPT, HolderGrouping.identity());
+            var holding = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
             var inputs = buildInputsFor(holding);
 
             var heldPlan = new HeldSystemRibbonPlanner(
@@ -126,7 +127,7 @@ final class ColonyCellRibbonsIntegrationTest {
             // the suite exists - each was self-consistent while disagreeing with the other.
             var sector = buildSectorWhereTritachyonIsUnregistered();
             var system = buildOnlySystem(sector);
-            var holding = HolderPass.over(sector, FOG_KEPT, HolderGrouping.identity());
+            var holding = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
             var pass = DominancePass.over(
                 holding,
                 SectorPoliticsFixtures.buildStabilityWeightedRules());

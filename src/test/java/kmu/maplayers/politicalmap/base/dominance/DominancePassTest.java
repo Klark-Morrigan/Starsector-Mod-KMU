@@ -1,11 +1,11 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
-import kmlib.starsector.colonies.ColonyVisibility;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
@@ -48,7 +48,7 @@ class DominancePassTest {
             assertThatThrownBy(() ->
                     new DominancePass(
                         null,
-                        HolderPass.over(null, ColonyVisibility.BASE_FOG, HolderGrouping.identity())))
+                        HolderPass.over(null, BASE_FOG, HolderGrouping.identity())))
                 .isInstanceOf(NullPointerException.class);
         }
 

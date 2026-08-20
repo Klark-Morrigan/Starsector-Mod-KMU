@@ -3,8 +3,6 @@ package kmu.maplayers.politicalmap.base.politics;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.starsector.colonies.ColonyVisibility;
-
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -14,6 +12,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
@@ -99,7 +99,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(
-                    DominancePass.over(sector, STABILITY_WEIGHTED, ColonyVisibility.BASE_FOG, grouping)))
+                    DominancePass.over(sector, STABILITY_WEIGHTED, BASE_FOG, grouping)))
                 .containsExactly(entry("alliance-1", new DominanceStats(2, 2, 5000, 5)));
         }
 

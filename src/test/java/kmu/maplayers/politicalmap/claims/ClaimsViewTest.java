@@ -4,8 +4,6 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.starsector.colonies.ColonyVisibility;
-
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
@@ -34,6 +32,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
@@ -115,7 +115,7 @@ final class ClaimsViewTest {
                     HolderPass.over(
                         mock(SectorAPI.class),
                         // Undiscovered colonies do not count, as on the live map.
-                        ColonyVisibility.BASE_FOG,
+                        BASE_FOG,
                         HolderGrouping.identity()),
                     blocId -> null,
                     new RibbonPlanRules(
@@ -304,7 +304,8 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(Map.of("hegemony", ANY_CLAIMANT_STATS));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, ColonyVisibility.BASE_FOG).items())
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc(
                             "hegemony",
@@ -328,7 +329,8 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(Map.of("luddic_path", new ClaimStats(1, 0)));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, ColonyVisibility.BASE_FOG).items())
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .items())
                     .extracting(RankedBloc::itemId)
                     .containsExactly("luddic_path");
             }
@@ -352,7 +354,8 @@ final class ClaimsViewTest {
                         "hegemony", new ClaimStats(1, 0),
                         "tritachyon", new ClaimStats(0, 40)));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, ColonyVisibility.BASE_FOG).items())
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .items())
                     .extracting(RankedBloc::itemId)
                     .containsExactlyInAnyOrder("hegemony", "tritachyon");
             }
@@ -378,7 +381,8 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(statsByBlocId);
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, ColonyVisibility.BASE_FOG).items())
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .items())
                     .extracting(RankedBloc::itemId, RankedBloc::isDimmed)
                     .containsExactly(
                         tuple("hegemony", false),
@@ -409,7 +413,8 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(statsByBlocId);
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, ColonyVisibility.BASE_FOG).items())
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .items())
                     .extracting(RankedBloc::itemId)
                     .containsExactly("hegemony", "tritachyon", "persean");
             }
@@ -427,7 +432,8 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(Map.of());
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, ColonyVisibility.BASE_FOG).items())
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .items())
                     .isEmpty();
             }
         }
@@ -444,7 +450,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(Map.of());
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, ColonyVisibility.BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
                         .sortModes())
                     .isEqualTo(ClaimSortMode.MODES);
             }

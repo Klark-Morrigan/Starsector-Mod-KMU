@@ -23,10 +23,11 @@ import org.mockito.Mockito;
 
 import java.util.List;
 
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.FOG_KEPT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
@@ -112,7 +113,7 @@ final class ClaimPresenceReadoutIntegrationTest {
             var inputs = RibbonPlanFixtures.buildInputsOver(
                 sector,
                 HolderGrouping.identity(),
-                FOG_KEPT);
+                BASE_FOG);
 
             // One reader for both surfaces, over the one walk of the system, exactly as a live bake
             // and the hover above it read a claim.

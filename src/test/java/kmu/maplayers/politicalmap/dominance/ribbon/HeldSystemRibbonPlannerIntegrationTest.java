@@ -4,8 +4,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.starsector.colonies.ColonyVisibility;
-
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -18,6 +16,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
@@ -50,9 +50,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class HeldSystemRibbonPlannerIntegrationTest {
 
     private static final String SYSTEM_ID = "corvus";
-
-    // Undiscovered colonies left out, which is the shipped rule; no case here turns on it.
-    private static final ColonyVisibility WITHOUT_DEV_REVEAL = ColonyVisibility.BASE_FOG;
 
     // Colony sizes chosen so the two blocs cannot tie on weight. A tie would send the resolve to
     // the proximity tie-break, which reads orbit geometry none of these systems is wired with -
@@ -163,7 +160,7 @@ final class HeldSystemRibbonPlannerIntegrationTest {
     // built apart, the weights could be read off one walk of a system and its colonies off another.
     private static HeldSystemRibbonPlanner buildPlanner(SectorAPI sector) {
 
-        var holding = HolderPass.over(sector, WITHOUT_DEV_REVEAL, HolderGrouping.identity());
+        var holding = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
 
         return new HeldSystemRibbonPlanner(
             DominancePass.over(holding, SectorPoliticsFixtures.buildStabilityWeightedRules()),

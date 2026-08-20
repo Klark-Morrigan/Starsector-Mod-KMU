@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.colonies.Colony;
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
@@ -13,7 +12,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
-import java.util.Set;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+
+import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -38,11 +40,6 @@ import static org.mockito.Mockito.mock;
  * in the {@code base.politics} integration suites.
  */
 final class HolderPassTest {
-
-    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
-    // is the widest rule any surface reads under.
-    private static final ColonyVisibility UNDER_THE_REVEAL =
-        new ColonyVisibility(true, Set.of());
 
     private static final String SYSTEM_ID = "corvus";
 
@@ -70,7 +67,7 @@ final class HolderPassTest {
         void rejectsNullGrouping() {
 
             assertThatThrownBy(() ->
-                    new HolderPass(null, ColonyVisibility.BASE_FOG, new SystemColoniesIndex(null)))
+                    new HolderPass(null, BASE_FOG, new SystemColoniesIndex(null)))
                 .isInstanceOf(NullPointerException.class);
         }
 
@@ -91,7 +88,7 @@ final class HolderPassTest {
             // here, and a pass over a sector that cannot be reached is a different thing entirely -
             // an index over a null sector, which answers an empty set and is perfectly legal.
             assertThatThrownBy(() ->
-                    new HolderPass(HolderGrouping.identity(), ColonyVisibility.BASE_FOG, null))
+                    new HolderPass(HolderGrouping.identity(), BASE_FOG, null))
                 .isInstanceOf(NullPointerException.class);
         }
     }
@@ -112,7 +109,7 @@ final class HolderPassTest {
                     COLONY_SIZE));
 
             var knownColonies = HolderPass
-                .over(sector, ColonyVisibility.BASE_FOG, HolderGrouping.identity())
+                .over(sector, BASE_FOG, HolderGrouping.identity())
                 .readKnownColoniesIn(SectorPoliticsFixtures.buildOnlySystem(sector));
 
             assertThat(knownColonies)
@@ -142,7 +139,7 @@ final class HolderPassTest {
             // The null-system answer every read on the pass holds to, so a reader handed a system
             // the sector no longer lists is not obliged to guard before asking.
             assertThat(HolderPass
-                    .over(mock(SectorAPI.class), ColonyVisibility.BASE_FOG, HolderGrouping.identity())
+                    .over(mock(SectorAPI.class), BASE_FOG, HolderGrouping.identity())
                     .readKnownColoniesIn(null))
                 .isEmpty();
         }
@@ -170,7 +167,7 @@ final class HolderPassTest {
             SectorPoliticsFixtures.placeMarketsOnSystemEntities(system, colony, derelict);
 
             var pass = HolderPass
-                .over(sector, ColonyVisibility.BASE_FOG, HolderGrouping.identity());
+                .over(sector, BASE_FOG, HolderGrouping.identity());
 
             assertThat(pass.readKnownColoniesIn(system))
                 .extracting(HolderPassTest::readColonyFactionId)
@@ -193,7 +190,7 @@ final class HolderPassTest {
                     COLONY_SIZE));
 
             var inhabitingColonies = HolderPass
-                .over(sector, ColonyVisibility.BASE_FOG, HolderGrouping.identity())
+                .over(sector, BASE_FOG, HolderGrouping.identity())
                 .readInhabitingColoniesIn(SectorPoliticsFixtures.buildOnlySystem(sector));
 
             assertThat(inhabitingColonies)
@@ -226,7 +223,7 @@ final class HolderPassTest {
             assertThat(HolderPass
                     .over(
                         mock(SectorAPI.class),
-                        ColonyVisibility.BASE_FOG,
+                        BASE_FOG,
                         HolderGrouping.identity())
                     .readInhabitingColoniesIn(null))
                 .isEmpty();
@@ -255,7 +252,7 @@ final class HolderPassTest {
                     COLONY_SIZE));
 
             assertThat(HolderPass
-                    .over(sector, ColonyVisibility.BASE_FOG, HolderGrouping.identity())
+                    .over(sector, BASE_FOG, HolderGrouping.identity())
                     .readKnownColonyFactionIds(SectorPoliticsFixtures.buildOnlySystem(sector)))
                 .containsExactlyInAnyOrder("hegemony", "tritachyon");
         }
@@ -270,7 +267,7 @@ final class HolderPassTest {
                 SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE));
 
             assertThat(HolderPass
-                    .over(sector, ColonyVisibility.BASE_FOG, HolderGrouping.identity())
+                    .over(sector, BASE_FOG, HolderGrouping.identity())
                     .readKnownColonyFactionIds(SectorPoliticsFixtures.buildOnlySystem(sector)))
                 .containsExactly("hegemony");
         }
@@ -289,7 +286,7 @@ final class HolderPassTest {
             var system = SectorPoliticsFixtures.buildOnlySystem(sector);
 
             assertThat(HolderPass
-                    .over(sector, ColonyVisibility.BASE_FOG, HolderGrouping.identity())
+                    .over(sector, BASE_FOG, HolderGrouping.identity())
                     .readKnownColonyFactionIds(system))
                 .isEmpty();
             assertThat(HolderPass
@@ -302,7 +299,7 @@ final class HolderPassTest {
         void namesNobodyForASystemThatIsNotThere() {
 
             assertThat(HolderPass
-                    .over(mock(SectorAPI.class), ColonyVisibility.BASE_FOG, HolderGrouping.identity())
+                    .over(mock(SectorAPI.class), BASE_FOG, HolderGrouping.identity())
                     .readKnownColonyFactionIds(null))
                 .isEmpty();
         }
@@ -323,7 +320,7 @@ final class HolderPassTest {
                     COLONY_SIZE));
 
             assertThat(HolderPass
-                    .over(sector, ColonyVisibility.BASE_FOG, ALLIED_HEGEMONY_AND_TRITACHYON)
+                    .over(sector, BASE_FOG, ALLIED_HEGEMONY_AND_TRITACHYON)
                     .readKnownColonyBlocIds(SectorPoliticsFixtures.buildOnlySystem(sector)))
                 .containsExactly(ALLIANCE_ID);
         }
@@ -341,7 +338,7 @@ final class HolderPassTest {
                     COLONY_SIZE));
 
             assertThat(HolderPass
-                    .over(sector, ColonyVisibility.BASE_FOG, HolderGrouping.identity())
+                    .over(sector, BASE_FOG, HolderGrouping.identity())
                     .readKnownColonyBlocIds(SectorPoliticsFixtures.buildOnlySystem(sector)))
                 .containsExactly("hegemony");
         }
@@ -355,7 +352,7 @@ final class HolderPassTest {
 
             var sectorMock = mock(SectorAPI.class);
 
-            assertThat(HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, HolderGrouping.identity()).sector())
+            assertThat(HolderPass.over(sectorMock, BASE_FOG, HolderGrouping.identity()).sector())
                 .isSameAs(sectorMock);
         }
 
@@ -363,7 +360,7 @@ final class HolderPassTest {
         void namesNoSectorForAPassOverNone() {
             // The unreachable-sector case every resolve already guards on, reported rather than
             // stood in for.
-            assertThat(HolderPass.over(null, ColonyVisibility.BASE_FOG, HolderGrouping.identity()).sector())
+            assertThat(HolderPass.over(null, BASE_FOG, HolderGrouping.identity()).sector())
                 .isNull();
         }
     }

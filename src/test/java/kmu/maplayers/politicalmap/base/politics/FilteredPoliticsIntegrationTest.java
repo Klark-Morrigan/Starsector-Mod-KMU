@@ -4,8 +4,6 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.starsector.colonies.ColonyVisibility;
-
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -18,6 +16,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+
+import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.PERSEAN_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
@@ -54,11 +55,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * economy walk and must agree with the assembly about where a bloc lives.
  */
 class FilteredPoliticsIntegrationTest {
-
-    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
-    // is the widest rule any surface reads under.
-    private static final ColonyVisibility UNDER_THE_REVEAL =
-        new ColonyVisibility(true, Set.of());
 
     private static final DominanceRules STABILITY_WEIGHTED = buildStabilityWeightedRules();
 
@@ -204,7 +200,7 @@ class FilteredPoliticsIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             var holder = FilteredPolitics.resolveFilteredHolder(
-                    DominancePass.over(sector, STABILITY_WEIGHTED, ColonyVisibility.BASE_FOG, grouping),
+                    DominancePass.over(sector, STABILITY_WEIGHTED, BASE_FOG, grouping),
                     "alliance-1")
                 .ownerBySystemId()
                 .get("contested-system");
@@ -479,7 +475,11 @@ class FilteredPoliticsIntegrationTest {
             String selectedBlocId) {
 
         return FilteredPolitics.resolveFilteredHolder(
-            DominancePass.over(sector, STABILITY_WEIGHTED, UNDER_THE_REVEAL, HolderGrouping.identity()),
+            DominancePass.over(
+                sector,
+                STABILITY_WEIGHTED,
+                UNDER_THE_REVEAL,
+                HolderGrouping.identity()),
             selectedBlocId);
     }
 }

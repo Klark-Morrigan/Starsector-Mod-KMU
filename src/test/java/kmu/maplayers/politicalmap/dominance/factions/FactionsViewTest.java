@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.base.refresh.MapLayerRefresh;
@@ -35,6 +34,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -94,7 +95,7 @@ final class FactionsViewTest {
             var holding = new HolderPass(
                 HolderGrouping.identity(),
                 // Undiscovered colonies do not count, as on the live map.
-                ColonyVisibility.BASE_FOG,
+                BASE_FOG,
                 new SystemColoniesIndex(null));
 
             try (var passMock = mockStatic(DominancePass.class)) {
@@ -295,7 +296,8 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(Map.of("hegemony", ANY_STATS));
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, ColonyVisibility.BASE_FOG).items())
+                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc(
                             "hegemony",
@@ -325,7 +327,8 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(Map.of("luddic_path", ANY_STATS));
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, ColonyVisibility.BASE_FOG).items())
+                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc("luddic_path", "Path", null),
                         ANY_STATS));
@@ -343,7 +346,8 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(Map.of());
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, ColonyVisibility.BASE_FOG).items())
+                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .items())
                     .isEmpty();
             }
         }
@@ -360,7 +364,7 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(Map.of());
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, ColonyVisibility.BASE_FOG)
+                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
                         .sortModes())
                     .isEqualTo(DominanceSortMode.MODES);
             }

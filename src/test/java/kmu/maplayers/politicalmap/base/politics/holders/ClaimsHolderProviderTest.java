@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.politics.holders;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 
@@ -19,6 +18,8 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -44,7 +45,7 @@ final class ClaimsHolderProviderTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, grouping);
+            var pass = HolderPass.over(sectorMock, BASE_FOG, grouping);
             var claimHolder = new DominantHolder("hegemony", PRIMARY, SECONDARY);
             var provider = new ClaimsHolderProvider(colonies -> claimReaderMock);
 
@@ -75,7 +76,7 @@ final class ClaimsHolderProviderTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, grouping);
+            var pass = HolderPass.over(sectorMock, BASE_FOG, grouping);
             var spotlightHolder = new DominantHolder("$spotlit", PRIMARY, SECONDARY);
             var ownClaimHolder = new DominantHolder("hegemony", PRIMARY, SECONDARY);
             var rivalClaimHolder = new DominantHolder("tritachyon", PRIMARY, SECONDARY);
@@ -129,7 +130,7 @@ final class ClaimsHolderProviderTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, grouping);
+            var pass = HolderPass.over(sectorMock, BASE_FOG, grouping);
             var spotlightHolder = new DominantHolder("$spotlit", PRIMARY, SECONDARY);
             var claimHolder = new DominantHolder("hegemony", PRIMARY, SECONDARY);
             var provider = new ClaimsHolderProvider(colonies -> claimReaderMock);
@@ -167,7 +168,7 @@ final class ClaimsHolderProviderTest {
             // each system rather than adding one.
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
-            var pass = HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.over(sectorMock, BASE_FOG, HolderGrouping.identity());
             var openedOver = new ArrayList<SystemColoniesIndex>();
 
             var provider = new ClaimsHolderProvider(colonies -> {

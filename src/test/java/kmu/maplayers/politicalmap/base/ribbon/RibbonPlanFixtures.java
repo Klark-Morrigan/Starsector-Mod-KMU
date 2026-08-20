@@ -12,7 +12,6 @@ import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import java.awt.Color;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
@@ -113,11 +112,6 @@ public final class RibbonPlanFixtures {
      * are in it.
      */
     public static final Optional<String> NO_PAINTER = Optional.empty();
-
-    // What the pass shows of a colony. Named at both settings because a suite posing the reveal
-    // is posing the one thing the counting rule's input reads.
-    public static final ColonyVisibility FOG_LIFTED = new ColonyVisibility(true, Set.of());
-    public static final ColonyVisibility FOG_KEPT = ColonyVisibility.BASE_FOG;
 
     // The size every colony these fixtures build carries. A band counts holdings rather than
     // weighing them, so a suite about counting or ordering varies nothing by varying this.

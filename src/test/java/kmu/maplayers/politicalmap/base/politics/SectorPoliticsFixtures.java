@@ -9,8 +9,6 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 
-import kmlib.starsector.colonies.ColonyVisibility;
-
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -25,6 +23,8 @@ import org.lwjgl.util.vector.Vector2f;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -100,7 +100,7 @@ public final class SectorPoliticsFixtures {
     public static HolderPass buildHolderPassOver(SectorAPI sector) {
         return HolderPass.over(
             sector,
-            ColonyVisibility.BASE_FOG, // Undiscovered markets are not included.
+            BASE_FOG, // Undiscovered markets are not included.
             HolderGrouping.identity());
     }
 

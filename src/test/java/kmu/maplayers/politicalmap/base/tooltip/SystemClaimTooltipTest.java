@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
@@ -27,8 +26,8 @@ import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildPresenceOnlyStanding;
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildStandingOnOneMarket;
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildUnfoundPresenceOnlyStanding;
@@ -44,6 +43,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
+import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,11 +67,6 @@ import static org.mockito.Mockito.when;
  * lines is {@link ExpandedSystemClaimTooltipTest}'s.
  */
 final class SystemClaimTooltipTest {
-
-    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
-    // is the widest rule any surface reads under.
-    private static final ColonyVisibility UNDER_THE_REVEAL =
-        new ColonyVisibility(true, Set.of());
 
     private static final String SYSTEM_ID = "askonia";
 
@@ -587,7 +582,7 @@ final class SystemClaimTooltipTest {
             tooltip.buildBodySections(sectorMock, systemMock);
 
             statusRowMock.verify(
-                () -> SystemStatusRow.resolveStatusRow(sectorMock, systemMock, ColonyVisibility.BASE_FOG));
+                () -> SystemStatusRow.resolveStatusRow(sectorMock, systemMock, BASE_FOG));
         }
 
         @Test

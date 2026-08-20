@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+
+import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
@@ -18,8 +21,6 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.bu
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildUndiscoveredHiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.FOG_KEPT;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.FOG_LIFTED;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_ALLIANCE;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
@@ -170,7 +171,7 @@ final class ColonyCellRibbonsTest {
                 Optional.of(HEGEMONY),
                 List.of(HEGEMONY, TRITACHYON),
                 buildOnlySystem(sector),
-                buildInputsOver(sector, NO_ALLIANCES, FOG_LIFTED));
+                buildInputsOver(sector, NO_ALLIANCES, UNDER_THE_REVEAL));
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -241,7 +242,7 @@ final class ColonyCellRibbonsTest {
                 Optional.of(HEGEMONY_ALLIANCE),
                 List.of(HEGEMONY_ALLIANCE, TRITACHYON),
                 buildOnlySystem(sector),
-                buildInputsOver(sector, buildAllianceOf(HEGEMONY, PERSEAN), FOG_KEPT));
+                buildInputsOver(sector, buildAllianceOf(HEGEMONY, PERSEAN), BASE_FOG));
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -265,7 +266,7 @@ final class ColonyCellRibbonsTest {
                 NO_PAINTER,
                 List.of(),
                 buildOnlySystem(sector),
-                buildInputsOver(sector, NO_ALLIANCES, FOG_KEPT));
+                buildInputsOver(sector, NO_ALLIANCES, BASE_FOG));
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -298,7 +299,7 @@ final class ColonyCellRibbonsTest {
             Optional.of(paintingBlocId),
             rankedBlocIds,
             buildOnlySystem(sector),
-            buildInputsOver(sector, NO_ALLIANCES, FOG_KEPT));
+            buildInputsOver(sector, NO_ALLIANCES, BASE_FOG));
     }
 
     private static RibbonPlan planThrough(

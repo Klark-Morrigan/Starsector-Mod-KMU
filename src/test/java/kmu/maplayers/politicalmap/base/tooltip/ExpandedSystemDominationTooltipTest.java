@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
@@ -31,9 +30,11 @@ import org.mockito.Mockito;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
+import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.VIEW_GROUPING;
 
@@ -62,11 +63,6 @@ import static org.mockito.Mockito.when;
  */
 final class ExpandedSystemDominationTooltipTest {
 
-    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
-    // is the widest rule any surface reads under.
-    private static final ColonyVisibility UNDER_THE_REVEAL =
-        new ColonyVisibility(true, Set.of());
-
     private static final String SYSTEM_ID = "askonia";
 
     // Where a colony sits and whether it is concealed, neither of which any case here turns on.
@@ -91,7 +87,7 @@ final class ExpandedSystemDominationTooltipTest {
     // Opened over no sector, so every pass here answers the empty colony set: what these cases are
     // about is which set the box hands on and under which knobs, not what a walk would have found.
     private static final DominancePass ANY_PASS =
-        DominancePass.over(null, ANY_RULES, ColonyVisibility.BASE_FOG, VIEW_GROUPING);
+        DominancePass.over(null, ANY_RULES, BASE_FOG, VIEW_GROUPING);
 
     // The same pass with the dev reveal on, so a case can tell a read that carries the pass's own
     // reveal from one that hardcodes the ordinary answer - which every other case would agree with.
@@ -247,7 +243,7 @@ final class ExpandedSystemDominationTooltipTest {
                 () -> KnownMarketFootprints.readBreakdownByFaction(
                     Colonies.NONE,
                     ANY_RULES,
-                    ColonyVisibility.BASE_FOG));
+                    BASE_FOG));
         }
 
         @Test
@@ -269,7 +265,7 @@ final class ExpandedSystemDominationTooltipTest {
                 () -> KnownMarketFootprints.readBreakdownByFaction(
                     Colonies.NONE,
                     ANY_RULES,
-                    ColonyVisibility.BASE_FOG),
+                    BASE_FOG),
                 Mockito.times(1));
         }
 
@@ -310,7 +306,7 @@ final class ExpandedSystemDominationTooltipTest {
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
                     Colonies.NONE,
-                    ColonyVisibility.BASE_FOG),
+                    BASE_FOG),
                 Mockito.times(1));
         }
     }

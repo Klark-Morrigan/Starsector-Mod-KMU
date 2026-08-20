@@ -9,7 +9,6 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.colonies.ColonyKind;
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.markets.MarketVisibility;
 
 import org.junit.jupiter.api.Nested;
@@ -18,8 +17,10 @@ import org.mockito.MockedStatic;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+
+import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOrbitingEntity;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStarAt;
 
@@ -50,11 +51,6 @@ class MarketProximityTieBreakTest {
 
     // Orbit radii the tests place bodies at, one clearly nearer the star than the other so the
     // closer bloc wins.
-    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
-    // is the widest rule any surface reads under.
-    private static final ColonyVisibility UNDER_THE_REVEAL =
-        new ColonyVisibility(true, Set.of());
-
     private static final float ORBIT_CLOSE = 100.0f;
     private static final float ORBIT_FAR = 200.0f;
 
@@ -83,7 +79,7 @@ class MarketProximityTieBreakTest {
                 var comparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    ColonyVisibility.BASE_FOG,
+                    BASE_FOG,
                     HolderGrouping.identity());
 
                 // hegemony's market orbits nearer the star, so it is ordered before blackrock.
@@ -109,7 +105,7 @@ class MarketProximityTieBreakTest {
                 var comparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    ColonyVisibility.BASE_FOG,
+                    BASE_FOG,
                     GREATER_HEGEMONY);
 
                 // Equal distance: the colour-faction id decides - the alliance colours by
@@ -141,13 +137,13 @@ class MarketProximityTieBreakTest {
                 var factionComparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    ColonyVisibility.BASE_FOG,
+                    BASE_FOG,
                     HolderGrouping.identity());
 
                 var allianceComparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    ColonyVisibility.BASE_FOG,
+                    BASE_FOG,
                     GREATER_HEGEMONY);
 
                 assertThat(factionComparator.compare("hegemony", "blackrock"))
@@ -172,7 +168,7 @@ class MarketProximityTieBreakTest {
                 var comparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    ColonyVisibility.BASE_FOG,
+                    BASE_FOG,
                     HolderGrouping.identity());
 
                 // Building the comparator reads nothing; only the first compare - the first tie -
@@ -208,7 +204,7 @@ class MarketProximityTieBreakTest {
                 var comparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    ColonyVisibility.BASE_FOG,
+                    BASE_FOG,
                     HolderGrouping.identity());
 
                 assertThat(comparator.compare("hegemony", "blackrock"))
@@ -239,14 +235,18 @@ class MarketProximityTieBreakTest {
                 // Without the reveal blackrock's nearer colony is not counted, so it is placeless
                 // and hegemony's farther one decides.
                 assertThat(MarketProximityTieBreak
-                        .forSystem(systemMock, colonies, ColonyVisibility.BASE_FOG, HolderGrouping.identity())
+                        .forSystem(systemMock, colonies, BASE_FOG, HolderGrouping.identity())
                         .compare("hegemony", "blackrock"))
                     .isNegative();
 
                 // Under the reveal the same colony counts, and being the nearer one it takes the
                 // tie.
                 assertThat(MarketProximityTieBreak
-                        .forSystem(systemMock, colonies, UNDER_THE_REVEAL, HolderGrouping.identity())
+                        .forSystem(
+                            systemMock,
+                            colonies,
+                            UNDER_THE_REVEAL,
+                            HolderGrouping.identity())
                         .compare("hegemony", "blackrock"))
                     .isPositive();
             }
@@ -270,7 +270,7 @@ class MarketProximityTieBreakTest {
                 var comparator = MarketProximityTieBreak.forSystem(
                     systemMock,
                     colonies,
-                    ColonyVisibility.BASE_FOG,
+                    BASE_FOG,
                     HolderGrouping.identity());
 
                 assertThat(comparator.compare("hegemony", "blackrock"))

@@ -3,8 +3,6 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.colonies.ColonyVisibility;
-
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 
@@ -13,6 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -156,7 +156,7 @@ final class PoliticalMapViewTest {
             // test is the seam's default and not that view's choice to keep it.
             var viewFake = new PoliticalMapViewFake(Map.of());
 
-            assertThat(viewFake.resolveBlocPicker(mock(SectorAPI.class), null, ColonyVisibility.BASE_FOG).items())
+            assertThat(viewFake.resolveBlocPicker(mock(SectorAPI.class), null, BASE_FOG).items())
                 .isEmpty();
         }
     }

@@ -16,7 +16,6 @@ import com.fs.starfarer.api.impl.campaign.ids.Tags;
 import com.fs.starfarer.api.util.DynamicStatsAPI;
 
 import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.entities.EntityMapIcon;
 import kmlib.starsector.entities.EntityNameplate;
@@ -35,6 +34,9 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Set;
 
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+
+import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.MarketWeights.DOMINANCE_WEIGHT_SCALE;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HALF_STABILITY;
@@ -88,11 +90,6 @@ class KnownMarketFootprintsIntegrationTest {
 
     // The name every stubbed station answers to, so a breakdown asserting that it named the
     // right entity has something to name.
-    // The "show all factions" reveal on: the fog lifted outright, and no gate held, which
-    // is the widest rule any surface reads under.
-    private static final ColonyVisibility UNDER_THE_REVEAL =
-        new ColonyVisibility(true, Set.of());
-
     private static final String STATION_NAME = "Fort Ludd";
 
     // The unlisted colony every off-economy case poses, identified as the read answers it - vanilla's
@@ -208,7 +205,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints)
                 .containsOnlyKeys("hegemony");
@@ -231,7 +228,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(8 * DOMINANCE_WEIGHT_SCALE);
@@ -254,7 +251,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("independent").totalWeight())
                 .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -278,7 +275,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints)
                 .containsOnlyKeys("hegemony", "pirates");
@@ -299,7 +296,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(2 * DOMINANCE_WEIGHT_SCALE);
@@ -317,7 +314,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withStabilityMaster(false).build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(4 * DOMINANCE_WEIGHT_SCALE);
@@ -335,7 +332,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints)
                 .containsOnlyKeys("hegemony");
@@ -354,7 +351,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withNormalPenalty(0.5).build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(2 * DOMINANCE_WEIGHT_SCALE);
@@ -371,7 +368,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(3 * DOMINANCE_WEIGHT_SCALE);
@@ -388,7 +385,7 @@ class KnownMarketFootprintsIntegrationTest {
             assertThat(KnownMarketFootprints.readByFaction(
                     readColoniesIn(sector),
                     buildRules().build(),
-                    ColonyVisibility.BASE_FOG))
+                    BASE_FOG))
                 .isEmpty();
         }
 
@@ -400,7 +397,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(DOMINANCE_WEIGHT_SCALE);
@@ -417,7 +414,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(DOMINANCE_WEIGHT_SCALE / 2);
@@ -431,7 +428,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withHiddenMarketScaling(HiddenMarketScalingChoice.NORMAL).build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -445,7 +442,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withHiddenMarketFixedWeight(2.0).build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(2 * DOMINANCE_WEIGHT_SCALE);
@@ -462,7 +459,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withColonyWeight(2.0).build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(2 * DOMINANCE_WEIGHT_SCALE);
@@ -479,7 +476,7 @@ class KnownMarketFootprintsIntegrationTest {
             assertThat(KnownMarketFootprints.readByFaction(
                     readColoniesIn(sector),
                     buildRules().build(),
-                    ColonyVisibility.BASE_FOG))
+                    BASE_FOG))
                 .isEmpty();
         }
 
@@ -518,7 +515,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("knights_of_selkie").totalWeight())
                 .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -556,7 +553,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withStationWeighting().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(6 * DOMINANCE_WEIGHT_SCALE);
@@ -574,7 +571,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withColonyWeight(0.0).withStationWeighting().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(DOMINANCE_WEIGHT_SCALE / 2);
@@ -588,7 +585,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withStabilityMaster(false).withStationWeighting().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -602,7 +599,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -619,7 +616,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withStationWeighting().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(3 * DOMINANCE_WEIGHT_SCALE / 2);
@@ -636,7 +633,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withStationWeighting().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -655,7 +652,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withStationWeighting().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -674,7 +671,7 @@ class KnownMarketFootprintsIntegrationTest {
                     .withStationWeighting()
                     .withStationWeight(0.0)
                     .build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -698,7 +695,7 @@ class KnownMarketFootprintsIntegrationTest {
                     .withStationWeighting()
                     .withStationWeight(2.0)
                     .build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(6 * DOMINANCE_WEIGHT_SCALE);
@@ -712,7 +709,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withColonyWeight(2.0).build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(8 * DOMINANCE_WEIGHT_SCALE);
@@ -733,7 +730,7 @@ class KnownMarketFootprintsIntegrationTest {
                     .withColonyWeight(2.0)
                     .withStationWeighting()
                     .build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(9 * DOMINANCE_WEIGHT_SCALE);
@@ -750,7 +747,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withColonyWeight(0.0).build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints)
                 .containsOnlyKeys("hegemony");
@@ -773,7 +770,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withPatrolWeighting().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(4 * DOMINANCE_WEIGHT_SCALE);
@@ -794,7 +791,7 @@ class KnownMarketFootprintsIntegrationTest {
                     .withStabilityMaster(false)
                     .withPatrolWeighting()
                     .build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(2 * DOMINANCE_WEIGHT_SCALE);
@@ -812,7 +809,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withColonyWeight(0.0).withPatrolWeighting().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(DOMINANCE_WEIGHT_SCALE / 2);
@@ -833,7 +830,7 @@ class KnownMarketFootprintsIntegrationTest {
                     .withStabilityMaster(false)
                     .withPatrolWeighting()
                     .build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(DOMINANCE_WEIGHT_SCALE);
@@ -848,7 +845,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -869,7 +866,7 @@ class KnownMarketFootprintsIntegrationTest {
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().withPatrolWeighting().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(3 * DOMINANCE_WEIGHT_SCALE);
@@ -903,7 +900,7 @@ class KnownMarketFootprintsIntegrationTest {
             var breakdowns = KnownMarketFootprints.readBreakdownByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(breakdowns.get("independent"))
                 .singleElement()
@@ -921,12 +918,12 @@ class KnownMarketFootprintsIntegrationTest {
             var breakdowns = KnownMarketFootprints.readBreakdownByFaction(
                 readColoniesIn(sector),
                 rules,
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 rules,
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(breakdowns)
                 .containsOnlyKeys("hegemony");
@@ -1145,7 +1142,7 @@ class KnownMarketFootprintsIntegrationTest {
             var breakdowns = KnownMarketFootprints.readBreakdownByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(breakdowns)
                 .containsOnlyKeys("hegemony", "tritachyon");
@@ -1168,7 +1165,7 @@ class KnownMarketFootprintsIntegrationTest {
             assertThat(KnownMarketFootprints.readBreakdownByFaction(
                     readColoniesIn(sector),
                     buildRules().build(),
-                    ColonyVisibility.BASE_FOG))
+                    BASE_FOG))
                 .isEmpty();
         }
 
@@ -1378,7 +1375,7 @@ class KnownMarketFootprintsIntegrationTest {
             return KnownMarketFootprints.readBreakdownByFaction(
                     readColoniesIn(sector),
                     rules,
-                    ColonyVisibility.BASE_FOG)
+                    BASE_FOG)
                 .values()
                 .iterator()
                 .next()
@@ -1403,7 +1400,7 @@ class KnownMarketFootprintsIntegrationTest {
 
             var colonies = KnownMarketFootprints.readUnweighedColoniesByFaction(
                 readColoniesIn(sector),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(colonies)
                 .containsOnlyKeys("independent");
@@ -1426,7 +1423,7 @@ class KnownMarketFootprintsIntegrationTest {
 
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
                     readColoniesIn(sector),
-                    ColonyVisibility.BASE_FOG)
+                    BASE_FOG)
                 .get("independent"))
                 .containsExactly(new EntityNameplate(
                     "Galatia Academy",
@@ -1451,7 +1448,7 @@ class KnownMarketFootprintsIntegrationTest {
 
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
                     readColoniesIn(sector),
-                    ColonyVisibility.BASE_FOG)
+                    BASE_FOG)
                 .get("independent"))
                 .containsExactly(
                     EntityNameplate.createUnmarkedNameplate("Tibicena"),
@@ -1472,7 +1469,7 @@ class KnownMarketFootprintsIntegrationTest {
 
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
                     readColoniesIn(sector),
-                    ColonyVisibility.BASE_FOG))
+                    BASE_FOG))
                 .isEmpty();
         }
 
@@ -1490,7 +1487,7 @@ class KnownMarketFootprintsIntegrationTest {
 
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
                     readColoniesIn(sector),
-                    ColonyVisibility.BASE_FOG))
+                    BASE_FOG))
                 .isEmpty();
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
                     readColoniesIn(sector),
@@ -1518,7 +1515,7 @@ class KnownMarketFootprintsIntegrationTest {
 
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
                     readColoniesIn(sector),
-                    ColonyVisibility.BASE_FOG)
+                    BASE_FOG)
                 .get("independent"))
                 .containsExactly(UNLISTED_ACADEMY);
         }
@@ -1541,7 +1538,7 @@ class KnownMarketFootprintsIntegrationTest {
             var contributions = KnownMarketFootprints.readContributionsByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
-                ColonyVisibility.BASE_FOG);
+                BASE_FOG);
 
             assertThat(contributions.get("hegemony").footprint().totalWeight())
                 .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
@@ -1571,7 +1568,7 @@ class KnownMarketFootprintsIntegrationTest {
             assertThat(KnownMarketFootprints.readByFaction(
                     readColoniesIn(sector),
                     buildRules().build(),
-                    ColonyVisibility.BASE_FOG))
+                    BASE_FOG))
                 .containsOnlyKeys("hegemony");
         }
 
@@ -1588,7 +1585,7 @@ class KnownMarketFootprintsIntegrationTest {
 
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
                     readColoniesIn(sector),
-                    ColonyVisibility.BASE_FOG))
+                    BASE_FOG))
                 .isEmpty();
         }
 
@@ -1611,13 +1608,13 @@ class KnownMarketFootprintsIntegrationTest {
             var systemColonies = readColoniesIn(sector);
 
             for (var breakdown : KnownMarketFootprints
-                    .readBreakdownByFaction(systemColonies, buildRules().build(), ColonyVisibility.BASE_FOG)
+                    .readBreakdownByFaction(systemColonies, buildRules().build(), BASE_FOG)
                     .get("hegemony")) {
 
                 colonies.add(breakdown.marketNameplate().displayName());
             }
             for (var nameplate : KnownMarketFootprints
-                    .readUnweighedColoniesByFaction(systemColonies, ColonyVisibility.BASE_FOG)
+                    .readUnweighedColoniesByFaction(systemColonies, BASE_FOG)
                     .get("hegemony")) {
 
                 colonies.add(nameplate.displayName());

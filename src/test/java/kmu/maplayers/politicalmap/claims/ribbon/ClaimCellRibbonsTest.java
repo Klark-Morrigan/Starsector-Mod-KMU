@@ -17,10 +17,11 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.DIKTAT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.DIKTAT_BRIGHT;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.FOG_KEPT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_ALLIANCE;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
@@ -151,7 +152,7 @@ final class ClaimCellRibbonsTest {
                 HEGEMONY_ALLIANCE,
                 contest,
                 sector,
-                buildInputsOver(sector, buildAllianceOf(HEGEMONY, PERSEAN), FOG_KEPT));
+                buildInputsOver(sector, buildAllianceOf(HEGEMONY, PERSEAN), BASE_FOG));
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -174,7 +175,7 @@ final class ClaimCellRibbonsTest {
             paintingBlocId,
             contest,
             sector,
-            buildInputsOver(sector, NO_ALLIANCES, FOG_KEPT));
+            buildInputsOver(sector, NO_ALLIANCES, BASE_FOG));
     }
 
     private static RibbonPlan planThrough(

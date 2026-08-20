@@ -15,7 +15,10 @@ import org.mockito.MockedConstruction;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+
+import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -43,13 +46,6 @@ class LiveVisibilityClaimBreakdownReaderTest {
     // A system under no decree at all, named so the case reads as the absence it poses rather
     // than as an argument somebody forgot to fill in.
     private static final String NO_DECREE = null;
-
-    // Two rules a market read can tell apart, so a reader that sampled once is caught by the
-    // second read still answering under the first.
-    private static final ColonyVisibility UNDER_THE_FOG = ColonyVisibility.BASE_FOG;
-
-    private static final ColonyVisibility UNDER_THE_REVEAL =
-        new ColonyVisibility(true, Set.of());
 
     @Nested
     class ReadBreakdown {
@@ -87,7 +83,7 @@ class LiveVisibilityClaimBreakdownReaderTest {
 
                 overridesMock
                     .when(MapVisibilityOverrides::readFromLunaSettings)
-                    .thenReturn(new MapVisibilityOverrides(UNDER_THE_FOG, false));
+                    .thenReturn(new MapVisibilityOverrides(BASE_FOG, false));
                 reader.readBreakdown(systemMock);
 
                 overridesMock
@@ -96,7 +92,7 @@ class LiveVisibilityClaimBreakdownReaderTest {
                 reader.readBreakdown(systemMock);
 
                 assertThat(openedRules)
-                    .containsExactly(UNDER_THE_FOG, UNDER_THE_REVEAL);
+                    .containsExactly(BASE_FOG, UNDER_THE_REVEAL);
             }
         }
     }

@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.testfixtures.starsector.systems.claims.ClaimReaderFake;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -12,6 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
@@ -137,7 +138,7 @@ final class ClaimStatsAggregatorIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    DominancePass.over(sectorMock, STABILITY_WEIGHTED, ColonyVisibility.BASE_FOG, grouping),
+                    DominancePass.over(sectorMock, STABILITY_WEIGHTED, BASE_FOG, grouping),
                     claimReaderFake))
                 .containsExactly(entry("alliance-1", new ClaimStats(1, 3)));
         }

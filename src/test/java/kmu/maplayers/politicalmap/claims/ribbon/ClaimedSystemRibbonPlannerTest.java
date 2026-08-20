@@ -18,8 +18,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.FOG_KEPT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
@@ -195,7 +196,7 @@ final class ClaimedSystemRibbonPlannerTest {
         return new ClaimedSystemRibbonPlanner(
                 readerFake,
                 buildInputsFor(
-                    HolderPass.over(sector, FOG_KEPT, HolderGrouping.identity()),
+                    HolderPass.over(sector, BASE_FOG, HolderGrouping.identity()),
                     rules))
             .planSystemRibbon(buildOnlySystem(sector));
     }

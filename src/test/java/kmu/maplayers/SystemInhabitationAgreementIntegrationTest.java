@@ -23,9 +23,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Set;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
+import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -54,13 +56,6 @@ final class SystemInhabitationAgreementIntegrationTest {
     // The status line is one plain run, so its label is read at the first of them.
     private static final int STATUS_RUN = 0;
 
-    // The player's dev reveal off, which is how the map is read in an ordinary game.
-    private static final ColonyVisibility UNDER_THE_FOG = ColonyVisibility.BASE_FOG;
-
-    // The "show all factions" reveal on, widening both reads at once.
-    private static final ColonyVisibility UNDER_THE_REVEAL =
-        new ColonyVisibility(true, Set.of());
-
     @BeforeEach
     void installStringsAndColours() {
         // The palette fake owns the settings proxy and the Misc colours the row is built from, so
@@ -85,9 +80,9 @@ final class SystemInhabitationAgreementIntegrationTest {
             var system = buildSystem();
             var sector = buildSectorListing(system, buildOpenUnreachedColony());
 
-            assertThat(isInhabited(sector, system, UNDER_THE_FOG))
+            assertThat(isInhabited(sector, system, BASE_FOG))
                 .isFalse();
-            assertThat(readStatus(sector, system, UNDER_THE_FOG))
+            assertThat(readStatus(sector, system, BASE_FOG))
                 .isEqualTo("Unpopulated");
         }
 
@@ -98,9 +93,9 @@ final class SystemInhabitationAgreementIntegrationTest {
             var system = buildSystem();
             var sector = buildSectorHoldingUnlistedColony(system, buildOpenColony());
 
-            assertThat(isInhabited(sector, system, UNDER_THE_FOG))
+            assertThat(isInhabited(sector, system, BASE_FOG))
                 .isTrue();
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, UNDER_THE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(sector, system, BASE_FOG))
                 .isEmpty();
         }
 
@@ -111,9 +106,9 @@ final class SystemInhabitationAgreementIntegrationTest {
             var system = buildSystem();
             var sector = buildSectorListing(system, buildFoundConcealedBase());
 
-            assertThat(isInhabited(sector, system, UNDER_THE_FOG))
+            assertThat(isInhabited(sector, system, BASE_FOG))
                 .isTrue();
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, UNDER_THE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(sector, system, BASE_FOG))
                 .isEmpty();
         }
 
@@ -124,9 +119,9 @@ final class SystemInhabitationAgreementIntegrationTest {
             var system = buildSystem();
             var sector = buildSectorListing(system, buildUnfoundConcealedBase());
 
-            assertThat(isInhabited(sector, system, UNDER_THE_FOG))
+            assertThat(isInhabited(sector, system, BASE_FOG))
                 .isFalse();
-            assertThat(readStatus(sector, system, UNDER_THE_FOG))
+            assertThat(readStatus(sector, system, BASE_FOG))
                 .isEqualTo("Unpopulated");
         }
 
@@ -150,9 +145,9 @@ final class SystemInhabitationAgreementIntegrationTest {
             var system = buildSystemWithRevealedRuin();
             var sector = buildSectorListing(system);
 
-            assertThat(isInhabited(sector, system, UNDER_THE_FOG))
+            assertThat(isInhabited(sector, system, BASE_FOG))
                 .isTrue();
-            assertThat(readStatus(sector, system, UNDER_THE_FOG))
+            assertThat(readStatus(sector, system, BASE_FOG))
                 .isEqualTo("Decivilised");
         }
 
@@ -162,9 +157,9 @@ final class SystemInhabitationAgreementIntegrationTest {
             var system = buildSystem();
             var sector = buildSectorListing(system);
 
-            assertThat(isInhabited(sector, system, UNDER_THE_FOG))
+            assertThat(isInhabited(sector, system, BASE_FOG))
                 .isFalse();
-            assertThat(readStatus(sector, system, UNDER_THE_FOG))
+            assertThat(readStatus(sector, system, BASE_FOG))
                 .isEqualTo("Unpopulated");
         }
     }

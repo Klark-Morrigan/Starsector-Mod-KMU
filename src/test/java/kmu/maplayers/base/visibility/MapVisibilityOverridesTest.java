@@ -1,12 +1,13 @@
 package kmu.maplayers.base.visibility;
 
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.colonies.RevelationGate;
 
 import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,7 +41,7 @@ class MapVisibilityOverridesTest {
             var overrides = MapVisibilityOverrides.NONE;
 
             assertThat(overrides.colonyVisibility())
-                .isEqualTo(ColonyVisibility.BASE_FOG);
+                .isEqualTo(BASE_FOG);
             assertThat(overrides.isForcedOntoMap())
                 .isFalse();
         }

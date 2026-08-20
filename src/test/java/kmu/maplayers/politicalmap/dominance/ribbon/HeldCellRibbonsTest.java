@@ -13,11 +13,12 @@ import org.junit.jupiter.api.Test;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.FOG_KEPT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
@@ -168,7 +169,7 @@ final class HeldCellRibbonsTest {
             paintingBlocId,
             buildOnlySystem(sector),
             footprintByBlocId,
-            buildInputsOver(sector, HolderGrouping.identity(), FOG_KEPT));
+            buildInputsOver(sector, HolderGrouping.identity(), BASE_FOG));
     }
 
     // One bloc's footprint as the dominance pass banked it, stated by the combined weight the

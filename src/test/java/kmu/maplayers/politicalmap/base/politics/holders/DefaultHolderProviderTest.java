@@ -2,8 +2,6 @@ package kmu.maplayers.politicalmap.base.politics.holders;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.colonies.ColonyVisibility;
-
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -16,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import java.awt.Color;
 import java.util.Map;
 import java.util.Set;
+
+import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -41,7 +41,7 @@ final class DefaultHolderProviderTest {
         void resolveHolderReturnsTheDominantHoldersAndNothingContestedOffFilter() {
 
             var sectorMock = mock(SectorAPI.class);
-            var pass = HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.over(sectorMock, BASE_FOG, HolderGrouping.identity());
             var holders = Map.of(
                 "owned-system",
                 new DominantHolder("hegemony", PRIMARY, SECONDARY));
@@ -67,7 +67,7 @@ final class DefaultHolderProviderTest {
         void resolveHolderPassesThroughThePresenceAwareResolverWhenABlocIsSpotlighted() {
 
             var sectorMock = mock(SectorAPI.class);
-            var pass = HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.over(sectorMock, BASE_FOG, HolderGrouping.identity());
             var holders = Map.of(
                 "owned-system",
                 new DominantHolder("$spotlit", PRIMARY, SECONDARY));
