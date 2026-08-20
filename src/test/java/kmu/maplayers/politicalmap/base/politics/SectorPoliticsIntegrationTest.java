@@ -17,10 +17,10 @@ import java.util.Map;
 
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.NEUTRAL_BASE;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildConditionOnlyMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildDarkTheme;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHiddenMarket;
@@ -121,7 +121,7 @@ class SectorPoliticsIntegrationTest {
             var sector = buildSectorWith(
                 "bare-system",
                 List.of(hegemony),
-                buildMarket(hegemony, 6, true, false, false));
+                buildConditionOnlyMarket(hegemony, 6));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
                 .doesNotContainKey("bare-system");
@@ -180,7 +180,7 @@ class SectorPoliticsIntegrationTest {
             var sector = buildSectorWith(
                 "hidden-faction-system",
                 List.of(hiddenFaction),
-                buildMarket(hiddenFaction, 5, false, false, false));
+                buildVisibleMarket(hiddenFaction, 5));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
                 .containsEntry(
@@ -322,7 +322,7 @@ class SectorPoliticsIntegrationTest {
             var sector = buildSectorWith(
                 "discovered-system",
                 List.of(knights),
-                buildMarket(knights, 5, false, false, false));
+                buildVisibleMarket(knights, 5));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
                 .containsEntry(
@@ -412,7 +412,7 @@ class SectorPoliticsIntegrationTest {
             var sector = buildSectorWith(
                 "bare-system",
                 List.of(hegemony),
-                buildMarket(hegemony, 6, true, false, false));
+                buildConditionOnlyMarket(hegemony, 6));
 
             assertThat(SectorPolitics.resolveDominantHolder(buildOnlySystem(sector), buildPassOver(sector)))
                 .isNull();
@@ -452,27 +452,9 @@ class SectorPoliticsIntegrationTest {
     }
 
     // A colony whose entity is still to be found, with nothing concealed about the market itself
-    // (FSF's DWR43 colonies between entry and approach). Local to this suite.
+    // (FSF's DWR43 colonies between entry and approach). Named locally because that install's
+    // shape is what this suite poses; what the market is made of is the shared fixture's.
     private static MarketAPI buildUnfoundColonyAwaitingApproach(FactionAPI faction, int size) {
-        return buildMarket(faction, size, false, false, true);
-    }
-
-    // The five-argument market shape this suite's condition-only and discovery tests read: a
-    // visible-stability colony varying only its condition-only, hidden, and undiscovered flags.
-    // Delegates to the shared builder, which takes stability as its sixth argument.
-    private static MarketAPI buildMarket(
-            FactionAPI faction,
-            int size,
-            boolean isConditionOnly,
-            boolean isHidden,
-            boolean isUndiscovered) {
-
-        return SectorPoliticsFixtures.buildMarket(
-            faction,
-            size,
-            isConditionOnly,
-            isHidden,
-            isUndiscovered,
-            FULL_STABILITY);
+        return SectorPoliticsFixtures.buildUndiscoveredOpenMarket(faction, size);
     }
 }

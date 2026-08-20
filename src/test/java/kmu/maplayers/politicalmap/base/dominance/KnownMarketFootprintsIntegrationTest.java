@@ -38,12 +38,12 @@ import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.MarketWeights.DOMINANCE_WEIGHT_SCALE;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HALF_STABILITY;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.NO_STABILITY;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildConditionOnlyMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHiddenMarket;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildMarket;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHiddenMarketAtStability;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildMarketAtStability;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
@@ -380,7 +380,7 @@ class KnownMarketFootprintsIntegrationTest {
             // no footprint.
             var sector = buildSectorWith(
                 "bare-system",
-                buildMarket(buildFaction("hegemony"), 6, true, false, false, FULL_STABILITY));
+                buildConditionOnlyMarket(buildFaction("hegemony"), 6));
 
             assertThat(KnownMarketFootprints.readByFaction(
                     readColoniesIn(sector),
@@ -1160,7 +1160,7 @@ class KnownMarketFootprintsIntegrationTest {
             // bare rock's placeholder is absent from both.
             var sector = buildSectorWith(
                 "bare-system",
-                buildMarket(buildFaction("hegemony"), 6, true, false, false, FULL_STABILITY));
+                buildConditionOnlyMarket(buildFaction("hegemony"), 6));
 
             assertThat(KnownMarketFootprints.readBreakdownByFaction(
                     readColoniesIn(sector),
@@ -1464,7 +1464,7 @@ class KnownMarketFootprintsIntegrationTest {
             placeMarketsOnSystemEntities(
                 buildOnlySystem(sector),
                 withName(
-                    buildMarket(buildFaction("hegemony"), 0, true, false, false, FULL_STABILITY),
+                    buildConditionOnlyMarket(buildFaction("hegemony"), 0),
                     "Barren Placeholder"));
 
             assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
@@ -1692,15 +1692,6 @@ class KnownMarketFootprintsIntegrationTest {
             .thenReturn(entitySpecMock);
 
         return entity;
-    }
-
-    // A hidden market at the given stability, for pinning that its token rating scales
-    // with stability like any other size rating.
-    private static MarketAPI buildHiddenMarketAtStability(
-            FactionAPI faction,
-            int size,
-            float stability) {
-        return buildMarket(faction, size, false, true, false, stability);
     }
 
     // A visible owned market that owns an attached defensive station - a "station"-tagged

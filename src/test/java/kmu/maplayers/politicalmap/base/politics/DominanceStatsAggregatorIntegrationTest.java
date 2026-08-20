@@ -1,7 +1,5 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
-import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -15,9 +13,9 @@ import java.util.Map;
 
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildConditionOnlyMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildEconomylessSectorWithSystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildPassOver;
@@ -148,11 +146,5 @@ class DominanceStatsAggregatorIntegrationTest {
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(null)))
                 .isEmpty();
         }
-    }
-
-    // A bare rock's condition-only market (the placeholder every uninhabited planet carries): no
-    // colony, so it confers no holding and marks no bloc presence. Local to this suite.
-    private static MarketAPI buildConditionOnlyMarket(FactionAPI faction, int size) {
-        return SectorPoliticsFixtures.buildMarket(faction, size, true, false, false, FULL_STABILITY);
     }
 }

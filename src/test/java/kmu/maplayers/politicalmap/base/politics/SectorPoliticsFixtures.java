@@ -40,9 +40,9 @@ import static org.mockito.Mockito.when;
  *
  * <p>Every builder returns the live Mockito mock, so a suite with a specialised need (an attached
  * station, patrol counts, a planet market) adds its own stubs on top and keeps that variant local
- * to the one suite that uses it. The base {@link #market} stubs exactly the fields the "counts as a
- * colony" filter and the weight read touch; {@link #faction} comes in a palette-less form for the
- * footprint read that never resolves colours and a palette form for the resolves that do.
+ * to the one suite that uses it. Markets are built by what kind of market they are rather than by
+ * flag, the flags themselves staying private; {@link #buildFaction} comes in a palette-less form
+ * for the footprint read that never resolves colours and a palette form for the resolves that do.
  */
 public final class SectorPoliticsFixtures {
 
@@ -191,6 +191,19 @@ public final class SectorPoliticsFixtures {
     }
 
     /**
+     * A bare rock's placeholder: the condition-only market procgen hangs on an uninhabited world
+     * to carry its hazard and atmosphere. Owned on paper and nobody's colony, so a holder read
+     * must not attribute its system to the faction it names.
+     *
+     * @param faction the faction the placeholder names
+     * @param size    the colony size
+     * @return the market mock
+     */
+    public static MarketAPI buildConditionOnlyMarket(FactionAPI faction, int size) {
+        return buildMarket(faction, size, true, false, false, FULL_STABILITY);
+    }
+
+    /**
      * A hidden market on a discovered entity: it still marks its system, but its base rating is
      * chosen by the hidden-market scaling rather than its real size.
      *
@@ -199,7 +212,25 @@ public final class SectorPoliticsFixtures {
      * @return the market mock
      */
     public static MarketAPI buildHiddenMarket(FactionAPI faction, int size) {
-        return buildMarket(faction, size, false, true, false, FULL_STABILITY);
+        return buildHiddenMarketAtStability(faction, size, FULL_STABILITY);
+    }
+
+    /**
+     * That same concealed market at the given stability, for exercising how the hidden-market
+     * scaling and the stability scaling compose - the one pairing neither single-axis builder can
+     * pose.
+     *
+     * @param faction   the owning faction
+     * @param size      the colony size
+     * @param stability the market's stability value
+     * @return the market mock
+     */
+    public static MarketAPI buildHiddenMarketAtStability(
+            FactionAPI faction,
+            int size,
+            float stability) {
+
+        return buildMarket(faction, size, false, true, false, stability);
     }
 
     /**
@@ -212,6 +243,20 @@ public final class SectorPoliticsFixtures {
      */
     public static MarketAPI buildUndiscoveredHiddenMarket(FactionAPI faction, int size) {
         return buildMarket(faction, size, false, true, true, FULL_STABILITY);
+    }
+
+    /**
+     * An undiscovered market with nothing concealed about it: the colony is openly listed and its
+     * entity is still to be found. Concealment and discovery disagree here, which is what makes it
+     * worth posing beside the hidden pair above - the fog answers on discovery, so declaring
+     * itself to an economy the player cannot see does not admit it.
+     *
+     * @param faction the owning faction
+     * @param size    the colony size
+     * @return the market mock
+     */
+    public static MarketAPI buildUndiscoveredOpenMarket(FactionAPI faction, int size) {
+        return buildMarket(faction, size, false, false, true, FULL_STABILITY);
     }
 
     /**
@@ -237,19 +282,15 @@ public final class SectorPoliticsFixtures {
         return marketMock;
     }
 
-    /**
-     * The base market stub the other builders wrap: exactly the fields the "counts as a colony"
-     * filter and the weight read touch, so a suite adds only the extra stubs its variant needs.
-     *
-     * @param faction         the owning faction
-     * @param size            the colony size
-     * @param isConditionOnly whether the market is a bare planet's condition-only placeholder
-     * @param isHidden        whether the market is hidden
-     * @param isUndiscovered  whether the market's entity is still discoverable (not yet found)
-     * @param stability       the market's stability value
-     * @return the market mock
-     */
-    public static MarketAPI buildMarket(
+    // The base market stub the named builders above wrap: exactly the fields the "counts as a
+    // colony" filter and the weight read touch, so a suite adds only the extra stubs its variant
+    // needs.
+    //
+    // Private, and the flags stay behind that boundary. Three adjacent booleans are transposable
+    // without failing, and a suite setting them directly says nothing about which of the resulting
+    // shapes it meant - so a case reads as the market it poses rather than as a flag triple the
+    // reader has to decode.
+    private static MarketAPI buildMarket(
             FactionAPI faction,
             int size,
             boolean isConditionOnly,
