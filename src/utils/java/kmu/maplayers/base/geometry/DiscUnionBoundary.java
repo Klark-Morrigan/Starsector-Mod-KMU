@@ -312,6 +312,41 @@ final class DiscUnionBoundary {
     }
 
     /**
+     * Where the walk runs off the end of the boundary instead of closing.
+     *
+     * <p>Every arc names the terminal it runs on to, and that terminal is another arc's
+     * beginning - the whole walk is that pairing. An arc whose terminal nothing begins at is a
+     * broken link: the run through it cannot close, so every cycle it belonged to is thrown
+     * away, and void that IS enclosed comes back as no pocket at all.
+     *
+     * <p>Wanted by anything asking why a shape that looks shut in was not found. A count of
+     * pockets cannot say; the point where the chain snapped can.
+     *
+     * @param union the discs to trace
+     * @param walls the walls to lay across the void
+     * @return one point per broken link, where the arc ended
+     */
+    static List<double[]> findBrokenLinks(DiscUnion union, Walls walls) {
+
+        var laid = new Walls(findAttachableChords(union, walls), walls.channel());
+        var arcs = findUncoveredArcs(union, laid);
+        var successors = linkArcsIntoCycles(arcs);
+        var broken = new ArrayList<double[]>();
+
+        for (var index = 0; index < arcs.size(); index++) {
+
+            if (successors[index] == NO_SUCCESSOR) {
+
+                var arc = arcs.get(index);
+
+                broken.add(findPointOnCircle(
+                    union.sites().get(arc.circle()), union.reach(), arc.toAngle()));
+            }
+        }
+        return broken;
+    }
+
+    /**
      * The chords that can actually be laid at this reach, which are the only ones traced.
      *
      * <p>Wanted by anything measuring the result: a chord that was dropped has no business
