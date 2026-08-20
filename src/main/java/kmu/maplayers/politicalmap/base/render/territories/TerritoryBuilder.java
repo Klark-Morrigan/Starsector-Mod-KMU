@@ -113,15 +113,15 @@ public final class TerritoryBuilder {
             // several reasons base.politics.holders sets out - leaves inhabited systems with no
             // holder. Only this read can tell those apart from empty space.
             //
-            // Under the same reveal the holding resolved under, so a colony the dev toggle
-            // admits to one is admitted to the other and the two cannot disagree about whether
-            // a system holds anything.
+            // Taken off the pass the holding resolved through, so a colony the dev toggle admits
+            // to one is admitted to the other and the two cannot disagree about whether a system
+            // holds anything - and each system is read once for both rather than once apiece.
             //
             var inhabitedSystemIds = measureSystemScan(
                 profiler,
                 "politicalMap.findInhabited",
                 "inhabitation scan",
-                () -> PoliticalMapInhabitation.readInhabitedSystemIds(sector));
+                () -> PoliticalMapInhabitation.readInhabitedSystemIds(pass));
 
             // Who is in each system, gathered as soon as the first two facts are resolved: the
             // third is asked of this one - which systems it left unheld - and folded back into it,
@@ -141,6 +141,9 @@ public final class TerritoryBuilder {
             // FilteredPolitics, which already keys every system the bloc is present in and can be
             // coloured for, so their leftovers are systems it is absent from and the read comes
             // back empty for the cost of the set arithmetic.
+            //
+            // Asked of the same habitation the scan above classified by, so a cell spared here is
+            // never one that scan called empty space.
             var spotlitPresenceSystemIds = measureSystemScan(
                 profiler,
                 "politicalMap.findSpotlitPresence",

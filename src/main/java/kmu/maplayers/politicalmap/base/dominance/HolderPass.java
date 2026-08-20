@@ -187,44 +187,63 @@ public record HolderPass(
     }
 
     /**
-     * The factions present in one system - the owners of the colonies above, each named once
-     * however many it holds there.
+     * The factions the player may be told about in one system - the owners of the known listing
+     * above, each named once however many colonies it holds there.
      *
-     * <p>Who is in a system is a question about the system rather than about the mechanic reading
+     * <p>Who a box may name is a question about the system rather than about the mechanic reading
      * it, so it is answered here, off the one projection, rather than derived by each mechanic from
-     * whatever it happened to score. That is what lets a band counting a cell and a box listing it
-     * report one set of factions: both are projections of this, so neither can hold an owner the
-     * other lacks.
+     * whatever it happened to score. That is what lets every box over one cell name the same
+     * factions: all of them are projections of this, so none can hold an owner another lacks.
+     *
+     * <p>The listing rather than habitation, which is what {@link #readHabitationIn} answers. A
+     * derelict somebody has seen has an owner to name and nobody living on it, so it belongs in
+     * this set and in no answer about who lives in the system.
      *
      * @param system the system to read; null yields an empty set
      * @return the ids of the factions holding a colony the rule admits, in the projection's own
      *         order
      */
     public Set<String> readKnownColonyFactionIds(StarSystemAPI system) {
-
-        var factionIds = new LinkedHashSet<String>();
-        for (var colony : readKnownColoniesIn(system)) {
-            factionIds.add(colony.market().getFaction().getId());
-        }
-        return factionIds;
+        return collectFactionIdsOf(readKnownColoniesIn(system));
     }
 
     /**
-     * The blocs present in one system - the owners above folded under this pass's grouping, so two
-     * allies in one system arrive as the one bloc they paint as.
+     * What one system's habitation amounts to - the colonies somebody lives on, and the blocs
+     * folded from those very colonies - as the one value the surfaces answering about habitation
+     * share.
      *
-     * <p>What a bloc-keyed surface asks when it needs presence rather than a verdict, and it is
-     * read here rather than off whatever the mechanic scored. A mechanic's own numbers are a
-     * narrower set than presence - a dominance weight is economy-fed throughout, so a bloc holding
-     * nothing the economy lists raises no footprint - and a surface reading presence off them calls
-     * such a bloc absent while the band inside the same cell counts its colonies.
+     * <p>Offered as a value rather than as two reads because the cell classification asks its
+     * emptiness while the filter's spotlight asks its bloc set, and a cell painted as empty space
+     * under a fill the spotlight kept over it is the one pairing those two must not be able to
+     * make. Folding the blocs here, from the same colonies the emptiness is asked of, is what makes
+     * presence a partition of that set rather than a second read two call sites happen to have
+     * chosen alike.
      *
-     * @param system the system to read; null yields an empty set
-     * @return the ids of the blocs holding a colony the rule admits, in the projection's own
-     *         order; an owner the grouping can name no bloc for is left out, as it is from every
-     *         other fold the grouping makes
+     * <p>Habitation rather than the wider listing, and the difference is the derelict: a hulk
+     * somebody has seen is named in a box and settles nothing, so no bloc is living in a system
+     * holding one alone and none is spared the recede there.
+     *
+     * @param system the system to read; null yields an empty habitation
+     * @return the system's habitation under this pass's rule and grouping
      */
-    public Set<String> readKnownColonyBlocIds(StarSystemAPI system) {
-        return grouping.collectBlocIds(readKnownColonyFactionIds(system));
+    public SystemHabitation readHabitationIn(StarSystemAPI system) {
+
+        var inhabitingColonies = readInhabitingColoniesIn(system);
+
+        return new SystemHabitation(
+            inhabitingColonies,
+            grouping.collectBlocIds(collectFactionIdsOf(inhabitingColonies)));
+    }
+
+    // The owners of one projection's colonies, each named once however many it holds there. Shared
+    // by the two folds above so a listing's owners and a habitation's blocs are gathered by one
+    // rule - which colonies were handed in is the only thing that separates them.
+    private static Set<String> collectFactionIdsOf(List<Colony> colonies) {
+
+        var factionIds = new LinkedHashSet<String>();
+        for (var colony : colonies) {
+            factionIds.add(colony.market().getFaction().getId());
+        }
+        return factionIds;
     }
 }

@@ -98,10 +98,15 @@ public final class FilteredPolitics {
      * lowest id, so "does the selected bloc dominate" is judged against honest competition under the
      * active grouping.
      *
+     * <p>Presence is living in the system rather than merely being nameable in it, which is what
+     * keeps a spared cell and a painted cell the same cell: a bloc whose only market here is a
+     * derelict nobody was ever aboard is absent, so the classification that calls the system empty
+     * space and the spotlight that would have kept a fill over it answer alike.
+     *
      * @param footprintByBlocId each bloc's footprint in the system, already regrouped under the
      *                          active view's grouping; empty means nothing here was weighed
-     * @param presentBlocIds    the blocs holding a colony the player may be shown, which the
-     *                          footprints are a subset of
+     * @param presentBlocIds    the blocs somebody the player knows of lives in the system under,
+     *                          which the footprints are a subset of
      * @param selectedBlocId    the spotlighted bloc's id (a faction id, or an alliance id)
      * @return where the selected bloc stands in this system
      */
@@ -124,8 +129,8 @@ public final class FilteredPolitics {
      *
      * @param footprintByBlocId each bloc's footprint in the system, already regrouped under the
      *                          active view's grouping; empty means nothing here was weighed
-     * @param presentBlocIds    the blocs holding a colony the player may be shown, which the
-     *                          footprints are a subset of
+     * @param presentBlocIds    the blocs somebody the player knows of lives in the system under,
+     *                          which the footprints are a subset of
      * @param selectedBlocId    the spotlighted bloc's id (a faction id, or an alliance id)
      * @param tieBreak          consulted only when the selected bloc ties a rival on every
      *                          weight level; the id it orders first dominates the system
@@ -161,13 +166,18 @@ public final class FilteredPolitics {
      * kept every system the bloc is present in, so what reaches this read is what it was absent
      * from and the answer comes back empty.
      *
-     * <p>Presence is the set {@link #classifySelectedBlocPresence}'s absent arm reads, so a bloc
-     * counts as living in a system here exactly where the filter's own resolve would have kept it
-     * visible - including where it holds only colonies no mechanic weighed. It is asked directly
-     * rather than through that classification, because the classification's other two arms rank
-     * the system's footprints to tell dominant from contested, and a holderless system has no
-     * contest for the bloc to win or lose: the ranking would be a weighing of every candidate's
-     * colonies for a verdict this read discards.
+     * <p>Presence is the set {@link #classifySelectedBlocPresence}'s absent arm reads - the blocs
+     * the system's habitation folds into - so a bloc counts as living in a system here exactly
+     * where the filter's own resolve would have kept it visible, including where it holds only
+     * colonies no mechanic weighed. It is asked directly rather than through that classification,
+     * because the classification's other two arms rank the system's footprints to tell dominant
+     * from contested, and a holderless system has no contest for the bloc to win or lose: the
+     * ranking would be a weighing of every candidate's colonies for a verdict this read discards.
+     *
+     * <p>Reading habitation is what makes the sparing agree with the drawing. The cells this
+     * spares are the ones the map classified as empty backdrop, and that classification asks the
+     * emptiness of this very set - so a bloc present here is a bloc the cell was never going to be
+     * called empty for.
      *
      * <p>So it takes the layer-generic reading of the sector rather than a dominance pass. Nothing
      * here weighs a market, which means no weighting rule has to be sampled to answer it.
@@ -181,7 +191,7 @@ public final class FilteredPolitics {
      *                          read shares; a pass over no sector yields an empty set
      * @param selectedBlocId    the spotlighted bloc's id; null yields an empty set (no filter)
      * @param candidateSystemIds the systems to test - those this pass resolved no holder for
-     * @return the candidates the spotlighted bloc holds a colony the player may be shown in
+     * @return the candidates the spotlighted bloc holds a colony somebody lives on in
      */
     public static Set<String> findPresentSystemIds(
             HolderPass pass,
@@ -202,7 +212,7 @@ public final class FilteredPolitics {
             if (!candidateSystemIds.contains(system.getId())) {
                 continue;
             }
-            if (pass.readKnownColonyBlocIds(system).contains(selectedBlocId)) {
+            if (pass.readHabitationIn(system).blocIds().contains(selectedBlocId)) {
                 presentSystemIds.add(system.getId());
             }
         }
@@ -321,6 +331,10 @@ public final class FilteredPolitics {
     // would put such a bloc into the map the dominant-holder rank is taken over, where an
     // all-weightless system would hand it the system outright - a spotlight moving a fill, which
     // it must never do.
+    //
+    // Taken off the system's habitation, which is the same value the cell classification asks the
+    // emptiness of, so a bloc kept visible here is never one whose cell the map has meanwhile
+    // called empty space.
     private static DominantHolder resolveHolder(
             StarSystemAPI system,
             DominancePass pass,
@@ -328,7 +342,7 @@ public final class FilteredPolitics {
             Set<String> contestedSystemIds) {
 
         var footprintByBlocId = pass.readBlocFootprints(system);
-        var presentBlocIds = pass.readKnownColonyBlocIds(system);
+        var presentBlocIds = pass.readHabitationIn(system).blocIds();
 
         // The proximity tie-break the normal pass uses, so both the "does the selected bloc
         // dominate" call and the receded real-holder fallback settle a tie the same way the base

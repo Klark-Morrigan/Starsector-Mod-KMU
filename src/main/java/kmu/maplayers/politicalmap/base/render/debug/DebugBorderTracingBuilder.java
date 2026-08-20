@@ -64,9 +64,10 @@ public final class DebugBorderTracingBuilder {
 
         // This overlay's own reading of the sector: it never filters and groups nothing, so it
         // opens a plain identity pass rather than being handed one - there is no rebuild above it
-        // to inherit from.
-        var ownerBySystemId = SectorPolitics.resolveDominantHolderBySystemId(
-            HolderPass.readFromLunaSettings(sector, HolderGrouping.identity()));
+        // to inherit from. Held in a local because both reads below take it, which is what makes
+        // the overlay's holding and its inhabitation answer off one walk of each system.
+        var pass = HolderPass.readFromLunaSettings(sector, HolderGrouping.identity());
+        var ownerBySystemId = SectorPolitics.resolveDominantHolderBySystemId(pass);
 
         // The agnostic geometry groups the drawn cells, resolving each to the system it draws
         // as and that system to its faction id.
@@ -76,7 +77,7 @@ public final class DebugBorderTracingBuilder {
 
         // The same inhabitation read the production build classifies its factionless cells by,
         // through the same seam, so the overlay shows the cells the map would show.
-        var inhabitedSystemIds = PoliticalMapInhabitation.readInhabitedSystemIds(sector);
+        var inhabitedSystemIds = PoliticalMapInhabitation.readInhabitedSystemIds(pass);
 
         // The same trace and the same smoothing profile the production build reads, so a stage
         // captured here is the geometry the normal render would have drawn rather than one this

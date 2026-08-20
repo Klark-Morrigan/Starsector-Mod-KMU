@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.politics;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -22,6 +23,7 @@ import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_R
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.PERSEAN_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildDarkTheme;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHolderPassOver;
@@ -254,6 +256,21 @@ class FilteredPoliticsIntegrationTest {
         }
 
         @Test
+        void withholdsABlocWhoseOnlyMarketHereIsADerelict() {
+            // Nobody lives aboard a hulk, so the bloc that owns it is absent and the system - which
+            // nothing weighed - takes no holder at all. The listing over the cell still names the
+            // wreck; what it may not do is put a fill under it.
+            var sector = buildSectorWith("haven", List.of(buildFaction(Factions.NEUTRAL)));
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                buildAbandonedStationMarket(4));
+
+            assertThat(resolveFor(sector, Factions.NEUTRAL).ownerBySystemId())
+                .doesNotContainKey("haven");
+        }
+
+        @Test
         void withholdsABlocWhoseOnlyUnregisteredColonyHereThePlayerHasNotFound() {
             // The fog reaches the widened presence like any other read of the projection: an
             // unfound station names nobody, so the cell keeps hegemony's holder and recedes - and
@@ -375,6 +392,25 @@ class FilteredPoliticsIntegrationTest {
                     "pirates",
                     Set.of("haven")))
                 .containsExactly("haven");
+        }
+
+        @Test
+        void omitsACandidateWhoseOnlyMarketOfTheSelectedBlocIsADerelict() {
+            // Presence is habitation, so a hulk's owner is not living here however plainly the box
+            // over the cell may name it. Sparing this cell would keep a bloc's fill over a system
+            // the same pass classified as empty backdrop - which is the one disagreement the two
+            // reads coming off one value exist to rule out.
+            var sector = buildSectorWith("haven", List.of(buildFaction(Factions.NEUTRAL)));
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                buildAbandonedStationMarket(4));
+
+            assertThat(FilteredPolitics.findPresentSystemIds(
+                    buildHolderPassOver(sector),
+                    Factions.NEUTRAL,
+                    Set.of("haven")))
+                .isEmpty();
         }
 
         @Test

@@ -23,6 +23,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.List;
 
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
@@ -44,6 +45,10 @@ import static org.mockito.Mockito.when;
  * "Unpopulated" over a settled cell or make a missing line the tell that a base is hiding. The row's
  * shape is pinned too - a banner set across the box, carrying its words and nothing else - since that
  * is what lets it read as a statement about the whole system rather than as an entry of a list.
+ *
+ * <p>The derelict pair is what pins <em>which</em> question the line answers. A hulk passes the fog
+ * outright, so a row wired to the listing beneath it would call a system of wrecks populated - and
+ * would answer identically on every other case here, none of which stages one.
  */
 final class SystemStatusRowTest {
 
@@ -165,6 +170,41 @@ final class SystemStatusRowTest {
         }
 
         @Test
+        void resolveStatusRowCallsASystemHoldingOnlyADerelictUnpopulated() {
+            // The line asks about habitation, not about what may be named. The hulk passes the fog
+            // outright - un-hidden, on a found entity - so the listing beneath this row goes on
+            // naming it, and the row still says nobody lives here, which is the true reading of a
+            // system with one wreck in it.
+            var system = buildSystemWithPlanets();
+            var sector = buildSectorHoldingMarkets(system);
+
+            // Through the entity side, as a vanilla hulk arrives: the economy never registers one,
+            // so listing it would pose a market the sector does not hold.
+            hangMarketsOnSystemEntities(system, buildAbandonedStation());
+
+            var row = SystemStatusRow
+                .resolveStatusRow(sector, system, BASE_FOG)
+                .orElseThrow();
+
+            assertThat(readLabelTextRun(row, STATUS_RUN).text())
+                .isEqualTo("Unpopulated");
+        }
+
+        @Test
+        void resolveStatusRowIsEmptyForAColonyStandingBesideADerelict() {
+            // The same hulk with somebody settled beside it. The row reads populated on the
+            // colony's account while the box beneath names both, so the derelict is neither
+            // counted as habitation nor withheld from the listing.
+            var system = buildSystemWithPlanets();
+            var sector = buildSectorHoldingMarkets(system, buildColony());
+
+            hangMarketsOnSystemEntities(system, buildAbandonedStation());
+
+            assertThat(SystemStatusRow.resolveStatusRow(sector, system, BASE_FOG))
+                .isEmpty();
+        }
+
+        @Test
         void resolveStatusRowCountsAnUndiscoveredColonyUnderTheReveal() {
             // The same system reads populated or empty purely on the reveal, so a body showing all
             // factions never contradicts itself with an "Unpopulated" line above the factions it lists.
@@ -199,15 +239,27 @@ final class SystemStatusRowTest {
             StarSystemAPI system,
             MarketAPI colony) {
 
-        // The entity is read off the colony before the system's stubbing opens, so Mockito does
-        // not see one stubbing nested inside another.
-        var entities = List.of(colony.getPrimaryEntity());
         var sector = buildSectorHoldingMarkets(system);
 
-        when(system.getAllEntities())
-            .thenReturn(entities);
+        hangMarketsOnSystemEntities(system, colony);
 
         return sector;
+    }
+
+    // Hangs markets on the system's own entities without registering any with the economy - the
+    // shape vanilla builds a derelict in, and the only way to pose one, since the routine that
+    // makes an abandoned station pointedly never lists it.
+    private static void hangMarketsOnSystemEntities(StarSystemAPI system, MarketAPI... markets) {
+
+        // The entities are gathered before the system's stubbing opens, so Mockito does not see
+        // one stubbing nested inside another.
+        var entities = new ArrayList<SectorEntityToken>();
+
+        for (var market : markets) {
+            entities.add(market.getPrimaryEntity());
+        }
+        when(system.getAllEntities())
+            .thenReturn(entities);
     }
 
     private static StarSystemAPI buildSystemWithPlanets(PlanetAPI... planets) {
@@ -247,6 +299,22 @@ final class SystemStatusRowTest {
     // awaiting discovery - the other half of the pair hiddenness and discovery come apart on.
     private static MarketAPI buildUnfoundListedColony() {
         return buildColonyOnEntity(true, false);
+    }
+
+    // A derelict station: an ordinary found colony's shape, held by nobody and carrying vanilla's
+    // abandoned-station condition. Both of those are the shape rather than details - the condition
+    // is what marks a hulk, and the neutral owner is what parts one from a station somebody keeps.
+    private static MarketAPI buildAbandonedStation() {
+
+        var marketMock = buildColonyOnEntity(false, false);
+        var factionMock = marketMock.getFaction();
+
+        when(marketMock.hasCondition(Conditions.ABANDONED_STATION))
+            .thenReturn(true);
+        when(factionMock.isNeutralFaction())
+            .thenReturn(true);
+
+        return marketMock;
     }
 
     // An open colony wired both ways - the market names its entity, the entity carries the market

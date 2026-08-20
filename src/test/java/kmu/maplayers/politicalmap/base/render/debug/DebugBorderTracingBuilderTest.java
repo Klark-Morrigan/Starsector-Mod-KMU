@@ -405,11 +405,14 @@ final class DebugBorderTracingBuilderTest {
 
     // The systems the overlay is to treat as settled. Stubbed at the political layer's
     // inhabitation seam rather than at the market scan behind it, since that seam is where the
-    // player's dev reveal is bound - and binding it reaches LunaLib, which the test JVM cannot
-    // load.
+    // overlay's own pass is read - and opening one reaches LunaLib for the colony rule, which the
+    // test JVM cannot load.
+    //
+    // Matched on the pass by type rather than by identity: the overlay opens its own, so no case
+    // here holds the instance the seam is called with.
     private void stubInhabitedSystems(String... systemIds) {
         inhabitationMock
-            .when(() -> PoliticalMapInhabitation.readInhabitedSystemIds(sectorMock))
+            .when(() -> PoliticalMapInhabitation.readInhabitedSystemIds(any(HolderPass.class)))
             .thenReturn(Set.of(systemIds));
     }
 

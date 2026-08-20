@@ -31,7 +31,7 @@ import static org.mockito.Mockito.verify;
  *
  * <p>What each per-system read <em>answers</em> - {@link DominancePass#readBlocFootprints},
  * {@link DominancePass#readBlocContributions}, {@link DominancePass#readKnownColonyFactionIds},
- * {@link DominancePass#readKnownColonyBlocIds}, and {@link DominancePass#tieBreakFor} - is covered
+ * {@link DominancePass#readHabitationIn}, and {@link DominancePass#tieBreakFor} - is covered
  * end to end by the
  * {@link kmu.maplayers.politicalmap.base.politics.SectorPolitics},
  * {@link kmu.maplayers.politicalmap.base.politics.FilteredPolitics}, the standings suites, and the
@@ -86,7 +86,7 @@ class DominancePassTest {
             pass.readWeightBreakdownsByFaction(system);
             pass.readUnweighedColoniesByFaction(system);
             pass.readKnownColonyFactionIds(system);
-            pass.readKnownColonyBlocIds(system);
+            pass.readHabitationIn(system);
             pass.readBlocFootprints(system);
             pass.readBlocContributions(system);
             pass.tieBreakFor(system);

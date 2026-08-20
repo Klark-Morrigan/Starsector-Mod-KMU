@@ -91,18 +91,24 @@ categories a cell falls in. One classification drives both, so a cell cannot tak
 style yet miss the recede that style draws under.
 
 That classification reads the pass's **inhabited-system set**, not the holder map. `TerritoryBuilder`
-scans it once per rebuild through `MapVisibility.findInhabitedSystemIds` - the same rule that decided
-the system seeds a cell at all - and `PoliticalMapTerritories` retains it, so the incremental
-re-shape classifies against exactly what the full build used. Deriving emptiness from the holder map
-instead would make every view whose holding rule admits only some factions report its unheld
-systems as empty space.
+scans it once per rebuild through `PoliticalMapInhabitation.readInhabitedSystemIds` - the same rule
+that decided the system seeds a cell at all - and `PoliticalMapTerritories` retains it, so the
+incremental re-shape classifies against exactly what the full build used. Deriving emptiness from
+the holder map instead would make every view whose holding rule admits only some factions report its
+unheld systems as empty space.
 
 The presence exception rides beside it as the **spotlit-presence set**, read through
 `FilteredPolitics.findPresentSystemIds` - the same presence rule `resolveFilteredHolder`
 keeps a spotlit bloc visible by, so "the pick lives here" means one thing across the map. Both read
-it off the colonies the player may be shown rather than off the dominance weights, since a bloc
-whose only foothold in a system is a colony the economy does not list wins nothing there and lives
-there all the same.
+it off the colonies somebody lives on rather than off the dominance weights, since a bloc whose only
+foothold in a system is a colony the economy does not list wins nothing there and lives there all
+the same.
+
+Both come off one value, `HolderPass.readHabitationIn` - the colonies somebody lives on, with the
+blocs folded from those very colonies. The classification asks its emptiness where the presence read
+asks its bloc set, so presence is a partition of the set emptiness is asked of and a cell cannot be
+called empty space while the spotlight keeps a bloc's fill over it. Two call sites picking the same
+projection would be a convention a later edit could break; one value handed to both is not.
 
 It is asked only of the inhabited systems the holding left out, since a system somebody holds
 already draws in that bloc's territory - and which view is painting decides whether anything is

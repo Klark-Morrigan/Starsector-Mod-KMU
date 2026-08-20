@@ -253,6 +253,18 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
+        void isInhabitedHonoursTheRuinArmForACallerThatResolvedHabitationItself() {
+            // The composed entry a layer takes when its own pass already answered habitation. The
+            // ruin is the arm that answer cannot carry - nobody owns a dead world, so no colony
+            // read reports one - and a layer left to compose the two itself would be the one place
+            // it could be dropped.
+            assertThat(MapVisibility.isInhabited(false, IS_REVEALED_DECIVILISED))
+                .isTrue();
+            assertThat(MapVisibility.isInhabited(false, false))
+                .isFalse();
+        }
+
+        @Test
         void isInhabitedIsFalseForASystemHoldingOnlyAnAbandonedStation() {
             // Nobody has ever been aboard a derelict, so a system with one hulk in it and nothing
             // else is empty space with a wreck in it. The fog admits the hulk - it is un-hidden and
@@ -291,61 +303,6 @@ class MapVisibilityIntegrationTest {
                     system,
                     INCLUDING_UNDISCOVERED_MARKETS))
                 .isTrue();
-        }
-    }
-
-    @Nested
-    class FindInhabitedSystemIds {
-
-        @Test
-        void findInhabitedSystemIdsReportsOnlyTheSystemsHoldingSomething() {
-            // The set the factionless classifier reads. It has to name the settled systems and
-            // only those, since a system missing from it draws as the empty backdrop the
-            // uninhabited-systems checkbox switches off.
-            var settled = buildUnreachableSystem("settled");
-            var empty = buildUnreachableSystem("empty");
-
-            assertThat(MapVisibility.findInhabitedSystemIds(
-                    buildSectorWithMarketsFor(settled, buildOwnedMarket(), empty),
-                    MapVisibilityRules.BASE))
-                .containsExactly("settled");
-        }
-
-        @Test
-        void findInhabitedSystemIdsReportsARevealedRuinAlongsideALiveColony() {
-            // Both reasons a system counts as settled land in the one set, so the classifier
-            // cannot tell a dead colony from a live one it found no holder for - which is what
-            // lets the two share a category.
-            var colonised = buildUnreachableSystem("colonised");
-            var ruined = buildUnreachableSystemWithDecivilisedPlanet("ruined");
-
-            assertThat(MapVisibility.findInhabitedSystemIds(
-                    buildSectorWithMarketsFor(colonised, buildOwnedMarket(), ruined),
-                    MapVisibilityRules.BASE))
-                .containsExactlyInAnyOrder("colonised", "ruined");
-        }
-
-        @Test
-        void findInhabitedSystemIdsHonoursTheUndiscoveredColonyReveal() {
-            // The roll-up hands its rules down rather than judging inhabitation itself, and a
-            // dropped argument would look identical at every other case here - all of which pass
-            // the no-reveal value. Only a system that flips on the reveal catches it.
-            var system = buildUnreachableSystem("undiscovered");
-            var sector = buildSectorWith(system, buildUndiscoveredColony());
-
-            assertThat(MapVisibility.findInhabitedSystemIds(sector, MapVisibilityRules.BASE))
-                .isEmpty();
-
-            assertThat(MapVisibility.findInhabitedSystemIds(
-                    sector,
-                    INCLUDING_UNDISCOVERED_MARKETS))
-                .containsExactly("undiscovered");
-        }
-
-        @Test
-        void findInhabitedSystemIdsIsEmptyForANullSector() {
-            assertThat(MapVisibility.findInhabitedSystemIds(null, MapVisibilityRules.BASE))
-                .isEmpty();
         }
     }
 
@@ -438,31 +395,6 @@ class MapVisibilityIntegrationTest {
     // that system - the read the inhabitation rule makes when judging colonies.
     private static SectorAPI buildSectorWith(StarSystemAPI system, MarketAPI... markets) {
         return buildSector(system, buildHyperspaceWithVisibleStarAnchorFor(system), markets);
-    }
-
-    // A two-system sector where only the first holds markets, for the sector-wide scan: the
-    // second is there so a scan that reported every system rather than the settled ones would
-    // be caught. No hyperspace stubbing, the scan reading the economy alone.
-    private static SectorAPI buildSectorWithMarketsFor(
-            StarSystemAPI marketSystem,
-            MarketAPI market,
-            StarSystemAPI marketlessSystem) {
-
-        var economyMock = mock(EconomyAPI.class);
-
-        when(economyMock.getMarkets(marketSystem))
-            .thenReturn(List.of(market));
-        when(economyMock.getMarkets(marketlessSystem))
-            .thenReturn(List.of());
-
-        var sectorMock = mock(SectorAPI.class);
-
-        when(sectorMock.getStarSystems())
-            .thenReturn(List.of(marketSystem, marketlessSystem));
-        when(sectorMock.getEconomy())
-            .thenReturn(economyMock);
-
-        return sectorMock;
     }
 
     // A reachable system whose only star anchor is hidden on the map, its economy listing nothing -

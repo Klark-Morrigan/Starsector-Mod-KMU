@@ -13,8 +13,9 @@ import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import kmlib.starsector.colonies.ColonyVisibility;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.base.visibility.MapVisibility;
-import kmu.maplayers.base.visibility.MapVisibilityRules;
+import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.tooltip.SystemStatusRow;
 
 import org.junit.jupiter.api.AfterEach;
@@ -37,10 +38,10 @@ import static org.mockito.Mockito.when;
  * Pins the one claim neither suite either side of it can make: that the cell a system is drawn as
  * and the status line drawn over it answer "does anybody live here" off one rule.
  *
- * <p>The cell classifies through {@link MapVisibility}, the box through
+ * <p>The cell classifies through {@link PoliticalMapInhabitation}, the box through
  * {@link SystemStatusRow}, and each has its own suite pinning its own answer. Nothing in that pair
- * stops the two drifting onto different colony filters, which is the state that lets a hover print
- * "Unpopulated" across a system the map beneath the cursor has painted as settled.
+ * stops the two drifting onto different colony projections, which is the state that lets a hover
+ * print "Unpopulated" across a system the map beneath the cursor has painted as settled.
  *
  * <p>Integration rather than unit, because the agreement is a property of the shared colony read
  * underneath both - stub it and the wiring this exists to catch is what gets asserted. Only the
@@ -91,12 +92,27 @@ final class SystemInhabitationAgreementIntegrationTest {
             // Galatia Academy's shape. Both surfaces have to find it through the entity walk, or
             // one of them reports a station flying a faction's colours as belonging to nobody.
             var system = buildSystem();
-            var sector = buildSectorHoldingUnlistedColony(system, buildOpenColony());
+            var sector = buildSectorHoldingUnlistedMarket(system, buildOpenColony());
 
             assertThat(isInhabited(sector, system, BASE_FOG))
                 .isTrue();
             assertThat(SystemStatusRow.resolveStatusRow(sector, system, BASE_FOG))
                 .isEmpty();
+        }
+
+        @Test
+        void aDerelictLeavesTheCellEmptyAndTheStatusSpokenThoughTheBoxMayNameIt() {
+            // The one shape the two surfaces answer alike about while the listing beside them says
+            // something else. The hulk passes the fog outright, so a cell or a status wired to the
+            // listing would call a system of wrecks settled - and the pair only agrees here because
+            // both read habitation.
+            var system = buildSystem();
+            var sector = buildSectorHoldingUnlistedMarket(system, buildAbandonedStation());
+
+            assertThat(isInhabited(sector, system, BASE_FOG))
+                .isFalse();
+            assertThat(readStatus(sector, system, BASE_FOG))
+                .isEqualTo("Unpopulated");
         }
 
         @Test
@@ -164,17 +180,19 @@ final class SystemInhabitationAgreementIntegrationTest {
         }
     }
 
-    // What the cell is classified on, under the reveal the box is asked with - the pairing being
-    // the whole point, a case handing the two different reveals would prove nothing.
+    // What the cell is classified on, under the rule the box is asked with - the pairing being the
+    // whole point, a case handing the two different rules would prove nothing.
+    //
+    // Reached through the map's own inhabitation read rather than through the framework rule
+    // beneath it, so what a case pins is the classification the rebuild actually makes.
     private static boolean isInhabited(
             SectorAPI sector,
             StarSystemAPI system,
             ColonyVisibility colonyVisibility) {
 
-        return MapVisibility.isInhabited(
-            sector,
-            system,
-            new MapVisibilityRules(colonyVisibility, false));
+        return PoliticalMapInhabitation.isSystemInhabited(
+            HolderPass.over(sector, colonyVisibility, HolderGrouping.identity()),
+            system);
     }
 
     // The status line's words. Read through orElseThrow rather than defended, since a case
@@ -207,9 +225,10 @@ final class SystemInhabitationAgreementIntegrationTest {
         return sectorMock;
     }
 
-    // A sector listing nothing in the system, the colony hanging on one of the system's own
-    // entities instead - what only the entity walk finds.
-    private static SectorAPI buildSectorHoldingUnlistedColony(
+    // A sector listing nothing in the system, the market hanging on one of the system's own
+    // entities instead - what only the entity walk finds, and the only shape a derelict comes in,
+    // vanilla never registering one with the economy.
+    private static SectorAPI buildSectorHoldingUnlistedMarket(
             StarSystemAPI system,
             MarketAPI colony) {
 
@@ -263,6 +282,22 @@ final class SystemInhabitationAgreementIntegrationTest {
     // the known projection - the one shape the fog has to keep back.
     private static MarketAPI buildUnfoundConcealedBase() {
         return buildColonyOnEntity(true, true);
+    }
+
+    // A derelict station: a found, open market held by nobody and carrying vanilla's
+    // abandoned-station condition. The condition marks a hulk and the neutral owner parts one from
+    // a station somebody keeps, so both are the shape rather than details of it.
+    private static MarketAPI buildAbandonedStation() {
+
+        var marketMock = buildColonyOnEntity(false, false);
+        var factionMock = marketMock.getFaction();
+
+        when(marketMock.hasCondition(Conditions.ABANDONED_STATION))
+            .thenReturn(true);
+        when(factionMock.isNeutralFaction())
+            .thenReturn(true);
+
+        return marketMock;
     }
 
     // The two-axis shape the named colonies above are points on, kept private so no case poses

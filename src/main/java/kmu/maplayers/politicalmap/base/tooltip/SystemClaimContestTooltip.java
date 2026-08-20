@@ -67,9 +67,13 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     protected final List<TooltipSection> buildBodySections(SectorAPI sector, StarSystemAPI system) {
         var sections = new ArrayList<TooltipSection>();
 
-        // Read once for the whole box and applied to both questions it settles - whether the system
-        // counts as populated, and which standings the player may be shown - since a banner calling a
-        // system empty over a list naming who lives there is the one pairing the box cannot make.
+        // Read once for the whole box and applied to both questions it settles - whether people
+        // live in the system, and which standings the player may be shown - since a banner and a
+        // list resolved under two rules could withhold different colonies of the same system.
+        //
+        // The two questions differ under that one rule, and are meant to: the banner asks about
+        // habitation, so a system holding only a derelict is headed "Unpopulated" while the list
+        // beneath names the derelict, which is the true reading of such a system.
         var colonyVisibility = readColonyVisibility();
 
         // One read for the whole box: the claimant, the override behind it, and every standing the

@@ -274,8 +274,8 @@ market its own mechanic never weighed, and for the same reason: the colony is th
 nothing, which is the whole of what the account has to say about it.
 A faction whose only colony in the system is one of these is listed all the same, at a nought of its
 own. Presence and weight are two questions, so the ranking (`SystemStandings`) is handed both: who is
-in the system (`HolderPass.readKnownColonyFactionIds` - the owners of the very projection the band
-counts, which is why the two surfaces cannot name different factions) beside each faction's
+in the system (`HolderPass.readKnownColonyFactionIds` - the owners of everything the box may name,
+so no two boxes over one cell can name different factions) beside each faction's
 footprint, and anyone present with no footprint takes a `PresenceOnlyFactionStanding`, the sealed
 other half of `FactionStanding`. Presence is read as the wider set rather than as whatever the
 weighing left over, so nothing a weighed read comes to exclude can drop a faction out of the listing
@@ -285,6 +285,13 @@ one. The nought reads in the quiet shade at both tiers (`statesUncountedValue` a
 `GroupStanding.hasWeighedMember` for the bloc line over it) - a bloc counts as weighed where any one
 member was, so an alliance holding one registered colony beside two unregistered ones keeps an
 aggregate somebody worked out.
+The status line above that listing (`SystemStatusRow`) answers a different question of the same
+colony rule, and the two are meant to part over one shape. It asks habitation - whether anybody
+lives here - where the listing asks what the player may be told about, so a system whose only market
+is an abandoned station is headed `Unpopulated` over a box that names the station's owner at nought.
+That is the true reading of a system with one wreck in it rather than the contradiction the two lines
+look like side by side: nobody has ever been aboard a derelict, and somebody has seen it. The cell
+under the box reads habitation too, so the line and the backdrop it is drawn over always agree.
 The claims box has a counterpart of its own on the same terms - `ExpandedSystemClaimTooltip`, which
 opens every faction the contest names into the markets it holds the system with and each market
 into the terms its claim score is built from. Both claim boxes sit on `SystemClaimContestTooltip`,
@@ -353,17 +360,19 @@ in the quiet shade (`statesUncountedValue`, the same treatment an unweighed mark
 the contest's statement about a faction it never weighed rather than a score competed for and lost.
 The claimant's line takes the same nought where a decree holds a system its faction is present in
 through unweighed colonies alone, in place of the blank column a claimant holding nothing there gets.
-A market the player has not found is left off the list, since
+A market the player may not be told about is left off the list, since
 vanilla settles a claim over colonies nobody has found and repeating what it learned there would
 name something the player has no way of knowing about; the rule is
 `MarketClaimBreakdown.isKnownToPlayer`, the same one the faction and alliance tabs fog by, so all
-three agree on what the player knows, and the dev reveal states everything in full. The same
-projection reaches the listing above the markets: a standing whose every colony is unfound is left
+three agree on what the player knows, and the dev reveal states everything in full. What that flag
+carries is the composed answer rather than the entity's own: the player has found the market
+**and**, for the shapes a bare fog would leak, somebody has seen it where it stands. The same
+projection reaches the listing above the markets: a standing whose every colony is withheld is left
 off the box entirely (`selectListedStandings` again), since naming a faction over an account with
 nothing in it would tell the player exactly what the fog is keeping back - and `F1` is offered only
 where a standing survives that filter, so the key is never advertised over a box the fog has emptied.
-A weighed standing always survives it, the mechanic scoring only markets held in the open and one
-held in the open being one the player knows of.
+A weighed standing is not spared that filter: the mechanic weighs what vanilla weighs, and vanilla
+weighs colonies the player has never reached.
 Closing the list is the presence term, which is the faction's rather than any one market's, since
 the mechanic gives every market of a faction the same point per other market it holds there: stated
 once beneath the very markets its count can be checked against, and worked out from that count

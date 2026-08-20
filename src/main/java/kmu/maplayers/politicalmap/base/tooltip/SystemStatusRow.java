@@ -14,8 +14,8 @@ import kmu.util.KmuStrings;
 import java.util.Optional;
 
 /**
- * The line naming why a hovered system holds nobody: a dead colony the player has already seen reads
- * "Decivilised", any other system with no counted colony "Unpopulated".
+ * The line naming why nobody lives in a hovered system: a dead colony the player has already seen
+ * reads "Decivilised", any other system nobody lives in "Unpopulated".
  *
  * <p>A shared row rather than each tooltip's own empty state, because the emptiness is a fact about
  * the system, not about the layer looking at it - a layer that says nothing else about a dead system
@@ -38,13 +38,19 @@ public final class SystemStatusRow {
     }
 
     /**
-     * Resolves the status line for a system holding nobody the player may be told about.
+     * Resolves the status line for a system nobody the player knows of lives in.
      *
-     * <p>Answered off the known listing - everybody the box may name - so the line appears exactly
-     * where the breakdown beneath it would have nothing to say, and never over a box that goes on
-     * to name somebody. The rule arrives from the caller rather than being read here, which is
-     * what keeps the two in step: a status resolved under a rule of its own would eventually call
-     * a system empty that the body below it goes on to fill.
+     * <p>Answered off habitation rather than off the listing beneath it, because the line is a
+     * statement about the system and not a heading for the breakdown: it says whether people live
+     * here, while the breakdown names everything the player may be told about. The two part over
+     * the derelict, and the parting is the true reading rather than the disagreement it looks
+     * like - a system holding one hulk and nothing else is unpopulated space, and the box beneath
+     * still names the hulk. The same holds the other way with a colony beside the hulk: the line
+     * reads populated on the colony's account and the box names both.
+     *
+     * <p>The rule arrives from the caller rather than being read here, which is what keeps this in
+     * step with the body below it: a status resolved under a rule of its own would eventually
+     * withhold a colony the breakdown went on to name, or count one it did not.
      *
      * <p>Withholding a colony never leaks. A colony the rule holds back fails the projection
      * outright, so its system keeps its status line and the absence of one never becomes a tell
@@ -54,7 +60,8 @@ public final class SystemStatusRow {
      * @param system           the hovered system
      * @param colonyVisibility what the player may be shown of a colony, passed by the caller so
      *                         the status agrees with whatever that caller's own reads admit
-     * @return the Decivilised or Unpopulated row, or empty when the player knows of a colony here
+     * @return the Decivilised or Unpopulated row, or empty when the player knows of somebody
+     *         living here
      */
     public static Optional<TooltipRow.CentredRow> resolveStatusRow(
             SectorAPI sector,
@@ -63,7 +70,7 @@ public final class SystemStatusRow {
 
         var colonies = SystemColonies.readColoniesIn(sector, system);
 
-        if (colonies.hasKnownColony(colonyVisibility)) {
+        if (colonies.hasInhabitingColony(colonyVisibility)) {
             return Optional.empty();
         }
         var statusKey = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system)

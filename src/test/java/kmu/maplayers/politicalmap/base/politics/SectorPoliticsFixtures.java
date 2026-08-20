@@ -597,13 +597,13 @@ public final class SectorPoliticsFixtures {
      * @param id      the system id
      * @param markets the markets the system's economy holds
      */
-    record SystemMarkets(
+    public record SystemMarkets(
         String id,
         List<MarketAPI> markets) {
     }
 
     /**
-     * Pairs a system id with its markets for {@link #sectorWithSystems}.
+     * Pairs a system id with its markets for {@link #buildSectorWithSystems}.
      *
      * @param id      the system id
      * @param markets the markets the system's economy holds

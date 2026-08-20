@@ -10,9 +10,6 @@ import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
 
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * Decides which star systems appear on a map layer, and fingerprints that
  * set so the overlay knows when to rebuild.
@@ -173,40 +170,34 @@ public final class MapVisibility {
             boolean isRevealedDecivilised,
             MapVisibilityRules visibilityRules) {
 
-        return colonies.hasInhabitingColony(visibilityRules.colonyVisibility())
-            || isRevealedDecivilised;
+        return isInhabited(
+            colonies.hasInhabitingColony(visibilityRules.colonyVisibility()),
+            isRevealedDecivilised);
     }
 
     /**
-     * The sector-wide roll-up of {@link #isInhabited}: every system somebody lives in,
-     * live colony or known ruin alike.
+     * Whether the system counts as inhabited, composed from the two facts a caller holding a
+     * pass's own reading of the system already has - so a layer that resolved habitation off its
+     * pass states the composition through this rather than restating it beside it.
      *
-     * <p>Scanned once per pass because the answer is wanted per cell, and a cell asking the
-     * economy for itself would put a market walk inside the per-cell styling loop.
+     * <p>The composition is the whole of what this owns, and it is a disjunction because the two
+     * facts are two ways a system holds people rather than two requirements: a live colony is one,
+     * and a ruin the player has already seen is the other, which no colony read answers because
+     * nobody owns a dead world.
      *
-     * <p>Read separately from holding because it is a different question. A layer resolves
-     * holding under a rule of its own, and a rule that admits only some factions leaves an
-     * inhabited system with nobody holding it - which is not the same state as empty space,
-     * however alike the two look to a holder lookup that came back null.
-     *
-     * @param sector          the sector to scan; null yields an empty set
-     * @param visibilityRules the pass's visibility rules, resolved once by the caller
-     * @return the ids of every inhabited system
+     * @param hasInhabitingColony   whether the system holds a colony somebody lives on that the
+     *                              player may be shown, as the caller's own habitation read
+     *                              reported it
+     * @param isRevealedDecivilised whether the system holds a dead colony the player has already
+     *                              seen; counts under any rules, a revealed ruin being known for
+     *                              good
+     * @return true when the system holds a colony somebody lives on or a known dead colony
      */
-    public static Set<String> findInhabitedSystemIds(
-            SectorAPI sector,
-            MapVisibilityRules visibilityRules) {
+    public static boolean isInhabited(
+            boolean hasInhabitingColony,
+            boolean isRevealedDecivilised) {
 
-        var systemIds = new HashSet<String>();
-        if (sector == null) {
-            return systemIds;
-        }
-        for (var system : sector.getStarSystems()) {
-            if (isInhabited(sector, system, visibilityRules)) {
-                systemIds.add(system.getId());
-            }
-        }
-        return systemIds;
+        return hasInhabitingColony || isRevealedDecivilised;
     }
 
     /**

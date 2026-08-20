@@ -71,8 +71,12 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
 
         // What the system is comes before who holds it, so the standings below read as a contest over
         // a known system. The status resolves under this pass's rule, the same filter the standings
-        // were ranked through, so the system counts as empty here exactly when the ranking found
-        // nothing to show - the two can never describe different systems.
+        // were ranked through, so neither can admit a colony the other withholds.
+        //
+        // It answers a different question of that one rule, though: the line says whether people
+        // live here, while the standings name everyone the player may be told about. A system whose
+        // only market is a derelict is therefore headed "Unpopulated" over a list naming the
+        // derelict - which is what both surfaces are for, rather than a disagreement between them.
         CellTooltipSections.appendBannerSection(
             sections,
             SystemStatusRow.resolveStatusRow(sector, system, pass.colonyVisibility()));

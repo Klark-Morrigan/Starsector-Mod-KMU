@@ -23,8 +23,8 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Unit coverage for {@link HolderPass}: the construction guard, the two projections it offers over
- * one walk, and that the pass names the sector its own walk was opened over rather than one carried
- * beside it.
+ * one walk, the habitation value the cell and the spotlight both answer off, and that the pass names
+ * the sector its own walk was opened over rather than one carried beside it.
  *
  * <p>What each projection admits is settled in KMLib, where the rule lives. What is read here is
  * that the pass reaches the right one of them and holds both to the rule it was opened with - a
@@ -304,12 +304,12 @@ final class HolderPassTest {
     }
 
     @Nested
-    class ReadKnownColonyBlocIds {
+    class ReadHabitationIn {
 
         @Test
         void foldsAlliedOwnersIntoTheOneBlocTheyPaintAs() {
             // Presence is asked by surfaces that decide per bloc - the spotlight's fill, the band's
-            // runs - so two allies in one system are one bloc present there, not two.
+            // runs - so two allies in one system are one bloc living there, not two.
             var sector = SectorPoliticsFixtures.buildSectorWith(
                 SYSTEM_ID,
                 SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE),
@@ -319,7 +319,8 @@ final class HolderPassTest {
 
             assertThat(HolderPass
                     .over(sector, BASE_FOG, ALLIED_HEGEMONY_AND_TRITACHYON)
-                    .readKnownColonyBlocIds(SectorPoliticsFixtures.buildOnlySystem(sector)))
+                    .readHabitationIn(SectorPoliticsFixtures.buildOnlySystem(sector))
+                    .blocIds())
                 .containsExactly(ALLIANCE_ID);
         }
 
@@ -337,8 +338,47 @@ final class HolderPassTest {
 
             assertThat(HolderPass
                     .over(sector, BASE_FOG, HolderGrouping.identity())
-                    .readKnownColonyBlocIds(SectorPoliticsFixtures.buildOnlySystem(sector)))
+                    .readHabitationIn(SectorPoliticsFixtures.buildOnlySystem(sector))
+                    .blocIds())
                 .containsExactly("hegemony");
+        }
+
+        @Test
+        void namesNoBlocForASystemHoldingOnlyADerelict() {
+            // The case the whole value exists for. The listing names the hulk's owner, and nobody
+            // lives on it - so the blocs come back empty beside a habitation that has nothing in
+            // it, which is what keeps the spotlight from sparing a cell the map draws as empty
+            // space.
+            var derelict = SectorPoliticsFixtures.buildAbandonedStationMarket(COLONY_SIZE);
+            var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID);
+            var system = SectorPoliticsFixtures.buildOnlySystem(sector);
+
+            // Through the entity side, as a vanilla hulk arrives: the economy never lists one.
+            SectorPoliticsFixtures.placeMarketsOnSystemEntities(system, derelict);
+
+            var pass = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
+            var habitation = pass.readHabitationIn(system);
+
+            assertThat(pass.readKnownColonyFactionIds(system))
+                .containsExactly("neutral");
+            assertThat(habitation.blocIds())
+                .isEmpty();
+            assertThat(habitation.hasInhabitingColony())
+                .isFalse();
+        }
+
+        @Test
+        void reportsNobodyLivingInASystemThatIsNotThere() {
+            // The null-system answer every read on the pass holds to, stated for the value too so a
+            // reader handed a system the sector no longer lists is not obliged to guard first.
+            var habitation = HolderPass
+                .over(mock(SectorAPI.class), BASE_FOG, HolderGrouping.identity())
+                .readHabitationIn(null);
+
+            assertThat(habitation.hasInhabitingColony())
+                .isFalse();
+            assertThat(habitation.blocIds())
+                .isEmpty();
         }
     }
 

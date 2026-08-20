@@ -105,9 +105,11 @@ the space it labels:
 - `FactionlessStyleResolver` - the counterpart for a cell with no owner, which has no bloc to carry
   a decision: which factionless category it draws in, and whether the pass's recede reaches it
   (a settled cell yes, an uninhabited one no, and a settled one the spotlit bloc lives in no
-  either). Classifies off the pass's inhabited-system set (`MapVisibility.findInhabitedSystemIds`)
-  and its spotlit-presence set (`FilteredPolitics.findPresentSystemIds`), never off the holder map
-  that sent the cell here.
+  either). Classifies off the pass's inhabited-system set
+  (`PoliticalMapInhabitation.readInhabitedSystemIds`) and its spotlit-presence set
+  (`FilteredPolitics.findPresentSystemIds`), never off the holder map that sent the cell here. Both
+  sets come off one habitation value per system, so a cell drawn as uninhabited is never one the
+  spotlight spared.
 - `BlocStyling` - maps that decision onto the pass's actual theme, giving the concrete bundle
   plus adjustment a bloc draws under. It owns the one field that crosses between bundles: a
   desaturated bloc's fill is held at the *faction* opacity, so a desaturated surface reads as

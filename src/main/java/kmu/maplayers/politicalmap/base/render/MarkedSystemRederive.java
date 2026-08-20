@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.render;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SectorStarSystems;
@@ -9,6 +8,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
@@ -74,7 +74,7 @@ final class MarkedSystemRederive {
             var system = systemById.get(systemId);
 
             rederiveSystemHolder(territories, geometryCache, pass, system, systemId, disturbance);
-            rederiveSystemInhabitation(territories, pass.sector(), system, systemId, disturbance);
+            rederiveSystemInhabitation(territories, pass.holding(), system, systemId, disturbance);
         }
         rederiveSpotlitPresence(territories, pass, markedSystemIds, disturbance);
 
@@ -119,14 +119,18 @@ final class MarkedSystemRederive {
     // is scanned once where a rebuild begins, so between rebuilds it goes stale exactly over the
     // systems the events have already moved - and on a layer whose holding cannot account for a
     // system, its cell is the only surface that reports the change at all.
+    //
+    // Handed the batch's reading of the sector rather than the whole pass, on the same terms the
+    // presence read below is: whether anybody lives in a system is a question no weighting rule
+    // takes part in answering.
     private static void rederiveSystemInhabitation(
             PoliticalMapTerritories territories,
-            SectorAPI sector,
+            HolderPass holding,
             StarSystemAPI system,
             String systemId,
             StalePoliticsDisturbance disturbance) {
 
-        var isInhabited = PoliticalMapInhabitation.isSystemInhabited(sector, system);
+        var isInhabited = PoliticalMapInhabitation.isSystemInhabited(holding, system);
 
         if (territories.getOccupancy().foldInhabitationOf(systemId, isInhabited)) {
             disturbance.recordRestyle(systemId);
