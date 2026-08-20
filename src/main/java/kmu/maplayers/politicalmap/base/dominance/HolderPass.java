@@ -7,11 +7,14 @@ import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -37,26 +40,54 @@ import java.util.Set;
  * <p>The sector is the index's rather than a field of its own, so a pass cannot be built naming
  * one sector while answering out of another.
  *
- * @param grouping         the grouping that folds factions into blocs before any mechanic
- *                         compares them; the identity grouping resolves the plain faction view
- * @param colonyVisibility the rule every read through this pass shows colonies under - the dev
- *                         reveal, and the gates holding back what a bare fog would leak
- * @param colonies         the pass's one walk of each system, shared by every read made through
- *                         it
+ * <p>A class rather than a record because it remembers as well as carries: the colony walk was
+ * always memoised inside the index it holds, and habitation is memoised here beside it. Both are a
+ * snapshot of one moment, which is why a pass is discarded with the rebuild that opened it - and
+ * why value equality would be wrong for it, two passes over one sector being two separate readings
+ * however alike the knobs they were built from. Not safe for concurrent use, a rebuild being one
+ * thread's work.
  */
-public record HolderPass(
-    HolderGrouping grouping,
-    ColonyVisibility colonyVisibility,
-    SystemColoniesIndex colonies) {
+public final class HolderPass {
 
-    // The rule is required on the same terms the grouping and the walk are: a pass is opened
-    // where a rebuild begins, from a value the opener already holds, so a null is a fault at that
-    // one place rather than a caller with no rule to state. Standing the fog in for it would turn
-    // that fault into a map that quietly draws less, which nothing on screen would report.
-    public HolderPass {
-        Objects.requireNonNull(grouping, "grouping");
-        Objects.requireNonNull(colonyVisibility, "colonyVisibility");
-        Objects.requireNonNull(colonies, "colonies");
+    // Each system's habitation, resolved on first ask and remembered for the rest of the pass.
+    //
+    // Memoised because two readers ask for it per system and they run in separate walks of the
+    // sector: the filter's holder resolve asks every system for its blocs, and the inhabitation
+    // scan asks every system for its emptiness. The colony walk beneath is already shared, so what
+    // repeated was the projection and the two folds over it - cheap each, and paid for the whole
+    // sector twice on every filtered rebuild.
+    //
+    // Keyed by system id on the same terms the colony index is, and for the same reason: an
+    // unkeyable system is resolved afresh rather than pooled with every other under a shared key.
+    private final Map<String, SystemHabitation> habitationBySystemId = new HashMap<>();
+
+    private final HolderGrouping grouping;
+    private final ColonyVisibility colonyVisibility;
+    private final SystemColoniesIndex colonies;
+
+    /**
+     * Opens a pass over an already-built colony index.
+     *
+     * <p>The rule is required on the same terms the grouping and the walk are: a pass is opened
+     * where a rebuild begins, from a value the opener already holds, so a null is a fault at that
+     * one place rather than a caller with no rule to state. Standing the fog in for it would turn
+     * that fault into a map that quietly draws less, which nothing on screen would report.
+     *
+     * @param grouping         the grouping that folds factions into blocs before any mechanic
+     *                         compares them; the identity grouping resolves the plain faction view
+     * @param colonyVisibility the rule every read through this pass shows colonies under - the dev
+     *                         reveal, and the gates holding back what a bare fog would leak
+     * @param colonies         the pass's one walk of each system, shared by every read made
+     *                         through it
+     */
+    public HolderPass(
+            HolderGrouping grouping,
+            ColonyVisibility colonyVisibility,
+            SystemColoniesIndex colonies) {
+
+        this.grouping = Objects.requireNonNull(grouping, "grouping");
+        this.colonyVisibility = Objects.requireNonNull(colonyVisibility, "colonyVisibility");
+        this.colonies = Objects.requireNonNull(colonies, "colonies");
     }
 
     /**
@@ -98,6 +129,33 @@ public record HolderPass(
             sector,
             MapVisibilityRules.readFromLunaSettings().colonyVisibility(),
             grouping);
+    }
+
+    /**
+     * The grouping this pass folds factions into blocs under.
+     *
+     * @return the grouping every per-bloc read through this pass is made under
+     */
+    public HolderGrouping grouping() {
+        return grouping;
+    }
+
+    /**
+     * The rule this pass shows colonies under.
+     *
+     * @return the dev reveal and the revelation gates every colony read through this pass takes
+     */
+    public ColonyVisibility colonyVisibility() {
+        return colonyVisibility;
+    }
+
+    /**
+     * The colony index this pass walks each system through.
+     *
+     * @return the index, so a reader needing to open something of its own over the same walk can
+     */
+    public SystemColoniesIndex colonies() {
+        return colonies;
     }
 
     /**
@@ -217,10 +275,33 @@ public record HolderPass(
      * nothing, so no bloc is living in a system holding one alone and none is spared the recede
      * there.
      *
+     * <p>Worked out on the first ask and remembered for the rest of the pass, since the two
+     * readers ask it in separate walks of the sector.
+     *
      * @param system the system to read; null yields an empty habitation
      * @return the system's habitation under this pass's rule and grouping
      */
     public SystemHabitation readHabitationIn(StarSystemAPI system) {
+
+        if (system == null) {
+            return resolveHabitationIn(null);
+        }
+        var systemId = system.getId();
+
+        if (!KmlibStrings.hasText(systemId)) {
+            // Nothing to key the memo on. Resolving afresh costs a second fold a later ask would
+            // have saved, which is the honest price of an unkeyable system - pooling every one of
+            // them under a shared key would hand one system's blocs to another.
+            return resolveHabitationIn(system);
+        }
+        return habitationBySystemId.computeIfAbsent(
+            systemId,
+            id -> resolveHabitationIn(system));
+    }
+
+    // One system's habitation worked out, for the memo above to remember: the habitation
+    // projection over this pass's walk, with the blocs folded from those very colonies.
+    private SystemHabitation resolveHabitationIn(StarSystemAPI system) {
 
         var inhabitingColonies = readInhabitingColoniesIn(system);
 

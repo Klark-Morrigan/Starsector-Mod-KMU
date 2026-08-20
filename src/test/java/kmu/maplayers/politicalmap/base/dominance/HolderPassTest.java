@@ -11,6 +11,7 @@ import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
@@ -365,6 +366,45 @@ final class HolderPassTest {
                 .isEmpty();
             assertThat(habitation.hasInhabitingColony())
                 .isFalse();
+        }
+
+        @Test
+        void worksOutOneSystemsHabitationOnceForTheWholePass() {
+            // Two readers ask this per system and they run in separate walks of the sector - the
+            // filter's holder resolve for the blocs, the inhabitation scan for the emptiness - so
+            // without the memo every filtered rebuild projects and folds the whole sector twice.
+            // Asserted as identity, since an equal value worked out again is exactly the repeat
+            // this exists to stop.
+            var sector = SectorPoliticsFixtures.buildSectorWith(
+                SYSTEM_ID,
+                SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE));
+
+            var pass = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
+            var system = SectorPoliticsFixtures.buildOnlySystem(sector);
+
+            assertThat(pass.readHabitationIn(system))
+                .isSameAs(pass.readHabitationIn(system));
+        }
+
+        @Test
+        void keepsTwoUnkeyableSystemsApart() {
+            // A system the sector names with nothing has no key to remember it by. It is resolved
+            // afresh rather than pooled, which costs a fold a later ask would have saved - the
+            // honest price, since a shared key would hand one system's blocs to another.
+            var sector = SectorPoliticsFixtures.buildSectorWithSystems(
+                List.of(),
+                SectorPoliticsFixtures.listSystemMarkets(
+                    null,
+                    SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE)),
+                SectorPoliticsFixtures.listSystemMarkets(null));
+
+            var pass = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
+            var systems = sector.getStarSystems();
+
+            assertThat(pass.readHabitationIn(systems.get(0)).blocIds())
+                .containsExactly("hegemony");
+            assertThat(pass.readHabitationIn(systems.get(1)).blocIds())
+                .isEmpty();
         }
 
         @Test
