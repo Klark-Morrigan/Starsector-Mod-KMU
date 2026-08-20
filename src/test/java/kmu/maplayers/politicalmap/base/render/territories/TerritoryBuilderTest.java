@@ -66,6 +66,10 @@ final class TerritoryBuilderTest {
     // The passes the presence scan was asked for, in the order the build asked.
     private final List<HolderPass> presenceScanPasses = new ArrayList<>();
 
+    // The same for the inhabitation scan, which walks every system for its colonies as the other
+    // two readers do.
+    private final List<HolderPass> inhabitationScanPasses = new ArrayList<>();
+
     @BeforeEach
     void openTheLiveSeams() {
 
@@ -83,9 +87,15 @@ final class TerritoryBuilderTest {
         filterSelectionMock
             .when(() -> FilterSelection.getSelectedIdOf(any()))
             .thenReturn(null);
+        // The inhabitation scan's pass is kept on the same terms the presence scan's is: it walks
+        // every system for its colonies, so which pass reached it decides whether the rebuild
+        // read the sector once or twice.
         inhabitationMock
-            .when(() -> PoliticalMapInhabitation.readInhabitedSystemIds(any()))
-            .thenReturn(Set.of("inhabited-system"));
+            .when(() -> PoliticalMapInhabitation.readInhabitedSystemIds(any(HolderPass.class)))
+            .thenAnswer(invocation -> {
+                inhabitationScanPasses.add(invocation.getArgument(0));
+                return Set.of("inhabited-system");
+            });
         styleReaderMock
             .when(RenderStyleReader::readRenderStyle)
             .thenReturn(createRenderStyleForEveryCategory(buildInertCategoryStyle()));
@@ -144,7 +154,7 @@ final class TerritoryBuilderTest {
                 mock(SectorAPI.class),
                 viewFake);
 
-            // One pass opened, and the same one at both readers - stated as identity rather than
+            // One pass opened, and the same one at every reader - stated as identity rather than
             // as equality, since two passes over one sector carry two separate walks of it while
             // agreeing about everything they were built from.
             assertThat(holderPasses)
@@ -152,6 +162,13 @@ final class TerritoryBuilderTest {
             assertThat(presenceScanPasses)
                 .hasSize(1);
             assertThat(presenceScanPasses.get(0))
+                .isSameAs(holderPasses.get(0));
+
+            // The inhabitation scan is the third of them, and the one that read the sector for
+            // itself until the habitation value gave it the pass's own walk to answer off.
+            assertThat(inhabitationScanPasses)
+                .hasSize(1);
+            assertThat(inhabitationScanPasses.get(0))
                 .isSameAs(holderPasses.get(0));
         }
     }

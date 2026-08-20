@@ -249,14 +249,24 @@ final class SystemStatusRowTest {
     // Hangs markets on the system's own entities without registering any with the economy - the
     // shape vanilla builds a derelict in, and the only way to pose one, since the routine that
     // makes an abandoned station pointedly never lists it.
+    //
+    // Each entity is wired to carry its market as well as being listed by the system. Both halves
+    // are load-bearing: the walk finds an entity through the system and then asks it for a market,
+    // so an entity listed without one puts nothing in the colony set at all - and a case posing a
+    // market this way would be asserting an empty system while reading as though it posed one.
     private static void hangMarketsOnSystemEntities(StarSystemAPI system, MarketAPI... markets) {
 
-        // The entities are gathered before the system's stubbing opens, so Mockito does not see
-        // one stubbing nested inside another.
+        // The entities finish their own stubbing before the system's opens, so Mockito does not
+        // see one stubbing nested inside another.
         var entities = new ArrayList<SectorEntityToken>();
 
         for (var market : markets) {
-            entities.add(market.getPrimaryEntity());
+            var entityMock = market.getPrimaryEntity();
+
+            when(entityMock.getMarket())
+                .thenReturn(market);
+
+            entities.add(entityMock);
         }
         when(system.getAllEntities())
             .thenReturn(entities);
