@@ -77,9 +77,14 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         // live here, while the standings name everyone the player may be told about. A system whose
         // only market is a derelict is therefore headed "Unpopulated" over a list naming the
         // derelict - which is what both surfaces are for, rather than a disagreement between them.
+        // Off the pass's own walk of the system - the very one the standings were ranked from - so
+        // the line and the list beneath it are two readings of one traversal rather than two.
         CellTooltipSections.appendBannerSection(
             sections,
-            SystemStatusRow.resolveStatusRow(sector, system, pass.colonyVisibility()));
+            SystemStatusRow.resolveStatusRow(
+                pass.readColoniesIn(system),
+                system,
+                pass.colonyVisibility()));
 
         // The account is settled once for the whole box, before any group is named, so a box reading
         // the economy to build one reads it once however many groups hold the system - and every
@@ -109,7 +114,10 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         // unpopulated - which reading the economy a second way here would eventually allow.
         var pass = DominancePass.readFromLunaSettings(sector, activeView.resolveGrouping());
         if (SystemStatusRow
-                .resolveStatusRow(sector, system, pass.colonyVisibility())
+                .resolveStatusRow(
+                    pass.readColoniesIn(system),
+                    system,
+                    pass.colonyVisibility())
                 .isPresent()) {
             return Optional.empty();
         }

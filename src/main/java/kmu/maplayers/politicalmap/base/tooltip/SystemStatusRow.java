@@ -1,10 +1,9 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.ColonyVisibility;
-import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
@@ -56,19 +55,23 @@ public final class SystemStatusRow {
      * outright, so its system keeps its status line and the absence of one never becomes a tell
      * that something is hiding there.
      *
-     * @param sector           the sector whose economy is read
-     * @param system           the hovered system
+     * <p>The colonies arrive read rather than as a sector to walk, so a box that has already read
+     * the system - which every box drawing this line has, the standings beside it being ranked off
+     * that very walk - heads itself for the cost of a projection rather than of a second traversal.
+     * A caller with no walk behind it selects one and hands it over, which is the same work it was
+     * paying before and is now visible where it is paid.
+     *
+     * @param colonies         the hovered system's colonies, as one walk of it reported
+     * @param system           the hovered system, read for the ruin no colony set reports
      * @param colonyVisibility what the player may be shown of a colony, passed by the caller so
      *                         the status agrees with whatever that caller's own reads admit
      * @return the Decivilised or Unpopulated row, or empty when the player knows of somebody
      *         living here
      */
     public static Optional<TooltipRow.CentredRow> resolveStatusRow(
-            SectorAPI sector,
+            Colonies colonies,
             StarSystemAPI system,
             ColonyVisibility colonyVisibility) {
-
-        var colonies = SystemColonies.readColoniesIn(sector, system);
 
         if (colonies.hasInhabitingColony(colonyVisibility)) {
             return Optional.empty();

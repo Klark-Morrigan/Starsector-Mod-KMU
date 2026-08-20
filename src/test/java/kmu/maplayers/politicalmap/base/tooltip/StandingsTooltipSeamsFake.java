@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -203,20 +204,22 @@ public final class StandingsTooltipSeamsFake {
      * Asserts the system's status was judged under a given visibility rule - the same filter the
      * standings beside it were ranked through.
      *
-     * @param sector           the sector the box was drawn for
+     * <p>The colonies the line was handed are left unmatched: which walk they came off is the
+     * box's business and is covered where that box reads for real, while what this pins is the
+     * rule, which is the one thing the line and the standings must share.
+     *
      * @param system           the hovered system
      * @param colonyVisibility the rule the status is expected to have been judged under
      */
     public static void verifyStatusJudgedUnderVisibility(
-            SectorAPI sector,
             StarSystemAPI system,
             ColonyVisibility colonyVisibility) {
 
         statusRowMock.verify(
             () -> SystemStatusRow.resolveStatusRow(
-                sector,
-                system,
-                colonyVisibility));
+                any(),
+                same(system),
+                eq(colonyVisibility)));
     }
 
     // A system with nothing to say about itself beyond its standings, which is the ordinary case and

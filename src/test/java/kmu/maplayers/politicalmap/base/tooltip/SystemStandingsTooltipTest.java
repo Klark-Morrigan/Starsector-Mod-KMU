@@ -335,7 +335,7 @@ final class SystemStandingsTooltipTest {
             tooltip.buildBodySections(sectorMock, systemMock);
 
             StandingsTooltipSeamsFake
-                .verifyStatusJudgedUnderVisibility(sectorMock, systemMock, UNDER_THE_REVEAL);
+                .verifyStatusJudgedUnderVisibility(systemMock, UNDER_THE_REVEAL);
         }
 
         @Test

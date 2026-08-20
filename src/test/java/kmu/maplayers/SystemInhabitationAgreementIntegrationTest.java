@@ -7,7 +7,9 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.ColonyVisibility;
+import kmlib.starsector.colonies.SystemColonies;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
@@ -98,7 +100,7 @@ final class SystemInhabitationAgreementIntegrationTest {
 
             assertThat(isInhabited(sector, system, BASE_FOG))
                 .isTrue();
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
                 .isEmpty();
         }
 
@@ -128,7 +130,7 @@ final class SystemInhabitationAgreementIntegrationTest {
 
             assertThat(isInhabited(sector, system, BASE_FOG))
                 .isTrue();
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
                 .isEmpty();
         }
 
@@ -154,7 +156,10 @@ final class SystemInhabitationAgreementIntegrationTest {
 
             assertThat(isInhabited(sector, system, UNDER_THE_REVEAL))
                 .isTrue();
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, UNDER_THE_REVEAL))
+            assertThat(SystemStatusRow.resolveStatusRow(
+                    readColoniesIn(sector, system),
+                    system,
+                    UNDER_THE_REVEAL))
                 .isEmpty();
         }
 
@@ -207,7 +212,7 @@ final class SystemInhabitationAgreementIntegrationTest {
             ColonyVisibility colonyVisibility) {
 
         var row = SystemStatusRow
-            .resolveStatusRow(sector, system, colonyVisibility)
+            .resolveStatusRow(readColoniesIn(sector, system), system, colonyVisibility)
             .orElseThrow();
 
         return readLabelTextRun(row, STATUS_RUN).text();
@@ -227,6 +232,11 @@ final class SystemInhabitationAgreementIntegrationTest {
             .thenReturn(economyMock);
 
         return sectorMock;
+    }
+
+    // The system's colonies, selected as the box drawing this line selects them.
+    private static Colonies readColoniesIn(SectorAPI sector, StarSystemAPI system) {
+        return SystemColonies.readColoniesIn(sector, system);
     }
 
     // A sector listing nothing in the system, the market hanging on one of the system's own

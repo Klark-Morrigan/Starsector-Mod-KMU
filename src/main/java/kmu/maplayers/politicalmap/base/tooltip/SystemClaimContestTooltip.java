@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.ColonyVisibility;
+import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
@@ -85,7 +86,15 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
         // Why the system holds nobody comes before who claims it, so a dead system names its state
         // first and the claim below reads as a hold over an empty system rather than over a colony.
-        var statusRow = SystemStatusRow.resolveStatusRow(sector, system, colonyVisibility);
+        //
+        // The walk is selected here rather than inside the line, and it is this box's own: the
+        // claim reader beneath deliberately holds no colony index - it is a session-long instance,
+        // and one that did would answer a later hover off the sector an earlier one saw - so there
+        // is no shared walk here to take, and the cost is stated where it is paid.
+        var statusRow = SystemStatusRow.resolveStatusRow(
+            SystemColonies.readColoniesIn(sector, system),
+            system,
+            colonyVisibility);
 
         CellTooltipSections.appendBannerSection(sections, statusRow);
 

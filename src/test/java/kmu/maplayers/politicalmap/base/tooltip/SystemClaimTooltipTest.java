@@ -49,6 +49,8 @@ import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFac
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -582,7 +584,7 @@ final class SystemClaimTooltipTest {
             tooltip.buildBodySections(sectorMock, systemMock);
 
             statusRowMock.verify(
-                () -> SystemStatusRow.resolveStatusRow(sectorMock, systemMock, BASE_FOG));
+                () -> SystemStatusRow.resolveStatusRow(any(), same(systemMock), eq(BASE_FOG)));
         }
 
         @Test
@@ -598,7 +600,10 @@ final class SystemClaimTooltipTest {
             tooltip.buildBodySections(sectorMock, systemMock);
 
             statusRowMock.verify(
-                () -> SystemStatusRow.resolveStatusRow(sectorMock, systemMock, UNDER_THE_REVEAL));
+                () -> SystemStatusRow.resolveStatusRow(
+                    any(),
+                    same(systemMock),
+                    eq(UNDER_THE_REVEAL)));
         }
 
         @Test

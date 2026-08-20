@@ -9,6 +9,8 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.util.Misc;
 
+import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.ui.text.TextSpan;
 
 import kmu.starsector.StarsectorSettingsFake;
@@ -89,7 +91,7 @@ final class SystemStatusRowTest {
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingMarkets(system, buildColony());
 
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
                 .isEmpty();
         }
 
@@ -98,7 +100,10 @@ final class SystemStatusRowTest {
 
             var system = buildSystemWithPlanets();
             var row = SystemStatusRow
-                .resolveStatusRow(buildSectorHoldingMarkets(system), system, BASE_FOG);
+                .resolveStatusRow(
+                    readColoniesIn(buildSectorHoldingMarkets(system), system),
+                    system,
+                    BASE_FOG);
 
             assertThat(readLabelTextRun(row.orElseThrow(), STATUS_RUN).text())
                 .isEqualTo("Unpopulated");
@@ -111,7 +116,10 @@ final class SystemStatusRowTest {
             // ruin changes is which status the player is told.
             var system = buildSystemWithPlanets(buildRevealedDecivilisedPlanet());
             var row = SystemStatusRow
-                .resolveStatusRow(buildSectorHoldingMarkets(system), system, BASE_FOG);
+                .resolveStatusRow(
+                    readColoniesIn(buildSectorHoldingMarkets(system), system),
+                    system,
+                    BASE_FOG);
 
             assertThat(readLabelTextRun(row.orElseThrow(), STATUS_RUN).text())
                 .isEqualTo("Decivilised");
@@ -125,7 +133,7 @@ final class SystemStatusRowTest {
             var system = buildSystemWithPlanets();
             var row = SystemStatusRow
                 .resolveStatusRow(
-                    buildSectorHoldingMarkets(system),
+                    readColoniesIn(buildSectorHoldingMarkets(system), system),
                     system,
                     BASE_FOG)
                 .orElseThrow();
@@ -141,7 +149,7 @@ final class SystemStatusRowTest {
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingMarkets(system, buildFoundConcealedBase());
 
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
                 .isEmpty();
         }
 
@@ -155,7 +163,7 @@ final class SystemStatusRowTest {
             var sector = buildSectorHoldingMarkets(system, buildUnfoundListedColony());
 
             var row = SystemStatusRow
-                .resolveStatusRow(sector, system, BASE_FOG)
+                .resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG)
                 .orElseThrow();
 
             assertThat(readLabelTextRun(row, STATUS_RUN).text())
@@ -170,7 +178,7 @@ final class SystemStatusRowTest {
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingUnlistedColony(system, buildUnlistedColony());
 
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
                 .isEmpty();
         }
 
@@ -188,7 +196,7 @@ final class SystemStatusRowTest {
             hangMarketsOnSystemEntities(system, buildAbandonedStationMarket(DERELICT_SIZE));
 
             var row = SystemStatusRow
-                .resolveStatusRow(sector, system, BASE_FOG)
+                .resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG)
                 .orElseThrow();
 
             assertThat(readLabelTextRun(row, STATUS_RUN).text())
@@ -205,7 +213,7 @@ final class SystemStatusRowTest {
 
             hangMarketsOnSystemEntities(system, buildAbandonedStationMarket(DERELICT_SIZE));
 
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
                 .isEmpty();
         }
 
@@ -216,11 +224,17 @@ final class SystemStatusRowTest {
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingMarkets(system, buildUndiscoveredColony());
 
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, UNDER_THE_REVEAL))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, UNDER_THE_REVEAL))
                 .isEmpty();
-            assertThat(SystemStatusRow.resolveStatusRow(sector, system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
                 .isPresent();
         }
+    }
+
+    // The system's colonies, selected as the box drawing this line selects them - the row takes
+    // the walk rather than making one, so every case here states which walk it is reading.
+    private static Colonies readColoniesIn(SectorAPI sector, StarSystemAPI system) {
+        return SystemColonies.readColoniesIn(sector, system);
     }
 
     private static SectorAPI buildSectorHoldingMarkets(StarSystemAPI system, MarketAPI... markets) {
