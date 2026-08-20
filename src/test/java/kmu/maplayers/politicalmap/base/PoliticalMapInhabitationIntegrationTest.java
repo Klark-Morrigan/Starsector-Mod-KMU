@@ -1,14 +1,11 @@
 package kmu.maplayers.politicalmap.base;
 
-import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
-import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 
 import kmlib.starsector.colonies.ColonyVisibility;
 
+import kmu.maplayers.DecivilisedPlanetFixtures;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
@@ -25,7 +22,6 @@ import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_R
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Integration coverage for the political map's inhabitation read: the whole-sector scan a rebuild
@@ -91,7 +87,8 @@ final class PoliticalMapInhabitationIntegrationTest {
             // dropped it would take every decivilised system off the map at once.
             var sector = SectorPoliticsFixtures.buildSectorWith(EMPTY_SYSTEM);
 
-            placeRevealedRuinIn(SectorPoliticsFixtures.buildOnlySystem(sector));
+            DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(
+                SectorPoliticsFixtures.buildOnlySystem(sector));
 
             assertThat(readInhabitedSystemIds(sector, BASE_FOG))
                 .containsExactly(EMPTY_SYSTEM);
@@ -170,7 +167,7 @@ final class PoliticalMapInhabitationIntegrationTest {
             var sector = SectorPoliticsFixtures.buildSectorWith(EMPTY_SYSTEM);
             var system = SectorPoliticsFixtures.buildOnlySystem(sector);
 
-            placeRevealedRuinIn(system);
+            DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(system);
 
             assertThat(PoliticalMapInhabitation.isSystemInhabited(
                     buildPassOver(sector, BASE_FOG),
@@ -211,23 +208,4 @@ final class PoliticalMapInhabitationIntegrationTest {
             COLONY_SIZE);
     }
 
-    // Hangs a surveyed planet carrying a revealed decivilised condition on the system - the ruin of
-    // a colony the player has already seen die, which no colony read reports because nobody owns it.
-    private static void placeRevealedRuinIn(StarSystemAPI system) {
-
-        var conditionMock = mock(MarketConditionAPI.class);
-        var ruinMock = mock(MarketAPI.class);
-
-        when(ruinMock.getSurveyLevel())
-            .thenReturn(MarketAPI.SurveyLevel.FULL);
-        when(ruinMock.getFirstCondition(Conditions.DECIVILIZED))
-            .thenReturn(conditionMock);
-
-        var planetMock = mock(PlanetAPI.class);
-
-        when(planetMock.getMarket())
-            .thenReturn(ruinMock);
-        when(system.getPlanets())
-            .thenReturn(List.of(planetMock));
-    }
 }

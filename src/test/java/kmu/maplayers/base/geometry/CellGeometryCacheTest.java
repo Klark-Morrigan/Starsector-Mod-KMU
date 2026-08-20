@@ -2,17 +2,14 @@ package kmu.maplayers.base.geometry;
 
 import com.fs.starfarer.api.campaign.JumpPointAPI;
 import com.fs.starfarer.api.campaign.LocationAPI;
-import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.econ.MarketAPI;
-import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
 import kmlib.math.geometry.VoronoiCellBuilder;
 
+import kmu.maplayers.DecivilisedPlanetFixtures;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.junit.jupiter.api.Nested;
@@ -422,22 +419,11 @@ final class CellGeometryCacheTest {
         // access rule rejects it; the revealed decivilised planet is its only
         // route onto the map. The planet is built before the getPlanets() stubbing
         // so Mockito does not see one stubbing nested inside another.
-        var planet = buildDecivilisedPlanet();
+        var planet = DecivilisedPlanetFixtures.buildRevealedDecivilisedPlanet();
         var systemMock = mock(StarSystemAPI.class);
         when(systemMock.getId()).thenReturn(id);
         when(systemMock.getLocation()).thenReturn(new Vector2f(x, y));
         when(systemMock.getPlanets()).thenReturn(List.of(planet));
         return systemMock;
-    }
-
-    private static PlanetAPI buildDecivilisedPlanet() {
-        var conditionMock = mock(MarketConditionAPI.class);
-        when(conditionMock.requiresSurveying()).thenReturn(false);
-        var marketMock = mock(MarketAPI.class);
-        when(marketMock.getSurveyLevel()).thenReturn(MarketAPI.SurveyLevel.FULL);
-        when(marketMock.getFirstCondition(Conditions.DECIVILIZED)).thenReturn(conditionMock);
-        var planetMock = mock(PlanetAPI.class);
-        when(planetMock.getMarket()).thenReturn(marketMock);
-        return planetMock;
     }
 }

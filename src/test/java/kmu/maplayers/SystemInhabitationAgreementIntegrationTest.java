@@ -1,14 +1,11 @@
 package kmu.maplayers;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
-import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
-import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 
 import kmlib.starsector.colonies.ColonyVisibility;
 
@@ -29,6 +26,7 @@ import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -56,6 +54,10 @@ final class SystemInhabitationAgreementIntegrationTest {
 
     // The status line is one plain run, so its label is read at the first of them.
     private static final int STATUS_RUN = 0;
+
+    // The size the staged hulk carries. Neither surface here weighs a colony, so a case varying
+    // this would vary nothing either can see - it is stated because the shared builder takes one.
+    private static final int DERELICT_SIZE = 4;
 
     @BeforeEach
     void installStringsAndColours() {
@@ -107,7 +109,9 @@ final class SystemInhabitationAgreementIntegrationTest {
             // listing would call a system of wrecks settled - and the pair only agrees here because
             // both read habitation.
             var system = buildSystem();
-            var sector = buildSectorHoldingUnlistedMarket(system, buildAbandonedStation());
+            var sector = buildSectorHoldingUnlistedMarket(
+                system,
+                buildAbandonedStationMarket(DERELICT_SIZE));
 
             assertThat(isInhabited(sector, system, BASE_FOG))
                 .isFalse();
@@ -253,11 +257,9 @@ final class SystemInhabitationAgreementIntegrationTest {
 
     private static StarSystemAPI buildSystemWithRevealedRuin() {
 
-        var planet = buildRevealedRuin();
         var systemMock = buildSystem();
 
-        when(systemMock.getPlanets())
-            .thenReturn(List.of(planet));
+        DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(systemMock);
 
         return systemMock;
     }
@@ -282,22 +284,6 @@ final class SystemInhabitationAgreementIntegrationTest {
     // the known projection - the one shape the fog has to keep back.
     private static MarketAPI buildUnfoundConcealedBase() {
         return buildColonyOnEntity(true, true);
-    }
-
-    // A derelict station: a found, open market held by nobody and carrying vanilla's
-    // abandoned-station condition. The condition marks a hulk and the neutral owner parts one from
-    // a station somebody keeps, so both are the shape rather than details of it.
-    private static MarketAPI buildAbandonedStation() {
-
-        var marketMock = buildColonyOnEntity(false, false);
-        var factionMock = marketMock.getFaction();
-
-        when(marketMock.hasCondition(Conditions.ABANDONED_STATION))
-            .thenReturn(true);
-        when(factionMock.isNeutralFaction())
-            .thenReturn(true);
-
-        return marketMock;
     }
 
     // The two-axis shape the named colonies above are points on, kept private so no case poses
@@ -326,24 +312,4 @@ final class SystemInhabitationAgreementIntegrationTest {
         return marketMock;
     }
 
-    // A surveyed planet carrying a revealed decivilised condition - the ruin of a colony the
-    // player has already seen die. Its market is the condition-only placeholder, owned by nobody,
-    // so no colony read admits it and only the ruin arm reports the system as settled.
-    private static PlanetAPI buildRevealedRuin() {
-
-        var conditionMock = mock(MarketConditionAPI.class);
-        var ruinMock = mock(MarketAPI.class);
-
-        when(ruinMock.getSurveyLevel())
-            .thenReturn(MarketAPI.SurveyLevel.FULL);
-        when(ruinMock.getFirstCondition(Conditions.DECIVILIZED))
-            .thenReturn(conditionMock);
-
-        var planetMock = mock(PlanetAPI.class);
-
-        when(planetMock.getMarket())
-            .thenReturn(ruinMock);
-
-        return planetMock;
-    }
 }

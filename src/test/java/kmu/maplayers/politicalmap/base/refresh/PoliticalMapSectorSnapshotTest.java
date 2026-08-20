@@ -3,16 +3,15 @@ package kmu.maplayers.politicalmap.base.refresh;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.JumpPointAPI;
 import com.fs.starfarer.api.campaign.LocationAPI;
-import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
-import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmu.maplayers.DecivilisedPlanetFixtures;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -264,35 +263,13 @@ class PoliticalMapSectorSnapshotTest {
     // dead colony, yet unowned, so it drives visibility without an holder.
     private static StarSystemAPI buildDecivilisedSystem(String id) {
 
-        var planet = buildDecivilisedPlanet();
+        var planet = DecivilisedPlanetFixtures.buildRevealedDecivilisedPlanet();
         var systemMock = buildSystem(id);
 
         when(systemMock.getPlanets())
             .thenReturn(List.of(planet));
 
         return systemMock;
-    }
-
-    private static PlanetAPI buildDecivilisedPlanet() {
-
-        var conditionMock = mock(MarketConditionAPI.class);
-
-        when(conditionMock.requiresSurveying())
-            .thenReturn(false);
-
-        var marketMock = mock(MarketAPI.class);
-
-        when(marketMock.getSurveyLevel())
-            .thenReturn(MarketAPI.SurveyLevel.FULL);
-        when(marketMock.getFirstCondition(Conditions.DECIVILIZED))
-            .thenReturn(conditionMock);
-
-        var planetMock = mock(PlanetAPI.class);
-
-        when(planetMock.getMarket())
-            .thenReturn(marketMock);
-
-        return planetMock;
     }
 
     // A derelict hulk's market: the neutral owner and nought size vanilla builds one at, marked

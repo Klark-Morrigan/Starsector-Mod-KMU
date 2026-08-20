@@ -7,8 +7,6 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
-import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.ui.text.TextSpan;
@@ -28,8 +26,10 @@ import java.util.List;
 
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
+import static kmu.maplayers.DecivilisedPlanetFixtures.buildRevealedDecivilisedPlanet;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -54,6 +54,11 @@ final class SystemStatusRowTest {
 
     // The status line is one plain run, so its label is read at the first of them.
     private static final int STATUS_RUN = 0;
+
+    // The size the staged hulk carries. Nothing the status line reads weighs a colony, so a case
+    // varying this would vary nothing the line can see - it is here because the shared builder
+    // states a size for the weighing suites that share it.
+    private static final int DERELICT_SIZE = 4;
 
     private MockedStatic<Misc> miscMock;
 
@@ -104,7 +109,7 @@ final class SystemStatusRowTest {
 
             // The dead colony is gone from the economy, so the system is empty either way - what the
             // ruin changes is which status the player is told.
-            var system = buildSystemWithPlanets(buildRevealedRuin());
+            var system = buildSystemWithPlanets(buildRevealedDecivilisedPlanet());
             var row = SystemStatusRow
                 .resolveStatusRow(buildSectorHoldingMarkets(system), system, BASE_FOG);
 
@@ -180,7 +185,7 @@ final class SystemStatusRowTest {
 
             // Through the entity side, as a vanilla hulk arrives: the economy never registers one,
             // so listing it would pose a market the sector does not hold.
-            hangMarketsOnSystemEntities(system, buildAbandonedStation());
+            hangMarketsOnSystemEntities(system, buildAbandonedStationMarket(DERELICT_SIZE));
 
             var row = SystemStatusRow
                 .resolveStatusRow(sector, system, BASE_FOG)
@@ -198,7 +203,7 @@ final class SystemStatusRowTest {
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingMarkets(system, buildColony());
 
-            hangMarketsOnSystemEntities(system, buildAbandonedStation());
+            hangMarketsOnSystemEntities(system, buildAbandonedStationMarket(DERELICT_SIZE));
 
             assertThat(SystemStatusRow.resolveStatusRow(sector, system, BASE_FOG))
                 .isEmpty();
@@ -311,22 +316,6 @@ final class SystemStatusRowTest {
         return buildColonyOnEntity(true, false);
     }
 
-    // A derelict station: an ordinary found colony's shape, held by nobody and carrying vanilla's
-    // abandoned-station condition. Both of those are the shape rather than details - the condition
-    // is what marks a hulk, and the neutral owner is what parts one from a station somebody keeps.
-    private static MarketAPI buildAbandonedStation() {
-
-        var marketMock = buildColonyOnEntity(false, false);
-        var factionMock = marketMock.getFaction();
-
-        when(marketMock.hasCondition(Conditions.ABANDONED_STATION))
-            .thenReturn(true);
-        when(factionMock.isNeutralFaction())
-            .thenReturn(true);
-
-        return marketMock;
-    }
-
     // An open colony wired both ways - the market names its entity, the entity carries the market
     // - which is what lets the entity walk find a colony the economy never registered.
     private static MarketAPI buildUnlistedColony() {
@@ -359,26 +348,5 @@ final class SystemStatusRowTest {
             .thenReturn(isHidden);
 
         return marketMock;
-    }
-
-    // A surveyed planet carrying a revealed decivilised condition - the ruin of a colony the player
-    // has already seen die.
-    private static PlanetAPI buildRevealedRuin() {
-
-        var conditionMock = mock(MarketConditionAPI.class);
-        var ruinMock = mock(MarketAPI.class);
-        
-        when(ruinMock.getSurveyLevel())
-            .thenReturn(MarketAPI.SurveyLevel.FULL);
-
-        when(ruinMock.getFirstCondition(Conditions.DECIVILIZED))
-            .thenReturn(conditionMock);
-
-        var planetMock = mock(PlanetAPI.class);
-
-        when(planetMock.getMarket())
-            .thenReturn(ruinMock);
-
-        return planetMock;
     }
 }

@@ -3,13 +3,11 @@ package kmu.maplayers.base.visibility;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.JumpPointAPI;
 import com.fs.starfarer.api.campaign.LocationAPI;
-import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
-import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
@@ -18,6 +16,8 @@ import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
+
+import kmu.maplayers.DecivilisedPlanetFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -560,35 +560,13 @@ class MapVisibilityIntegrationTest {
     private static StarSystemAPI buildUnreachableSystemWithDecivilisedPlanet(String id) {
         // Build the planet (and its own stubs) before the getPlanets() stubbing,
         // so Mockito does not see one stubbing nested inside another.
-        var planet = buildDecivilisedPlanet();
+        var planet = DecivilisedPlanetFixtures.buildRevealedDecivilisedPlanet();
         var systemMock = buildUnreachableSystem(id);
 
         when(systemMock.getPlanets())
             .thenReturn(List.of(planet));
 
         return systemMock;
-    }
-
-    private static PlanetAPI buildDecivilisedPlanet() {
-
-        var conditionMock = mock(MarketConditionAPI.class);
-
-        when(conditionMock.requiresSurveying())
-            .thenReturn(false);
-
-        var marketMock = mock(MarketAPI.class);
-
-        when(marketMock.getSurveyLevel())
-            .thenReturn(MarketAPI.SurveyLevel.FULL);
-        when(marketMock.getFirstCondition(Conditions.DECIVILIZED))
-            .thenReturn(conditionMock);
-
-        var planetMock = mock(PlanetAPI.class);
-
-        when(planetMock.getMarket())
-            .thenReturn(marketMock);
-
-        return planetMock;
     }
 
     // A discovered, openly owned colony: faction set, not condition-only, its
