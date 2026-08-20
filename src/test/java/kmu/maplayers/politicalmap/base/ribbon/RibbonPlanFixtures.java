@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.ribbon;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.factions.FactionPalette;
@@ -38,6 +39,14 @@ public final class RibbonPlanFixtures {
     public static final String DIKTAT = "sindria";
 
     /**
+     * The faction every unowned station falls to, and so the owner of every derelict. Carries
+     * shades like any other bloc below, which is what makes a case about a derelict raising no run
+     * discriminate: with no palette it would draw nothing for want of a colour, and pass whatever
+     * the counting rule did with it.
+     */
+    public static final String NEUTRAL = Factions.NEUTRAL;
+
+    /**
      * The alliance the allies fold into, named by the synthetic id an alliance record carries
      * rather than by either member: a bloc is its own thing, and its shades are its colour
      * faction's, resolved before a band ever asks for them.
@@ -58,6 +67,8 @@ public final class RibbonPlanFixtures {
     public static final Color PERSEAN_DARK = new Color(90, 70, 30);
     public static final Color DIKTAT_BRIGHT = new Color(220, 150, 120);
     public static final Color DIKTAT_DARK = new Color(90, 50, 40);
+    public static final Color NEUTRAL_BRIGHT = new Color(170, 170, 170);
+    public static final Color NEUTRAL_DARK = new Color(70, 70, 70);
 
     /**
      * The shades every bloc draws in, read by bloc id exactly as the live map reads them. A bloc
@@ -74,7 +85,9 @@ public final class RibbonPlanFixtures {
             PERSEAN,
             new FactionPalette(PERSEAN_BRIGHT, PERSEAN_DARK),
             DIKTAT,
-            new FactionPalette(DIKTAT_BRIGHT, DIKTAT_DARK))
+            new FactionPalette(DIKTAT_BRIGHT, DIKTAT_DARK),
+            NEUTRAL,
+            new FactionPalette(NEUTRAL_BRIGHT, NEUTRAL_DARK))
         ::get;
 
     /**

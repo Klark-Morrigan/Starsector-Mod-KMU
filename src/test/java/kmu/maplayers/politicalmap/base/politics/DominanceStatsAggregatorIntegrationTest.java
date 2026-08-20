@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;

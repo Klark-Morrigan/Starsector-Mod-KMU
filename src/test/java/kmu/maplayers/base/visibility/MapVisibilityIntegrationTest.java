@@ -11,6 +11,7 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
 import kmlib.starsector.colonies.Colonies;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.lwjgl.util.vector.Vector2f;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
@@ -134,10 +136,11 @@ class MapVisibilityIntegrationTest {
             // and a hulk is not inhabitation - a system hidden by its own design stops being
             // dragged onto the map by a derelict the player has never been near.
             var system = buildReachableSystem("a");
+            var sector = buildSectorWithHiddenStar(system);
 
-            assertThat(shouldAppearOnMapUnderNoReveal(
-                    buildSectorWithHiddenStar(system, buildAbandonedStation()),
-                    system))
+            hangMarketsOnSystemEntities(system, buildAbandonedStation());
+
+            assertThat(shouldAppearOnMapUnderNoReveal(sector, system))
                 .isFalse();
         }
 
@@ -256,10 +259,11 @@ class MapVisibilityIntegrationTest {
             // its entity is found - which is what makes this the habitation read's own case rather
             // than a fog case wearing a derelict's clothes.
             var system = buildUnreachableSystem("a");
+            var sector = buildSectorWith(system);
 
-            assertThat(isInhabitedUnderNoReveal(
-                    buildSectorWith(system, buildAbandonedStation()),
-                    system))
+            hangMarketsOnSystemEntities(system, buildAbandonedStation());
+
+            assertThat(isInhabitedUnderNoReveal(sector, system))
                 .isFalse();
         }
 
@@ -268,10 +272,11 @@ class MapVisibilityIntegrationTest {
             // The same system after somebody settles it. The hulk is staged unchanged, so what
             // turned the answer is the colony rather than anything the derelict stopped being.
             var system = buildUnreachableSystem("a");
+            var sector = buildSectorWith(system, buildOwnedMarket());
 
-            assertThat(isInhabitedUnderNoReveal(
-                    buildSectorWith(system, buildAbandonedStation(), buildOwnedMarket()),
-                    system))
+            hangMarketsOnSystemEntities(system, buildAbandonedStation());
+
+            assertThat(isInhabitedUnderNoReveal(sector, system))
                 .isTrue();
         }
 
@@ -460,11 +465,10 @@ class MapVisibilityIntegrationTest {
         return sectorMock;
     }
 
-    // A reachable system whose only star anchor is hidden on the map, listing whatever markets the
-    // case stages - none of them, so the inhabited path cannot admit it either, unless the case is
-    // about which markets that path reads.
-    private static SectorAPI buildSectorWithHiddenStar(StarSystemAPI system, MarketAPI... markets) {
-        return buildSector(system, buildHyperspaceWithHiddenStarAnchorFor(system), markets);
+    // A reachable system whose only star anchor is hidden on the map, its economy listing nothing -
+    // so the inhabited path cannot admit it either unless a case hangs something on its entities.
+    private static SectorAPI buildSectorWithHiddenStar(StarSystemAPI system) {
+        return buildSector(system, buildHyperspaceWithHiddenStarAnchorFor(system));
     }
 
     // A sector whose hyperspace holds no star anchor, so no system reads as
@@ -590,21 +594,35 @@ class MapVisibilityIntegrationTest {
     }
 
     private static StarSystemAPI buildUnreachableSystemHoldingUnlistedColony(String id) {
-        // The colony hangs on one of the system's own entities and is absent from the economy's
-        // listing, so only the entity walk finds it. The market and its entity finish their own
-        // stubbing before the system's opens, so Mockito sees no nested stubbing.
-        var market = buildOwnedMarket();
-        var entity = market.getPrimaryEntity();
-
-        when(entity.getMarket())
-            .thenReturn(market);
 
         var systemMock = buildUnreachableSystem(id);
 
-        when(systemMock.getAllEntities())
-            .thenReturn(List.of(entity));
+        hangMarketsOnSystemEntities(systemMock, buildOwnedMarket());
 
         return systemMock;
+    }
+
+    // Hangs the given markets on entities of the system without registering any with the economy -
+    // the shape vanilla builds an unlisted colony in, and the only shape a derelict comes in.
+    //
+    // Each market and its entity finish their own stubbing before the system's opens, so Mockito
+    // sees no stubbing nested inside another.
+    private static void hangMarketsOnSystemEntities(
+            StarSystemAPI system,
+            MarketAPI... markets) {
+
+        var entities = new ArrayList<SectorEntityToken>(markets.length);
+
+        for (var market : markets) {
+            var entityMock = market.getPrimaryEntity();
+
+            when(entityMock.getMarket())
+                .thenReturn(market);
+
+            entities.add(entityMock);
+        }
+        when(system.getAllEntities())
+            .thenReturn(entities);
     }
 
     private static StarSystemAPI buildUnreachableSystemWithDecivilisedPlanet(String id) {
@@ -645,16 +663,20 @@ class MapVisibilityIntegrationTest {
     // entity no longer discoverable - what the colony read counts as a colony the player has
     // found.
     private static MarketAPI buildOwnedMarket() {
-        return buildColonyOnEntity(false, false);
+        return buildColonyOnEntity(OWNING_FACTION, false, false);
     }
 
-    // A derelict hulk's market: an ordinary owned market in every respect the fog can see - open,
-    // on a found entity - marked out only by the condition vanilla hangs on an abandoned station.
-    // Built off the plain colony above for exactly that reason: the condition is the one axis a
-    // habitation case may vary, so nothing else can be answering.
+    // A derelict hulk's market: an ordinary open market on a found entity, marked out by the
+    // condition vanilla hangs on an abandoned station and held by nobody.
+    //
+    // Its owner and its absence from the economy are both part of the shape rather than details of
+    // it. The condition on a market a faction holds - or on one the economy lists - is a station
+    // somebody keeps, which inhabits its system like any colony, so a case staging one of these
+    // through the economy would be posing an outpost and asserting a derelict's answers. Every
+    // case here hangs it on a system entity instead, which is where vanilla builds one.
     private static MarketAPI buildAbandonedStation() {
 
-        var marketMock = buildOwnedMarket();
+        var marketMock = buildColonyOnEntity(Factions.NEUTRAL, false, false);
 
         when(marketMock.hasCondition(Conditions.ABANDONED_STATION))
             .thenReturn(true);
@@ -666,12 +688,15 @@ class MapVisibilityIntegrationTest {
     // discoverable entity, so it fails the normal known-to-player gate and confers
     // presence only under the show-undiscovered-markets reveal.
     private static MarketAPI buildUndiscoveredColony() {
-        return buildColonyOnEntity(true, true);
+        return buildColonyOnEntity(OWNING_FACTION, true, true);
     }
 
-    // The two-axis shape the named colonies above are points on, kept private so no case poses
-    // itself as a pair of bare booleans - which axis a case varies is the whole of what it says.
-    private static MarketAPI buildColonyOnEntity(boolean isEntityDiscoverable, boolean isHidden) {
+    // The shape the named colonies above are points on, kept private so no case poses itself as a
+    // pair of bare booleans - which axis a case varies is the whole of what it says.
+    private static MarketAPI buildColonyOnEntity(
+            String factionId,
+            boolean isEntityDiscoverable,
+            boolean isHidden) {
 
         // The entity and the faction each finish their own stubbing before the market's opens, so
         // Mockito sees no stubbing nested inside another.
@@ -680,11 +705,7 @@ class MapVisibilityIntegrationTest {
         when(entityMock.isDiscoverable())
             .thenReturn(isEntityDiscoverable);
 
-        var factionMock = mock(FactionAPI.class);
-
-        when(factionMock.getId())
-            .thenReturn(OWNING_FACTION);
-
+        var factionMock = buildFaction(factionId);
         var marketMock = mock(MarketAPI.class);
 
         when(marketMock.getFaction())
@@ -699,5 +720,21 @@ class MapVisibilityIntegrationTest {
             .thenReturn(entityMock);
 
         return marketMock;
+    }
+
+    // The faction holding one of these markets. Whether it is the neutral one is answered off the
+    // faction, as the engine answers it, rather than left false: the colony kind read parts an
+    // unowned hulk from a station somebody keeps on exactly this question, so a fixture that had
+    // neutral deny being neutral would pose every derelict here as a manned outpost.
+    private static FactionAPI buildFaction(String factionId) {
+
+        var factionMock = mock(FactionAPI.class);
+
+        when(factionMock.getId())
+            .thenReturn(factionId);
+        when(factionMock.isNeutralFaction())
+            .thenReturn(Factions.NEUTRAL.equals(factionId));
+
+        return factionMock;
     }
 }

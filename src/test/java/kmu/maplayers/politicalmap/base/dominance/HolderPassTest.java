@@ -154,9 +154,7 @@ final class HolderPassTest {
             // the same rule, so a habitation read that had been wired to the known projection -
             // a copy-paste away - would pass every other case in this class.
             var colony = SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE);
-            var derelict = SectorPoliticsFixtures.buildAbandonedStationMarket(
-                SectorPoliticsFixtures.buildFaction("neutral"),
-                COLONY_SIZE);
+            var derelict = SectorPoliticsFixtures.buildAbandonedStationMarket(COLONY_SIZE);
 
             var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID, colony);
             var system = SectorPoliticsFixtures.buildOnlySystem(sector);

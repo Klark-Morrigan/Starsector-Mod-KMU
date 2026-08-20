@@ -165,9 +165,15 @@ final class ColonyCellRibbonsTest {
             // all - the same reading that leaves its cell drawn as empty backdrop. The hover box
             // over that cell still names the hulk, which is the one place the band and the box are
             // meant to differ.
-            var sector = buildSectorWith(
-                SYSTEM_ID,
-                buildAbandonedStationMarket(buildFaction(TRITACHYON), COLONY_SIZE));
+            //
+            // Hung on a system entity rather than listed, because the economy listing is one of
+            // the two things that make a station somebody's: a listed hulk is an outpost, and an
+            // outpost counts.
+            var sector = buildSectorWith(SYSTEM_ID);
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                buildAbandonedStationMarket(COLONY_SIZE));
 
             var plan = planThrough(
                 NO_PAINTER,
@@ -186,8 +192,11 @@ final class ColonyCellRibbonsTest {
             // between a faction and a wreck.
             var sector = buildSectorWith(
                 SYSTEM_ID,
-                buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE),
-                buildAbandonedStationMarket(buildFaction(TRITACHYON), COLONY_SIZE));
+                buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE));
+
+            placeMarketsOnSystemEntities(
+                buildOnlySystem(sector),
+                buildAbandonedStationMarket(COLONY_SIZE));
 
             assertThat(planFor(HEGEMONY, List.of(HEGEMONY, TRITACHYON), sector).segments())
                 .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));

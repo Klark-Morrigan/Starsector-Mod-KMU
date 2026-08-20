@@ -8,6 +8,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -143,6 +144,13 @@ public final class SectorPoliticsFixtures {
         when(factionMock.getId())
             .thenReturn(id);
 
+        // Whether this is the neutral faction is answered off the faction, as the engine answers
+        // it, rather than left false: the colony kind read parts an unowned hulk from a station
+        // somebody keeps on exactly this question, so a fixture that had neutral deny being
+        // neutral would pose every derelict as a manned outpost.
+        when(factionMock.isNeutralFaction())
+            .thenReturn(Factions.NEUTRAL.equals(id));
+
         return factionMock;
     }
 
@@ -260,19 +268,41 @@ public final class SectorPoliticsFixtures {
     }
 
     /**
-     * A derelict station's market: un-hidden, on a found entity, and carrying vanilla's
-     * abandoned-station condition - the shape Sentinel Gantries and every other hulk wears.
+     * A derelict station's market: un-hidden, on a found entity, held by nobody, and carrying
+     * vanilla's abandoned-station condition - the shape Sentinel Gantries and every other hulk
+     * wears.
      *
      * <p>The condition is what parts it from a colony, and it is the only thing that does: nobody
      * lives aboard, but the market is owned, sized and stable exactly as a settlement's is. A
      * suite reading habitation therefore cannot pose this shape by varying anything else.
      *
-     * @param faction the faction the hulk is attributed to, which for a vanilla derelict is the
-     *                neutral one every station without an owner falls to
+     * <p>The neutral owner is the shape rather than a detail. It is what makes this a derelict
+     * instead of a station somebody keeps, so it is fixed here rather than left to a caller.
+     *
+     * @param size the colony size
+     * @return the market mock
+     */
+    public static MarketAPI buildAbandonedStationMarket(int size) {
+        return buildStationCarryingDerelictCondition(buildFaction(Factions.NEUTRAL), size);
+    }
+
+    /**
+     * A station a faction keeps: the same derelict condition on a market a real faction holds.
+     * Nothing but the owner parts it from the hulk above, which is why the pair is worth posing
+     * together - a read splitting them on anything else is reading the wrong thing.
+     *
+     * @param faction the faction keeping the station
      * @param size    the colony size
      * @return the market mock
      */
-    public static MarketAPI buildAbandonedStationMarket(FactionAPI faction, int size) {
+    public static MarketAPI buildOutpostMarket(FactionAPI faction, int size) {
+        return buildStationCarryingDerelictCondition(faction, size);
+    }
+
+    // The derelict condition on an ordinary colony's shape, which the owner then decides the kind
+    // of. Stated once so the hulk and the kept station cannot drift into differing on anything but
+    // that owner, which is the whole of what the kind read parts them on.
+    private static MarketAPI buildStationCarryingDerelictCondition(FactionAPI faction, int size) {
 
         var marketMock = buildMarket(faction, size, false, false, false, FULL_STABILITY);
 

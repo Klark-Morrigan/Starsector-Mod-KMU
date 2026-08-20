@@ -160,11 +160,11 @@ class PoliticalMapSectorSnapshotTest {
             // reading the wider listing would hash a system the geometry never draws, and the
             // fingerprint would report a rebuild for a wreck.
             //
-            // The hulk is staged economy-listed, which is the harder case - a derelict is unlisted
-            // in vanilla, so listing it leaves the kind as the only thing that can be answering.
+            // Hung on a system entity rather than listed, as vanilla builds one: the economy
+            // listing is itself one of the two things that make a station somebody's, so a listed
+            // hulk is an outpost and would be counted.
             var snapshot = scanUnderStabilityWeighting(
-                buildSectorWith(buildSystem("a"),
-                buildAbandonedStation()));
+                buildSectorWithUnlistedColony(buildSystem("a"), buildAbandonedStation()));
 
             assertThat(snapshot.visibilityFingerprint())
                 .isZero();
@@ -321,6 +321,11 @@ class PoliticalMapSectorSnapshotTest {
 
         when(factionMock.getId())
             .thenReturn(factionId);
+        // Whether this is the neutral faction is answered off the faction, as the engine answers
+        // it: the colony kind read parts an unowned hulk from a station somebody keeps on exactly
+        // this question, so leaving it false would pose the derelict above as a manned outpost.
+        when(factionMock.isNeutralFaction())
+            .thenReturn(Factions.NEUTRAL.equals(factionId));
 
         var marketMock = mock(MarketAPI.class);
 
