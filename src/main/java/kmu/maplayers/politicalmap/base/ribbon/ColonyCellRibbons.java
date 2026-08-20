@@ -31,10 +31,15 @@ import java.util.Set;
  * mechanic ranked - one present through colonies no score was ever computed from - falls to the end
  * in id order, so it draws its run without a place it never earned.
  *
- * <p>The counts come off the pass's known projection, so a band never counts out a colony the
+ * <p>The counts come off the pass's habitation projection, so a band never counts out a colony the
  * pass's colony rule is keeping back and never omits one it is showing. What that rule admits is
  * settled there and not here - a concealed colony reaches this count where the player has seen it
- * and not otherwise, and a derelict the same - so nothing about a colony is asked twice.
+ * and not otherwise - so nothing about a colony is asked twice.
+ *
+ * <p>Habitation rather than the wider listing of what may be named, which is the one place a band
+ * and a hover box over the same cell say different things. A run stands for somebody holding
+ * something in the system, and nobody has ever been aboard a derelict, so a seen hulk is named in
+ * the box and raises no run - the same reading that keeps the cell beneath from painting as settled.
  *
  * <p>Past the projection, nothing at all is asked: a colony the economy never listed and one it
  * weighed at full size both count as the one colony each of them is.
@@ -80,7 +85,7 @@ public final class ColonyCellRibbons {
             BlocPresence.collectColouredPresences(
                 orderCountsForBand(
                     countColoniesByBloc(
-                        inputs.readKnownColoniesIn(system),
+                        inputs.readInhabitingColoniesIn(system),
                         inputs.grouping()),
                     rankedBlocIds),
                 inputs.palettes()),
@@ -98,12 +103,12 @@ public final class ColonyCellRibbons {
     // Unordered on purpose: the ranking is the mechanic's to state, and a count that came out in
     // the walk's order would look ranked without being it.
     private static Map<String, Integer> countColoniesByBloc(
-            List<Colony> knownColonies,
+            List<Colony> inhabitingColonies,
             HolderGrouping grouping) {
 
         var countByFactionId = new HashMap<String, Integer>();
 
-        for (var colony : knownColonies) {
+        for (var colony : inhabitingColonies) {
             countByFactionId.merge(
                 colony.market().getFaction().getId(),
                 ONE_COLONY,

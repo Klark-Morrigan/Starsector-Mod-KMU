@@ -19,10 +19,16 @@ import java.util.Set;
  *
  * <p>Two independent reasons put a system on the map, and reachability
  * ({@link StarSystems#isReachable}) is only one of them. A system appears when it
- * has a normal means of arrival OR when it is inhabited - a faction colony the
+ * has a normal means of arrival OR when it is inhabited - somebody living there the
  * player knows of, or a revealed decivilised planet. What "knows of" admits is the
  * pass's own colony rule rather than anything decided here, so the cell, the band
  * inside it and the box over it are all reading the one rule.
+ *
+ * <p>Inhabited means somebody lives there, which a derelict hulk is exactly the case
+ * against: a system drawn as settled because an abandoned station orbits its star says
+ * something false about that system, quite apart from whether the player has been near
+ * it. So the reads below take the habitation projection rather than the wider listing
+ * of what the player may be told about.
  *
  * <p>The inhabitation path is what admits
  * an otherwise unreachable system: a transverse-only or abyssal world, hidden
@@ -89,8 +95,8 @@ public final class MapVisibility {
      *
      * @param system          the system to test
      * @param visibleStars    the index of systems whose star the map draws
-     * @param isInhabited     whether the system holds a folded colony or a revealed
-     *                     dead colony, decided by the caller
+     * @param isInhabited     whether the system holds a colony somebody lives on or a
+     *                     revealed dead colony, decided by the caller
      * @param visibilityRules the pass's visibility rules, resolved once by the caller
      * @return true when the system should seed a map cell
      */
@@ -106,11 +112,11 @@ public final class MapVisibility {
     }
 
     /**
-     * Whether the system counts as inhabited - a colony the player knows of or a
-     * revealed decivilised planet, the first of those judged by the rules' colony half.
-     * Drives admission to the map independently of how (or whether) the system can be
-     * reached. A revealed decivilised planet counts under any rules - it is always known
-     * once revealed.
+     * Whether the system counts as inhabited - a colony somebody lives on that the player
+     * knows of, or a revealed decivilised planet, the first of those judged by the rules'
+     * colony half. Drives admission to the map independently of how (or whether) the system
+     * can be reached. A revealed decivilised planet counts under any rules - it is always
+     * known once revealed.
      *
      * <p>Walks the system for its colonies and for its ruins, so a caller already holding
      * either - a pass that read the system once for everything it asks of it - wants the
@@ -121,7 +127,7 @@ public final class MapVisibility {
      * @param visibilityRules the pass's visibility rules; only the colony half is read
      *                        here, since forcing a system onto the map does not make it
      *                        inhabited
-     * @return true when the system holds a colony or a known dead colony
+     * @return true when the system holds a colony somebody lives on or a known dead colony
      */
     public static boolean isInhabited(
             SectorAPI sector,
@@ -139,10 +145,15 @@ public final class MapVisibility {
      * already have made rather than repeating either.
      *
      * <p>The rule itself, and the one the sector-taking form above resolves its inputs for.
-     * Stated over the shared colony set so that "somebody lives here" is the known projection
-     * being non-empty - the very set a ribbon counts runs from and a hover box names factions
-     * out of - with the revealed dead colony added, which no colony read answers. Two surfaces
-     * drawn from one system can then no longer disagree about whether it holds anybody.
+     * Stated over the shared colony set so that "somebody lives here" is the habitation
+     * projection being non-empty - the very set a ribbon counts runs from - with the revealed
+     * dead colony added, which no colony read answers. Two surfaces drawn from one system can
+     * then no longer disagree about whether it holds anybody.
+     *
+     * <p>Habitation rather than the wider known listing, which is what a hover box names its
+     * factions out of. The two part over the derelict: a hulk somebody has seen belongs in a
+     * listing of what the player may be told about, and nobody has ever lived on it, so a
+     * system holding one and nothing else is empty space with a wreck in it.
      *
      * <p>The ruin arrives as a flag for the same reason {@link #shouldAppearOnMap} takes
      * inhabitation as one: the sector scan reads it anyway, to salt the drawn system's
@@ -155,19 +166,19 @@ public final class MapVisibility {
      * @param visibilityRules       the pass's visibility rules; only the colony half is
      *                              read here, since forcing a system onto the map does not
      *                              make it inhabited
-     * @return true when the system holds a colony or a known dead colony
+     * @return true when the system holds a colony somebody lives on or a known dead colony
      */
     public static boolean isInhabited(
             Colonies colonies,
             boolean isRevealedDecivilised,
             MapVisibilityRules visibilityRules) {
 
-        return colonies.hasKnownColony(visibilityRules.colonyVisibility())
+        return colonies.hasInhabitingColony(visibilityRules.colonyVisibility())
             || isRevealedDecivilised;
     }
 
     /**
-     * The sector-wide roll-up of {@link #isInhabited}: every system something stands in,
+     * The sector-wide roll-up of {@link #isInhabited}: every system somebody lives in,
      * live colony or known ruin alike.
      *
      * <p>Scanned once per pass because the answer is wanted per cell, and a cell asking the

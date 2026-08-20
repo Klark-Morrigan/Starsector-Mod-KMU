@@ -36,11 +36,16 @@ import static org.mockito.Mockito.when;
  * Integration coverage for the on-map rule: {@link MapVisibility}
  * composing the real {@link StarSystems}, {@link Colonies}, {@link VisibleStars},
  * and {@link DecivilisedMarkets}. A reachable system appears; an unreachable one
- * appears once inhabited - a colony the player knows of, registered with the economy
- * or not, or a revealed decivilised planet - and otherwise stays off; and the
- * fingerprint shifts when a system joins the on-map set. Exercised together because
- * the value is the composition: a mock of each rule would hide whether they are wired
- * in the right order.
+ * appears once inhabited - a colony somebody lives on that the player knows of,
+ * registered with the economy or not, or a revealed decivilised planet - and otherwise
+ * stays off; and the fingerprint shifts when a system joins the on-map set. Exercised
+ * together because the value is the composition: a mock of each rule would hide whether
+ * they are wired in the right order.
+ *
+ * <p>The derelict cases are the composition's own, and pass through the whole of it: the
+ * fog admits an abandoned station, habitation does not, and membership follows habitation
+ * - so a stub anywhere in that chain would let a hulk go on dragging its system onto the
+ * map while every read in isolation looked right.
  */
 class MapVisibilityIntegrationTest {
 
@@ -111,6 +116,20 @@ class MapVisibilityIntegrationTest {
             var system = buildReachableSystem("a");
 
             assertThat(shouldAppearOnMapUnderNoReveal(buildSectorWithHiddenStar(system), system))
+                .isFalse();
+        }
+
+        @Test
+        void shouldAppearOnMapIsFalseForAStarHiddenSystemHoldingOnlyAnAbandonedStation() {
+            // Membership is where reading habitation is visible rather than merely tidy. The
+            // vanilla map draws no star for this system, so inhabitation was its only route on,
+            // and a hulk is not inhabitation - a system hidden by its own design stops being
+            // dragged onto the map by a derelict the player has never been near.
+            var system = buildReachableSystem("a");
+
+            assertThat(shouldAppearOnMapUnderNoReveal(
+                    buildSectorWithHiddenStar(system, buildAbandonedStation()),
+                    system))
                 .isFalse();
         }
 
@@ -219,6 +238,32 @@ class MapVisibilityIntegrationTest {
                     Colonies.NONE,
                     IS_REVEALED_DECIVILISED,
                     MapVisibilityRules.BASE))
+                .isTrue();
+        }
+
+        @Test
+        void isInhabitedIsFalseForASystemHoldingOnlyAnAbandonedStation() {
+            // Nobody has ever been aboard a derelict, so a system with one hulk in it and nothing
+            // else is empty space with a wreck in it. The fog admits the hulk - it is un-hidden and
+            // its entity is found - which is what makes this the habitation read's own case rather
+            // than a fog case wearing a derelict's clothes.
+            var system = buildUnreachableSystem("a");
+
+            assertThat(isInhabitedUnderNoReveal(
+                    buildSectorWith(system, buildAbandonedStation()),
+                    system))
+                .isFalse();
+        }
+
+        @Test
+        void isInhabitedIsTrueOnceAColonyStandsBesideTheAbandonedStation() {
+            // The same system after somebody settles it. The hulk is staged unchanged, so what
+            // turned the answer is the colony rather than anything the derelict stopped being.
+            var system = buildUnreachableSystem("a");
+
+            assertThat(isInhabitedUnderNoReveal(
+                    buildSectorWith(system, buildAbandonedStation(), buildOwnedMarket()),
+                    system))
                 .isTrue();
         }
 
@@ -425,14 +470,15 @@ class MapVisibilityIntegrationTest {
         return sectorMock;
     }
 
-    // A reachable system whose only star anchor is hidden on the map, with an
-    // empty economy so the inhabited path cannot admit it either.
-    private static SectorAPI buildSectorWithHiddenStar(StarSystemAPI system) {
+    // A reachable system whose only star anchor is hidden on the map, listing whatever markets the
+    // case stages - none of them, so the inhabited path cannot admit it either, unless the case is
+    // about which markets that path reads.
+    private static SectorAPI buildSectorWithHiddenStar(StarSystemAPI system, MarketAPI... markets) {
 
         var economyMock = mock(EconomyAPI.class);
 
         when(economyMock.getMarkets(system))
-            .thenReturn(List.of());
+            .thenReturn(List.of(markets));
 
         var hyperspaceMock = buildHyperspaceWithHiddenStarAnchorFor(system);
         var sectorMock = mock(SectorAPI.class);
@@ -633,6 +679,20 @@ class MapVisibilityIntegrationTest {
             .thenReturn(false);
         when(marketMock.getPrimaryEntity())
             .thenReturn(entityMock);
+
+        return marketMock;
+    }
+
+    // A derelict hulk's market: an ordinary owned market in every respect the fog can see - open,
+    // on a found entity - marked out only by the condition vanilla hangs on an abandoned station.
+    // Built off the plain colony above for exactly that reason: the condition is the one axis a
+    // habitation case may vary, so nothing else can be answering.
+    private static MarketAPI buildAbandonedStation() {
+
+        var marketMock = buildOwnedMarket();
+
+        when(marketMock.hasCondition(Conditions.ABANDONED_STATION))
+            .thenReturn(true);
 
         return marketMock;
     }

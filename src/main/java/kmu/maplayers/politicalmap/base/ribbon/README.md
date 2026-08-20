@@ -41,25 +41,31 @@ side's question, which is what lets this whole package be exercised on literals.
 
 ## One count for both mechanics
 
-`ColonyCellRibbons` counts every cell on every layer: the pass's **known projection** of the
+`ColonyCellRibbons` counts every cell on every layer: the pass's **habitation projection** of the
 system's colonies, folded into a count per bloc under the pass's grouping.
 
-That projection is the pass's `ColonyVisibility` and nothing besides: the fog -
-`MarketVisibility.isCountedAsColony` - plus the gates holding back the shapes a bare fog would
-leak. It is the same rule the cell classification paints on, sampled once per bake, so a colony the
-player has not found is left out of band and fill together and the dev reveal puts it back on both.
+That projection is the pass's `ColonyVisibility` plus the one kind test habitation turns on: the
+fog (`MarketVisibility.isCountedAsColony`), the gates holding back the shapes a bare fog would
+leak, and then the derelicts nobody has ever been aboard. It is the same reading the cell beneath
+is classified on, sampled once per bake, so a colony the player has not found is left out of band
+and fill together and the dev reveal puts it back on both.
+
+Habitation and not the wider listing, which is where a band and the hover box over it deliberately
+differ. A run stands for somebody holding something in the system; an abandoned station the player
+has seen is named in the box at nought and has never had anybody on it, so it raises no run - and a
+system holding nothing else draws as empty backdrop with no band at all.
 
 The rule is threaded rather than re-read because it is more than one bit now. A counter handed the
-reveal and not the gates would count a derelict the fill declines to draw, which is the drift the
-one shared value makes unexpressible.
+reveal and not the gates would count a concealed colony the fill declines to draw, which is the drift
+the one shared value makes unexpressible.
 
 Past the projection, nothing about a colony is asked: unlisted by the economy, weighed or never
 weighed, each counts as the one colony it is.
 
 It is here rather than beside each mechanic because a band reports how a system splits, which is a
 fact about the system rather than about the mechanic reading it. Counted per mechanic, the two
-answers drifted: an unlisted station reached neither band while both hover boxes named it, a
-concealed colony fed a weight on one layer and a sibling term on the other, and the dev reveal
+answers drifted: a colony the economy never listed reached neither band while both hover boxes named
+it, a concealed colony fed a weight on one layer and a sibling term on the other, and the dev reveal
 reached the held count while the claim count went on hiding what the fill was drawing.
 
 What each mechanic still supplies is the **painter** and the **ranking**, which are what genuinely

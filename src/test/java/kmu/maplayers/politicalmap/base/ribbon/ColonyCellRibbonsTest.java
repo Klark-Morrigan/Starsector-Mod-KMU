@@ -14,6 +14,7 @@ import java.util.Optional;
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
@@ -44,10 +45,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * system earn a segment, and where a bloc's run falls in the band.
  *
  * <p>The counting cases are posed on the axes a colony can differ on and the rule refuses to read -
- * whether the economy lists it, whether it is held in concealment - beside the one axis it does
- * read, which is whether the player may be shown it at all. That last one is the pass's own
- * projection rather than a rule of this class, so the reveal is posed through the pass exactly as
- * the map moves it.
+ * whether the economy lists it, whether it is held in concealment - beside the two it does read:
+ * whether the player may be shown it at all, and whether anybody lives on it. Both of those are the
+ * pass's own projection rather than rules of this class, so the reveal is posed through the pass
+ * exactly as the map moves it, and the derelict is posed as the market vanilla builds one as.
  *
  * <p>The ordering cases are posed on a ranking that does not cover every bloc present, which is the
  * shape the widening produces: a mechanic ranks the blocs it scored, and the shared set hands back
@@ -153,6 +154,40 @@ final class ColonyCellRibbonsTest {
                 SYSTEM_ID,
                 buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE),
                 buildUndiscoveredHiddenMarket(buildFaction(TRITACHYON), COLONY_SIZE));
+
+            assertThat(planFor(HEGEMONY, List.of(HEGEMONY, TRITACHYON), sector).segments())
+                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+        }
+
+        @Test
+        void drawsNoBandForASystemHoldingOnlyAnAbandonedStation() {
+            // A derelict raises no run, so a system holding one hulk and nothing else bands not at
+            // all - the same reading that leaves its cell drawn as empty backdrop. The hover box
+            // over that cell still names the hulk, which is the one place the band and the box are
+            // meant to differ.
+            var sector = buildSectorWith(
+                SYSTEM_ID,
+                buildAbandonedStationMarket(buildFaction(TRITACHYON), COLONY_SIZE));
+
+            var plan = planThrough(
+                NO_PAINTER,
+                List.of(),
+                buildOnlySystem(sector),
+                buildInputsOver(sector, NO_ALLIANCES, BASE_FOG));
+
+            assertThat(plan.segments())
+                .isEmpty();
+        }
+
+        @Test
+        void countsTheColonyBesideAnAbandonedStationAndNotTheStation() {
+            // The same hulk once somebody settles the system. One run for the colony, none for the
+            // derelict - so the band reports the one holding there is rather than a system split
+            // between a faction and a wreck.
+            var sector = buildSectorWith(
+                SYSTEM_ID,
+                buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE),
+                buildAbandonedStationMarket(buildFaction(TRITACHYON), COLONY_SIZE));
 
             assertThat(planFor(HEGEMONY, List.of(HEGEMONY, TRITACHYON), sector).segments())
                 .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));

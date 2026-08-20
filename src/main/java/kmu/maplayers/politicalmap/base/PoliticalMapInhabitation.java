@@ -9,7 +9,7 @@ import kmu.maplayers.base.visibility.MapVisibilityRules;
 import java.util.Set;
 
 /**
- * The political map's inhabitation read: which star systems something stands in, under the
+ * The political map's inhabitation read: which star systems somebody lives in, under the
  * player's live visibility rules.
  *
  * <p>Two passes classify the same factionless cells - the production build and the debug
@@ -40,7 +40,7 @@ public final class PoliticalMapInhabitation {
      * some other read resolved.
      *
      * @param sector the sector to scan; null yields an empty set
-     * @return the ids of every system holding a live colony or a known ruin
+     * @return the ids of every system holding a colony somebody lives on or a known ruin
      */
     public static Set<String> readInhabitedSystemIds(SectorAPI sector) {
         return MapVisibility.findInhabitedSystemIds(
@@ -49,7 +49,7 @@ public final class PoliticalMapInhabitation {
     }
 
     /**
-     * Whether anything stands in one star system, under the player's current rules.
+     * Whether anybody lives in one star system, under the player's current rules.
      *
      * <p>The single-system arm of the scan above, for the incremental refresh: a colony event
      * marks the systems it moved, and re-deriving those is what keeps the standing inhabited set
@@ -59,7 +59,7 @@ public final class PoliticalMapInhabitation {
      *
      * @param sector the sector the system belongs to; null yields false
      * @param system the system to read; null yields false
-     * @return true when the system holds a live colony or a known ruin
+     * @return true when the system holds a colony somebody lives on or a known ruin
      */
     public static boolean isSystemInhabited(SectorAPI sector, StarSystemAPI system) {
         return MapVisibility.isInhabited(
