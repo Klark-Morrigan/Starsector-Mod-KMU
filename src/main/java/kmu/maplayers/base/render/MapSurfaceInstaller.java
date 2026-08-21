@@ -7,8 +7,6 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
-import kmlib.starsector.ui.screen.VanillaScreen;
-import kmlib.starsector.ui.suppression.OffScreenWidgetSuppressor;
 
 import kmu.starsector.listeners.SectorListeners;
 
@@ -19,12 +17,16 @@ import static kmu.KmuWiringSteps.runGuardedStep;
 /**
  * Standing up the surfaces a map layer paints on, and the frame boundary they paint within.
  *
- * <p>Three render entities, the script that keeps the upper one above the map's nebula icons, the
- * claim that keeps a frame's preparation to one, and the suppressor that stops a parked minimap
- * driving a second pass over the whole sector. Grouped because they are one subject - what exists
- * for a layer to draw into - and because their order among themselves matters: an entity has to be
- * installed before the script that moves it, and the claim has to be registered before anything
- * asks it for a frame.
+ * <p>Three render entities, the script that keeps the upper one above the map's nebula icons, and
+ * the claim that keeps a frame's preparation to one. Grouped because they are one subject - what
+ * exists for a layer to draw into - and because their order among themselves matters: an entity has
+ * to be installed before the script that moves it, and the claim has to be registered before
+ * anything asks it for a frame.
+ *
+ * <p>The parked-minimap suppressor is not among them, for all that it is a script over the same
+ * map. Nothing about it is a surface - it neither draws nor is drawn into - and it answers a
+ * compatibility mode aimed at another mod's widget rather than anything this one paints, so it
+ * stands or falls on that switch instead: {@link ParkedMinimapInstaller} owns it.
  *
  * <p>Each is guarded on its own, so a surface that fails to stand up costs its own look and leaves
  * the rest painting.
@@ -33,13 +35,12 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  */
 public final class MapSurfaceInstaller {
 
-    // The two library scripts this installs, held so they can be taken out again by instance. Both
-    // are KMLib classes another mod may also be running in the same sector, so a removal by
-    // class would reach further than this mod's own wiring. Per process rather than per sector: a
-    // reference to a script from a sector since left is inert, since removing it from another
-    // sector does nothing, and the next install overwrites it.
+    // The reseat this installs, held so it can be taken out again by instance. MapIconReseater is
+    // KMLib's and another mod may be running its own in the same sector, so a removal by class would
+    // reach further than this mod's own wiring. Per process rather than per sector: a reference to a
+    // script from a sector since left is inert, since removing it from another sector does nothing,
+    // and the next install overwrites it.
     private static MapIconReseater installedReseater;
-    private static OffScreenWidgetSuppressor installedMinimapSuppressor;
 
     private MapSurfaceInstaller() {
         // utility class, no instances.
@@ -82,23 +83,19 @@ public final class MapSurfaceInstaller {
         runGuardedStep(
             () -> installMapFramePreparationClaim(sector),
             "Failed to install KMU map layer frame preparation claim");
-
-        runGuardedStep(
-            () -> installParkedMinimapSuppressor(sector),
-            "Failed to install KMU parked minimap suppressor");
     }
 
     /**
      * Removes every surface this installs, for a player switching the map layers off.
      *
      * <p>All of it, and not only the terrain: the toggle takes effect where the player made it, so
-     * the scripts and the claim have to stop within the session that registered them. Across a load
+     * the reseat and the claim have to stop within the session that registered them. Across a load
      * they would have gone by themselves, being transient - but a player who switched the overlay
      * off and went on playing would still have the reseat running and the frame boundary claimed.
      *
-     * <p>The two library scripts are taken out by instance rather than by class, since a sibling KM
-     * mod may have its own of the same class in the same sector and this must not reach it. The
-     * watcher, the listeners and the terrain are all this mod's own, so a class is enough for them.
+     * <p>The reseat is taken out by instance rather than by class, since another mod may have its
+     * own of that KMLib class in the same sector and this must not reach it. The claim and the
+     * terrain are this mod's own, so a class is enough for them.
      *
      * @param sector the loaded sector; null leaves the save untouched rather than throwing
      */
@@ -115,16 +112,12 @@ public final class MapSurfaceInstaller {
         runGuardedStep(
             () -> SectorListeners.removeListener(sector, MapFramePreparationClaim.class),
             "Failed to remove KMU map layer frame preparation claim");
-
-        runGuardedStep(
-            () -> removeParkedMinimapSuppressor(sector),
-            "Failed to remove KMU parked minimap suppressor");
     }
 
     // Stops the reseat, by the instance this installed rather than by class: MapIconReseater is
-    // KMLib's and a sibling KM mod may be running its own over the same sector, which removing by
-    // class would take with it. Cleared after, so a later removal cannot reach a script belonging
-    // to a sector this one has since left.
+    // KMLib's and another mod may be running its own over the same sector, which removing by class
+    // would take with it. Cleared after, so a later removal cannot reach a script belonging to a
+    // sector this one has since left.
     static void removeStarscapeTerrainReseater(SectorAPI sector) {
 
         if (sector == null || installedReseater == null) {
@@ -132,18 +125,6 @@ public final class MapSurfaceInstaller {
         }
         sector.removeTransientScript(installedReseater);
         installedReseater = null;
-    }
-
-    // Stops the suppressor, by instance and for the reason the reseat is - and with one of its own:
-    // the script hands the widget it silenced its opacity back as it goes, which a removal by class
-    // over somebody else's suppressor would do to a widget this mod never touched.
-    static void removeParkedMinimapSuppressor(SectorAPI sector) {
-
-        if (sector == null || installedMinimapSuppressor == null) {
-            return;
-        }
-        sector.removeTransientScript(installedMinimapSuppressor);
-        installedMinimapSuppressor = null;
     }
 
     // Registers the per-frame script that lifts the upper Starscape terrain over the map's nebula
@@ -207,34 +188,5 @@ public final class MapSurfaceInstaller {
             sector,
             MapFramePreparationClaim.class,
             MapFramePreparationClaim::getInstance);
-    }
-
-    // Registers the per-frame script that stops a docked minimap rendering while its owner has it
-    // parked off screen. A minimap nobody can see still renders a whole sector map and drives every
-    // terrain pass in the sector, so the frame a player opened a vanilla map on carries a second
-    // transform - and which of the two a cursor read resolves through is the engine's child order
-    // rather than a contract.
-    //
-    // The split is the same one the compatibility mode is built on. What parked means and how a
-    // widget is switched off are stated over any widget at all and are KMLib's; whether writing into
-    // somebody else's panel is wanted is a per-mod question, and the mode is where the player answers
-    // it. The screen the widget is compared against is a live read for the same reason the box is: a
-    // window resized mid-session moves both.
-    //
-    // Transient: pure runtime logic that must not enter a save, so it is re-added fresh each load.
-    // A fresh permission per load with it, so the widget walk behind it starts on this save's tree
-    // rather than holding the previous one's.
-    static void installParkedMinimapSuppressor(SectorAPI sector) {
-
-        if (sector == null) {
-            return;
-        }
-        var minimapSuppression = RandomAssortmentOfThingsMinimapSuppression.createForLiveScreen();
-
-        installedMinimapSuppressor = new OffScreenWidgetSuppressor(
-            minimapSuppression::resolveSuppressibleMinimap,
-            VanillaScreen::resolveScreenBox);
-
-        sector.addTransientScript(installedMinimapSuppressor);
     }
 }
