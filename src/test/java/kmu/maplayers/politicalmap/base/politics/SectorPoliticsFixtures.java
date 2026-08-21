@@ -7,8 +7,11 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
+
+import kmlib.starsector.colonies.SectorColonySightings;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -23,10 +26,14 @@ import org.lwjgl.util.vector.Vector2f;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -68,6 +75,10 @@ public final class SectorPoliticsFixtures {
     public static final Color TRITACHYON_BRIGHT = new Color(140, 180, 220);
     public static final Color PERSEAN_BRIGHT = new Color(160, 200, 240);
     public static final Color NEUTRAL_BASE = new Color(150, 150, 150);
+
+    // Runs across the whole test JVM rather than per sector, which is all it has to do: the ids it
+    // hands out only need to differ from one another within whatever sector a case builds.
+    private static int builtMarketCount;
 
     private SectorPoliticsFixtures() {
     }
@@ -335,6 +346,13 @@ public final class SectorPoliticsFixtures {
 
         var marketMock = mock(MarketAPI.class);
 
+        // Every market gets an id of its own, because a sighting is kept against one: markets
+        // sharing the null a mock answers by default would share one entry in the register, and a
+        // case marking one seen would silently mark the lot.
+        builtMarketCount++;
+
+        when(marketMock.getId())
+            .thenReturn("market_" + builtMarketCount);
         when(marketMock.getFaction())
             .thenReturn(faction);
         when(marketMock.getSize())
@@ -492,19 +510,51 @@ public final class SectorPoliticsFixtures {
     }
 
     /**
-     * Records the player's fleet as having been in the system, which is vanilla's own memory of a
-     * visit and the player's route to having seen whatever stands there.
+     * Takes the player's fleet through the system, recording every colony standing there as seen
+     * where it stands - their own route to having heard of whatever is present.
      *
-     * <p>Its absence is the interesting state rather than its presence: an unstubbed system mock
-     * answers this false already, so a case wanting an unvisited system says nothing and a case
-     * wanting a visited one says this.
+     * <p>Driven through the production recorder rather than by writing the register directly, so a
+     * case saying "the player has been here" is posing the visit the game would record and not a
+     * fixture's own idea of what one leaves behind.
      *
+     * <p>Its absence is the interesting state rather than its presence: a sector with no register
+     * written answers nothing seen already, so a case wanting an unvisited system says nothing and
+     * a case wanting a visited one says this.
+     *
+     * @param sector the sector whose memory carries the register
      * @param system the system the player has been in
      */
-    public static void markSystemAsEnteredByPlayer(StarSystemAPI system) {
+    public static void markSystemAsVisitedByPlayer(SectorAPI sector, StarSystemAPI system) {
 
-        when(system.isEnteredByPlayer())
-            .thenReturn(true);
+        openSectorMemory(sector);
+
+        SectorColonySightings.recordSightingsIn(sector, system);
+    }
+
+    // Sector memory backed by a real map, so what the recorder writes is what a later read finds.
+    // Idempotent: a sector visited twice keeps the register the first visit opened, which is the
+    // only way a case can pose a colony met in one system and then met again in another.
+    private static void openSectorMemory(SectorAPI sector) {
+
+        if (sector.getMemoryWithoutUpdate() != null) {
+            return;
+        }
+        var storedValues = new HashMap<String, Object>();
+        var memoryMock = mock(MemoryAPI.class);
+
+        when(memoryMock.contains(anyString()))
+            .thenAnswer(invocation -> storedValues.containsKey(invocation.getArgument(0)));
+        when(memoryMock.get(anyString()))
+            .thenAnswer(invocation -> storedValues.get(invocation.getArgument(0)));
+
+        doAnswer(invocation -> storedValues.put(
+                invocation.getArgument(0),
+                invocation.getArgument(1)))
+            .when(memoryMock)
+            .set(anyString(), any());
+
+        when(sector.getMemoryWithoutUpdate())
+            .thenReturn(memoryMock);
     }
 
     /**
@@ -562,7 +612,9 @@ public final class SectorPoliticsFixtures {
      * @return the sector mock
      */
     public static SectorAPI buildSectorWith(String systemId, List<FactionAPI> factions, MarketAPI... markets) {
+
         var sectorMock = buildSectorWith(systemId, markets);
+
         for (var faction : factions) {
 
             when(sectorMock.getFaction(faction.getId()))
@@ -586,6 +638,7 @@ public final class SectorPoliticsFixtures {
         var systemMocks = new ArrayList<StarSystemAPI>();
 
         for (var system : systems) {
+            
             var systemMock = mock(StarSystemAPI.class);
 
             when(systemMock.getId())

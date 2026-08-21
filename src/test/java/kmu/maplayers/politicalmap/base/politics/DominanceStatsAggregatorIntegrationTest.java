@@ -31,7 +31,7 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.bu
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStabilityWeightedRules;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.markSystemAsEnteredByPlayer;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.markSystemAsVisitedByPlayer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -187,7 +187,7 @@ class DominanceStatsAggregatorIntegrationTest {
             try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
 
                 var sector = buildUnvisitedSectorHoldingGatedPair(UNVISITED_SYSTEM);
-                markSystemAsEnteredByPlayer(buildOnlySystem(sector));
+                markSystemAsVisitedByPlayer(sector, buildOnlySystem(sector));
 
                 assertThat(readOfferedHolderIds(sector))
                     .contains(CONCEALED_HOLDER_ID);

@@ -23,7 +23,7 @@ import static kmu.maplayers.SectorScenarioFixtures.buildUnvisitedSectorHoldingGa
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.markSystemAsEnteredByPlayer;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.markSystemAsVisitedByPlayer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -103,7 +103,7 @@ final class SpoilerGateIntegrationTest {
             // The player's own route, and it reaches both shapes at once: a visit is a sighting of
             // everything standing there, so neither gate has anything left to hold.
             var sector = buildUnvisitedSectorHoldingGatedPair(SYSTEM_ID);
-            markSystemAsEnteredByPlayer(buildOnlySystem(sector));
+            markSystemAsVisitedByPlayer(sector, buildOnlySystem(sector));
 
             assertThat(readKnownOwnerIds(sector))
                 .containsExactlyInAnyOrder(CONCEALED_HOLDER_ID, Factions.NEUTRAL);

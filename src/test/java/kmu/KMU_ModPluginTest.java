@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
+import kmlib.starsector.colonies.ColonySightingRecorder;
 import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.map.presence.SectorMapState;
@@ -111,6 +112,40 @@ class KMU_ModPluginTest {
     }
 
     @Nested
+    class InstallColonySightingRecorder {
+
+        @Test
+        void reinstallsTheSightingRecorderFreshAsTransient() {
+            // Remove-then-add rather than a has-check, because the recorder holds the sector it
+            // writes into: one restored from a save would go on recording against the sector it
+            // was built for while the loaded one learned nothing.
+            var listenerManager = new RecordingListenerManager(false);
+
+            KMU_ModPlugin.installColonySightingRecorder(buildSector(listenerManager));
+
+            assertThat(listenerManager.removedListenerClasses)
+                .containsExactly(ColonySightingRecorder.class);
+
+            assertThat(listenerManager.addedListeners)
+                .singleElement()
+                .isInstanceOf(ColonySightingRecorder.class);
+
+            assertThat(listenerManager.addedTransientFlags)
+                .containsExactly(true);
+        }
+
+        @Test
+        void toleratesAMissingListenerManager() {
+
+            var recorderInstallOnNullManager = (Runnable) () ->
+                KMU_ModPlugin.installColonySightingRecorder(buildSector(null));
+
+            assertThatCode(recorderInstallOnNullManager::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
     class InstallPoliticalMapSidebar {
 
         @Test
@@ -138,6 +173,7 @@ class KMU_ModPluginTest {
 
         @Test
         void toleratesAMissingListenerManager() {
+
             var sidebarInstallOnNullManager = (Runnable) () ->
                 KMU_ModPlugin.installPoliticalMapSidebar(buildSector(null));
 
@@ -219,6 +255,7 @@ class KMU_ModPluginTest {
 
         @Test
         void toleratesAMissingListenerManager() {
+
             var tooltipInstallOnNullManager = (Runnable) () ->
                 KMU_ModPlugin.installMapLayerHoverTooltip(buildSector(null));
 
@@ -472,6 +509,7 @@ class KMU_ModPluginTest {
 
         @Test
         void toleratesANullSector() {
+
             var watcherInstallOnNullSector = (Runnable) () ->
                 KMU_ModPlugin.installMapLayerSectorWatcher(null);
 
@@ -481,7 +519,9 @@ class KMU_ModPluginTest {
     }
 
     private static SectorAPI buildSector(ListenerManagerAPI listenerManager) {
+
         return proxy(SectorAPI.class, (proxy, method, args) -> {
+
             if (method.getName().equals("getListenerManager")) {
                 return listenerManager;
             }
@@ -490,7 +530,9 @@ class KMU_ModPluginTest {
     }
 
     private static Object handleObjectMethodOrThrow(Object proxy, Method method, Object[] args) {
+
         if (method.getDeclaringClass().equals(Object.class)) {
+
             switch (method.getName()) {
                 case "toString":
                     return proxy.getClass().getInterfaces()[0].getSimpleName() + "Proxy";
@@ -507,6 +549,7 @@ class KMU_ModPluginTest {
 
     @SuppressWarnings("unchecked")
     private static <T> T proxy(Class<T> type, InvocationHandler handler) {
+        
         return (T) Proxy.newProxyInstance(
             type.getClassLoader(),
             new Class<?>[]{type},

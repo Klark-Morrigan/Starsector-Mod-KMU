@@ -5,6 +5,8 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 
+import kmlib.starsector.colonies.ColonySightingRecorder;
+import kmlib.starsector.colonies.SectorColonySightings;
 import kmlib.starsector.ui.coreui.ReflectiveCoreUiComponentRepainter;
 import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
@@ -60,9 +62,11 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
     @Override
     public void onApplicationLoad() {
+
         // App-scoped, once per launch: register KMU's LunaLib settings bindings before any save
         // loads. LunaLib is a hard dependency, so it has already loaded by the time this runs.
-        runGuardedStep("Failed to install KMU LunaLib settings bindings",
+        runGuardedStep(
+            "Failed to install KMU LunaLib settings bindings",
             KmuLunaSettings::installBindings);
 
         // Shed the values of settings withdrawn since shipping, LunaLib pruning nothing itself.
@@ -70,13 +74,16 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // reads, so a failure here must cost only the orphaned values. One seam owns the full set,
         // so this call site never has to track which ids are retired - the app-load counterpart of
         // the save migrations below.
-        runGuardedStep("Failed to clear retired KMU settings",
+        runGuardedStep(
+            "Failed to clear retired KMU settings",
             KmuRetiredSettings::clearRetiredSettings);
 
         // Wire the concrete map layers into the framework registry once per launch, before any
         // sector map can open. The registry stays agnostic to which views exist; this is the
         // one place they are named.
-        runGuardedStep("Failed to register KMU map layers", MapLayers::registerAll);
+        runGuardedStep(
+            "Failed to register KMU map layers",
+            MapLayers::registerAll);
     }
 
     // The alias lineage belongs to the terrain plugin whose renames created it, so the list and the
@@ -86,105 +93,155 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // recognises.
     @Override
     public void configureXStream(com.thoughtworks.xstream.XStream x) {
+
         super.configureXStream(x);
         MapLayerTerrainInstaller.registerSaveAliases(x);
     }
 
     @Override
     public void onGameLoad(boolean newGame) {
+
         super.onGameLoad(newGame);
 
-        runGuardedStep("Failed to install KMU market UI context tracker",
+        runGuardedStep(
+            "Failed to install KMU market UI context tracker",
             () -> installMarketUiContextTracker(Global.getSector()));
 
         // Self-heal pre-rename saves before the terrain reads them. One seam owns the full set of
         // political-map heals, so this call site never has to track which migrations exist.
-        runGuardedStep("Failed to migrate KMU political map state",
+        runGuardedStep(
+            "Failed to migrate KMU political map state",
             PoliticalMapSaveMigrations::healLoadedSave);
 
-        runGuardedStep("Failed to install KMU sector map layer terrain",
+        // Before any surface reads a colony set, since a revelation gate answers off the register
+        // this settles: sightings of colonies the sector no longer holds are shed, and wherever the
+        // player is sitting is recorded as seen. The second half is what keeps a save loaded in a
+        // system from having to be left and re-entered before its colonies are shown.
+        runGuardedStep(
+            "Failed to reconcile KMU colony sightings with the loaded save",
+            () -> SectorColonySightings.reconcileWithLoadedSave(Global.getSector()));
+
+        runGuardedStep(
+            "Failed to install KMU colony sighting recorder",
+            () -> installColonySightingRecorder(Global.getSector()));
+
+        runGuardedStep(
+            "Failed to install KMU sector map layer terrain",
             () -> MapLayerTerrainInstaller.installSchematicTerrain(Global.getSector()));
 
         // The second render surface, guarded separately so a failure to build the Starscape entity -
         // the variant reaching concrete core classes - cannot take the schematic one down with it and
         // leave the map painting nothing in either mode.
-        runGuardedStep("Failed to install KMU sector map layer Starscape terrain",
+        runGuardedStep(
+            "Failed to install KMU sector map layer Starscape terrain",
             () -> MapLayerTerrainInstaller.installStarscapeTerrain(Global.getSector()));
 
         // The third surface, which paints over the map's own nebula icons. Guarded apart from the
         // one above for the same reason it is guarded apart from the schematic one, and because
         // losing it costs only the band that clears the fog rather than the whole Starscape overlay.
-        runGuardedStep("Failed to install KMU sector map layer Starscape above-nebulae terrain",
+        runGuardedStep(
+            "Failed to install KMU sector map layer Starscape above-nebulae terrain",
             () -> MapLayerTerrainInstaller.installAboveStarscapeNebulaeTerrain(Global.getSector()));
 
-        runGuardedStep("Failed to install KMU sector map layer Starscape terrain reseater",
+        runGuardedStep(
+            "Failed to install KMU sector map layer Starscape terrain reseater",
             () -> installStarscapeTerrainReseater(Global.getSector()));
 
-        runGuardedStep("Failed to install KMU political map discovery listener",
+        runGuardedStep(
+            "Failed to install KMU political map discovery listener",
             () -> installPoliticalMapDiscoveryListener(Global.getSector()));
 
-        runGuardedStep("Failed to install KMU political map sidebar",
+        runGuardedStep(
+            "Failed to install KMU political map sidebar",
             () -> installPoliticalMapSidebar(Global.getSector()));
 
         // Open every sidebar at the fold this save was left at. Per load rather than at construction:
         // the hosts are process-lifetime singletons built before any sector exists, so this is the only
         // point they can read the save - and it also stops the previous save's folds leaking into this
         // one. Each host reads its own key, so the screens' folds stay independent.
-        runGuardedStep("Failed to restore KMU political map sidebar folds", () -> {
-            for (var host : SidebarHosts.getRegisteredHosts()) {
-                host.restoreFoldFromSave();
-            }
+        runGuardedStep(
+            "Failed to restore KMU political map sidebar folds",
+            () -> {
+                for (var host : SidebarHosts.getRegisteredHosts()) {
+                    host.restoreFoldFromSave();
+                }
         });
 
         // Same reason as the folds above, for the overlay's derived state: the layer renderer is
         // a process-lifetime singleton, so without this the sector just left keeps painting over
         // the one being loaded.
-        runGuardedStep("Failed to discard KMU political map state from the previous save",
+        runGuardedStep(
+            "Failed to discard KMU political map state from the previous save",
             PoliticalMapLayerRenderer.INSTANCE::discardStateFromPreviousSave);
 
         // Same reason again, for the hover box's detail mode: the holder is a process-lifetime
         // singleton, so a save left showing the expanded box would otherwise open the next one on
         // it. The mode is a live view preference and enters no save, so load is the only point it
         // can be dropped.
-        runGuardedStep("Failed to discard KMU hover tooltip detail mode from the previous save",
+        runGuardedStep(
+            "Failed to discard KMU hover tooltip detail mode from the previous save",
             HoverTooltipDetailModeState.getInstance()::discardModeFromPreviousSave);
 
         // Before the tooltip and the surfaces that ask it: the claim is what keeps a frame's
         // preparation to one, and until it is registered the surfaces fall back to preparing per
         // pass, so a late registration costs duplicated work rather than a wrong picture.
-        runGuardedStep("Failed to install KMU map layer frame preparation claim",
+        runGuardedStep(
+            "Failed to install KMU map layer frame preparation claim",
             () -> installMapFramePreparationClaim(Global.getSector()));
 
-        runGuardedStep("Failed to install KMU parked minimap suppressor",
+        runGuardedStep(
+            "Failed to install KMU parked minimap suppressor",
             () -> installParkedMinimapSuppressor(Global.getSector()));
 
-        runGuardedStep("Failed to install KMU map layer hover tooltip",
+        runGuardedStep(
+            "Failed to install KMU map layer hover tooltip",
             () -> installMapLayerHoverTooltip(Global.getSector()));
 
-        runGuardedStep("Failed to install KMU hover tooltip detail mode input",
+        runGuardedStep(
+            "Failed to install KMU hover tooltip detail mode input",
             () -> installHoverTooltipDetailModeInput(Global.getSector()));
 
-        runGuardedStep("Failed to install KMU political map sector watcher",
+        runGuardedStep(
+            "Failed to install KMU political map sector watcher",
             () -> installMapLayerSectorWatcher(Global.getSector()));
 
-        runGuardedStep("Failed to install KMU political map colony size listener",
+        runGuardedStep(
+            "Failed to install KMU political map colony size listener",
             () -> installPoliticalMapColonySizeListener(Global.getSector()));
 
-        runGuardedStep("Failed to install KMU political map deciv listener",
+        runGuardedStep(
+            "Failed to install KMU political map deciv listener",
             () -> installPoliticalMapDecivListener(Global.getSector()));
 
-        runGuardedStep("Failed to install KMU political map colonisation listener",
+        runGuardedStep(
+            "Failed to install KMU political map colonisation listener",
             () -> installPoliticalMapColonisationListener(Global.getSector()));
 
         // Nex-gated: no-op unless Nexerelin is enabled, so a Nex-free install
         // never loads the market-transfer listener's Nex-coupled class.
-        runGuardedStep("Failed to install KMU political map market-transfer listener",
+        runGuardedStep(
+            "Failed to install KMU political map market-transfer listener",
             () -> NexerelinInvasionListenerInstaller.installIfPresent(Global.getSector()));
     }
 
     static void installMarketUiContextTracker(SectorAPI sector) {
         installListenerOnce(
-            sector, StarsectorMarketUiContextTracker.class, StarsectorMarketUiContextTracker::new);
+            sector,
+            StarsectorMarketUiContextTracker.class,
+            StarsectorMarketUiContextTracker::new);
+    }
+
+    // Registers the listener that records what the player sees as they travel, which is what the
+    // map's revelation gates read to decide whether a derelict or a concealed base may be shown.
+    //
+    // Transient, and re-created per load, because the recorder holds the sector it writes into: one
+    // carried into a save would come back beside the sector being loaded and go on writing to the
+    // sector it was built against.
+    static void installColonySightingRecorder(SectorAPI sector) {
+        installTransientListener(
+            sector,
+            ColonySightingRecorder.class,
+            () -> new ColonySightingRecorder(sector));
     }
 
     // Registers the listener that refreshes the political map when the player
@@ -192,7 +249,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // the overlay updates live rather than only on reload.
     static void installPoliticalMapDiscoveryListener(SectorAPI sector) {
         installListenerOnce(
-            sector, PoliticalMapDiscoveryListener.class, PoliticalMapDiscoveryListener::new);
+            sector,
+            PoliticalMapDiscoveryListener.class,
+            PoliticalMapDiscoveryListener::new);
     }
 
     // Registers the listener that marks a system's political-map ownership stale
@@ -200,7 +259,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // faction repaints live rather than only on reload.
     static void installPoliticalMapColonySizeListener(SectorAPI sector) {
         installListenerOnce(
-            sector, PoliticalMapColonySizeListener.class, PoliticalMapColonySizeListener::new);
+            sector,
+            PoliticalMapColonySizeListener.class,
+            PoliticalMapColonySizeListener::new);
     }
 
     // Registers the listener that marks a system's political-map ownership stale
@@ -208,7 +269,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // colour and repaints neutral live rather than only on reload.
     static void installPoliticalMapDecivListener(SectorAPI sector) {
         installListenerOnce(
-            sector, PoliticalMapDecivListener.class, PoliticalMapDecivListener::new);
+            sector,
+            PoliticalMapDecivListener.class,
+            PoliticalMapDecivListener::new);
     }
 
     // Registers the listener that marks a system's political-map ownership stale
@@ -216,7 +279,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // a colony repaints its system live rather than only on reload.
     static void installPoliticalMapColonisationListener(SectorAPI sector) {
         installListenerOnce(
-            sector, PoliticalMapColonisationListener.class, PoliticalMapColonisationListener::new);
+            sector,
+            PoliticalMapColonisationListener.class,
+            PoliticalMapColonisationListener::new);
     }
 
     // Registers the per-frame script that lifts the upper Starscape terrain over the map's nebula
@@ -418,7 +483,10 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // The has-check shape is the opposite call, and is installListenerOnce below: it is for the
     // listeners meant to survive into the save, which must not be cleared out from under it.
     private static void installTransientListener(
-            SectorAPI sector, Class<?> listenerClass, Supplier<?> buildListener) {
+            SectorAPI sector,
+            Class<?> listenerClass,
+            Supplier<?> buildListener) {
+
         if (sector == null) {
             return;
         }
@@ -438,7 +506,10 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // Transient is false by that same design - the listeners are meant to survive into the save; the
     // ones that must not are added elsewhere, remove-then-add, for exactly the opposite reason.
     private static void installListenerOnce(
-            SectorAPI sector, Class<?> listenerClass, Supplier<?> buildListener) {
+            SectorAPI sector,
+            Class<?> listenerClass,
+            Supplier<?> buildListener) {
+
         if (sector == null) {
             return;
         }
@@ -459,8 +530,10 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // whose first failing install aborted the rest would come back with a half-wired sector and no
     // indication of which piece went missing.
     private static void runGuardedStep(String failureMessage, Runnable wiringStep) {
+
         try {
             wiringStep.run();
+            
         } catch (RuntimeException exception) {
             LOG.error(failureMessage, exception);
         }
