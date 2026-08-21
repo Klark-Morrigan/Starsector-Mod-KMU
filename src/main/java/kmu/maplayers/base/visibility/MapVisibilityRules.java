@@ -45,7 +45,7 @@ public record MapVisibilityRules(
      * The rules with nothing widened and nothing forced: the fog alone, and a system on the map
      * only where the ordinary gates admit it. What a caller stating no rules of its own passes.
      *
-     * <p>Not what the live read below returns - the shipped settings leave both revelation gates
+     * <p>Not what the live read below returns - the shipped settings leave every revelation gate
      * in force - so a caller asserting what a player is actually shown wants that read rather
      * than this value.
      */
