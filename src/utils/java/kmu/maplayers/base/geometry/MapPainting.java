@@ -108,38 +108,22 @@ final class MapPainting {
         return path;
     }
 
-    /** Paints the geometry in world coordinates under a pan/zoom transform. */
-
     /**
-     * The line to draw for one span of void, pulled back at both ends by {@code trim}.
+     * The line to draw for one span of void, end to end.
      *
-     * <p>A span is found at the reach that defines the void, while a pocket is drawn at the
-     * reach that leaves the border channel, so an untrimmed span overhangs into the channel
-     * at each end and reads as crossing the cells rather than the void. No offsetting is
-     * needed to find the pull-back: the span already runs along the line joining the two
-     * sites, which is the line the moved reach is measured along.
+     * <p>At its true extent, with nothing pulled back. A span drawn here is a wall - a line
+     * laid across void to close it off - and a wall is the boundary itself rather than
+     * something either side stops short of, so both of its ends are where they belong.
      *
      * @param span the corridor to draw
-     * @param trim how far to pull each end back - positive towards the cells, negative away
-     *             from them, which is what a pocket pushed out to meet one owner's fills
-     *             needs
      * @return the line to draw
      */
-    static Line2D buildTrimmedSpan(CellGap span, double trim) {
-
-        var runX = span.end()[0] - span.start()[0];
-        var runY = span.end()[1] - span.start()[1];
-        var length = Math.hypot(runX, runY);
-
-        // A corridor narrower than two channels has no drawn outline for the cut to reach,
-        // so trimming it would turn it inside out. Left at its true extent instead, where
-        // it is at worst a short mark across a gap too tight to have been drawn anyway.
-        var pullBack = length > 2 * trim ? trim / length : 0;
+    static Line2D buildSpanLine(CellGap span) {
 
         return new Line2D.Double(
-            span.start()[0] + runX * pullBack,
-            span.start()[1] + runY * pullBack,
-            span.end()[0] - runX * pullBack,
-            span.end()[1] - runY * pullBack);
+            span.start()[0],
+            span.start()[1],
+            span.end()[0],
+            span.end()[1]);
     }
 }

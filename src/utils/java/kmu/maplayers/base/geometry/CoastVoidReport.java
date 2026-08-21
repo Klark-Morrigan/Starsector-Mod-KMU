@@ -168,7 +168,7 @@ final class CoastVoidReport {
         return CoastPockets.findCoastPockets(
             laid.traced(),
             CoastPockets.markEverySiteUnowned(laid.sites()),
-            new VoidPockets.PocketRules(laid.parameters(), ShippedMap.SECTION_RULES, shaping));
+            new VoidPockets.PocketRules(laid.parameters(), shaping));
     }
 
     // Every run of pocket outline lying outside the coast that shut it in - judged against the
@@ -227,7 +227,7 @@ final class CoastVoidReport {
     private static void reportUndrawnVoid(LaidCoast laid) {
 
         var unfilled = UndrawnVoid.findUnfilledVoid(
-            laid, ShippedMap.SECTION_RULES, VoidPockets.PocketShaping.WITH_CHANNEL);
+            laid, VoidPockets.PocketShaping.WITH_CHANNEL);
 
         System.out.printf(
             Locale.ROOT,

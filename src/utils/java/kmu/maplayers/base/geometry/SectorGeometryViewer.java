@@ -7,15 +7,19 @@ import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -114,16 +118,11 @@ final class SectorGeometryViewer implements ViewerRefreshes {
 
     private static final float SITE_RADIUS = 120f;
 
-    // The mark standing in for a pocket with no room to draw. Fixed in world units like the
-    // site dots, so it reads as a pin on the map rather than as a shape of that size.
+    // How far the readout sits from the pointer, and the margin inside its backdrop. Clear
+    // enough of the tip that the pointer is not standing on what it is reporting.
     private static final int READOUT_OFFSET_X = 14;
     private static final int READOUT_OFFSET_Y = 20;
     private static final int READOUT_PADDING = 4;
-
-    // Generous enough to cover the drawn label whatever the coordinates are, so the repaint
-    // it asks for erases the old one without measuring text twice.
-    private static final int READOUT_BOX_WIDTH = 240;
-    private static final int READOUT_BOX_HEIGHT = 40;
 
     private static final Color READOUT_TEXT = new Color(0xff, 0xff, 0xff);
     private static final Color READOUT_BACKDROP = new Color(0x00, 0x00, 0x00, 0xc0);
@@ -152,6 +151,12 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     private final PickLog picks = PickLog.startPickLog();
     private final VoidBridgesOverlay voidBridges = new VoidBridgesOverlay(settings);
     private final CoastlinesOverlay coastlines = new CoastlinesOverlay(settings);
+    private final VoidSectionsOverlay voidSections = new VoidSectionsOverlay(settings);
+
+    // The cells as named regions, so the pointer can be told which one it is over and a name
+    // can be written on each. Built with the geometry rather than on a toggle of their own,
+    // because the readout names a cell whether or not the names are being drawn.
+    private List<NamedRegion> cellNames = List.of();
 
     private SectorGeometryViewer() {
     }
@@ -307,10 +312,20 @@ final class SectorGeometryViewer implements ViewerRefreshes {
         refreshCoastlines();
     }
 
+    // The sections follow the coast rather than having a schedule of their own: a section is a
+    // piece of void the walls helped close, so every knob that moves a wall moves both where
+    // the divisions fall and what the pieces are called.
     @Override
     public void refreshCoastlines() {
 
         coastlines.refresh(fixture);
+        refreshVoidSections();
+    }
+
+    @Override
+    public void refreshVoidSections() {
+
+        voidSections.refresh(fixture);
         repaintMap();
     }
 
@@ -324,6 +339,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
 
         var start = System.nanoTime();
         geometry = SectorGeometry.buildSectorGeometry(fixture, settings.parameters);
+        cellNames = buildCellNames();
 
         if (settings.showUnboundedCells) {
 
@@ -334,6 +350,33 @@ final class SectorGeometryViewer implements ViewerRefreshes {
         refreshVoidBridges();
         lastBuildMillis = (System.nanoTime() - start) / NANOS_PER_MILLI;
         refreshStatus();
+    }
+
+    // Each cell as a named region, taken from its TRUE border rather than from its inset fill.
+    // What a reader means by "which cell is this" includes the border channel, which the fill
+    // has already given up - so a pointer in the channel would be told it is nowhere.
+    private List<NamedRegion> buildCellNames() {
+
+        var named = new ArrayList<NamedRegion>(geometry.cellEdgesByCellId().size());
+
+        for (var entry : geometry.cellEdgesByCellId().entrySet()) {
+
+            var ring = convertEdgesToRing(entry.getValue());
+
+            if (ring.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
+                continue;
+            }
+            named.add(NamedRegion.nameRegion(entry.getKey(), ring));
+        }
+        return List.copyOf(named);
+    }
+
+    // A cell's border as a closed ring. Each edge begins where the last one ended, so the
+    // starts alone are the ring and taking both ends would repeat every vertex.
+    private static List<double[]> convertEdgesToRing(List<CellEdge> edges) {
+        return edges.stream()
+            .map(edge -> new double[] {edge.x1(), edge.y1()})
+            .toList();
     }
 
     private void refreshStatus() {
@@ -417,7 +460,41 @@ final class SectorGeometryViewer implements ViewerRefreshes {
 
             super.paintComponent(g);
             paintMap((Graphics2D) g);
+
+            if (scale != 0) {
+                paintNames((Graphics2D) g);
+            }
             paintCursorReadout((Graphics2D) g);
+        }
+
+        // The cells first, so that where a name of each kind would land on the same place the
+        // void's name is the one left readable. A piece of void is the smaller and rarer thing
+        // and is what anyone with the void names switched on is looking for.
+        private void paintNames(Graphics2D g2) {
+
+            var worldToScreen = buildWorldToScreen();
+
+            if (settings.showCellNames) {
+                NamedRegions.paintNames(
+                    g2, worldToScreen, cellNames, settings.regionNameColour);
+            }
+            voidSections.paintNames(g2, worldToScreen);
+        }
+
+        // The one statement of where the sector sits on the canvas. The map is drawn through
+        // it and the section names are placed by it, so a name landing somewhere other than on
+        // its own section is impossible rather than merely unlikely.
+        private AffineTransform buildWorldToScreen() {
+
+            var transform = new AffineTransform();
+
+            transform.translate(offsetX, offsetY);
+
+            // World y grows upward and screen y downward, so the drawing is flipped once here
+            // rather than at every vertex - a sector drawn upside down would read as a bug.
+            transform.scale(scale, -scale);
+
+            return transform;
         }
 
         // The map itself, without the readout drawn over it. Apart from the readout because a
@@ -435,10 +512,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
                 fitToSector();
             }
 
-            // World y grows upward and screen y downward, so the drawing is flipped once here
-            // rather than at every vertex - a sector drawn upside down would read as a bug.
-            g2.translate(offsetX, offsetY);
-            g2.scale(scale, -scale);
+            g2.transform(buildWorldToScreen());
 
             paintGeometry(g2);
 
@@ -485,12 +559,19 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             }
         }
 
+        // Exactly what the readout covers at that pointer position, worked out the same way
+        // the readout itself places it. Sized rather than assumed, because the readout now
+        // carries a region name and those are as long as the cells they list - a fixed box
+        // generous enough for the longest of them would repaint a good part of the canvas on
+        // every mouse move, and one sized for the coordinates alone would leave the tail of a
+        // name smeared behind the pointer.
         private void repaintAround(Point point) {
-            repaint(
-                point.x - READOUT_BOX_WIDTH,
-                point.y - READOUT_BOX_HEIGHT,
-                READOUT_BOX_WIDTH * 2,
-                READOUT_BOX_HEIGHT * 2);
+
+            var box = findReadoutBox(point, getFontMetrics(getFont()));
+
+            // A pixel out on each side, so an antialiased glyph edge sitting on the boundary
+            // is erased along with the rest of it.
+            repaint(box.x - 1, box.y - 1, box.width + 2, box.height + 2);
         }
 
         // In screen space, on purpose: the world transform is scaled and y-flipped, so text
@@ -501,40 +582,99 @@ final class SectorGeometryViewer implements ViewerRefreshes {
                 return;
             }
 
-            var text = describeCursor();
             var metrics = g2.getFontMetrics();
-            var width = metrics.stringWidth(text);
-            var x = cursorPoint.x + READOUT_OFFSET_X;
-            var y = cursorPoint.y + READOUT_OFFSET_Y;
-
-            // Flipped to the near side at the canvas edge, so the label stays readable
-            // rather than running off where the pointer is most likely to be.
-            if (x + width + READOUT_PADDING > getWidth()) {
-                x = cursorPoint.x - READOUT_OFFSET_X - width;
-            }
-
-            if (y + READOUT_PADDING > getHeight()) {
-                y = cursorPoint.y - READOUT_OFFSET_Y;
-            }
+            var lines = describeCursorLines(cursorPoint);
+            var box = findReadoutBox(cursorPoint, metrics);
 
             g2.setColor(READOUT_BACKDROP);
-            g2.fillRect(
-                x - READOUT_PADDING,
-                y - metrics.getAscent() - READOUT_PADDING,
-                width + 2 * READOUT_PADDING,
-                metrics.getHeight() + 2 * READOUT_PADDING);
+            g2.fillRect(box.x, box.y, box.width, box.height);
             g2.setColor(READOUT_TEXT);
-            g2.drawString(text, x, y);
+
+            for (var line = 0; line < lines.size(); line++) {
+
+                g2.drawString(
+                    lines.get(line),
+                    box.x + READOUT_PADDING,
+                    box.y + READOUT_PADDING + metrics.getAscent()
+                        + line * metrics.getHeight());
+            }
         }
 
-        private String describeCursor() {
+        // Where the readout sits for one pointer position. Shared by the drawing and by the
+        // repaint that erases it, so the region invalidated is the region painted rather than
+        // a second guess at it.
+        private Rectangle findReadoutBox(Point at, FontMetrics metrics) {
 
-            if (cursorPoint == null || scale == 0) {
-                return " ";
+            var lines = describeCursorLines(at);
+            var width = measureWidestLine(lines, metrics) + 2 * READOUT_PADDING;
+            var height = metrics.getHeight() * lines.size() + 2 * READOUT_PADDING;
+
+            var x = at.x + READOUT_OFFSET_X;
+            var y = at.y + READOUT_OFFSET_Y - metrics.getAscent() - READOUT_PADDING;
+
+            // Flipped to the near side at the canvas edge, so the readout stays on screen
+            // rather than running off where the pointer is most likely to be.
+            if (x + width > getWidth()) {
+                x = at.x - READOUT_OFFSET_X - width;
             }
-            var world = findWorldPoint(cursorPoint);
 
-            return String.format(Locale.ROOT, "%.0f, %.0f", world[0], world[1]);
+            if (y + height > getHeight()) {
+                y = at.y - READOUT_OFFSET_Y - height;
+            }
+            return new Rectangle(x, y, width, height);
+        }
+
+        private static int measureWidestLine(List<String> lines, FontMetrics metrics) {
+
+            var widest = 0;
+
+            for (var line : lines) {
+                widest = Math.max(widest, metrics.stringWidth(line));
+            }
+            return widest;
+        }
+
+        // What the pointer is over, as the coordinates and then whatever is named there. Two
+        // lines rather than one string with a break in it, because the readout at the pointer
+        // measures and places each line and the status bar wants them on one line instead.
+        private List<String> describeCursorLines(Point at) {
+
+            if (at == null || scale == 0) {
+                return List.of(" ");
+            }
+
+            var world = findWorldPoint(at);
+            var coordinates = String.format(Locale.ROOT, "%.0f, %.0f", world[0], world[1]);
+            var named = findNameAt(world[0], world[1]);
+
+            return named == null
+                ? List.of(coordinates)
+                : List.of(coordinates, named);
+        }
+
+        // Whichever named region the pointer is in. The cells are asked first because a cell
+        // is the more definite answer: void is defined as what the cells do not reach, so the
+        // two only ever overlap by the sliver between a cell's straight bound and the circle
+        // it is inscribed under, and inside that sliver the cell is what a reader is pointing
+        // at.
+        private String findNameAt(double worldX, double worldY) {
+
+            var cell = NamedRegions.findRegionAt(cellNames, worldX, worldY);
+
+            if (cell != null) {
+                return cell.name();
+            }
+
+            var section = NamedRegions.findRegionAt(
+                voidSections.getSections(), worldX, worldY);
+
+            return section == null ? null : section.name();
+        }
+
+        // The same two readings on one line, which is what the status bar has room for: the
+        // name to the RIGHT of the coordinates rather than under them.
+        private String describeCursor() {
+            return String.join("   ", describeCursorLines(cursorPoint));
         }
 
         // Where a point on the canvas is in the sector's own coordinates - the inverse of the
@@ -655,24 +795,6 @@ final class SectorGeometryViewer implements ViewerRefreshes {
         // Which is which comes from the true edge the fill edge was pulled off: the inset is
         // a parallel offset, so the nearest true edge to a fill edge's midpoint is the edge
         // it came from, and that edge is tagged with what lies across it.
-        // A diamond rather than a disc, so a pocket that could not be drawn is not mistaken
-        // for one of the round site dots at a glance.
-        // Where each long pocket would be divided. Drawn last of the shapes and over the top
-        // of the fills, because the question a cut is there to answer is whether it lands
-        // where the corridor is actually pinched - which can only be judged against the
-        // pocket it crosses, not against a gap in it.
-        //
-        // Pulled back at both ends to the outline that is actually on screen. A cut is found
-        // at the reach that defines the void, and the pocket is drawn at the reach that leaves
-        // the channel, so an untrimmed cut overhangs into the channel at each end and reads as
-        // crossing the cells rather than the void. The pull-back is exactly the channel width
-        // and no offsetting is needed to find it: the cut already runs along the line joining
-        // the two sites, which is the line the moved reach is measured along.
-        //
-        // The bridges are drawn in the same colour and stroke as the cuts, and deliberately
-        // so: both are a line across void saying "this much is held between these two
-        // cells", arrived at from opposite ends. Two colours would say they were two kinds
-        // of thing, and the whole point of showing them together is that they are not.
         private void paintFillContours(Graphics2D g2) {
 
             for (var entry : geometry.shapedCellByCellId().entrySet()) {
@@ -772,10 +894,5 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             offsetY = getHeight() / 2.0 + (bounds.minY() + bounds.maxY()) / 2 * scale;
         }
 
-        private List<double[]> convertEdgesToRing(List<CellEdge> edges) {
-            return edges.stream()
-                .map(edge -> new double[] {edge.x1(), edge.y1()})
-                .toList();
-        }
     }
 }

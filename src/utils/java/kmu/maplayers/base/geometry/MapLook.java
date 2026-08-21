@@ -54,11 +54,17 @@ final class MapLook {
     // from, and the only place the partition itself is visible once the fills are in.
     static final Color CENTRELINE = new Color(0x50, 0x50, 0x58);
 
-    // Where a long pocket is cut into sections. Deliberately unlike anything else on the map:
-    // the cut is a proposal about where a division could go, not a thing that has been divided,
-    // and reading it as an existing border is the one mistake that would make the shape look
-    // right when it is not.
-    static final Color SECTION_CUT = new Color(0xff, 0xd0, 0x40);
+    // A line laid across void to close it off - a bridge between two cells that face each
+    // other. Deliberately unlike anything else on the map: it is a proposal about where a
+    // boundary could go, not a thing that has one, and reading it as an existing border is the
+    // one mistake that would make the shape look right when it is not.
+    static final Color VOID_BRIDGE = new Color(0xff, 0xd0, 0x40);
+
+    // What a name is written in, whether it names a cell or a piece of void. One colour for
+    // both because a name is not a shape: it says what a reader is looking at rather than
+    // marking out anything, and two colours would imply a distinction the map already makes
+    // with the shapes underneath.
+    static final Color REGION_NAME = new Color(0xff, 0xff, 0xff);
 
     // The smoothed outer edge. Unlike anything else drawn, because it is a proposal about where
     // the edge could be rather than an edge anything has: reading it as one of the shapes

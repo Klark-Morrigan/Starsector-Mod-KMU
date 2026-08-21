@@ -119,9 +119,7 @@ final class CoastPockets {
                     outline.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA
                         ? List.of()
                         : List.of(outline),
-                    VoidPockets.resolveAbsorbingOwner(hole.ringing(), ownerBySite),
-                    sites,
-                    rules.sectionRules()),
+                    VoidPockets.resolveAbsorbingOwner(hole.ringing(), ownerBySite)),
                 walling));
         }
         return pockets;

@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.Segments;
@@ -22,8 +23,8 @@ import java.util.Locale;
  * that decide what is painted there - inside the drawn coast, clear of the band a fill gives up
  * against that line, clear of every cell at the reach fills are drawn against, and inside no
  * fill - so a patch reported here is black on screen, and a map with none has no black left in
- * it. Matching holes to pockets cannot say that: a pocket is cut, sectioned and shaped after
- * the hole it came from, so a hole with a pocket to its name can still leave ground uncovered.
+ * it. Matching holes to pockets cannot say that: a pocket is shaped after the hole it came from,
+ * so a hole with a pocket to its name can still leave ground uncovered.
  *
  * <p>Sampled on a grid, because area is what the question is about. The spacing decides the
  * smallest patch that can be seen and nothing else; a patch worth a reader's attention is
@@ -88,13 +89,11 @@ final class UndrawnVoid {
      * @param laid         the coast with its walls down - handed in rather than laid again,
      *                     since a patch judged against one laying says nothing about a map
      *                     drawn under another
-     * @param sectionRules how long a piece should be before it is cut into more than one
      * @param shaping      whether to ask of the map as drawn or of the void's true extent
      * @return one entry per patch, widest first
      */
     static List<UnfilledPatch> findUnfilledVoid(
             LaidCoast laid,
-            VoidSections.SectionRules sectionRules,
             VoidPockets.PocketShaping shaping) {
 
         var parameters = laid.parameters();
@@ -113,7 +112,7 @@ final class UndrawnVoid {
         var patches = collectPatches(collectBareSamples(
             laid,
             Coastlines.collectCoastRings(laid.traced()),
-            collectDrawnFills(laid, sectionRules, shaping),
+            collectDrawnFills(laid, shaping),
             clearOfCells,
             clearOfCoast));
 
@@ -128,7 +127,6 @@ final class UndrawnVoid {
     // a whole sector.
     private static List<BoxedFill> collectDrawnFills(
             LaidCoast laid,
-            VoidSections.SectionRules sectionRules,
             VoidPockets.PocketShaping shaping) {
 
         var parameters = laid.parameters();
@@ -138,7 +136,7 @@ final class UndrawnVoid {
         for (var pocket : CoastPockets.findCoastPockets(
                 laid.traced(),
                 CoastPockets.markEverySiteUnowned(sites),
-                new VoidPockets.PocketRules(parameters, sectionRules, shaping))) {
+                new VoidPockets.PocketRules(parameters, shaping))) {
 
             for (var outline : pocket.pocket().outlines()) {
                 fills.add(BoxedFill.boxFill(outline));
@@ -178,17 +176,18 @@ final class UndrawnVoid {
         // having looked at it.
         var sites = laid.sites();
         var cells = new DiscUnion(sites, clearOfCells);
-        var box = BoxedFill.boxPoints(sites);
+        var box = Bounds.computeEnclosingBounds(sites);
         var bare = new ArrayList<double[]>();
 
-        for (var down = 0; down * SAMPLE_STEP <= box[3] - box[1] + 2 * clearOfCells; down++) {
-            for (var across = 0;
-                    across * SAMPLE_STEP <= box[2] - box[0] + 2 * clearOfCells;
-                    across++) {
+        var tall = box.maxY() - box.minY() + 2 * clearOfCells;
+        var wide = box.maxX() - box.minX() + 2 * clearOfCells;
+
+        for (var down = 0; down * SAMPLE_STEP <= tall; down++) {
+            for (var across = 0; across * SAMPLE_STEP <= wide; across++) {
 
                 var at = new double[] {
-                    box[0] - clearOfCells + across * SAMPLE_STEP,
-                    box[1] - clearOfCells + down * SAMPLE_STEP};
+                    box.minX() - clearOfCells + across * SAMPLE_STEP,
+                    box.minY() - clearOfCells + down * SAMPLE_STEP};
 
                 if (cells.isPointInside(at)
                         || !isWellInsideCoast(coasts, at, clearOfCoast)
@@ -348,42 +347,25 @@ final class UndrawnVoid {
      * fills a sample could possibly be in.
      *
      * @param outline the fill's own ring
-     * @param box     the {lowX, lowY, highX, highY} it lies within
+     * @param box     the box it lies within
      */
     private record BoxedFill(
         List<double[]> outline,
-        double[] box) {
+        Bounds box) {
 
         // One fill with its box worked out, which is how every fill enters the sweep.
         static BoxedFill boxFill(List<double[]> outline) {
-            return new BoxedFill(outline, boxPoints(outline));
-        }
-
-        // The box a set of points lies within, as {lowX, lowY, highX, highY}. Shared with
-        // the sweep itself, which wants the same answer about the sites.
-        static double[] boxPoints(List<double[]> points) {
-
-            var box = new double[] {
-                Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
-
-            for (var point : points) {
-
-                box[0] = Math.min(box[0], point[0]);
-                box[1] = Math.min(box[1], point[1]);
-                box[2] = Math.max(box[2], point[0]);
-                box[3] = Math.max(box[3], point[1]);
-            }
-            return box;
+            return new BoxedFill(outline, Bounds.computeEnclosingBounds(outline));
         }
 
         // Whether this fill covers a point - the box first, since almost every fill on the
         // map is nowhere near any given sample and a box rejects those in four comparisons.
         boolean holds(double[] at) {
 
-            return at[0] >= box[0]
-                && at[0] <= box[2]
-                && at[1] >= box[1]
-                && at[1] <= box[3]
+            return at[0] >= box.minX()
+                && at[0] <= box.maxX()
+                && at[1] >= box.minY()
+                && at[1] <= box.maxY()
                 && PolygonRegions.isPointInsideRing(outline, at[0], at[1]);
         }
     }

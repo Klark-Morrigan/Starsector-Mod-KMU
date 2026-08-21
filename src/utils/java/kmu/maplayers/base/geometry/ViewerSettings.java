@@ -31,7 +31,8 @@ final class ViewerSettings {
     static final Color WIDE_VOID_DEFAULT = MapLook.WIDE_VOID;
     static final Color CHANNEL_DEFAULT = MapLook.CHANNEL;
     static final Color CENTRELINE_DEFAULT = MapLook.CENTRELINE;
-    static final Color SECTION_CUT_DEFAULT = MapLook.SECTION_CUT;
+    static final Color VOID_BRIDGE_DEFAULT = MapLook.VOID_BRIDGE;
+    static final Color REGION_NAME_DEFAULT = MapLook.REGION_NAME;
     static final Color COASTLINE_DEFAULT = MapLook.COASTLINE;
 
     // Read off the coast's own defaults rather than restated here. What each of them means is
@@ -47,20 +48,9 @@ final class ViewerSettings {
 
     static final Color SITE_COLOUR = MapLook.SITE;
 
-    // Read off the shipped map rather than restated. These two and the report's own were
-    // the same pair of numbers written twice, which is how a window comes to divide the void
-    // differently from the report describing it, with neither of them saying so.
-    static final double VOID_SPAN_DEFAULT = ShippedMap.SECTION_LENGTH_IN_RADII;
-    static final double VOID_SPAN_STEP_SCALE = 100.0;
-
     static final double BRIDGE_REACH_DEFAULT =
         Coastlines.DEFAULT_RULES.bridgeReachMultiple();
     static final double BRIDGE_REACH_STEP_SCALE = 100.0;
-
-    // The slider reads in per cent, so the shipped share is scaled up to meet it. Why that
-    // share is the one it is belongs with the share itself.
-    static final double MIN_SECTION_SCALE = 100.0;
-    static final double MIN_SECTION_DEFAULT = ShippedMap.MIN_SECTION_SHARE * MIN_SECTION_SCALE;
 
     static final float JITTER_DEFAULT = 35;
     static final double JITTER_SCALE = 100.0;
@@ -77,23 +67,26 @@ final class ViewerSettings {
     Color voidCellEdge = VOID_CELL_DEFAULT;
 
     int voidCellOpacity = OWNER_FILL_ALPHA;
-    double voidSpanMultiple = VOID_SPAN_DEFAULT;
-    double minSectionShare = MIN_SECTION_DEFAULT / MIN_SECTION_SCALE;
     double bridgeReachMultiple = BRIDGE_REACH_DEFAULT;
 
-    // The void the cells and their bridges close around, as shapes rather than as the black
-    // left showing between the fills.
-    boolean showVoidBridges = true;
+    // The void, in the two kinds it comes in and the three things there are to see of each.
+    //
+    // Split this finely because each of the six answers a different question. A wall is a
+    // proposal about where a boundary could go and the fill is what that proposal encloses, so
+    // judging either means being able to see it without the other; and the two KINDS are
+    // separate proposals entirely - the bridges are about the gaps between cells, the coast is
+    // about the sector's outer shape - so a reader weighing one wants the other out of the way.
+    boolean showInlandBridges = true;
+    boolean showInlandFill = true;
+    boolean showInlandNames;
 
-    // A third reading of the same map: not what the void is, but where the edge of what is
-    // NOT void could be drawn.
-    boolean showCoastlines = true;
+    boolean showCoastline = true;
+    boolean showCoastalFill = true;
+    boolean showCoastalNames;
 
-    // Both constructions drawn at the void's own extent instead of a channel inside it, which
-    // is the only way to see the pockets that have no room for a channel and so draw nothing
-    // at all. Off by default because the map it produces is not one to keep: every fill sits
-    // flush against the cells around it.
-    boolean showPocketsAtTrueExtent;
+    // The cells' own names, whose system ids the void's names are built out of. Not part of the
+    // void group: a cell is there whatever the void is doing.
+    boolean showCellNames;
 
     double coastSkipMultiple = COAST_SKIP_DEFAULT;
     int coastMaxSkips = (int) COAST_MAX_SKIPS_DEFAULT;
@@ -103,7 +96,8 @@ final class ViewerSettings {
     Color piercedCellColour = PIERCED_CELL_DEFAULT;
     Color wideVoidColour = WIDE_VOID_DEFAULT;
     Color wideVoidEdge = WIDE_VOID_DEFAULT;
-    Color sectionCutColour = SECTION_CUT_DEFAULT;
+    Color voidBridgeColour = VOID_BRIDGE_DEFAULT;
+    Color regionNameColour = REGION_NAME_DEFAULT;
     Color siteColour = SITE_COLOUR;
     Color centrelineColour = CENTRELINE_DEFAULT;
     Color channelColour = CHANNEL_DEFAULT;
@@ -137,9 +131,22 @@ final class ViewerSettings {
     // Which map of the void the overlays are asking for. Asked of the settings rather than
     // worked out at each overlay, because the two constructions drawn together have to be
     // asked the same question within one frame or they are describing different maps.
+    //
+    // The void's own extent, with no choice about it. The other shaping takes the channel out
+    // by re-tracing at a moved reach, which is what a section stops doing once the inset is a
+    // per-edge verdict from the ownership rule - so offering it is offering a map that is on
+    // its way out, and a reading taken from it is not evidence about the one being built.
     VoidPockets.PocketShaping resolvePocketShaping() {
-        return showPocketsAtTrueExtent
-            ? VoidPockets.PocketShaping.AT_TRUE_EXTENT
-            : VoidPockets.PocketShaping.WITH_CHANNEL;
+        return VoidPockets.PocketShaping.AT_TRUE_EXTENT;
     }
+
+    // How the coast is traced, for the same reason. More than one overlay walks the cells with
+    // the coast's walls laid, and a wall set built twice from the same sliders is still two
+    // answers - one of them can have a different wall crowded out of a mouth, and the two
+    // drawings then describe maps that were never the same.
+    Coastlines.CoastRules resolveCoastRules() {
+        return new Coastlines.CoastRules(
+            bridgeReachMultiple, coastSkipMultiple, coastMaxSkips);
+    }
+
 }

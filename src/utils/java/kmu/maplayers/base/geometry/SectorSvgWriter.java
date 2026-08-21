@@ -277,8 +277,7 @@ final class SectorSvgWriter {
         for (var pocket : CoastPockets.findCoastPockets(
                 traced,
                 CoastPockets.markEverySiteUnowned(sites),
-                new VoidPockets.PocketRules(
-                    parameters, ShippedMap.SECTION_RULES, shaping))) {
+                new VoidPockets.PocketRules(parameters, shaping))) {
 
             for (var outline : pocket.pocket().outlines()) {
 

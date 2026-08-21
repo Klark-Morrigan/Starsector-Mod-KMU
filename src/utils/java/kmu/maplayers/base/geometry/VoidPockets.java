@@ -88,9 +88,10 @@ final class VoidPockets {
      *                       than one owner does, or any unowned cell - non-null means the
      *                       pocket is part of that owner's area rather than void between
      *                       owners
-     * @param division       where it is cut across into roughly cell-sized sections, so a
-     *                       pocket spanning several cells is not decided as a single piece,
-     *                       and how long those sections came out
+     * @param section        it as the member the cluster machinery will take it for. One per
+     *                       pocket: the bridges and the coast's reaches already shut a long
+     *                       corridor of void into separate holes, so a pocket IS a section and
+     *                       there is nothing left to divide
      */
     record VoidPocket(
         List<List<double[]>> outlines,
@@ -98,7 +99,7 @@ final class VoidPockets {
         List<Integer> adjacentCells,
         double span,
         String absorbingOwner,
-        VoidSections.VoidDivision division) {
+        VoidSection section) {
     }
 
     /**
@@ -144,22 +145,17 @@ final class VoidPockets {
     /**
      * The knobs one pocket is built under, gathered because they never travel apart.
      *
-     * <p>Three answers that have to agree with each other: what the void is measured against,
-     * how a long piece of it is divided, and which of the two maps is being asked for. Handed
-     * over loose, a caller can give one construction the shipped knobs and another a swept
-     * set within the same frame, and the two then describe different sectors while looking
-     * like one.
+     * <p>Two answers that have to agree with each other: what the void is measured against, and
+     * which of the two maps is being asked for. Handed over loose, a caller can give one
+     * construction the shipped knobs and another a swept set within the same frame, and the two
+     * then describe different sectors while looking like one.
      *
-     * @param parameters   the same knobs the cells are built under, so the void takes the
-     *                     reach that decides where it begins and the channel the cells leave
-     * @param sectionRules how long a piece of a pocket should be before it is cut into more
-     *                     than one, and how narrow a crossing has to be to count as a place
-     *                     to cut it
-     * @param shaping      how much of the channel each pocket takes out of its own outline
+     * @param parameters the same knobs the cells are built under, so the void takes the reach
+     *                   that decides where it begins and the channel the cells leave
+     * @param shaping    how much of the channel each pocket takes out of its own outline
      */
     record PocketRules(
         SectorGeometryParameters parameters,
-        VoidSections.SectionRules sectionRules,
         PocketShaping shaping) {
     }
 
@@ -209,9 +205,7 @@ final class VoidPockets {
             pockets.add(shapeVoidPocket(
                 hole,
                 findOutlines(hole, absorbingOwner, rules.shaping(), withChannel, atFills),
-                absorbingOwner,
-                sites,
-                rules.sectionRules()));
+                absorbingOwner));
         }
         return pockets;
     }
@@ -220,10 +214,10 @@ final class VoidPockets {
      * Turns one piece of bound void into a pocket, given what it comes to once shaped.
      *
      * <p>Everything a pocket is beyond its own extent - who rings it, whether one owner has it
-     * to itself, how wide it is, where it divides - follows from the hole and not from what
-     * closed the hole. So this is shared with {@link CoastPockets}, which arrives at bound
-     * void a different way entirely: cells that happened to meet in one case, a line the
-     * coast smoothing drew in the other.
+     * to itself, how wide it is - follows from the hole and not from what closed the hole. So
+     * this is shared with {@link CoastPockets}, which arrives at bound void a different way
+     * entirely: cells that happened to meet in one case, a line the coast smoothing drew in
+     * the other.
      *
      * <p>What is NOT shared is the shaping itself, which is the one part that turns on how the
      * void was closed. Void ringed by cells gives up the channel by being retraced at a reach
@@ -238,26 +232,20 @@ final class VoidPockets {
      *                       The answer rather than the owner table it comes out of, because
      *                       a caller has to know it to shape the pocket at all and reading it
      *                       here as well is one fact read twice
-     * @param sites          the sites
-     * @param sectionRules   how long a piece should be before it is cut into more than one
      * @return the pocket
      */
     static VoidPocket shapeVoidPocket(
             VoidHole hole,
             List<List<double[]>> outlines,
-            String absorbingOwner,
-            List<double[]> sites,
-            VoidSections.SectionRules sectionRules) {
-
-        var span = VoidSections.measureWidestSpan(hole.corners());
+            String absorbingOwner) {
 
         return new VoidPocket(
             outlines,
             Points.computeMean(hole.boundary()),
             hole.ringing(),
-            span,
+            hole.measureSpan(),
             absorbingOwner,
-            VoidSections.divideVoidPocket(hole, sites, span, sectionRules));
+            VoidSection.buildFromHole(hole));
     }
 
     /**

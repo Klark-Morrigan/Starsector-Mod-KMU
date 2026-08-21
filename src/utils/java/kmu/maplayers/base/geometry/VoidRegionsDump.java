@@ -5,7 +5,6 @@ import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.VoronoiCellBuilder;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -33,10 +32,6 @@ final class VoidRegionsDump {
     // costs the one guarantee worth having: that no two numbers here describe different
     // geometry. The same reasoning the sites get, applied to the other half of the pair.
     private static final SectorGeometryParameters SHIPPED = ShippedMap.KNOBS;
-
-    private static final double SECTION_LENGTH = ShippedMap.SECTION_LENGTH;
-
-    private static final VoidSections.SectionRules SECTION_RULES = ShippedMap.SECTION_RULES;
 
     private static final double BRIDGE_REACH_MULTIPLE = ShippedMap.BRIDGE_REACH_MULTIPLE;
 
@@ -87,13 +82,13 @@ final class VoidRegionsDump {
             CoastWallReport.reportCoastWalls(laid);
             PickedPointCheck.reportPickedPoints(fixture, sectorName, laid);
             CoastVoidReport.reportCoastlines(laid);
+            VoidSectionReport.reportSections(fixture, laid);
             reportPockets(
                 VoidPockets.findVoidPockets(
                     sites,
                     fixture.getOwnerBySite(),
                     new VoidPockets.PocketRules(
                         SHIPPED,
-                        SECTION_RULES,
                         VoidPockets.PocketShaping.WITH_CHANNEL)),
                 fixture,
                 laid);
@@ -260,7 +255,6 @@ final class VoidRegionsDump {
                     0,
                     SHIPPED.weldTolerance(),
                     SHIPPED.miterSpikeLimit()),
-                SECTION_RULES,
                 VoidPockets.PocketShaping.WITH_CHANNEL)).size();
     }
 
@@ -353,8 +347,6 @@ final class VoidRegionsDump {
             cellWidth,
             pockets.size() - wide);
 
-        VoidDivisionReport.reportSectioning(pockets);
-
         var absorbed = 0;
         var closedOver = 0;
         var pinched = 0;
@@ -380,8 +372,6 @@ final class VoidRegionsDump {
             pinched);
 
         reportRingingOwners(pockets, fixture);
-        VoidDivisionReport.reportEachPocket(pockets);
-        VoidDivisionReport.reportShareSweep(fixture);
         reportBridges(fixture, pockets, laid);
 
         var shares = new ArrayList<Double>(pockets.size());
@@ -516,19 +506,18 @@ final class VoidRegionsDump {
             VoidPockets.buildDrawnUnion(sites, SHIPPED), walls, walls.chords(), "bridge");
     }
 
-    // Against the sections rather than the pockets' own outlines, because the sections are
-    // the pocket at the reach that defines the void and tile it exactly, while an outline is
-    // the pocket pulled in by the channel and would report a bridge near its rim as outside.
+    // Against the section rather than the pocket's own outline, because the section is the
+    // pocket at the reach that defines the void, while an outline is the pocket pulled in by
+    // the channel and would report a bridge near its rim as outside.
     private static boolean doesAnyPocketHold(
             List<VoidPockets.VoidPocket> pockets,
             double[] point) {
 
         for (var pocket : pockets) {
-            for (var section : pocket.division().sections()) {
 
-                if (PolygonRegions.isPointInsideRing(section, point[0], point[1])) {
-                    return true;
-                }
+            if (PolygonRegions.isPointInsideRing(
+                    pocket.section().outline(), point[0], point[1])) {
+                return true;
             }
         }
         return false;

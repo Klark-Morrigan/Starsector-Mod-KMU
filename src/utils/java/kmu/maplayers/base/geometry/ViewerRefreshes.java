@@ -24,6 +24,9 @@ interface ViewerRefreshes {
     /** Traces the smoothed outer edge again. */
     void refreshCoastlines();
 
+    /** Cuts the void into sections and names them again. */
+    void refreshVoidSections();
+
     /** Traces the unclipped partition again. */
     void refreshUnboundedCells();
 

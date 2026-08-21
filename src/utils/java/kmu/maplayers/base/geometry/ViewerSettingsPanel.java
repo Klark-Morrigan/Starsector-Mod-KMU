@@ -49,19 +49,16 @@ final class ViewerSettingsPanel {
 
     private static final double SEGMENTS_MAXIMUM = 96;
 
-    // A bound pocket smaller than this share of a normal cell is one void cell rather than
-    // something to divide. Measured against a whole cell's area because that is the unit the
-    // map is already read in - "half a system's worth of gap" means something on sight, where
-    // a number of square units does not.
-    private static final double VOID_SPAN_MINIMUM = 0;
+    // What each void switch is remembered under. Named here rather than written at the two
+    // places each of them appears - once as the switch, once in whichever roll-ups cover it -
+    // because a roll-up that named a key the switch does not would cover nothing, silently.
+    private static final String INLAND_BRIDGES = "Inland void bridges";
+    private static final String INLAND_FILL = "Inland void fill";
+    private static final String INLAND_NAMES = "Inland void names";
+    private static final String COASTLINE = "Coastline";
+    private static final String COASTAL_FILL = "Coastal void fill";
+    private static final String COASTAL_NAMES = "Coastal void names";
 
-    private static final double VOID_SPAN_MAXIMUM = 6;
-
-    // How much of a section a cut has to leave on either side of it, as a percentage. The
-    // knob that decides how evenly a pocket comes out divided, and the one worth sweeping:
-    // the two ends of its range are two different wrong answers - slivers shaved off the
-    // tips at the bottom, chords thrown across open void at the top - and where the good
-    // answers sit between them is a question about a shape rather than about a number.
     // How far apart two cells may sit and still be taken to hold the void between them, in
     // cell radii from centre to centre. Four is the width at which a whole further cell
     // would fit in the gap, which is the point past which the void between two cells stops
@@ -69,10 +66,6 @@ final class ViewerSettingsPanel {
     private static final double BRIDGE_REACH_MINIMUM = 2;
 
     private static final double BRIDGE_REACH_MAXIMUM = 10;
-
-    private static final double MIN_SECTION_MINIMUM = 0;
-
-    private static final double MIN_SECTION_MAXIMUM = 100;
 
     // How near the last kept point a cell's frontage has to be before it is dropped from the
     // smoothed edge, in cell radii. Zero keeps every cell and reproduces the scallop exactly,
@@ -267,24 +260,7 @@ final class ViewerSettingsPanel {
             colour -> settings.voidCellEdge = colour,
             refreshes::repaintMap));
 
-        controls.add(ViewerControls.buildToggle(
-            "Show void bridges",
-            "Void pockets",
-            true,
-            on -> settings.showVoidBridges = on,
-            refreshes::refreshVoidBridges));
-
-        // Redoes both constructions over the void, because each answers to it and a frame with
-        // one of them moved is a map neither of them describes.
-        controls.add(ViewerControls.buildToggle(
-            "Draw void at its true extent",
-            "Void at its true extent (no channel)",
-            false,
-            on -> settings.showPocketsAtTrueExtent = on,
-            () -> {
-                refreshes.refreshVoidBridges();
-                refreshes.refreshCoastlines();
-            }));
+        controls.add(buildVoidPocketToggles());
 
         controls.add(ViewerControls.buildColourPair(
             "Wide void",
@@ -325,29 +301,22 @@ final class ViewerSettingsPanel {
             "Void cell opacity",
             opacity -> settings.voidCellOpacity = (int) opacity));
 
+        // Keyed as bridges rather than as cuts, which is what this swatch has actually
+        // coloured all along. A saved value under the old key belongs to the line it was
+        // chosen for, and letting it carry over would silently colour the cuts with it.
         controls.add(ViewerControls.buildColour(
-            "Void section cuts",
-            "Void section cuts",
-            ViewerSettings.SECTION_CUT_DEFAULT,
-            colour -> settings.sectionCutColour = colour,
+            "Void bridges",
+            "Void bridges",
+            ViewerSettings.VOID_BRIDGE_DEFAULT,
+            colour -> settings.voidBridgeColour = colour,
             refreshes::repaintMap));
 
-        // Stepped in hundredths, so the threshold can be moved by a fraction of a cell
-        // radius rather than jumping a whole one at a time.
+        // Stepped in hundredths, so the reach can be moved by a fraction of a cell radius
+        // rather than jumping a whole one at a time.
         //
         // Recomputed rather than merely repainted, unlike every other knob down here, because
-        // this one no longer only decides a colour: the same length is what a pocket is cut
-        // into sections of, and those are geometry.
-        controls.add(ViewerControls.buildSlider(
-            "Void span multiple",
-            "Void span, in cell radii (x100)",
-            VOID_SPAN_MINIMUM * ViewerSettings.VOID_SPAN_STEP_SCALE,
-            VOID_SPAN_MAXIMUM * ViewerSettings.VOID_SPAN_STEP_SCALE,
-            ViewerSettings.VOID_SPAN_DEFAULT * ViewerSettings.VOID_SPAN_STEP_SCALE,
-            multiple -> settings.voidSpanMultiple = multiple / ViewerSettings.VOID_SPAN_STEP_SCALE,
-            refreshes::refreshVoidBridges,
-            () -> { }));
-
+        // this one decides where the walls go, and a wall is what shuts one piece of void off
+        // from the next.
         controls.add(ViewerControls.buildSlider(
             "Bridge reach multiple",
             "Bridge reach, in cell radii (x100)",
@@ -358,22 +327,21 @@ final class ViewerSettingsPanel {
             refreshes::refreshVoidBridges,
             () -> { }));
 
-        controls.add(ViewerControls.buildSlider(
-            "Min section share",
-            "Least a cut leaves, as % of a section",
-            MIN_SECTION_MINIMUM,
-            MIN_SECTION_MAXIMUM,
-            ViewerSettings.MIN_SECTION_DEFAULT,
-            share -> settings.minSectionShare = share / ViewerSettings.MIN_SECTION_SCALE,
-            refreshes::refreshVoidBridges,
-            () -> { }));
-
+        // Zoom in to read the names: one is only drawn once its region is wide enough on
+        // screen to hold it, so at the zoom the map opens on none of them appear.
         controls.add(ViewerControls.buildToggle(
-            "Show coastlines",
-            "Smoothed outer edge",
-            true,
-            on -> settings.showCoastlines = on,
-            refreshes::refreshCoastlines));
+            "Show cell names",
+            "Cell names",
+            false,
+            on -> settings.showCellNames = on,
+            refreshes::repaintMap));
+
+        controls.add(ViewerControls.buildColour(
+            "Region names",
+            "Region names",
+            ViewerSettings.REGION_NAME_DEFAULT,
+            colour -> settings.regionNameColour = colour,
+            refreshes::repaintMap));
 
         controls.add(ViewerControls.buildColour(
             "Smoothed outer edge",
@@ -416,6 +384,48 @@ final class ViewerSettingsPanel {
             () -> { }));
 
         return controls;
+    }
+
+    // Everything there is to see of the void, under one head.
+    //
+    // Two kinds of pocket, three things to see of each, and two roll-ups cutting the other way
+    // for the questions that are about a KIND OF THING rather than about a kind of pocket -
+    // "show me every wall", "take every name off". Those two cross the branches on purpose:
+    // a bridge and a reach of coast are the same kind of proposal seen in two places, and
+    // comparing them means having them under one switch.
+    //
+    // Rebuilt rather than repainted, because both overlays are built only while something of
+    // theirs is on screen - so turning one on is what makes it exist, not merely what shows it.
+    private JPanel buildVoidPocketToggles() {
+
+        return ViewerToggleTree.buildToggleTree(
+            () -> {
+                refreshes.refreshVoidBridges();
+                refreshes.refreshCoastlines();
+            },
+            ViewerToggleTree.Row.ofRollUp(
+                0,
+                "Void pockets",
+                INLAND_BRIDGES, INLAND_FILL, INLAND_NAMES,
+                COASTLINE, COASTAL_FILL, COASTAL_NAMES),
+            ViewerToggleTree.Row.ofRollUp(
+                1, "Inland void pockets", INLAND_BRIDGES, INLAND_FILL, INLAND_NAMES),
+            ViewerToggleTree.Row.ofSwitch(2, new ViewerToggleTree.Switch(
+                INLAND_BRIDGES, "Bridges", true, on -> settings.showInlandBridges = on)),
+            ViewerToggleTree.Row.ofSwitch(2, new ViewerToggleTree.Switch(
+                INLAND_FILL, "Fill", true, on -> settings.showInlandFill = on)),
+            ViewerToggleTree.Row.ofSwitch(2, new ViewerToggleTree.Switch(
+                INLAND_NAMES, "Pocket names", false, on -> settings.showInlandNames = on)),
+            ViewerToggleTree.Row.ofRollUp(
+                1, "Coastal void pockets", COASTLINE, COASTAL_FILL, COASTAL_NAMES),
+            ViewerToggleTree.Row.ofSwitch(2, new ViewerToggleTree.Switch(
+                COASTLINE, "Coastline", true, on -> settings.showCoastline = on)),
+            ViewerToggleTree.Row.ofSwitch(2, new ViewerToggleTree.Switch(
+                COASTAL_FILL, "Fill", true, on -> settings.showCoastalFill = on)),
+            ViewerToggleTree.Row.ofSwitch(2, new ViewerToggleTree.Switch(
+                COASTAL_NAMES, "Pocket names", false, on -> settings.showCoastalNames = on)),
+            ViewerToggleTree.Row.ofRollUp(1, "Pocket borders", INLAND_BRIDGES, COASTLINE),
+            ViewerToggleTree.Row.ofRollUp(1, "Pocket names", INLAND_NAMES, COASTAL_NAMES));
     }
 
     // Every geometry knob rebuilds; that is what makes it a geometry knob rather than a

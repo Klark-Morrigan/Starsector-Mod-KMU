@@ -460,7 +460,10 @@ final class ViewerControls {
     // Where every knob's value is kept, in one place. Each factory reads on build and writes
     // on change, so the node was named at eleven separate call sites; one of them naming a
     // different class would have split the panel's memory in two without failing anything.
-    private static Preferences findSavedValues() {
+    //
+    // Shared with the toggle block next door for exactly that reason: its switches are knobs
+    // like any other and have to be remembered in the same node, not in one of their own.
+    static Preferences findSavedValues() {
         return Preferences.userNodeForPackage(ViewerControls.class);
     }
 

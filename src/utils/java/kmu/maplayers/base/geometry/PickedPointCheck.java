@@ -443,8 +443,7 @@ final class PickedPointCheck {
         for (var walled : CoastPockets.findCoastPockets(
                 laid.traced(),
                 fixture.getOwnerBySite(),
-                new VoidPockets.PocketRules(
-                    laid.parameters(), ShippedMap.SECTION_RULES, shaping))) {
+                new VoidPockets.PocketRules(laid.parameters(), shaping))) {
 
             outlines.addAll(walled.pocket().outlines());
         }

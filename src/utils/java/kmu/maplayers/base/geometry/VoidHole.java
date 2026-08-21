@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Points;
+
 import java.util.List;
 
 /**
@@ -39,4 +41,33 @@ record VoidHole(
     List<Integer> ringing,
     double reach,
     List<DiscUnionBoundary.Chord> walledBy) {
+
+    /**
+     * How far it reaches across, as the distance between its two most distant corners.
+     *
+     * <p>Across the CORNERS rather than across the sampled boundary, for the reason
+     * {@link #corners} gives: every disc bounding a hole has its centre outside it, so each arc
+     * bulges inward and no point along one can be further out than the corners either side of
+     * it. Measured on the samples instead, the answer would wander with how finely the arcs
+     * were flattened.
+     *
+     * <p>Asked of the hole rather than computed by each reader, because more than one wants it
+     * and a span measured two ways is two answers about one piece of void.
+     *
+     * @return the widest distance across it, or zero where it has fewer than two corners
+     */
+    double measureSpan() {
+
+        var widest = 0.0;
+
+        for (var first = 0; first < corners.size(); first++) {
+            for (var second = first + 1; second < corners.size(); second++) {
+
+                widest = Math.max(
+                    widest,
+                    Points.computeDistance(corners.get(first), corners.get(second)));
+            }
+        }
+        return widest;
+    }
 }

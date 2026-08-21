@@ -34,7 +34,11 @@ final class VoidBridgesOverlay {
      */
     void refresh(SectorFixture fixture) {
 
-        bridges = settings.showVoidBridges
+        // Built while either half of it is on screen. The walls and the fills are one
+        // construction seen twice, so a frame showing one of them has already paid for both.
+        var wanted = settings.showInlandBridges || settings.showInlandFill;
+
+        bridges = wanted
             ? VoidBridges.findVoidBridges(
                 fixture.getSites(),
                 settings.parameters.cellRadius(),
@@ -60,6 +64,10 @@ final class VoidBridgesOverlay {
      */
     void paintFills(Graphics2D g2) {
 
+        if (!settings.showInlandFill) {
+            return;
+        }
+
         g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
 
         for (var outline : captured) {
@@ -76,19 +84,23 @@ final class VoidBridgesOverlay {
     /**
      * Draws every bridge, over the top of everything.
      *
-     * <p>Untrimmed, unlike a pocket's cuts: there is no inset fill for a bridge to stop
-     * short of, so it spans the corridor it actually holds.
+     * <p>Untrimmed: there is no inset fill for a bridge to stop short of, so it spans the
+     * corridor it actually holds.
      *
      * @param g2 what to draw with
      */
     void paintSpans(Graphics2D g2) {
 
+        if (!settings.showInlandBridges) {
+            return;
+        }
+
         g2.setStroke(new BasicStroke(MapLook.SPAN_STROKE));
         g2.setColor(MapPainting.applyAlpha(
-            settings.sectionCutColour, MapLook.OPAQUE_ALPHA));
+            settings.voidBridgeColour, MapLook.OPAQUE_ALPHA));
 
         for (var bridge : bridges) {
-            g2.draw(MapPainting.buildTrimmedSpan(bridge, 0));
+            g2.draw(MapPainting.buildSpanLine(bridge));
         }
     }
 }

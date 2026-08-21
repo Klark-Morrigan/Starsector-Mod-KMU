@@ -47,7 +47,10 @@ final class CoastlinesOverlay {
      */
     void refresh(SectorFixture fixture) {
 
-        if (!settings.showCoastlines) {
+        // Traced while either half of it is on screen. The line and the void it shuts in are
+        // one construction seen twice, and the pockets come off this same trace - so a frame
+        // showing one of them has already paid for both.
+        if (!settings.showCoastline && !settings.showCoastalFill) {
 
             traced = null;
             penetrations = List.of();
@@ -59,7 +62,7 @@ final class CoastlinesOverlay {
         traced = Coastlines.traceSectorCoasts(
             fixture.getSites(),
             settings.parameters,
-            coastRules());
+            settings.resolveCoastRules());
 
         penetrations = CoastCrossings.findVisibleCrossings(
             traced,
@@ -70,25 +73,11 @@ final class CoastlinesOverlay {
             fixture.getOwnerBySite(),
             new VoidPockets.PocketRules(
                 settings.parameters,
-                new VoidSections.SectionRules(
-                    settings.voidSpanMultiple * settings.parameters.cellRadius(),
-                    settings.minSectionShare),
                 settings.resolvePocketShaping()));
 
         spills = CoastPocketFaults.findSpills(
             pockets,
             Coastlines.collectCoastRings(traced));
-    }
-
-    // The knobs as the sliders currently stand. Read once per refresh rather than rebuilt at
-    // each place that wants them, so the coast and the pockets it shut in cannot be traced
-    // under two different settings within one frame.
-    private Coastlines.CoastRules coastRules() {
-
-        return new Coastlines.CoastRules(
-            settings.bridgeReachMultiple,
-            settings.coastSkipMultiple,
-            settings.coastMaxSkips);
     }
 
     /**
@@ -102,6 +91,10 @@ final class CoastlinesOverlay {
      * @param g2 what to draw with
      */
     void paintPocketFills(Graphics2D g2) {
+
+        if (!settings.showCoastalFill) {
+            return;
+        }
 
         g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
 
@@ -125,7 +118,7 @@ final class CoastlinesOverlay {
      */
     void paintCoasts(Graphics2D g2) {
 
-        if (traced == null) {
+        if (traced == null || !settings.showCoastline) {
             return;
         }
 

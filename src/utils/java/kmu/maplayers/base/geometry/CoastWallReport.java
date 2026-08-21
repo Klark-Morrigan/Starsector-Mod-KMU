@@ -4,7 +4,6 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segments;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 
 /**
