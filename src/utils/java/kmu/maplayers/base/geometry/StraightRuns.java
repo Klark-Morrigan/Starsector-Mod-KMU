@@ -26,6 +26,25 @@ final class StraightRuns {
     // stops being visible; the clearance check afterwards is what says whether it was enough.
     private static final int CLAMP_PASSES = 4;
 
+    // Room for the passes to stop short of what they converge on: they APPROACH a fixed
+    // point rather than landing on it, so a collapsed run keeps a residue a shade above the
+    // tolerance at which two points count as one place rather than nothing at all.
+    private static final int APPROACH_RESIDUE = 10;
+
+    // How short a run has to be to count as having collapsed onto the point where its two
+    // circles cross rather than spanning the notch between them.
+    //
+    // The two sides of this are nowhere near each other: over both fixtures every collapsed
+    // run measures under 1.4 units and every real one over 300, so the value has only to
+    // fall in that gap rather than be tuned to it.
+    //
+    // Deliberately NOT the wall channel, which lands in the same gap and asks a different
+    // question - whether a wall has room to hold its two sides apart - and which moves with
+    // a slider. Whether an iteration converged is a fact about the arithmetic, and tying it
+    // to a knob would let a wide channel start refusing runs that go somewhere.
+    private static final double COLLAPSED_ONTO_A_CROSSING =
+        DiscUnion.TOUCHING_TOLERANCE * APPROACH_RESIDUE;
+
     private StraightRuns() {
     }
 
@@ -161,9 +180,34 @@ final class StraightRuns {
         // what the clamp was working against, so a run can satisfy both and still shave a
         // third cell that neither end knows about - and that run was then accepted, which is
         // where the shallow crossings came from.
-        return isKeepingCellsLeft(run, clamped) && isRunClearOfEveryCell(run, clamped)
+        return isRunSpanningTheNotch(run, clamped)
+            && isKeepingCellsLeft(run, clamped)
+            && isRunClearOfEveryCell(run, clamped)
             ? clamped
             : findTangentEdge(run);
+    }
+
+    // Whether a clamped run goes anywhere at all.
+    //
+    // The clamp has TWO fixed points and only one of them is wanted. Sliding each end to the
+    // nearest place the other can see converges on the common tangent - or, where the two
+    // circles cross, onto the crossing itself, which lies on both of them and which each end
+    // can therefore see from the other trivially. Settled there, the run leaves one cell and
+    // arrives on the next without covering any ground, so the notch it exists to span is left
+    // open and the coast walks down into it instead.
+    //
+    // Refused on its own terms because the two tests beside it cannot see this: a run of no
+    // length goes inside nothing, so it reads as clear of every cell, and its two ends make
+    // no line to have a side, so both centres count as left of it. Both pass vacuously, and
+    // the collapse is rubber-stamped as the answer.
+    //
+    // The tangent is exactly what such a pair needs - it spans the full width of the notch,
+    // which for equal reaches is the distance between the two sites - so refusing the
+    // collapse is enough on its own to hand the pair the line it should have had.
+    private static boolean isRunSpanningTheNotch(StraightRun run, EdgeAngles edge) {
+
+        return Points.computeDistance(run.findDeparture(edge), run.findArrival(edge))
+            > COLLAPSED_ONTO_A_CROSSING;
     }
 
     /**
