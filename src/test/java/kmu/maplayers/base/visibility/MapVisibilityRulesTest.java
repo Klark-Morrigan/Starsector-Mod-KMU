@@ -22,9 +22,10 @@ import static org.mockito.Mockito.mockStatic;
  * would compile and read correctly while silently trading one for the other. Each case raises
  * exactly one toggle, which is what makes that swap fail.
  *
- * <p>And the gates, which no toggle reaches yet: a read that quietly dropped them would leave
- * every derelict in the sector on the map the moment its entity was found, with nothing in the
- * settings screen to explain it.
+ * <p>The two spoiler toggles are held the same way, and one thing more: each is named for what
+ * switching it on shows, so it is the toggle left off that carries a gate. A read that took them
+ * the right way round but the wrong polarity would leave every derelict in the sector on the map
+ * the moment its entity was found, with the settings screen saying the opposite.
  *
  * <p>The construction guard is here on the same grounds. Every failure this value can carry
  * shows up as a map drawing the wrong amount rather than as anything that announces itself, so
@@ -107,27 +108,81 @@ class MapVisibilityRulesTest {
         }
 
         @Test
-        void holdsEveryRevelationGateWhicheverWayTheTogglesFall() {
+        void holdsEveryRevelationGateWhereNeitherSpoilerToggleIsOn() {
 
-            // Asserted against the enum's own values rather than against a list written out
-            // here: a gate added later must reach the live rule without this case being
-            // remembered, since a shape nobody thought to name is exactly the one that leaks.
-            for (var isRevealing : new boolean[] {false, true}) {
+            // The shipped state, both spoiler toggles being off. Asserted against the enum's own
+            // values rather than against a list written out here: a gate added later must reach
+            // the live rule without this case being remembered, since a shape nobody thought to
+            // name is exactly the one that leaks.
+            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
 
-                try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+                var visibilityRules = MapVisibilityRules.readFromLunaSettings();
 
-                    settingsMock
-                        .when(KmuMapLayerSettings::shouldShowUndiscoveredMarkets)
-                        .thenReturn(isRevealing);
-                    settingsMock
-                        .when(KmuMapLayerSettings::shouldShowHiddenSystems)
-                        .thenReturn(false);
+                assertThat(visibilityRules.colonyVisibility().revelationGates())
+                    .containsExactlyInAnyOrder(RevelationGate.values());
+            }
+        }
 
-                    var visibilityRules = MapVisibilityRules.readFromLunaSettings();
+        @Test
+        void dropsTheDerelictGateForTheUnseenDerelictsToggleAlone() {
 
-                    assertThat(visibilityRules.colonyVisibility().revelationGates())
-                        .containsExactlyInAnyOrder(RevelationGate.values());
-                }
+            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+
+                settingsMock
+                    .when(KmuMapLayerSettings::shouldShowUnseenAbandonedStations)
+                    .thenReturn(true);
+                settingsMock
+                    .when(KmuMapLayerSettings::shouldShowUnseenHiddenMarkets)
+                    .thenReturn(false);
+
+                var visibilityRules = MapVisibilityRules.readFromLunaSettings();
+
+                // The concealment gate is what survives, which is what a transposed mapping
+                // fails on: reading the two toggles the wrong way round leaves the derelict
+                // gate standing instead, and every other assertion here would still pass.
+                assertThat(visibilityRules.colonyVisibility().revelationGates())
+                    .containsExactly(RevelationGate.HIDDEN_COLONIES);
+            }
+        }
+
+        @Test
+        void dropsTheConcealmentGateForTheUnseenHiddenColoniesToggleAlone() {
+
+            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+
+                settingsMock
+                    .when(KmuMapLayerSettings::shouldShowUnseenAbandonedStations)
+                    .thenReturn(false);
+                settingsMock
+                    .when(KmuMapLayerSettings::shouldShowUnseenHiddenMarkets)
+                    .thenReturn(true);
+
+                var visibilityRules = MapVisibilityRules.readFromLunaSettings();
+
+                assertThat(visibilityRules.colonyVisibility().revelationGates())
+                    .containsExactly(RevelationGate.SPACE_DERELICTS);
+            }
+        }
+
+        @Test
+        void holdsNoRevelationGateWhereBothSpoilerTogglesAreOn() {
+
+            // A player asking to see both shapes drops each back to the fog alone - which is
+            // still the fog, so this widens what is shown without ever showing what has not
+            // been found.
+            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+
+                settingsMock
+                    .when(KmuMapLayerSettings::shouldShowUnseenAbandonedStations)
+                    .thenReturn(true);
+                settingsMock
+                    .when(KmuMapLayerSettings::shouldShowUnseenHiddenMarkets)
+                    .thenReturn(true);
+
+                var visibilityRules = MapVisibilityRules.readFromLunaSettings();
+
+                assertThat(visibilityRules.colonyVisibility().revelationGates())
+                    .isEmpty();
             }
         }
     }

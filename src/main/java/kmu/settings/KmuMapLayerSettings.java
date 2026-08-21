@@ -18,24 +18,32 @@ package kmu.settings;
  * stored key stays put.
  *
  * <p>The visibility overrides and the axis diagnostics below are the exception that rule
- * allows: a toggle defaulting off holds nothing a rename could cost, so their ids say
- * {@code kmu_map_dev_*} - the tab and section a player finds them under - rather than the
- * layer that first wanted them.
+ * allows: a toggle defaulting off holds nothing a rename could cost, so their ids say the
+ * tab and section a player finds them under - {@code kmu_map_visibility_overrides_*} and
+ * {@code kmu_map_dev_diagnostics_*} - rather than the layer that first wanted them. The
+ * overrides took that allowance twice, having shipped under {@code kmu_map_dev_*} before
+ * they earned a tab of their own; {@link KmuRetiredSettings} sweeps what the old ids left
+ * in the player's settings file.
  *
- * <p>The knobs lay out across five tabs. {@code Map - Visuals} carries the overlay
+ * <p>The knobs lay out across six tabs. {@code Map - Visuals} carries the overlay
  * sidebar, the map labels, the two upper hover tiers and how tightly a hover box is set -
  * what every layer shares. {@code Map - Sound} carries how loudly each moment the panel and
  * the map answer audibly plays, which is a component of the look for the same reason a fill
  * colour is but browsed by a player who has come looking for the volume rather than for the
  * shades.
  * {@code Map - Keybinds} carries the layer shortcuts, which are controls rather than
- * appearance. {@code Map - Compatibility} carries what the layers may do on a map this mod
+ * appearance. {@code Map - Visibility} carries how much of the sector the map may show -
+ * the two gates that decide whether an abandoned station or a hidden market has to have
+ * been seen before any layer will say it is there, and the two reveals that drop the fog
+ * and the map's admission rule outright. Its own tab rather than a section of the visuals
+ * one because it is not a look and not a control: it is what the map is permitted to say,
+ * which is the one question a player answers once and for every layer at once.
+ * {@code Map - Compatibility} carries what the layers may do on a map this mod
  * does not own, which is neither a look nor a control but a boundary - the one tab whose
  * knobs are reached for because another mod is installed rather than because of anything
  * this one draws. {@code Map - Dev} carries the tuning surfaces a player does not browse: the
- * two visibility overrides that widen what any layer draws, the national border's tracing
- * tolerances, the label-anchor search's modifiers, and the band and axis diagnostics that
- * draw the search's own workings on the map.
+ * national border's tracing tolerances, the label-anchor search's modifiers, and the band
+ * and axis diagnostics that draw the search's own workings on the map.
  */
 public final class KmuMapLayerSettings {
 
@@ -261,26 +269,40 @@ public final class KmuMapLayerSettings {
     // what the fit would accept with no horizontal bias, so the bias knob's effect is
     // visible directly. Both meaningful only while the anchors themselves draw, which is
     // the drawing layer's own toggle.
-    // Visibility overrides (Map - Dev tab): two toggles that widen what every map layer draws,
-    // each bypassing a gate the visibility rules would otherwise hold. Show-undiscovered-markets
-    // drops the known-to-player filter so a colony the player has not found still counts as
-    // inhabitation - and, on a layer that weighs colonies, toward what it weighs;
-    // show-hidden-systems bypasses the rule outright so every star system seeds a cell. Both off
-    // by default. They reseed the geometry (they change which systems get a cell), so a change
-    // forces a geometry rebuild rather than the restyle a styling knob triggers.
-    //
-    // The ids are the framework's own rather than inherited, unlike most above: a toggle
-    // defaulting off holds nothing a rename could cost, which is the same allowance the axis
-    // diagnostics take.
-    private static final String SHOW_UNDISCOVERED_MARKETS_FIELD =
-        "kmu_map_dev_visibilityOverrides_showUndiscoveredMarkets";
-    private static final String SHOW_HIDDEN_SYSTEMS_FIELD =
-        "kmu_map_dev_visibilityOverrides_showHiddenSystems";
-
     private static final String SHOW_REJECTED_AXES_FIELD =
         "kmu_map_dev_diagnostics_labels_boxes_areRejectedShown";
     private static final String SHOW_UNBIASED_AXES_FIELD =
         "kmu_map_dev_diagnostics_labels_boxes_areUnbiasedShown";
+
+    // Visibility overrides (Map - Visibility tab): the four toggles that decide how much of the
+    // sector any map layer may show, each naming what turning it on reveals so the section reads
+    // one way down the screen. What each does to the colony rule is RevelationGate's word, not
+    // theirs; these are named for what the player is asking to see.
+    //
+    // The first two are the spoiler gates, and they are the shapes the discovery fog alone leaks:
+    // an unowned station nobody ever lived on, and a market that conceals itself. Both are placed
+    // on entities that were never discoverable, so the fog admits them from the first day of a
+    // campaign - each toggle decides whether that is enough, or whether somebody must also have
+    // seen the place where it now stands. Off is the gate in force, which is why they ship off.
+    //
+    // The last two widen rather than gate. Show-undiscovered-markets drops the fog outright, so a
+    // colony the player has not found still counts as inhabitation - and, on a layer that weighs
+    // colonies, toward what it weighs; show-hidden-systems bypasses the map's own admission rule
+    // so every star system seeds a cell. Both reseed the geometry, so a change forces a geometry
+    // rebuild rather than the restyle a styling knob triggers.
+    //
+    // The ids are the framework's own rather than inherited, unlike most above, and the two that
+    // shipped under kmu_map_dev_* were renamed here rather than frozen: a toggle defaulting off
+    // holds nothing a rename could cost, which is the allowance this class's note above states.
+    // KmuRetiredSettings sweeps what they left behind.
+    private static final String SHOW_UNSEEN_ABANDONED_STATIONS_FIELD =
+        "kmu_map_visibility_overrides_showUnseenAbandonedStations";
+    private static final String SHOW_UNSEEN_HIDDEN_MARKETS_FIELD =
+        "kmu_map_visibility_overrides_showUnseenHiddenMarkets";
+    private static final String SHOW_UNDISCOVERED_MARKETS_FIELD =
+        "kmu_map_visibility_overrides_showUndiscoveredMarkets";
+    private static final String SHOW_HIDDEN_SYSTEMS_FIELD =
+        "kmu_map_visibility_overrides_showHiddenSystems";
 
     // Fallbacks used only when a setting is read before LunaLib has loaded it;
     // the live values come from LunaLib. These mirror the defaultValue column in
@@ -437,8 +459,12 @@ public final class KmuMapLayerSettings {
     private static final boolean DEFAULT_SHOW_REJECTED_AXES = false;
     private static final boolean DEFAULT_SHOW_UNBIASED_AXES = false;
 
-    // Both visibility overrides off by default: the map draws exactly what the normal gates admit
-    // until the player opts into a wider view.
+    // Every visibility override off by default: the map draws exactly what the ordinary rules
+    // admit until the player opts into a wider view. Off is the safe way round for the fallbacks
+    // as well as for the shipped defaults - these constants answer while LunaLib has no stored
+    // value, and a map that spoiled a sector during that window could not take it back.
+    private static final boolean DEFAULT_SHOW_UNSEEN_ABANDONED_STATIONS = false;
+    private static final boolean DEFAULT_SHOW_UNSEEN_HIDDEN_MARKETS = false;
     private static final boolean DEFAULT_SHOW_UNDISCOVERED_MARKETS = false;
     private static final boolean DEFAULT_SHOW_HIDDEN_SYSTEMS = false;
 
@@ -840,6 +866,30 @@ public final class KmuMapLayerSettings {
      */
     public static boolean getMapShowUnbiasedAxes() {
         return KmuLunaSettings.readBoolean(SHOW_UNBIASED_AXES_FIELD, DEFAULT_SHOW_UNBIASED_AXES);
+    }
+
+    /**
+     * @return whether an unowned market carrying vanilla's abandoned-station condition is drawn,
+     *         counted and named as soon as its entity is found, rather than waiting until the
+     *         player has been in its star system or somebody lives there who would have seen it;
+     *         off by default, which holds the wreck back. A station a faction keeps wears the same
+     *         condition and is not one of these
+     */
+    public static boolean shouldShowUnseenAbandonedStations() {
+        return KmuLunaSettings.readBoolean(
+            SHOW_UNSEEN_ABANDONED_STATIONS_FIELD,
+            DEFAULT_SHOW_UNSEEN_ABANDONED_STATIONS);
+    }
+
+    /**
+     * @return whether a market marked hidden is drawn, counted and named wherever it currently
+     *         stands as soon as its entity is found, rather than waiting until somebody has seen
+     *         it standing there; off by default, which holds the base back
+     */
+    public static boolean shouldShowUnseenHiddenMarkets() {
+        return KmuLunaSettings.readBoolean(
+            SHOW_UNSEEN_HIDDEN_MARKETS_FIELD,
+            DEFAULT_SHOW_UNSEEN_HIDDEN_MARKETS);
     }
 
     /**

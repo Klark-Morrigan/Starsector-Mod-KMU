@@ -61,7 +61,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * fails here rather than leaving a value nothing will ever reach again.
  *
  * <p>A Boolean row's default column is held the same way where the value is a decision rather than a
- * taste: the hover tiers ship on so that switching them is the player's move and not the file's, and
+ * taste: the hover tiers ship on so that switching them is the player's move and not the file's, the
+ * visibility overrides ship off so that a fresh player is shown what the ordinary rules admit and
+ * nothing beyond it, and
  * the Java fallback beside each getter cannot stand in for that - it answers only while LunaLib has
  * no stored value, so it is this column a fresh player is actually given. Which way a switch ships is
  * that one table's business; that the two spellings of it agree is every Boolean row's, so the
@@ -100,6 +102,7 @@ final class LunaSettingsCsvIntegrationTest {
     private static final String RADIO_FIELD_TYPE = "Radio";
     private static final String BOOLEAN_FIELD_TYPE = "Boolean";
     private static final String BOOLEAN_ON_VALUE = "TRUE";
+    private static final String BOOLEAN_OFF_VALUE = "FALSE";
 
     // The five rows hovering is switched at - the master, the pair that answers for every map layer,
     // and the political map's own pair - which are held to shipping on. The Java fallback beside each
@@ -113,6 +116,17 @@ final class LunaSettingsCsvIntegrationTest {
         "kmu_politicalMapHoverTooltipEnabled",
         "kmu_mapPoliticsVisualsHoverEffectsEnabled",
         "kmu_mapPoliticsVisualsHoverTooltipEnabled");
+
+    // The visibility overrides, held to shipping off for the reason the hover tiers above are
+    // held to shipping on, and with more riding on it. Every one is named for what switching it
+    // on reveals, so off is the whole section's safe state: a row shipped on would put an
+    // abandoned station, a hidden base or an undiscovered colony on the map from the first day of
+    // a campaign, which is a thing a player cannot un-see once the map has drawn it.
+    private static final List<String> VISIBILITY_OVERRIDE_FIELD_IDS = List.of(
+        "kmu_map_visibility_overrides_showUnseenAbandonedStations",
+        "kmu_map_visibility_overrides_showUnseenHiddenMarkets",
+        "kmu_map_visibility_overrides_showUndiscoveredMarkets",
+        "kmu_map_visibility_overrides_showHiddenSystems");
 
     // The tabs the settings screen is laid out into. LunaLib creates a tab by being asked for one,
     // so a mistyped tab name is not an error there - it silently opens a tab of its own holding
@@ -129,6 +143,7 @@ final class LunaSettingsCsvIntegrationTest {
         "Map - Politics - Domination",
         "Map - Sound",
         "Map - Keybinds",
+        "Map - Visibility",
         "Map - Compatibility",
         "Map - Dev",
         "Dev",
@@ -275,7 +290,9 @@ final class LunaSettingsCsvIntegrationTest {
     // an id the file still declares, or an id no source sweeps, fails rather than sitting here as a
     // stale exemption.
     private static final Set<String> RETIRED_FIELD_IDS = Set.of(
-            "kmu_map_politics_visuals_presenceRibbons_uncontestedEnabled");
+            "kmu_map_politics_visuals_presenceRibbons_uncontestedEnabled",
+            "kmu_map_dev_visibilityOverrides_showUndiscoveredMarkets",
+            "kmu_map_dev_visibilityOverrides_showHiddenSystems");
 
     // A field id as the sources spell it: quoted, so a mention in prose or a comment does not count
     // as reading the field.
@@ -361,6 +378,24 @@ final class LunaSettingsCsvIntegrationTest {
                     fieldId,
                     SETTINGS_CSV)
                 .isEqualTo(BOOLEAN_ON_VALUE);
+        }
+    }
+
+    @Nested
+    class VisibilityOverrideDefaults {
+
+        @ParameterizedTest(name = "{0}")
+        @ArgumentsSource(VisibilityOverrideFieldIdsProvider.class)
+        void visibilityOverrideRowsAllShipSwitchedOff(String fieldId) {
+
+            assertThat(readColumn(fieldId, DEFAULT_VALUE_COLUMN, BOOLEAN_FIELD_TYPE))
+                .as(
+                    "default of %s in %s: a visibility override ships off, so what a fresh player"
+                        + " is shown of the sector is what the ordinary rules admit and nothing"
+                        + " beyond it",
+                    fieldId,
+                    SETTINGS_CSV)
+                .isEqualTo(BOOLEAN_OFF_VALUE);
         }
     }
 
@@ -1013,6 +1048,21 @@ final class LunaSettingsCsvIntegrationTest {
                 ExtensionContext context) {
 
             return HOVER_TIER_FIELD_IDS.stream().map(Arguments::of);
+        }
+    }
+
+    /**
+     * The visibility overrides, one case each, so the row shipped the wrong way round is named by
+     * the failure rather than hidden inside one assertion over all four ids.
+     */
+    static final class VisibilityOverrideFieldIdsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(
+                ParameterDeclarations parameters,
+                ExtensionContext context) {
+
+            return VISIBILITY_OVERRIDE_FIELD_IDS.stream().map(Arguments::of);
         }
     }
 

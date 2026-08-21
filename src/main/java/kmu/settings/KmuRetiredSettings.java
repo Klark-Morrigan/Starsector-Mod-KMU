@@ -28,8 +28,17 @@ public final class KmuRetiredSettings {
     // The uncontested-bands switch, withdrawn when an uncontested cell was made to band
     // unconditionally: the only question left about one is how long its runs are, which the
     // shortening beside it already answers.
+    //
+    // Then the two visibility overrides as they shipped on the Map - Dev tab, retired when the
+    // spoiler gates gave visibility a tab of its own and all four rows were renamed onto it. A
+    // rename is a retirement from the settings file's point of view - LunaLib stores by id, so
+    // the old key keeps whatever the player last set on it and would hand it to any later field
+    // that reused the id. Both defaulted off, which is what made renaming them cheap enough to be
+    // worth doing at all: what a rename costs is a value a player set on purpose.
     private static final List<String> RETIRED_FIELD_IDS = List.of(
-        "kmu_map_politics_visuals_presenceRibbons_uncontestedEnabled");
+        "kmu_map_politics_visuals_presenceRibbons_uncontestedEnabled",
+        "kmu_map_dev_visibilityOverrides_showUndiscoveredMarkets",
+        "kmu_map_dev_visibilityOverrides_showHiddenSystems");
 
     private KmuRetiredSettings() {
     }

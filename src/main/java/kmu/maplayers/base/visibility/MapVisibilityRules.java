@@ -49,27 +49,12 @@ public record MapVisibilityRules(
      * The rules with nothing widened and nothing forced: the fog alone, and a system on the map
      * only where the ordinary gates admit it. What a caller stating no rules of its own passes.
      *
-     * <p>Not what the live read below returns - that holds every revelation gate, since no gate
-     * has a toggle of its own yet - so a caller asserting the shipped behaviour wants that read
-     * rather than this value.
+     * <p>Not what the live read below returns - the shipped settings leave both revelation gates
+     * in force - so a caller asserting what a player is actually shown wants that read rather
+     * than this value.
      */
     public static final MapVisibilityRules BASE =
         new MapVisibilityRules(ColonyVisibility.BASE_FOG, false);
-
-    // Every gate the rule knows of, which is what the player's live read below applies until each
-    // gate has a toggle of its own.
-    //
-    // Held rather than open because a gate narrows: showing a derelict now and taking it away
-    // once the toggles ship would have the map contradict itself across a version, while holding
-    // one back costs nothing but a colony the player can still reach and find.
-    //
-    // Copied into an immutable set once here rather than left as the EnumSet. The rule takes its
-    // own defensive copy of whatever it is handed, and that copy is free for a set already known
-    // immutable - which matters because the live read below runs per hover box, not per pass.
-    //
-    // TODO: resolve each gate from its own player setting once the two spoiler toggles ship.
-    private static final Set<RevelationGate> HELD_REVELATION_GATES =
-        Set.copyOf(EnumSet.allOf(RevelationGate.class));
 
     /**
      * Rejects an unstated colony rule rather than standing one in.
@@ -99,7 +84,37 @@ public record MapVisibilityRules(
         return new MapVisibilityRules(
             new ColonyVisibility(
                 KmuMapLayerSettings.shouldShowUndiscoveredMarkets(),
-                HELD_REVELATION_GATES),
+                resolveRevelationGates()),
             KmuMapLayerSettings.shouldShowHiddenSystems());
+    }
+
+    // The gates the player's spoiler settings leave in force. Each toggle is named for what
+    // switching it on shows, so it is a toggle left off that carries its gate - which is also
+    // why the shipped state holds both: a gate narrows, and a map that spoiled a sector
+    // before the player asked it to could not take that back.
+    //
+    // Read as two independent questions rather than one three-way choice, because the two shapes
+    // leak for different reasons - one is a place nobody ever lived on, the other a place hiding
+    // itself - and a player minding one need not mind the other.
+    //
+    // The abandoned-station toggle covers the unowned wreck alone, which is why the gate behind
+    // it is a kind rather than vanilla's condition: a station a faction keeps wears that same
+    // condition and is a place somebody is, so it is not a shape the fog leaks and nothing here
+    // holds it back.
+    //
+    // Copied into an immutable set here rather than handed over as the EnumSet: the rule takes
+    // its own defensive copy of whatever it is given, and that copy is free for a set already
+    // known immutable, which matters because this read runs per hover box and not only per pass.
+    private static Set<RevelationGate> resolveRevelationGates() {
+
+        var gatesInForce = EnumSet.noneOf(RevelationGate.class);
+
+        if (!KmuMapLayerSettings.shouldShowUnseenAbandonedStations()) {
+            gatesInForce.add(RevelationGate.SPACE_DERELICTS);
+        }
+        if (!KmuMapLayerSettings.shouldShowUnseenHiddenMarkets()) {
+            gatesInForce.add(RevelationGate.HIDDEN_COLONIES);
+        }
+        return Set.copyOf(gatesInForce);
     }
 }

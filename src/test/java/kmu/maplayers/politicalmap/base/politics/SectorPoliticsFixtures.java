@@ -466,6 +466,48 @@ public final class SectorPoliticsFixtures {
     }
 
     /**
+     * Stands the given markets in the system, so a read asking where a colony is finds it there.
+     *
+     * <p>Separate from {@link #placeMarketsOnSystemEntities}, which hangs a market on one of the
+     * system's entities: that is how an unregistered colony is <em>found</em>, while this is what
+     * the colony answers when asked where it stands. A market wants both only if a case turns on
+     * both, and most turn on neither.
+     *
+     * <p>The one thing that does turn on it is a revelation gate. A colony reads as sighted
+     * wherever its containing location is not a star system - hyperspace has no system to have
+     * been in - so an unstubbed market mock is sighted by default and no gate can be shown to
+     * hold anything back against one. Standing a market in a system that has not been entered is
+     * the only way to pose a colony nobody has seen.
+     *
+     * @param system  the system the markets stand in
+     * @param markets the markets to stand there
+     */
+    public static void placeMarketsInSystem(StarSystemAPI system, MarketAPI... markets) {
+
+        for (var market : markets) {
+
+            when(market.getContainingLocation())
+                .thenReturn(system);
+        }
+    }
+
+    /**
+     * Records the player's fleet as having been in the system, which is vanilla's own memory of a
+     * visit and the player's route to having seen whatever stands there.
+     *
+     * <p>Its absence is the interesting state rather than its presence: an unstubbed system mock
+     * answers this false already, so a case wanting an unvisited system says nothing and a case
+     * wanting a visited one says this.
+     *
+     * @param system the system the player has been in
+     */
+    public static void markSystemAsEnteredByPlayer(StarSystemAPI system) {
+
+        when(system.isEnteredByPlayer())
+            .thenReturn(true);
+    }
+
+    /**
      * Centres a system on a star - both its centre and its one star - so a distance-from-centre
      * read resolves that star as its reference.
      *

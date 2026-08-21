@@ -25,6 +25,15 @@ final class KmuRetiredSettingsTest {
     private static final String RETIRED_UNCONTESTED_BANDS_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_uncontestedEnabled";
 
+    // The two visibility overrides as they shipped on the Map - Dev tab, before visibility earned
+    // a tab of its own and all four rows were renamed onto it. Spelt out for the reason above, and
+    // with a second one: these ids no longer appear anywhere but the sweep, so a spelling read off
+    // the class under test would agree with a typo that shed nothing at all.
+    private static final String RETIRED_SHOW_UNDISCOVERED_MARKETS_FIELD =
+        "kmu_map_dev_visibilityOverrides_showUndiscoveredMarkets";
+    private static final String RETIRED_SHOW_HIDDEN_SYSTEMS_FIELD =
+        "kmu_map_dev_visibilityOverrides_showHiddenSystems";
+
     @Nested
     class ClearRetiredSettings {
 
@@ -37,6 +46,22 @@ final class KmuRetiredSettingsTest {
 
                 settingsMock.verify(
                     () -> KmuLunaSettings.clearSetting(RETIRED_UNCONTESTED_BANDS_FIELD));
+            }
+        }
+
+        @Test
+        void clearRetiredSettingsShedsTheVisibilityOverridesOldDevIds() {
+            // A rename leaves the same orphan a withdrawal does, and a worse one: the row is still
+            // on the screen under a new key, so a player who had set the old one sees a toggle
+            // that reads as untouched while their real answer sits unreachable in the file.
+            try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
+
+                KmuRetiredSettings.clearRetiredSettings();
+
+                settingsMock.verify(
+                    () -> KmuLunaSettings.clearSetting(RETIRED_SHOW_UNDISCOVERED_MARKETS_FIELD));
+                settingsMock.verify(
+                    () -> KmuLunaSettings.clearSetting(RETIRED_SHOW_HIDDEN_SYSTEMS_FIELD));
             }
         }
     }
