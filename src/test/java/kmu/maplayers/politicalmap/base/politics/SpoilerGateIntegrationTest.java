@@ -12,8 +12,12 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.settings.KmuMapLayerSettings;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +34,6 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.pl
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins the two spoiler toggles all the way from the settings read to the surfaces they reach: the
@@ -80,6 +83,24 @@ final class SpoilerGateIntegrationTest {
     // The faction holding the open colony, whose presence is what settles the system.
     private static final String OPEN_HOLDER = "hegemony";
 
+    // The live settings read, which is unreachable from the test JVM and so stood in for every
+    // case. Held for the whole case rather than wrapped around one statement of it, because the
+    // read happens several layers down inside the pass the helpers below open.
+    //
+    // An unstubbed toggle answers false, which is the shipped state - so a case names only the
+    // toggle it means to move, and a case that names none is posing a fresh install.
+    private MockedStatic<KmuMapLayerSettings> settingsMock;
+
+    @BeforeEach
+    void installTheSettingsSeam() {
+        settingsMock = Mockito.mockStatic(KmuMapLayerSettings.class);
+    }
+
+    @AfterEach
+    void clearTheSettingsSeam() {
+        settingsMock.close();
+    }
+
     @Nested
     class ReadKnownColoniesIn {
 
@@ -88,13 +109,10 @@ final class SpoilerGateIntegrationTest {
             // The shipped state, both gates in force. Nobody has been here and nobody lives here,
             // so neither the hulk nor the base has been seen by anyone the player could have heard
             // it from - and the fog alone would have shown both, neither entity being discoverable.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            var sector = buildUnvisitedSystemHoldingTheGatedPair();
 
-                var sector = buildUnvisitedSystemHoldingTheGatedPair();
-
-                assertThat(readKnownOwnerIds(sector))
-                    .isEmpty();
-            }
+            assertThat(readKnownOwnerIds(sector))
+                .isEmpty();
         }
 
         @Test
@@ -103,27 +121,21 @@ final class SpoilerGateIntegrationTest {
             // unchanged, so what reveals them is the colony's inhabitants rather than anything
             // either stopped being - word of a wreck in orbit travels as far as the people who can
             // see it.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            var sector = buildUnvisitedSystemHoldingTheGatedPair(buildOpenColony());
 
-                var sector = buildUnvisitedSystemHoldingTheGatedPair(buildOpenColony());
-
-                assertThat(readKnownOwnerIds(sector))
-                    .containsExactlyInAnyOrder(OPEN_HOLDER, CONCEALED_HOLDER, Factions.NEUTRAL);
-            }
+            assertThat(readKnownOwnerIds(sector))
+                .containsExactlyInAnyOrder(OPEN_HOLDER, CONCEALED_HOLDER, Factions.NEUTRAL);
         }
 
         @Test
         void namesBothOnceThePlayerHasBeenInTheirSystem() {
             // The player's own route, and it reaches both shapes at once: a visit is a sighting of
             // everything standing there, so neither gate has anything left to hold.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            var sector = buildUnvisitedSystemHoldingTheGatedPair();
+            markSystemAsEnteredByPlayer(buildOnlySystem(sector));
 
-                var sector = buildUnvisitedSystemHoldingTheGatedPair();
-                markSystemAsEnteredByPlayer(buildOnlySystem(sector));
-
-                assertThat(readKnownOwnerIds(sector))
-                    .containsExactlyInAnyOrder(CONCEALED_HOLDER, Factions.NEUTRAL);
-            }
+            assertThat(readKnownOwnerIds(sector))
+                .containsExactlyInAnyOrder(CONCEALED_HOLDER, Factions.NEUTRAL);
         }
 
         @Test
@@ -131,33 +143,27 @@ final class SpoilerGateIntegrationTest {
             // One toggle, one shape. A player asking to see unseen derelicts gets the hulk and not
             // the base beside it, which is what makes these two settings rather than one spoiler
             // switch - and what a transposed reading of them would fail on.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            settingsMock
+                .when(KmuMapLayerSettings::shouldShowUnseenAbandonedStations)
+                .thenReturn(true);
 
-                settingsMock
-                    .when(KmuMapLayerSettings::shouldShowUnseenAbandonedStations)
-                    .thenReturn(true);
+            var sector = buildUnvisitedSystemHoldingTheGatedPair();
 
-                var sector = buildUnvisitedSystemHoldingTheGatedPair();
-
-                assertThat(readKnownOwnerIds(sector))
-                    .containsExactly(Factions.NEUTRAL);
-            }
+            assertThat(readKnownOwnerIds(sector))
+                .containsExactly(Factions.NEUTRAL);
         }
 
         @Test
         void namesTheConcealedBaseAloneOnceItsOwnGateIsTurnedOff() {
 
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            settingsMock
+                .when(KmuMapLayerSettings::shouldShowUnseenHiddenMarkets)
+                .thenReturn(true);
 
-                settingsMock
-                    .when(KmuMapLayerSettings::shouldShowUnseenHiddenMarkets)
-                    .thenReturn(true);
+            var sector = buildUnvisitedSystemHoldingTheGatedPair();
 
-                var sector = buildUnvisitedSystemHoldingTheGatedPair();
-
-                assertThat(readKnownOwnerIds(sector))
-                    .containsExactly(CONCEALED_HOLDER);
-            }
+            assertThat(readKnownOwnerIds(sector))
+                .containsExactly(CONCEALED_HOLDER);
         }
     }
 
@@ -170,43 +176,34 @@ final class SpoilerGateIntegrationTest {
             // holder the map declines to draw is a holder the picker declines to offer - and
             // contributes to none of the metrics its options are sorted by, there being no entry
             // of its own to carry them.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            var sector = buildUnvisitedSystemHoldingTheGatedPair();
 
-                var sector = buildUnvisitedSystemHoldingTheGatedPair();
-
-                assertThat(readPickerHolderIds(sector))
-                    .doesNotContain(CONCEALED_HOLDER);
-            }
+            assertThat(readPickerHolderIds(sector))
+                .doesNotContain(CONCEALED_HOLDER);
         }
 
         @Test
         void offersThatFactionOnceThePlayerHasBeenInItsSystem() {
 
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            var sector = buildUnvisitedSystemHoldingTheGatedPair();
+            markSystemAsEnteredByPlayer(buildOnlySystem(sector));
 
-                var sector = buildUnvisitedSystemHoldingTheGatedPair();
-                markSystemAsEnteredByPlayer(buildOnlySystem(sector));
-
-                assertThat(readPickerHolderIds(sector))
-                    .contains(CONCEALED_HOLDER);
-            }
+            assertThat(readPickerHolderIds(sector))
+                .contains(CONCEALED_HOLDER);
         }
 
         @Test
         void offersThatFactionOnceTheConcealmentGateIsTurnedOff() {
             // The other way into the same entry, and the one this step adds: the player has been
             // nowhere near the base and has asked to be shown concealed colonies anyway.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            settingsMock
+                .when(KmuMapLayerSettings::shouldShowUnseenHiddenMarkets)
+                .thenReturn(true);
 
-                settingsMock
-                    .when(KmuMapLayerSettings::shouldShowUnseenHiddenMarkets)
-                    .thenReturn(true);
+            var sector = buildUnvisitedSystemHoldingTheGatedPair();
 
-                var sector = buildUnvisitedSystemHoldingTheGatedPair();
-
-                assertThat(readPickerHolderIds(sector))
-                    .contains(CONCEALED_HOLDER);
-            }
+            assertThat(readPickerHolderIds(sector))
+                .contains(CONCEALED_HOLDER);
         }
     }
 
