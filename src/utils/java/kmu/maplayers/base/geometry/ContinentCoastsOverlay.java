@@ -35,8 +35,9 @@ final class ContinentCoastsOverlay {
     /**
      * Traces the continents again, or drops them when the preview is switched off.
      *
-     * <p>Under the same coast knobs as the settled coast, so the two lines on screen differ
-     * only in the one thing the proposal changes - whether the bridges are laid.
+     * <p>Under the v3 coast rules rather than the settled coast's, so a knob moved down here
+     * moves this line and leaves the map alone. What the two constructions still share is the
+     * cells and the parameters they are built from - they are two readings of one sector.
      *
      * @param fixture the sector to trace in
      */
@@ -51,7 +52,7 @@ final class ContinentCoastsOverlay {
         rings = Coastlines.collectCoastRings(Coastlines.traceContinentCoasts(
             fixture.getSites(),
             settings.parameters,
-            settings.resolveCoastRules()));
+            settings.resolveContinentCoastRules()));
     }
 
     /**

@@ -43,6 +43,11 @@ final class ViewerSettings {
 
     static final double COAST_MAX_SKIPS_DEFAULT = Coastlines.DEFAULT_RULES.maxSkips();
 
+    // The v3 coast opens on the same skip cap as the settled one, so the two lines start
+    // identical and any difference on screen is a knob someone deliberately moved rather
+    // than a difference that was there from the first frame.
+    static final double CONTINENT_MAX_SKIPS_DEFAULT = COAST_MAX_SKIPS_DEFAULT;
+
     static final Color CONTINENT_COAST_DEFAULT = MapLook.CONTINENT_COAST;
 
     static final Color COAST_CROSSING_DEFAULT = MapLook.COAST_CROSSING;
@@ -93,6 +98,15 @@ final class ViewerSettings {
 
     double coastSkipMultiple = COAST_SKIP_DEFAULT;
     int coastMaxSkips = (int) COAST_MAX_SKIPS_DEFAULT;
+
+    // The v3 coast's own skip cap, apart from the settled coast's above.
+    //
+    // Apart because the two coasts are smoothed against different things. The settled coast
+    // runs round everything the bridges join, so a long stretch of it is open sea frontage
+    // where dropping cells costs nothing; a continent's coast is short and turns constantly,
+    // and the cap that reads as smoothing on the first can cut the second down to a triangle.
+    // Sharing one knob meant every attempt to tune either was a compromise with the other.
+    int continentMaxSkips = (int) CONTINENT_MAX_SKIPS_DEFAULT;
 
     Color coastlineColour = COASTLINE_DEFAULT;
     Color continentCoastColour = CONTINENT_COAST_DEFAULT;
@@ -155,4 +169,16 @@ final class ViewerSettings {
             bridgeReachMultiple, coastSkipMultiple, coastMaxSkips);
     }
 
+    // How the v3 coast is traced. Its own rules rather than the settled coast's, because that
+    // is what having a separate skip cap MEANS - one method each, so which coast a knob
+    // reaches is decided here rather than at whichever overlay happens to read it.
+    //
+    // The bridge reach goes unread: no bridges are found for a continent coast, so it is the
+    // one field of the record with nothing on the other end of it. Passed through as the
+    // settled coast's rather than as some number of its own, so that if it ever comes to be
+    // read the two coasts are still looking at one sector.
+    Coastlines.CoastRules resolveContinentCoastRules() {
+        return new Coastlines.CoastRules(
+            bridgeReachMultiple, coastSkipMultiple, continentMaxSkips);
+    }
 }

@@ -131,6 +131,10 @@ final class ViewerSettingsPanel {
 
         addVoidPocketRows(controls);
 
+        controls.add(ViewerControls.buildDivider());
+
+        addVoidPocketV3Rows(controls);
+
         return controls;
     }
 
@@ -328,11 +332,10 @@ final class ViewerSettingsPanel {
             refreshes::repaintMap));
     }
 
-    // Everything about the void, under one rule and in the order the toggles above it read:
-    // what to show, then the inland knobs, then the coastal ones with the continent preview
-    // beside them, then the one knob both kinds share. Below a divider because the rest of
-    // the panel is about CELLS, and a reader hunting for a void knob was otherwise reading
-    // forty identical rows to find it.
+    // Everything about the void as v2 builds it, under one rule and in the order the toggles
+    // above it read: what to show, then the inland knobs, then the coastal ones, then the one
+    // knob both kinds share. Below a divider because the rest of the panel is about CELLS, and
+    // a reader hunting for a void knob was otherwise reading forty identical rows to find it.
     private void addVoidPocketRows(JPanel controls) {
 
         controls.add(buildVoidPocketToggles());
@@ -423,25 +426,6 @@ final class ViewerSettingsPanel {
                 refreshes::refreshCoastlines,
                 () -> { })));
 
-        // The per-continent preview: the same walk and the same skip knobs with no bridges
-        // laid, so each touching-connected run of cells closes its own coast. Outside the
-        // toggle tree on purpose - the tree's switches show parts of the one settled
-        // construction, and this is a rival one being judged against it; a roll-up that
-        // could hide or show both at once would misstate what "all of it" means.
-        controls.add(ViewerControls.buildToggle(
-            "Continent coasts preview",
-            "Continent coasts preview",
-            false,
-            on -> settings.showContinentCoasts = on,
-            refreshes::refreshCoastlines));
-
-        controls.add(ViewerSwatches.buildColour(
-            "Continent coasts",
-            "Continent coasts",
-            ViewerSettings.CONTINENT_COAST_DEFAULT,
-            colour -> settings.continentCoastColour = colour,
-            refreshes::repaintMap));
-
         // A pair rather than one, because the two say different halves of the same thing:
         // which run went where it should not, and which cell it went into. Nothing is drawn
         // in either once the construction stops crossing anything.
@@ -461,6 +445,51 @@ final class ViewerSettingsPanel {
         controls.add(buildOpacitySlider(
             "Void fill opacity",
             opacity -> settings.voidFillOpacity = (int) opacity));
+    }
+
+    // Void pockets v3: the per-continent construction, behind its own divider.
+    //
+    // Its own section rather than more rows among the v2 knobs because it is a SEPARATE
+    // construction, not another thing to see of the settled one. Every knob down here reads
+    // only v3 - which is what makes the divider honest, and what lets a reader turn one
+    // without wondering whether the map above just moved.
+    //
+    // Grown a control at a time as v3 acquires them, in the pattern the section already
+    // reads in: what to show, what to draw it with, then the knobs that decide its shape.
+    private void addVoidPocketV3Rows(JPanel controls) {
+
+        // Outside the v2 toggle tree on purpose - that tree's switches show parts of the one
+        // settled construction, and a roll-up that could hide or show this too would misstate
+        // what "all of it" means.
+        controls.add(ViewerControls.buildToggle(
+            "Continent coasts preview",
+            "Continent coasts preview",
+            false,
+            on -> settings.showContinentCoasts = on,
+            refreshes::refreshCoastlines));
+
+        controls.add(ViewerSwatches.buildColour(
+            "Continent coasts",
+            "Continent coasts",
+            ViewerSettings.CONTINENT_COAST_DEFAULT,
+            colour -> settings.continentCoastColour = colour,
+            refreshes::repaintMap));
+
+        // v3's own skip cap, which is the first knob that makes this a construction rather
+        // than a second drawing of the settled one. Same range as the v2 cap, since it is the
+        // same quantity measured the same way and a reader comparing the two sliders is
+        // comparing their positions.
+        controls.add(ViewerSliders.buildSlider(
+            "Continent max skips",
+            "Most cells skipped in a row",
+            new ViewerSliders.SliderRange(
+                COAST_MAX_SKIPS_MINIMUM,
+                COAST_MAX_SKIPS_MAXIMUM,
+                ViewerSettings.CONTINENT_MAX_SKIPS_DEFAULT),
+            new ViewerSliders.SliderWork(
+                skips -> settings.continentMaxSkips = (int) Math.round(skips),
+                refreshes::refreshCoastlines,
+                () -> { })));
     }
 
     // Everything there is to see of the void, under one head.
