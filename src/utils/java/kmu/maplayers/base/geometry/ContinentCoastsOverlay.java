@@ -1,6 +1,5 @@
 package kmu.maplayers.base.geometry;
 
-import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.util.List;
 
@@ -65,14 +64,6 @@ final class ContinentCoastsOverlay {
         if (rings.isEmpty()) {
             return;
         }
-
-        g2.setStroke(new BasicStroke(MapLook.SPAN_STROKE));
-        g2.setColor(MapPainting.applyAlpha(
-            settings.continentCoastColour,
-            MapLook.OPAQUE_ALPHA));
-
-        for (var ring : rings) {
-            g2.draw(MapPainting.buildPath(ring));
-        }
+        MapPainting.paintLineRings(g2, rings, settings.continentCoastColour);
     }
 }

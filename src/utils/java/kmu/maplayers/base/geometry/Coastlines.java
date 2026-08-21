@@ -4,7 +4,6 @@ import kmlib.math.geometry.Angles;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
-import kmlib.math.ranges.Ranges;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -41,18 +40,13 @@ import java.util.Set;
  * <p><b>A coast may never pass through a cell.</b> Joining the middles of two frontages with a
  * straight line does exactly that wherever the coast turns inward, which is at every waist
  * between two cells - so where the line would cut a cell, the point gives way instead of the
- * line. It slides along that cell's own border to the nearest place to the middle that the
- * line can actually reach, which needs no search: seen from a point, the part of a circle a
- * straight line can touch without cutting through it is the arc facing that point, half a turn
- * wide less {@code acos(reach / distance)}. Both ends give way, the far cell blocking the
- * approach and the near cell blocking its own departure, and where both are blocked at once
- * the two settle on the common tangent.
- *
- * <p>That is why a cell contributes an arrival point and a departure point rather than one
- * point. The line coming in and the line going out can want it slid in opposite directions,
- * which is precisely what happens at the inward turns this exists to fix; joined along the
- * cell's own border, the two can disagree without the coast leaving the boundary. Where
- * nothing blocks, both land on the middle and it is one point again.
+ * line, sliding along that cell's own border. How far it slides, and what happens when both
+ * ends give way at once, is {@link StraightRuns}' whole subject; what stays here is why a cell
+ * contributes an arrival point and a departure point rather than one. The line coming in and
+ * the line going out can want it slid in opposite directions, which is precisely what happens
+ * at the inward turns this exists to fix; joined along the cell's own border, the two can
+ * disagree without the coast leaving the boundary. Where nothing blocks, both land on the
+ * middle and it is one point again.
  *
  * <p><b>Why cells get skipped.</b> A run of cells packed tightly along a coast contributes a
  * stretch every few hundred units, and joining all of them reproduces the scallop at a
@@ -67,11 +61,6 @@ import java.util.Set;
  * up, so every jump is tested against every cell, and whichever one blocks it is put back.
  */
 final class Coastlines {
-
-    // Each pass slides one end to the furthest the other allows, so the two close on the
-    // common tangent from opposite directions. Four is past the point where the movement
-    // stops being visible; the clearance check afterwards is what says whether it was enough.
-    private static final int CLAMP_PASSES = 4;
 
     // A skip put back changes the jump either side of it, which can expose a different cell.
     // Bounded rather than run to a fixed point, because each pass keeps strictly more cells
@@ -144,13 +133,11 @@ final class Coastlines {
     }
 
     /**
-     * Traces a whole sector's coast: the one place that knows how a coast is built.
+     * Traces a whole sector's coast: the settled construction, with the bridges laid.
      *
-     * <p>The recipe is six steps - find the bridges, turn them into chords, wall the void
-     * with them, take the discs at both reaches a coast needs, convert the knobs from cell
-     * radii to distances, and trace. Spelled out at each of the three places that wanted a
-     * coast, it had to be kept in step by hand, and changing a reach meant remembering all
-     * of them.
+     * <p>All this entry decides is the wall set - find the bridges and lay them as chords at
+     * the border channel. Everything else about building a coast lives once, in the shared
+     * tail, where the continent entry below cannot come to differ from it.
      *
      * @param sites      the sites
      * @param parameters the knobs the cells are built under
@@ -204,7 +191,7 @@ final class Coastlines {
             CoastRules rules) {
 
         return traceCoastsAcrossWalls(
-            sites, parameters, rules, new DiscUnionBoundary.Walls(List.of(), 0));
+            sites, parameters, rules, DiscUnionBoundary.Walls.NONE);
     }
 
     // The shared tail of both entries: everything about tracing a coast that does not depend
@@ -615,10 +602,10 @@ final class Coastlines {
             int from,
             int to) {
 
-        var jump = new StraightRun(union, coast.get(from), coast.get(to));
-        var edge = resolveEdge(jump);
+        var jump = new StraightRuns.StraightRun(union, coast.get(from), coast.get(to));
+        var edge = StraightRuns.resolveEdge(jump);
 
-        if (isRunClearOfEveryCell(jump, edge)) {
+        if (StraightRuns.isRunClearOfEveryCell(jump, edge)) {
             return NOTHING_BLOCKING;
         }
 
@@ -668,8 +655,8 @@ final class Coastlines {
 
             var next = (index + 1) % kept.size();
 
-            var edge = findClearEdge(
-                new StraightRun(
+            var edge = StraightRuns.findClearEdge(
+                new StraightRuns.StraightRun(
                     union, coast.get(kept.get(index)), coast.get(kept.get(next))),
                 kept.get(next) == (kept.get(index) + 1) % coast.size());
 
@@ -730,7 +717,8 @@ final class Coastlines {
         var sweep = departAngle - arriveAngle;
 
         if (sweep <= 0) {
-            return List.of(findPointAt(union, mark, (arriveAngle + departAngle) / 2));
+            return List.of(DiscUnionBoundary.findPointOnMark(
+                union, mark, (arriveAngle + departAngle) / 2));
         }
 
         var steps = Math.max(
@@ -738,277 +726,15 @@ final class Coastlines {
         var points = new ArrayList<double[]>(steps + 1);
 
         for (var step = 0; step <= steps; step++) {
-            points.add(findPointAt(union, mark, arriveAngle + sweep * step / steps));
+            points.add(DiscUnionBoundary.findPointOnMark(
+                union, mark, arriveAngle + sweep * step / steps));
         }
         return points;
-    }
-
-    // The straight reach between two cells where one can be drawn, and the boundary's own
-    // join where it cannot.
-    //
-    // The reach is what buys the pocket space, and it is what nearly every pair gets: two
-    // cells that overlap still have an outer tangent, and a run along it spans the notch
-    // between them from outside, taking the void in the notch with it.
-    //
-    // What stops it is a THIRD cell covering the direction the tangent needs. The tangent
-    // point is then not on this cell's frontage at all, and clamping it back onto the
-    // frontage moves it - by most of a right angle in the worst measured case - which leaves
-    // a line that is no longer tangent to anything and cuts straight through a cell. For
-    // those pairs there is no straight run from one frontage to the other that stays outside
-    // both, so inventing one can only produce a bad one.
-    //
-    // Two stretches the walk itself put next to each other need no line invented for them:
-    // the boundary already joins them, at the far end of one frontage and the near end of the
-    // other, which is one point where the cells overlap and the two sides of a mouth where a
-    // bridge runs between them. That join cannot cut anything, because it IS the boundary.
-    //
-    // Only where the reach fails, though. Taking this join for every adjacent pair - which an
-    // earlier version did - hugs the whole coast and gives up every pocket the smoothing was
-    // for.
-    private static EdgeAngles findClearEdge(StraightRun run, boolean isAdjacent) {
-
-        var reach = resolveEdge(run);
-
-        if (!isAdjacent || isRunClearOfEveryCell(run, reach)) {
-
-            return reach;
-        }
-        return new EdgeAngles(run.from().toAngle(), run.to().fromAngle());
-    }
-
-    // Whether a straight reach passes outside every cell on the map. Every cell, including
-    // the two it runs between - those it touches rather than enters, so a hair of slack is
-    // what tells the two apart.
-    private static boolean isRunClearOfEveryCell(StraightRun run, EdgeAngles edge) {
-
-        for (var circle = 0; circle < run.union().sites().size(); circle++) {
-
-            if (run.measureIncursion(edge, circle) > DiscUnion.TOUCHING_TOLERANCE) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // Where one straight reach of coast leaves one cell and lands on the next. Each end is
-    // slid to the nearest place to its own middle that the other end can see, and each pass
-    // moves one of them to the furthest the other now allows - so two ends that both block
-    // settle towards the common tangent instead of one of them winning outright.
-    //
-    // The passes leave one end a step stale, though: the arrival was worked out against the
-    // departure BEFORE the departure last moved. Where that still clears both cells it is the
-    // answer, and where it does not the two are put straight onto the tangent, which is the
-    // configuration they were converging on and is exact rather than approached.
-    private static EdgeAngles resolveEdge(StraightRun run) {
-
-        var clamped = clampEdgeEnds(run);
-
-        // Clear is asked of EVERY cell rather than only the two the run joins. The two are
-        // what the clamp was working against, so a run can satisfy both and still shave a
-        // third cell that neither end knows about - and that run was then accepted, which is
-        // where the shallow crossings came from.
-        return isKeepingCellsLeft(run, clamped) && isRunClearOfEveryCell(run, clamped)
-            ? clamped
-            : findTangentEdge(run);
-    }
-
-    // Whether a straight run keeps the cells it joins on its left, which is the side the walk
-    // puts them on and so the only side a coast may pass them.
-    //
-    // The clamp cannot tell this for itself. It slides each end towards that cell's own
-    // middle, and the two outer tangents sit the same distance either side of that middle, so
-    // it settles on whichever one it happened to drift towards. The wrong one clears every
-    // cell perfectly well - it is a tangent - and is still wrong: it leaves a cell where the
-    // coast ought to arrive and arrives where it ought to leave, so the border between the two
-    // sweeps backwards, collapses to a point, and the cell contributes nothing.
-    //
-    // On a long coast that costs one cell. On a two-cell island it costs both, and an outline
-    // of two points is not a shape, so the island vanished off the map entirely.
-    private static boolean isKeepingCellsLeft(StraightRun run, EdgeAngles edge) {
-
-        var departure = run.findDeparture(edge);
-        var arrival = run.findArrival(edge);
-
-        return isLeftOfRun(departure, arrival, run.findCentre(run.from()))
-            && isLeftOfRun(departure, arrival, run.findCentre(run.to()));
-    }
-
-    // On the line counts as left: a run that departs straight along a diameter has its own
-    // cell's centre exactly on it, and that is the ordinary case rather than a failure.
-    private static boolean isLeftOfRun(double[] from, double[] to, double[] point) {
-
-        return (to[0] - from[0]) * (point[1] - from[1])
-            - (to[1] - from[1]) * (point[0] - from[0]) >= 0;
-    }
-
-    // Each end slid to the nearest place to its own middle that the other end can see, over
-    // and over, so two ends that both block settle towards the common tangent instead of one
-    // of them winning outright.
-    private static EdgeAngles clampEdgeEnds(StraightRun run) {
-
-        var union = run.union();
-        var departAngle = run.from().midAngle();
-        var arriveAngle = run.to().midAngle();
-
-        for (var pass = 0; pass < CLAMP_PASSES; pass++) {
-
-            arriveAngle = findReachableAngle(
-                union, run.to(), findPointAt(union, run.from(), departAngle));
-            departAngle = findReachableAngle(
-                union, run.from(), findPointAt(union, run.to(), arriveAngle));
-        }
-        return new EdgeAngles(departAngle, arriveAngle);
-    }
-
-    // The common tangent, put on each cell's own frontage. Where the frontage does not reach
-    // the tangent point - a third cell covering that direction - this clamp moves it, and the
-    // run stops being tangent to anything; that is the case the boundary's own join exists
-    // for, and it is why the clamp is named rather than buried.
-    private static EdgeAngles findTangentEdge(StraightRun run) {
-
-        var tangent = measureTangentAngle(run);
-
-        return new EdgeAngles(
-            clampIntoFrontage(run.from(), tangent), clampIntoFrontage(run.to(), tangent));
-    }
-
-    // Equal reaches, so the outer tangent runs parallel to the line joining the two sites and
-    // meets both circles square to it - one angle, the same on each.
-    private static double measureTangentAngle(StraightRun run) {
-
-        var fromCentre = run.findCentre(run.from());
-        var toCentre = run.findCentre(run.to());
-
-        return Math.atan2(
-            -(toCentre[0] - fromCentre[0]),
-            toCentre[1] - fromCentre[1]);
-    }
-
-    // An angle held to the stretch of border a cell actually offers. A reach slid to clear
-    // one neighbour can otherwise leave the cell's own frontage entirely, which puts the
-    // coast on a piece of border that belongs to no stretch of the walk.
-    private static double clampIntoFrontage(DiscUnionBoundary.CoastMark mark, double angle) {
-
-        return Ranges.clampInto(
-            Angles.placeAfter(angle, mark.fromAngle()), mark.fromAngle(), mark.toAngle());
-    }
-
-    // The place on one cell's frontage nearest its middle that a straight line from somewhere
-    // else can touch without cutting through the cell. Seen from a point, the reachable part
-    // of a circle is the arc facing it, half a turn wide less acos(reach / distance) - there
-    // is nothing to search for. Narrowed again to the frontage itself, because a coast has no
-    // business on the part of a cell's border that faces another cell rather than the void.
-    private static double findReachableAngle(
-            DiscUnion union,
-            DiscUnionBoundary.CoastMark mark,
-            double[] viewer) {
-
-        var centre = union.sites().get(mark.circle());
-        var distance = Points.computeDistance(centre, viewer);
-
-        // A viewer inside the cell can reach no part of its border at all, so there is no
-        // window to clamp into. The middle is the least wrong answer, and the clearance check
-        // is what reports that this one could not be satisfied.
-        if (distance <= union.reach()) {
-            return mark.midAngle();
-        }
-
-        var facing = Angles.placeAfter(
-            Math.atan2(viewer[1] - centre[1], viewer[0] - centre[0]),
-            mark.fromAngle());
-
-        var reachable = Math.acos(union.reach() / distance);
-
-        return Ranges.clampInto(
-            mark.midAngle(),
-            Math.max(mark.fromAngle(), facing - reachable),
-            Math.min(mark.toAngle(), facing + reachable));
     }
 
     // Where a stretch of coast would be passed through if nothing were in the way, which is
     // what the skip rules measure distances between.
     private static double[] findMidpoint(DiscUnion union, DiscUnionBoundary.CoastMark mark) {
-        return findPointAt(union, mark, mark.midAngle());
-    }
-
-    // A point on the cell's own border at one angle along it. The single conversion from an
-    // angle on a stretch to a place on the map, so no caller does the trigonometry twice.
-    private static double[] findPointAt(
-            DiscUnion union,
-            DiscUnionBoundary.CoastMark mark,
-            double angle) {
-
-        return DiscUnionBoundary.findPointOnCircle(
-            union.sites().get(mark.circle()), union.reach(), angle);
-    }
-
-    /**
-     * Where one straight reach of coast leaves one cell and where it lands on the next.
-     *
-     * @param departAngle where on the near cell's border it leaves
-     * @param arriveAngle where on the far cell's border it lands
-     */
-    private record EdgeAngles(
-        double departAngle,
-        double arriveAngle) {
-    }
-
-    /**
-     * One straight reach of coast still being decided - the two stretches it joins, and the
-     * discs it is drawn against.
-     *
-     * <p>Everything that works out where a reach should go needs all three, so seven
-     * signatures carried the same trio and four of them opened by turning it into the same
-     * pair of points. The trio is not three arguments that happen to travel together: the
-     * marks name circles by INDEX, so they mean nothing except against the union they were
-     * indexed in, and a caller free to pair one construction's marks with another's discs can
-     * do it and still compile.
-     *
-     * <p>Deliberately not the answer, only the question. Where the reach ends up is an
-     * {@link EdgeAngles}, worked out several ways and chosen between, so it is passed in
-     * rather than held - one run, several candidate edges.
-     *
-     * @param union the discs the reach is drawn against
-     * @param from  the stretch it leaves
-     * @param to    the stretch it lands on
-     */
-    private record StraightRun(
-        DiscUnion union,
-        DiscUnionBoundary.CoastMark from,
-        DiscUnionBoundary.CoastMark to) {
-
-        double[] findDeparture(EdgeAngles edge) {
-            return findPointAt(union, from, edge.departAngle());
-        }
-
-        double[] findArrival(EdgeAngles edge) {
-            return findPointAt(union, to, edge.arriveAngle());
-        }
-
-        double[] findCentre(DiscUnionBoundary.CoastMark mark) {
-            return union.sites().get(mark.circle());
-        }
-
-        /**
-         * How far this reach goes inside one cell, at one candidate edge.
-         *
-         * @param edge   where the reach leaves and lands
-         * @param circle whose cell to measure against
-         * @return how far past that cell's border it goes, negative when it stays outside
-         */
-        double measureIncursion(EdgeAngles edge, int circle) {
-
-            return union.measureIncursionInto(findDeparture(edge), findArrival(edge), circle);
-        }
-
-        /**
-         * Whether a cell is one of the two this reach runs between.
-         *
-         * @param circle whose cell to ask about
-         * @return true when the reach starts or ends on it
-         */
-        boolean isRunBetween(int circle) {
-            return circle == from.circle() || circle == to.circle();
-        }
+        return DiscUnionBoundary.findPointOnMark(union, mark, mark.midAngle());
     }
 }

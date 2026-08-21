@@ -329,9 +329,10 @@ final class ViewerSettingsPanel {
     }
 
     // Everything about the void, under one rule and in the order the toggles above it read:
-    // what to show, then the inland knobs, then the coastal ones, then the one knob both
-    // kinds share. Below a divider because the rest of the panel is about CELLS, and a reader
-    // hunting for a void knob was otherwise reading forty identical rows to find it.
+    // what to show, then the inland knobs, then the coastal ones with the continent preview
+    // beside them, then the one knob both kinds share. Below a divider because the rest of
+    // the panel is about CELLS, and a reader hunting for a void knob was otherwise reading
+    // forty identical rows to find it.
     private void addVoidPocketRows(JPanel controls) {
 
         controls.add(buildVoidPocketToggles());

@@ -21,7 +21,7 @@ interface ViewerRefreshes {
     /** Finds the void held between facing cells again. */
     void refreshVoidBridges();
 
-    /** Traces the smoothed outer edge again. */
+    /** Traces the smoothed outer edge again, and the continent preview beside it. */
     void refreshCoastlines();
 
     /** Traces the unclipped partition again. */

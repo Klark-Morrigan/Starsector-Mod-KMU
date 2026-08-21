@@ -122,14 +122,9 @@ final class CoastlinesOverlay {
             return;
         }
 
-        g2.setStroke(new BasicStroke(MapLook.SPAN_STROKE));
-        g2.setColor(MapPainting.applyAlpha(
-            settings.coastlineColour,
-            MapLook.OPAQUE_ALPHA));
+        MapPainting.paintLineRings(
+            g2, Coastlines.collectCoastRings(traced), settings.coastlineColour);
 
-        for (var coast : traced.coasts()) {
-            g2.draw(MapPainting.buildPath(Coastlines.collectPoints(coast)));
-        }
         paintPenetrations(g2);
         paintSpills(g2);
     }

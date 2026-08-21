@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
@@ -65,6 +66,20 @@ final class MapPainting {
         g2.fill(shape);
         g2.setColor(applyAlpha(edge, MapLook.OPAQUE_ALPHA));
         g2.draw(shape);
+    }
+
+    // The one way a proposed line is drawn here: closed rings stroked at span weight in one
+    // opaque colour, filled with nothing. Shared by the settled coast and the continent
+    // preview because the two exist to be compared, and two stanzas of stroke-and-colour
+    // setup is how two lines meant to differ only in colour come to differ in weight as well.
+    static void paintLineRings(Graphics2D g2, List<List<double[]>> rings, Color colour) {
+
+        g2.setStroke(new BasicStroke(MapLook.SPAN_STROKE));
+        g2.setColor(applyAlpha(colour, MapLook.OPAQUE_ALPHA));
+
+        for (var ring : rings) {
+            g2.draw(buildPath(ring));
+        }
     }
 
     static Color applyAlpha(Color colour, int alpha) {

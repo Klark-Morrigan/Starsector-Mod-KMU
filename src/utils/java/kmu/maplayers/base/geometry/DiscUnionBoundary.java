@@ -77,11 +77,6 @@ final class DiscUnionBoundary {
     private static final int FROM_SIDE = 0;
     private static final int TO_SIDE = 1;
 
-    // Nothing laid across the void, for the callers that want the cells' own boundary. Its
-    // channel is zero, which the pairing refuses for any real wall and does not need here:
-    // with no chords there is no mouth for a channel to size.
-    private static final Walls NO_WALLS = new Walls(List.of(), 0);
-
     private DiscUnionBoundary() {
     }
 
@@ -205,6 +200,13 @@ final class DiscUnionBoundary {
         List<Chord> chords,
         double channel) {
 
+        // Nothing laid across the void, for the callers that want the cells' own boundary -
+        // whether the trace over the bare discs or a coast traced with no bridges. Named
+        // rather than built at each of them, because the pair is only legal together: the
+        // channel is zero, which the constructor refuses for any real wall and does not
+        // need here, since with no chords there is no mouth for a channel to size.
+        static final Walls NONE = new Walls(List.of(), 0);
+
         Walls {
             if (!chords.isEmpty() && channel <= 0) {
                 throw new IllegalArgumentException("walls need a channel to keep");
@@ -230,7 +232,7 @@ final class DiscUnionBoundary {
      * @return the holes, wound the way any other filled shape is
      */
     static List<VoidHole> traceHoles(DiscUnion union, int boundSegments) {
-        return traceHolesAcrossWalls(union, NO_WALLS, boundSegments);
+        return traceHolesAcrossWalls(union, Walls.NONE, boundSegments);
     }
 
     /**
@@ -1368,6 +1370,23 @@ final class DiscUnionBoundary {
         return new double[] {
             centre[0] + reach * Math.cos(angle),
             centre[1] + reach * Math.sin(angle)};
+    }
+
+    /**
+     * The point at one angle along one stretch's own circle.
+     *
+     * <p>The single conversion from an angle on a {@link CoastMark} to a place on the map,
+     * so no reader of a mark does the site-and-reach lookup its own way. Here rather than
+     * with any one of those readers, because the mark is this class's type and more than one
+     * class reads them.
+     *
+     * @param union the discs the mark was traced against
+     * @param mark  the stretch
+     * @param angle the direction from the stretch's own centre
+     * @return the point on the stretch's circle
+     */
+    static double[] findPointOnMark(DiscUnion union, CoastMark mark, double angle) {
+        return findPointOnCircle(union.sites().get(mark.circle()), union.reach(), angle);
     }
 
     // Offset by one so the "no neighbour" marker cannot land on the name of a real pairing,
