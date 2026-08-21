@@ -44,8 +44,11 @@ final class MapLook {
     static final Color OWNED_CELL = new Color(0x4a, 0x8a, 0xd0);
     static final Color UNOWNED_CELL = new Color(0x55, 0x55, 0x55);
     static final Color UNBOUNDED_CELL = new Color(0x30, 0x30, 0x38);
-    static final Color VOID_CELL = new Color(0xb0, 0x8a, 0x30);
-    static final Color WIDE_VOID = new Color(0x30, 0xa0, 0xb0);
+    // The void the cells and their bridges shut in, filled. Not a colour for void "within" a
+    // cell: the apron a cell leaves between its own bound and its inset fill is the unbounded
+    // partition showing through from underneath, so it takes that colour and needs none of
+    // its own.
+    static final Color INLAND_VOID = new Color(0x30, 0xa0, 0xb0);
     static final Color CHANNEL = new Color(0x22, 0x22, 0x26);
 
     // The line down the middle of a channel: the true border two neighbouring cells share,

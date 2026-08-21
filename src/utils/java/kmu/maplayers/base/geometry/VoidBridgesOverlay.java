@@ -75,9 +75,9 @@ final class VoidBridgesOverlay {
             MapPainting.paintFilledShape(
                 g2,
                 MapPainting.buildPath(outline),
-                settings.wideVoidColour,
-                settings.voidCellOpacity,
-                settings.wideVoidEdge);
+                settings.inlandVoidColour,
+                settings.voidFillOpacity,
+                settings.inlandVoidEdge);
         }
     }
 

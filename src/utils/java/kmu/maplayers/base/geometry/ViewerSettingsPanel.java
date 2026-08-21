@@ -251,23 +251,14 @@ final class ViewerSettingsPanel {
             ViewerSettings.JITTER_DEFAULT,
             strength -> settings.jitterStrength = (float) (strength / ViewerSettings.JITTER_SCALE)));
 
-        controls.add(ViewerControls.buildColourPair(
-            "Void cells",
-            "Void within a cell",
-            ViewerSettings.VOID_CELL_DEFAULT,
-            ViewerSettings.VOID_CELL_DEFAULT,
-            colour -> settings.voidCellColour = colour,
-            colour -> settings.voidCellEdge = colour,
-            refreshes::repaintMap));
-
         controls.add(buildVoidPocketToggles());
 
         controls.add(ViewerControls.buildColourPair(
-            "Wide void",
-            "Void wider than that",
-            ViewerSettings.WIDE_VOID_DEFAULT, ViewerSettings.WIDE_VOID_DEFAULT,
-            colour -> settings.wideVoidColour = colour,
-            colour -> settings.wideVoidEdge = colour,
+            "Inland void fill",
+            "Inland void fill",
+            ViewerSettings.INLAND_VOID_DEFAULT, ViewerSettings.INLAND_VOID_DEFAULT,
+            colour -> settings.inlandVoidColour = colour,
+            colour -> settings.inlandVoidEdge = colour,
             refreshes::repaintMap));
 
         controls.add(ViewerControls.buildColour(
@@ -297,9 +288,11 @@ final class ViewerSettingsPanel {
             "Channel opacity",
             opacity -> settings.channelOpacity = (int) opacity));
 
+        // Both kinds of pocket fill, not one: they are the same kind of shape and a reader
+        // comparing them wants them equally solid.
         controls.add(buildOpacitySlider(
-            "Void cell opacity",
-            opacity -> settings.voidCellOpacity = (int) opacity));
+            "Void fill opacity",
+            opacity -> settings.voidFillOpacity = (int) opacity));
 
         // Keyed as bridges rather than as cuts, which is what this swatch has actually
         // coloured all along. A saved value under the old key belongs to the line it was

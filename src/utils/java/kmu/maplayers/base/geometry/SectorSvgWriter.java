@@ -258,8 +258,8 @@ final class SectorSvgWriter {
             appendPolygon(
                 svg,
                 outline,
-                formatColour(MapLook.WIDE_VOID),
-                formatColour(MapLook.WIDE_VOID),
+                formatColour(MapLook.INLAND_VOID),
+                formatColour(MapLook.INLAND_VOID),
                 MapLook.RING_STROKE / TRAPPED_EDGE_STROKES);
         }
     }

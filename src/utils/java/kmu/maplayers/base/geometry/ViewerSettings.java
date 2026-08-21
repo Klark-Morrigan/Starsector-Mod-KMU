@@ -27,8 +27,7 @@ final class ViewerSettings {
     static final Color OWNED_CELL_DEFAULT = MapLook.OWNED_CELL;
     static final Color UNOWNED_CELL_DEFAULT = MapLook.UNOWNED_CELL;
     static final Color UNBOUNDED_CELL_DEFAULT = MapLook.UNBOUNDED_CELL;
-    static final Color VOID_CELL_DEFAULT = MapLook.VOID_CELL;
-    static final Color WIDE_VOID_DEFAULT = MapLook.WIDE_VOID;
+    static final Color INLAND_VOID_DEFAULT = MapLook.INLAND_VOID;
     static final Color CHANNEL_DEFAULT = MapLook.CHANNEL;
     static final Color CENTRELINE_DEFAULT = MapLook.CENTRELINE;
     static final Color VOID_BRIDGE_DEFAULT = MapLook.VOID_BRIDGE;
@@ -63,10 +62,7 @@ final class ViewerSettings {
     Color unownedCellEdge = UNOWNED_CELL_DEFAULT;
     Color unboundedCellColour = UNBOUNDED_CELL_DEFAULT;
     Color unboundedCellEdge = UNBOUNDED_CELL_DEFAULT;
-    Color voidCellColour = VOID_CELL_DEFAULT;
-    Color voidCellEdge = VOID_CELL_DEFAULT;
-
-    int voidCellOpacity = OWNER_FILL_ALPHA;
+    int voidFillOpacity = OWNER_FILL_ALPHA;
     double bridgeReachMultiple = BRIDGE_REACH_DEFAULT;
 
     // The void, in the two kinds it comes in and the three things there are to see of each.
@@ -94,8 +90,8 @@ final class ViewerSettings {
     Color coastlineColour = COASTLINE_DEFAULT;
     Color coastCrossingColour = COAST_CROSSING_DEFAULT;
     Color piercedCellColour = PIERCED_CELL_DEFAULT;
-    Color wideVoidColour = WIDE_VOID_DEFAULT;
-    Color wideVoidEdge = WIDE_VOID_DEFAULT;
+    Color inlandVoidColour = INLAND_VOID_DEFAULT;
+    Color inlandVoidEdge = INLAND_VOID_DEFAULT;
     Color voidBridgeColour = VOID_BRIDGE_DEFAULT;
     Color regionNameColour = REGION_NAME_DEFAULT;
     Color siteColour = SITE_COLOUR;
