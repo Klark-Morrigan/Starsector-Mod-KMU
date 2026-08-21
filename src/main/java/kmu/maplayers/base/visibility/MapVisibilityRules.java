@@ -32,10 +32,6 @@ import java.util.Set;
  * fixes it for the whole pass, so every system is admitted under the same rules even if the
  * player moves a toggle mid-walk.
  *
- * <p>The components are named for what each does to the map, while the settings the read below
- * samples are named for what the player is asking to see. Same knobs, stated from the two ends
- * that care about them.
- *
  * @param colonyVisibility the rule this pass reads colonies under - the dev reveal that lifts the
  *                         fog outright, and the gates holding back the shapes a bare fog leaks
  * @param isForcedOntoMap  whether a star system is admitted to the map regardless of access or
@@ -88,23 +84,18 @@ public record MapVisibilityRules(
             KmuMapLayerSettings.shouldShowHiddenSystems());
     }
 
-    // The gates the player's spoiler settings leave in force. Each toggle is named for what
-    // switching it on shows, so it is a toggle left off that carries its gate - which is also
-    // why the shipped state holds both: a gate narrows, and a map that spoiled a sector
-    // before the player asked it to could not take that back.
+    // The gates the player's settings leave in force. Each toggle grants rather than withholds,
+    // so it is the one left off that carries its gate - which is why the shipped state holds
+    // every gate there is: a gate narrows, and a map that spoiled a sector before the player
+    // asked it to could not take that back.
     //
     // Read as two independent questions rather than one three-way choice, because the two shapes
     // leak for different reasons - one is a place nobody ever lived on, the other a place hiding
     // itself - and a player minding one need not mind the other.
     //
-    // The abandoned-station toggle covers the unowned wreck alone, which is why the gate behind
-    // it is a kind rather than vanilla's condition: a station a faction keeps wears that same
-    // condition and is a place somebody is, so it is not a shape the fog leaks and nothing here
-    // holds it back.
-    //
-    // Copied into an immutable set here rather than handed over as the EnumSet: the rule takes
-    // its own defensive copy of whatever it is given, and that copy is free for a set already
-    // known immutable, which matters because this read runs per hover box and not only per pass.
+    // Copied rather than returned as the EnumSet, so what leaves here cannot be added to. The
+    // rule takes its own defensive copy either way, so this buys no work back - it keeps a
+    // mutable set from being the thing a private helper hands out.
     private static Set<RevelationGate> resolveRevelationGates() {
 
         var gatesInForce = EnumSet.noneOf(RevelationGate.class);
