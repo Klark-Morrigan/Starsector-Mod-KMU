@@ -251,16 +251,6 @@ final class ViewerSettingsPanel {
             ViewerSettings.JITTER_DEFAULT,
             strength -> settings.jitterStrength = (float) (strength / ViewerSettings.JITTER_SCALE)));
 
-        controls.add(buildVoidPocketToggles());
-
-        controls.add(ViewerControls.buildColourPair(
-            "Inland void fill",
-            "Inland void fill",
-            ViewerSettings.INLAND_VOID_DEFAULT, ViewerSettings.INLAND_VOID_DEFAULT,
-            colour -> settings.inlandVoidColour = colour,
-            colour -> settings.inlandVoidEdge = colour,
-            refreshes::repaintMap));
-
         controls.add(ViewerControls.buildColour(
             "Site dots",
             "Site dots",
@@ -288,11 +278,36 @@ final class ViewerSettingsPanel {
             "Channel opacity",
             opacity -> settings.channelOpacity = (int) opacity));
 
-        // Both kinds of pocket fill, not one: they are the same kind of shape and a reader
-        // comparing them wants them equally solid.
-        controls.add(buildOpacitySlider(
-            "Void fill opacity",
-            opacity -> settings.voidFillOpacity = (int) opacity));
+        // Zoom in to read the names: one is only drawn once its region is wide enough on
+        // screen to hold it, so at the zoom the map opens on none of them appear.
+        controls.add(ViewerControls.buildToggle(
+            "Show cell names",
+            "Cell names",
+            false,
+            on -> settings.showCellNames = on,
+            refreshes::repaintMap));
+
+        controls.add(ViewerControls.buildColour(
+            "Region names",
+            "Region names",
+            ViewerSettings.REGION_NAME_DEFAULT,
+            colour -> settings.regionNameColour = colour,
+            refreshes::repaintMap));
+
+        controls.add(ViewerControls.buildDivider());
+
+        addVoidPocketRows(controls);
+
+        return controls;
+    }
+
+    // Everything about the void, under one rule and in the order the toggles above it read:
+    // what to show, then the inland knobs, then the coastal ones, then the one knob both
+    // kinds share. Below a divider because the rest of the panel is about CELLS, and a reader
+    // hunting for a void knob was otherwise reading forty identical rows to find it.
+    private void addVoidPocketRows(JPanel controls) {
+
+        controls.add(buildVoidPocketToggles());
 
         // Keyed as bridges rather than as cuts, which is what this swatch has actually
         // coloured all along. A saved value under the old key belongs to the line it was
@@ -320,20 +335,12 @@ final class ViewerSettingsPanel {
             refreshes::refreshVoidBridges,
             () -> { }));
 
-        // Zoom in to read the names: one is only drawn once its region is wide enough on
-        // screen to hold it, so at the zoom the map opens on none of them appear.
-        controls.add(ViewerControls.buildToggle(
-            "Show cell names",
-            "Cell names",
-            false,
-            on -> settings.showCellNames = on,
-            refreshes::repaintMap));
-
-        controls.add(ViewerControls.buildColour(
-            "Region names",
-            "Region names",
-            ViewerSettings.REGION_NAME_DEFAULT,
-            colour -> settings.regionNameColour = colour,
+        controls.add(ViewerControls.buildColourPair(
+            "Inland void fill",
+            "Inland void fill",
+            ViewerSettings.INLAND_VOID_DEFAULT, ViewerSettings.INLAND_VOID_DEFAULT,
+            colour -> settings.inlandVoidColour = colour,
+            colour -> settings.inlandVoidEdge = colour,
             refreshes::repaintMap));
 
         controls.add(ViewerControls.buildColour(
@@ -341,18 +348,6 @@ final class ViewerSettingsPanel {
             "Smoothed outer edge",
             ViewerSettings.COASTLINE_DEFAULT,
             colour -> settings.coastlineColour = colour,
-            refreshes::repaintMap));
-
-        // A pair rather than one, because the two say different halves of the same thing:
-        // which run went where it should not, and which cell it went into. Nothing is drawn
-        // in either once the construction stops crossing anything.
-        controls.add(ViewerControls.buildColourPair(
-            "Coast crossings",
-            "Coast crossing / crossed cell",
-            ViewerSettings.COAST_CROSSING_DEFAULT,
-            ViewerSettings.PIERCED_CELL_DEFAULT,
-            colour -> settings.coastCrossingColour = colour,
-            colour -> settings.piercedCellColour = colour,
             refreshes::repaintMap));
 
         controls.add(ViewerControls.buildSlider(
@@ -376,7 +371,23 @@ final class ViewerSettingsPanel {
             refreshes::refreshCoastlines,
             () -> { }));
 
-        return controls;
+        // A pair rather than one, because the two say different halves of the same thing:
+        // which run went where it should not, and which cell it went into. Nothing is drawn
+        // in either once the construction stops crossing anything.
+        controls.add(ViewerControls.buildColourPair(
+            "Coast crossings",
+            "Coast crossing / crossed cell",
+            ViewerSettings.COAST_CROSSING_DEFAULT,
+            ViewerSettings.PIERCED_CELL_DEFAULT,
+            colour -> settings.coastCrossingColour = colour,
+            colour -> settings.piercedCellColour = colour,
+            refreshes::repaintMap));
+
+        // Last because it is the one knob that reaches both kinds, so it belongs to neither
+        // group above it.
+        controls.add(buildOpacitySlider(
+            "Void fill opacity",
+            opacity -> settings.voidFillOpacity = (int) opacity));
     }
 
     // Everything there is to see of the void, under one head.

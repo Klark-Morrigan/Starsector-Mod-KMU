@@ -18,8 +18,10 @@ import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 /**
  * The viewer's knobs: a slider, a toggle and a colour, each remembering where it was left and
@@ -40,6 +42,10 @@ final class ViewerControls {
 
     private static final int SLIDER_STEPS = 1000;
     private static final int ROW_PADDING = 4;
+
+    // Wider than a row's own padding, so the rule reads as a break between subjects
+    // rather than as one more gap in an evenly spaced column.
+    private static final int DIVIDER_PADDING = 8;
     private static final int LABELLED_ROWS = 2;
     private static final int SINGLE_COLUMN = 1;
     private static final int SINGLE_ROW = 1;
@@ -150,6 +156,30 @@ final class ViewerControls {
             onSettled.run();
         };
         return layOutLabelledRow(title, valueBox, reset, slider);
+    }
+
+    /**
+     * A rule across the panel, breaking one run of knobs off from the next.
+     *
+     * <p>The panel is one long column and every row in it looks like every other, so a reader
+     * looking for a knob has only its label to go on. A rule says where one subject ends, which
+     * turns the search into "the void half, near the top" rather than a scan of forty rows.
+     *
+     * @return the rule, as a row
+     */
+    static JPanel buildDivider() {
+
+        var row = new JPanel(new BorderLayout());
+
+        row.add(new JSeparator(SwingConstants.HORIZONTAL), BorderLayout.CENTER);
+        row.setBorder(BorderFactory.createEmptyBorder(DIVIDER_PADDING, 0, DIVIDER_PADDING, 0));
+
+        // A separator will take whatever height it is offered, and the panel's layout offers
+        // it everything left over - so without a cap the rule becomes a gap the height of the
+        // window and pushes the knobs under it off the bottom.
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
+
+        return row;
     }
 
     /**
