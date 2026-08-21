@@ -75,12 +75,17 @@ final class ViewerSettingsPanel {
 
     private static final double COAST_SKIP_MAXIMUM = 4;
 
-    // How many cells may be dropped in a row. At zero nothing is skipped whatever the
-    // distance; the ceiling is past the point where a dense coast collapses to a few points,
-    // so what that failure looks like is reachable rather than merely describable.
-    private static final double COAST_MAX_SKIPS_MINIMUM = 0;
+    // How little of its own border a cell may face the void with and still be walked through,
+    // as a percentage of the whole turn. Zero is the bottom because it asks nothing, which is
+    // the rule switched off and what every other knob is judged against.
+    //
+    // The ceiling sits at about the median stretch: half of what a sector offers is narrower
+    // than a quarter turn, so at the top of this range half the coast is dropped outright and
+    // what that costs is on screen rather than merely describable. The useful band is the
+    // bottom fifth - a sliver worth losing is a few percent.
+    private static final double MIN_FRONTAGE_MINIMUM = 0;
 
-    private static final double COAST_MAX_SKIPS_MAXIMUM = 20;
+    private static final double MIN_FRONTAGE_MAXIMUM = 25;
 
     // How far brightness may wander either side of the chosen colour when jitter is on, as a
     // percentage of the full range. The default is wide enough to tell two neighbours apart
@@ -414,15 +419,20 @@ final class ViewerSettingsPanel {
                 refreshes::refreshCoastlines,
                 () -> { })));
 
+        // Beside the skip distance but asking a different question: this drops a stretch for
+        // what it offers on its own, so what it removes does not depend on which cells
+        // happened to be kept before it.
         controls.add(ViewerSliders.buildSlider(
-            "Coast max skips",
-            "Most cells skipped in a row",
+            "Coast least frontage",
+            "Least frontage faced, in % of a cell",
             new ViewerSliders.SliderRange(
-                COAST_MAX_SKIPS_MINIMUM,
-                COAST_MAX_SKIPS_MAXIMUM,
-                ViewerSettings.COAST_MAX_SKIPS_DEFAULT),
+                MIN_FRONTAGE_MINIMUM,
+                MIN_FRONTAGE_MAXIMUM,
+                ViewerSettings.COAST_MIN_FRONTAGE_DEFAULT
+                    * ViewerSettings.FRONTAGE_PERCENT_SCALE),
             new ViewerSliders.SliderWork(
-                skips -> settings.coastMaxSkips = (int) Math.round(skips),
+                percent -> settings.coastMinFrontageShare =
+                    percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
                 refreshes::refreshCoastlines,
                 () -> { })));
 
@@ -475,19 +485,22 @@ final class ViewerSettingsPanel {
             colour -> settings.continentCoastColour = colour,
             refreshes::repaintMap));
 
-        // v3's own skip cap, which is the first knob that makes this a construction rather
-        // than a second drawing of the settled one. Same range as the v2 cap, since it is the
-        // same quantity measured the same way and a reader comparing the two sliders is
-        // comparing their positions.
+        // v3's own frontage floor, and the first knob that makes this a construction rather
+        // than a second drawing of the settled one. Its own rather than the v2 one read
+        // twice, because with no bridges laid a continent's cells face the void through
+        // slivers far more often - so the share that clears them off here would take real
+        // frontage off the sector coast above.
         controls.add(ViewerSliders.buildSlider(
-            "Continent max skips",
-            "Most cells skipped in a row",
+            "Continent least frontage",
+            "Least frontage faced, in % of a cell",
             new ViewerSliders.SliderRange(
-                COAST_MAX_SKIPS_MINIMUM,
-                COAST_MAX_SKIPS_MAXIMUM,
-                ViewerSettings.CONTINENT_MAX_SKIPS_DEFAULT),
+                MIN_FRONTAGE_MINIMUM,
+                MIN_FRONTAGE_MAXIMUM,
+                ViewerSettings.CONTINENT_MIN_FRONTAGE_DEFAULT
+                    * ViewerSettings.FRONTAGE_PERCENT_SCALE),
             new ViewerSliders.SliderWork(
-                skips -> settings.continentMaxSkips = (int) Math.round(skips),
+                percent -> settings.continentMinFrontageShare =
+                    percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
                 refreshes::refreshCoastlines,
                 () -> { })));
     }

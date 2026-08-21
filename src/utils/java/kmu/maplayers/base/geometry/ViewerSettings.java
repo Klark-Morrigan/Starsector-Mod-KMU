@@ -41,12 +41,16 @@ final class ViewerSettings {
     static final double COAST_SKIP_DEFAULT = Coastlines.DEFAULT_RULES.skipMultiple();
     static final double COAST_SKIP_STEP_SCALE = 100.0;
 
-    static final double COAST_MAX_SKIPS_DEFAULT = Coastlines.DEFAULT_RULES.maxSkips();
+    // The rule is a share of a cell's whole border; the slider asks for it as a percentage,
+    // which is how anyone reading a map thinks about how far a cell sticks out.
+    static final double COAST_MIN_FRONTAGE_DEFAULT =
+        Coastlines.DEFAULT_RULES.minFrontageShare();
+    static final double FRONTAGE_PERCENT_SCALE = 100.0;
 
-    // The v3 coast opens on the same skip cap as the settled one, so the two lines start
+    // The v3 coast opens on the same knobs as the settled one, so the two lines start
     // identical and any difference on screen is a knob someone deliberately moved rather
     // than a difference that was there from the first frame.
-    static final double CONTINENT_MAX_SKIPS_DEFAULT = COAST_MAX_SKIPS_DEFAULT;
+    static final double CONTINENT_MIN_FRONTAGE_DEFAULT = COAST_MIN_FRONTAGE_DEFAULT;
 
     static final Color CONTINENT_COAST_DEFAULT = MapLook.CONTINENT_COAST;
 
@@ -97,16 +101,19 @@ final class ViewerSettings {
     boolean showContinentCoasts;
 
     double coastSkipMultiple = COAST_SKIP_DEFAULT;
-    int coastMaxSkips = (int) COAST_MAX_SKIPS_DEFAULT;
 
-    // The v3 coast's own skip cap, apart from the settled coast's above.
+    // How little of its own border a cell may face the void with before it is dropped from
+    // the walk outright, as a share of the whole turn. Apart from the spacing above because
+    // it judges one stretch on its own rather than against its neighbours - so what it drops
+    // does not depend on which cells happened to be kept before it.
+    double coastMinFrontageShare = COAST_MIN_FRONTAGE_DEFAULT;
+
+    // The v3 coast's own frontage floor, apart from the settled coast's above.
     //
-    // Apart because the two coasts are smoothed against different things. The settled coast
-    // runs round everything the bridges join, so a long stretch of it is open sea frontage
-    // where dropping cells costs nothing; a continent's coast is short and turns constantly,
-    // and the cap that reads as smoothing on the first can cut the second down to a triangle.
-    // Sharing one knob meant every attempt to tune either was a compromise with the other.
-    int continentMaxSkips = (int) CONTINENT_MAX_SKIPS_DEFAULT;
+    // Apart because with no bridges laid far more of a continent's cells face the void
+    // through a sliver, so the share that clears those off would take real frontage off the
+    // sector coast. Shared, every attempt to tune one was a compromise with the other.
+    double continentMinFrontageShare = CONTINENT_MIN_FRONTAGE_DEFAULT;
 
     Color coastlineColour = COASTLINE_DEFAULT;
     Color continentCoastColour = CONTINENT_COAST_DEFAULT;
@@ -166,7 +173,7 @@ final class ViewerSettings {
     // drawings then describe maps that were never the same.
     Coastlines.CoastRules resolveCoastRules() {
         return new Coastlines.CoastRules(
-            bridgeReachMultiple, coastSkipMultiple, coastMaxSkips);
+            bridgeReachMultiple, coastSkipMultiple, coastMinFrontageShare);
     }
 
     // How the v3 coast is traced. Its own rules rather than the settled coast's, because that
@@ -179,6 +186,6 @@ final class ViewerSettings {
     // read the two coasts are still looking at one sector.
     Coastlines.CoastRules resolveContinentCoastRules() {
         return new Coastlines.CoastRules(
-            bridgeReachMultiple, coastSkipMultiple, continentMaxSkips);
+            bridgeReachMultiple, coastSkipMultiple, continentMinFrontageShare);
     }
 }

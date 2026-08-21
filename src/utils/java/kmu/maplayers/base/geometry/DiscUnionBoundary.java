@@ -1440,6 +1440,24 @@ final class DiscUnionBoundary {
         double midAngle() {
             return (fromAngle + toAngle) / 2;
         }
+
+        /**
+         * How much of the cell's own border this stretch is, as a share of the whole turn.
+         *
+         * <p>How far a cell sticks out into the void, in the only terms that compare across
+         * a map: a share rather than an arc length, so the answer does not move when the
+         * reach slider does, and so one number means the same thing on every cell.
+         *
+         * <p>Of the STRETCH rather than of the cell. A cell facing the void on two separate
+         * frontages - a strait, or the inside of a C - contributes one stretch per frontage,
+         * and each is a separate place the coast passes; summing them would report a cell
+         * that peeks out twice as though it presented one broad face.
+         *
+         * @return the share of the full turn, from 0 to 1
+         */
+        double measureShareOfCircle() {
+            return (toAngle - fromAngle) / Angles.FULL_TURN;
+        }
     }
 
     /**
