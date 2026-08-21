@@ -1,6 +1,6 @@
-package kmu.maplayers.base.hover.cover;
+package kmu.starsector.consolecommands;
 
-import kmu.starsector.consolecommands.ConsoleOverlay;
+import kmu.maplayers.base.hover.cover.MapCover;
 
 /**
  * The cover a text-entry console lays over the map: it takes the whole screen, so while one is up
@@ -10,8 +10,11 @@ import kmu.starsector.consolecommands.ConsoleOverlay;
  * the panel hidden its cover answers false, so a hover asking only about the panel reads straight
  * through to the cells under the console and lights them.
  *
- * <p>Asked of the {@link ConsoleOverlay} role rather than of the console mod, so this cover depends
- * on the question and not on an optional mod, and inherits that role's fail-open answer whole.
+ * <p>The reading is asked of the {@link ConsoleOverlay} role rather than of the console mod, and
+ * inherits that role's fail-open answer whole. The home and the factory are the mod's all the
+ * same: the only live answer comes from Console Commands, and the cover joins the map's covers
+ * only where {@link ConsoleCommandsPresence} finds that mod installed - so this class sits with
+ * the integration it exists for, beside the adapter that answers it.
  */
 public final class ConsoleMapCover implements MapCover {
 
@@ -22,6 +25,13 @@ public final class ConsoleMapCover implements MapCover {
      */
     public ConsoleMapCover(ConsoleOverlay consoleOverlay) {
         this.consoleOverlay = consoleOverlay;
+    }
+
+    /**
+     * @return the cover over the one live console read a running game has
+     */
+    public static ConsoleMapCover createForLiveScreen() {
+        return new ConsoleMapCover(ConsoleCommandsOverlay.INSTANCE);
     }
 
     @Override

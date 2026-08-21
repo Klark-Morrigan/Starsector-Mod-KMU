@@ -3,7 +3,6 @@ package kmu.starsector.consolecommands;
 import com.fs.starfarer.api.Global;
 
 import kmlib.logging.SessionWarning;
-import kmlib.starsector.settings.ModPresence;
 
 import org.apache.log4j.Logger;
 
@@ -12,10 +11,11 @@ import org.apache.log4j.Logger;
  * mod's own overlay read, with every failure turned into "no console is open".
  *
  * <p>Console Commands is compiled against but not declared a dependency, so an install without it
- * is ordinary and must cost nothing. The gate asks the mod manager first and only then touches
- * {@link ConsoleCommandsPanelPresence}, which is what defers resolving the one class that names an
- * {@code org.lazywizard.console} type until that type is known to exist. The enablement is read
- * once and held: the mod set is fixed for a run, and this is asked every frame.
+ * is ordinary and must cost nothing. The gate asks {@link ConsoleCommandsPresence} first and only
+ * then touches {@link ConsoleCommandsPanelPresence}, which is what defers resolving the one class
+ * that names an {@code org.lazywizard.console} type until that type is known to exist. The
+ * enablement is read once and held: the mod set is fixed for a run, and this is asked every
+ * frame.
  *
  * <p>Fail-open is the governing rule here rather than a footnote. The mod absent, the class
  * missing, the accessor moved by a Console Commands release, the read throwing anything at all -
@@ -41,8 +41,6 @@ import org.apache.log4j.Logger;
 public final class ConsoleCommandsOverlay implements ConsoleOverlay {
 
     private static final Logger LOG = Global.getLogger(ConsoleCommandsOverlay.class);
-
-    private static final String CONSOLE_COMMANDS_MOD_ID = "lw_console";
 
     // What every failure here costs, said in the log's own terms. Appended to whichever hop broke,
     // so one line names both the cause and the consequence.
@@ -121,7 +119,7 @@ public final class ConsoleCommandsOverlay implements ConsoleOverlay {
         
         if (isConsoleReadable == null) {
             try {
-                isConsoleReadable = ModPresence.isModEnabled(CONSOLE_COMMANDS_MOD_ID);
+                isConsoleReadable = ConsoleCommandsPresence.isModEnabled();
 
             } catch (Throwable cannotReadModState) {
 

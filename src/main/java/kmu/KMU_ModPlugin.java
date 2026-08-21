@@ -4,6 +4,9 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.settings.LunaSettingsReader;
+import kmlib.starsector.rat.RandomAssortmentOfThingsPresence;
+
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
@@ -11,10 +14,10 @@ import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.politicalmap.base.PoliticalMapInstaller;
 import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuLunaSettings;
-import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.KmuRetiredSettings;
 import kmu.starsector.colonies.ColonySightingInstaller;
 import kmu.starsector.rat.RandomAssortmentOfThingsCompatibilityInstaller;
+import kmu.starsector.rat.RandomAssortmentOfThingsMode;
 import kmu.ui.context.MarketUiContextInstaller;
 
 /**
@@ -49,14 +52,17 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
     // Adapting to another mod, and so switched on its own: none of what it does is about anything
     // this mod paints, and a player who turned the overlay off has not thereby asked for a minimap
-    // they cannot see to start rendering a whole sector again. Whether that mod is installed at all
-    // is the installer's own gate rather than this switch's - the two conditions change on
-    // different clocks, and the installer says which is which. The knob is the map-layer settings
-    // class's because the mode it reads is shared with the layers' own compatibility reads.
+    // they cannot see to start rendering a whole sector again.
+    //
+    // The switch is the mode's own composed condition - the player's compatibility toggle, and that
+    // mod present with its minimap switch on - so the wiring follows every one of the three: ours
+    // through our settings listener, the mod's own switch through the listener on its settings, and
+    // presence through the load that first applies this, presence being the one that cannot move
+    // within a run.
     private static final KmuToggledFeature randomAssortmentOfThingsCompatibility =
         new KmuToggledFeature(
-            KmuMapLayerSettings::getRandomAssortmentOfThingsModeEnabled,
-            RandomAssortmentOfThingsCompatibilityInstaller::installIfPresent,
+            RandomAssortmentOfThingsMode.createForLiveGame()::isEngaged,
+            RandomAssortmentOfThingsCompatibilityInstaller::installAll,
             RandomAssortmentOfThingsCompatibilityInstaller::uninstallAll);
 
     @Override
@@ -93,6 +99,18 @@ public class KMU_ModPlugin extends BaseModPlugin {
         KmuWiringSteps.runGuardedStep(
             () -> KmuLunaSettings.runOnSettingsChange(KMU_ModPlugin::applySwitchedFeatures),
             "Failed to install KMU feature switch listener");
+
+        // The same reaction to Random Assortment of Things' own saves: LunaLib announces every
+        // mod's settings to every listener, so that mod flipping its own minimap switch is as
+        // observable as our knobs are, and the compatibility follows it live instead of at the next
+        // load. Registered without asking whether the mod is installed, since the listener is bound
+        // to that mod's id: on an install without it nothing ever announces that id, so this simply
+        // never fires.
+        KmuWiringSteps.runGuardedStep(
+            () -> LunaSettingsReader.runOnSettingsChange(
+                RandomAssortmentOfThingsPresence.MOD_ID,
+                KMU_ModPlugin::applySwitchedFeatures),
+            "Failed to install KMU Random Assortment of Things settings listener");
     }
 
     @Override

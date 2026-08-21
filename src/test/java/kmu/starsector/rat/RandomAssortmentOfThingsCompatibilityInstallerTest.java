@@ -2,7 +2,6 @@ package kmu.starsector.rat;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.rat.RandomAssortmentOfThingsPresence;
 import kmlib.starsector.ui.suppression.OffScreenWidgetSuppressor;
 
 import org.junit.jupiter.api.Nested;
@@ -13,56 +12,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
- * Pins the presence gate and the script's lifetime: nothing is registered on an install without
- * that mod, and what is registered is taken back by the instance rather than by its class.
+ * Pins the script's lifetime: registered transient and fresh per load, and taken back by the
+ * instance this installed rather than by its class. When any of this runs at all is the composed
+ * switch's, pinned where the switch is.
  */
 class RandomAssortmentOfThingsCompatibilityInstallerTest {
-
-    @Nested
-    class InstallIfPresent {
-
-        @Test
-        void registersNothingWhereThatModIsNotInstalled() {
-            // There is no minimap that could ever be parked, so a script registered anyway would
-            // walk the widget tree for the rest of the campaign to reach that conclusion.
-            var sectorMock = mock(SectorAPI.class);
-
-            try (var presenceMock = mockStatic(RandomAssortmentOfThingsPresence.class)) {
-
-                presenceMock
-                    .when(RandomAssortmentOfThingsPresence::isModEnabled)
-                    .thenReturn(false);
-
-                RandomAssortmentOfThingsCompatibilityInstaller.installIfPresent(sectorMock);
-
-                verify(sectorMock, never())
-                    .addTransientScript(any());
-            }
-        }
-
-        @Test
-        void registersTheSuppressorWhereThatModIsInstalled() {
-
-            var sectorMock = mock(SectorAPI.class);
-
-            try (var presenceMock = mockStatic(RandomAssortmentOfThingsPresence.class)) {
-
-                presenceMock
-                    .when(RandomAssortmentOfThingsPresence::isModEnabled)
-                    .thenReturn(true);
-
-                RandomAssortmentOfThingsCompatibilityInstaller.installIfPresent(sectorMock);
-
-                verify(sectorMock)
-                    .addTransientScript(any(OffScreenWidgetSuppressor.class));
-            }
-        }
-    }
 
     @Nested
     class InstallParkedMinimapSuppressor {

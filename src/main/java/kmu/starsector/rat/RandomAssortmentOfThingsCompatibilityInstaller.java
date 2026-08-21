@@ -2,7 +2,6 @@ package kmu.starsector.rat;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.rat.RandomAssortmentOfThingsPresence;
 import kmlib.starsector.ui.screen.VanillaScreen;
 import kmlib.starsector.ui.suppression.OffScreenWidgetSuppressor;
 
@@ -23,20 +22,18 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  * the same way. What cannot be stated generally is whose widget this mod may write into, and that
  * is the whole of what this package is for.
  *
- * <p><b>Three conditions govern the suppression, and they are answered at three different
- * layers</b>, because they do not change on the same clock:
+ * <p><b>Three conditions govern the suppression, and the switch that drives this installer
+ * composes all of them</b>: {@link RandomAssortmentOfThingsMode#isEngaged()} is the player's
+ * compatibility toggle, and that mod present with its own minimap switch on. The composition root
+ * applies it on load and re-applies it whenever either mod's settings are saved - LunaLib
+ * announces every mod's saves, so the other mod's switch is as observable as ours - and presence,
+ * the one condition that cannot move within a run, is settled by the load that first applies it.
+ * So nothing is installed here that the mode does not currently want, and this class carries no
+ * gate of its own.
  *
- * <ul>
- *   <li><b>Whether that mod is installed</b> is fixed for the launch, so it gates the install here.
- *       Without it there is no minimap that could ever be parked, and a script registered anyway
- *       would walk the widget tree for the rest of the campaign to reach that conclusion.</li>
- *   <li><b>Whether the player wants this mod adapting to that one</b> is a switch of ours, and one
- *       we are told about, so it stands the whole feature up or takes it back where it is flipped.
- *       That belongs to the composition root, which owns every such switch.</li>
- *   <li><b>Whether that mod's own minimap switch is on</b> is a live setting of somebody else's,
- *       and nothing announces it to us. So it stays a per-frame read inside the suppression, where
- *       being wrong for one frame costs a frame rather than a session.</li>
- * </ul>
+ * <p>The suppression still reads {@code isEngaged()} per frame. That is the frame-level truth
+ * between announcements, and being wrong for a frame costs a frame - where this installer being
+ * wrong would cost a session of a script walking the widget tree for nothing.
  *
  * <p>Final class with a private constructor: pure-function utility, no instance state beyond the
  * script it is holding on the sector's behalf.
@@ -56,7 +53,7 @@ public final class RandomAssortmentOfThingsCompatibilityInstaller {
     }
 
     /**
-     * Installs what the compatibility needs when that mod is enabled, and does nothing otherwise.
+     * Installs what the compatibility needs, each step behind its own failure boundary.
      *
      * <p>Transient: pure runtime logic that must not enter a save, so it is re-added fresh each
      * load. A fresh permission per load with it, so the widget walk behind it starts on this save's
@@ -64,11 +61,7 @@ public final class RandomAssortmentOfThingsCompatibilityInstaller {
      *
      * @param sector the loaded sector; null leaves it uninstalled rather than throwing
      */
-    public static void installIfPresent(SectorAPI sector) {
-
-        if (!RandomAssortmentOfThingsPresence.isModEnabled()) {
-            return;
-        }
+    public static void installAll(SectorAPI sector) {
 
         runGuardedStep(
             () -> installParkedMinimapSuppressor(sector),
@@ -78,9 +71,9 @@ public final class RandomAssortmentOfThingsCompatibilityInstaller {
     /**
      * Takes back what the compatibility stood up.
      *
-     * <p>Ungated, where the install is not: a player who disables the mod between sessions leaves a
-     * sector still holding the script, and a removal that first asked whether the mod was there
-     * would decline to clean up in exactly that case. Removing what was never installed is free.
+     * <p>Runs whenever the composed switch reads off, whichever of its conditions turned it -
+     * including the mod being disabled between sessions, where a removal that asked after the mod
+     * first would decline to clean up. Removing what was never installed is free.
      *
      * @param sector the loaded sector; null leaves the save untouched rather than throwing
      */

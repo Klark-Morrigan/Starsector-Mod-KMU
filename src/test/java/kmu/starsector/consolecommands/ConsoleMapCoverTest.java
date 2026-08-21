@@ -1,6 +1,4 @@
-package kmu.maplayers.base.hover.cover;
-
-import kmu.starsector.consolecommands.ConsoleOverlayFake;
+package kmu.starsector.consolecommands;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

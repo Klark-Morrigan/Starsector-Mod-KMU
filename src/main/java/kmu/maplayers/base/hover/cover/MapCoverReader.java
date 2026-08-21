@@ -1,8 +1,12 @@
 package kmu.maplayers.base.hover.cover;
 
-import kmu.starsector.consolecommands.ConsoleCommandsOverlay;
+import kmlib.starsector.rat.RandomAssortmentOfThingsPresence;
+
+import kmu.starsector.consolecommands.ConsoleCommandsPresence;
+import kmu.starsector.consolecommands.ConsoleMapCover;
 import kmu.starsector.rat.RandomAssortmentOfThingsMinimapCover;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,6 +23,12 @@ import java.util.List;
  * <p>The covers are held as a list in ascending cost and asked in that order, stopping at the first
  * that answers: the composition is what states the order, so a cover states only its own reading
  * and a further one is a class plus a line in {@link #createForLiveScreen()}.
+ *
+ * <p>That factory is also where the optional mods' covers join or do not: a mod's cover is
+ * composed only where the mod is installed at all, the same gate its installer stands behind.
+ * Presence is the one condition that cannot move within a run, so it is answered once at
+ * composition; everything that can move - a console opening, the compatibility mode, the minimap's
+ * own switch - stays each cover's own live read.
  */
 public final class MapCoverReader {
 
@@ -41,12 +51,25 @@ public final class MapCoverReader {
      *         are worth asking in
      */
     public static MapCoverReader createForLiveScreen() {
-        return new MapCoverReader(List.of(
-            new PauseMenuMapCover(),
-            new ConsoleMapCover(ConsoleCommandsOverlay.INSTANCE),
-            new SidebarMapCover(),
-            new VanillaChromeMapCover(),
-            RandomAssortmentOfThingsMinimapCover.createForLiveScreen()));
+
+        var covers = new ArrayList<MapCover>();
+
+        covers.add(new PauseMenuMapCover());
+
+        // Composed only where the mod is present, which is safe to settle here: the mod set is
+        // fixed for the launch, and this factory runs no earlier than the renderer's first ask,
+        // long after the game has stood that set up. An install without the mod then never holds
+        // the cover, rather than asking one every frame that could only ever answer no.
+        if (ConsoleCommandsPresence.isModEnabled()) {
+            covers.add(ConsoleMapCover.createForLiveScreen());
+        }
+        covers.add(new SidebarMapCover());
+        covers.add(new VanillaChromeMapCover());
+
+        if (RandomAssortmentOfThingsPresence.isModEnabled()) {
+            covers.add(RandomAssortmentOfThingsMinimapCover.createForLiveScreen());
+        }
+        return new MapCoverReader(covers);
     }
 
     /**
