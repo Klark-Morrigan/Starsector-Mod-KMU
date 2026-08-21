@@ -15,6 +15,7 @@ Part of [the map layers](../../README.md), in Klark Morrigan's Utilities; see th
 - [Silencing a minimap parked off screen](#silencing-a-minimap-parked-off-screen)
 - [Three terrains, one draw](#three-terrains-one-draw)
 - [Where the Starscape surfaces sit in the draw order](#where-the-starscape-surfaces-sit-in-the-draw-order)
+- [Renaming a class here loses saves](#renaming-a-class-here-loses-saves)
 - [What is not here](#what-is-not-here)
 
 ## Who gets the frame
@@ -189,23 +190,22 @@ chain - schematic, then Starscape, then above-nebulae - each adding one thing: t
 the band.
 
 `MapLayerTerrainInstaller` is what puts any of them into a loaded save and keeps exactly one of each
-there, and it owns the save-facing constants that go with that: the type ids the entities are built
-under, and the XStream aliases that let a save written under a former plugin name still load.
-`MapSurfaceInstaller` calls it and holds none of that knowledge itself, as the mod's entry point
-holds none of the installer's. Its variants are told apart by
-plugin class compared exactly - the chain means an `instanceof` would have one answer for another's.
+there, and it owns the type ids they are built under. `MapSurfaceInstaller` calls it and holds none
+of that knowledge itself, as the mod's entry point holds none of the installer's. Which entity in
+hyperspace belongs to which surface is decided by its plugin class alone, compared exactly - the
+three form a subclass chain, so an `instanceof` would have one answer for another's, and two of them
+report the engine's whitelisted map type rather than the id they were installed under, so there is
+nothing else to tell them apart by.
 
 All three terrain rows are declared in `data/campaign/terrain.json`. Four class names from this
-package reach a save: the three plugins', serialised with the entities holding them, and
-`SectorMapLayerStarscapeTerrain`'s - the Starscape surfaces use a mod-owned entity where the base
-one uses a vanilla one. Every former name of any of them needs a `configureXStream` alias or an
-existing save fails to load.
+package reach a save, which is why
+[renaming one loses saves](#renaming-a-class-here-loses-saves).
 
-The Starscape surfaces carry one further constraint the base one does not. Their entity resolves its
-spec from the row id it is constructed with and then reports the whitelisted map type in the
-getter's place, so the id cannot be read back off a loaded entity: a sweep by type id can neither
-recognise nor retire one left behind by a renamed row. Renaming those rows needs a bridge on the
-entity itself.
+The type ids are frozen once shipped, for the reason the class names are: a terrain entity resolves
+its spec from the id it was written under, and nothing bridges a renamed one back. The Starscape
+surfaces make that worse rather than better - their entity reports the whitelisted map type in the
+getter's place, so the id it was installed under cannot be read back off it at all, and a renamed row
+leaves an entity nothing can even recognise as ours.
 
 ## Where the Starscape surfaces sit in the draw order
 
@@ -234,6 +234,32 @@ The move takes that terrain out of hyperspace for one advance, which is among th
 `installAboveStarscapeNebulaeTerrain` stays a per-load sweep; its Javadoc has what that costs a save
 written inside the window. Losing the surface entirely costs the upper band alone - the lower
 band still paints, and whatever the layer placed above it stops appearing.
+
+## Renaming a class here loses saves
+
+Four class names from this package are written into every save file: the three terrain plugins',
+serialised with the entities holding them, and `SectorMapLayerStarscapeTerrain`'s - the Starscape
+surfaces use a mod-owned entity where the base one uses a vanilla one.
+
+XStream stores the concrete class name. A save naming a class that no longer exists does not fail
+gracefully and does not lose the overlay - it fails the whole read with
+`CannotResolveClassException`, and the player cannot load that game at all. Renaming, moving or
+deleting any of the four is therefore a save-destroying change to every campaign already running
+with this mod.
+
+Nothing currently bridges an old name to a new one. Four aliases used to, covering this package's
+own rename history, and they were dropped once the mod was young enough that no save worth keeping
+predated them. So the rule for the next rename is:
+
+- **Before shipping a rename**, add a `configureXStream` override on the mod plugin that calls
+  `x.alias("<the old fully-qualified name>", TheClass.class)`.
+- **Register the live name last**, aliased to itself, so a re-saved game is written under the real
+  class name and sheds the historical one rather than carrying a dead reference forever.
+- **Keep each alias** for as long as saves predating that rename might still exist. They are
+  read-only bridges and cost nothing to hold.
+
+A rename shipped without one is not caught by the build, by a test, or by the mod's own logging.
+It surfaces as a player reporting that their campaign will not load.
 
 ## What is not here
 

@@ -33,6 +33,13 @@ import java.util.List;
  * <p>This plugin is serialised into the save with its terrain entity, so it deliberately holds no
  * state: everything a frame needs lives behind the layer's renderer, which is reached through a
  * registered layer and never enters a save.
+ *
+ * <p><b>Renaming or moving this class breaks every existing save.</b> XStream writes the concrete
+ * class name into the file, and a save naming a class that no longer exists fails to load outright -
+ * the player loses the game, not the overlay. A rename therefore has to ship with an XStream alias
+ * from the old name, registered in a {@code configureXStream} override on the mod plugin. The same
+ * holds for every other class a terrain entity carries into a save. See
+ * {@code base/render/README.md}.
  */
 public class SectorMapLayerTerrainPlugin extends BaseTerrain {
 

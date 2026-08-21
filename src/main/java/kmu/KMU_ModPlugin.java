@@ -4,7 +4,6 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 
 import kmu.maplayers.MapLayers;
-import kmu.maplayers.base.render.MapLayerTerrainInstaller;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
@@ -60,18 +59,6 @@ public class KMU_ModPlugin extends BaseModPlugin {
         KmuWiringSteps.runGuardedStep(
             MapLayers::registerAll,
             "Failed to register KMU map layers");
-    }
-
-    // The alias lineage belongs to the terrain plugin whose renames created it, so the list and the
-    // ordering rule live beside that class rather than here. super runs first so this only adds to
-    // what the base plugin configures. XStream is fully qualified for the reason the installer
-    // fully qualifies it: com.thoughtworks belongs to no import group the checkstyle order
-    // recognises.
-    @Override
-    public void configureXStream(com.thoughtworks.xstream.XStream x) {
-
-        super.configureXStream(x);
-        MapLayerTerrainInstaller.registerSaveAliases(x);
     }
 
     @Override
