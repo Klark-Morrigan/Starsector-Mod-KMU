@@ -211,25 +211,29 @@ final class SpoilerGateIntegrationTest {
     // concealed base - the two shapes the gates cover, one each - beside whatever open colonies the
     // caller founds there.
     //
-    // The hulk arrives through the entity side and everything else through the economy, which is
-    // how each really turns up: the routine that builds an abandoned station pointedly never
-    // registers one.
+    // The two sets are kept apart because the difference between them is the point: the hulk hangs
+    // on one of the system's entities and the rest are registered with the economy, which is how
+    // each really turns up. The routine that builds an abandoned station pointedly never registers
+    // one, so a fixture that listed it would be posing a colony no sector ever holds.
     private static SectorAPI buildUnvisitedSystemHoldingTheGatedPair(MarketAPI... openColonies) {
 
-        var listedMarkets = new ArrayList<>(List.of(openColonies));
         var derelict = buildAbandonedStationMarket(DERELICT_SIZE);
+        var economyMarkets = new ArrayList<>(List.of(openColonies));
 
-        listedMarkets.add(buildHiddenMarket(buildFaction(CONCEALED_HOLDER), BASE_SIZE));
+        economyMarkets.add(buildHiddenMarket(buildFaction(CONCEALED_HOLDER), BASE_SIZE));
 
-        var sector = buildSectorWith(SYSTEM_ID, listedMarkets.toArray(new MarketAPI[0]));
+        var sector = buildSectorWith(SYSTEM_ID, economyMarkets.toArray(new MarketAPI[0]));
         var system = buildOnlySystem(sector);
 
         placeMarketsOnSystemEntities(system, derelict);
 
-        // Every market stands in the system, the hulk included, so each answers the sighting route
-        // off the system's own memory of a visit rather than off an unstubbed location.
-        listedMarkets.add(derelict);
-        placeMarketsInSystem(system, listedMarkets.toArray(new MarketAPI[0]));
+        // Where each market stands, which is a separate question from which listing found it - and
+        // one every market here answers alike. Standing in a system the player has not entered is
+        // what makes the gated pair unseen; leave it out and both read as already sighted.
+        var standingMarkets = new ArrayList<>(economyMarkets);
+
+        standingMarkets.add(derelict);
+        placeMarketsInSystem(system, standingMarkets.toArray(new MarketAPI[0]));
 
         return sector;
     }
