@@ -422,6 +422,25 @@ final class ViewerSettingsPanel {
                 refreshes::refreshCoastlines,
                 () -> { })));
 
+        // The per-continent preview: the same walk and the same skip knobs with no bridges
+        // laid, so each touching-connected run of cells closes its own coast. Outside the
+        // toggle tree on purpose - the tree's switches show parts of the one settled
+        // construction, and this is a rival one being judged against it; a roll-up that
+        // could hide or show both at once would misstate what "all of it" means.
+        controls.add(ViewerControls.buildToggle(
+            "Continent coasts preview",
+            "Continent coasts preview",
+            false,
+            on -> settings.showContinentCoasts = on,
+            refreshes::refreshCoastlines));
+
+        controls.add(ViewerSwatches.buildColour(
+            "Continent coasts",
+            "Continent coasts",
+            ViewerSettings.CONTINENT_COAST_DEFAULT,
+            colour -> settings.continentCoastColour = colour,
+            refreshes::repaintMap));
+
         // A pair rather than one, because the two say different halves of the same thing:
         // which run went where it should not, and which cell it went into. Nothing is drawn
         // in either once the construction stops crossing anything.

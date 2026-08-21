@@ -142,6 +142,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     private final PickLog picks = PickLog.startPickLog();
     private final VoidBridgesOverlay voidBridges = new VoidBridgesOverlay(settings);
     private final CoastlinesOverlay coastlines = new CoastlinesOverlay(settings);
+    private final ContinentCoastsOverlay continentCoasts = new ContinentCoastsOverlay(settings);
     private final VoidSectionsOverlay voidSections = new VoidSectionsOverlay(settings);
 
     // The cells as named regions, so the pointer can be told which one it is over and a name
@@ -313,6 +314,11 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     public void refreshCoastlines() {
 
         coastlines.refresh(fixture);
+
+        // The preview rides the same refresh because it is traced under the same coast knobs:
+        // a knob that moved one line without the other would show two coasts that were never
+        // traced from the same settings.
+        continentCoasts.refresh(fixture);
         refreshVoidSections();
     }
 
@@ -602,6 +608,11 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             paintCentrelines(g2);
             voidBridges.paintSpans(g2);
             coastlines.paintCoasts(g2);
+
+            // Topmost of the lines, so where the preview and the settled coast coincide the
+            // preview reads unbroken - what is being looked for is where they DIVERGE, and a
+            // divergence shows as two colours coming apart.
+            continentCoasts.paintCoasts(g2);
             paintSites(g2);
         }
 

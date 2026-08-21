@@ -162,12 +162,60 @@ final class Coastlines {
             SectorGeometryParameters parameters,
             CoastRules rules) {
 
-        var walls = new DiscUnionBoundary.Walls(
-            DiscUnionBoundary.buildChordsFrom(VoidBridges.findVoidBridges(
-                sites,
-                parameters.cellRadius(),
-                parameters.cellRadius() * rules.bridgeReachMultiple())),
-            parameters.borderInset());
+        return traceCoastsAcrossWalls(
+            sites,
+            parameters,
+            rules,
+            new DiscUnionBoundary.Walls(
+                DiscUnionBoundary.buildChordsFrom(VoidBridges.findVoidBridges(
+                    sites,
+                    parameters.cellRadius(),
+                    parameters.cellRadius() * rules.bridgeReachMultiple())),
+                parameters.borderInset()));
+    }
+
+    /**
+     * Traces each touching-connected run of cells - each continent - as its own closed coast,
+     * with no bridges laid.
+     *
+     * <p>A preview of the per-continent proposal: the same walk and the same smoothing as
+     * {@link #traceSectorCoasts}, with the walls left out. Runs that a bridge joins into one
+     * super-continent come back as separate closed lines instead - so laid over the settled
+     * map, this shows exactly where those lines and the bridges would cross, which is the
+     * fact the proposal turns on.
+     *
+     * <p>Without walls there are also no bridged cells for the smoothing to protect, so a
+     * continent's coast is free to cut a corner across where a bridge lands. That is not a
+     * defect of the preview - it is the very collision this exists to make visible.
+     *
+     * <p>A cell alone in the void still contributes nothing: the lone-island rule reads the
+     * run rather than the walls, so a single-cell continent degenerates exactly as it does
+     * on the settled coast.
+     *
+     * @param sites      the sites
+     * @param parameters the knobs the cells are built under
+     * @param rules      the knobs the coast is traced under; the bridge reach goes unread,
+     *                   since there are no bridges to find
+     * @return the coasts, one closed run of points per continent
+     */
+    static TracedCoasts traceContinentCoasts(
+            List<double[]> sites,
+            SectorGeometryParameters parameters,
+            CoastRules rules) {
+
+        return traceCoastsAcrossWalls(
+            sites, parameters, rules, new DiscUnionBoundary.Walls(List.of(), 0));
+    }
+
+    // The shared tail of both entries: everything about tracing a coast that does not depend
+    // on where the walls came from. What differs between a sector coast and a continent coast
+    // is only the wall set - bridges found from the sites, or none at all - so the walk, the
+    // smoothing and the reach live once, here, and cannot drift between the two.
+    private static TracedCoasts traceCoastsAcrossWalls(
+            List<double[]> sites,
+            SectorGeometryParameters parameters,
+            CoastRules rules,
+            DiscUnionBoundary.Walls walls) {
 
         // ONE reach, for the walk and for the line alike.
         //

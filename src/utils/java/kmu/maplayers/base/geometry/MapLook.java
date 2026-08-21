@@ -80,6 +80,12 @@ final class MapLook {
     // underneath is the one mistake that would make it look right when it is not.
     static final Color COASTLINE = new Color(0x70, 0xe0, 0x90);
 
+    // A rival coast being previewed: each touching-connected run of cells traced as its own
+    // closed line, with no bridges laid. Deliberately unlike the settled coastline's colour -
+    // the whole point of drawing it is to see where the two constructions and the bridges
+    // disagree, and two greens would make agreement and disagreement look alike.
+    static final Color CONTINENT_COAST = new Color(0xc0, 0x60, 0xff);
+
     // The two halves of a coast crossing a cell, in colours nothing else on the map uses: the
     // run that goes where it should not, and the cell it goes into. Diagnostic rather than
     // decorative - when the construction is right, neither is ever drawn.

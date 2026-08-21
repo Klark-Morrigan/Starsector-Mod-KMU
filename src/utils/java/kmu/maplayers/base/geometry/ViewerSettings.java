@@ -43,6 +43,8 @@ final class ViewerSettings {
 
     static final double COAST_MAX_SKIPS_DEFAULT = Coastlines.DEFAULT_RULES.maxSkips();
 
+    static final Color CONTINENT_COAST_DEFAULT = MapLook.CONTINENT_COAST;
+
     static final Color COAST_CROSSING_DEFAULT = MapLook.COAST_CROSSING;
     static final Color PIERCED_CELL_DEFAULT = MapLook.PIERCED_CELL;
 
@@ -85,10 +87,15 @@ final class ViewerSettings {
     // void group: a cell is there whatever the void is doing.
     boolean showCellNames;
 
+    // The per-continent coast preview. Not part of the void group either, and off by default:
+    // it is a rival construction being judged against the settled coast, not a part of it.
+    boolean showContinentCoasts;
+
     double coastSkipMultiple = COAST_SKIP_DEFAULT;
     int coastMaxSkips = (int) COAST_MAX_SKIPS_DEFAULT;
 
     Color coastlineColour = COASTLINE_DEFAULT;
+    Color continentCoastColour = CONTINENT_COAST_DEFAULT;
     Color coastCrossingColour = COAST_CROSSING_DEFAULT;
     Color piercedCellColour = PIERCED_CELL_DEFAULT;
     Color inlandVoidColour = INLAND_VOID_DEFAULT;
