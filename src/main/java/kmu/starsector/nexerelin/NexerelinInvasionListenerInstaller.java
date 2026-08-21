@@ -45,6 +45,21 @@ public final class NexerelinInvasionListenerInstaller {
         Installer.install(sector);
     }
 
+    /**
+     * Clears the market-transfer listener when Nexerelin is enabled, and does
+     * nothing otherwise; a null sector is ignored.
+     *
+     * @param sector the sector whose listener manager is cleared
+     */
+    public static void uninstallIfPresent(SectorAPI sector) {
+        // Gated exactly as the install is, and for the same reason: a Nex-free install must not
+        // load the class that names the Nex InvasionListener, not even to remove it.
+        if (sector == null || !NexerelinPresence.isModEnabled()) {
+            return;
+        }
+        Installer.uninstall(sector);
+    }
+
     // Isolates the only reference to the Nex-coupled listener. The classloader
     // resolves this holder on first call, which the gate in installIfPresent
     // defers until Nex is known to be present, so InvasionListener is never
@@ -52,6 +67,7 @@ public final class NexerelinInvasionListenerInstaller {
     private static final class Installer {
 
         private static void install(SectorAPI sector) {
+            
             var listenerManager = sector.getListenerManager();
             if (listenerManager == null) {
                 return;
@@ -64,6 +80,15 @@ public final class NexerelinInvasionListenerInstaller {
             // the save (it registered this non-transiently), repairing that save on load.
             listenerManager.removeListenerOfClass(PoliticalMapMarketTransferListener.class);
             listenerManager.addListener(new PoliticalMapMarketTransferListener(), true);
+        }
+
+        private static void uninstall(SectorAPI sector) {
+
+            var listenerManager = sector.getListenerManager();
+            if (listenerManager == null) {
+                return;
+            }
+            listenerManager.removeListenerOfClass(PoliticalMapMarketTransferListener.class);
         }
     }
 }

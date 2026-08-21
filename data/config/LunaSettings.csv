@@ -3,7 +3,7 @@ fieldID,,,,fieldName,,fieldType,defaultValue,secondaryValue,,,fieldDescription,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 kmu_features_toggles_header,,,,Feature toggles,,Header,Feature toggles,,,,,,,,,Features
-kmu_features_mapLayers,,,,Enable map layers,,Boolean,TRUE,,,,"Enables [KMU Map Layers] and all related components (sidebar, mouseover effect, etc.). Map layers are rendered on sector map widgets (map screen, intel screen, Random Assortment of Things minimap replacement, etc.) as an information and presentation tool, with no effect on gameplay. Can be safely toggled on and off but [takes effect on the next save load]. Default: [true].",,,,,Features
+kmu_features_toggles_mapLayers,,,,Enable map layers,,Boolean,TRUE,,,,"Enables [KMU Map Layers] and all related components (sidebar, mouseover effect, etc.). Map layers are rendered on sector map widgets (map screen, intel screen, Random Assortment of Things minimap replacement, etc.) as an information and presentation tool, with no effect on gameplay. Can be safely toggled on and off on a save. Default: [true].",,,,,Features
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,

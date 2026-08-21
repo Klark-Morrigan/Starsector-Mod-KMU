@@ -5,6 +5,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.ui.coreui.ReflectiveCoreUiComponentRepainter;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 
+import kmu.starsector.listeners.SectorListeners;
+
 import static kmu.KmuWiringSteps.runGuardedStep;
 
 /**
@@ -46,6 +48,25 @@ public final class SidebarInstaller {
                 }
             },
             "Failed to restore KMU political map sidebar folds");
+    }
+
+    /**
+     * Clears the sidebar from every screen it draws on, for a player switching the map layers off.
+     *
+     * <p>Both classes rather than the roster, because the roster says which hosts exist and this has
+     * to clear whatever is registered - including a host's pair left by a roster that has since
+     * changed.
+     *
+     * @param sector the loaded sector; null is a no-op
+     */
+    public static void uninstallAll(SectorAPI sector) {
+
+        runGuardedStep(
+            () -> {
+                SectorListeners.removeListener(sector, SidebarRenderer.class);
+                SectorListeners.removeListener(sector, SidebarInput.class);
+            },
+            "Failed to remove KMU political map sidebar");
     }
 
     // Registers the sidebar's render and input listeners for every screen it draws on, walking the one

@@ -83,6 +83,22 @@ public final class KmuLunaSettings {
     }
 
     /**
+     * Runs {@code onChange} whenever any of KMU's LunaLib settings changes.
+     *
+     * <p>Offered beside the reads for the reason they are here: the mod id is bound in one place, so
+     * a caller that wants to react to a settings change names what it wants to do and nothing else.
+     *
+     * <p>The callback fires for a change to any field, not to one - LunaLib announces the settings
+     * rather than the setting - so a caller acting on one knob compares its value against what it
+     * last acted on rather than acting every time.
+     *
+     * @param onChange what to run after a settings change lands
+     */
+    public static void runOnSettingsChange(Runnable onChange) {
+        LunaSettingsReader.runOnSettingsChange(MOD_ID, onChange);
+    }
+
+    /**
      * @return a counter that advances whenever KMU's LunaLib settings change;
      *         a consumer rebuilds its cached state when this differs from the
      *         value it last saw

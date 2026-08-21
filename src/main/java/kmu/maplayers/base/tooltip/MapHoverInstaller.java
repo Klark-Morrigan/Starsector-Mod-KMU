@@ -51,6 +51,25 @@ public final class MapHoverInstaller {
             "Failed to install KMU hover tooltip detail mode input");
     }
 
+    /**
+     * Clears both halves of the hover box, for a player switching the map layers off.
+     *
+     * <p>The detail mode itself is left alone: it is a live view preference held in a
+     * process-lifetime singleton, so there is nothing registered to take back and nothing in a save
+     * to tidy.
+     *
+     * @param sector the loaded sector; null is a no-op
+     */
+    public static void uninstallAll(SectorAPI sector) {
+
+        runGuardedStep(
+            () -> {
+                SectorListeners.removeListener(sector, MapLayerCellTooltip.class);
+                SectorListeners.removeListener(sector, HoverTooltipDetailModeInput.class);
+            },
+            "Failed to remove KMU map layer hover tooltip");
+    }
+
     // Registers the hover-tooltip dispatcher - the render listener that draws whichever tooltip the
     // active map layer injects for the star system under the cursor. Transient, remove-then-add: it
     // draws only, holds no save-relevant state, and its cached GL text must never enter a save, so it

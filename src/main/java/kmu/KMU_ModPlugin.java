@@ -37,6 +37,11 @@ import kmu.ui.context.MarketUiContextInstaller;
  */
 public class KMU_ModPlugin extends BaseModPlugin {
 
+    // What the toggle was last applied as, so a settings change can tell whether this knob is the
+    // one that moved. Null until the first apply, which reads as "not what the setting says" and so
+    // applies - the safe direction for a state nothing has established yet.
+    private static Boolean appliedMapLayersEnabled;
+
     @Override
     public void onApplicationLoad() {
 
@@ -57,10 +62,19 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
         // Wire the concrete map layers into the framework registry once per launch, before any
         // sector map can open. The registry stays agnostic to which views exist; this is the
-        // one place they are named.
+        // one place they are named. Registered whatever the feature toggle says: the registry is
+        // process-level and holds no sector state, so a map with nothing installed draws through
+        // nothing at all - and gating it here would make the toggle need a restart rather than
+        // taking effect where the player made it.
         KmuWiringSteps.runGuardedStep(
             MapLayers::registerAll,
             "Failed to register KMU map layers");
+
+        // React to the feature toggle where the player flips it, rather than at the next load.
+        KmuWiringSteps.runGuardedStep(
+            () -> KmuLunaSettings.runOnSettingsChange(
+                () -> applyMapLayerFeatureIfToggled(Global.getSector())),
+            "Failed to install KMU feature toggle listener");
     }
 
     @Override
@@ -80,25 +94,23 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // colony unobserved again when they are switched back on.
         ColonySightingInstaller.installAll(sector);
 
-        installMapLayers(sector);
+        applyMapLayerFeature(sector);
     }
 
-    // The map layers and everything that stands them up, or their removal when the player has
-    // switched the feature off.
+    // Brings the sector into line with the map-layer toggle: everything stood up, or everything
+    // taken back. Named for what it does either way, since a method called install that also
+    // uninstalls tells a reader half of what it is for.
     //
-    // Read once per load rather than per frame, so a change takes effect on the next save load -
-    // which the setting's own description says, a deferred knob that does not say so reading as a
-    // broken one. The layer registry is stood up either way, at application load: it holds no
-    // sector state, and registering into it costs a map with nothing installed to draw through
-    // nothing at all.
-    static void installMapLayers(SectorAPI sector) {
+    // Applied unconditionally on load, whatever was applied before, because the sector is new and
+    // carries none of the previous one's wiring.
+    static void applyMapLayerFeature(SectorAPI sector) {
 
-        if (!KmuFeatureSettings.areMapLayersEnabled()) {
+        var areMapLayersEnabled = KmuFeatureSettings.areMapLayersEnabled();
 
-            // Only the surfaces have anything to take back. Every listener and script the four
-            // installers register is transient and simply never registered again; terrain is an
-            // entity, and one left behind would sit in the save for as long as it exists.
-            MapSurfaceInstaller.uninstallAll(sector);
+        appliedMapLayersEnabled = areMapLayersEnabled;
+
+        if (!areMapLayersEnabled) {
+            uninstallMapLayers(sector);
             return;
         }
 
@@ -110,5 +122,32 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
         SidebarInstaller.installAll(sector);
         MapHoverInstaller.installAll(sector);
+    }
+
+    // The same, run when the settings change rather than when a save loads, and only when this
+    // toggle is what changed.
+    //
+    // LunaLib announces that the settings changed rather than which setting did, so acting every
+    // time would tear down and rebuild the whole overlay whenever the player moved an unrelated
+    // slider - dropping the hover box's cached text and re-arming the frame claim for nothing.
+    // Comparing against what was last applied makes this the edge it reads as.
+    static void applyMapLayerFeatureIfToggled(SectorAPI sector) {
+
+        if (appliedMapLayersEnabled != null
+                && appliedMapLayersEnabled == KmuFeatureSettings.areMapLayersEnabled()) {
+            return;
+        }
+        applyMapLayerFeature(sector);
+    }
+
+    // Takes back everything the four installers stand up. All of them and not only the surfaces:
+    // across a load their listeners and scripts would be gone by themselves, being transient, but a
+    // player switching the overlay off mid-campaign is still running every one of them.
+    private static void uninstallMapLayers(SectorAPI sector) {
+
+        MapHoverInstaller.uninstallAll(sector);
+        SidebarInstaller.uninstallAll(sector);
+        MapSurfaceInstaller.uninstallAll(sector);
+        PoliticalMapInstaller.uninstallAll(sector);
     }
 }

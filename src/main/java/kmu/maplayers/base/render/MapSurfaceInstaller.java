@@ -33,6 +33,14 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  */
 public final class MapSurfaceInstaller {
 
+    // The two library scripts this installs, held so they can be taken out again by instance. Both
+    // are KMLib classes another mod may also be running in the same sector, so a removal by
+    // class would reach further than this mod's own wiring. Per process rather than per sector: a
+    // reference to a script from a sector since left is inert, since removing it from another
+    // sector does nothing, and the next install overwrites it.
+    private static MapIconReseater installedReseater;
+    private static OffScreenWidgetSuppressor installedMinimapSuppressor;
+
     private MapSurfaceInstaller() {
         // utility class, no instances.
     }
@@ -81,11 +89,16 @@ public final class MapSurfaceInstaller {
     }
 
     /**
-     * Removes every surface this installs, for a load where the map layers are switched off.
+     * Removes every surface this installs, for a player switching the map layers off.
      *
-     * <p>Only the terrain needs removing. The scripts and the frame claim are transient, so a load
-     * that never installs them is a load without them - but terrain is an entity and entities
-     * persist, so one left behind would sit in a save that has no use for it.
+     * <p>All of it, and not only the terrain: the toggle takes effect where the player made it, so
+     * the scripts and the claim have to stop within the session that registered them. Across a load
+     * they would have gone by themselves, being transient - but a player who switched the overlay
+     * off and went on playing would still have the reseat running and the frame boundary claimed.
+     *
+     * <p>The two library scripts are taken out by instance rather than by class, since a sibling KM
+     * mod may have its own of the same class in the same sector and this must not reach it. The
+     * watcher, the listeners and the terrain are all this mod's own, so a class is enough for them.
      *
      * @param sector the loaded sector; null leaves the save untouched rather than throwing
      */
@@ -94,6 +107,43 @@ public final class MapSurfaceInstaller {
         runGuardedStep(
             () -> MapLayerTerrainInstaller.removeMapLayerTerrain(sector),
             "Failed to remove KMU sector map layer terrain");
+
+        runGuardedStep(
+            () -> removeStarscapeTerrainReseater(sector),
+            "Failed to remove KMU sector map layer Starscape terrain reseater");
+
+        runGuardedStep(
+            () -> SectorListeners.removeListener(sector, MapFramePreparationClaim.class),
+            "Failed to remove KMU map layer frame preparation claim");
+
+        runGuardedStep(
+            () -> removeParkedMinimapSuppressor(sector),
+            "Failed to remove KMU parked minimap suppressor");
+    }
+
+    // Stops the reseat, by the instance this installed rather than by class: MapIconReseater is
+    // KMLib's and a sibling KM mod may be running its own over the same sector, which removing by
+    // class would take with it. Cleared after, so a later removal cannot reach a script belonging
+    // to a sector this one has since left.
+    static void removeStarscapeTerrainReseater(SectorAPI sector) {
+
+        if (sector == null || installedReseater == null) {
+            return;
+        }
+        sector.removeTransientScript(installedReseater);
+        installedReseater = null;
+    }
+
+    // Stops the suppressor, by instance and for the reason the reseat is - and with one of its own:
+    // the script hands the widget it silenced its opacity back as it goes, which a removal by class
+    // over somebody else's suppressor would do to a widget this mod never touched.
+    static void removeParkedMinimapSuppressor(SectorAPI sector) {
+
+        if (sector == null || installedMinimapSuppressor == null) {
+            return;
+        }
+        sector.removeTransientScript(installedMinimapSuppressor);
+        installedMinimapSuppressor = null;
     }
 
     // Registers the per-frame script that lifts the upper Starscape terrain over the map's nebula
@@ -130,10 +180,12 @@ public final class MapSurfaceInstaller {
 
         // A fresh script per load, so the previous save's spent lift attempts cannot carry into this
         // one and stand the move down over a sector it never tried.
-        sector.addTransientScript(new MapIconReseater(
+        installedReseater = new MapIconReseater(
             new MapPresence()::isStarscapeMapShowing,
             findAboveNebulaeTerrain,
-            () -> MapIconLayeringProbe.readLayeringOf(findAboveNebulaeTerrain.get())));
+            () -> MapIconLayeringProbe.readLayeringOf(findAboveNebulaeTerrain.get()));
+
+        sector.addTransientScript(installedReseater);
     }
 
     // Registers the render listener the map surfaces read their frame boundary from, and clears what
@@ -179,8 +231,10 @@ public final class MapSurfaceInstaller {
         }
         var minimapSuppression = RandomAssortmentOfThingsMinimapSuppression.createForLiveScreen();
 
-        sector.addTransientScript(new OffScreenWidgetSuppressor(
+        installedMinimapSuppressor = new OffScreenWidgetSuppressor(
             minimapSuppression::resolveSuppressibleMinimap,
-            VanillaScreen::resolveScreenBox));
+            VanillaScreen::resolveScreenBox);
+
+        sector.addTransientScript(installedMinimapSuppressor);
     }
 }
