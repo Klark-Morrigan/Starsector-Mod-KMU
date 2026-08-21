@@ -1,4 +1,4 @@
-package kmu.maplayers.base.hover.cover;
+package kmu.starsector.rat;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.input.CursorPosition;
@@ -6,8 +6,8 @@ import kmlib.starsector.ui.input.VanillaCursorPosition;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMap;
 
-import kmu.maplayers.base.hover.RandomAssortmentOfThingsMode;
-import kmu.maplayers.base.hover.SingleEmbeddedMapReader;
+import kmu.maplayers.base.hover.cover.MapCover;
+import kmu.starsector.ui.SingleEmbeddedMapReader;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;

@@ -1,4 +1,4 @@
-package kmu.maplayers.base.hover;
+package kmu.starsector.rat;
 
 import kmlib.starsector.rat.RandomAssortmentOfThingsMinimap;
 import kmlib.starsector.ui.map.presence.CampaignMinimap;

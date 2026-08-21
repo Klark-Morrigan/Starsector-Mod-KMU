@@ -1,11 +1,10 @@
-package kmu.maplayers.base.render;
+package kmu.starsector.rat;
 
 import com.fs.starfarer.api.ui.UIComponentAPI;
 
 import kmlib.starsector.ui.map.probes.EmbeddedMap;
 
-import kmu.maplayers.base.hover.RandomAssortmentOfThingsMode;
-import kmu.maplayers.base.hover.SingleEmbeddedMapReader;
+import kmu.starsector.ui.SingleEmbeddedMapReader;
 
 import java.util.function.Supplier;
 

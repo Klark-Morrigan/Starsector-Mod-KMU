@@ -1,4 +1,4 @@
-package kmu.maplayers.base.hover;
+package kmu.starsector.ui;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.map.probes.EmbeddedMap;

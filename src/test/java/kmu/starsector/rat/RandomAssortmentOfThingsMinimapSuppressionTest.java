@@ -1,4 +1,4 @@
-package kmu.maplayers.base.render;
+package kmu.starsector.rat;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.map.probes.EmbeddedMap;
@@ -6,8 +6,6 @@ import kmlib.testfixtures.starsector.ui.layout.PositionFake;
 import kmlib.testfixtures.starsector.ui.map.presence.CampaignMinimapFake;
 import kmlib.testfixtures.starsector.ui.map.probes.PlacedSectorMapWidgetFake;
 import kmlib.testfixtures.starsector.ui.map.probes.SectorMapWidgetFake;
-
-import kmu.maplayers.base.hover.RandomAssortmentOfThingsMode;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

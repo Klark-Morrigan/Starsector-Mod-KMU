@@ -1,6 +1,7 @@
 package kmu.maplayers.base.hover.cover;
 
 import kmu.starsector.consolecommands.ConsoleCommandsOverlay;
+import kmu.starsector.rat.RandomAssortmentOfThingsMinimapCover;
 
 import java.util.List;
 

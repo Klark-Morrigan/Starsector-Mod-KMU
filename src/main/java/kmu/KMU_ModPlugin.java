@@ -6,7 +6,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
-import kmu.maplayers.base.render.ParkedMinimapInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.politicalmap.base.PoliticalMapInstaller;
@@ -15,6 +14,7 @@ import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.KmuRetiredSettings;
 import kmu.starsector.colonies.ColonySightingInstaller;
+import kmu.starsector.rat.RandomAssortmentOfThingsCompatibilityInstaller;
 import kmu.ui.context.MarketUiContextInstaller;
 
 /**
@@ -47,15 +47,17 @@ public class KMU_ModPlugin extends BaseModPlugin {
         KMU_ModPlugin::installMapLayers,
         KMU_ModPlugin::uninstallMapLayers);
 
-    // Answers the compatibility mode rather than the map layers, and so is switched on its own: it
-    // writes into another mod's widget and none of what it does is about anything this mod paints.
-    // A player who has turned the overlay off has not thereby asked for a minimap they cannot see to
-    // start rendering a whole sector again. The knob is the map-layer settings class's because the
-    // mode it reads is shared with the layers' own compatibility reads.
-    private static final KmuToggledFeature parkedMinimapSuppression = new KmuToggledFeature(
-        KmuMapLayerSettings::getRandomAssortmentOfThingsModeEnabled,
-        ParkedMinimapInstaller::installAll,
-        ParkedMinimapInstaller::uninstallAll);
+    // Adapting to another mod, and so switched on its own: none of what it does is about anything
+    // this mod paints, and a player who turned the overlay off has not thereby asked for a minimap
+    // they cannot see to start rendering a whole sector again. Whether that mod is installed at all
+    // is the installer's own gate rather than this switch's - the two conditions change on
+    // different clocks, and the installer says which is which. The knob is the map-layer settings
+    // class's because the mode it reads is shared with the layers' own compatibility reads.
+    private static final KmuToggledFeature randomAssortmentOfThingsCompatibility =
+        new KmuToggledFeature(
+            KmuMapLayerSettings::getRandomAssortmentOfThingsModeEnabled,
+            RandomAssortmentOfThingsCompatibilityInstaller::installIfPresent,
+            RandomAssortmentOfThingsCompatibilityInstaller::uninstallAll);
 
     @Override
     public void onApplicationLoad() {
@@ -111,7 +113,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         ColonySightingInstaller.installAll(sector);
 
         mapLayers.applyTo(sector);
-        parkedMinimapSuppression.applyTo(sector);
+        randomAssortmentOfThingsCompatibility.applyTo(sector);
     }
 
     // Brings both switches to bear on the sector already wired, each acting only if it was the one
@@ -122,7 +124,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         var sector = Global.getSector();
 
         mapLayers.applyToIfSwitched(sector);
-        parkedMinimapSuppression.applyToIfSwitched(sector);
+        randomAssortmentOfThingsCompatibility.applyToIfSwitched(sector);
     }
 
     // What the map layers need of a sector while they are on, in the order they need it in.

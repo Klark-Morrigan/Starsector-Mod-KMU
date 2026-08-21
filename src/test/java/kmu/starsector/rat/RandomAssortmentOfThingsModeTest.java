@@ -1,4 +1,4 @@
-package kmu.maplayers.base.hover;
+package kmu.starsector.rat;
 
 import kmlib.testfixtures.starsector.ui.map.presence.CampaignMinimapFake;
 

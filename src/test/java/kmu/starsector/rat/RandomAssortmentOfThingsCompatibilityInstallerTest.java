@@ -1,7 +1,8 @@
-package kmu.maplayers.base.render;
+package kmu.starsector.rat;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.rat.RandomAssortmentOfThingsPresence;
 import kmlib.starsector.ui.suppression.OffScreenWidgetSuppressor;
 
 import org.junit.jupiter.api.Nested;
@@ -12,14 +13,56 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
- * Pins the parked-minimap suppressor as a transient script built fresh per load, and taken out by
- * the instance this installed rather than by its class.
+ * Pins the presence gate and the script's lifetime: nothing is registered on an install without
+ * that mod, and what is registered is taken back by the instance rather than by its class.
  */
-class ParkedMinimapInstallerTest {
+class RandomAssortmentOfThingsCompatibilityInstallerTest {
+
+    @Nested
+    class InstallIfPresent {
+
+        @Test
+        void registersNothingWhereThatModIsNotInstalled() {
+            // There is no minimap that could ever be parked, so a script registered anyway would
+            // walk the widget tree for the rest of the campaign to reach that conclusion.
+            var sectorMock = mock(SectorAPI.class);
+
+            try (var presenceMock = mockStatic(RandomAssortmentOfThingsPresence.class)) {
+
+                presenceMock
+                    .when(RandomAssortmentOfThingsPresence::isModEnabled)
+                    .thenReturn(false);
+
+                RandomAssortmentOfThingsCompatibilityInstaller.installIfPresent(sectorMock);
+
+                verify(sectorMock, never())
+                    .addTransientScript(any());
+            }
+        }
+
+        @Test
+        void registersTheSuppressorWhereThatModIsInstalled() {
+
+            var sectorMock = mock(SectorAPI.class);
+
+            try (var presenceMock = mockStatic(RandomAssortmentOfThingsPresence.class)) {
+
+                presenceMock
+                    .when(RandomAssortmentOfThingsPresence::isModEnabled)
+                    .thenReturn(true);
+
+                RandomAssortmentOfThingsCompatibilityInstaller.installIfPresent(sectorMock);
+
+                verify(sectorMock)
+                    .addTransientScript(any(OffScreenWidgetSuppressor.class));
+            }
+        }
+    }
 
     @Nested
     class InstallParkedMinimapSuppressor {
@@ -32,7 +75,8 @@ class ParkedMinimapInstallerTest {
             // name into the file.
             var sectorMock = mock(SectorAPI.class);
 
-            ParkedMinimapInstaller.installParkedMinimapSuppressor(sectorMock);
+            RandomAssortmentOfThingsCompatibilityInstaller
+                .installParkedMinimapSuppressor(sectorMock);
 
             verify(sectorMock)
                 .addTransientScript(any(OffScreenWidgetSuppressor.class));
@@ -48,8 +92,10 @@ class ParkedMinimapInstallerTest {
             var firstLoadSectorMock = mock(SectorAPI.class);
             var secondLoadSectorMock = mock(SectorAPI.class);
 
-            ParkedMinimapInstaller.installParkedMinimapSuppressor(firstLoadSectorMock);
-            ParkedMinimapInstaller.installParkedMinimapSuppressor(secondLoadSectorMock);
+            RandomAssortmentOfThingsCompatibilityInstaller
+                .installParkedMinimapSuppressor(firstLoadSectorMock);
+            RandomAssortmentOfThingsCompatibilityInstaller
+                .installParkedMinimapSuppressor(secondLoadSectorMock);
 
             var firstSuppressor = ArgumentCaptor.forClass(OffScreenWidgetSuppressor.class);
             var secondSuppressor = ArgumentCaptor.forClass(OffScreenWidgetSuppressor.class);
@@ -67,7 +113,8 @@ class ParkedMinimapInstallerTest {
         void toleratesANullSector() {
 
             var suppressorInstallOnNullSector = (Runnable) () ->
-                ParkedMinimapInstaller.installParkedMinimapSuppressor(null);
+                RandomAssortmentOfThingsCompatibilityInstaller
+                    .installParkedMinimapSuppressor(null);
 
             assertThatCode(suppressorInstallOnNullSector::run)
                 .doesNotThrowAnyException();
@@ -85,14 +132,16 @@ class ParkedMinimapInstallerTest {
             // written into on the way out.
             var sectorMock = mock(SectorAPI.class);
 
-            ParkedMinimapInstaller.installParkedMinimapSuppressor(sectorMock);
+            RandomAssortmentOfThingsCompatibilityInstaller
+                .installParkedMinimapSuppressor(sectorMock);
 
             var installedSuppressor = ArgumentCaptor.forClass(OffScreenWidgetSuppressor.class);
 
             verify(sectorMock)
                 .addTransientScript(installedSuppressor.capture());
 
-            ParkedMinimapInstaller.removeParkedMinimapSuppressor(sectorMock);
+            RandomAssortmentOfThingsCompatibilityInstaller
+                .removeParkedMinimapSuppressor(sectorMock);
 
             verify(sectorMock)
                 .removeTransientScript(installedSuppressor.getValue());
@@ -101,14 +150,17 @@ class ParkedMinimapInstallerTest {
         }
 
         @Test
-        void takesOutNothingWhereNothingWasInstalled() {
-            // The switch read off at a load that never installed, which must not reach for a script
-            // belonging to whatever sector was wired before this one.
+        void takesOutNothingWhereNothingIsHeld() {
+            // A removal asked twice, which must not reach for a script belonging to whatever sector
+            // was wired before this one.
             var sectorMock = mock(SectorAPI.class);
 
-            ParkedMinimapInstaller.installParkedMinimapSuppressor(sectorMock);
-            ParkedMinimapInstaller.removeParkedMinimapSuppressor(sectorMock);
-            ParkedMinimapInstaller.removeParkedMinimapSuppressor(sectorMock);
+            RandomAssortmentOfThingsCompatibilityInstaller
+                .installParkedMinimapSuppressor(sectorMock);
+            RandomAssortmentOfThingsCompatibilityInstaller
+                .removeParkedMinimapSuppressor(sectorMock);
+            RandomAssortmentOfThingsCompatibilityInstaller
+                .removeParkedMinimapSuppressor(sectorMock);
 
             verify(sectorMock)
                 .removeTransientScript(any());
@@ -118,7 +170,8 @@ class ParkedMinimapInstallerTest {
         void toleratesANullSector() {
 
             var suppressorRemovalOnNullSector = (Runnable) () ->
-                ParkedMinimapInstaller.removeParkedMinimapSuppressor(null);
+                RandomAssortmentOfThingsCompatibilityInstaller
+                    .removeParkedMinimapSuppressor(null);
 
             assertThatCode(suppressorRemovalOnNullSector::run)
                 .doesNotThrowAnyException();
