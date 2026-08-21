@@ -316,8 +316,9 @@ final class SectorGeometryViewer implements ViewerRefreshes {
         refreshVoidSections();
     }
 
-    @Override
-    public void refreshVoidSections() {
+    // Not on the refresh contract: the panel has no knob that moves the sections without
+    // moving the walls first, so this is reached through the coast rather than asked for.
+    private void refreshVoidSections() {
 
         voidSections.refresh(fixture);
         readout.nameRegionsFrom(cellNames, voidSections.getSections());
@@ -358,7 +359,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
 
         for (var entry : geometry.cellEdgesByCellId().entrySet()) {
 
-            var ring = convertEdgesToRing(entry.getValue());
+            var ring = CellEdges.convertEdgesToRing(entry.getValue());
 
             if (ring.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                 continue;
@@ -366,14 +367,6 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             named.add(NamedRegion.nameRegion(entry.getKey(), ring));
         }
         return List.copyOf(named);
-    }
-
-    // A cell's border as a closed ring. Each edge begins where the last one ended, so the
-    // starts alone are the ring and taking both ends would repeat every vertex.
-    private static List<double[]> convertEdgesToRing(List<CellEdge> edges) {
-        return edges.stream()
-            .map(edge -> new double[] {edge.x1(), edge.y1()})
-            .toList();
     }
 
     private void refreshStatus() {
@@ -644,7 +637,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
                 settings.channelColour, settings.channelOpacity));
 
             for (var cell : geometry.cellEdgesByCellId().values()) {
-                g2.fill(MapPainting.buildPath(convertEdgesToRing(cell)));
+                g2.fill(MapPainting.buildPath(CellEdges.convertEdgesToRing(cell)));
             }
         }
 

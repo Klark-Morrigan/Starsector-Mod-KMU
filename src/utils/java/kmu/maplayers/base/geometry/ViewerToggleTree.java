@@ -44,12 +44,17 @@ import javax.swing.UIManager;
  */
 final class ViewerToggleTree {
 
+    // Tighter than the padding a slider or a colour row takes. A block of a dozen switches
+    // is read as a block, and spacing them like the knobs below would push the last of them
+    // off the panel.
     private static final int ROW_PADDING = 2;
 
     // How far one level of nesting shifts a row, in pixels. Enough to read as a level at a
     // glance without pushing the deepest labels into the panel's scroll bar.
     private static final int INDENT_STEP = 14;
 
+    // The rows are laid one per line, so the grid is one column of however many rows there
+    // are - named because a bare 1 in a GridLayout says nothing about which axis it fixes.
     private static final int SINGLE_COLUMN = 1;
 
     private ViewerToggleTree() {
@@ -277,6 +282,8 @@ final class ViewerToggleTree {
     // ordinary checkboxes without looking foreign, and a filled square for the third.
     private static final class TriStateBox extends JCheckBox {
 
+        // How far inside the box the partial marker is drawn. Enough that it reads as a
+        // filled square within the frame rather than as a box that has been shaded in.
         private static final int MARK_INSET = 4;
 
         private TriState state = TriState.NONE;

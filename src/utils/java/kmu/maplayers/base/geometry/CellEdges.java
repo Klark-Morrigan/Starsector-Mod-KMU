@@ -3,7 +3,7 @@ package kmu.maplayers.base.geometry;
 import java.util.List;
 
 /**
- * Finding which of a cell's true edges a point came off.
+ * Reading a cell's true edges: which one a point came off, and the ring they make.
  *
  * <p>The shaping hands back a fill polygon and a per-edge boundary flag, but not what each
  * fill edge FACES - and facing is what decides how an edge is drawn and how wide the gap
@@ -14,6 +14,23 @@ import java.util.List;
 final class CellEdges {
 
     private CellEdges() {
+    }
+
+    /**
+     * A cell's border as a closed ring of points.
+     *
+     * <p>The starts alone, because each edge begins where the last one ended: taking both ends
+     * of every edge would repeat each vertex, and a ring with every point doubled draws the
+     * same shape while measuring, filling and hit-testing differently.
+     *
+     * @param edges the cell's true edges, in order round it
+     * @return the ring
+     */
+    static List<double[]> convertEdgesToRing(List<CellEdge> edges) {
+
+        return edges.stream()
+            .map(edge -> new double[] {edge.x1(), edge.y1()})
+            .toList();
     }
 
     /**

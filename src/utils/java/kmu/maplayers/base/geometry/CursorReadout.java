@@ -27,6 +27,9 @@ import java.util.function.Function;
  */
 final class CursorReadout {
 
+    // How far the box sits from the pointer, and the margin inside it. Clear enough of the
+    // tip that the pointer is not standing on the very thing it is reporting, and down-right
+    // by default because that is the corner a pointer arrow leaves free.
     private static final int OFFSET_X = 14;
     private static final int OFFSET_Y = 20;
     private static final int PADDING = 4;
@@ -35,6 +38,9 @@ final class CursorReadout {
     // along with the rest of it.
     private static final int ERASE_MARGIN = 1;
 
+    // Not map colours and so not read off the palette: this is writing ON the picture rather
+    // than part of it, and it has to stay legible over a fill of any colour. Part-transparent
+    // so that what it covers can still be made out underneath.
     private static final Color TEXT = new Color(0xff, 0xff, 0xff);
     private static final Color BACKDROP = new Color(0x00, 0x00, 0x00, 0xc0);
 

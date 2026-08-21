@@ -8,7 +8,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -139,11 +138,8 @@ final class SectorSvgWriter {
     private static void appendRawCells(StringBuilder svg, Map<String, List<CellEdge>> cellEdges) {
 
         for (var edges : cellEdges.values()) {
-            var ring = new ArrayList<double[]>(edges.size());
-            for (var edge : edges) {
-                ring.add(new double[] {edge.x1(), edge.y1()});
-            }
-            appendPolygon(svg, ring, "none", CELL_COLOUR, CELL_STROKE);
+            appendPolygon(
+                svg, CellEdges.convertEdgesToRing(edges), "none", CELL_COLOUR, CELL_STROKE);
         }
     }
 

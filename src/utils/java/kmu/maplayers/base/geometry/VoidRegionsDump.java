@@ -35,19 +35,9 @@ final class VoidRegionsDump {
 
     private static final double BRIDGE_REACH_MULTIPLE = ShippedMap.BRIDGE_REACH_MULTIPLE;
 
-    // Shares to sweep the division across, so the knob has a starting range instead of being
-    // a bare slider. Spread over the whole span rather than clustered near the default,
-    // because both ends of it are wrong in a different way and seeing where each one sets in
-    // is the point.
-    private static final double[] SWEPT_SHARES = {0, 0.2, 0.4, 0.6, 0.8, 1.0};
-
     // Area percentiles worth naming when deciding where the "leave it alone" threshold sits.
     private static final double MEDIAN_FRACTION = 0.5;
     private static final double[] REPORTED_PERCENTILES = {MEDIAN_FRACTION, 0.9, 1.0};
-
-    // The low end as well as the high, because what is being asked of the frontages is
-    // whether the crossed cells sit at the crowded end of the population.
-    private static final double[] FRONTAGE_PERCENTILES = {0.1, MEDIAN_FRACTION, 0.9};
 
     private VoidRegionsDump() {
     }

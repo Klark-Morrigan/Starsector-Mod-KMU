@@ -26,7 +26,7 @@ final class VoidSectionsOverlay {
 
     private final ViewerSettings settings;
 
-    // What the last division produced, held rather than recomputed while painting: a frame that
+    // What the last naming produced, held rather than recomputed while painting: a frame that
     // redid it would be drawing marks measured against geometry the rest of the frame is not
     // being drawn from.
     private List<NamedRegion> inland = List.of();

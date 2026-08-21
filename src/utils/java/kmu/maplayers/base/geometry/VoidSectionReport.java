@@ -24,6 +24,9 @@ import java.util.TreeSet;
  */
 final class VoidSectionReport {
 
+    // The middle, the far end, and the worst - which is what a population of shapes wants
+    // read out of it. A mean would hide the one section that is nothing like the rest, and
+    // the rest is what the median already says.
     private static final double[] REPORTED_PERCENTILES = {0.5, 0.9, 1.0};
 
     // Enough of the field to see whether a section was taken outright or scraped. Beyond the
@@ -74,6 +77,8 @@ final class VoidSectionReport {
         VoidSections.NamedSection named,
         VoidSectionOwners.SectionOwner owner) {
 
+        // Reached through rather than around, so a reader of one of these asks it for what it
+        // is rather than remembering which half of it holds what.
         String id() {
             return named.id();
         }

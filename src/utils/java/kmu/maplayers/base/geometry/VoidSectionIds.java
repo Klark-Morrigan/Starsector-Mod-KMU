@@ -15,11 +15,11 @@ import java.util.Locale;
  * namespace, held apart from a real star's only by a prefix nothing else uses.
  *
  * <p>Named from the CELLS AROUND IT rather than from anything about the run that produced it.
- * Sections come out of the division in list order, and that order moves with a threshold, a
- * fixture edit, or a tie in the sort - so a name taken from it would rename half the map for a
- * reason nobody could see. The cells around a piece of void are what that piece of void IS: a
- * name anchored to them is untouched by a politics refresh, and changes exactly when the cells
- * bounding it change, which is when the region genuinely differs.
+ * The boundary walk hands the holes back in whatever order it met them, and that order moves
+ * with a knob, a fixture edit, or a tie in a sort - so a name taken from it would rename half
+ * the map for a reason nobody could see. The cells around a piece of void are what that piece
+ * of void IS: a name anchored to them is untouched by a politics refresh, and changes exactly
+ * when the cells bounding it change, which is when the region genuinely differs.
  *
  * <p><b>The cells alone are not quite enough.</b> Two distinct pieces of void can run on the
  * same pair of cells - one on each side of the line between them - and across the two fixtures

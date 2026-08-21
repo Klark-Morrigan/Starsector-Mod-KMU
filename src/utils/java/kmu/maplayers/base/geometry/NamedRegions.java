@@ -40,6 +40,9 @@ import java.util.List;
  */
 final class NamedRegions {
 
+    // Small enough that a name takes little of the region it names, large enough to read at
+    // a glance. Fixed rather than scaled with the zoom: a name sized by the zoom would grow
+    // with the shape it sits on and never come to fit it.
     private static final float LABEL_POINT_SIZE = 11f;
 
     // Not a map colour and so not read off the palette: the backdrop exists to keep text
@@ -47,6 +50,9 @@ final class NamedRegions {
     // than of the thing being written about.
     private static final Color LABEL_BACKDROP = new Color(0x00, 0x00, 0x00, 0xc0);
 
+    // The margin between a name and the edge of its own backdrop. Enough that the glyphs do
+    // not touch the fill showing past it, which is what makes the box read as a label rather
+    // than as a shape on the map.
     private static final int LABEL_PADDING = 3;
 
     // How solidly a name is drawn when its region cannot quite hold it, and the floor it falls
