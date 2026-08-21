@@ -28,6 +28,7 @@ final class ViewerSettings {
     static final Color UNOWNED_CELL_DEFAULT = MapLook.UNOWNED_CELL;
     static final Color UNBOUNDED_CELL_DEFAULT = MapLook.UNBOUNDED_CELL;
     static final Color INLAND_VOID_DEFAULT = MapLook.INLAND_VOID;
+    static final Color COASTAL_VOID_DEFAULT = MapLook.COASTAL_VOID;
     static final Color CHANNEL_DEFAULT = MapLook.CHANNEL;
     static final Color CENTRELINE_DEFAULT = MapLook.CENTRELINE;
     static final Color VOID_BRIDGE_DEFAULT = MapLook.VOID_BRIDGE;
@@ -92,6 +93,8 @@ final class ViewerSettings {
     Color piercedCellColour = PIERCED_CELL_DEFAULT;
     Color inlandVoidColour = INLAND_VOID_DEFAULT;
     Color inlandVoidEdge = INLAND_VOID_DEFAULT;
+    Color coastalVoidColour = COASTAL_VOID_DEFAULT;
+    Color coastalVoidEdge = COASTAL_VOID_DEFAULT;
     Color voidBridgeColour = VOID_BRIDGE_DEFAULT;
     Color regionNameColour = REGION_NAME_DEFAULT;
     Color siteColour = SITE_COLOUR;

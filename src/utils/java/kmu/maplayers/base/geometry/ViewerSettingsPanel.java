@@ -123,6 +123,21 @@ final class ViewerSettingsPanel {
             PANEL_PADDING,
             PANEL_PADDING));
 
+        addCellGeometryRows(controls);
+        addCellPaintRows(controls);
+        addMapChromeRows(controls);
+
+        controls.add(ViewerControls.buildDivider());
+
+        addVoidPocketRows(controls);
+
+        return controls;
+    }
+
+    // The five knobs that decide what shape the cells are. Every one of them rebuilds the
+    // partition, which is what makes them geometry rather than paint.
+    private void addCellGeometryRows(JPanel controls) {
+
         controls.add(buildSlider(
             "Cell reach (cell radius)",
             REACH_MINIMUM,
@@ -182,6 +197,10 @@ final class ViewerSettingsPanel {
                 settings.parameters.borderInset(),
                 settings.parameters.weldTolerance(),
                 settings.parameters.miterSpikeLimit())));
+    }
+
+    // What the cells are painted with, and how solidly.
+    private void addCellPaintRows(JPanel controls) {
 
         controls.add(ViewerControls.buildColourPair(
             "Owned cells",
@@ -250,6 +269,11 @@ final class ViewerSettingsPanel {
             JITTER_MAXIMUM,
             ViewerSettings.JITTER_DEFAULT,
             strength -> settings.jitterStrength = (float) (strength / ViewerSettings.JITTER_SCALE)));
+    }
+
+    // The marks that are neither cell nor void: the sites, the borders the insets were measured
+    // from, the channel between two fills, and the names written over any of it.
+    private void addMapChromeRows(JPanel controls) {
 
         controls.add(ViewerControls.buildColour(
             "Site dots",
@@ -293,12 +317,6 @@ final class ViewerSettingsPanel {
             ViewerSettings.REGION_NAME_DEFAULT,
             colour -> settings.regionNameColour = colour,
             refreshes::repaintMap));
-
-        controls.add(ViewerControls.buildDivider());
-
-        addVoidPocketRows(controls);
-
-        return controls;
     }
 
     // Everything about the void, under one rule and in the order the toggles above it read:
@@ -344,10 +362,21 @@ final class ViewerSettingsPanel {
             refreshes::repaintMap));
 
         controls.add(ViewerControls.buildColour(
-            "Smoothed outer edge",
-            "Smoothed outer edge",
+            "Coastline",
+            "Coastline",
             ViewerSettings.COASTLINE_DEFAULT,
             colour -> settings.coastlineColour = colour,
+            refreshes::repaintMap));
+
+        // Its own colour rather than the coastline's, so the two kinds of pocket read the same
+        // way: a wall colour and a fill colour each. Sharing one made the coastal fill the only
+        // fill on the map painted in the colour of the line that closed it.
+        controls.add(ViewerControls.buildColourPair(
+            "Coastal void fill",
+            "Coastal void fill",
+            ViewerSettings.COASTAL_VOID_DEFAULT, ViewerSettings.COASTAL_VOID_DEFAULT,
+            colour -> settings.coastalVoidColour = colour,
+            colour -> settings.coastalVoidEdge = colour,
             refreshes::repaintMap));
 
         controls.add(ViewerControls.buildSlider(

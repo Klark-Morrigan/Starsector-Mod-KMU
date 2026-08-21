@@ -79,8 +79,6 @@ final class VoidPockets {
      *                       say
      * @param centre         the middle of its true extent, so a pocket with nothing to draw
      *                       can still be pointed at
-     * @param adjacentCells  the sites whose cells ring it, in the order its outline meets
-     *                       them, which are also its sections
      * @param span           the distance between its two most distant points, measured on
      *                       the void itself and not on what is drawn, so the threshold it is
      *                       tested against does not move with the channel width
@@ -96,7 +94,6 @@ final class VoidPockets {
     record VoidPocket(
         List<List<double[]>> outlines,
         double[] centre,
-        List<Integer> adjacentCells,
         double span,
         String absorbingOwner,
         VoidSection section) {
@@ -242,7 +239,6 @@ final class VoidPockets {
         return new VoidPocket(
             outlines,
             Points.computeMean(hole.boundary()),
-            hole.ringing(),
             hole.measureSpan(),
             absorbingOwner,
             VoidSection.buildFromHole(hole));

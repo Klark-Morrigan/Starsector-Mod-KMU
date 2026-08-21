@@ -6,19 +6,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The void cut into sections, named.
+ * The void, named.
  *
- * <p>The cuts themselves are not drawn. A line across a pocket saying where it was divided is
- * what the retired first void-pocket construction put on the map, and it is not wanted back:
- * the division is a step on the way to deciding who holds each piece, not a border anybody is
- * meant to read. What the map shows of it is the NAMES, one per piece, which say the pocket
- * came out as more than one thing without drawing a boundary that nothing will ever paint.
+ * <p>One name per piece of void, and the pieces are what the walls left: the bridges and the
+ * coast's reaches shut a long corridor into separate holes before there is anything to name,
+ * so nothing here divides or draws a division.
  *
  * <p><b>Built whether or not anything is switched on.</b> Everything else here is built only
  * while it is on screen, because the work is per-frame-visible. This is not: the pointer readout
  * names whatever piece of void it is over, and a readout that only worked while the names
  * happened to be drawn would be a readout with a hidden precondition. The cost is one coast
- * trace and one division per rebuild, beside the trace the coast overlay already does.
+ * trace per rebuild, beside the trace the coast overlay already does.
  *
  * <p>The sections are taken at the cells' own reach whatever the pocket shaping is set to. What
  * a piece of void is and what it is called are facts about the void itself; the shaping decides
@@ -39,15 +37,12 @@ final class VoidSectionsOverlay {
     }
 
     /**
-     * Cuts the void into sections again and names them.
+     * Finds the sections again and names them.
      *
-     * @param fixture the sector to divide, which carries the system ids a section is named from
-     *                as well as the sites it is measured against
+     * @param fixture the sector to name in, which carries the system ids a section is named
+     *                from as well as the sites it is measured against
      */
     void refresh(SectorFixture fixture) {
-
-        var sites = fixture.getSites();
-        var systemIds = fixture.getSystemIds();
 
         // Walls laid, because a wall closes void the cells did not close on their own and those
         // pieces are sections like any other. Traced here rather than taken from the coast
@@ -55,25 +50,18 @@ final class VoidSectionsOverlay {
         // coast LINE is drawn.
         var laid = LaidCoast.layCoast(
             Coastlines.traceSectorCoasts(
-                sites, settings.parameters, settings.resolveCoastRules()),
+                fixture.getSites(), settings.parameters, settings.resolveCoastRules()),
             settings.parameters);
 
         var foundInland = new ArrayList<NamedRegion>();
         var foundCoastal = new ArrayList<NamedRegion>();
 
-        for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
-                laid.atCells(), laid.walls(), settings.parameters.boundSegments())) {
+        for (var named : VoidSections.collectNamedSections(laid, fixture.getSystemIds())) {
 
-            var section = VoidSection.buildFromHole(hole);
-
-            var named = NamedRegion.nameRegion(
-                VoidSectionIds.nameSection(section, sites, systemIds),
-                section.outline());
-
-            if (section.kind() == VoidSection.SectionKind.COASTAL) {
-                foundCoastal.add(named);
+            if (named.section().kind() == VoidSection.SectionKind.COASTAL) {
+                foundCoastal.add(named.region());
             } else {
-                foundInland.add(named);
+                foundInland.add(named.region());
             }
         }
         inland = List.copyOf(foundInland);

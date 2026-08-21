@@ -71,22 +71,21 @@ final class ViewerToggleTree {
     }
 
     /**
-     * One row of the block: either a switch or a roll-up over several.
+     * One row of the block.
      *
-     * <p>One type for both because the panel lays them out as one list and their difference is
-     * not a layout difference. A row with no {@code covers} is a switch; a row with some is a
-     * roll-up, and its own {@code toggle} is then only a place to show and change them.
-     *
-     * @param indent how many levels in it sits, for layout only
-     * @param title  what it is called
-     * @param toggle the switch it is, or null when it is a roll-up
-     * @param covers the keys of the switches it rolls up, empty when it is a switch
+     * <p>Sealed over the two kinds rather than one shape with a field left null for whichever
+     * kind does not use it: a row is a switch or a roll-up, never both and never neither, and
+     * this is the statement of that. The layout treats them alike, which is why they share a
+     * list; nothing else about them is alike, and a reader taking a row apart is made to say
+     * which one it has.
      */
-    record Row(
-        int indent,
-        String title,
-        Switch toggle,
-        List<String> covers) {
+    sealed interface Row permits SwitchRow, RollUpRow {
+
+        /** @return how many levels in it sits, for layout only */
+        int indent();
+
+        /** @return what it is called */
+        String title();
 
         /**
          * A switch at the given depth.
@@ -96,7 +95,7 @@ final class ViewerToggleTree {
          * @return the row
          */
         static Row ofSwitch(int indent, Switch toggle) {
-            return new Row(indent, toggle.title(), toggle, List.of());
+            return new SwitchRow(indent, toggle);
         }
 
         /**
@@ -108,12 +107,32 @@ final class ViewerToggleTree {
          * @return the row
          */
         static Row ofRollUp(int indent, String title, String... covers) {
-            return new Row(indent, title, null, List.of(covers));
+            return new RollUpRow(indent, title, List.of(covers));
         }
+    }
 
-        boolean isRollUp() {
-            return toggle == null;
+    /**
+     * A row that is one switch.
+     *
+     * @param indent how many levels in it sits
+     * @param toggle the switch it stands for
+     */
+    record SwitchRow(int indent, Switch toggle) implements Row {
+
+        @Override
+        public String title() {
+            return toggle.title();
         }
+    }
+
+    /**
+     * A row that speaks for several switches at once.
+     *
+     * @param indent how many levels in it sits
+     * @param title  what it is called
+     * @param covers the keys of the switches it rolls up
+     */
+    record RollUpRow(int indent, String title, List<String> covers) implements Row {
     }
 
     /**
@@ -139,17 +158,17 @@ final class ViewerToggleTree {
 
         for (var row : rows) {
 
-            if (row.isRollUp()) {
+            if (row instanceof RollUpRow rollUp) {
 
-                var box = new TriStateBox(row.title());
+                var box = new TriStateBox(rollUp.title());
 
-                rollUps.add(new RollUp(box, row.covers()));
+                rollUps.add(new RollUp(box, rollUp.covers()));
 
                 box.addActionListener(event -> {
 
                     var turningOn = box.getState() != TriState.ALL;
 
-                    for (var key : row.covers()) {
+                    for (var key : rollUp.covers()) {
                         switches.get(key).setSelected(turningOn);
                     }
                     applyAll(switches, rows, saved);
@@ -159,9 +178,9 @@ final class ViewerToggleTree {
 
                 block.add(layOutRow(box, row.indent()));
 
-            } else {
+            } else if (row instanceof SwitchRow switchRow) {
 
-                var toggle = row.toggle();
+                var toggle = switchRow.toggle();
                 var box = new JCheckBox(
                     toggle.title(), saved.getBoolean(toggle.key(), toggle.fallback()));
 
@@ -206,14 +225,14 @@ final class ViewerToggleTree {
 
         for (var row : rows) {
 
-            if (row.isRollUp()) {
-                continue;
+            if (row instanceof SwitchRow switchRow) {
+
+                var toggle = switchRow.toggle();
+                var state = switches.get(toggle.key()).isSelected();
+
+                toggle.apply().accept(state);
+                saved.putBoolean(toggle.key(), state);
             }
-
-            var state = switches.get(row.toggle().key()).isSelected();
-
-            row.toggle().apply().accept(state);
-            saved.putBoolean(row.toggle().key(), state);
         }
     }
 

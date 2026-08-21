@@ -12,7 +12,7 @@ import java.util.List;
  * <p>The second way of arriving at a void pocket, beside {@link VoidPockets}. That one starts
  * from the cells and finds the void they closed around; this one starts from the lines the
  * smoothing drew and finds the void those lines cut off. They come back as the same
- * {@link VoidPockets.VoidPocket}, because what a pocket is - bound void, shaped, sectioned,
+ * {@link VoidPockets.VoidPocket}, because what a pocket is - bound void, shaped and
  * ringed by cells - has nothing to do with what closed it.
  *
  * <p><b>A reach of coast is laid as a wall, exactly as a bridge is.</b> That is the whole of

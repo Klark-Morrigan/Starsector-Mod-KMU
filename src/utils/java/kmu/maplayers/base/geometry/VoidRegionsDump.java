@@ -288,7 +288,7 @@ final class VoidRegionsDump {
             var owners = new LinkedHashSet<String>();
             var hasUnowned = false;
 
-            for (var site : pocket.adjacentCells()) {
+            for (var site : pocket.section().cells()) {
 
                 var owner = ownerBySite.get(site);
 
@@ -380,7 +380,7 @@ final class VoidRegionsDump {
         for (var pocket : pockets) {
 
             shares.add(pocket.span() / cellWidth);
-            sections.add((double) pocket.adjacentCells().size());
+            sections.add((double) pocket.section().cells().size());
 
         }
 

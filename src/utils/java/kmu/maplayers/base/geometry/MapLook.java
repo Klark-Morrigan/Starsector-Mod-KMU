@@ -63,6 +63,12 @@ final class MapLook {
     // one mistake that would make the shape look right when it is not.
     static final Color VOID_BRIDGE = new Color(0xff, 0xd0, 0x40);
 
+    // The void a reach of the smoothed coast shut in behind it, filled. Apart from the
+    // coastline's own colour so that both kinds of pocket read alike - a wall colour and a
+    // fill colour each - rather than the coastal fill alone being painted in the colour of
+    // the line that closed it.
+    static final Color COASTAL_VOID = new Color(0x30, 0x70, 0xb0);
+
     // What a name is written in, whether it names a cell or a piece of void. One colour for
     // both because a name is not a shape: it says what a reader is looking at rather than
     // marking out anything, and two colours would imply a distinction the map already makes

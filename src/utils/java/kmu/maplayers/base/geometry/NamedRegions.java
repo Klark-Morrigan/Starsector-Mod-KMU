@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Rectangle;
+
 import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
@@ -84,9 +86,7 @@ final class NamedRegions {
             paintName(
                 text,
                 region.name(),
-                (int) at.x - width / HALVES,
-                (int) at.y,
-                width,
+                findBackdrop(at, width, metrics),
                 metrics,
                 colour);
         }
@@ -117,25 +117,42 @@ final class NamedRegions {
         return null;
     }
 
+    // The box a name is painted on, centred over the point its region anchors it at.
+    //
+    // A box rather than the four numbers it is made of: they only mean anything together, and
+    // handed over loose they were four of a method's seven parameters with nothing but their
+    // order saying which was which.
+    private static Rectangle findBackdrop(Point2D at, int width, FontMetrics metrics) {
+
+        return new Rectangle(
+            (float) at.getX() - width / (float) HALVES - LABEL_PADDING,
+            (float) at.getY() - metrics.getAscent() - LABEL_PADDING,
+            width + (float) HALVES * LABEL_PADDING,
+            metrics.getHeight() + (float) HALVES * LABEL_PADDING);
+    }
+
     // One name on a backdrop, so it stays readable over a fill of any colour.
     private static void paintName(
             Graphics2D g2,
             String name,
-            int x,
-            int y,
-            int width,
+            Rectangle backdrop,
             FontMetrics metrics,
             Color colour) {
 
         g2.setColor(LABEL_BACKDROP);
         g2.fillRect(
-            x - LABEL_PADDING,
-            y - metrics.getAscent() - LABEL_PADDING,
-            width + HALVES * LABEL_PADDING,
-            metrics.getHeight() + HALVES * LABEL_PADDING);
+            Math.round(backdrop.x()),
+            Math.round(backdrop.y()),
+            Math.round(backdrop.width()),
+            Math.round(backdrop.height()));
 
+        // The baseline sits an ascent below the backdrop's own top, which is what puts the
+        // glyphs inside it rather than resting on it.
         g2.setColor(colour);
-        g2.drawString(name, x, y);
+        g2.drawString(
+            name,
+            Math.round(backdrop.x()) + LABEL_PADDING,
+            Math.round(backdrop.y()) + LABEL_PADDING + metrics.getAscent());
     }
 
     // How wide a region is on screen, taken by putting its box through the same transform the

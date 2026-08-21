@@ -104,9 +104,9 @@ final class CoastlinesOverlay {
                 MapPainting.paintFilledShape(
                     g2,
                     MapPainting.buildPath(outline),
-                    settings.coastlineColour,
+                    settings.coastalVoidColour,
                     settings.voidFillOpacity,
-                    settings.coastlineColour);
+                    settings.coastalVoidEdge);
             }
         }
     }

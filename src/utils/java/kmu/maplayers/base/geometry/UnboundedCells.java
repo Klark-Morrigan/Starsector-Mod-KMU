@@ -15,7 +15,7 @@ import java.util.List;
  * back to {@code cellRadius} that opens gaps. So the void is not unowned space that has to be
  * divided by some new rule: it is space that already has an owner, hidden by the clip. Drawing
  * the unclipped cells under the clipped ones shows the bisectors the clip removed, which are
- * the lines a large pocket would be sectioned along.
+ * where the cells would reach if nothing bounded them.
  *
  * <p>"Unbounded" is a convenience rather than the truth - an outer cell really is unbounded,
  * and a polygon cannot be. They are built at a radius far past the sector instead, so every

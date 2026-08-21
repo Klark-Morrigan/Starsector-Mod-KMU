@@ -8,7 +8,7 @@ import java.util.Locale;
 import java.util.TreeSet;
 
 /**
- * What the void comes out as once it is cut into sections, named, and owned.
+ * What the void comes out as once it is named and owned.
  *
  * <p>Asked of the whole population at once - every hole at the cells' own reach with the walls
  * laid, whatever closed it - because a name has to be unique across all of them and not merely
@@ -46,47 +46,44 @@ final class VoidSectionReport {
      */
     static void reportSections(SectorFixture fixture, LaidCoast laid) {
 
-        var sites = laid.sites();
         var systemIds = fixture.getSystemIds();
         var ownerBySite = fixture.getOwnerBySite();
 
-        var named = new ArrayList<NamedSection>();
+        var named = new ArrayList<OwnedSection>();
 
-        // One section per hole, and no dividing afterwards: the bridges and the coast's reaches
-        // are what shut a long corridor of void into separate holes in the first place.
-        for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
-                laid.atCells(), laid.walls(), laid.parameters().boundSegments())) {
+        for (var section : VoidSections.collectNamedSections(laid, systemIds)) {
 
-            var section = VoidSection.buildFromHole(hole);
-
-            named.add(new NamedSection(
-                NamedRegion.nameRegion(
-                    VoidSectionIds.nameSection(section, sites, systemIds),
-                    section.outline()),
+            named.add(new OwnedSection(
                 section,
-                VoidSectionOwners.resolveSectionOwner(section, ownerBySite)));
+                VoidSectionOwners.resolveSectionOwner(section.section(), ownerBySite)));
         }
         reportNaming(named, systemIds);
+        reportCellCounts(named);
         reportTiling(named);
         reportClaims(named);
         reportEachSection(named);
     }
 
     /**
-     * One section with the two answers this step exists to produce.
+     * One named section with the answer this step exists to produce about it.
      *
-     * @param region  it as a named piece of map - what it is called, and where in it that name
-     *                would be written, which is also the point the others are asked about
-     * @param section the section itself
-     * @param owner   who holds it, and who else had a claim
+     * @param named the section and what it is called
+     * @param owner who holds it, and who else had a claim
      */
-    private record NamedSection(
-        NamedRegion region,
-        VoidSection section,
+    private record OwnedSection(
+        VoidSections.NamedSection named,
         VoidSectionOwners.SectionOwner owner) {
 
         String id() {
-            return region.name();
+            return named.id();
+        }
+
+        NamedRegion region() {
+            return named.region();
+        }
+
+        VoidSection section() {
+            return named.section();
         }
     }
 
@@ -99,7 +96,7 @@ final class VoidSectionReport {
     // Asked of each section's own anchor, which sits inside it at its widest rather than near
     // an edge, so a hit is a genuinely shared middle rather than two rings agreeing about a
     // point on the boundary between them.
-    private static void reportTiling(List<NamedSection> named) {
+    private static void reportTiling(List<OwnedSection> named) {
 
         var overlapping = 0;
 
@@ -132,9 +129,9 @@ final class VoidSectionReport {
 
     // Whether the naming scheme actually names. Distinct ids short of the section count is the
     // one failure it can have, and it is a failure of the SCHEME rather than of a section - so
-    // the colliding names are printed, since a count cannot say which rule fell short.
+    // the offending names are printed, since a count cannot say which rule fell short.
     private static void reportNaming(
-            List<NamedSection> named,
+            List<OwnedSection> named,
             List<String> systemIds) {
 
         var distinct = new TreeSet<String>();
@@ -155,19 +152,6 @@ final class VoidSectionReport {
             }
         }
 
-        var cellCounts = new ArrayList<Double>(named.size());
-        var singleCell = 0;
-
-        for (var section : named) {
-
-            cellCounts.add((double) section.section().cells().size());
-
-            if (section.section().cells().size() == LONE_CELL) {
-                singleCell++;
-            }
-        }
-        cellCounts.sort(Double::compare);
-
         System.out.printf(
             Locale.ROOT,
             "sections of void at the cells' own reach: %d, %d distinct ids (has to match), "
@@ -184,15 +168,34 @@ final class VoidSectionReport {
         for (var id : collided) {
             System.out.printf(Locale.ROOT, "  collides %s%n", id);
         }
+    }
+
+    // How many cells a section has around it, which is what it is named and owned by - so a
+    // population sitting at one would mean the names and the owners both rest on a single
+    // neighbour.
+    private static void reportCellCounts(List<OwnedSection> named) {
+
+        var counts = new ArrayList<Double>(named.size());
+        var loneCell = 0;
+
+        for (var section : named) {
+
+            counts.add((double) section.section().cells().size());
+
+            if (section.section().cells().size() == LONE_CELL) {
+                loneCell++;
+            }
+        }
+        counts.sort(Double::compare);
 
         System.out.printf(
             Locale.ROOT,
             "cells a section runs on: p50 %.0f / p90 %.0f / max %.0f; %d run on one cell "
                 + "and cannot take a side%n",
-            ReportFigures.findPercentile(cellCounts, REPORTED_PERCENTILES[0]),
-            ReportFigures.findPercentile(cellCounts, REPORTED_PERCENTILES[1]),
-            ReportFigures.findPercentile(cellCounts, REPORTED_PERCENTILES[2]),
-            singleCell);
+            ReportFigures.findPercentile(counts, REPORTED_PERCENTILES[0]),
+            ReportFigures.findPercentile(counts, REPORTED_PERCENTILES[1]),
+            ReportFigures.findPercentile(counts, REPORTED_PERCENTILES[2]),
+            loneCell);
     }
 
     // Whether a key is made of what a generated system id is made of. The scheme is meant to
@@ -206,7 +209,7 @@ final class VoidSectionReport {
     // and ownerless alone cannot be read: a section the unowned cells took outright and one
     // two owners drew on both report ownerless, and only the second is a rule failing to
     // decide.
-    private static void reportClaims(List<NamedSection> named) {
+    private static void reportClaims(List<OwnedSection> named) {
 
         var held = 0;
         var takenByUnowned = 0;
@@ -261,7 +264,7 @@ final class VoidSectionReport {
     // Every section, one line each. The distribution above says how the rule behaved across
     // the map; only a line per section says which piece of void ended up where, and every
     // question asked of this map so far has turned out to be about a particular one.
-    private static void reportEachSection(List<NamedSection> named) {
+    private static void reportEachSection(List<OwnedSection> named) {
 
         System.out.println("  section                                    owner        claims");
 
