@@ -22,6 +22,7 @@ import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailMode;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailModeInput;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailModeState;
+import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.MapLayerCellTooltip;
 
@@ -34,7 +35,6 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import static kmu.maplayers.base.hover.HoverSwitchScopes.runWithHoverTooltipSwitchOn;
 import static kmu.maplayers.base.hover.HoverSwitchScopes.runWithHoverTooltipSwitchOnInGameSpace;
@@ -42,6 +42,7 @@ import static kmu.maplayers.base.hover.HoverSwitchScopes.runWithHoverTooltipSwit
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -239,8 +240,7 @@ class MapLayerCellTooltipGateIntegrationTest {
             when(eventMock.getEventValue())
                 .thenReturn(Keyboard.KEY_F1);
 
-            var toggleInput = installListener(
-                KMU_ModPlugin::installHoverTooltipDetailModeInput, HoverTooltipDetailModeInput.class);
+            var toggleInput = installListener(HoverTooltipDetailModeInput.class);
 
             runWithHoverTooltipSwitchOnInGameSpace(() -> runInGameSpace(
                 () -> toggleInput.processCampaignInputPreCore(List.of(eventMock))));
@@ -277,15 +277,13 @@ class MapLayerCellTooltipGateIntegrationTest {
 
     // The dispatcher the mod plugin registers, for the cases that settle the screen themselves.
     private MapLayerCellTooltip installedDispatcher() {
-        return installListener(
-            KMU_ModPlugin::installMapLayerHoverTooltip, MapLayerCellTooltip.class);
+        return installListener(MapLayerCellTooltip.class);
     }
 
     // Installs the toggle listener the way the game does and feeds it one press of its key.
     private InputEventAPI pressToggleOnInstalledInput(SectorMapState sectorMapState) {
 
-        var toggleInput = installListener(
-            KMU_ModPlugin::installHoverTooltipDetailModeInput, HoverTooltipDetailModeInput.class);
+        var toggleInput = installListener(HoverTooltipDetailModeInput.class);
 
         var eventMock = mock(InputEventAPI.class);
 
@@ -349,14 +347,18 @@ class MapLayerCellTooltipGateIntegrationTest {
         }
     }
 
-    // The listener the mod plugin registers, taken from the registration itself rather than built
-    // here - constructing one locally would hand it a gate this test wrote, which is the very thing
-    // under test.
+    // The listener the hover installer registers, taken from the registration itself rather than
+    // built here - constructing one locally would hand it a gate this test wrote, which is the very
+    // thing under test.
+    //
+    // The whole installer is run and the wanted half picked out of what it registered, rather than
+    // one step being called directly: the composition under test is the one a load performs, and a
+    // case that drove a single step would go on passing if the load stopped performing it.
     //
     // The install runs outside the mocked statics on purpose: it is where the presence class and its
     // live intel-screen binding are built, and that binding takes its logger from Global at
     // class-init, which a mocked Global would answer null for once and for the rest of the JVM.
-    private <T> T installListener(Consumer<SectorAPI> runInstallStep, Class<T> listenerType) {
+    private <T> T installListener(Class<T> listenerType) {
 
         var listenerManagerMock = mock(ListenerManagerAPI.class);
         var installSectorMock = mock(SectorAPI.class);
@@ -364,13 +366,18 @@ class MapLayerCellTooltipGateIntegrationTest {
         when(installSectorMock.getListenerManager())
             .thenReturn(listenerManagerMock);
 
-        runInstallStep.accept(installSectorMock);
+        MapHoverInstaller.installAll(installSectorMock);
 
-        var installedListener = ArgumentCaptor.forClass(Object.class);
+        var installedListeners = ArgumentCaptor.forClass(Object.class);
 
-        verify(listenerManagerMock)
-            .addListener(installedListener.capture(), eq(true));
+        verify(listenerManagerMock, atLeastOnce())
+            .addListener(installedListeners.capture(), eq(true));
 
-        return listenerType.cast(installedListener.getValue());
+        return installedListeners.getAllValues().stream()
+            .filter(listenerType::isInstance)
+            .map(listenerType::cast)
+            .findFirst()
+            .orElseThrow(() -> new AssertionError(
+                "The hover installer registered no " + listenerType.getSimpleName()));
     }
 }

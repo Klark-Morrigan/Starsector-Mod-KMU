@@ -103,8 +103,8 @@ placement goes null off its screen - the on-map host hangs its panel from the sc
 resolves a box wherever it is asked. What the point is tested against is the placement's own
 `containsPoint`, so the body-plus-notch footprint is KMLib's answer and not a second copy here.
 
-That roster is the whole of "every host": `KMU_ModPlugin` walks it for the per-load fold reseed and
-for both listener registrations, which is why `restoreFoldFromSave` sits on `SidebarHost` rather than
+That roster is the whole of "every host": `SidebarInstaller` walks it for the per-load fold reseed
+and for both listener registrations, which is why `restoreFoldFromSave` sits on `SidebarHost` rather than
 only on `BaseSidebarHost`. A new screen is added to the roster and is reseeded, registered, and
 answered for from that one edit.
 
@@ -632,4 +632,4 @@ layer is active - for the political map, [`politicalmap`](../../politicalmap/REA
 `base/sidebar` controls - though it is here that KMLib's picker is bound to the save (see
 [Picker state](#picker-state)). What the political map keeps of its own there is what the picker
 refuses to know: which items are on offer, what invalidates that list, and the recede toggles it
-pairs with the sort. Both listeners and the per-load reseed are registered in `KMU_ModPlugin`.
+pairs with the sort. Both listeners and the per-load reseed are registered in `SidebarInstaller`.

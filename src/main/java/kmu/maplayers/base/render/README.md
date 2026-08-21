@@ -88,7 +88,7 @@ two can paint the lower band of one frame and there is nothing on that side to c
 as the frame boundary the surfaces cannot see from where they stand, and granting the preparation to
 the first to ask after it. It fails open - until that pass has been seen, every claim is granted -
 because a duplicated preparation costs work while a denied one costs the overlay, nothing else
-bringing the draw lists up to date. The mod's entry point clears it per load before re-registering
+bringing the draw lists up to date. `MapSurfaceInstaller` clears it per load before re-registering
 it, so a load that never re-registers falls back to that open state rather than to a claim armed by
 a session whose boundary pass is gone.
 
@@ -190,8 +190,9 @@ the band.
 
 `MapLayerTerrainInstaller` is what puts any of them into a loaded save and keeps exactly one of each
 there, and it owns the save-facing constants that go with that: the type ids the entities are built
-under, and the XStream aliases that let a save written under a former plugin name still load. The
-mod's entry point calls it and holds none of that knowledge itself. Its variants are told apart by
+under, and the XStream aliases that let a save written under a former plugin name still load.
+`MapSurfaceInstaller` calls it and holds none of that knowledge itself, as the mod's entry point
+holds none of the installer's. Its variants are told apart by
 plugin class compared exactly - the chain means an `instanceof` would have one answer for another's.
 
 All three terrain rows are declared in `data/campaign/terrain.json`. Four class names from this
@@ -223,7 +224,7 @@ What KMU supplies is the two ports. The map read is the Starscape one - the enti
 one of the surfaces that stand aside while a schematic map is up - and the entity read is
 `MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain`, which resolves it afresh per call
 through the same plugin-class guard the install uses, so the entity a load brought back is the one
-moved. Both are wired at the mod's entry point: that the entity is a terrain, and that the fog above
+moved. Both are wired in `MapSurfaceInstaller`: that the entity is a terrain, and that the fog above
 it is what makes the move worth making, is the whole of KMU's side.
 
 Only the above-nebulae surface is moved. The one beneath it is meant to be fogged, so lifting both
