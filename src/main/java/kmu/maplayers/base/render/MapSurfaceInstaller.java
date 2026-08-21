@@ -80,6 +80,22 @@ public final class MapSurfaceInstaller {
             "Failed to install KMU parked minimap suppressor");
     }
 
+    /**
+     * Removes every surface this installs, for a load where the map layers are switched off.
+     *
+     * <p>Only the terrain needs removing. The scripts and the frame claim are transient, so a load
+     * that never installs them is a load without them - but terrain is an entity and entities
+     * persist, so one left behind would sit in a save that has no use for it.
+     *
+     * @param sector the loaded sector; null leaves the save untouched rather than throwing
+     */
+    public static void uninstallAll(SectorAPI sector) {
+
+        runGuardedStep(
+            () -> MapLayerTerrainInstaller.removeMapLayerTerrain(sector),
+            "Failed to remove KMU sector map layer terrain");
+    }
+
     // Registers the per-frame script that lifts the upper Starscape terrain over the map's nebula
     // icons whenever the widget has seeded it underneath them. Moving an icon to the end of the
     // widget's draw order is KMLib's, and it is told only which map matters and which entity to move;

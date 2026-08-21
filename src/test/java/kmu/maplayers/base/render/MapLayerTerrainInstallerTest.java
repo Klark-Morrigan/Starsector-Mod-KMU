@@ -432,6 +432,67 @@ class MapLayerTerrainInstallerTest {
         }
     }
 
+    @Nested
+    class RemoveMapLayerTerrain {
+
+        @Test
+        void removesEverySurfaceThisModInstalls() {
+            // What switching the map layers off has to take back. Terrain is an entity and entities
+            // persist, so one left behind would sit in the save for as long as it exists - where
+            // every listener and script the surfaces install is transient and simply never
+            // registered again.
+            var schematicMock = buildTerrainMock(
+                CURRENT_TERRAIN_TYPE,
+                new SectorMapLayerTerrainPlugin());
+            var starscapeMock = buildTerrainMock(
+                WHITELISTED_MAP_TYPE,
+                new SectorMapLayerStarscapeTerrainPlugin());
+            var aboveNebulaeMock = buildTerrainMock(
+                WHITELISTED_MAP_TYPE,
+                new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin());
+
+            var hyperspaceMock = buildHyperspaceCarrying(
+                schematicMock, starscapeMock, aboveNebulaeMock);
+
+            MapLayerTerrainInstaller.removeMapLayerTerrain(
+                buildSectorWithHyperspace(hyperspaceMock));
+
+            verify(hyperspaceMock)
+                .removeEntity(schematicMock);
+            verify(hyperspaceMock)
+                .removeEntity(starscapeMock);
+            verify(hyperspaceMock)
+                .removeEntity(aboveNebulaeMock);
+        }
+
+        @Test
+        void leavesTerrainBelongingToAnotherModAlone() {
+            // A player switching this mod's overlays off is not asking for anybody else's terrain to
+            // go with them, and the walk has only the plugin class to tell the difference by.
+            var otherModTerrainMock = buildTerrainMock(
+                "some_other_terrain",
+                mock(CampaignTerrainPlugin.class));
+
+            var hyperspaceMock = buildHyperspaceCarrying(otherModTerrainMock);
+
+            MapLayerTerrainInstaller.removeMapLayerTerrain(
+                buildSectorWithHyperspace(hyperspaceMock));
+
+            verify(hyperspaceMock, never())
+                .removeEntity(any());
+        }
+
+        @Test
+        void toleratesANullSector() {
+
+            var removeOnNullSector = (Runnable) () ->
+                MapLayerTerrainInstaller.removeMapLayerTerrain(null);
+
+            assertThatCode(removeOnNullSector::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
     private static LocationAPI buildHyperspaceCarrying(CampaignTerrainAPI... terrain) {
 
         var hyperspaceMock = mock(LocationAPI.class);

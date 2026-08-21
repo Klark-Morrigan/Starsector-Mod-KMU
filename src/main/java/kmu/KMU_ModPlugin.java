@@ -2,12 +2,14 @@ package kmu;
 
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.politicalmap.base.PoliticalMapInstaller;
+import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuRetiredSettings;
 import kmu.starsector.colonies.ColonySightingInstaller;
@@ -73,9 +75,32 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
         MarketUiContextInstaller.installAll(sector);
 
-        // Before any surface or listener that reads a colony set: the revelation gates answer off
-        // the sighting register, so it has to be in step with this save before anything asks.
+        // Kept current whether or not the map is drawing, since it is the map that would lose by a
+        // gap in it: a register left unwritten while the layers are off would have every gated
+        // colony unobserved again when they are switched back on.
         ColonySightingInstaller.installAll(sector);
+
+        installMapLayers(sector);
+    }
+
+    // The map layers and everything that stands them up, or their removal when the player has
+    // switched the feature off.
+    //
+    // Read once per load rather than per frame, so a change takes effect on the next save load -
+    // which the setting's own description says, a deferred knob that does not say so reading as a
+    // broken one. The layer registry is stood up either way, at application load: it holds no
+    // sector state, and registering into it costs a map with nothing installed to draw through
+    // nothing at all.
+    static void installMapLayers(SectorAPI sector) {
+
+        if (!KmuFeatureSettings.areMapLayersEnabled()) {
+
+            // Only the surfaces have anything to take back. Every listener and script the four
+            // installers register is transient and simply never registered again; terrain is an
+            // entity, and one left behind would sit in the save for as long as it exists.
+            MapSurfaceInstaller.uninstallAll(sector);
+            return;
+        }
 
         // Before the render surfaces, because its save heal repairs what the terrain then reads.
         PoliticalMapInstaller.installAll(sector);

@@ -119,6 +119,39 @@ public final class MapLayerTerrainInstaller {
     }
 
     /**
+     * Removes every render surface this mod installs, so a save carries none of them.
+     *
+     * <p>What switching the map layers off has to do, and the only part of the wiring that does:
+     * every listener and script the surfaces install is transient and simply never registered
+     * again, but terrain is an entity and entities persist, so one left behind would sit in
+     * hyperspace for as long as the save exists.
+     *
+     * <p>Identified by plugin class, as everything here is - a third party's terrain is never
+     * touched.
+     *
+     * @param sector the sector to clear; null is a no-op
+     */
+    public static void removeMapLayerTerrain(SectorAPI sector) {
+
+        if (sector == null) {
+            return;
+        }
+        var hyperspace = sector.getHyperspace();
+
+        if (hyperspace == null) {
+            return;
+        }
+        // getTerrainCopy hands back a copy, so removing while walking it is safe.
+        for (var terrain : hyperspace.getTerrainCopy()) {
+
+            if (isMapLayerTerrain(terrain)) {
+                hyperspace.removeEntity(terrain);
+                LOG.debug("Removed map layer terrain " + terrain.getPlugin().getClass().getSimpleName());
+            }
+        }
+    }
+
+    /**
      * The above-nebulae terrain this save is carrying, or null while hyperspace holds none - which is
      * the ordinary state before {@link #installAboveStarscapeNebulaeTerrain} has run for the load, and
      * during the advance the reseat holds it out.
@@ -162,13 +195,29 @@ public final class MapLayerTerrainInstaller {
 
         for (var terrain : locationTerrain) {
 
-            if (terrain != null
-                    && terrain.getPlugin() != null
-                    && terrain.getPlugin().getClass() == pluginClass) {
+            if (isTerrainOfPlugin(terrain, pluginClass)) {
                 return terrain;
             }
         }
         return null;
+    }
+
+    // Whether this terrain is one of the three the render surfaces install, whichever it is - what
+    // a wholesale removal asks, where every read above asks after one variant.
+    private static boolean isMapLayerTerrain(CampaignTerrainAPI terrain) {
+
+        return isTerrainOfPlugin(terrain, SCHEMATIC_TERRAIN)
+            || isTerrainOfPlugin(terrain, STARSCAPE_TERRAIN)
+            || isTerrainOfPlugin(terrain, ABOVE_STARSCAPE_NEBULAE_TERRAIN);
+    }
+
+    private static boolean isTerrainOfPlugin(
+            CampaignTerrainAPI terrain,
+            Class<? extends CampaignTerrainPlugin> pluginClass) {
+
+        return terrain != null
+            && terrain.getPlugin() != null
+            && terrain.getPlugin().getClass() == pluginClass;
     }
 
     // The install shape all three variants share: add one only if none is already present. They

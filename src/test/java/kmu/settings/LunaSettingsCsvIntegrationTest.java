@@ -138,6 +138,7 @@ final class LunaSettingsCsvIntegrationTest {
     // mod-wide one - which is why logging keeps the bare name rather than taking a prefix that
     // would claim it for a feature it is not part of.
     private static final Set<String> KNOWN_TABS = Set.of(
+        "Features",
         "Map - Visuals",
         "Map - Politics - Visuals",
         "Map - Politics - Domination",
