@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import java.awt.Color;
 import java.awt.FontMetrics;
@@ -21,11 +22,21 @@ import java.util.List;
  * reason: a right click reads the colour under the pointer off a freshly painted frame, and a
  * name lying across a fill would be read as that fill's colour.
  *
- * <p><b>A name is drawn only where its region is wide enough on screen to hold it.</b> There
- * are several hundred cells and several hundred sections in a sector and their names are long,
- * so at the zoom where the whole map fits they would be one illegible mass laid over the thing
- * they describe. Culling on the region's own on-screen width rather than on a zoom threshold
- * means names appear as one zooms in, and each one that appears has room to be read.
+ * <p><b>A name too big for its region fades rather than vanishing.</b> There are several
+ * hundred cells and several hundred sections in a sector and their names are long, so at the
+ * zoom where the whole map fits, drawing them all solid would be one illegible mass laid over
+ * the thing it describes. Dropping them outright is the other extreme, and it loses the one
+ * thing the far view has to say - that there is something there at all.
+ *
+ * <p>So opacity falls with how badly the name overruns its region: full where it fits, three
+ * quarters where it only just does not, and away down towards a hundredth where the region is
+ * a speck. Never to nothing, because a name that reached zero would be a region the map
+ * silently stopped mentioning, and the reader would have no way to tell that from empty space.
+ *
+ * <p>Faint names OVERLAP, and overlapping is the point. Alpha compounds, so a hundred specks
+ * on top of one another come out as a visible haze exactly where the map is dense, and a lone
+ * far-off region stays a whisper. The reader gets a density reading for free out of the same
+ * pass that writes the names, and it is honest by construction: what looks crowded is crowded.
  */
 final class NamedRegions {
 
@@ -37,6 +48,21 @@ final class NamedRegions {
     private static final Color LABEL_BACKDROP = new Color(0x00, 0x00, 0x00, 0xc0);
 
     private static final int LABEL_PADDING = 3;
+
+    // How solidly a name is drawn when its region cannot quite hold it, and the floor it falls
+    // to when the region is a speck. The floor is deliberately not zero: a name faded out
+    // entirely is a region the map stopped mentioning, which a reader cannot tell from there
+    // being nothing there.
+    private static final float NEAR_FIT_OPACITY = 0.75f;
+    private static final float LEAST_OPACITY = 0.01f;
+
+    // How sharply the fade sets in between those two. Squared rather than straight, so a name
+    // that nearly fits stays readable while one at a quarter of its width is already down to
+    // about a twentieth - which is what keeps a dense far view a haze rather than a smear of
+    // half-legible text.
+    private static final int FALLOFF_POWER = 2;
+
+    private static final float FULLY_SOLID = 1f;
 
     // A radius either side of the centre makes a box's full width.
     private static final int HALVES = 2;
@@ -76,7 +102,7 @@ final class NamedRegions {
 
             var width = metrics.stringWidth(region.name());
 
-            if (measureScreenWidth(region, worldToScreen) < width) {
+            if (width <= 0) {
                 continue;
             }
 
@@ -88,7 +114,9 @@ final class NamedRegions {
                 region.name(),
                 findBackdrop(at, width, metrics),
                 metrics,
-                colour);
+                new UiElementPaint(
+                    colour,
+                    readOpacity(measureScreenWidth(region, worldToScreen) / width)));
         }
         text.dispose();
     }
@@ -131,15 +159,34 @@ final class NamedRegions {
             metrics.getHeight() + (float) HALVES * LABEL_PADDING);
     }
 
+    // How solidly to draw a name, given how much of its own width its region offers on screen.
+    //
+    // One at a time and from that ratio alone: a name is faint because its own region is small,
+    // not because of what is around it, so nothing here has to know what else is being drawn.
+    // What the far view shows is then the sum of those independent decisions, which is what
+    // makes a crowd of them read as a crowd.
+    private static float readOpacity(double fit) {
+
+        if (fit >= FULLY_SOLID) {
+            return FULLY_SOLID;
+        }
+        return (float) (LEAST_OPACITY
+            + (NEAR_FIT_OPACITY - LEAST_OPACITY) * Math.pow(Math.max(0, fit), FALLOFF_POWER));
+    }
+
     // One name on a backdrop, so it stays readable over a fill of any colour.
+    //
+    // The backdrop fades with the text rather than staying put: a solid box under a whisper of
+    // text would make the far view a field of black rectangles, which says nothing about what
+    // is under them.
     private static void paintName(
             Graphics2D g2,
             String name,
             Rectangle backdrop,
             FontMetrics metrics,
-            Color colour) {
+            UiElementPaint paint) {
 
-        g2.setColor(LABEL_BACKDROP);
+        g2.setColor(fade(LABEL_BACKDROP, paint.alpha()));
         g2.fillRect(
             Math.round(backdrop.x()),
             Math.round(backdrop.y()),
@@ -148,11 +195,18 @@ final class NamedRegions {
 
         // The baseline sits an ascent below the backdrop's own top, which is what puts the
         // glyphs inside it rather than resting on it.
-        g2.setColor(colour);
+        g2.setColor(fade(paint.colour(), paint.alpha()));
         g2.drawString(
             name,
             Math.round(backdrop.x()) + LABEL_PADDING,
             Math.round(backdrop.y()) + LABEL_PADDING + metrics.getAscent());
+    }
+
+    // A colour at a share of its own opacity, so a colour already part-transparent stays in
+    // proportion rather than being reset to the share outright.
+    private static Color fade(Color colour, float share) {
+
+        return MapPainting.applyAlpha(colour, Math.round(colour.getAlpha() * share));
     }
 
     // How wide a region is on screen, taken by putting its box through the same transform the
