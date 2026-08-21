@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmu.maplayers.SectorScenarioFixtures;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
@@ -69,9 +70,7 @@ final class SpotlitPresenceAgreementIntegrationTest {
             // had just classified as backdrop.
             var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID);
 
-            SectorPoliticsFixtures.placeMarketsOnSystemEntities(
-                SectorPoliticsFixtures.buildOnlySystem(sector),
-                SectorPoliticsFixtures.buildAbandonedStationMarket(MARKET_SIZE));
+            SectorScenarioFixtures.placeDerelictIn(SectorPoliticsFixtures.buildOnlySystem(sector));
 
             assertThat(isInhabited(sector))
                 .isFalse();

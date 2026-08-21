@@ -27,17 +27,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
+import static kmu.maplayers.SectorScenarioFixtures.placeDerelictIn;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStabilityWeightedRules;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,10 +69,10 @@ final class DerelictReadoutIntegrationTest {
     // point here: what each case reads back is which factions the box named at all.
     private static final String NO_CREST = null;
 
-    // Colony sizes. Only the colony's is ever weighed - a hulk is unregistered, so no term of the
-    // arithmetic can read it - so the two differ merely to read apart.
+    // The colony's size. Only a listed colony is ever weighed - a hulk is unregistered, so no term
+    // of the arithmetic can read one - which is why the derelict's size is the scenario fixture's
+    // business and not stated here.
     private static final int COLONY = 6;
-    private static final int DERELICT = 4;
 
     private MockedStatic<MapVisibilityRules> visibilityRulesMock;
     private MockedStatic<PoliticalMapViewRegistry> viewRegistryMock;
@@ -203,17 +201,12 @@ final class DerelictReadoutIntegrationTest {
     }
 
     // A system holding a derelict on one of its own entities, beside whatever colonies the economy
-    // lists there. The hulk arrives through the entity side because that is the only way it ever
-    // does: the routine that builds an abandoned station pointedly never registers one.
+    // lists there.
     private static SectorAPI buildSectorHoldingADerelict(MarketAPI... listedColonies) {
 
         var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID, listedColonies);
-        var standingMarkets = new ArrayList<MarketAPI>(List.of(listedColonies));
 
-        standingMarkets.add(buildAbandonedStationMarket(DERELICT));
-        placeMarketsOnSystemEntities(
-            buildOnlySystem(sector),
-            standingMarkets.toArray(new MarketAPI[0]));
+        placeDerelictIn(buildOnlySystem(sector));
 
         stubFaction(sector, "hegemony", "The Hegemony", NO_CREST);
         stubFaction(sector, Factions.NEUTRAL, "Neutral", NO_CREST);

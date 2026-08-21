@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import kmlib.starsector.colonies.ColonyVisibility;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
+import kmu.maplayers.SectorScenarioFixtures;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
@@ -73,9 +74,7 @@ final class PoliticalMapInhabitationIntegrationTest {
             // one wreck in it and nothing else is empty space, and the cell has to draw as such.
             var sector = SectorPoliticsFixtures.buildSectorWith(EMPTY_SYSTEM);
 
-            SectorPoliticsFixtures.placeMarketsOnSystemEntities(
-                SectorPoliticsFixtures.buildOnlySystem(sector),
-                SectorPoliticsFixtures.buildAbandonedStationMarket(COLONY_SIZE));
+            SectorScenarioFixtures.placeDerelictIn(SectorPoliticsFixtures.buildOnlySystem(sector));
 
             assertThat(readInhabitedSystemIds(sector, BASE_FOG))
                 .isEmpty();
@@ -150,9 +149,7 @@ final class PoliticalMapInhabitationIntegrationTest {
             var sector = SectorPoliticsFixtures.buildSectorWith(EMPTY_SYSTEM);
             var system = SectorPoliticsFixtures.buildOnlySystem(sector);
 
-            SectorPoliticsFixtures.placeMarketsOnSystemEntities(
-                system,
-                SectorPoliticsFixtures.buildAbandonedStationMarket(COLONY_SIZE));
+            SectorScenarioFixtures.placeDerelictIn(system);
 
             assertThat(PoliticalMapInhabitation.isSystemInhabited(
                     buildPassOver(sector, BASE_FOG),

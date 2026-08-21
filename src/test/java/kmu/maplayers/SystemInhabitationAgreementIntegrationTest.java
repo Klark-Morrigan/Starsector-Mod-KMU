@@ -15,6 +15,7 @@ import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
+import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.maplayers.politicalmap.base.tooltip.SystemStatusRow;
 
 import org.junit.jupiter.api.AfterEach;
@@ -246,17 +247,11 @@ final class SystemInhabitationAgreementIntegrationTest {
             StarSystemAPI system,
             MarketAPI colony) {
 
-        // The entity is wired to carry its market, and both finish stubbing before the system's
-        // opens, so Mockito sees no stubbing nested inside another.
-        var entityMock = colony.getPrimaryEntity();
-
-        when(entityMock.getMarket())
-            .thenReturn(colony);
-
         var sector = buildSectorListing(system);
 
-        when(system.getAllEntities())
-            .thenReturn(List.of(entityMock));
+        // Hanging a market on an entity takes two stubs and dropping either loses it in silence,
+        // so the wiring is the shared fixture's rather than restated here.
+        SectorPoliticsFixtures.placeMarketsOnSystemEntities(system, colony);
 
         return sector;
     }

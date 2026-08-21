@@ -1,8 +1,13 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
+
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
+import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,20 +17,25 @@ import java.util.Map;
 
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
+import static kmu.maplayers.SectorScenarioFixtures.CONCEALED_HOLDER_ID;
+import static kmu.maplayers.SectorScenarioFixtures.buildUnvisitedSectorHoldingGatedPair;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildConditionOnlyMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildEconomylessSectorWithSystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildPassOver;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWithSystems;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStabilityWeightedRules;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.markSystemAsEnteredByPlayer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.mockito.Mockito.mockStatic;
 
 /**
  * Integration coverage for {@link DominanceStatsAggregator}'s whole-sector picker totals end to end:
@@ -33,6 +43,13 @@ import static org.assertj.core.api.Assertions.entry;
  * {@link SystemDominance}, then folding each bloc's four metrics across systems. Exercises them
  * together because the value is the wiring - one walk yielding dominations, presences, summed
  * weight, and summed raw size - which mocking either collaborator would hide.
+ *
+ * <p>The last cases below ask the other half of the same question: not what a bloc's totals come to
+ * once it is here, but whether it is offered at all. The picker's selectable set is this fold's key
+ * set, five hops down from the view, so a holder the colony rule withholds is a holder the picker
+ * cannot list - and until the spoiler gates became toggles, nothing could observe that. They drive
+ * the live settings read rather than a rule of their own, the wiring from a toggle to this fold
+ * being what they are about.
  */
 class DominanceStatsAggregatorIntegrationTest {
 
@@ -40,6 +57,9 @@ class DominanceStatsAggregatorIntegrationTest {
     // from LunaLib settings only the running game provides.
     private static final DominanceRules STABILITY_WEIGHTED
         = buildStabilityWeightedRules();
+
+    // The sector the gate cases below pose, whose one system nobody has visited.
+    private static final String UNVISITED_SYSTEM = "unvisited-system";
 
     @Nested
     class AggregateDominanceStats {
@@ -145,5 +165,64 @@ class DominanceStatsAggregatorIntegrationTest {
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(null)))
                 .isEmpty();
         }
+
+        @Test
+        void aggregateDominanceStatsWithholdsAHolderWhoseOnlyColonyIsAnUnseenConcealedBase() {
+            // A bloc the colony rule withholds has no entry here at all, so it contributes to none
+            // of the four metrics the picker sorts its options by - there is nothing to carry them.
+            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+
+                var sector = buildUnvisitedSectorHoldingGatedPair(UNVISITED_SYSTEM);
+
+                assertThat(readOfferedHolderIds(sector))
+                    .doesNotContain(CONCEALED_HOLDER_ID);
+            }
+        }
+
+        @Test
+        void aggregateDominanceStatsOffersThatHolderOnceThePlayerHasBeenInItsSystem() {
+            // The gate is still in force; what changed is that somebody has seen the base. A rule
+            // reaching the fold means the picker gains the option on the same day the map gains
+            // the colony.
+            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+
+                var sector = buildUnvisitedSectorHoldingGatedPair(UNVISITED_SYSTEM);
+                markSystemAsEnteredByPlayer(buildOnlySystem(sector));
+
+                assertThat(readOfferedHolderIds(sector))
+                    .contains(CONCEALED_HOLDER_ID);
+            }
+        }
+
+        @Test
+        void aggregateDominanceStatsOffersThatHolderOnceTheConcealmentGateIsTurnedOff() {
+            // The other way into the same entry: the player has been nowhere near the base and has
+            // asked to be shown concealed colonies anyway.
+            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+
+                settingsMock
+                    .when(KmuMapLayerSettings::shouldShowUnseenHiddenMarkets)
+                    .thenReturn(true);
+
+                var sector = buildUnvisitedSectorHoldingGatedPair(UNVISITED_SYSTEM);
+
+                assertThat(readOfferedHolderIds(sector))
+                    .contains(CONCEALED_HOLDER_ID);
+            }
+        }
+    }
+
+    // The blocs the picker would offer over a sector, under the player's live colony rule rather
+    // than the fog the cases above pose - which is what makes a gate observable here at all.
+    private static List<String> readOfferedHolderIds(SectorAPI sector) {
+
+        var pass = DominancePass.over(
+            HolderPass.over(
+                sector,
+                MapVisibilityRules.readFromLunaSettings().colonyVisibility(),
+                HolderGrouping.identity()),
+            STABILITY_WEIGHTED);
+
+        return List.copyOf(DominanceStatsAggregator.aggregateDominanceStats(pass).keySet());
     }
 }
