@@ -11,6 +11,7 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
+import kmlib.testfixtures.starsector.consolecommands.ConsoleOverlayFake;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
@@ -18,7 +19,6 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;
-import kmu.starsector.consolecommands.ConsoleOverlayFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

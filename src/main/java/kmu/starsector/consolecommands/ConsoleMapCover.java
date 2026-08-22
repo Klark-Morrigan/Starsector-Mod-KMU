@@ -1,6 +1,8 @@
 package kmu.starsector.consolecommands;
 
+import kmlib.starsector.consolecommands.ConsoleCommandsOverlay;
 import kmlib.starsector.consolecommands.ConsoleCommandsPresence;
+import kmlib.starsector.consolecommands.ConsoleOverlay;
 
 import kmu.maplayers.base.hover.cover.MapCover;
 
@@ -16,7 +18,8 @@ import kmu.maplayers.base.hover.cover.MapCover;
  * inherits that role's fail-open answer whole. The home and the factory are the mod's all the
  * same: the only live answer comes from Console Commands, and the cover joins the map's covers
  * only where {@link ConsoleCommandsPresence} finds that mod installed - so this class sits with
- * the integration it exists for, beside the adapter that answers it.
+ * the integration it exists for. What is a cover stays here because a cover is this mod's own
+ * notion; what a console is, and whether one is up, is the library's.
  */
 public final class ConsoleMapCover implements MapCover {
 

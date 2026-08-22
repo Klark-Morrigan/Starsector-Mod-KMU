@@ -68,7 +68,7 @@ Hiding is also the better look, a console dimming and blurring its own backdrop.
 gate goes false, the renderer's early return zeroes the frame clock and drops the input motions and
 the input listener cancels a dangling drag, so a console opened mid-drag leaves nothing stale behind.
 
-What answers "is a console up" is `kmu.starsector.consolecommands.ConsoleOverlay`, injected into each
+What answers "is a console up" is `kmlib.starsector.consolecommands.ConsoleOverlay`, injected into each
 host so the sidebar depends on the question rather than on an optional mod (each `INSTANCE` names the
 one live `ConsoleCommandsOverlay.INSTANCE`; any other implementation states the answer outright).
 That read fails open - mod

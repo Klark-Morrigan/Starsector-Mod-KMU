@@ -4,17 +4,17 @@ import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.animation.TraverseDurations;
 import kmlib.math.geometry.BoxEdge;
+import kmlib.starsector.consolecommands.ConsoleOverlay;
 import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
+import kmlib.testfixtures.starsector.consolecommands.ConsoleOverlayFake;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.settings.KmuMapLayerSettings;
-import kmu.starsector.consolecommands.ConsoleOverlay;
-import kmu.starsector.consolecommands.ConsoleOverlayFake;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;

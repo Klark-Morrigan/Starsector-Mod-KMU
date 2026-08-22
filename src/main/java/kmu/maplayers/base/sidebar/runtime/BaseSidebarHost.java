@@ -2,6 +2,7 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmlib.starsector.consolecommands.ConsoleOverlay;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
@@ -14,7 +15,6 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 import kmu.settings.KmuMapLayerSettings;
-import kmu.starsector.consolecommands.ConsoleOverlay;
 
 import java.util.ArrayList;
 import java.util.List;

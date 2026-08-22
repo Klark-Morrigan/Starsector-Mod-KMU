@@ -1,6 +1,8 @@
 package kmu.maplayers.base.sidebar.runtime;
 
 import kmlib.math.geometry.BoxEdge;
+import kmlib.starsector.consolecommands.ConsoleCommandsOverlay;
+import kmlib.starsector.consolecommands.ConsoleOverlay;
 import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
@@ -10,8 +12,6 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.PersistedSidebarFold;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
-import kmu.starsector.consolecommands.ConsoleCommandsOverlay;
-import kmu.starsector.consolecommands.ConsoleOverlay;
 
 import java.util.Set;
 
