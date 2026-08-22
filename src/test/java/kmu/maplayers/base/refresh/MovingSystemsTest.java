@@ -7,9 +7,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.starsector.map.VisibleStars;
-import kmlib.starsector.systems.SystemColoniesIndex;
-
+import kmu.maplayers.base.visibility.MapVisibilityPass;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.junit.jupiter.api.Nested;
@@ -61,15 +59,14 @@ class MovingSystemsTest {
 
         @Test
         void reportsNoChangeAndObservesNothingWithoutASectorToWalk() {
-            // A poll that found no sector opens an index over none, so the walk has nothing to
-            // reach - and one handed no index at all has not even that.
+            // A poll that found no sector opens a pass over none, so the walk has nothing to
+            // reach - and one handed no pass at all has not even that.
             var movingSystems = new MovingSystems();
 
             assertThat(observePositions(movingSystems, null, FORCED_ONTO_MAP))
                 .isFalse();
 
-            assertThat(movingSystems.updateMovingSystems(
-                    null, VisibleStars.scan(null), FORCED_ONTO_MAP))
+            assertThat(movingSystems.updateMovingSystems(null))
                 .isFalse();
 
             assertThat(movingSystems.getMovingSystemIds())
@@ -183,10 +180,10 @@ class MovingSystemsTest {
         }
     }
 
-    // One poll's observation, opening the reading of the sector a poll opens: a colony index and
-    // a hyperspace scan built fresh and discarded with the call. Built per call rather than once
-    // per test because that is what the walk is handed in production - a kept index would answer
-    // the second poll off the positions the first one saw.
+    // One poll's observation, opening the reading of the sector a poll opens: a pass built fresh
+    // and discarded with the call. Built per call rather than once per test because that is what
+    // the walk is handed in production - a kept pass would answer the second poll off the
+    // positions the first one saw.
     private static boolean observePositions(
             MovingSystems movingSystems,
             MovableSystemSectorFake sectorFake,
@@ -195,9 +192,7 @@ class MovingSystemsTest {
         var sector = sectorFake == null ? null : sectorFake.getSector();
 
         return movingSystems.updateMovingSystems(
-            new SystemColoniesIndex(sector),
-            VisibleStars.scan(sector),
-            visibilityRules);
+            MapVisibilityPass.over(sector, visibilityRules));
     }
 
     // A one-system sector whose system reports a position the test rewrites between polls,

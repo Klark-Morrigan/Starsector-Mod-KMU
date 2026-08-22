@@ -55,13 +55,11 @@ public final class MapVisibility {
     /**
      * Decides map membership from an inhabitation flag the caller already has.
      *
-     * <p>The only form, and the walk it is missing is the point. Every caller here is a pass
-     * that has already read each system once - the fingerprint scan sizes dominance off that
-     * read and holds the ruin flag anyway, the drawn-set predicate answers habitation off the
-     * pass's shared colony index - so a form that took a sector and read the economy again
-     * would be a second walk of every system hidden inside a membership test. Only the force
-     * override is read off the rules here: the colony half is already folded into the flag by
-     * whoever computed it.
+     * <p>The only form, and the walk it is missing is the point. The caller is a pass that has
+     * already read each system once and answers habitation off that reading, so a form that took
+     * a sector and read the economy again would be a second walk of every system hidden inside a
+     * membership test. Only the force override is read off the rules here: the colony half is
+     * already folded into the flag by whoever computed it.
      *
      * @param system          the system to test
      * @param visibleStars    the index of systems whose star the map draws
@@ -94,10 +92,9 @@ public final class MapVisibility {
      * listing of what the player may be told about, and nobody has ever lived on it, so a
      * system holding one and nothing else is empty space with a wreck in it.
      *
-     * <p>Both arrive as facts already read rather than as a colony set and a system to walk. Every
-     * caller with a pass has them - the sector scan reads the ruin anyway, to salt a drawn
-     * system's fingerprint, and a render pass answers habitation off its own one walk - so taking
-     * the answers is what keeps this from being a second walk hidden inside a rule.
+     * <p>Both arrive as facts already read rather than as a colony set and a system to walk. A
+     * pass has them off its own one reading of the system, so taking the answers is what keeps
+     * this from being a second walk hidden inside a rule.
      *
      * @param hasInhabitingColony   whether the system holds a colony somebody lives on that the
      *                              player may be shown, as the caller's own habitation read

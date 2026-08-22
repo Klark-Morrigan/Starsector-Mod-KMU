@@ -6,12 +6,11 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.SectorColonySightings;
-import kmlib.starsector.map.VisibleStars;
-import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
+import kmu.maplayers.base.visibility.MapVisibilityPass;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
@@ -305,10 +304,7 @@ final class PoliticalMapStalenessSourceTest {
                 .thenReturn(MapVisibilityRules.BASE);
 
             snapshotMock
-                .when(() -> PoliticalMapSectorSnapshot.scan(
-                    any(SystemColoniesIndex.class),
-                    any(VisibleStars.class),
-                    any(MapVisibilityRules.class)))
+                .when(() -> PoliticalMapSectorSnapshot.scan(any(MapVisibilityPass.class)))
                 .thenReturn(inputs.firstSnapshot(), inputs.secondSnapshot());
 
             alliancesMock
@@ -319,10 +315,7 @@ final class PoliticalMapStalenessSourceTest {
 
             var movingSystemsMock = mock(MovingSystems.class);
 
-            when(movingSystemsMock.updateMovingSystems(
-                    any(SystemColoniesIndex.class),
-                    any(VisibleStars.class),
-                    any(MapVisibilityRules.class)))
+            when(movingSystemsMock.updateMovingSystems(any(MapVisibilityPass.class)))
                 .thenReturn(false, inputs.hasMovingSetChangedOnSecondPoll());
 
             movingStaticMock

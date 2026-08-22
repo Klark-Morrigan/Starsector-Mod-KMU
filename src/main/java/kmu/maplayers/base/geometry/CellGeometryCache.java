@@ -8,6 +8,7 @@ import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.profiling.Timings;
 
 import kmu.maplayers.base.visibility.DrawnSystemPositions;
+import kmu.maplayers.base.visibility.MapVisibilityPass;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.apache.log4j.Logger;
@@ -257,12 +258,17 @@ public final class CellGeometryCache {
     // clips no neighbour; the cells around it fill the space as if it were absent.
     // The visibility rules pass through to the drawn-set walk, so a forced or
     // undiscovered-colony system enters the partition like any other site.
+    //
+    // The rebuild's own pass is opened here and discarded with the walk: this is the one
+    // place a geometry update reads the sector, so nothing survives to answer a later
+    // rebuild off a sector that has since moved on.
     private static Map<String, double[]> collectAccessibleSites(
             SectorAPI sector,
             Set<String> movingSystemIds,
             MapVisibilityRules visibilityRules) {
 
-        var sites = DrawnSystemPositions.collectLivePositions(sector, visibilityRules);
+        var sites = DrawnSystemPositions.collectLivePositions(
+            MapVisibilityPass.over(sector, visibilityRules));
         sites.keySet().removeAll(movingSystemIds);
         return sites;
     }

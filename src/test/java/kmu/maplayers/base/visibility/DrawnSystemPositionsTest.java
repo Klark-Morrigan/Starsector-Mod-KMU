@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.lwjgl.util.vector.Vector2f;
 
 import java.util.List;
+import java.util.Map;
 
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
@@ -25,10 +26,9 @@ import static org.mockito.Mockito.when;
  * Pins the drawn-set walk: which systems earn a Voronoi site and where each one sits.
  *
  * <p>The membership rule itself is exercised next door; what only this can show is the walk
- * around it. It opens the colony index and the hyperspace scan its own pass needs, so a case
- * admitting a system on its colony read alone is what says that reading really happened -
- * a walk that opened a hollow index would leave such a system off the map while every other
- * case here went on passing.
+ * around it. It is driven through a real pass over a real sector, so a case admitting a system
+ * on its colony read alone is what says that reading really happened - a walk over a hollow
+ * pass would leave such a system off the map while every other case here went on passing.
  *
  * <p>The other half is the skip: a system with no hyperspace position has no site to place a
  * cell at, and is left out whatever the rule says about it.
@@ -52,7 +52,7 @@ class DrawnSystemPositionsTest {
         @Test
         void collectsNoPositionsWithoutASectorToRead() {
 
-            assertThat(DrawnSystemPositions.collectLivePositions(null, FORCED_ONTO_MAP))
+            assertThat(collectPositionsUnder(null, FORCED_ONTO_MAP))
                 .isEmpty();
         }
 
@@ -63,7 +63,7 @@ class DrawnSystemPositionsTest {
                 buildSystemAt("a", 3f, 4f),
                 buildSystemAt("b", -5f, 6f));
 
-            var positions = DrawnSystemPositions.collectLivePositions(sector, FORCED_ONTO_MAP);
+            var positions = collectPositionsUnder(sector, FORCED_ONTO_MAP);
 
             assertThat(positions)
                 .containsOnlyKeys("a", "b");
@@ -77,7 +77,7 @@ class DrawnSystemPositionsTest {
         void leavesOutASystemWithNoPositionToSeedACellAt() {
             // A site is a position, so a system without one cannot enter the partition however
             // the rule judges it - which is why the force override is on here.
-            var positions = DrawnSystemPositions.collectLivePositions(
+            var positions = collectPositionsUnder(
                 buildSectorHolding(buildSystemWithoutAPosition("a")),
                 FORCED_ONTO_MAP);
 
@@ -89,7 +89,7 @@ class DrawnSystemPositionsTest {
         void leavesOutASystemTheRuleDoesNotDraw() {
             // Unreachable, no visible star anchor and nobody living there, so nothing admits
             // it once the force override is off.
-            var positions = DrawnSystemPositions.collectLivePositions(
+            var positions = collectPositionsUnder(
                 buildSectorHolding(buildSystemAt("a", 3f, 4f)),
                 MapVisibilityRules.BASE);
 
@@ -99,17 +99,28 @@ class DrawnSystemPositionsTest {
 
         @Test
         void admitsASystemOnItsOwnColonyReadAlone() {
-            // The walk's own reading of the sector, and the only case that can show it was
+            // The pass's own reading of the sector, and the only case that can show it was
             // made. This system has no other route onto the map, so it is drawn if and only if
-            // the colony index the walk opened answered for it.
+            // the colony index behind the pass answered for it.
             var system = buildSystemAt("a", 3f, 4f);
             var sector = buildSectorHolding(system);
 
             listColonyIn(sector, system, buildOpenColony());
 
-            assertThat(DrawnSystemPositions.collectLivePositions(sector, MapVisibilityRules.BASE))
+            assertThat(collectPositionsUnder(sector, MapVisibilityRules.BASE))
                 .containsOnlyKeys("a");
         }
+    }
+
+    // One walk over a pass opened the way a rebuild opens one: built per call and discarded
+    // with it, which is what the production caller does - a kept pass would answer a second
+    // walk off the sector the first one saw.
+    private static Map<String, double[]> collectPositionsUnder(
+            SectorAPI sector,
+            MapVisibilityRules visibilityRules) {
+
+        return DrawnSystemPositions.collectLivePositions(
+            MapVisibilityPass.over(sector, visibilityRules));
     }
 
     // A sector whose hyperspace carries no star anchor and whose economy lists nothing, so no

@@ -16,7 +16,6 @@ import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
-import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
 
@@ -357,21 +356,17 @@ class MapVisibilityIntegrationTest {
         }
     }
 
-    // The whole rule over one system with no reveal applied, reached through the drawn-set
-    // predicate. That is where the rule's two walks are now composed - the membership test
-    // itself takes the answers rather than the sector - so a case asking the rule for real has
-    // to ask it through the predicate that assembles them. Bound here once so the scenarios
-    // below differ only in the fixture they stage.
+    // The whole rule over one system with no reveal applied, asked of a pass. That is where the
+    // rule's two walks are composed - the membership test itself takes the answers rather than
+    // the sector - so a case asking the rule for real has to ask it of the thing that assembles
+    // them. Bound here once so the scenarios below differ only in the fixture they stage.
     private static boolean shouldAppearOnMapUnderNoReveal(
             SectorAPI sector,
             StarSystemAPI system) {
 
-        return DrawnSystemPositions
-            .buildDrawnSystemPredicate(
-                new SystemColoniesIndex(sector),
-                VisibleStars.scan(sector),
-                MapVisibilityRules.BASE)
-            .test(system);
+        return MapVisibilityPass
+            .over(sector, MapVisibilityRules.BASE)
+            .isDrawn(system);
     }
 
     // The inhabitation read with no reveal applied, so the normal known-to-player gate stands.
@@ -382,18 +377,17 @@ class MapVisibilityIntegrationTest {
         return isInhabitedUnder(sector, system, MapVisibilityRules.BASE);
     }
 
-    // The inhabitation read over a sector, reached through the production composition rather
-    // than restated here: the rule takes two answers, and a case stating for itself which
-    // walks produce them would be asserting against its own copy of the rule.
+    // The inhabitation read over a sector, asked of a pass rather than restated here: the rule
+    // takes two answers, and a case stating for itself which walks produce them would be
+    // asserting against its own copy of the rule.
     private static boolean isInhabitedUnder(
             SectorAPI sector,
             StarSystemAPI system,
             MapVisibilityRules visibilityRules) {
 
-        return DrawnSystemPositions.isSystemInhabited(
-            new SystemColoniesIndex(sector),
-            system,
-            visibilityRules);
+        return MapVisibilityPass
+            .over(sector, visibilityRules)
+            .isSystemInhabited(system);
     }
 
     // Wires a single-system sector whose economy returns the given markets for

@@ -1,11 +1,7 @@
 package kmu.maplayers.politicalmap.base.refresh;
 
-import kmlib.starsector.map.VisibleStars;
-import kmlib.starsector.markets.DecivilisedMarkets;
-import kmlib.starsector.systems.SystemColoniesIndex;
-
 import kmu.maplayers.base.visibility.MapVisibility;
-import kmu.maplayers.base.visibility.MapVisibilityRules;
+import kmu.maplayers.base.visibility.MapVisibilityPass;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -32,11 +28,11 @@ import java.util.Map;
  * already marked and the watcher's own diff dedupe to one reshape.
  *
  * <p>Both come from a single walk, and that walk is the poll's rather than this scan's own.
- * Each system's colonies are selected once - through the index the caller opened, so the same
+ * Each system's colonies are selected once - through the pass the caller opened, so the same
  * selection answers the poll's other passengers - and that one set answers both outputs here:
- * whether anybody lives there, which decides membership, and the footprints the dominance rule
- * weighs. Inhabitation is asked of the set rather
- * than read off those footprints, since a footprint is weighed only for a colony the
+ * whether anybody lives there, which the pass composes membership from, and the footprints the
+ * dominance rule weighs. Membership is asked of the pass rather than derived from those
+ * footprints, since a footprint is weighed only for a colony the
  * economy lists - a system settled by an unregistered one alone lives, and would go
  * missing from the fingerprint that notices it appear. The concerns stay separated: the
  * visibility contribution is {@link MapVisibility}'s and the dominant holder is
@@ -50,63 +46,50 @@ public record PoliticalMapSectorSnapshot(
      * Walks the sector once over the poll's own reading of it, reading the
      * dominance-weighting rules itself so the whole walk resolves every system under one rule
      * even if the player applies a settings change mid-scan. Lets a caller that shares one
-     * toggle read across several walks (the staleness poll, which drives both this scan and
-     * the motion walk from a single read) pass the toggles in while leaving weighting - which
-     * only this scan needs - encapsulated here.
+     * pass across several walks (the staleness poll, which drives both this scan and the
+     * motion walk from a single reading) pass it in while leaving weighting - which only this
+     * scan needs - encapsulated here.
      *
-     * @param colonies        the poll's colony index, which every system is read through;
-     *                        required, the caller being a pass that has already opened one;
-     *                        an index opened over no sector yields an empty snapshot
-     * @param visibleStars    the poll's hyperspace scan of which stars the map draws
-     * @param visibilityRules the rules in force for this pass - what may be shown of a
-     *                        colony, which the dominance fold and the inhabitation read
-     *                        both take, and whether a system is forced onto the drawn set
+     * @param pass the poll's reading of the sector: which systems are drawn, what may be shown
+     *             of a colony, and the one walk of each system every reader shares; a pass
+     *             over no sector yields an empty snapshot
      * @return the visibility fingerprint and the dominant holder (by faction id) of each
      *         owned on-map system; a drawn-but-unowned system (a decivilised shell) is
      *         absent from the holder map
      */
-    public static PoliticalMapSectorSnapshot scan(
-            SystemColoniesIndex colonies,
-            VisibleStars visibleStars,
-            MapVisibilityRules visibilityRules) {
-        return scan(
-            colonies,
-            visibleStars,
-            DominanceRules.readFromLunaSettings(),
-            visibilityRules);
+    public static PoliticalMapSectorSnapshot scan(MapVisibilityPass pass) {
+        return scan(pass, DominanceRules.readFromLunaSettings());
     }
 
     /**
-     * Walks the sector once under an explicit weighting rule and visibility rules,
-     * for a caller that resolves both itself rather than letting this class read the
-     * live settings.
+     * Walks the sector once under an explicit weighting rule, for a caller that resolves it
+     * itself rather than letting this class read the live settings.
      *
-     * <p>Given the poll's index and hyperspace scan rather than the sector behind them, so
-     * that a system this walk selects is a system the poll's other walks are handed rather
-     * than select again. A scan holding a sector could open a second reading of every system
-     * in the same tick, which is the arrangement this signature makes unstateable.
+     * <p>Given the poll's pass rather than the sector behind it, so that a system this walk
+     * selects is a system the poll's other walks are handed rather than select again. A scan
+     * holding a sector could open a second reading of every system in the same tick, which is
+     * the arrangement this signature makes unstateable.
      *
-     * @param colonies        the poll's colony index, which every system is read through;
-     *                        required, the caller being a pass that has already opened one;
-     *                        an index opened over no sector yields an empty snapshot
-     * @param visibleStars    the poll's hyperspace scan of which stars the map draws
-     * @param rules           the dominance-weighting rules for this pass - whether
-     *                            stability scales each rating and whether an attached station
-     *                            lifts it - before dominance is compared
-     * @param visibilityRules the rules in force for this pass - what may be shown of a
-     *                        colony, which the dominance fold and the inhabitation read
-     *                        both take, and whether a system is forced onto the drawn set
+     * <p>Reaches past the pass's own membership answer for two things it alone needs: the
+     * colonies each system holds, which the dominance fold weighs, and the ruin flag, which
+     * salts a drawn system's fingerprint. Both come off the pass rather than beside it, so
+     * what this walk weighs is what the same walk drew.
+     *
+     * @param pass  the poll's reading of the sector: which systems are drawn, what may be shown
+     *              of a colony, and the one walk of each system every reader shares; a pass
+     *              over no sector yields an empty snapshot
+     * @param rules the dominance-weighting rules for this pass - whether stability scales each
+     *              rating and whether an attached station lifts it - before dominance is
+     *              compared
      * @return the visibility fingerprint and the dominant holder (by faction id) of
      *         each owned on-map system; a drawn-but-unowned system (a decivilised
      *         shell) is absent from the holder map
      */
     public static PoliticalMapSectorSnapshot scan(
-            SystemColoniesIndex colonies,
-            VisibleStars visibleStars,
-            DominanceRules rules,
-            MapVisibilityRules visibilityRules) {
+            MapVisibilityPass pass,
+            DominanceRules rules) {
 
-        var sector = colonies.getSector();
+        var sector = pass.sector();
 
         if (sector == null) {
             return new PoliticalMapSectorSnapshot(0, Map.of());
@@ -116,39 +99,28 @@ public record PoliticalMapSectorSnapshot(
 
         for (var system : sector.getStarSystems()) {
 
-            // One colony read per system, shared by both concerns: membership asks it whether
-            // anybody lives here, the dominance rule ranks the footprints it weighs out of it. A
-            // null economy (early load) reads as no colonies rather than faulting.
-            var systemColonies = colonies.readColoniesIn(system);
+            // The pass's one colony read per system, which the drawn-set answer above is composed
+            // from too: membership asks it whether anybody lives here, the dominance rule ranks
+            // the footprints it weighs out of it. A null economy (early load) reads as no colonies
+            // rather than faulting.
+            var systemColonies = pass.colonies().readColoniesIn(system);
 
-            // Read before inhabitation and handed to it, rather than left for that rule to
-            // re-derive: it is wanted here anyway, to salt a drawn system's fingerprint, and it
-            // walks every planet in the system.
-            var hasRevealedDecivilised = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
-
-            // Asked through the shared rule rather than off the footprints below, which is the
-            // narrower question: a footprint is only ever weighed for an economy-listed colony,
-            // so a system settled by an unregistered one alone would read as empty here while the
-            // drawn set - which asks the rule - draws it. The fingerprint would then never move
-            // for it, and the map would go on showing whatever it last built there.
-            //
-            // Both arms are read here and handed over, the rule owning the composition alone: the
-            // ruin is in hand for the fingerprint salt anyway, and the habitation read comes off
-            // the one walk of the system above rather than off a second one inside the rule.
-            var isInhabited = MapVisibility.isInhabited(
-                systemColonies.hasInhabitingColony(visibilityRules.colonyVisibility()),
-                hasRevealedDecivilised);
+            // Taken off the pass rather than read again: membership folds the ruin in and cannot
+            // report it, but the fingerprint needs it on its own to salt a drawn system's
+            // contribution, so a live-to-dead flip moves the hash without the drawn set changing.
+            var hasRevealedDecivilised = pass.isRevealedDecivilised(system);
 
             var footprintByFactionId = KnownMarketFootprints.readByFaction(
                 systemColonies,
                 rules,
-                visibilityRules.colonyVisibility());
+                pass.rules().colonyVisibility());
 
-            if (!MapVisibility.shouldAppearOnMap(
-                    system,
-                    visibleStars,
-                    isInhabited,
-                    visibilityRules)) {
+            // Asked of the pass rather than derived from the footprints below, which is the
+            // narrower question: a footprint is only ever weighed for an economy-listed colony,
+            // so a system settled by an unregistered one alone would read as empty here while the
+            // drawn set - which asks the pass - draws it. The fingerprint would then never move
+            // for it, and the map would go on showing whatever it last built there.
+            if (!pass.isDrawn(system)) {
                 continue;
             }
             var systemId = system.getId();

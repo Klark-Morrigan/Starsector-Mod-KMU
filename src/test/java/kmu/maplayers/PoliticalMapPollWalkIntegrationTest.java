@@ -40,8 +40,8 @@ import static org.mockito.Mockito.when;
  *
  * <p>Three of them ask each system who lives there - the snapshot that fingerprints the drawn
  * set, the motion walk that follows a drifting system, and the observation write that records
- * what a system's own inhabitants can see - and each is handed the poll's colony index rather
- * than the sector it was opened over. What that costs, if it is ever undone, is a walk of every
+ * what a system's own inhabitants can see - and each is handed the poll's own pass rather than
+ * the sector it was opened over. What that costs, if it is ever undone, is a walk of every
  * entity in every system in the sector, twice over, every four to five campaign seconds.
  *
  * <p>No unit can make this claim. How many times a system was walked is a fact about the

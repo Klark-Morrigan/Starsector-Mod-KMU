@@ -11,10 +11,8 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.starsector.map.VisibleStars;
-import kmlib.starsector.systems.SystemColoniesIndex;
-
 import kmu.maplayers.DecivilisedPlanetFixtures;
+import kmu.maplayers.base.visibility.MapVisibilityPass;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -192,10 +190,8 @@ class PoliticalMapSectorSnapshotTest {
     // reads as the sector it scans and nothing else.
     private static PoliticalMapSectorSnapshot scanUnderStabilityWeighting(SectorAPI sector) {
         return PoliticalMapSectorSnapshot.scan(
-            new SystemColoniesIndex(sector),
-            VisibleStars.scan(sector),
-            STABILITY_WEIGHTED,
-            MapVisibilityRules.BASE);
+            MapVisibilityPass.over(sector, MapVisibilityRules.BASE),
+            STABILITY_WEIGHTED);
     }
 
     // A single-system sector whose economy returns the given markets for that

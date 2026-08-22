@@ -3,14 +3,13 @@ package kmu.maplayers.politicalmap.base.refresh;
 import com.fs.starfarer.api.Global;
 
 import kmlib.starsector.colonies.SectorColonySightings;
-import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.visibility.MapVisibilityRules;
+import kmu.maplayers.base.visibility.MapVisibilityPass;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import org.apache.log4j.Logger;
@@ -81,30 +80,25 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     public void markChangesSinceLastPoll() {
         var sector = Global.getSector();
 
-        // The three values every passenger below shares, read once here. The rules first,
-        // so a toggle flipped mid-poll cannot leave the snapshot's drawn set and the motion
-        // walk's disagreeing - and so the motion walk observes the revealed systems the
-        // geometry draws rather than only the normally visible ones. The colony index and the
-        // star scan then bound what the poll costs: each passenger asks every system who
-        // lives there, so one selection per system serves all three.
+        // The one reading of the sector every passenger below shares, opened here. It samples
+        // the live rules before it walks anything, so a toggle flipped mid-poll cannot leave the
+        // snapshot's drawn set and the motion walk's disagreeing - and so the motion walk
+        // observes the revealed systems the geometry draws rather than only the normally visible
+        // ones. Its colony index then bounds what the poll costs: each passenger asks every
+        // system who lives there, so one selection per system serves all three.
         //
-        // All three are discarded with the poll. A kept index would answer the next poll off
-        // the sector this one saw, which is the change a poll exists to notice.
-        var visibilityRules = MapVisibilityRules.readFromLunaSettings();
-        var colonies = new SystemColoniesIndex(sector);
-        var visibleStars = VisibleStars.scan(sector);
-        var snapshot = PoliticalMapSectorSnapshot.scan(colonies, visibleStars, visibilityRules);
+        // Discarded with the poll. A kept pass would answer the next poll off the sector this
+        // one saw, which is the change a poll exists to notice.
+        var pass = MapVisibilityPass.readFromLunaSettings(sector);
+        var snapshot = PoliticalMapSectorSnapshot.scan(pass);
 
         // Observe positions every poll so a system that starts or stops moving is
         // taken out of, or returned to, the partition. Only a change to the moving set
         // stales the geometry; a system that keeps moving is already excluded, so it
         // reports no change and never churns the map.
-        var hasMovingSetChanged = MovingSystems.getInstance().updateMovingSystems(
-            colonies,
-            visibleStars,
-            visibilityRules);
+        var hasMovingSetChanged = MovingSystems.getInstance().updateMovingSystems(pass);
 
-        recordObservationsByInhabitants(colonies);
+        recordObservationsByInhabitants(pass.colonies());
 
         // One call per axis, each handed the same first-poll flag and each owning its own
         // baseline, so no axis can be read without seeing how it treats a baseline poll.
