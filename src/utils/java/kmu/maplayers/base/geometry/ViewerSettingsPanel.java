@@ -67,6 +67,7 @@ final class ViewerSettingsPanel {
 
     private static final double BRIDGE_REACH_MAXIMUM = 10;
 
+
     // How little of its own border a cell may face the void with and still be walked through,
     // as a percentage of the whole turn. Zero is the bottom because it asks nothing, which is
     // the rule switched off and what every other knob is judged against.
@@ -78,6 +79,14 @@ final class ViewerSettingsPanel {
     private static final double MIN_FRONTAGE_MINIMUM = 0;
 
     private static final double MIN_FRONTAGE_MAXIMUM = 25;
+
+    // How far off a wall already down a span may run and still count as running along it, in
+    // map units. Zero asks for lines that coincide exactly, which catches only the spans that
+    // repeat a wall end for end. The ceiling is several stroke widths - past that the rule is
+    // discarding spans that are visibly clear of anything and merely heading the same way.
+    private static final double COAST_SLACK_MINIMUM = 0;
+
+    private static final double COAST_SLACK_MAXIMUM = 500;
 
     // How far brightness may wander either side of the chosen colour when jitter is on, as a
     // percentage of the full range. The default is wide enough to tell two neighbours apart
@@ -414,6 +423,28 @@ final class ViewerSettingsPanel {
                 refreshes::refreshCoastlines,
                 () -> { })));
 
+        // What the smoothing left out, on whichever coasts are drawn. A diagnostic rather
+        // than a layer: it answers "what did the rules take" - the one thing a finished coast
+        // cannot be asked, since a stretch a rule threw away and one the walk never offered
+        // are both simply missing from the line.
+        //
+        // One row for both constructions, and here rather than in either section, because
+        // the question is the same of each and the answer is told apart by the coast each
+        // mark sits beside.
+        controls.add(ViewerControls.buildToggle(
+            "Dropped stretches",
+            "Dropped stretches",
+            false,
+            on -> settings.showDroppedStretches = on,
+            refreshes::repaintMap));
+
+        controls.add(ViewerSwatches.buildColour(
+            "Dropped stretches colour",
+            "Dropped stretches",
+            ViewerSettings.DROPPED_STRETCH_DEFAULT,
+            colour -> settings.droppedStretchColour = colour,
+            refreshes::repaintMap));
+
         // A pair rather than one, because the two say different halves of the same thing:
         // which run went where it should not, and which cell it went into. Nothing is drawn
         // in either once the construction stops crossing anything.
@@ -479,6 +510,59 @@ final class ViewerSettingsPanel {
             new ViewerSliders.SliderWork(
                 percent -> settings.continentMinFrontageShare =
                     percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
+                refreshes::refreshCoastlines,
+                () -> { })));
+
+        // The bridges v3 lays once its coastlines are down. The same search the settled map
+        // uses, offered the same cells - only the surviving set differs, because a span into
+        // void a coastline has already shut in is walling off the same emptiness twice.
+        //
+        // Rebuilt rather than repainted: the coasts have to be traced for this to be
+        // answerable at all, so switching it on is what makes the set exist.
+        controls.add(ViewerControls.buildToggle(
+            "Continent bridges",
+            "Continent bridges",
+            false,
+            on -> settings.showContinentBridges = on,
+            refreshes::refreshCoastlines));
+
+        controls.add(ViewerSwatches.buildColour(
+            "Continent bridges colour",
+            "Continent bridges",
+            ViewerSettings.CONTINENT_BRIDGE_DEFAULT,
+            colour -> settings.continentBridgeColour = colour,
+            refreshes::repaintMap));
+
+        // Its own reach rather than the settled bridges', because the two are offered to
+        // different maps: v3's are laid over a sector whose coastlines have already taken
+        // some of the void, so the reach that finds the right spans there is not this one.
+        controls.add(ViewerSliders.buildSlider(
+            "Continent bridge reach",
+            "Bridge reach, in cell radii (x100)",
+            new ViewerSliders.SliderRange(
+                BRIDGE_REACH_MINIMUM * ViewerSettings.BRIDGE_REACH_STEP_SCALE,
+                BRIDGE_REACH_MAXIMUM * ViewerSettings.BRIDGE_REACH_STEP_SCALE,
+                ViewerSettings.CONTINENT_BRIDGE_REACH_DEFAULT
+                    * ViewerSettings.BRIDGE_REACH_STEP_SCALE),
+            new ViewerSliders.SliderWork(
+                multiple -> settings.continentBridgeReachMultiple =
+                    multiple / ViewerSettings.BRIDGE_REACH_STEP_SCALE,
+                refreshes::refreshCoastlines,
+                () -> { })));
+
+        // How near a wall already down a span may run before it counts as running ALONG it
+        // and is left out. What it removes is doubled line: a span whose length is covered,
+        // piece by piece, by a shorter span and then by the coastline, walling nothing that
+        // was not walled before it arrived.
+        controls.add(ViewerSliders.buildSlider(
+            "Continent bridge coast slack",
+            "Off a wall still counted as along it",
+            new ViewerSliders.SliderRange(
+                COAST_SLACK_MINIMUM,
+                COAST_SLACK_MAXIMUM,
+                ViewerSettings.CONTINENT_BRIDGE_COAST_SLACK_DEFAULT),
+            new ViewerSliders.SliderWork(
+                slack -> settings.continentBridgeCoastSlack = slack,
                 refreshes::refreshCoastlines,
                 () -> { })));
     }

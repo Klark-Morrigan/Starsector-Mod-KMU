@@ -86,6 +86,19 @@ final class MapLook {
     // disagree, and two greens would make agreement and disagreement look alike.
     static final Color CONTINENT_COAST = new Color(0xc0, 0x60, 0xff);
 
+    // A bridge offered to a sector that already has continent coastlines on it, and kept
+    // because it spans open sea rather than void a coast had already taken. Its own colour
+    // rather than the settled bridges': the two constructions are laid under different rules
+    // and are on screen together to be compared, so one colour for both would hide the very
+    // difference being looked at.
+    static final Color CONTINENT_BRIDGE = new Color(0x40, 0xd0, 0xff);
+
+    // A stretch of frontage the smoothing decided not to pass through, drawn on the border it
+    // sits on. Diagnostic rather than decorative, and unlike either coast colour: what it is
+    // for is being seen NEXT TO the line that replaced it, so the eye can judge what the drop
+    // actually bought. A shade of the coast's own colour would read as part of the coast.
+    static final Color DROPPED_STRETCH = new Color(0xff, 0x60, 0xc0);
+
     // The two halves of a coast crossing a cell, in colours nothing else on the map uses: the
     // run that goes where it should not, and the cell it goes into. Diagnostic rather than
     // decorative - when the construction is right, neither is ever drawn.

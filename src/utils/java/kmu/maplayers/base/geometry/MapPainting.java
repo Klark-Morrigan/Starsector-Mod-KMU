@@ -74,12 +74,29 @@ final class MapPainting {
     // setup is how two lines meant to differ only in colour come to differ in weight as well.
     static void paintLineRings(Graphics2D g2, List<List<double[]>> rings, Color colour) {
 
-        g2.setStroke(new BasicStroke(MapLook.SPAN_STROKE));
-        g2.setColor(applyAlpha(colour, MapLook.OPAQUE_ALPHA));
+        prepareSpanStroke(g2, colour);
 
         for (var ring : rings) {
             g2.draw(buildPath(ring));
         }
+    }
+
+    // The open-run sibling: same weight and colour, but the path is left unclosed. A run of
+    // border has two real ends, and closing it would stroke a chord straight across the cell
+    // it was traced on - drawing a line that exists only as an artefact of the closing.
+    static void paintLineRuns(Graphics2D g2, List<List<double[]>> runs, Color colour) {
+
+        prepareSpanStroke(g2, colour);
+
+        for (var run : runs) {
+            g2.draw(buildOpenPath(run));
+        }
+    }
+
+    private static void prepareSpanStroke(Graphics2D g2, Color colour) {
+
+        g2.setStroke(new BasicStroke(MapLook.SPAN_STROKE));
+        g2.setColor(applyAlpha(colour, MapLook.OPAQUE_ALPHA));
     }
 
     static Color applyAlpha(Color colour, int alpha) {
@@ -109,17 +126,26 @@ final class MapPainting {
 
     static Path2D buildPath(List<double[]> ring) {
 
+        var path = buildOpenPath(ring);
+
+        path.closePath();
+        return path;
+    }
+
+    // A polyline with real ends: the points and nothing more. The closed builder above is
+    // this plus the edge back to the start.
+    static Path2D buildOpenPath(List<double[]> run) {
+
         var path = new Path2D.Double();
 
-        for (var i = 0; i < ring.size(); i++) {
+        for (var i = 0; i < run.size(); i++) {
 
             if (i == 0) {
-                path.moveTo(ring.get(i)[0], ring.get(i)[1]);
+                path.moveTo(run.get(i)[0], run.get(i)[1]);
             } else {
-                path.lineTo(ring.get(i)[0], ring.get(i)[1]);
+                path.lineTo(run.get(i)[0], run.get(i)[1]);
             }
         }
-        path.closePath();
         return path;
     }
 

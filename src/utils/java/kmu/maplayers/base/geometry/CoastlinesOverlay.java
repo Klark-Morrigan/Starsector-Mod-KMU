@@ -123,10 +123,33 @@ final class CoastlinesOverlay {
         }
 
         MapPainting.paintLineRings(
-            g2, Coastlines.collectCoastRings(traced), settings.coastlineColour);
+            g2,
+            Coastlines.collectCoastRings(traced),
+            settings.coastlineColour);
 
+        paintDroppedStretches(g2);
         paintPenetrations(g2);
         paintSpills(g2);
+    }
+
+    // The frontages the smoothing left out, drawn on the borders they sit on.
+    //
+    // Over the coast rather than under it, because the two are read together: what a drop
+    // bought is the gap between the stretch and the line that replaced it, and a mark hidden
+    // beneath that line says nothing. Off the same trace as the coast, so a stretch shown as
+    // dropped is one THIS line was built without rather than one from a stale walk.
+    private void paintDroppedStretches(Graphics2D g2) {
+
+        if (!settings.showDroppedStretches) {
+            return;
+        }
+
+        MapPainting.paintLineRuns(
+            g2,
+            Coastlines.collectDroppedRuns(
+                traced,
+                settings.parameters.measureArcSegments()),
+            settings.droppedStretchColour);
     }
 
     // Only the stretch of a pocket outline that is outside the drawn coast, not the pocket it
@@ -162,7 +185,8 @@ final class CoastlinesOverlay {
             for (var circle : penetration.circles()) {
 
                 g2.draw(MapPainting.buildCircle(
-                    traced.union().sites().get(circle), traced.union().reach()));
+                    traced.union().sites().get(circle),
+                    traced.union().reach()));
             }
         }
 

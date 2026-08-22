@@ -146,6 +146,10 @@ final class Coastlines {
      *                    smoothing. Carried rather than walked again by whatever wants them:
      *                    the walk is not cheap, and a second one is a second answer that can
      *                    disagree with the coast it is supposed to describe
+     * @param dropped     the stretches the smoothing chose not to pass through, which is the
+     *                    one thing about a finished coast that cannot be read back off the
+     *                    line: a stretch the walk never offered and a stretch a rule threw
+     *                    away are both simply absent from it
      * @param union       the discs it was walked and drawn against, which are the same discs:
      *                     a coast is a border, and everything measured from a border has to
      *                     be measured from the one the map draws
@@ -157,8 +161,46 @@ final class Coastlines {
     record TracedCoasts(
         List<List<CoastVertex>> coasts,
         List<List<DiscUnionBoundary.CoastMark>> silhouettes,
+        List<DiscUnionBoundary.CoastMark> dropped,
         DiscUnion union,
         DiscUnionBoundary.Walls walls) {
+    }
+
+    /**
+     * The stretches the smoothing left out, as lines along the borders they sit on.
+     *
+     * <p>Drawn where the coast WOULD have run had it passed through them, which is what makes
+     * them legible beside the line that replaced them: the gap between the two is exactly what
+     * the rule bought. Sampled rather than chorded, so a wide frontage reads as the arc of
+     * border it is rather than as a straight line cutting through its own cell.
+     *
+     * @param traced      the coast
+     * @param arcSegments how finely a half-turn of arc is sampled
+     * @return one open run of points per dropped stretch
+     */
+    static List<List<double[]>> collectDroppedRuns(TracedCoasts traced, int arcSegments) {
+
+        var runs = new ArrayList<List<double[]>>(traced.dropped().size());
+
+        for (var mark : traced.dropped()) {
+
+            var sweep = mark.toAngle() - mark.fromAngle();
+            var steps = Math.max(
+                1,
+                (int) Math.ceil(arcSegments * sweep / Angles.HALF_TURN));
+
+            var run = new ArrayList<double[]>(steps + 1);
+
+            for (var step = 0; step <= steps; step++) {
+
+                run.add(DiscUnionBoundary.findPointOnMark(
+                    traced.union(),
+                    mark,
+                    mark.fromAngle() + sweep * step / steps));
+            }
+            runs.add(List.copyOf(run));
+        }
+        return List.copyOf(runs);
     }
 
     /**
@@ -253,7 +295,9 @@ final class Coastlines {
         var union = new DiscUnion(sites, parameters.cellRadius());
 
         var silhouettes = dropLoneIslands(DiscUnionBoundary.traceSilhouetteCoasts(
-            union, walls, parameters.boundSegments()));
+            union,
+            walls,
+            parameters.boundSegments()));
 
         var smoothed = smoothSilhouettes(
             silhouettes,
@@ -263,7 +307,12 @@ final class Coastlines {
                 rules.minFrontageShare(),
                 parameters.measureArcSegments()));
 
-        return new TracedCoasts(smoothed, silhouettes, union, walls);
+        return new TracedCoasts(
+            smoothed.coasts(),
+            silhouettes,
+            smoothed.dropped(),
+            union,
+            walls);
     }
 
     /**
@@ -316,27 +365,48 @@ final class Coastlines {
      * @param rules       how aggressively to smooth, and how finely
      * @return one closed run of points per run of connected cells
      */
-    private static List<List<CoastVertex>> smoothSilhouettes(
+    private static SmoothedCoasts smoothSilhouettes(
             List<List<DiscUnionBoundary.CoastMark>> silhouettes,
             DiscUnion union,
             Set<Integer> bridged,
             SmoothingRules rules) {
 
         var smoothed = new ArrayList<List<CoastVertex>>();
+        var dropped = new ArrayList<DiscUnionBoundary.CoastMark>();
 
         for (var coast : silhouettes) {
 
-            var outline = buildClearedOutline(
-                coast,
-                keepSmoothedMarks(coast, union, bridged, rules),
-                union,
-                rules);
+            var kept = keepSmoothedMarks(coast, union, bridged, rules);
+            var outline = buildClearedOutline(coast, kept, union, rules);
+
+            for (var index = 0; index < coast.size(); index++) {
+
+                if (!kept.contains(index)) {
+                    dropped.add(coast.get(index));
+                }
+            }
 
             if (outline.size() >= Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                 smoothed.add(outline);
             }
         }
-        return smoothed;
+        return new SmoothedCoasts(smoothed, List.copyOf(dropped));
+    }
+
+    /**
+     * What the smoothing made, and what it left out on the way.
+     *
+     * <p>The stretches dropped are kept rather than discarded because they are the only record
+     * of a decision the smoothing otherwise makes silently. A coast that came out wrong looks
+     * the same on screen whether a rule dropped too much or the walk never offered the stretch
+     * at all, and those are opposite faults with opposite fixes.
+     *
+     * @param coasts  one closed run of points per run of connected cells
+     * @param dropped every stretch the coast was not drawn through, over all of them
+     */
+    private record SmoothedCoasts(
+        List<List<CoastVertex>> coasts,
+        List<DiscUnionBoundary.CoastMark> dropped) {
     }
 
     /**

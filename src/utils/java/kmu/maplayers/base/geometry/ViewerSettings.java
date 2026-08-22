@@ -51,6 +51,10 @@ final class ViewerSettings {
 
     static final Color CONTINENT_COAST_DEFAULT = MapLook.CONTINENT_COAST;
 
+    static final Color CONTINENT_BRIDGE_DEFAULT = MapLook.CONTINENT_BRIDGE;
+
+    static final Color DROPPED_STRETCH_DEFAULT = MapLook.DROPPED_STRETCH;
+
     static final Color COAST_CROSSING_DEFAULT = MapLook.COAST_CROSSING;
     static final Color PIERCED_CELL_DEFAULT = MapLook.PIERCED_CELL;
 
@@ -59,6 +63,21 @@ final class ViewerSettings {
     static final double BRIDGE_REACH_DEFAULT =
         Coastlines.DEFAULT_RULES.bridgeReachMultiple();
     static final double BRIDGE_REACH_STEP_SCALE = 100.0;
+
+    // v3's bridges open on the same reach the settled ones use, so the two lists start from
+    // the same offer and any difference between them is the coastline filter rather than a
+    // different search.
+    static final double CONTINENT_BRIDGE_REACH_DEFAULT = BRIDGE_REACH_DEFAULT;
+
+    // The width a wall is drawn at, so two lines closer than this are drawn overlapping -
+    // which is the state a reader calls doubled.
+    //
+    // Not half of it, which was the first guess and too tight to work: a span shadowing a
+    // shorter one at a degree's divergence pulls a hundred units away by the far end, and a
+    // slack narrower than that leaves a gap where neither the shorter span nor the coastline
+    // quite covers, so the doubled line survives on a technicality.
+    static final double CONTINENT_BRIDGE_COAST_SLACK_DEFAULT = MapLook.SPAN_STROKE;
+
 
     static final float JITTER_DEFAULT = 35;
     static final double JITTER_SCALE = 100.0;
@@ -97,6 +116,17 @@ final class ViewerSettings {
     // it is a rival construction being judged against the settled coast, not a part of it.
     boolean showContinentCoasts;
 
+    // The bridges v3 would lay once its coastlines are down. Off by default and apart from
+    // the coasts' own switch, because it is the next proposal rather than another view of
+    // this one - and it is only meaningful with the coasts traced, since the coastlines are
+    // what decides which bridges survive.
+    boolean showContinentBridges;
+
+    // Every stretch of frontage the smoothing chose not to pass through, on whichever coasts
+    // are being drawn. One switch rather than one per coast: it shows a DECISION rather than a
+    // layer, and the answer it gives - what the rules left out - is the same question of both.
+    boolean showDroppedStretches;
+
     // How little of its own border a cell may face the void with before it is dropped from
     // the walk outright, as a share of the whole turn. The whole of how the settled coast is
     // smoothed: one intrinsic measure, with nothing carried from one stretch to the next.
@@ -109,7 +139,22 @@ final class ViewerSettings {
     // sector coast. Shared, every attempt to tune one was a compromise with the other.
     double continentMinFrontageShare = CONTINENT_MIN_FRONTAGE_DEFAULT;
 
+    // How far apart two cells may sit and still be bridged on the v3 layer, in cell radii.
+    // Its own knob rather than the settled bridges' because the two are laid over different
+    // maps: v3's are offered to a sector whose coastlines have already taken some of the void,
+    // so the reach that finds the right spans there is not the one that finds them here.
+    double continentBridgeReachMultiple = CONTINENT_BRIDGE_REACH_DEFAULT;
+
+    // How far off a wall already down a span may run and still count as running along it,
+    // in map units. A real judgement rather than rounding: a span shadowing the coast at a
+    // distance is redundant or not depending on how far a reader will accept two lines being
+    // apart and still call them one, and that is a matter of taste about the map.
+    double continentBridgeCoastSlack = CONTINENT_BRIDGE_COAST_SLACK_DEFAULT;
+
+    Color continentBridgeColour = CONTINENT_BRIDGE_DEFAULT;
+
     Color coastlineColour = COASTLINE_DEFAULT;
+    Color droppedStretchColour = DROPPED_STRETCH_DEFAULT;
     Color continentCoastColour = CONTINENT_COAST_DEFAULT;
     Color coastCrossingColour = COAST_CROSSING_DEFAULT;
     Color piercedCellColour = PIERCED_CELL_DEFAULT;
@@ -177,6 +222,15 @@ final class ViewerSettings {
     // one field of the record with nothing on the other end of it. Passed through as the
     // settled coast's rather than as some number of its own, so that if it ever comes to be
     // read the two coasts are still looking at one sector.
+    // How v3's bridges are offered and judged, asked of the settings for the same reason the
+    // coast rules are: the overlay that lays them and anything that later reports on them
+    // have to be describing one set, not two built from the same sliders a moment apart.
+    ContinentBridges.BridgeRules resolveContinentBridgeRules() {
+        return new ContinentBridges.BridgeRules(
+            continentBridgeReachMultiple,
+            continentBridgeCoastSlack);
+    }
+
     Coastlines.CoastRules resolveContinentCoastRules() {
         return new Coastlines.CoastRules(bridgeReachMultiple, continentMinFrontageShare);
     }

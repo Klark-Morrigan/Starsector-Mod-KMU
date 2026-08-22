@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.util.List;
 
@@ -26,7 +27,15 @@ final class ContinentCoastsOverlay {
     // What the last trace found, held rather than recomputed while painting: a frame that
     // rebuilt these would be drawing lines traced against geometry the rest of the frame is
     // not being drawn from.
-    private List<List<double[]>> rings = List.of();
+    //
+    // The whole trace rather than the rings alone, because what the smoothing LEFT OUT is
+    // part of what a reader is judging and can only be had from the walk that left it out.
+    private Coastlines.TracedCoasts traced;
+
+    // The bridges that survive those coastlines. Held beside the trace they were filtered
+    // against rather than found while painting, since which ones survive is a question about
+    // THAT trace and a frame that asked it again could answer about a different one.
+    private List<CellGap> bridges = List.of();
 
     ContinentCoastsOverlay(ViewerSettings settings) {
         this.settings = settings;
@@ -43,16 +52,28 @@ final class ContinentCoastsOverlay {
      */
     void refresh(SectorFixture fixture) {
 
-        if (!settings.showContinentCoasts) {
+        traced = null;
+        bridges = List.of();
 
-            rings = List.of();
+        // The coasts are traced while either they or the bridges are wanted, because the
+        // bridges are filtered against them: switching the bridges on without the line that
+        // decides which of them survive would show a set nothing on screen accounts for.
+        if (!settings.showContinentCoasts && !settings.showContinentBridges) {
             return;
         }
 
-        rings = Coastlines.collectCoastRings(Coastlines.traceContinentCoasts(
+        traced = Coastlines.traceContinentCoasts(
             fixture.getSites(),
             settings.parameters,
-            settings.resolveContinentCoastRules()));
+            settings.resolveContinentCoastRules());
+
+        if (settings.showContinentBridges) {
+
+            bridges = ContinentBridges.findAnchoredBridges(
+                traced,
+                settings.parameters,
+                settings.resolveContinentBridgeRules());
+        }
     }
 
     /**
@@ -62,9 +83,52 @@ final class ContinentCoastsOverlay {
      */
     void paintCoasts(Graphics2D g2) {
 
-        if (rings.isEmpty()) {
+        if (traced == null) {
             return;
         }
-        MapPainting.paintLineRings(g2, rings, settings.continentCoastColour);
+
+        paintBridges(g2);
+
+        if (settings.showContinentCoasts) {
+
+            MapPainting.paintLineRings(
+                g2,
+                Coastlines.collectCoastRings(traced),
+                settings.continentCoastColour);
+        }
+
+        if (!settings.showDroppedStretches || !settings.showContinentCoasts) {
+            return;
+        }
+
+        // In the same colour the settled coast marks its own drops with. The two
+        // constructions are told apart by the line each drop sits beside, and a second
+        // colour would imply the drops themselves differ in kind, which they do not.
+        MapPainting.paintLineRuns(
+            g2,
+            Coastlines.collectDroppedRuns(
+                traced,
+                settings.parameters.measureArcSegments()),
+            settings.droppedStretchColour);
+    }
+
+    // The bridges that survived the coastlines, drawn end to end at their true extent.
+    //
+    // Under the coast rather than over it, because the coastline is what JUDGED them: where
+    // the two meet, the line that did the refusing is the one worth being able to see.
+    private void paintBridges(Graphics2D g2) {
+
+        if (!settings.showContinentBridges) {
+            return;
+        }
+
+        g2.setStroke(new BasicStroke(MapLook.SPAN_STROKE));
+        g2.setColor(MapPainting.applyAlpha(
+            settings.continentBridgeColour,
+            MapLook.OPAQUE_ALPHA));
+
+        for (var bridge : bridges) {
+            g2.draw(MapPainting.buildSpanLine(bridge));
+        }
     }
 }
