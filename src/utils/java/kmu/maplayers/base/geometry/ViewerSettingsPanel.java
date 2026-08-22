@@ -67,14 +67,6 @@ final class ViewerSettingsPanel {
 
     private static final double BRIDGE_REACH_MAXIMUM = 10;
 
-    // How near the last kept point a cell's frontage has to be before it is dropped from the
-    // smoothed edge, in cell radii. Zero keeps every cell and reproduces the scallop exactly,
-    // which is the useful bottom end of the range: it is what the smoothing is judged
-    // against. The top is wide enough to cut a coast down to its corners.
-    private static final double COAST_SKIP_MINIMUM = 0;
-
-    private static final double COAST_SKIP_MAXIMUM = 4;
-
     // How little of its own border a cell may face the void with and still be walked through,
     // as a percentage of the whole turn. Zero is the bottom because it asks nothing, which is
     // the rule switched off and what every other knob is judged against.
@@ -406,22 +398,8 @@ final class ViewerSettingsPanel {
                 colour -> settings.coastalVoidEdge = colour),
             refreshes::repaintMap));
 
-        controls.add(ViewerSliders.buildSlider(
-            "Coast skip distance",
-            "Coast skip distance, in cell radii (x100)",
-            new ViewerSliders.SliderRange(
-                COAST_SKIP_MINIMUM * ViewerSettings.COAST_SKIP_STEP_SCALE,
-                COAST_SKIP_MAXIMUM * ViewerSettings.COAST_SKIP_STEP_SCALE,
-                ViewerSettings.COAST_SKIP_DEFAULT * ViewerSettings.COAST_SKIP_STEP_SCALE),
-            new ViewerSliders.SliderWork(
-                multiple -> settings.coastSkipMultiple =
-                    multiple / ViewerSettings.COAST_SKIP_STEP_SCALE,
-                refreshes::refreshCoastlines,
-                () -> { })));
-
-        // Beside the skip distance but asking a different question: this drops a stretch for
-        // what it offers on its own, so what it removes does not depend on which cells
-        // happened to be kept before it.
+        // The whole of how the settled coast is smoothed: a stretch is dropped for what it
+        // offers on its own, so what goes does not depend on which cells came before it.
         controls.add(ViewerSliders.buildSlider(
             "Coast least frontage",
             "Least frontage faced, in % of a cell",

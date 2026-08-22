@@ -38,9 +38,6 @@ final class ViewerSettings {
     // Read off the coast's own defaults rather than restated here. What each of them means is
     // documented where it is declared; restating the NUMBER is how the sliders come to open
     // on a different map from the one the report describes, with neither of them saying so.
-    static final double COAST_SKIP_DEFAULT = Coastlines.DEFAULT_RULES.skipMultiple();
-    static final double COAST_SKIP_STEP_SCALE = 100.0;
-
     // The rule is a share of a cell's whole border; the slider asks for it as a percentage,
     // which is how anyone reading a map thinks about how far a cell sticks out.
     static final double COAST_MIN_FRONTAGE_DEFAULT =
@@ -100,12 +97,9 @@ final class ViewerSettings {
     // it is a rival construction being judged against the settled coast, not a part of it.
     boolean showContinentCoasts;
 
-    double coastSkipMultiple = COAST_SKIP_DEFAULT;
-
     // How little of its own border a cell may face the void with before it is dropped from
-    // the walk outright, as a share of the whole turn. Apart from the spacing above because
-    // it judges one stretch on its own rather than against its neighbours - so what it drops
-    // does not depend on which cells happened to be kept before it.
+    // the walk outright, as a share of the whole turn. The whole of how the settled coast is
+    // smoothed: one intrinsic measure, with nothing carried from one stretch to the next.
     double coastMinFrontageShare = COAST_MIN_FRONTAGE_DEFAULT;
 
     // The v3 coast's own frontage floor, apart from the settled coast's above.
@@ -172,8 +166,7 @@ final class ViewerSettings {
     // answers - one of them can have a different wall crowded out of a mouth, and the two
     // drawings then describe maps that were never the same.
     Coastlines.CoastRules resolveCoastRules() {
-        return new Coastlines.CoastRules(
-            bridgeReachMultiple, coastSkipMultiple, coastMinFrontageShare);
+        return new Coastlines.CoastRules(bridgeReachMultiple, coastMinFrontageShare);
     }
 
     // How the v3 coast is traced. Its own rules rather than the settled coast's, because that
@@ -185,7 +178,6 @@ final class ViewerSettings {
     // settled coast's rather than as some number of its own, so that if it ever comes to be
     // read the two coasts are still looking at one sector.
     Coastlines.CoastRules resolveContinentCoastRules() {
-        return new Coastlines.CoastRules(
-            bridgeReachMultiple, coastSkipMultiple, continentMinFrontageShare);
+        return new Coastlines.CoastRules(bridgeReachMultiple, continentMinFrontageShare);
     }
 }

@@ -48,28 +48,30 @@ import java.util.Set;
  * disagree without the coast leaving the boundary. Where nothing blocks, both land on the
  * middle and it is one point again.
  *
- * <p><b>Why cells get skipped.</b> A run of cells packed tightly along a coast contributes a
+ * <p><b>Why cells get dropped.</b> A run of cells packed tightly along a coast contributes a
  * stretch every few hundred units, and joining all of them reproduces the scallop at a
- * slightly smaller amplitude rather than smoothing it. Dropping the ones that fall within a
- * set distance of the last one kept is what turns the chain into a line.
+ * slightly smaller amplitude rather than smoothing it. What turns the chain into a line is
+ * dropping the cells that barely face the void at all: one that peeks out by a few degrees
+ * contributes a notch the width of a rounding error, and the coast is drawn all the way in
+ * and back out for it.
  *
- * <p><b>And why cells get dropped outright.</b> The rule above is about a stretch's
- * NEIGHBOURS, so what it drops depends on what happened to be kept before it. The second rule
- * asks only about the stretch itself: a cell facing the void through a crack contributes a
- * notch the width of a rounding error, and the coast is drawn all the way in and back out for
- * it. That question no arrangement of neighbours can change, so the answer does not depend on
- * walk order - and it reaches slivers the spacing rule keeps simply because the last point
- * kept happened to be far away.
+ * <p><b>One rule, asked of the stretch alone.</b> How much of its own border a cell offers
+ * the void is a fact about that cell, so the answer does not depend on where the walk began
+ * or on which of its neighbours happened to be kept. Judging instead by distance from the
+ * last point kept - which this did until the share replaced it - made the same cell kept or
+ * dropped according to walk order, and needed a second rule capping how many could go in a
+ * row to stop a dense run vanishing wholesale. Neither the order-dependence nor the cap
+ * survives a measure that is intrinsic to the cell.
  *
- * <p>Judged per STRETCH rather than per cell. A cell facing the void on two frontages can
+ * <p>Per STRETCH rather than per cell, since a cell facing the void on two frontages can
  * offer a crack on one side and half its border on the other, and only the crack is worth
  * losing.
  *
- * <p>Two things bound all of it. <b>A cell a bridge attaches to is never dropped</b>, by
- * either rule, because a bridge's wall is boundary the coast has to stay outside of, and
- * cutting the corner across one puts the coast on the wrong side of a shape already drawn.
- * And a drop is provisional: a cell nothing else knows about can sit in the gap a jump opens
- * up, so every jump is tested against every cell, and whichever one blocks it is put back.
+ * <p>Two things bound it. <b>A cell a bridge attaches to is never dropped</b>, because a
+ * bridge's wall is boundary the coast has to stay outside of, and cutting the corner across
+ * one puts the coast on the wrong side of a shape already drawn. And a drop is provisional:
+ * a cell nothing else knows about can sit in the gap a jump opens up, so every jump is tested
+ * against every cell, and whichever one blocks it is put back.
  */
 final class Coastlines {
 
@@ -80,6 +82,23 @@ final class Coastlines {
 
     // No stretch stands between two kept ones, or none of those that do is in anything's way.
     private static final int NOTHING_BLOCKING = -1;
+
+    // How far apart two cells may sit and still be walled together, centre to centre, in cell
+    // radii. Four is the width at which a whole further cell would fit in the gap, which is
+    // the point past which the void between two cells stops being theirs.
+    private static final double DEFAULT_BRIDGE_REACH_MULTIPLE = 4;
+
+    // Three percent of a cell's border - about eleven degrees of arc.
+    //
+    // What a cell has to show of itself to be worth drawing the coast in and back out for.
+    // Below this it contributes a notch a few pixels wide at the zoom a sector is read at,
+    // bought at the price of two straight runs and a fillet.
+    //
+    // Not zero, because zero is the rule switched off: every stretch kept, and the scalloped
+    // silhouette reproduced exactly rather than smoothed. Since this is now the only thing
+    // deciding what a coast passes through, an opening value of zero would be no smoothing at
+    // all.
+    private static final double DEFAULT_MIN_FRONTAGE_SHARE = 0.03;
 
     private Coastlines() {
     }
@@ -94,15 +113,12 @@ final class Coastlines {
      *
      * @param bridgeReachMultiple how far apart two cells may sit and still be walled together,
      *                            centre to centre, in cell radii
-     * @param skipMultiple        how near the last kept point a cell must be to be dropped,
-     *                            in cell radii
      * @param minFrontageShare    how much of its own border a cell has to face the void with
      *                            to be worth passing through, as a share of the whole turn.
      *                            Zero asks nothing and drops nobody
      */
     record CoastRules(
         double bridgeReachMultiple,
-        double skipMultiple,
         double minFrontageShare) {
     }
 
@@ -113,9 +129,8 @@ final class Coastlines {
      * how a report comes to describe a different map from the one on screen without either of
      * them saying so.
      */
-    // The frontage rule opens at zero, asking nothing: it drops cells the other two rules
-    // would have kept, so any other opening value would be a shape nobody chose.
-    static final CoastRules DEFAULT_RULES = new CoastRules(4, 1, 0);
+    static final CoastRules DEFAULT_RULES =
+        new CoastRules(DEFAULT_BRIDGE_REACH_MULTIPLE, DEFAULT_MIN_FRONTAGE_SHARE);
 
     /**
      * A traced coast and the two things it was traced against.
@@ -205,7 +220,10 @@ final class Coastlines {
             CoastRules rules) {
 
         return traceCoastsAcrossWalls(
-            sites, parameters, rules, DiscUnionBoundary.Walls.NONE);
+            sites,
+            parameters,
+            rules,
+            DiscUnionBoundary.Walls.NONE);
     }
 
     // The shared tail of both entries: everything about tracing a coast that does not depend
@@ -242,7 +260,6 @@ final class Coastlines {
             union,
             findBridgedCircles(union, walls),
             new SmoothingRules(
-                rules.skipMultiple() * parameters.cellRadius(),
                 rules.minFrontageShare(),
                 parameters.measureArcSegments()));
 
@@ -252,20 +269,17 @@ final class Coastlines {
     /**
      * How aggressively a coast is smoothed, in the units the smoothing works in.
      *
-     * <p>The two drop rules answer different questions, which is why both are here. The
-     * distance asks where a stretch sits relative to its NEIGHBOURS, so what it drops depends
-     * on what was kept before it; the frontage share asks how much of its own border one cell
-     * offers, which no arrangement of neighbours can change.
+     * <p>One rule for what is dropped and one for how finely what survives is drawn. They do
+     * not interact - the first decides which stretches the coast passes through, the second
+     * how smoothly it rounds each of them.
      *
-     * @param skipDistance     how near the last kept point a cell must be to be dropped
      * @param minFrontageShare how much of its own border a cell has to face the void with to
      *                         be worth passing through, as a share of the whole turn
      * @param arcSegments      how finely a half-turn of arc is sampled, which is how smooth
-     *                         the fillets come out and so the third thing deciding what a
+     *                         the fillets come out and so the second thing deciding what a
      *                         smoothed coast looks like
      */
     private record SmoothingRules(
-        double skipDistance,
         double minFrontageShare,
         int arcSegments) {
     }
@@ -313,7 +327,10 @@ final class Coastlines {
         for (var coast : silhouettes) {
 
             var outline = buildClearedOutline(
-                coast, keepSmoothedMarks(coast, union, bridged, rules), union, rules);
+                coast,
+                keepSmoothedMarks(coast, union, bridged, rules),
+                union,
+                rules);
 
             if (outline.size() >= Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                 smoothed.add(outline);
@@ -503,7 +520,7 @@ final class Coastlines {
             Set<Integer> bridged,
             SmoothingRules rules) {
 
-        var isKept = markSpacedOutStretches(coast, union, bridged, rules);
+        var isKept = markExposedStretches(coast, bridged, rules);
 
         for (var pass = 0; pass < REPAIR_PASSES; pass++) {
 
@@ -530,46 +547,21 @@ final class Coastlines {
         return kept;
     }
 
-    // One pass along the coast, dropping stretches that barely face the void at all and then
-    // stretches that sit too near the last one kept. The first survivor is always kept,
-    // because there is nothing yet for it to be near.
-    private static boolean[] markSpacedOutStretches(
+    // One pass along the coast, keeping every stretch that faces the void with enough of its
+    // own border to be worth drawing.
+    //
+    // Order-free, and that is the point of it: each stretch is judged against nothing but
+    // itself, so the walk could start anywhere and drop the same set. Nothing accumulates
+    // across the loop, which is why there is no state here to get wrong.
+    private static boolean[] markExposedStretches(
             List<DiscUnionBoundary.CoastMark> coast,
-            DiscUnion union,
             Set<Integer> bridged,
             SmoothingRules rules) {
 
         var isKept = new boolean[coast.size()];
-        var lastKept = (double[]) null;
 
         for (var index = 0; index < coast.size(); index++) {
-
-            var mark = coast.get(index);
-
-            // Barely out of the water at all, and dropped for that alone.
-            //
-            // Before the spacing rule and outside its bookkeeping, because it asks a
-            // different question. Spacing asks where a stretch sits relative to its
-            // NEIGHBOURS, so it has to be capped or a dense run vanishes wholesale; this
-            // asks how much of its own border one cell offers, which no number of
-            // neighbours can change. Counted against the cap, a run of slivers would
-            // exhaust it and force the next real frontage to be kept whatever ITS spacing;
-            // measured into the spacing, a sliver nobody drew would still move the point
-            // every later distance is taken from.
-            if (isBarelyFacingTheVoid(mark, bridged, rules)) {
-                continue;
-            }
-
-            var middle = findMidpoint(union, mark);
-
-            if (lastKept != null
-                    && !bridged.contains(mark.circle())
-                    && Points.computeDistance(lastKept, middle) < rules.skipDistance()) {
-
-                continue;
-            }
-            isKept[index] = true;
-            lastKept = middle;
+            isKept[index] = !isBarelyFacingTheVoid(coast.get(index), bridged, rules);
         }
         return isKept;
     }
@@ -580,11 +572,10 @@ final class Coastlines {
     // error, and the coast is drawn all the way in and back out for it. Dropping it is what
     // the caller asked for by setting the rule above zero.
     //
-    // A cell a bridge attaches to is exempt, exactly as it is from the spacing rule and for
-    // the same reason: a bridge's wall is boundary the coast has to stay OUTSIDE of, so
-    // cutting the corner across one puts the coast on the wrong side of a shape already
-    // drawn. That is a matter of correctness rather than of taste, and no smoothing knob may
-    // overrule it.
+    // A cell a bridge attaches to is exempt: a bridge's wall is boundary the coast has to
+    // stay OUTSIDE of, so cutting the corner across one puts the coast on the wrong side of
+    // a shape already drawn. That is a matter of correctness rather than of taste, and no
+    // smoothing knob may overrule it.
     //
     // Nothing here can strand the coast inside a cell. A stretch dropped from this pass is
     // put straight back by the repair pass if the jump over it turns out to cross anything -
@@ -696,7 +687,10 @@ final class Coastlines {
             var only = coast.get(kept.get(0));
 
             return buildVertices(
-                only, sampleFillet(union, only, only.fromAngle(), only.toAngle(), rules));
+                only,
+                sampleFillet(union, only, only.fromAngle(),
+                only.toAngle(),
+                rules));
         }
 
         var arriveAngles = new double[kept.size()];
@@ -708,7 +702,9 @@ final class Coastlines {
 
             var edge = StraightRuns.findClearEdge(
                 new StraightRuns.StraightRun(
-                    union, coast.get(kept.get(index)), coast.get(kept.get(next))),
+                    union,
+                    coast.get(kept.get(index)),
+                    coast.get(kept.get(next))),
                 kept.get(next) == (kept.get(index) + 1) % coast.size());
 
             departAngles[index] = edge.departAngle();
@@ -724,7 +720,11 @@ final class Coastlines {
             outline.addAll(buildVertices(
                 mark,
                 sampleFillet(
-                    union, mark, arriveAngles[index], departAngles[index], rules)));
+                    union,
+                    mark,
+                    arriveAngles[index],
+                    departAngles[index],
+                    rules)));
         }
         return outline;
     }
@@ -768,24 +768,27 @@ final class Coastlines {
         var sweep = departAngle - arriveAngle;
 
         if (sweep <= 0) {
+
             return List.of(DiscUnionBoundary.findPointOnMark(
-                union, mark, (arriveAngle + departAngle) / 2));
+                union,
+                mark,
+                (arriveAngle + departAngle) / 2));
         }
 
         var steps = Math.max(
-            1, (int) Math.ceil(rules.arcSegments() * sweep / Angles.HALF_TURN));
+            1,
+            (int) Math.ceil(rules.arcSegments() * sweep / Angles.HALF_TURN));
+
         var points = new ArrayList<double[]>(steps + 1);
 
         for (var step = 0; step <= steps; step++) {
+
             points.add(DiscUnionBoundary.findPointOnMark(
-                union, mark, arriveAngle + sweep * step / steps));
+                union,
+                mark,
+                arriveAngle + sweep * step / steps));
         }
         return points;
     }
 
-    // Where a stretch of coast would be passed through if nothing were in the way, which is
-    // what the skip rules measure distances between.
-    private static double[] findMidpoint(DiscUnion union, DiscUnionBoundary.CoastMark mark) {
-        return DiscUnionBoundary.findPointOnMark(union, mark, mark.midAngle());
-    }
 }
