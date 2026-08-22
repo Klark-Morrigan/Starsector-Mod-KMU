@@ -3,6 +3,7 @@ package kmu.starsector.consolecommands;
 import com.fs.starfarer.api.Global;
 
 import kmlib.logging.SessionWarning;
+import kmlib.starsector.consolecommands.ConsoleCommandsPresence;
 
 import org.apache.log4j.Logger;
 

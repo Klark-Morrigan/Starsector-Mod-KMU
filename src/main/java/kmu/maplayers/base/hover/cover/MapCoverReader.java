@@ -1,8 +1,8 @@
 package kmu.maplayers.base.hover.cover;
 
+import kmlib.starsector.consolecommands.ConsoleCommandsPresence;
 import kmlib.starsector.rat.RandomAssortmentOfThingsPresence;
 
-import kmu.starsector.consolecommands.ConsoleCommandsPresence;
 import kmu.starsector.consolecommands.ConsoleMapCover;
 import kmu.starsector.rat.RandomAssortmentOfThingsMinimapCover;
 

@@ -1,5 +1,7 @@
 package kmu.starsector.consolecommands;
 
+import kmlib.starsector.consolecommands.ConsoleCommandsPresence;
+
 import kmu.maplayers.base.hover.cover.MapCover;
 
 /**
