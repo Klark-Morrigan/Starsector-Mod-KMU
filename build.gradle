@@ -67,6 +67,15 @@ enforcePackageLayering {
 // that fired mostly on legitimate prose would train its next reader to
 // allowlist rather than to read. Plurals are their own words to the gate, so
 // both spellings are declared.
+enforceNoTestVocabulary {
+    // The utils tree is developer tooling that is neither shipped nor a test,
+    // and the fixture and assembly path in it are shared with the assertions -
+    // which is the whole reason it exists, and cannot be explained without
+    // saying so. Nothing in it reaches the mod's jar, so no reader of the
+    // shipped code meets these words.
+    exemptSourceSet name: 'utils'
+}
+
 enforcePackageVocabulary {
     forbidWords under: 'kmu.maplayers.base',
                 words: ['territory', 'territories', 'national border',
