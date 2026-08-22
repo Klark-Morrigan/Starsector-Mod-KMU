@@ -40,8 +40,9 @@ identical to a full rebuild.
   same loops, so they cannot drift apart.
 
 No presence band is laid here. A band is baked *around* the cluster names, and the names are
-fitted after this pass - each inside the border these very cells trace - so the bands are a pass
-of their own afterwards, over the shapes this one recorded. `CellRibbonsBaker` (in
+fitted after this build - each inside the border these very cells trace - so the bands are a stage
+of their own afterwards, over the shapes this one recorded and through the same reading of the
+sector this one was handed. `CellRibbonsBaker` (in
 [`render.ribbon`](../ribbon/CellRibbonsBaker.java)) drives it, and both the full rebuild and the
 incremental refresh reach it through the same call, which is what keeps an incrementally-updated
 band identical to the one a full rebuild would lay.

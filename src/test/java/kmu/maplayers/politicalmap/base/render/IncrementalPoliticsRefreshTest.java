@@ -23,6 +23,7 @@ import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
@@ -571,6 +572,36 @@ final class IncrementalPoliticsRefreshTest {
 
             passMock.verify(
                 () -> DominancePass.readFromLunaSettings(any(), any(HolderGrouping.class)));
+        }
+
+        @Test
+        void applyStalePoliticsUpdatesBakesTheBandsOffTheBatchesOwnReadingOfTheSector() {
+            // The batch's last stage used to be handed a bare sector and open a second reading of
+            // it - for a sector that cannot have moved since the re-derive read it a moment
+            // earlier. So the count is taken at the one entry a reading is opened through, and one
+            // opening is what says the bake shares rather than repeats.
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+
+            seedBandSizedDistantCell(territories);
+
+            // Built before the seam is opened, so what the seam hands back is a real reading the
+            // batch and the bake beneath it can both be answered from.
+            var batchHolding = HolderPass.readFromLunaSettings(
+                sectorMock,
+                HolderGrouping.identity());
+
+            var holdingMock = openSeam(HolderPass.class);
+            holdingMock
+                .when(() -> HolderPass.readFromLunaSettings(any(), any(HolderGrouping.class)))
+                .thenReturn(batchHolding);
+
+            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
+
+            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            applyTo(territories);
+
+            holdingMock.verify(
+                () -> HolderPass.readFromLunaSettings(any(), any(HolderGrouping.class)));
         }
 
         @Test

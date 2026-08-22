@@ -1,7 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
 import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.profiling.Timings;
 
@@ -11,6 +10,7 @@ import kmu.maplayers.base.labels.LabelLineBoxes;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.settings.KmuPoliticalMapSettings;
 
@@ -84,14 +84,18 @@ public final class CellRibbonsBaker {
      * @param territories    the built cells, read for their shapes and written back with their
      *                       bands
      * @param geometryCache  the cells' geometry, for the system each draws as and its site
-     * @param sector         the sector the counts are read from
+     * @param pass           the reading of the sector the counts are made off, folded by the
+     *                       grouping the cells were painted under. A bake in the same frame as the
+     *                       rebuild before it takes that rebuild's; one on its own cadence opens a
+     *                       fresh one, since the older reading is a snapshot of a moment that has
+     *                       since passed
      * @param clusterAnchors the cluster names' placements, whose boxes the bands keep out of
      * @return the pass, ready to bake whichever cells the caller names
      */
     public static CellRibbonsBaker createForPass(
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
-            SectorAPI sector,
+            HolderPass pass,
             List<ClusterAnchor> clusterAnchors) {
 
         // Both geometry reads are taken here, once, rather than per cell inside the loop: each
@@ -102,8 +106,8 @@ public final class CellRibbonsBaker {
             territories,
             geometryCache.getSystemIdByCellId(),
             CellRibbonSource.createForPass(
-                sector,
-                territories.getViewGrouping(),
+                pass,
+                territories.getViewGrouping().view(),
                 // The pass's inhabitation scan rather than its holding, so a settled system this
                 // layer gives to nobody - an unclaimed pirate haven on the claims layer - is still
                 // offered a band. It is the same set the factionless cell beneath it is classified

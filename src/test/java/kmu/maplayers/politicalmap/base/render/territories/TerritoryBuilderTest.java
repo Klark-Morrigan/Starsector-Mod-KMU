@@ -2,15 +2,16 @@ package kmu.maplayers.politicalmap.base.render.territories;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.factions.StarsectorFactionColours;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewFake;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderResolution;
@@ -38,13 +39,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins what a rebuild opens and what it hands down: one reading of the sector, shared by every
- * reader beneath it.
+ * Pins what a build hands down: the one reading of the sector it was given, at every reader
+ * beneath it.
  *
  * <p>The arrangement the whole pass exists for, and the one thing no reader below can state for
  * itself. Each of them takes a pass and shares its walk of a system with whatever else reads that
- * system through it - but only this build decides how many passes there are, and two opened here
- * would have the sector walked twice over while every reader below went on looking correct.
+ * system through it - but only this build decides which pass they are handed, and one opened here
+ * would have the sector walked again while every reader below went on looking correct.
  *
  * <p>Everything the build reads apart from that is stood in for: the theme, the palettes, the
  * inhabitation scan and the filter selection all read live sources no test JVM answers, and none
@@ -55,7 +56,6 @@ final class TerritoryBuilderTest {
 
     private static final Color NEUTRAL = new Color(150, 150, 150);
 
-    private MockedStatic<MapVisibilityRules> visibilityRulesMock;
     private MockedStatic<FilterSelection> filterSelectionMock;
     private MockedStatic<PoliticalMapInhabitation> inhabitationMock;
     private MockedStatic<FilteredPolitics> filteredPoliticsMock;
@@ -73,7 +73,6 @@ final class TerritoryBuilderTest {
     @BeforeEach
     void openTheLiveSeams() {
 
-        visibilityRulesMock = mockStatic(MapVisibilityRules.class);
         filterSelectionMock = mockStatic(FilterSelection.class);
         inhabitationMock = mockStatic(PoliticalMapInhabitation.class);
         filteredPoliticsMock = mockStatic(FilteredPolitics.class);
@@ -81,9 +80,6 @@ final class TerritoryBuilderTest {
         factionColoursMock = mockStatic(StarsectorFactionColours.class);
         palettesMock = mockStatic(MapPalettes.class);
 
-        visibilityRulesMock
-            .when(MapVisibilityRules::readFromLunaSettings)
-            .thenReturn(MapVisibilityRules.BASE);
         filterSelectionMock
             .when(() -> FilterSelection.getSelectedIdOf(any()))
             .thenReturn(null);
@@ -121,7 +117,6 @@ final class TerritoryBuilderTest {
         filteredPoliticsMock.close();
         inhabitationMock.close();
         filterSelectionMock.close();
-        visibilityRulesMock.close();
     }
 
     // One style bundle for every category: nothing here turns on how a cell paints, only on what
@@ -136,7 +131,7 @@ final class TerritoryBuilderTest {
     class BuildTerritories {
 
         @Test
-        void buildTerritoriesReadsTheSectorThroughOnePassForEveryReaderBeneathIt() {
+        void buildTerritoriesReadsTheSectorThroughTheHandedPassForEveryReaderBeneathIt() {
             // A rebuild resolves holding and then asks where the spotlit bloc lives outside it.
             // Both walk every system, so a pass apiece is a second traversal of the sector for
             // colonies the first one has already read - and, less visibly, a second reading of a
@@ -148,28 +143,52 @@ final class TerritoryBuilderTest {
                     holderPasses.add(pass);
                     return new HolderResolution(Map.of(), Set.of(), Set.of());
                 });
+            var rebuildPass = buildPassOverAnEmptySector();
 
-            TerritoryBuilder.buildTerritories(
-                new CellGeometryCache(),
-                mock(SectorAPI.class),
-                viewFake);
+            TerritoryBuilder.buildTerritories(new CellGeometryCache(), rebuildPass, viewFake);
 
-            // One pass opened, and the same one at every reader - stated as identity rather than
-            // as equality, since two passes over one sector carry two separate walks of it while
-            // agreeing about everything they were built from.
+            // The handed pass at every reader - stated as identity rather than as equality, since
+            // two passes over one sector carry two separate walks of it while agreeing about
+            // everything they were built from.
             assertThat(holderPasses)
-                .hasSize(1);
+                .containsExactly(rebuildPass);
             assertThat(presenceScanPasses)
-                .hasSize(1);
-            assertThat(presenceScanPasses.get(0))
-                .isSameAs(holderPasses.get(0));
+                .containsExactly(rebuildPass);
 
             // The inhabitation scan is the third of them, and the one that read the sector for
             // itself until the habitation value gave it the pass's own walk to answer off.
             assertThat(inhabitationScanPasses)
-                .hasSize(1);
-            assertThat(inhabitationScanPasses.get(0))
-                .isSameAs(holderPasses.get(0));
+                .containsExactly(rebuildPass);
         }
+
+        @Test
+        void buildTerritoriesResolvesUnderTheHandedPassesGroupingRatherThanTheViewsOwn() {
+            // The grouping the build retains has to be the one its holding was resolved under, or
+            // an incremental re-shape would classify a cell against blocs the fills never drew.
+            // Taking it off the pass is what makes that so: the view is asked for a grouping only
+            // where the pass is opened, which is above this build.
+            var grouping = HolderGrouping.identity();
+            var viewFake = new PoliticalMapViewFake(
+                Map.of(),
+                (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of()));
+
+            var territories = TerritoryBuilder.buildTerritories(
+                new CellGeometryCache(),
+                HolderPass.over(mock(SectorAPI.class), ColonyVisibility.BASE_FOG, grouping),
+                viewFake);
+
+            assertThat(territories.getViewGrouping().grouping())
+                .isSameAs(grouping);
+        }
+    }
+
+    // A reading of a sector holding nothing, which is every case here: the readers are stood in
+    // for, so what a pass would answer reaches nothing this suite asserts and only which pass
+    // reached them does.
+    private static HolderPass buildPassOverAnEmptySector() {
+        return HolderPass.over(
+            mock(SectorAPI.class),
+            ColonyVisibility.BASE_FOG,
+            HolderGrouping.identity());
     }
 }

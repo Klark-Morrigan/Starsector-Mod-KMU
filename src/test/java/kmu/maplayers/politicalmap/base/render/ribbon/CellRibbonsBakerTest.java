@@ -3,7 +3,11 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
+
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
@@ -55,9 +59,12 @@ import static org.mockito.Mockito.when;
  * outline produces an equal path, so only the same instance coming back distinguishes a pass that
  * read the store from one that quietly re-derived what it found there.
  *
- * <p>A pass per bake rather than one reused, because that is how a rebuild drives it - each bake
- * samples the settings, the names and the holding afresh - so a case that reused a pass would be
- * posing an arrangement production never has.
+ * <p>A bake per bake rather than one reused, because that is how a rebuild drives it - each one
+ * samples the settings and the names afresh - so a case that reused one would be posing an
+ * arrangement production never has. The reading of the sector each is handed is opened here for
+ * the same reason it is opened by a rebuild: whose reading it is belongs to the caller, and every
+ * case here is about what the bake does with the cells rather than about how current its counts
+ * are.
  */
 final class CellRibbonsBakerTest {
 
@@ -278,7 +285,8 @@ final class CellRibbonsBakerTest {
         bakeThrough(territories).bakeAllCellRibbons();
     }
 
-    // A fresh pass over the given territories, as a rebuild mints one per bake.
+    // A fresh bake over the given territories, as a rebuild mints one per bake, over a reading of
+    // the sector opened here as its caller opens one.
     //
     // The geometry and the sector are derived from the cells the territories actually drew rather
     // than named here, so a case adding a cell gets it placed and listed without a second fixture
@@ -290,7 +298,10 @@ final class CellRibbonsBakerTest {
         return CellRibbonsBaker.createForPass(
             territories,
             buildGeometryPlacing(drawnCellIds),
-            buildSectorOf(drawnCellIds),
+            HolderPass.over(
+                buildSectorOf(drawnCellIds),
+                ColonyVisibility.BASE_FOG,
+                HolderGrouping.identity()),
             // No names placed, since where a name falls is pinned by the builder that lays a band
             // inside one cell rather than by which cells a pass reaches.
             List.of());

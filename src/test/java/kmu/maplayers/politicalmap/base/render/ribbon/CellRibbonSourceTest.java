@@ -4,10 +4,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.math.geometry.RingPath;
+import kmlib.starsector.colonies.ColonyVisibility;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
@@ -400,8 +401,8 @@ final class CellRibbonSourceTest {
             .thenReturn(systems);
 
         return CellRibbonSource.createForPass(
-            sectorMock,
-            new ViewGrouping(viewMock, HolderGrouping.identity()),
+            HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, HolderGrouping.identity()),
+            viewMock,
             Set.of(INHABITED_SYSTEM, SITELESS_SYSTEM),
             // Only the placed system has a site; the other settled one is what a band with
             // nowhere to start is posed on.

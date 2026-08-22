@@ -1,7 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
 import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.opengl.GlVertexRuns;
 import kmlib.profiling.Profiler;
@@ -52,27 +51,26 @@ public final class TerritoryBuilder {
     // cluster-filled (owned) and per-cell (decivilised/uninhabited) draw lists, baking in each
     // cell's colours, opacities, and widths resolved from the current settings, then
     // flattens each to GL-ready vertex runs. Reads the settings once per category, not
-    // per cell. The active view supplies the holder grouping the pass resolves under
-    // and the style classifier each cell reads; both are retained on the territories so an
+    // per cell. The active view supplies the style classifier each cell reads, beside the
+    // grouping the handed pass was opened under; both are retained on the territories so an
     // incremental re-shape classifies against the same view and grouping snapshot.
+    //
+    // The reading of the sector arrives rather than being opened here, so this build's walk of
+    // each system is the same walk the geometry and the band bake either side of it make. It is
+    // the rebuild's, and is discarded with it.
     public static PoliticalMapTerritories buildTerritories(
             CellGeometryCache geometryCache,
-            SectorAPI sector,
+            HolderPass pass,
             PoliticalMapView view) {
 
         var profiler = KmuProfiling.getProfiler();
         return profiler.measure("politicalMap.rebuildTerritories", () -> {
 
-            // Sample the view's grouping once for the whole pass (the alliances view reads
-            // Nexerelin), so every stage keys off one snapshot and the retained copy the
-            // incremental re-shape reads matches the holding this build resolved.
-            var grouping = view.resolveGrouping();
-
-            // The rebuild's own reading of the sector, opened here because this is where the
-            // rebuild begins: the colony rule is sampled once, and every reader below shares one
-            // walk of each system rather than taking a walk apiece. Discarded with this build, so
-            // nothing goes on answering off a sector that has since moved on.
-            var pass = HolderPass.readFromLunaSettings(sector, grouping);
+            // The grouping is the pass's rather than a second sampling of the view's (the
+            // alliances view reads Nexerelin), so the holding this build resolves and the
+            // grouping the retained copy names cannot be two readings of it.
+            var grouping = pass.grouping();
+            var sector = pass.sector();
 
             // The spotlighted bloc, read once so the whole pass keys off one snapshot - the
             // holding provider (which keeps a spotlit bloc drawn wherever it is present), the

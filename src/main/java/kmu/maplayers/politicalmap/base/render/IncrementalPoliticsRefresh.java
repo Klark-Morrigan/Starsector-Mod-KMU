@@ -14,6 +14,7 @@ import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterLabelStylingSnapshot;
@@ -120,7 +121,7 @@ final class IncrementalPoliticsRefresh {
             pass,
             markedSystemIds);
 
-        redrawDisturbedCells(standingMap, pass.sector(), markedSystemIds, disturbance);
+        redrawDisturbedCells(standingMap, pass, markedSystemIds, disturbance);
     }
 
     // The marked systems that draw a cell, in the order they were marked.
@@ -148,11 +149,13 @@ final class IncrementalPoliticsRefresh {
     // flips still decide is everything below the cells, all of which is a consequence of holding
     // having moved.
     //
-    // Takes the batch's sector rather than reaching for the global one, so every half of one
-    // redraw is answered off the reading the re-derive already worked from.
+    // Takes the batch's pass rather than reaching for the global sector, so every half of one
+    // redraw is answered off the reading the re-derive already worked from - the names off its
+    // sector, and the bands off its walk of each system rather than off a second one opened for a
+    // sector that cannot have moved since.
     private static void redrawDisturbedCells(
             StandingPoliticalMap standingMap,
-            SectorAPI sector,
+            DominancePass pass,
             Set<String> markedSystemIds,
             StalePoliticsDisturbance disturbance) {
 
@@ -163,7 +166,7 @@ final class IncrementalPoliticsRefresh {
             reshapeCellInPlace(territories, geometryCache, cellId);
         }
         var nameDisturbance = disturbance.hasFlips()
-            ? rebuildFlippedHolding(standingMap, sector, disturbance)
+            ? rebuildFlippedHolding(standingMap, pass.sector(), disturbance)
             : ClusterNameDisturbance.NONE;
 
         // A marked system's band counts what is in it, and the events that mark a system are
@@ -175,7 +178,7 @@ final class IncrementalPoliticsRefresh {
             disturbance,
             nameDisturbance);
 
-        bakeBandsOf(standingMap, sector, cellIdsToBake);
+        bakeBandsOf(standingMap, pass.holding(), cellIdsToBake);
 
         LOG.debug("Political map politics updated incrementally; marked="
             + markedSystemIds.size()
@@ -252,16 +255,22 @@ final class IncrementalPoliticsRefresh {
 
     // One bake of the named cells' bands, which every batch ends on. Held in one place because a
     // second copy of the pass construction could bake from a different snapshot of the same map.
+    //
+    // Baked off the batch's own reading of the sector. The batch is one frame's work and the
+    // sector cannot move within it, so a reading opened here could only report what that one
+    // already holds, at the cost of walking every system a second time. Its grouping is the
+    // territories' - the batch opened it from exactly that - which is the condition a shared
+    // reading has to meet before bands are planned through it.
     private static void bakeBandsOf(
             StandingPoliticalMap standingMap,
-            SectorAPI sector,
+            HolderPass pass,
             Collection<String> cellIds) {
 
         CellRibbonsBaker
             .createForPass(
                 standingMap.territories(),
                 standingMap.cellGeometry().cells(),
-                sector,
+                pass,
                 standingMap.standingAnchors().getAnchors())
             .bakeCellRibbonsOf(cellIds);
     }

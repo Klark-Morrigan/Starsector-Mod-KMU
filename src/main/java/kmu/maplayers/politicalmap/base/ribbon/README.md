@@ -33,8 +33,8 @@ The grammar it lays down:
 
 `RibbonSegmentLengths` pairs the two proportions the grammar is stated in, and `RibbonPlanRules`
 pairs those with the shortening below. `RibbonPlanInputs` carries the rules, the palette port and the
-bake's own `HolderPass`, so a planner is handed one object rather than four loose knobs - and so
-both mechanics of a composed planner count off a single walk of each system.
+`HolderPass` the bake was handed, so a planner is handed one object rather than four loose knobs -
+and so both mechanics of a composed planner count off a single walk of each system.
 
 Lengths are counts of widths, never world sizes: how large a width is in the world is the render
 side's question, which is what lets this whole package be exercised on literals.

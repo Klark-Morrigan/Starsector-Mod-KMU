@@ -1,12 +1,11 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.math.geometry.RingPath;
 import kmlib.starsector.systems.SectorStarSystems;
 
-import kmu.maplayers.politicalmap.base.ViewGrouping;
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
@@ -33,6 +32,15 @@ import java.util.Set;
  * them here mirrors how the rest of a rebuild is driven -
  * one snapshot, then a per-item call over it - and is what lets the incremental re-shape bake a
  * band identical to the one the full rebuild would have.
+ *
+ * <p>The reading of the sector the counts are made off arrives rather than being opened here,
+ * because how current it has to be is the caller's question and not this one's. A bake that runs in
+ * the same frame as the rebuild before it counts off that rebuild's reading, which is the walk of
+ * each system already made; a bake that runs on its own cadence - whenever a cluster name may have
+ * moved, which is long after some rebuild began - opens a fresh one, since counting through the
+ * older one would report a sector as it stood some flips ago. Both hand over a reading folded by
+ * the grouping the fills were painted under, without which a band would plan against blocs no cell
+ * was drawn for.
  *
  * <p>Inhabitation rather than this layer's holding, because that is the question a band is actually
  * about: a system splits whether or not the mechanic painting the map gives it to anybody, and a
@@ -111,11 +119,12 @@ public final class CellRibbonSource {
      * the bands switched off - in which case every cell is answered "no band" without a count, a
      * size read, or a ring traced.
      *
-     * @param sector             the sector the counts are read from
-     * @param viewGrouping       the active view and the grouping it resolved, the pair the pass
-     *                           already carries: the view supplies the mechanic its cells are
-     *                           counted by - the same one they were painted by - and the grouping
-     *                           folds factions into blocs exactly as the fill did
+     * @param pass               the reading of the sector the counts are made off - its walk of
+     *                           each system, under one sampling of the colony rule, folded by the
+     *                           grouping the fills were painted under. Whose reading it is, and so
+     *                           how current it is, is the caller's to decide
+     * @param view               the active view, supplying the mechanic its cells are counted by -
+     *                           the same one they were painted by
      * @param inhabitedSystemIds every system something stands in this pass, the gate deciding
      *                           which cells are asked for a band at all. The pass's own scan
      *                           rather than its holding, so a settled system this layer gives to
@@ -134,8 +143,8 @@ public final class CellRibbonSource {
      * @return the source the pass bakes its bands through
      */
     public static CellRibbonSource createForPass(
-            SectorAPI sector,
-            ViewGrouping viewGrouping,
+            HolderPass pass,
+            PoliticalMapView view,
             Set<String> inhabitedSystemIds,
             Map<String, double[]> siteBySystemId,
             List<List<double[]>> nameBoxes,
@@ -145,15 +154,6 @@ public final class CellRibbonSource {
             return createBandlessPass();
         }
         var style = RibbonStyleReader.readRibbonStyle();
-
-        // The bake's own reading of the sector, opened here so both mechanics of a composed planner
-        // count off one walk of each system, under one sampling of the colony rule - a band read
-        // under a reveal the player moved mid-bake would count out colonies the fills are hiding.
-        //
-        // Its own pass rather than the rebuild's, because a bake runs whenever a cluster name may
-        // have moved and a rebuild's pass is a snapshot of the moment that rebuild began: re-baking
-        // through it would count a sector as it stood some flips ago.
-        var pass = HolderPass.readFromLunaSettings(sector, viewGrouping.grouping());
 
         // The colour source and the laying rules are sampled here, once, and handed to whatever
         // planner the view resolves - so both mechanics read a bloc's shades through one object
@@ -165,10 +165,10 @@ public final class CellRibbonSource {
                 UncontestedRibbonRuns.readFromLunaSettings()));
 
         return new CellRibbonSource(
-            viewGrouping.view().resolveRibbonPlanner(inputs),
+            view.resolveRibbonPlanner(inputs),
             style,
             inhabitedSystemIds,
-            SectorStarSystems.indexById(sector),
+            SectorStarSystems.indexById(pass.sector()),
             siteBySystemId,
             nameBoxes,
             ringPathCache);

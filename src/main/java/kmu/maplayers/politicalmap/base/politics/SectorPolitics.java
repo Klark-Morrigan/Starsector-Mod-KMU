@@ -74,32 +74,6 @@ public final class SectorPolitics {
     }
 
     /**
-     * Resolves the dominant holder of one star system under an explicit grouping and
-     * the player's live settings.
-     *
-     * <p>The view-aware single-system entry point: the incremental refresh path
-     * hands in the active view's grouping so a re-derived system resolves the same
-     * winning bloc the bulk pass would under that view, reading the dominance rule
-     * and colony rule live like the parameterless entry.
-     *
-     * @param sector   the sector whose economy is read; null (or a null economy)
-     *                 yields null
-     * @param system   the system to resolve; null yields null
-     * @param grouping the holder grouping that collapses factions into blocs for
-     *                 this pass
-     * @return the dominant holder, or null when the system holds no owned market
-     *         (uninhabited)
-     */
-    public static DominantHolder resolveDominantHolder(
-            SectorAPI sector,
-            StarSystemAPI system,
-            HolderGrouping grouping) {
-        return resolveDominantHolder(
-            system,
-            DominancePass.readFromLunaSettings(sector, grouping));
-    }
-
-    /**
      * Resolves the dominant holder of one star system under an explicit dominance pass.
      *
      * <p>The core of the holder pipeline: it reads each bloc's footprint under the

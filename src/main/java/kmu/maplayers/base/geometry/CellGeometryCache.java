@@ -1,7 +1,6 @@
 package kmu.maplayers.base.geometry;
 
 import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.VoronoiCellBuilder;
@@ -9,7 +8,6 @@ import kmlib.profiling.Timings;
 
 import kmu.maplayers.base.visibility.DrawnSystemPositions;
 import kmu.maplayers.base.visibility.MapVisibilityPass;
-import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.apache.log4j.Logger;
 
@@ -104,31 +102,31 @@ public final class CellGeometryCache {
      * partition - including a system that entered or left it by starting or stopping
      * moving. A no-op when the participating set is unchanged.
      *
-     * <p>The visibility rules widen the participating set: a forced system seeds a cell
+     * <p>The pass's visibility rules widen the participating set: a forced system seeds a cell
      * whatever the normal gates say, and a system inhabited only by an undiscovered
      * colony is admitted. A change to either shifts the participating set, so it reads
      * through the same add/remove diff as an access change - the caller forces this
      * update when one moves.
      *
-     * @param sector          the sector to read; null clears nothing and does nothing
+     * @param pass            the rebuild's reading of the sector, whose walk of each system this
+     *                        update shares and whose rules the drawn set is taken under; a pass
+     *                        over no sector seeds nothing
      * @param movingSystemIds the systems currently moving, left out of the partition -
      *                        each seeds no cell and clips no neighbour, so the cells
      *                        around it fill the space as if it were absent
      * @param seedInputs      what to seed each cell with - its frontier resolution and its
      *                        reach; a change from the last update reseeds every cell, and
      *                        the reach also sets how far the diff scans
-     * @param visibilityRules the pass's visibility rules, applied to the drawn set
      */
     public void updateFromSector(
-            SectorAPI sector,
+            MapVisibilityPass pass,
             Set<String> movingSystemIds,
-            CellSeedInputs seedInputs,
-            MapVisibilityRules visibilityRules) {
+            CellSeedInputs seedInputs) {
 
         // Timed independently of the profiler so the per-update cost (the whole
         // diff, or a full rebuild) reads straight from the log.
         var start = System.nanoTime();
-        var newSites = collectAccessibleSites(sector, movingSystemIds, visibilityRules);
+        var newSites = collectAccessibleSites(pass, movingSystemIds);
 
         // The seed inputs are what every cell is cut from, so a change to either of them
         // invalidates all cached cells regardless of the access diff. Drop them so the diff
@@ -256,19 +254,17 @@ public final class CellGeometryCache {
     // The live sites the partition is built from: every drawn system's position,
     // minus the ones currently moving. A mover is left out so it seeds no cell and
     // clips no neighbour; the cells around it fill the space as if it were absent.
-    // The visibility rules pass through to the drawn-set walk, so a forced or
+    // The pass's visibility rules reach the drawn-set walk, so a forced or
     // undiscovered-colony system enters the partition like any other site.
     //
-    // The rebuild's own pass is opened here and discarded with the walk: this is the one
-    // place a geometry update reads the sector, so nothing survives to answer a later
-    // rebuild off a sector that has since moved on.
+    // The pass is the rebuild's rather than one opened here, so this walk of the sector is
+    // the same walk the stages after it make. A geometry update handed a sector could open a
+    // reading of its own, which is what put three readings in one rebuild.
     private static Map<String, double[]> collectAccessibleSites(
-            SectorAPI sector,
-            Set<String> movingSystemIds,
-            MapVisibilityRules visibilityRules) {
+            MapVisibilityPass pass,
+            Set<String> movingSystemIds) {
 
-        var sites = DrawnSystemPositions.collectLivePositions(
-            MapVisibilityPass.over(sector, visibilityRules));
+        var sites = DrawnSystemPositions.collectLivePositions(pass);
         sites.keySet().removeAll(movingSystemIds);
         return sites;
     }

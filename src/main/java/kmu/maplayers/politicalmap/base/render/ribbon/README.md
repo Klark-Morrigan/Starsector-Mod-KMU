@@ -38,11 +38,19 @@ stating apart, plus the accumulator they charge what they spend to:
 | `CellRingPathCache` | one build | the rings already walked, so a re-bake walks only what was re-shaped |
 | `RibbonBakeTimings` | the pass | what the pass spent, split four ways; see [what a bake spends its time on](#what-a-bake-spends-its-time-on) |
 
-`CellRibbonsBaker` runs as its own pass **after** the rest of a rebuild, because a band needs two
+`CellRibbonsBaker` runs as its own **stage**, after the rest of a rebuild, because a band needs two
 things no single cell knows: the shape it runs inside, and where every cluster name on the map ended
 up. It reads the shapes back off the territories rather than off a shaping pass, so the incremental
 refresh re-bakes the cells it disturbed through the very same call the full rebuild bakes all of
 them through.
+
+A stage of its own, but not a **reading** of its own. The reading of the sector a bake counts off
+arrives from its caller, because how current it has to be is the caller's question: a bake running
+in the same frame as the rebuild before it takes that rebuild's reading, the sector being unable to
+move between the two, while a bake on its own cadence - whenever a cluster name may have moved -
+opens a fresh one rather than reporting the sector as it stood some flips ago. Either way the
+reading has to be folded by the grouping the fills were painted under, or a band would plan against
+blocs no cell was drawn for.
 
 `CellRibbonSource` is a source rather than a builder because the per-cell work is
 `CellRibbonBuilder`'s; what it adds is the pass that work is done under - the planner the view

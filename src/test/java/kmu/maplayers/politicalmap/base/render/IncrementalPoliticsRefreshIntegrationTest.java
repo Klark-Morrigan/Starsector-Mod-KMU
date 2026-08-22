@@ -25,6 +25,7 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
@@ -463,9 +464,15 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         // bands laid around those names, then the labels minted from them.
         private StandingPoliticalMap buildMapByFullRebuild() {
 
+            // The rebuild's one reading of the sector, opened here as the plugin's cache opens it
+            // and handed to both the build and the bake beneath it.
+            var pass = HolderPass.readFromLunaSettings(
+                sectorMock,
+                FactionsView.INSTANCE.resolveGrouping());
+
             var territories = TerritoryBuilder.buildTerritories(
                 cellsMock,
-                sectorMock,
+                pass,
                 FactionsView.INSTANCE);
 
             var standingAnchors = new StandingClusterAnchors();
@@ -482,7 +489,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
                 .createForPass(
                     territories,
                     cellsMock,
-                    sectorMock,
+                    pass,
                     standingAnchors.getAnchors())
                 .bakeAllCellRibbons();
 

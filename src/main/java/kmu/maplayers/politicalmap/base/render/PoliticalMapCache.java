@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 
 import kmlib.profiling.Timings;
+import kmlib.starsector.map.VisibleStars;
+import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
@@ -16,9 +18,11 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
+import kmu.maplayers.base.visibility.MapVisibilityPass;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.render.debug.DebugBorderTracingBuilder;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterLabelStylingSnapshot;
@@ -204,14 +208,19 @@ final class PoliticalMapCache {
     // rebuild completes so a thrown rebuild is retried next frame. Builds under the active view's
     // rules, so a view switch (folded into the content revision) rebuilds the territories under
     // the newly-selected view.
+    //
+    // A rebuild is a pass, and is read as one: whichever stages run, they run against one reading
+    // of the sector, opened below and handed to each. What that buys is stated where it is opened.
     private void rebuildStaleHalves(PoliticalMapView view) {
-
-        var rebuiltCells = false;
 
         // What the cells would be cut from right now. The reachable-set revision alone does not
         // answer that: the frontier resolution, the cell reach and the two visibility overrides
         // each reseed every cell without it moving, so all four are read into one value and the
         // staleness question is asked of that value rather than of the signal.
+        //
+        // This is also the rebuild's one sampling of the visibility rules: the cut, the fills and
+        // the bands all resolve under what it holds, so a gate flipped mid-rebuild cannot leave
+        // cells cut under one rule and painted under another.
         var cellCut = new CellCutInputs(
             MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY),
             new CellSeedInputs(
@@ -219,14 +228,50 @@ final class PoliticalMapCache {
                 KmuPoliticalMapSettings.getPoliticalMapCellRadius()),
             MapVisibilityRules.readFromLunaSettings());
 
-        if (!cellCut.equals(lastCellCut)) {
+        var isCellCutStale = !cellCut.equals(lastCellCut);
+
+        // TODO: when only geometry changed (isCellCutStale), reshape just the cells
+        // CellGeometryCache rebuilt - the system that gained or lost access and every cell
+        // it touches - rather than the full territories rebuild below. Have updateFromSector report
+        // its affected-cell set and drive a targeted reshape from it, the geometry-side analogue of
+        // applyStalePoliticsUpdates.
+
+        // Both views null means neither has been built this session, so the first frame forces the
+        // build even if the content revision happens to match its unbuilt seed. Asked ahead of the
+        // cut rather than after it because the reading of the sector below is opened for whichever
+        // stages will run, and a frame where none will must not open one at all - which is nearly
+        // every frame.
+        var contentRevision = computeContentRevision(view);
+        var isContentStale = isCellCutStale
+            || (territories == null && borderStageOverlay == null)
+            || contentRevision != lastContentRevision;
+
+        if (!isContentStale) {
+            applyStandingMapUpdates();
+            return;
+        }
+        // The one reading of the sector this rebuild's stages share: the cell cut, the fills and
+        // the bands each ask every system who lives there, so one walk per system serves all
+        // three. Opened here rather than by each stage, which is what let a single rebuild walk
+        // the whole sector three times over.
+        //
+        // Discarded with the rebuild. A kept one would draw the next rebuild off the sector this
+        // one saw, which is the change a rebuild exists to show.
+        var colonies = new SystemColoniesIndex(Global.getSector());
+
+        if (isCellCutStale) {
 
             // Transition trace: a stale cell or one left behind after an access change can be tied
             // to the revision step - or the seed inputs or toggle flip - that drove it.
             LOG.debug("Political map geometry stale; rebuilding cut " + cellGeometry.revision()
                 + " from " + lastCellCut + " to " + cellCut);
 
-            rebuildGeometry(cellCut.seedInputs(), cellCut.visibilityRules());
+            rebuildGeometry(
+                new MapVisibilityPass(
+                    colonies,
+                    VisibleStars.scan(Global.getSector()),
+                    cellCut.visibilityRules()),
+                cellCut.seedInputs());
 
             // A fresh cut number the moment the cells are recut, whichever of the four inputs
             // drove it - so work derived from the previous cut can never read as derived from
@@ -234,97 +279,105 @@ final class PoliticalMapCache {
             // still through a seed-input or dev-toggle recut.
             cellGeometry = cellGeometry.copyWithRevision(cellGeometry.revision() + 1);
             lastCellCut = cellCut;
-            rebuiltCells = true;
+        }
+        var drawablesStart = System.nanoTime();
+
+        // Build one view or the other, never both: the debug overlay replaces the normal
+        // render, so in debug mode the production draw lists are not built at all, and the
+        // unused view is nulled. The toggle is a KMU setting, so flipping it bumps the content
+        // revision and forces this rebuild - which is what swaps the two. The anchor overlay
+        // rebuilds either way - it draws over both views - borrowing the normal build's holder
+        // map when there is one, resolving its own from the sector when the debug build left
+        // none behind.
+        if (KmuPoliticalMapSettings.shouldTraceBordersForDebug()) {
+            borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
+                cellGeometry.cells(),
+                Global.getSector());
+            territories = null;
+            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+                standingAnchors,
+                cellGeometry,
+                Global.getSector(),
+                view);
+        } else {
+            rebuildTerritoriesAndBands(
+                new HolderPass(
+                    view.resolveGrouping(),
+                    cellCut.visibilityRules().colonyVisibility(),
+                    colonies),
+                view);
         }
 
-        // TODO: when only geometry changed (rebuiltCells), reshape just the cells
-        // CellGeometryCache rebuilt - the system that gained or lost access and every cell
-        // it touches - rather than the full territories rebuild below. Have updateFromSector report
-        // its affected-cell set and drive a targeted reshape from it, the geometry-side analogue of
-        // applyStalePoliticsUpdates.
+        // The name labels are minted from the placements just rebuilt (empty when the names
+        // toggle is off), keeping them in step with the fills and borders and reusing the one
+        // placement search both consumers share. The name choice is read here rather than
+        // inside the build, since whether names draw at all is this layer's own answer.
+        LabelsBuilder.rebuildLabels(
+            factionLabels,
+            standingAnchors.getAnchors(),
+            NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
 
-        // Both views null means neither has been built this session, so the first frame forces the
-        // build even if the content revision happens to match its unbuilt seed.
-        var contentRevision = computeContentRevision(view);
-        if (rebuiltCells
-                || (territories == null && borderStageOverlay == null)
-                || contentRevision != lastContentRevision) {
-            var drawablesStart = System.nanoTime();
+        lastContentRevision = contentRevision;
 
-            // Build one view or the other, never both: the debug overlay replaces the normal
-            // render, so in debug mode the production draw lists are not built at all, and the
-            // unused view is nulled. The toggle is a KMU setting, so flipping it bumps the content
-            // revision and forces this rebuild - which is what swaps the two. The anchor overlay
-            // rebuilds either way - it draws over both views - borrowing the normal build's holder
-            // map when there is one, resolving its own from the sector when the debug build left
-            // none behind.
-            if (KmuPoliticalMapSettings.shouldTraceBordersForDebug()) {
-                borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
-                    cellGeometry.cells(),
-                    Global.getSector());
-                territories = null;
-                ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
-                    standingAnchors,
-                    cellGeometry,
-                    Global.getSector(),
-                    view);
-            } else {
-                territories = TerritoryBuilder.buildTerritories(
-                    cellGeometry.cells(),
-                    Global.getSector(),
-                    view);
-                borderStageOverlay = null;
-                // The cells go over carrying the revision they stand at rather than the live
-                // signal read at the top - the two agree here, and only the pair is true of the
-                // geometry in hand. The standing placements go in whole beside it, which is what
-                // lets the rebuild keep the ones whose clusters this pass has not moved.
-                ClusterAnchorsBuilder.rebuildClusterAnchors(
-                    standingAnchors,
-                    cellGeometry,
-                    Global.getSector(),
-                    ClusterLabelStylingSnapshot.resolveFrom(territories));
+        // A full rebuild re-derives every system, so any pending per-system staleness is
+        // already reflected - drain and discard it rather than re-processing the same systems
+        // immediately after.
+        MapLayerRefresh.drainStaleGroupingSystemIds();
+        logContentRebuild(isCellCutStale, contentRevision, drawablesStart);
+    }
 
-                // The bands come last, after the names have places, because they are laid around
-                // them: a band is cut by the room the names take, so baking one before the fit
-                // would leave it running under a word rather than clear of it. What the fit
-                // reports about the names it moved is dropped here: every cell was just rebuilt
-                // from nothing, so all of them owe a band whatever the names did.
-                CellRibbonsBaker
-                    .createForPass(
-                        territories,
-                        cellGeometry.cells(),
-                        Global.getSector(),
-                        standingAnchors.getAnchors())
-                    .bakeAllCellRibbons();
-            }
+    // The production view's three stages, driven off the one reading of the sector the rebuild
+    // opened: the fills, the names fitted inside the borders they trace, and the bands laid
+    // around wherever those names ended up.
+    //
+    // The grouping the pass was opened under is the view's, sampled once, which is the condition
+    // the bake shares this reading on: a pass folded by another grouping would plan bands against
+    // blocs the fills never drew.
+    private void rebuildTerritoriesAndBands(HolderPass pass, PoliticalMapView view) {
 
-            // The name labels are minted from the placements just rebuilt (empty when the names
-            // toggle is off), keeping them in step with the fills and borders and reusing the one
-            // placement search both consumers share. The name choice is read here rather than
-            // inside the build, since whether names draw at all is this layer's own answer.
-            LabelsBuilder.rebuildLabels(
-                factionLabels,
-                standingAnchors.getAnchors(),
-                NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
-                    
-            lastContentRevision = contentRevision;
+        territories = TerritoryBuilder.buildTerritories(cellGeometry.cells(), pass, view);
+        borderStageOverlay = null;
 
-            // A full rebuild re-derives every system, so any pending per-system staleness is
-            // already reflected - drain and discard it rather than re-processing the same systems
-            // immediately after.
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-            logContentRebuild(rebuiltCells, contentRevision, drawablesStart);
-            return;
-        }
+        // The cells go over carrying the revision they stand at rather than the live
+        // signal read at the top - the two agree here, and only the pair is true of the
+        // geometry in hand. The standing placements go in whole beside it, which is what
+        // lets the rebuild keep the ones whose clusters this pass has not moved.
+        ClusterAnchorsBuilder.rebuildClusterAnchors(
+            standingAnchors,
+            cellGeometry,
+            pass.sector(),
+            ClusterLabelStylingSnapshot.resolveFrom(territories));
 
-        // No full rebuild this frame. In the normal view, fold in any per-system holder changes
-        // a colony resize marked, re-shaping only those systems and their neighbours over the
-        // standing territories. The static debug overlay has no draw lists to patch, so its
-        // staleness is drained instead - it refreshes on the next full rebuild (any settings or
-        // geometry change). Under a filter the incremental re-shape is bypassed too: it re-derives
-        // holders through the normal (non-filter) politics, which would overwrite the spotlit keys
-        // and corrupt the spotlight, so a filtered map defers holder changes to the next full
-        // rebuild instead.
+        // The bands come last, after the names have places, because they are laid around
+        // them: a band is cut by the room the names take, so baking one before the fit
+        // would leave it running under a word rather than clear of it. What the fit
+        // reports about the names it moved is dropped here: every cell was just rebuilt
+        // from nothing, so all of them owe a band whatever the names did.
+        //
+        // Baked through this rebuild's own reading rather than one of its own: the bake runs in
+        // the same frame the fills were painted in, so a fresh reading could only report the
+        // same sector at the cost of walking it again.
+        CellRibbonsBaker
+            .createForPass(
+                territories,
+                cellGeometry.cells(),
+                pass,
+                standingAnchors.getAnchors())
+            .bakeAllCellRibbons();
+    }
+
+    // The cheap frame, and nearly every frame: nothing is stale enough to rebuild, so no reading
+    // of the sector is opened here at all. In the normal view, fold in any per-system holder
+    // changes a colony resize marked, re-shaping only those systems and their neighbours over the
+    // standing territories - that batch opens its own reading, over the handful of systems it was
+    // handed rather than over this frame. The static debug overlay has no draw lists to patch, so
+    // its staleness is drained instead - it refreshes on the next full rebuild (any settings or
+    // geometry change). Under a filter the incremental re-shape is bypassed too: it re-derives
+    // holders through the normal (non-filter) politics, which would overwrite the spotlit keys
+    // and corrupt the spotlight, so a filtered map defers holder changes to the next full
+    // rebuild instead.
+    private void applyStandingMapUpdates() {
+
         if (territories != null && !territories.isFiltering()) {
             // The standing pair goes in whole: a re-fit leaves its own placements and rules in
             // it, and a frame that re-fits nothing leaves both alone, since the placements it
@@ -344,7 +397,7 @@ final class PoliticalMapCache {
     // is whichever view was built this rebuild - the normal styled cells or the debug overlay's
     // base loops.
     private void logContentRebuild(
-            boolean rebuiltCells,
+            boolean isCellCutStale,
             int contentRevision,
             long drawablesStart) {
 
@@ -357,7 +410,7 @@ final class PoliticalMapCache {
 
         LOG.debug("Political map territories rebuilt; contentRevision="
             + contentRevision + " " + builtCounts
-            + " geometryRebuilt=" + rebuiltCells
+            + " geometryRebuilt=" + isCellCutStale
             + " took=" + Timings.formatMillis(System.nanoTime() - drawablesStart));
     }
 
@@ -402,11 +455,11 @@ final class PoliticalMapCache {
     // affected by an access change or a system starting or stopping moving - or every cell, when
     // the frontier resolution or the cell radius changed, since either reseeds them all. Feeds the
     // cache the currently-moving systems so they are left out of the partition (they seed no cell
-    // and clip no neighbour), and the visibility overrides so a forced or undiscovered-colony
-    // system joins the drawn set.
+    // and clip no neighbour), and the rebuild's reading of the sector, whose visibility rules put
+    // a forced or undiscovered-colony system on the drawn set.
     private void rebuildGeometry(
-            CellSeedInputs seedInputs,
-            MapVisibilityRules visibilityRules) {
+            MapVisibilityPass pass,
+            CellSeedInputs seedInputs) {
 
         var movingSystemIds = MovingSystems.getInstance().getMovingSystemIds();
         KmuProfiling
@@ -414,9 +467,8 @@ final class PoliticalMapCache {
             .measure(
                 "politicalMap.updateGeometry",
                 () -> cellGeometry.cells().updateFromSector(
-                    Global.getSector(),
+                    pass,
                     movingSystemIds,
-                    seedInputs,
-                    visibilityRules));
+                    seedInputs));
     }
 }
