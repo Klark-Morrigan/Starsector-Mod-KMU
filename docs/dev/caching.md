@@ -94,6 +94,55 @@ selection per system per poll: a passenger given the sector instead would walk e
 entity in every system again, and there are three of them. The index is discarded with
 the poll, a kept one being a reading of the sector the *previous* poll saw.
 
+```mermaid
+sequenceDiagram
+    participant Poll as Staleness poll
+    participant Snapshot
+    participant Motion as Moving-set walk
+    participant Register as Sighting register
+    participant Index as SystemColoniesIndex
+    participant Sector as The live sector
+
+    Poll->>Index: open over the sector
+    Poll->>Sector: VisibleStars.scan (hyperspace, once)
+
+    Poll->>Snapshot: scan(index, visibleStars, rules)
+    loop each star system
+        Snapshot->>Index: readColoniesIn(system)
+        Index->>Sector: system.getAllEntities()
+        Index-->>Snapshot: colonies, and the memo keeps them
+    end
+
+    Poll->>Motion: updateMovingSystems(index, visibleStars, rules)
+    loop each star system
+        Motion->>Index: readColoniesIn(system)
+        Index-->>Motion: the memo answers, and the system is not walked
+    end
+
+    loop each star system
+        Poll->>Index: readColoniesIn(system)
+        Index-->>Poll: the memo answers, and the system is not walked
+        Poll->>Register: recordSightingsByInhabitants(sector, system, colonies)
+    end
+
+    Note over Poll,Sector: One getAllEntities per system per poll.<br/>Each passenger reaching for the sector itself would make it three.
+```
+
+Two shapes in that picture are the arrangement rather than incidental. The register is
+handed a place and its colonies instead of the index, because `SystemColoniesIndex` reads
+the colonies package and a register living in it could not take one without the layering
+gate refusing the cycle - so the sector loop is the poll's, which is where the cadence was
+decided anyway. And the membership rule takes an inhabitation *answer* rather than a sector
+to read one from, which is what keeps a second walk from hiding inside the drawn-set test
+the moving-set walk applies per system.
+
+What the index does not cover is the revealed-ruin read, which walks a system's *planets*
+rather than its entities and is still made once by the snapshot and once by the drawn-set
+predicate. It is unshared because it does not run through the colony set at all - it has
+its own walk and its own survey-based reveal - and folding it in means giving a dead world
+a colony kind, which is a change to what the map counts as habitation rather than a caching
+one.
+
 The overlap is intentional. Both feed the same stale-system set, so a change a
 listener already marked and one the watcher's diff re-discovers collapse into a
 single re-shape - and a change no listener ever saw is still caught, just one poll
