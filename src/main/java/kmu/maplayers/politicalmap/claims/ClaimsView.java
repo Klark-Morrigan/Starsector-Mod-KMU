@@ -198,7 +198,9 @@ public final class ClaimsView implements PoliticalMapView {
                 grouping,
                 ClaimStatsAggregator.aggregateClaimStats(
                     pass,
-                    claimReaderSource.openReaderOver(pass.colonies())),
+                    claimReaderSource.openReaderOver(
+                        pass.colonyVisibility(),
+                        pass.colonies())),
                 blocId -> true),
             ClaimSortMode.MODES);
     }

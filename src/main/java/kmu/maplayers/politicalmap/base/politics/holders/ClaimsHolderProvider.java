@@ -60,11 +60,13 @@ public final class ClaimsHolderProvider implements HolderProvider {
         // contested and no unfilled systems, which the fill split reads as its whole-cluster-solid
         // fast path. The spotlight only changes which key a claim carries, never its fill.
         return new HolderResolution(
-                FilteredClaims.resolveFilteredClaims(
-                        pass,
-                        claimReaderSource.openReaderOver(pass.colonies()),
-                        selectedBlocId),
-                Set.of(),
-                Set.of());
+            FilteredClaims.resolveFilteredClaims(
+                pass,
+                claimReaderSource.openReaderOver(
+                    pass.colonyVisibility(),
+                    pass.colonies()),
+                selectedBlocId),
+            Set.of(),
+            Set.of());
     }
 }

@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.politics.holders;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.colonies.ColonyVisibility;
+import kmlib.starsector.colonies.RevelationGate;
 import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 
@@ -18,6 +20,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
@@ -33,6 +36,12 @@ import static org.mockito.Mockito.mockStatic;
  */
 final class ClaimsHolderProviderTest {
 
+    // A rule that is plainly not the fog alone, so a reader opened under a default of its own
+    // fails the pass-through case rather than passing it by coincidence.
+    private static final ColonyVisibility GATED_VISIBILITY = new ColonyVisibility(
+        false,
+        Set.of(RevelationGate.SPACE_DERELICTS, RevelationGate.HIDDEN_COLONIES));
+
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
 
@@ -47,7 +56,7 @@ final class ClaimsHolderProviderTest {
             var grouping = HolderGrouping.identity();
             var pass = HolderPass.over(sectorMock, BASE_FOG, grouping);
             var claimHolder = new DominantHolder("hegemony", PRIMARY, SECONDARY);
-            var provider = new ClaimsHolderProvider(colonies -> claimReaderMock);
+            var provider = new ClaimsHolderProvider((visibility, colonies) -> claimReaderMock);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
@@ -85,7 +94,7 @@ final class ClaimsHolderProviderTest {
             claims.put("own-claimed", ownClaimHolder);
             claims.put("rival-claimed", rivalClaimHolder);
 
-            var provider = new ClaimsHolderProvider(colonies -> claimReaderMock);
+            var provider = new ClaimsHolderProvider((visibility, colonies) -> claimReaderMock);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
                     var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
@@ -133,7 +142,7 @@ final class ClaimsHolderProviderTest {
             var pass = HolderPass.over(sectorMock, BASE_FOG, grouping);
             var spotlightHolder = new DominantHolder("$spotlit", PRIMARY, SECONDARY);
             var claimHolder = new DominantHolder("hegemony", PRIMARY, SECONDARY);
-            var provider = new ClaimsHolderProvider(colonies -> claimReaderMock);
+            var provider = new ClaimsHolderProvider((visibility, colonies) -> claimReaderMock);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
                     var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
@@ -171,7 +180,7 @@ final class ClaimsHolderProviderTest {
             var pass = HolderPass.over(sectorMock, BASE_FOG, HolderGrouping.identity());
             var openedOver = new ArrayList<SystemColoniesIndex>();
 
-            var provider = new ClaimsHolderProvider(colonies -> {
+            var provider = new ClaimsHolderProvider((visibility, colonies) -> {
                 openedOver.add(colonies);
                 return claimReaderMock;
             });
@@ -186,6 +195,34 @@ final class ClaimsHolderProviderTest {
 
                 assertThat(openedOver)
                     .containsExactly(pass.colonies());
+            }
+        }
+
+        @Test
+        void resolveHolderOpensItsClaimReaderUnderThePassesOwnVisibilityRule() {
+            // A reader states no rule of its own, so what its breakdowns report the player may be
+            // told is whatever rule the pass was resolved under. One invented where the reader is
+            // opened would let a claim account name colonies the map around it is holding back.
+            var sectorMock = mock(SectorAPI.class);
+            var claimReaderMock = mock(ClaimReader.class);
+            var pass = HolderPass.over(sectorMock, GATED_VISIBILITY, HolderGrouping.identity());
+            var openedUnder = new ArrayList<ColonyVisibility>();
+
+            var provider = new ClaimsHolderProvider((visibility, colonies) -> {
+                openedUnder.add(visibility);
+                return claimReaderMock;
+            });
+
+            try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
+
+                sectorClaimsMock
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(pass, claimReaderMock))
+                    .thenReturn(Map.of());
+
+                provider.resolveHolder(pass, null);
+
+                assertThat(openedUnder)
+                    .containsExactly(GATED_VISIBILITY);
             }
         }
     }
