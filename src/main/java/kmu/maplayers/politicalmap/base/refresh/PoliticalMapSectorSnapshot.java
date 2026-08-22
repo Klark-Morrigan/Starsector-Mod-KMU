@@ -55,8 +55,8 @@ public record PoliticalMapSectorSnapshot(
      * only this scan needs - encapsulated here.
      *
      * @param colonies        the poll's colony index, which every system is read through;
-     *                        null - or an index opened over no sector - yields an empty
-     *                        snapshot
+     *                        required, the caller being a pass that has already opened one;
+     *                        an index opened over no sector yields an empty snapshot
      * @param visibleStars    the poll's hyperspace scan of which stars the map draws
      * @param visibilityRules the rules in force for this pass - what may be shown of a
      *                        colony, which the dominance fold and the inhabitation read
@@ -87,8 +87,8 @@ public record PoliticalMapSectorSnapshot(
      * in the same tick, which is the arrangement this signature makes unstateable.
      *
      * @param colonies        the poll's colony index, which every system is read through;
-     *                        null - or an index opened over no sector - yields an empty
-     *                        snapshot
+     *                        required, the caller being a pass that has already opened one;
+     *                        an index opened over no sector yields an empty snapshot
      * @param visibleStars    the poll's hyperspace scan of which stars the map draws
      * @param rules           the dominance-weighting rules for this pass - whether
      *                            stability scales each rating and whether an attached station
@@ -106,7 +106,7 @@ public record PoliticalMapSectorSnapshot(
             DominanceRules rules,
             MapVisibilityRules visibilityRules) {
 
-        var sector = colonies == null ? null : colonies.getSector();
+        var sector = colonies.getSector();
 
         if (sector == null) {
             return new PoliticalMapSectorSnapshot(0, Map.of());

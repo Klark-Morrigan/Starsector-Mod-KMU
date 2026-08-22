@@ -17,9 +17,9 @@ import java.util.function.Predicate;
  *
  * <p>Several passes need the same drawn set: the geometry cache builds a cell per
  * drawn system, and the motion tracker follows a drawn system that moves. Owning the
- * membership rule here - {@link MapVisibility} applied over one hyperspace
- * scan - keeps those passes from drifting apart on what "drawn" means, and lets each
- * walk it independently through the same predicate rather than re-deriving it.
+ * membership rule here - {@link MapVisibility} applied over a pass's colony index and
+ * hyperspace scan - keeps those passes from drifting apart on what "drawn" means, and lets
+ * each walk it independently through the same predicate rather than re-deriving it.
  */
 public final class DrawnSystemPositions {
 
@@ -51,7 +51,7 @@ public final class DrawnSystemPositions {
         return system -> MapVisibility.shouldAppearOnMap(
             system,
             visibleStars,
-            isInhabited(colonies, system, visibilityRules),
+            isSystemInhabited(colonies, system, visibilityRules),
             visibilityRules);
     }
 
@@ -81,11 +81,23 @@ public final class DrawnSystemPositions {
                 visibilityRules));
     }
 
-    // The two facts membership composes, read off the pass rather than off the sector: the
-    // colony set the index already holds, and the system's own planets for a ruin. Stated here
-    // because MapVisibility takes the answer rather than the walk that produces it - which is
-    // what keeps a second walk of every system from hiding inside a membership test.
-    private static boolean isInhabited(
+    /**
+     * Whether anybody lives in one system, composed off a pass's own reading of it.
+     *
+     * <p>The framework's per-system inhabitation read, stated once. {@link MapVisibility} owns
+     * what inhabitation <em>is</em> and takes the two answers rather than the walks that
+     * produce them - which is what keeps a second walk of every system out of a membership
+     * test - so somewhere has to make those two reads, and for a pass holding a colony index
+     * this is that place.
+     *
+     * @param colonies        the pass's colony index, which the habitation half is read
+     *                        through
+     * @param system          the system to read; null yields false
+     * @param visibilityRules the pass's visibility rules; only the colony half is read here,
+     *                        since forcing a system onto the map does not make it inhabited
+     * @return true when the system holds a colony somebody lives on or a known dead colony
+     */
+    public static boolean isSystemInhabited(
             SystemColoniesIndex colonies,
             StarSystemAPI system,
             MapVisibilityRules visibilityRules) {

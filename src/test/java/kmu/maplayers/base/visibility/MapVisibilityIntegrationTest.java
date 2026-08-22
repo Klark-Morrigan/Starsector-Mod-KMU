@@ -382,21 +382,18 @@ class MapVisibilityIntegrationTest {
         return isInhabitedUnder(sector, system, MapVisibilityRules.BASE);
     }
 
-    // The inhabitation read over a sector, composed the way every pass composes it: the
-    // system's colony set through the pass's index, and its own planets for a ruin. Stated
-    // here rather than reached for, the rule taking the two answers rather than the walks that
-    // produce them - which is what keeps a second walk of every system out of a membership
-    // test.
+    // The inhabitation read over a sector, reached through the production composition rather
+    // than restated here: the rule takes two answers, and a case stating for itself which
+    // walks produce them would be asserting against its own copy of the rule.
     private static boolean isInhabitedUnder(
             SectorAPI sector,
             StarSystemAPI system,
             MapVisibilityRules visibilityRules) {
 
-        return MapVisibility.isInhabited(
-            new SystemColoniesIndex(sector)
-                .readColoniesIn(system)
-                .hasInhabitingColony(visibilityRules.colonyVisibility()),
-            DecivilisedMarkets.hasRevealedDecivilisedPlanet(system));
+        return DrawnSystemPositions.isSystemInhabited(
+            new SystemColoniesIndex(sector),
+            system,
+            visibilityRules);
     }
 
     // Wires a single-system sector whose economy returns the given markets for

@@ -107,7 +107,7 @@ final class PoliticalMapPollWalkIntegrationTest {
             // opening a walk of their own is what this stops.
             var sector = buildSettledSectorWithAnEmptyNeighbour();
 
-            runPollsAndReadGeometryDelta(sector, ONE_POLL, () -> { });
+            runOnePoll(sector);
 
             for (var system : sector.getStarSystems()) {
                 verify(system, times(1)).getAllEntities();
@@ -124,11 +124,22 @@ final class PoliticalMapPollWalkIntegrationTest {
             var derelict = findOnlyDerelictIn(sector);
 
             SectorPoliticsFixtures.openSectorMemory(sector);
-            runPollsAndReadGeometryDelta(sector, ONE_POLL, () -> { });
+            runOnePoll(sector);
 
             assertThat(SectorColonySightings.readSightings(sector)
                     .readSightedLocationId(derelict.getId()))
                 .isEqualTo(ALPHA_ID);
+        }
+
+        @Test
+        void pollsWithoutASectorWithoutFaultingOrRefreshing() {
+            // Mid-load, before the sector stands up. Every passenger is handed a reading opened
+            // over nothing, so each has to answer emptily rather than fault - and a poll that
+            // saw nothing must not report the drawn set as having changed.
+            var geometryDelta = runPollsAndReadGeometryDelta(null, TWO_POLLS, () -> { });
+
+            assertThat(geometryDelta)
+                .isZero();
         }
 
         @Test
@@ -147,6 +158,12 @@ final class PoliticalMapPollWalkIntegrationTest {
             assertThat(geometryDelta)
                 .isEqualTo(1);
         }
+    }
+
+    // One poll of the real source over a sector nothing disturbs - what a case asserting on
+    // what the poll read, rather than on what it decided, wants.
+    private static void runOnePoll(SectorAPI sector) {
+        runPollsAndReadGeometryDelta(sector, ONE_POLL, () -> { });
     }
 
     // Drives the real poll pollCount times and reports how far the geometry revision moved.

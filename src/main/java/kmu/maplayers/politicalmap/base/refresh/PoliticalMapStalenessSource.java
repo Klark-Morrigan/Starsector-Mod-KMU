@@ -59,11 +59,9 @@ import java.util.Map;
  * the sector-wide sweep running on the cadence such an arrival deserves, in the way
  * {@link MovingSystems} already rides it. It stales nothing and no baseline turns on it.
  *
- * <p>Every passenger reads the same one reading of the sector. A poll is a pass, and each of
- * them asks each system who lives there - so each is handed the colony index and the
- * hyperspace scan opened here rather than a sector it could walk again for itself. Both are
- * discarded with the poll, a kept reading being the previous poll's sector rather than this
- * one's.
+ * <p>A poll is a pass, and is read as one: every passenger is handed the same reading of the
+ * sector rather than a sector it could walk again for itself. What that buys is stated where
+ * the reading is opened.
  */
 public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     private static final Logger LOG = Global.getLogger(PoliticalMapStalenessSource.class);
@@ -83,19 +81,16 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     public void markChangesSinceLastPoll() {
         var sector = Global.getSector();
 
-        // Read the visibility rules once and share them across both walks, so the
-        // snapshot's drawn set and the motion tracker's drawn set agree even if the
-        // player flips a toggle between the two - and, crucially, so the motion walk
-        // observes the same revealed systems the geometry draws, not just the normally
-        // visible ones.
+        // The three values every passenger below shares, read once here. The rules first,
+        // so a toggle flipped mid-poll cannot leave the snapshot's drawn set and the motion
+        // walk's disagreeing - and so the motion walk observes the revealed systems the
+        // geometry draws rather than only the normally visible ones. The colony index and the
+        // star scan then bound what the poll costs: each passenger asks every system who
+        // lives there, so one selection per system serves all three.
+        //
+        // All three are discarded with the poll. A kept index would answer the next poll off
+        // the sector this one saw, which is the change a poll exists to notice.
         var visibilityRules = MapVisibilityRules.readFromLunaSettings();
-
-        // One reading of the sector for the whole poll, handed to each passenger below. Every
-        // one of them asks each system who lives there, and each used to walk for the answer
-        // itself - three selections per system per tick, every one of which reaches every
-        // entity in the system. The index is opened here and discarded with the poll: a kept
-        // one would answer the next poll off the sector this one saw, which is precisely the
-        // change a poll exists to notice.
         var colonies = new SystemColoniesIndex(sector);
         var visibleStars = VisibleStars.scan(sector);
         var snapshot = PoliticalMapSectorSnapshot.scan(colonies, visibleStars, visibilityRules);
