@@ -40,7 +40,7 @@ import java.util.function.BooleanSupplier;
  * <p>Both halves are read live, like every other hover switch, so a player toggling the mode sees
  * the map change on the next frame rather than on the next load.
  */
-public final class RandomAssortmentOfThingsMode {
+public final class RandomAssortmentOfThingsCompatibilityMode {
 
     private final BooleanSupplier isModeSwitchedOn;
 
@@ -50,7 +50,10 @@ public final class RandomAssortmentOfThingsMode {
      * @param isModeSwitchedOn whether the player has left the compatibility mode on
      * @param minimap          whether a minimap stands in for the campaign radar
      */
-    public RandomAssortmentOfThingsMode(BooleanSupplier isModeSwitchedOn, CampaignMinimap minimap) {
+    public RandomAssortmentOfThingsCompatibilityMode(
+            BooleanSupplier isModeSwitchedOn,
+            CampaignMinimap minimap) {
+
         this.isModeSwitchedOn = isModeSwitchedOn;
         this.minimap = minimap;
     }
@@ -59,9 +62,10 @@ public final class RandomAssortmentOfThingsMode {
      * @return the mode over the switch a running game actually reads and the minimap it actually
      *         has
      */
-    public static RandomAssortmentOfThingsMode createForLiveGame() {
-        return new RandomAssortmentOfThingsMode(
-            KmuMapLayerSettings::getRandomAssortmentOfThingsModeEnabled,
+    public static RandomAssortmentOfThingsCompatibilityMode createForLiveGame() {
+
+        return new RandomAssortmentOfThingsCompatibilityMode(
+            KmuMapLayerSettings::getRandomAssortmentOfThingsCompatibilityModeEnabled,
             new RandomAssortmentOfThingsMinimap());
     }
 
@@ -70,6 +74,8 @@ public final class RandomAssortmentOfThingsMode {
      *         a minimap to adapt to, both
      */
     public boolean isEngaged() {
-        return isModeSwitchedOn.getAsBoolean() && minimap.isReplacingRadar();
+        
+        return isModeSwitchedOn.getAsBoolean()
+            && minimap.isReplacingRadar();
     }
 }

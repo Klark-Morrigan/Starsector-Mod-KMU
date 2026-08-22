@@ -140,7 +140,10 @@ public final class KmuMapLayerSettings {
     // the only map drawn, admitting it whole means answering the cursor over the entire campaign
     // view. Named for the mod because that is how a player arrives at this tab, and kept under the
     // same header because it refines those switches rather than sitting beside them.
-    private static final String RANDOM_ASSORTMENT_OF_THINGS_MODE_FIELD =
+    // The id is what LunaLib files the player's choice under, so it is fixed by what is already
+    // saved rather than by what the mode is called here; the tab prefix carries "compatibility"
+    // either way.
+    private static final String RANDOM_ASSORTMENT_OF_THINGS_COMPATIBILITY_MODE_FIELD =
         "kmu_map_compatibility_foreignMapSurfaces_randomAssortmentOfThingsMode";
 
     // Hover tooltip density (Map - Visuals tab): how tightly a hover box is set, across every map
@@ -393,7 +396,7 @@ public final class KmuMapLayerSettings {
     // defaults to is only ever read by a player who has one - and to that player, layers that
     // stand clear of the map under the pointer read as the mod failing rather than as a setting
     // waiting to be found. A switch to turn off, not one to discover.
-    private static final boolean DEFAULT_RANDOM_ASSORTMENT_OF_THINGS_MODE = true;
+    private static final boolean DEFAULT_RANDOM_ASSORTMENT_OF_THINGS_COMPATIBILITY_MODE = true;
 
     // No shrink by default: every line of a hover box draws at the body's own size, which is the
     // size its atlas is crisp at, and how deep a line sits is said by its indent alone. A box is
@@ -540,10 +543,10 @@ public final class KmuMapLayerSettings {
      *         it; on by default. The player's half of the mode only: whether there is a minimap to
      *         adapt to is the other half, and both are ANDed before anything behaves differently
      */
-    public static boolean getRandomAssortmentOfThingsModeEnabled() {
+    public static boolean getRandomAssortmentOfThingsCompatibilityModeEnabled() {
         return KmuLunaSettings.readBoolean(
-            RANDOM_ASSORTMENT_OF_THINGS_MODE_FIELD,
-            DEFAULT_RANDOM_ASSORTMENT_OF_THINGS_MODE);
+            RANDOM_ASSORTMENT_OF_THINGS_COMPATIBILITY_MODE_FIELD,
+            DEFAULT_RANDOM_ASSORTMENT_OF_THINGS_COMPATIBILITY_MODE);
     }
 
     /**

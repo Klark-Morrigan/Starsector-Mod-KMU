@@ -44,7 +44,7 @@ public final class RandomAssortmentOfThingsMinimapSuppression {
     // the answer is walked out of.
     private final Supplier<EmbeddedMap> findSingleEmbeddedMap;
 
-    private final RandomAssortmentOfThingsMode mode;
+    private final RandomAssortmentOfThingsCompatibilityMode mode;
 
     /**
      * @param mode                  whether the player's compatibility mode is on and there is a
@@ -53,7 +53,7 @@ public final class RandomAssortmentOfThingsMinimapSuppression {
      *                              opened, or null when there is not exactly one
      */
     public RandomAssortmentOfThingsMinimapSuppression(
-            RandomAssortmentOfThingsMode mode,
+            RandomAssortmentOfThingsCompatibilityMode mode,
             Supplier<EmbeddedMap> findSingleEmbeddedMap) {
 
         this.findSingleEmbeddedMap = findSingleEmbeddedMap;
@@ -65,7 +65,7 @@ public final class RandomAssortmentOfThingsMinimapSuppression {
      */
     public static RandomAssortmentOfThingsMinimapSuppression createForLiveScreen() {
         return new RandomAssortmentOfThingsMinimapSuppression(
-            RandomAssortmentOfThingsMode.createForLiveGame(),
+            RandomAssortmentOfThingsCompatibilityMode.createForLiveGame(),
             SingleEmbeddedMapReader.INSTANCE::resolveSingleEmbeddedMap);
     }
 

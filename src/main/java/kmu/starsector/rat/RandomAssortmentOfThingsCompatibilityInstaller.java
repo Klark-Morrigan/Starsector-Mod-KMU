@@ -25,13 +25,13 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  * is the whole of what this package is for.
  *
  * <p><b>Three conditions govern the suppression, and the switch that drives this installer
- * composes all of them</b>: {@link RandomAssortmentOfThingsMode#isEngaged()} is the player's
- * compatibility toggle, and that mod present with its own minimap switch on. The composition root
- * applies it on load and re-applies it whenever either mod's settings are saved - LunaLib
- * announces every mod's saves, so the other mod's switch is as observable as ours - and presence,
- * the one condition that cannot move within a run, is settled by the load that first applies it.
- * So nothing is installed here that the mode does not currently want, and this class carries no
- * gate of its own.
+ * composes all of them</b>: {@link RandomAssortmentOfThingsCompatibilityMode#isEngaged()} is the
+ * player's compatibility toggle, and that mod present with its own minimap switch on. The
+ * composition root applies it on load and re-applies it whenever either mod's settings are saved -
+ * LunaLib announces every mod's saves, so the other mod's switch is as observable as ours - and
+ * presence, the one condition that cannot move within a run, is settled by the load that first
+ * applies it. So nothing is installed here that the mode does not currently want, and this class
+ * carries no gate of its own.
  *
  * <p>The suppression still reads {@code isEngaged()} per frame. That is the frame-level truth
  * between announcements, and being wrong for a frame costs a frame - where this installer being

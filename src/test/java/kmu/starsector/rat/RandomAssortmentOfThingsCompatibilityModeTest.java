@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>The switch-off case additionally pins that no minimap read runs, which is what the ordering
  * inside the mode is for.
  */
-final class RandomAssortmentOfThingsModeTest {
+final class RandomAssortmentOfThingsCompatibilityModeTest {
 
     @Nested
     class IsEngaged {
@@ -28,7 +28,7 @@ final class RandomAssortmentOfThingsModeTest {
             var minimapFake = new CampaignMinimapFake();
             minimapFake.replaceRadarWithMinimap();
 
-            var mode = new RandomAssortmentOfThingsMode(() -> true, minimapFake);
+            var mode = new RandomAssortmentOfThingsCompatibilityMode(() -> true, minimapFake);
 
             assertThat(mode.isEngaged())
                 .isTrue();
@@ -39,7 +39,7 @@ final class RandomAssortmentOfThingsModeTest {
 
             var minimapFake = new CampaignMinimapFake();
 
-            var mode = new RandomAssortmentOfThingsMode(() -> true, minimapFake);
+            var mode = new RandomAssortmentOfThingsCompatibilityMode(() -> true, minimapFake);
 
             assertThat(mode.isEngaged())
                 .isFalse();
@@ -49,7 +49,7 @@ final class RandomAssortmentOfThingsModeTest {
         void standsDownWithoutReadingTheMinimapWhileTheSwitchIsOff() {
 
             var minimapReadCount = new AtomicInteger();
-            var mode = new RandomAssortmentOfThingsMode(
+            var mode = new RandomAssortmentOfThingsCompatibilityMode(
                 () -> false,
                 () -> {
                     minimapReadCount.incrementAndGet();

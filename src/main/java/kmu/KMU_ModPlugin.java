@@ -17,7 +17,7 @@ import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuRetiredSettings;
 import kmu.starsector.colonies.ColonySightingInstaller;
 import kmu.starsector.rat.RandomAssortmentOfThingsCompatibilityInstaller;
-import kmu.starsector.rat.RandomAssortmentOfThingsMode;
+import kmu.starsector.rat.RandomAssortmentOfThingsCompatibilityMode;
 import kmu.ui.context.MarketUiContextInstaller;
 
 /**
@@ -61,7 +61,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // within a run.
     private static final KmuToggledFeature randomAssortmentOfThingsCompatibility =
         new KmuToggledFeature(
-            RandomAssortmentOfThingsMode.createForLiveGame()::isEngaged,
+            RandomAssortmentOfThingsCompatibilityMode.createForLiveGame()::isEngaged,
             RandomAssortmentOfThingsCompatibilityInstaller::installAll,
             RandomAssortmentOfThingsCompatibilityInstaller::uninstallAll);
 

@@ -53,10 +53,10 @@ import java.util.function.Supplier;
  * has to cover rather than open up, or the leak returns by way of the read meant to stop it. What
  * failing closed costs is the behaviour the player had before switching the mode on.
  *
- * <p>Named for the mod because the mode is - see {@link RandomAssortmentOfThingsMode} - while
- * nothing it reads names one: an embedded map is found structurally, and its box is the game's own
- * answer about a widget. So the reading would fit the next mod that docks a map surface; what is
- * per-mod is the switch that engages it.
+ * <p>Named for the mod because the mode is - see {@link RandomAssortmentOfThingsCompatibilityMode}
+ * - while nothing it reads names one: an embedded map is found structurally, and its box is the
+ * game's own answer about a widget. So the reading would fit the next mod that docks a map surface;
+ * what is per-mod is the switch that engages it.
  */
 public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
 
@@ -69,7 +69,7 @@ public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
 
     private final BooleanSupplier isAnyMapShowing;
 
-    private final RandomAssortmentOfThingsMode mode;
+    private final RandomAssortmentOfThingsCompatibilityMode mode;
 
     /**
      * @param mode                  whether the player's compatibility mode is on and there is a
@@ -81,7 +81,7 @@ public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
      * @param cursor                where the pointer is, in the UI units the boxes are laid out in
      */
     public RandomAssortmentOfThingsMinimapCover(
-            RandomAssortmentOfThingsMode mode,
+            RandomAssortmentOfThingsCompatibilityMode mode,
             BooleanSupplier isAnyMapShowing,
             Supplier<EmbeddedMap> findSingleEmbeddedMap,
             CursorPosition cursor) {
@@ -98,7 +98,7 @@ public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
      */
     public static RandomAssortmentOfThingsMinimapCover createForLiveScreen() {
         return new RandomAssortmentOfThingsMinimapCover(
-            RandomAssortmentOfThingsMode.createForLiveGame(),
+            RandomAssortmentOfThingsCompatibilityMode.createForLiveGame(),
             new MapPresence()::isAnyMapShowing,
             SingleEmbeddedMapReader.INSTANCE::resolveSingleEmbeddedMap,
             new VanillaCursorPosition());

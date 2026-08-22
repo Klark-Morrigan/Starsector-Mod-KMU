@@ -211,7 +211,7 @@ about what the overlay means.
   switched at three tiers - a master over the whole map, a pair under it for the effects and the box
   separately, and a pair of the layer's own - and this answers for the two that reach every layer,
   which a layer ANDs its own into. So one layer's box can go dark while another's stays up, and one
-  row still silences them all. `RandomAssortmentOfThingsMode` is the same tab's per-mod switch:
+  row still silences them all. `RandomAssortmentOfThingsCompatibilityMode` is the same tab's per-mod switch:
   whether the player has left that mod's compatibility mode on *and* the mod is installed with its
   own minimap replacing the campaign radar, which is KMLib's `CampaignMinimap` role to answer - the
   map surface `MapPresence` cannot report, since it stands in for the radar rather than opening as a
@@ -244,7 +244,7 @@ about what the overlay means.
   `ConsoleMapCover` (`kmu.starsector.consolecommands`) is a text-entry console, which takes the
   whole screen and so reads no geometry at all. `RandomAssortmentOfThingsMinimapCover`
   (`kmu.starsector.rat`) is everywhere that is *not* a docked minimap, on the frames the mode from
-  `RandomAssortmentOfThingsMode` is engaged and no vanilla map is showing; which surface that
+  `RandomAssortmentOfThingsCompatibilityMode` is engaged and no vanilla map is showing; which surface that
   minimap is comes from `SingleEmbeddedMapReader`, the one walk it shares with the rule that
   switches a parked surface off, so the two cannot act on different answers.
 

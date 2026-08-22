@@ -106,22 +106,22 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
     }
 
     // The player's switch on over a minimap standing in for the radar - both halves the mode ANDs.
-    private static RandomAssortmentOfThingsMode buildEngagedMode() {
+    private static RandomAssortmentOfThingsCompatibilityMode buildEngagedMode() {
         return buildMode(true);
     }
 
     // The player's switch off over the same minimap, so what disengages the mode is the switch and
     // not the absence of a map to adapt to.
-    private static RandomAssortmentOfThingsMode buildDisengagedMode() {
+    private static RandomAssortmentOfThingsCompatibilityMode buildDisengagedMode() {
         return buildMode(false);
     }
 
-    private static RandomAssortmentOfThingsMode buildMode(boolean isModeSwitchedOn) {
+    private static RandomAssortmentOfThingsCompatibilityMode buildMode(boolean isModeSwitchedOn) {
 
         var minimapFake = new CampaignMinimapFake();
         minimapFake.replaceRadarWithMinimap();
 
-        return new RandomAssortmentOfThingsMode(() -> isModeSwitchedOn, minimapFake);
+        return new RandomAssortmentOfThingsCompatibilityMode(() -> isModeSwitchedOn, minimapFake);
     }
 
     // A placed map widget, at whatever it is currently drawn at.
