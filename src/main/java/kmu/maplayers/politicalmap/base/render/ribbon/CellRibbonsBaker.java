@@ -85,10 +85,8 @@ public final class CellRibbonsBaker {
      *                       bands
      * @param geometryCache  the cells' geometry, for the system each draws as and its site
      * @param pass           the reading of the sector the counts are made off, folded by the
-     *                       grouping the cells were painted under. A bake in the same frame as the
-     *                       rebuild before it takes that rebuild's; one on its own cadence opens a
-     *                       fresh one, since the older reading is a snapshot of a moment that has
-     *                       since passed
+     *                       grouping the cells were painted under; whose reading it is, and so how
+     *                       current it is, is the caller's to decide
      * @param clusterAnchors the cluster names' placements, whose boxes the bands keep out of
      * @return the pass, ready to bake whichever cells the caller names
      */

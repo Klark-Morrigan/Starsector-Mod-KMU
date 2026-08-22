@@ -2,7 +2,6 @@ package kmu.maplayers;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.SectorColonySightings;
@@ -20,7 +19,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.lwjgl.util.vector.Vector2f;
 
 import java.util.List;
 
@@ -233,14 +231,14 @@ final class PoliticalMapPollWalkIntegrationTest {
             listSystemMarkets(ALPHA_ID, colony),
             listSystemMarkets(BETA_ID));
 
-        var alpha = findSystemIn(sector, ALPHA_ID);
+        var alpha = SectorPoliticsFixtures.findSystemIn(sector, ALPHA_ID);
 
         SectorPoliticsFixtures.placeMarketsOnSystemEntities(
             alpha,
             SectorPoliticsFixtures.buildAbandonedStationMarket(DERELICT_SIZE));
 
         for (var system : sector.getStarSystems()) {
-            placeSystemInHyperspace(system);
+            SectorPoliticsFixtures.placeSystemInHyperspace(system);
         }
         return sector;
     }
@@ -249,7 +247,7 @@ final class PoliticalMapPollWalkIntegrationTest {
     // fingerprint - the change a stale reading of the sector could not report.
     private static void settleTheEmptyNeighbour(SectorAPI sector) {
 
-        var beta = findSystemIn(sector, BETA_ID);
+        var beta = SectorPoliticsFixtures.findSystemIn(sector, BETA_ID);
         var colony = SectorPoliticsFixtures.buildVisibleMarket(
             SectorPoliticsFixtures.buildFaction("tritachyon"),
             COLONY_SIZE);
@@ -262,28 +260,10 @@ final class PoliticalMapPollWalkIntegrationTest {
     // hulk is an outpost rather than a wreck. Read back off the fixture so the case names the
     // register's key without a second builder stating what was staged.
     private static MarketAPI findOnlyDerelictIn(SectorAPI sector) {
-        return findSystemIn(sector, ALPHA_ID).getAllEntities().get(0).getMarket();
+        return SectorPoliticsFixtures.findSystemIn(sector, ALPHA_ID)
+            .getAllEntities()
+            .get(0)
+            .getMarket();
     }
 
-    private static StarSystemAPI findSystemIn(SectorAPI sector, String systemId) {
-
-        for (var system : sector.getStarSystems()) {
-
-            if (systemId.equals(system.getId())) {
-                return system;
-            }
-        }
-        throw new IllegalArgumentException("No system staged under the id " + systemId);
-    }
-
-    // A hyperspace position, distinct per system so no two share a site. Any position will do -
-    // nothing here moves - so the id's hash is spread across the two axes rather than a case
-    // being handed coordinates that look like they mean something.
-    private static void placeSystemInHyperspace(StarSystemAPI system) {
-
-        var idHash = system.getId().hashCode();
-
-        when(system.getLocation())
-            .thenReturn(new Vector2f(idHash, -idHash));
-    }
 }

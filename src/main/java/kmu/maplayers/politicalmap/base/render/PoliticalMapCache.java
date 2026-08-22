@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.profiling.Timings;
 import kmlib.starsector.map.VisibleStars;
@@ -161,22 +162,27 @@ final class PoliticalMapCache {
      * are dropped rather than left to LazyLib's finalizer sweep.
      */
     public void discardCachedState() {
+
         LabelsBuilder.disposeAll(factionLabels);
         factionLabels.clear();
+
         // The placements go with the record of what they were fitted under: a statement of the
         // rules the previous sector's labels were made under must not outlive the labels.
         standingAnchors.discardAnchors();
         territories = null;
         borderStageOverlay = null;
+
         // Emptying the cells is itself a cut, so it takes its own number rather than rewinding to
         // a seed: a placement fitted against the previous sector's cells must not be able to
         // match the number these emptied ones now answer for.
         cellGeometry.cells().clearCachedCells();
         cellGeometry = cellGeometry.copyWithRevision(cellGeometry.revision() + 1);
         lastContentRevision = UNBUILT_REVISION;
+
         // Forgotten rather than zeroed, since every reading the record can hold is one the player
         // can be under - this is what forces the next refresh to cut against the new sector.
         lastCellCut = null;
+
         // Per-system staleness names systems of the sector being left, so it is dropped rather than
         // replayed against the next one - the rebuild this discard forces re-derives every system.
         MapLayerRefresh.drainStaleGroupingSystemIds();
@@ -250,14 +256,19 @@ final class PoliticalMapCache {
             applyStandingMapUpdates();
             return;
         }
-        // The one reading of the sector this rebuild's stages share: the cell cut, the fills and
+        // The sector this rebuild draws, looked up once. Every stage below is answered from this
+        // one reference rather than from the global lookup, so a rebuild cannot name one sector
+        // to its cut and another to its fills.
+        var sector = Global.getSector();
+
+        // The one reading of that sector this rebuild's stages share: the cell cut, the fills and
         // the bands each ask every system who lives there, so one walk per system serves all
         // three. Opened here rather than by each stage, which is what let a single rebuild walk
         // the whole sector three times over.
         //
         // Discarded with the rebuild. A kept one would draw the next rebuild off the sector this
         // one saw, which is the change a rebuild exists to show.
-        var colonies = new SystemColoniesIndex(Global.getSector());
+        var colonies = new SystemColoniesIndex(sector);
 
         if (isCellCutStale) {
 
@@ -269,7 +280,7 @@ final class PoliticalMapCache {
             rebuildGeometry(
                 new MapVisibilityPass(
                     colonies,
-                    VisibleStars.scan(Global.getSector()),
+                    VisibleStars.scan(sector),
                     cellCut.visibilityRules()),
                 cellCut.seedInputs());
 
@@ -290,16 +301,10 @@ final class PoliticalMapCache {
         // map when there is one, resolving its own from the sector when the debug build left
         // none behind.
         if (KmuPoliticalMapSettings.shouldTraceBordersForDebug()) {
-            borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
-                cellGeometry.cells(),
-                Global.getSector());
-            territories = null;
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
-                standingAnchors,
-                cellGeometry,
-                Global.getSector(),
-                view);
+            rebuildBorderTracingOverlay(sector, view);
+
         } else {
+            
             rebuildTerritoriesAndBands(
                 new HolderPass(
                     view.resolveGrouping(),
@@ -324,6 +329,25 @@ final class PoliticalMapCache {
         // immediately after.
         MapLayerRefresh.drainStaleGroupingSystemIds();
         logContentRebuild(isCellCutStale, contentRevision, drawablesStart);
+    }
+
+    // The debug border-tracing view, which replaces the production draw lists outright. It reads
+    // holding from the sector rather than through the rebuild's own reading, and deliberately: the
+    // overlay is gated behind a dev toggle and builds no draw lists for the anchors to borrow a
+    // holder map from, so what it costs is paid only while somebody is looking at it.
+    private void rebuildBorderTracingOverlay(SectorAPI sector, PoliticalMapView view) {
+
+        borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
+            cellGeometry.cells(),
+            sector);
+            
+        territories = null;
+
+        ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+            standingAnchors,
+            cellGeometry,
+            sector,
+            view);
     }
 
     // The production view's three stages, driven off the one reading of the sector the rebuild
@@ -366,16 +390,14 @@ final class PoliticalMapCache {
             .bakeAllCellRibbons();
     }
 
-    // The cheap frame, and nearly every frame: nothing is stale enough to rebuild, so no reading
-    // of the sector is opened here at all. In the normal view, fold in any per-system holder
-    // changes a colony resize marked, re-shaping only those systems and their neighbours over the
-    // standing territories - that batch opens its own reading, over the handful of systems it was
-    // handed rather than over this frame. The static debug overlay has no draw lists to patch, so
-    // its staleness is drained instead - it refreshes on the next full rebuild (any settings or
-    // geometry change). Under a filter the incremental re-shape is bypassed too: it re-derives
-    // holders through the normal (non-filter) politics, which would overwrite the spotlit keys
-    // and corrupt the spotlight, so a filtered map defers holder changes to the next full
-    // rebuild instead.
+    // Nothing stale enough to rebuild. In the normal view, fold in any per-system holder changes a
+    // colony resize marked, re-shaping only those systems and their neighbours over the standing
+    // territories; that batch opens a reading of its own, since none was opened for this frame.
+    // The static debug overlay has no draw lists to patch, so its staleness is drained instead -
+    // it refreshes on the next full rebuild (any settings or geometry change). Under a filter the
+    // incremental re-shape is bypassed too: it re-derives holders through the normal (non-filter)
+    // politics, which would overwrite the spotlit keys and corrupt the spotlight, so a filtered
+    // map defers holder changes to the next full rebuild instead.
     private void applyStandingMapUpdates() {
 
         if (territories != null && !territories.isFiltering()) {

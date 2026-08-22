@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * One rebuild's band source: everything a cell's band is settled from, sampled once, so asking
+ * One bake's band source: everything a cell's band is settled from, sampled once, so asking
  * for a cell's band is a call rather than a fresh set of reads.
  *
  * <p>What it holds is what must not vary across a pass. The planner is the mechanic the active
@@ -34,13 +34,11 @@ import java.util.Set;
  * band identical to the one the full rebuild would have.
  *
  * <p>The reading of the sector the counts are made off arrives rather than being opened here,
- * because how current it has to be is the caller's question and not this one's. A bake that runs in
- * the same frame as the rebuild before it counts off that rebuild's reading, which is the walk of
- * each system already made; a bake that runs on its own cadence - whenever a cluster name may have
- * moved, which is long after some rebuild began - opens a fresh one, since counting through the
- * older one would report a sector as it stood some flips ago. Both hand over a reading folded by
- * the grouping the fills were painted under, without which a band would plan against blocs no cell
- * was drawn for.
+ * because how current it has to be is the caller's question and not this one's: a bake in the same
+ * frame as the build before it counts off that build's walk of each system, while one on its own
+ * cadence opens a fresh reading rather than report a sector as it stood some flips ago. What the
+ * caller owes either way is a reading folded by the grouping the fills were painted under, without
+ * which a band would plan against blocs no cell was drawn for.
  *
  * <p>Inhabitation rather than this layer's holding, because that is the question a band is actually
  * about: a system splits whether or not the mechanic painting the map gives it to anybody, and a

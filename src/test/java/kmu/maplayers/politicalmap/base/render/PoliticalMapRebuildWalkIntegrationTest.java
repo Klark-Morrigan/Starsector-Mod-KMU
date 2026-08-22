@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.StarSystemAPI;
+import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.ColonyVisibility;
 
@@ -32,7 +32,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.lwjgl.util.vector.Vector2f;
 import org.mockito.MockedStatic;
 
 import java.util.ArrayList;
@@ -195,6 +194,24 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
+        void refreshReadsNoSectorOnAFrameWithNothingStaleToRebuild() {
+            // The frame this cache spends nearly all of its life on: the map is open, refresh runs,
+            // and no input has moved. Both staleness questions are settled before a reading of the
+            // sector is opened for exactly this reason - a reading opened first would put a walk of
+            // every system into every frame of an idle map, which is worse than the three walks the
+            // step set out to remove.
+            var sector = buildContestedSectorWithAnEmptyNeighbour();
+            var cache = new PoliticalMapCache();
+
+            cache.refresh(FactionsView.INSTANCE);
+            cache.refresh(FactionsView.INSTANCE);
+
+            for (var system : sector.getStarSystems()) {
+                verify(system, times(1)).getAllEntities();
+            }
+        }
+
+        @Test
         void refreshSamplesTheVisibilityRulesOnceForTheWholeRebuild() {
             // The other half of one reading: one sampling of the rules it is taken under. Three
             // samplings let a gate flipped mid-rebuild cut the cells under one rule and paint the
@@ -268,49 +285,38 @@ final class PoliticalMapRebuildWalkIntegrationTest {
 
     // Two star systems: one settled by two rival colonies, and one empty. The rivalry is what
     // gives the bake a band to lay, and the empty neighbour is what a later rebuild can settle.
-    //
-    // Both carry a hyperspace position, without which neither seeds a cell and the rebuild would
-    // draw nothing for the count to be taken over.
     private SectorAPI buildContestedSectorWithAnEmptyNeighbour() {
-
-        var hegemony = SectorPoliticsFixtures.buildFaction(HEGEMONY_ID);
-        var tritachyon = SectorPoliticsFixtures.buildFaction(TRITACHYON_ID);
-
-        return buildSectorPlacedInHyperspace(
-            List.of(hegemony, tritachyon),
-            listSystemMarkets(
-                ALPHA_ID,
-                SectorPoliticsFixtures.buildVisibleMarket(hegemony, HOLDING_COLONY_SIZE),
-                SectorPoliticsFixtures.buildVisibleMarket(tritachyon, RIVAL_COLONY_SIZE)),
-            listSystemMarkets(BETA_ID));
+        return buildContestedSectorStagedBy(SectorPoliticsFixtures::buildVisibleMarket);
     }
 
     // The same shape with neither colony discovered, so the shipped rule leaves the system
     // unsettled and the dev reveal admits both at once.
     private SectorAPI buildUndiscoveredSectorWithAnEmptyNeighbour() {
+        return buildContestedSectorStagedBy(SectorPoliticsFixtures::buildUndiscoveredOpenMarket);
+    }
+
+    // The sector both shapes above are, differing only in how their two colonies are staged - so
+    // the reveal case and the plain one cannot drift apart on anything else, which is what makes
+    // the rule the only thing between them.
+    //
+    // Answered for by the global lookup the cache reaches through, with every system given a site
+    // to seed a cell at: without one neither seeds a cell and the rebuild would draw nothing for
+    // the count to be taken over.
+    private SectorAPI buildContestedSectorStagedBy(ColonyStaging stageColony) {
 
         var hegemony = SectorPoliticsFixtures.buildFaction(HEGEMONY_ID);
         var tritachyon = SectorPoliticsFixtures.buildFaction(TRITACHYON_ID);
 
-        return buildSectorPlacedInHyperspace(
+        var sector = SectorPoliticsFixtures.buildSectorWithSystems(
             List.of(hegemony, tritachyon),
             listSystemMarkets(
                 ALPHA_ID,
-                SectorPoliticsFixtures.buildUndiscoveredOpenMarket(hegemony, HOLDING_COLONY_SIZE),
-                SectorPoliticsFixtures.buildUndiscoveredOpenMarket(tritachyon, RIVAL_COLONY_SIZE)),
+                stageColony.stageColony(hegemony, HOLDING_COLONY_SIZE),
+                stageColony.stageColony(tritachyon, RIVAL_COLONY_SIZE)),
             listSystemMarkets(BETA_ID));
-    }
-
-    // The staged sector, answered for by the global lookup the cache reaches through, with every
-    // system given a site to seed a cell at.
-    private SectorAPI buildSectorPlacedInHyperspace(
-            List<FactionAPI> factions,
-            SectorPoliticsFixtures.SystemMarkets... systems) {
-
-        var sector = SectorPoliticsFixtures.buildSectorWithSystems(factions, systems);
 
         for (var system : sector.getStarSystems()) {
-            placeSystemInHyperspace(system);
+            SectorPoliticsFixtures.placeSystemInHyperspace(system);
         }
         globalMock
             .when(Global::getSector)
@@ -323,7 +329,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // change a stale reading of the sector could not report.
     private static void settleTheEmptyNeighbour(SectorAPI sector) {
 
-        var beta = findSystemIn(sector, BETA_ID);
+        var beta = SectorPoliticsFixtures.findSystemIn(sector, BETA_ID);
         var colony = SectorPoliticsFixtures.buildVisibleMarket(
             SectorPoliticsFixtures.buildFaction(TRITACHYON_ID),
             HOLDING_COLONY_SIZE);
@@ -332,26 +338,12 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             .thenReturn(List.of(colony));
     }
 
-    private static StarSystemAPI findSystemIn(SectorAPI sector, String systemId) {
-
-        for (var system : sector.getStarSystems()) {
-
-            if (systemId.equals(system.getId())) {
-                return system;
-            }
-        }
-        throw new IllegalArgumentException("No system staged under the id " + systemId);
-    }
-
-    // A hyperspace position, distinct per system so no two share a site. Any position will do -
-    // nothing here moves - so the id's hash is spread across the two axes rather than a case being
-    // handed coordinates that look like they mean something.
-    private static void placeSystemInHyperspace(StarSystemAPI system) {
-
-        var idHash = system.getId().hashCode();
-
-        when(system.getLocation())
-            .thenReturn(new Vector2f(idHash, -idHash));
+    // How one of the sector's colonies is staged - a plain visible market, or one nobody has
+    // discovered. Named rather than taken as a bare lambda type so the two sector shapes read as
+    // one arrangement under two colony kinds.
+    @FunctionalInterface
+    private interface ColonyStaging {
+        MarketAPI stageColony(FactionAPI faction, int size);
     }
 
     // One style bundle for every category: nothing here turns on how a cell paints, only on what

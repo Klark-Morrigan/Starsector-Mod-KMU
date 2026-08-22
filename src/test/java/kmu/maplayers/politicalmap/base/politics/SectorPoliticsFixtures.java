@@ -681,6 +681,48 @@ public final class SectorPoliticsFixtures {
     }
 
     /**
+     * The system a sector lists under one id.
+     *
+     * <p>Beside {@link #buildOnlySystem}, which serves the single-system sectors: a walk over
+     * several systems has to name the one it is about, and reading it back off the sector is what
+     * lets a case state a change to that system without a second handle on the mock.
+     *
+     * @param sector   the sector to read
+     * @param systemId the id to find
+     * @return the system listed under that id
+     * @throws IllegalArgumentException when the sector lists no such system
+     */
+    public static StarSystemAPI findSystemIn(SectorAPI sector, String systemId) {
+
+        for (var system : sector.getStarSystems()) {
+
+            if (systemId.equals(system.getId())) {
+                return system;
+            }
+        }
+        throw new IllegalArgumentException("No system staged under the id " + systemId);
+    }
+
+    /**
+     * Gives a system a hyperspace position, without which a walk collecting drawn-system positions
+     * skips it before the drawn-set rule is ever asked about it - so a suite counting what that
+     * walk read would be blind to the very systems it staged.
+     *
+     * <p>Distinct per system so no two share a site, and taken off the id's hash rather than from
+     * an argument: nothing that wants this moves a system, so coordinates on the call would look
+     * like they meant something.
+     *
+     * @param system the system to place
+     */
+    public static void placeSystemInHyperspace(StarSystemAPI system) {
+
+        var idHash = system.getId().hashCode();
+
+        when(system.getLocation())
+            .thenReturn(new Vector2f(idHash, -idHash));
+    }
+
+    /**
      * Wires a sector whose systems are walkable but whose economy is absent - the shape mid-load,
      * before the economy stands up - so a read can be pinned on what it does without one. The
      * system is there deliberately: it makes the sector one a walk <em>could</em> enter, so a read

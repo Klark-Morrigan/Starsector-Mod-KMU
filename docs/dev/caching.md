@@ -88,11 +88,17 @@ its own, so nothing about the diff lives in the loop.
 
 The poll is a pass, and is read as one. Each of its passengers - the snapshot, the
 moving-set walk, and the write that records what a system's own inhabitants can see -
-asks every system who lives there, so the poll opens a single KMLib `SystemColoniesIndex`
-and a single hyperspace scan and hands both down. That is what keeps the cost at one
-selection per system per poll: a passenger given the sector instead would walk every
-entity in every system again, and there are three of them. The index is discarded with
-the poll, a kept one being a reading of the sector the *previous* poll saw.
+asks every system who lives there, so the poll opens one
+[`MapVisibilityPass`](../../src/main/java/kmu/maplayers/base/visibility/MapVisibilityPass.java)
+- a KMLib `SystemColoniesIndex`, a hyperspace scan, and the rules the three are read under - and
+hands it down. That is what keeps the cost at one selection per system per poll: a passenger
+given the sector instead would walk every entity in every system again, and there are three of
+them. The pass is discarded with the poll, a kept one being a reading of the sector the
+*previous* poll saw.
+
+The pass answers rather than merely carrying: `isDrawn(system)` is the drawn-set rule applied
+over its own reading, so the geometry sites, the motion tracker and the fingerprint scan share
+one statement of it instead of each re-deriving it off the same three values.
 
 ```mermaid
 sequenceDiagram
@@ -100,28 +106,27 @@ sequenceDiagram
     participant Snapshot
     participant Motion as Moving-set walk
     participant Register as Sighting register
-    participant Index as SystemColoniesIndex
+    participant Pass as MapVisibilityPass
     participant Sector as The live sector
 
-    Poll->>Index: open over the sector
-    Poll->>Sector: VisibleStars.scan (hyperspace, once)
+    Poll->>Pass: open over the sector (index + VisibleStars.scan + rules)
 
-    Poll->>Snapshot: scan(index, visibleStars, rules)
+    Poll->>Snapshot: scan(pass)
     loop each star system
-        Snapshot->>Index: readColoniesIn(system)
-        Index->>Sector: system.getAllEntities()
-        Index-->>Snapshot: colonies, and the memo keeps them
+        Snapshot->>Pass: isDrawn(system)
+        Pass->>Sector: system.getAllEntities()
+        Pass-->>Snapshot: drawn or not, and the memo keeps the colonies
     end
 
-    Poll->>Motion: updateMovingSystems(index, visibleStars, rules)
+    Poll->>Motion: updateMovingSystems(pass)
     loop each star system
-        Motion->>Index: readColoniesIn(system)
-        Index-->>Motion: the memo answers, and the system is not walked
+        Motion->>Pass: isDrawn(system)
+        Pass-->>Motion: the memo answers, and the system is not walked
     end
 
     loop each star system
-        Poll->>Index: readColoniesIn(system)
-        Index-->>Poll: the memo answers, and the system is not walked
+        Poll->>Pass: colonies().readColoniesIn(system)
+        Pass-->>Poll: the memo answers, and the system is not walked
         Poll->>Register: recordSightingsByInhabitants(sector, system, colonies)
     end
 
@@ -129,19 +134,21 @@ sequenceDiagram
 ```
 
 Two shapes in that picture are the arrangement rather than incidental. The register is
-handed a place and its colonies instead of the index, because `SystemColoniesIndex` reads
+handed a place and its colonies instead of the pass, because `SystemColoniesIndex` reads
 the colonies package and a register living in it could not take one without the layering
 gate refusing the cycle - so the sector loop is the poll's, which is where the cadence was
 decided anyway. And the membership rule takes an inhabitation *answer* rather than a sector
 to read one from, which is what keeps a second walk from hiding inside the drawn-set test
 the moving-set walk applies per system.
 
-What the index does not cover is the revealed-ruin read, which walks a system's *planets*
-rather than its entities and is still made once by the snapshot and once by the drawn-set
-predicate. It is unshared because it does not run through the colony set at all - it has
-its own walk and its own survey-based reveal - and folding it in means giving a dead world
-a colony kind, which is a change to what the map counts as habitation rather than a caching
-one.
+What the colony index does not cover is the revealed-ruin read, which walks a system's
+*planets* rather than its entities: it does not run through the colony set at all, having its
+own walk and its own survey-based reveal, and folding it in means giving a dead world a colony
+kind - a change to what the map counts as habitation rather than a caching one. So the pass
+carries a second memo of its own for it, beside the index, which is what keeps that walk to one
+per system too: the fingerprint scan needs the flag on its own to salt a drawn system's
+contribution, and both that scan and the motion walk reach it again through the inhabitation
+read.
 
 The overlap is intentional. Both feed the same stale-system set, so a change a
 listener already marked and one the watcher's diff re-discovers collapse into a
@@ -212,6 +219,33 @@ rather than per frame, leaves the cached revisions un-advanced so the next frame
 retries, and installs an empty placeholder so the renderer never dereferences a
 null draw list. The last good draw lists stay on screen in the meantime.
 
+**A rebuild is a pass too**, on the same terms the poll is and for the heavier reason: a poll
+runs every four to five campaign seconds, while a rebuild runs whenever the drawn set moves, a
+toggle flips, a view switches or a colony changes hands. Its three stages each ask every system
+who lives there - the cell cut deciding what is drawn, the fills resolving who holds each, and
+the band bake counting how each splits - so the rebuild opens **one** `SystemColoniesIndex` and
+builds each stage's pass over it: a `MapVisibilityPass` for the geometry, a `HolderPass` under
+the view's grouping for the fills and the bands. Two pass types over one walk; the types stay
+apart because the render side has no use for the star scan and the membership side none for the
+grouping, which was never a claim about the walk beneath them.
+
+The rules are sampled once for the whole rebuild, into the same `CellCutInputs` the staleness
+test is taken on. That is not only a saving: three samplings let a gate flipped mid-rebuild cut
+the cells under one rule, paint the fills under a second and count the bands under a third, with
+nothing on screen reporting which half was which.
+
+Both staleness questions are settled **before** the index is opened, and that ordering is the
+arrangement rather than an accident. `refresh` runs every frame the map is open and nearly every
+frame rebuilds nothing, so a reading opened first would put a walk of every system into every
+idle frame - worse than the three walks per rebuild it was opened to collapse. The incremental
+re-shape below therefore opens a reading of its own, there being none for that frame to share.
+
+Whose reading the band bake counts off is its **caller's** choice, for the same reason. A bake in
+the same frame as the build before it takes that build's reading, the sector being unable to move
+between the two; a bake on its own cadence - a name may have moved, long after some rebuild began
+- opens a fresh one rather than report a sector as it stood some flips ago. The shared condition
+is the grouping: a pass folded by another would plan bands against blocs the fills never drew.
+
 ### Cell geometry
 
 [`CellGeometryCache`](../../src/main/java/kmu/maplayers/base/geometry/CellGeometryCache.java)
@@ -252,18 +286,18 @@ because every size in it is a world quantity: the ring it runs along, the width 
 stroked at, and how far each run reaches all resolve at rebuild, so a frame draws a
 triangle list rather than laying one out.
 
-The bands are baked in a pass of their own after the rest of a rebuild, because a band keeps
+The bands are baked in a stage of their own after the rest of a rebuild, because a band keeps
 clear of the cluster names by default and the names are placed only once every cell has been
 shaped - each is fitted inside the border its cluster's cells trace. So the cells' shapes go in
 first and the bands follow, over the shapes the territories already hold. A player who would
 rather keep the whole band can switch that clearance off, which leaves the ordering doing
-nothing rather than making it wrong: the pass still runs last, and simply carves nothing. Recording a shape drops
-whatever band that cell was carrying, which is what keeps a band from outliving the ring it
-was laid in; the band pass then fills it back in.
+nothing rather than making it wrong: the stage still runs last, and simply carves nothing.
+Recording a shape drops whatever band that cell was carrying, which is what keeps a band from
+outliving the ring it was laid in; the band stage then fills it back in.
 
 The ring a band is laid along is kept beside the shape it was walked inside, in a
 [`CellRingPathCache`](../../src/main/java/kmu/maplayers/politicalmap/base/render/ribbon/CellRingPathCache.java)
-the territories hold and the band pass asks before it walks anything. A bake runs whenever a
+the territories hold and the bake asks before it walks anything. A bake runs whenever a
 cluster name may have moved, while a cell's ring changes only when the cell is cut again, so
 without it a cell re-baked because a re-fitted name landed on it would re-walk the outline it just
 discarded. The cells the flip re-shaped walk again either way - their paths went with their shapes
@@ -279,7 +313,7 @@ band is the sector's ordinary state and also every one of the band's refusals, a
 same picture without it. Held only while the toggle is on: the bake hands over nothing per cell
 while it is off, and a settings change rebuilds every cell, so switching it off is what clears
 what an earlier pass left behind. That trace walks its own ring rather than reading the cache
-above, deliberately: the cells it exists to explain are the ones the band pass has no path for.
+above, deliberately: the cells it exists to explain are the ones the bake has no path for.
 
 A frame measures nothing about a band at all: every size in one is a world size, so how
 large it lands on screen is the map's own scaling of the triangle list and no question
@@ -384,9 +418,10 @@ shared cache that would keep handing out the disposed buffer.
 
 Per frame, in increasing cost:
 
-1. **Nothing changed** - a few int compares against the cached revisions, and the
-   standing draw lists are handed to the renderer. This is the overwhelmingly
-   common path.
+1. **Nothing changed** - a few int compares against the cached revisions, no reading of the
+   sector opened at all, and the standing draw lists are handed to the renderer. This is the
+   overwhelmingly common path, which is why both staleness questions are settled before any
+   reading is opened.
 2. **Systems marked stale** - the stale set is drained and only those systems and
    their neighbours are re-derived and re-shaped, with the two affected factions'
    territories rebuilt. Reading the sector back is
@@ -422,6 +457,10 @@ Per frame, in increasing cost:
    switch off the whole search.
 4. **Geometry changed** (the drawn set, a seed input, a reveal override) - the
    partition is reconciled, which forces a full territories rebuild after it.
+
+Paths 2 to 4 each open exactly one reading of the sector and hand it to every stage of that
+path - see [the overlay cache](#the-overlay-cache) for what the rebuild's covers and why the
+band bake takes its caller's rather than opening one.
 
 ## Persistence: none of it is saved
 
