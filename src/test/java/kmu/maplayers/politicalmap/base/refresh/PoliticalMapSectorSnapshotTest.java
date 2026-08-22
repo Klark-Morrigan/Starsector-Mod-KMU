@@ -11,6 +11,9 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.starsector.map.VisibleStars;
+import kmlib.starsector.systems.SystemColoniesIndex;
+
 import kmu.maplayers.DecivilisedPlanetFixtures;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
@@ -184,11 +187,13 @@ class PoliticalMapSectorSnapshotTest {
         }
     }
 
-    // Binds the two arguments every case here shares - the stability-only rule and no
-    // dev reveals - so each test reads as the sector it scans and nothing else.
+    // Binds the two rules every case here shares - the stability-only weighting and no dev
+    // reveals - and opens the pass's reading of the sector the way the poll does, so each test
+    // reads as the sector it scans and nothing else.
     private static PoliticalMapSectorSnapshot scanUnderStabilityWeighting(SectorAPI sector) {
         return PoliticalMapSectorSnapshot.scan(
-            sector,
+            new SystemColoniesIndex(sector),
+            VisibleStars.scan(sector),
             STABILITY_WEIGHTED,
             MapVisibilityRules.BASE);
     }

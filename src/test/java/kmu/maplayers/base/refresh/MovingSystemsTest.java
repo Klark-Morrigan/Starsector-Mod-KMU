@@ -7,6 +7,9 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.map.VisibleStars;
+import kmlib.starsector.systems.SystemColoniesIndex;
+
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.junit.jupiter.api.Nested;
@@ -38,7 +41,7 @@ class MovingSystemsTest {
     // the map - the shortest route to a tracked system without also staging an economy that
     // owns it.
     private static final MapVisibilityRules FORCED_ONTO_MAP =
-            new MapVisibilityRules(BASE_FOG, true);
+        new MapVisibilityRules(BASE_FOG, true);
 
     @Nested
     class GetInstance {
@@ -48,7 +51,8 @@ class MovingSystemsTest {
             // The writer (the staleness poll) and the reader (the geometry cache) have no
             // owner between them, so they only agree about the moving set if this is one
             // instance.
-            assertThat(MovingSystems.getInstance()).isSameAs(MovingSystems.getInstance());
+            assertThat(MovingSystems.getInstance())
+                .isSameAs(MovingSystems.getInstance());
         }
     }
 
@@ -56,34 +60,47 @@ class MovingSystemsTest {
     class UpdateMovingSystems {
 
         @Test
-        void reportsNoChangeAndObservesNothingForANullSector() {
+        void reportsNoChangeAndObservesNothingWithoutASectorToWalk() {
+            // A poll that found no sector opens an index over none, so the walk has nothing to
+            // reach - and one handed no index at all has not even that.
             var movingSystems = new MovingSystems();
 
-            assertThat(movingSystems.updateMovingSystems(null, FORCED_ONTO_MAP)).isFalse();
-            assertThat(movingSystems.getMovingSystemIds()).isEmpty();
+            assertThat(observePositions(movingSystems, null, FORCED_ONTO_MAP))
+                .isFalse();
+
+            assertThat(movingSystems.updateMovingSystems(
+                    null, VisibleStars.scan(null), FORCED_ONTO_MAP))
+                .isFalse();
+
+            assertThat(movingSystems.getMovingSystemIds())
+                .isEmpty();
         }
 
         @Test
         void reportsNoChangeOnTheFirstPollThatOnlySeedsABaseline() {
+
             var sectorFake = new MovableSystemSectorFake();
             var movingSystems = new MovingSystems();
 
-            assertThat(movingSystems.updateMovingSystems(
-                    sectorFake.getSector(), FORCED_ONTO_MAP)).isFalse();
-            assertThat(movingSystems.getMovingSystemIds()).isEmpty();
+            assertThat(observePositions(movingSystems, sectorFake, FORCED_ONTO_MAP))
+                .isFalse();
+            assertThat(movingSystems.getMovingSystemIds())
+                .isEmpty();
         }
 
         @Test
         void namesADrawnSystemOnceItMovesOffItsBaseline() {
+
             var sectorFake = new MovableSystemSectorFake();
             var movingSystems = new MovingSystems();
-            movingSystems.updateMovingSystems(sectorFake.getSector(), FORCED_ONTO_MAP);
 
+            observePositions(movingSystems, sectorFake, FORCED_ONTO_MAP);
             sectorFake.moveSystemClearOfItsLastPosition();
 
-            assertThat(movingSystems.updateMovingSystems(
-                    sectorFake.getSector(), FORCED_ONTO_MAP)).isTrue();
-            assertThat(movingSystems.getMovingSystemIds()).containsExactly("a");
+            assertThat(observePositions(movingSystems, sectorFake, FORCED_ONTO_MAP))
+                .isTrue();
+            assertThat(movingSystems.getMovingSystemIds())
+                .containsExactly("a");
         }
 
         @Test
@@ -92,15 +109,17 @@ class MovingSystemsTest {
             // transition and must not churn the map.
             var sectorFake = new MovableSystemSectorFake();
             var movingSystems = new MovingSystems();
-            movingSystems.updateMovingSystems(sectorFake.getSector(), FORCED_ONTO_MAP);
-            sectorFake.moveSystemClearOfItsLastPosition();
-            movingSystems.updateMovingSystems(sectorFake.getSector(), FORCED_ONTO_MAP);
 
+            observePositions(movingSystems, sectorFake, FORCED_ONTO_MAP);
             sectorFake.moveSystemClearOfItsLastPosition();
 
-            assertThat(movingSystems.updateMovingSystems(
-                    sectorFake.getSector(), FORCED_ONTO_MAP)).isFalse();
-            assertThat(movingSystems.getMovingSystemIds()).containsExactly("a");
+            observePositions(movingSystems, sectorFake, FORCED_ONTO_MAP);
+            sectorFake.moveSystemClearOfItsLastPosition();
+
+            assertThat(observePositions(movingSystems, sectorFake, FORCED_ONTO_MAP))
+                .isFalse();
+            assertThat(movingSystems.getMovingSystemIds())
+                .containsExactly("a");
         }
 
         @Test
@@ -109,13 +128,15 @@ class MovingSystemsTest {
             // wherever it halted, so the geometry has to rebuild around it.
             var sectorFake = new MovableSystemSectorFake();
             var movingSystems = new MovingSystems();
-            movingSystems.updateMovingSystems(sectorFake.getSector(), FORCED_ONTO_MAP);
-            sectorFake.moveSystemClearOfItsLastPosition();
-            movingSystems.updateMovingSystems(sectorFake.getSector(), FORCED_ONTO_MAP);
 
-            assertThat(movingSystems.updateMovingSystems(
-                    sectorFake.getSector(), FORCED_ONTO_MAP)).isTrue();
-            assertThat(movingSystems.getMovingSystemIds()).isEmpty();
+            observePositions(movingSystems, sectorFake, FORCED_ONTO_MAP);
+            sectorFake.moveSystemClearOfItsLastPosition();
+            observePositions(movingSystems, sectorFake, FORCED_ONTO_MAP);
+
+            assertThat(observePositions(movingSystems, sectorFake, FORCED_ONTO_MAP))
+                .isTrue();
+            assertThat(movingSystems.getMovingSystemIds())
+                .isEmpty();
         }
 
         @Test
@@ -125,14 +146,14 @@ class MovingSystemsTest {
             // a whole-map geometry rebuild - for a system the overlay never paints.
             var sectorFake = new MovableSystemSectorFake();
             var movingSystems = new MovingSystems();
-            movingSystems.updateMovingSystems(
-                    sectorFake.getSector(), MapVisibilityRules.BASE);
 
+            observePositions(movingSystems, sectorFake, MapVisibilityRules.BASE);
             sectorFake.moveSystemClearOfItsLastPosition();
 
-            assertThat(movingSystems.updateMovingSystems(
-                    sectorFake.getSector(), MapVisibilityRules.BASE)).isFalse();
-            assertThat(movingSystems.getMovingSystemIds()).isEmpty();
+            assertThat(observePositions(movingSystems, sectorFake, MapVisibilityRules.BASE))
+                .isFalse();
+            assertThat(movingSystems.getMovingSystemIds())
+                .isEmpty();
         }
     }
 
@@ -146,17 +167,37 @@ class MovingSystemsTest {
             // read as having teleported.
             var sectorFake = new MovableSystemSectorFake();
             var movingSystems = new MovingSystems();
-            movingSystems.updateMovingSystems(sectorFake.getSector(), FORCED_ONTO_MAP);
-            sectorFake.moveSystemClearOfItsLastPosition();
-            movingSystems.updateMovingSystems(sectorFake.getSector(), FORCED_ONTO_MAP);
 
+            observePositions(movingSystems, sectorFake, FORCED_ONTO_MAP);
+            sectorFake.moveSystemClearOfItsLastPosition();
+
+            observePositions(movingSystems, sectorFake, FORCED_ONTO_MAP);
             movingSystems.reset();
 
-            assertThat(movingSystems.getMovingSystemIds()).isEmpty();
-            assertThat(movingSystems.updateMovingSystems(
-                    sectorFake.getSector(), FORCED_ONTO_MAP)).isFalse();
-            assertThat(movingSystems.getMovingSystemIds()).isEmpty();
+            assertThat(movingSystems.getMovingSystemIds())
+                .isEmpty();
+            assertThat(observePositions(movingSystems, sectorFake, FORCED_ONTO_MAP))
+                .isFalse();
+            assertThat(movingSystems.getMovingSystemIds())
+                .isEmpty();
         }
+    }
+
+    // One poll's observation, opening the reading of the sector a poll opens: a colony index and
+    // a hyperspace scan built fresh and discarded with the call. Built per call rather than once
+    // per test because that is what the walk is handed in production - a kept index would answer
+    // the second poll off the positions the first one saw.
+    private static boolean observePositions(
+            MovingSystems movingSystems,
+            MovableSystemSectorFake sectorFake,
+            MapVisibilityRules visibilityRules) {
+
+        var sector = sectorFake == null ? null : sectorFake.getSector();
+
+        return movingSystems.updateMovingSystems(
+            new SystemColoniesIndex(sector),
+            VisibleStars.scan(sector),
+            visibilityRules);
     }
 
     // A one-system sector whose system reports a position the test rewrites between polls,
@@ -168,6 +209,7 @@ class MovingSystemsTest {
     // Hyperspace carries no star anchor and the system no jump point, so nothing here is
     // drawn on the normal gates; each test decides admission through the rules it passes.
     private static final class MovableSystemSectorFake {
+
         // Comfortably past the tracker's one-unit noise floor, so each move is unambiguous
         // motion rather than something that could read as float jitter.
         private static final float CLEAR_OF_THE_NOISE_FLOOR = 500f;
@@ -176,17 +218,32 @@ class MovingSystemsTest {
         private final SectorAPI sectorMock = mock(SectorAPI.class);
 
         private MovableSystemSectorFake() {
+
             var systemMock = mock(StarSystemAPI.class);
-            when(systemMock.getId()).thenReturn("a");
-            when(systemMock.getJumpPoints()).thenReturn(List.of());
-            when(systemMock.getLocation()).thenReturn(livePosition);
+
+            when(systemMock.getId())
+                .thenReturn("a");
+            when(systemMock.getJumpPoints())
+                .thenReturn(List.of());
+            when(systemMock.getLocation())
+                .thenReturn(livePosition);
+
             var economyMock = mock(EconomyAPI.class);
-            when(economyMock.getMarkets(systemMock)).thenReturn(List.<MarketAPI>of());
+
+            when(economyMock.getMarkets(systemMock))
+                .thenReturn(List.<MarketAPI>of());
+
             var hyperspaceMock = mock(LocationAPI.class);
-            when(hyperspaceMock.getEntities(JumpPointAPI.class)).thenReturn(List.of());
-            when(sectorMock.getStarSystems()).thenReturn(List.of(systemMock));
-            when(sectorMock.getEconomy()).thenReturn(economyMock);
-            when(sectorMock.getHyperspace()).thenReturn(hyperspaceMock);
+
+            when(hyperspaceMock.getEntities(JumpPointAPI.class))
+                .thenReturn(List.of());
+
+            when(sectorMock.getStarSystems())
+                .thenReturn(List.of(systemMock));
+            when(sectorMock.getEconomy())
+                .thenReturn(economyMock);
+            when(sectorMock.getHyperspace())
+                .thenReturn(hyperspaceMock);
         }
 
         private SectorAPI getSector() {

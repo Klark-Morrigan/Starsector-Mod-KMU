@@ -153,7 +153,10 @@ about what the overlay means.
 - **`base/visibility`** - which star systems a layer draws at all: `MapVisibility` admits a
   system on either of two paths (reachable and drawn by the vanilla map, or inhabited) and hashes the
   admitted set into the fingerprint that says it moved; `DrawnSystemPositions` exposes that rule as
-  one predicate every walk shares, and each drawn system's live hyperspace position. Inhabited means
+  one predicate every walk shares, and each drawn system's live hyperspace position. The rule takes
+  the answers rather than the sector to read them from - the predicate is built over a pass's own
+  colony index and hyperspace scan - so a pass running several walks selects each system once
+  between them. Inhabited means
   somebody lives there - the colony set's habitation projection - so a system whose only market is an
   abandoned station is admitted by access alone, and a star-hidden one holding a derelict is not drawn
   at all. `MapVisibilityRules` pairs the colony rule that judges that with the force override a

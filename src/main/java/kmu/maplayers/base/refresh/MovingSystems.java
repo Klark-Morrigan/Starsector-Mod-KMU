@@ -1,7 +1,7 @@
 package kmu.maplayers.base.refresh;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
+import kmlib.starsector.map.VisibleStars;
+import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.SystemMotionTracker;
 
 import kmu.maplayers.base.visibility.DrawnSystemPositions;
@@ -77,18 +77,34 @@ public final class MovingSystems {
      * Observes every drawn system's live position under the pass's visibility rules,
      * republishes the moving set, and reports whether that set changed.
      *
-     * @param sector          the sector to walk; null observes nothing and reports no change
+     * <p>Reads the poll's own colony index and hyperspace scan rather than opening either.
+     * The drawn-set rule asks each system whether anybody lives there, and the poll has
+     * already asked that of every system for its snapshot - so a walk given the sector here
+     * would select every system's colonies a second time in the same tick.
+     *
+     * @param colonies        the poll's colony index, which the drawn-set rule reads
+     *                        habitation through; also the sector walked, so a null one - or
+     *                        an index opened over none - observes nothing and reports no
+     *                        change
+     * @param visibleStars    the poll's hyperspace scan of which stars the map draws
      * @param visibilityRules the pass's visibility rules, matching the set the geometry cache
      *                  draws, so both agree on which systems are on the map
      * @return true when the moving set gained or lost a member this poll, so the caller
      *         requests a geometry refresh; false while it is steady
      */
-    public boolean updateMovingSystems(SectorAPI sector, MapVisibilityRules visibilityRules) {
-        if (sector == null) {
+    public boolean updateMovingSystems(
+            SystemColoniesIndex colonies,
+            VisibleStars visibleStars,
+            MapVisibilityRules visibilityRules) {
+
+        if (colonies == null) {
             return false;
         }
         return systemMotionTracker.updateMovingSystems(
-            sector,
-            DrawnSystemPositions.buildDrawnSystemPredicate(sector, visibilityRules));
+            colonies.getSector(),
+            DrawnSystemPositions.buildDrawnSystemPredicate(
+                colonies,
+                visibleStars,
+                visibilityRules));
     }
 }

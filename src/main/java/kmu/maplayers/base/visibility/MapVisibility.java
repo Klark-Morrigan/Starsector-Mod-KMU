@@ -1,10 +1,8 @@
 package kmu.maplayers.base.visibility;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.math.hashing.Avalanche;
-import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
@@ -55,39 +53,15 @@ public final class MapVisibility {
     }
 
     /**
-     * Decides map membership by reading the system's inhabitation itself, under the
-     * pass's visibility rules: the inhabitation read follows their colony half, and the
-     * force override then admits a system that half would leave off.
+     * Decides map membership from an inhabitation flag the caller already has.
      *
-     * @param sector          the sector the system belongs to; supplies the economy read
-     * @param system          the system to test
-     * @param visibleStars    the index of systems whose star the map draws, scanned once
-     *                     by the caller
-     * @param visibilityRules the pass's visibility rules, resolved once by the caller
-     * @return true when the system should seed a map cell
-     */
-    public static boolean shouldAppearOnMap(
-            SectorAPI sector,
-            StarSystemAPI system,
-            VisibleStars visibleStars,
-            MapVisibilityRules visibilityRules) {
-
-        return shouldAppearOnMap(
-            system,
-            visibleStars,
-            isInhabited(sector, system, visibilityRules),
-            visibilityRules);
-    }
-
-    /**
-     * Decides map membership from an inhabitation flag the caller already has,
-     * rather than re-reading the economy to recompute it.
-     *
-     * <p>The single-walk fingerprint scan reads each system's markets once - to size
-     * dominance and to know if it is inhabited - so it passes that flag straight in
-     * here instead of paying for a second economy read through {@link #isInhabited}.
-     * Only the force override is read off the rules here: the colony half is already
-     * folded into the flag by whoever computed it.
+     * <p>The only form, and the walk it is missing is the point. Every caller here is a pass
+     * that has already read each system once - the fingerprint scan sizes dominance off that
+     * read and holds the ruin flag anyway, the drawn-set predicate answers habitation off the
+     * pass's shared colony index - so a form that took a sector and read the economy again
+     * would be a second walk of every system hidden inside a membership test. Only the force
+     * override is read off the rules here: the colony half is already folded into the flag by
+     * whoever computed it.
      *
      * @param system          the system to test
      * @param visibleStars    the index of systems whose star the map draws
@@ -105,33 +79,6 @@ public final class MapVisibility {
         return visibilityRules.isForcedOntoMap()
             || hasVisibleMapAccess(system, visibleStars)
             || isInhabited;
-    }
-
-    /**
-     * Whether the system counts as inhabited, walking it for both facts - the form for a caller
-     * with a sector and a system and nothing else read yet.
-     *
-     * <p>Two walks: the colony selection, and every planet in the system for a ruin. A caller
-     * that has already made either - a pass that read the system once for everything it asks of
-     * it - states the composition through the form below instead of paying for them again.
-     *
-     * @param sector          the sector the system belongs to; null yields false
-     * @param system          the system to test; null yields false
-     * @param visibilityRules the pass's visibility rules; only the colony half is read
-     *                        here, since forcing a system onto the map does not make it
-     *                        inhabited
-     * @return true when the system holds a colony somebody lives on or a known dead colony
-     */
-    public static boolean isInhabited(
-            SectorAPI sector,
-            StarSystemAPI system,
-            MapVisibilityRules visibilityRules) {
-
-        return isInhabited(
-            SystemColonies
-                .readColoniesIn(sector, system)
-                .hasInhabitingColony(visibilityRules.colonyVisibility()),
-            DecivilisedMarkets.hasRevealedDecivilisedPlanet(system));
     }
 
     /**

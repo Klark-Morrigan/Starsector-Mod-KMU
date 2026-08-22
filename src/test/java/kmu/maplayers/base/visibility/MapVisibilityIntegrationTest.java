@@ -16,6 +16,7 @@ import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
+import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
 
@@ -35,9 +36,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Integration coverage for the on-map rule: {@link MapVisibility}
- * composing the real {@link StarSystems}, {@link Colonies}, {@link VisibleStars},
- * and {@link DecivilisedMarkets}. A reachable system appears; an unreachable one
+ * Integration coverage for the on-map rule: {@link MapVisibility} over the real
+ * {@link StarSystems}, {@link Colonies}, {@link VisibleStars}, and
+ * {@link DecivilisedMarkets}, assembled as {@link DrawnSystemPositions} assembles them - the
+ * rule takes the answers, so the predicate that reads them is where the whole of it stands.
+ * A reachable system appears; an unreachable one
  * appears once inhabited - a colony somebody lives on that the player knows of,
  * registered with the economy or not, or a revealed decivilised planet - and otherwise
  * stays off; and the fingerprint shifts when a system joins the on-map set. Exercised
@@ -286,7 +289,7 @@ class MapVisibilityIntegrationTest {
             // inhabited and earns a cell.
             var system = buildUnreachableSystem("a");
 
-            assertThat(MapVisibility.isInhabited(
+            assertThat(isInhabitedUnder(
                     buildSectorWith(system, buildUndiscoveredColony()),
                     system,
                     INCLUDING_UNDISCOVERED_MARKETS))
@@ -354,29 +357,46 @@ class MapVisibilityIntegrationTest {
         }
     }
 
-    // The whole rule over one system with no reveal applied: scans the sector's visible
-    // stars, then asks the entry point that reads inhabitation itself. Bound here once so
-    // the scenarios below differ only in the fixture they stage, not in the scan and the
-    // no-reveal value each would otherwise repeat.
+    // The whole rule over one system with no reveal applied, reached through the drawn-set
+    // predicate. That is where the rule's two walks are now composed - the membership test
+    // itself takes the answers rather than the sector - so a case asking the rule for real has
+    // to ask it through the predicate that assembles them. Bound here once so the scenarios
+    // below differ only in the fixture they stage.
     private static boolean shouldAppearOnMapUnderNoReveal(
             SectorAPI sector,
             StarSystemAPI system) {
 
-        return MapVisibility.shouldAppearOnMap(
-            sector,
-            system,
-            VisibleStars.scan(sector),
-            MapVisibilityRules.BASE);
+        return DrawnSystemPositions
+            .buildDrawnSystemPredicate(
+                new SystemColoniesIndex(sector),
+                VisibleStars.scan(sector),
+                MapVisibilityRules.BASE)
+            .test(system);
     }
 
-    // The inhabitation read with no reveal applied, so the normal known-to-player gate
-    // stands. Bound here for the same reason as the rule helper above: the no-reveal value is
-    // the constant across these scenarios, and only the fixture varies.
+    // The inhabitation read with no reveal applied, so the normal known-to-player gate stands.
     private static boolean isInhabitedUnderNoReveal(
             SectorAPI sector,
             StarSystemAPI system) {
 
-        return MapVisibility.isInhabited(sector, system, MapVisibilityRules.BASE);
+        return isInhabitedUnder(sector, system, MapVisibilityRules.BASE);
+    }
+
+    // The inhabitation read over a sector, composed the way every pass composes it: the
+    // system's colony set through the pass's index, and its own planets for a ruin. Stated
+    // here rather than reached for, the rule taking the two answers rather than the walks that
+    // produce them - which is what keeps a second walk of every system out of a membership
+    // test.
+    private static boolean isInhabitedUnder(
+            SectorAPI sector,
+            StarSystemAPI system,
+            MapVisibilityRules visibilityRules) {
+
+        return MapVisibility.isInhabited(
+            new SystemColoniesIndex(sector)
+                .readColoniesIn(system)
+                .hasInhabitingColony(visibilityRules.colonyVisibility()),
+            DecivilisedMarkets.hasRevealedDecivilisedPlanet(system));
     }
 
     // Wires a single-system sector whose economy returns the given markets for

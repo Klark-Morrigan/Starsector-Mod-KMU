@@ -1,7 +1,5 @@
 package kmu.maplayers.politicalmap.base.refresh;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.SystemColoniesIndex;
@@ -33,9 +31,11 @@ import java.util.Map;
  * feed the same targeted stale set the event listeners do, so a change a listener
  * already marked and the watcher's own diff dedupe to one reshape.
  *
- * <p>Both come from a single walk. Each system's colonies are selected once, and that
- * one set answers both outputs: whether anybody lives there, which decides membership,
- * and the footprints the dominance rule weighs. Inhabitation is asked of the set rather
+ * <p>Both come from a single walk, and that walk is the poll's rather than this scan's own.
+ * Each system's colonies are selected once - through the index the caller opened, so the same
+ * selection answers the poll's other passengers - and that one set answers both outputs here:
+ * whether anybody lives there, which decides membership, and the footprints the dominance rule
+ * weighs. Inhabitation is asked of the set rather
  * than read off those footprints, since a footprint is weighed only for a colony the
  * economy lists - a system settled by an unregistered one alone lives, and would go
  * missing from the fingerprint that notices it appear. The concerns stay separated: the
@@ -47,15 +47,17 @@ public record PoliticalMapSectorSnapshot(
     Map<String, String> ownerBySystemId) {
 
     /**
-     * Walks the sector once under visibility rules the caller has already read,
-     * reading the dominance-weighting rules itself so the whole walk resolves every
-     * system under one rule even if the player applies a settings change mid-scan. Lets
-     * a caller that shares one toggle read across several walks (the staleness poll,
-     * which drives both this scan and the motion walk from a single read) pass the
-     * toggles in while leaving weighting - which only this scan needs - encapsulated
-     * here.
+     * Walks the sector once over the poll's own reading of it, reading the
+     * dominance-weighting rules itself so the whole walk resolves every system under one rule
+     * even if the player applies a settings change mid-scan. Lets a caller that shares one
+     * toggle read across several walks (the staleness poll, which drives both this scan and
+     * the motion walk from a single read) pass the toggles in while leaving weighting - which
+     * only this scan needs - encapsulated here.
      *
-     * @param sector          the sector to scan; null yields an empty snapshot
+     * @param colonies        the poll's colony index, which every system is read through;
+     *                        null - or an index opened over no sector - yields an empty
+     *                        snapshot
+     * @param visibleStars    the poll's hyperspace scan of which stars the map draws
      * @param visibilityRules the rules in force for this pass - what may be shown of a
      *                        colony, which the dominance fold and the inhabitation read
      *                        both take, and whether a system is forced onto the drawn set
@@ -64,10 +66,12 @@ public record PoliticalMapSectorSnapshot(
      *         absent from the holder map
      */
     public static PoliticalMapSectorSnapshot scan(
-            SectorAPI sector,
+            SystemColoniesIndex colonies,
+            VisibleStars visibleStars,
             MapVisibilityRules visibilityRules) {
         return scan(
-            sector,
+            colonies,
+            visibleStars,
             DominanceRules.readFromLunaSettings(),
             visibilityRules);
     }
@@ -77,7 +81,15 @@ public record PoliticalMapSectorSnapshot(
      * for a caller that resolves both itself rather than letting this class read the
      * live settings.
      *
-     * @param sector          the sector to scan; null yields an empty snapshot
+     * <p>Given the poll's index and hyperspace scan rather than the sector behind them, so
+     * that a system this walk selects is a system the poll's other walks are handed rather
+     * than select again. A scan holding a sector could open a second reading of every system
+     * in the same tick, which is the arrangement this signature makes unstateable.
+     *
+     * @param colonies        the poll's colony index, which every system is read through;
+     *                        null - or an index opened over no sector - yields an empty
+     *                        snapshot
+     * @param visibleStars    the poll's hyperspace scan of which stars the map draws
      * @param rules           the dominance-weighting rules for this pass - whether
      *                            stability scales each rating and whether an attached station
      *                            lifts it - before dominance is compared
@@ -89,26 +101,18 @@ public record PoliticalMapSectorSnapshot(
      *         shell) is absent from the holder map
      */
     public static PoliticalMapSectorSnapshot scan(
-            SectorAPI sector,
+            SystemColoniesIndex colonies,
+            VisibleStars visibleStars,
             DominanceRules rules,
             MapVisibilityRules visibilityRules) {
+
+        var sector = colonies == null ? null : colonies.getSector();
 
         if (sector == null) {
             return new PoliticalMapSectorSnapshot(0, Map.of());
         }
-
-        // Scanned once for the whole walk so the per-system access check stays an
-        // O(1) lookup rather than rescanning hyperspace each time.
-        var visibleStars = VisibleStars.scan(sector);
-
         var visibility = 0;
         var ownerBySystemId = new LinkedHashMap<String, String>();
-
-        // The scan's own colony walk, opened here and discarded with the scan: a snapshot has to
-        // read the sector as it stands at this moment, and an index outliving one would answer the
-        // next scan off the sector this one saw - which is precisely the change a scan exists to
-        // notice.
-        var colonies = new SystemColoniesIndex(sector);
 
         for (var system : sector.getStarSystems()) {
 

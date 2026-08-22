@@ -538,10 +538,20 @@ public final class SectorPoliticsFixtures {
         SectorColonySightings.recordSightingsIn(sector, system);
     }
 
-    // Sector memory backed by a real map, so what the recorder writes is what a later read finds.
-    // Idempotent: a sector visited twice keeps the register the first visit opened, which is the
-    // only way a case can pose a colony met in one system and then met again in another.
-    private static void openSectorMemory(SectorAPI sector) {
+    /**
+     * Gives the sector a memory a production write can land in, without also posing a visit.
+     *
+     * <p>What a case wants when the write under exercise is one of the sector's own routes rather
+     * than the player's: the register has to have somewhere to go, and staging a visit to open it
+     * would seed the very observations the case means to watch being made.
+     *
+     * <p>Backed by a real map, so what a recorder writes is what a later read finds. Idempotent: a
+     * sector opened twice keeps the register the first call opened, which is the only way a case
+     * can pose a colony met in one system and then met again in another.
+     *
+     * @param sector the sector to give a memory to
+     */
+    public static void openSectorMemory(SectorAPI sector) {
 
         if (sector.getMemoryWithoutUpdate() != null) {
             return;

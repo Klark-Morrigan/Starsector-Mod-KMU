@@ -2,8 +2,12 @@ package kmu.maplayers.politicalmap.base.refresh;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.SectorColonySightings;
+import kmlib.starsector.map.VisibleStars;
+import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
@@ -15,12 +19,12 @@ import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
@@ -223,12 +227,31 @@ final class PoliticalMapStalenessSourceTest {
                     PollInputs.buildForSnapshotChange(STEADY_SNAPSHOT, STEADY_SNAPSHOT),
                     2);
 
+                // Once per system per poll, the sweep being the poll's own now: the register is
+                // handed a place and the set already selected for it rather than walking the
+                // sector for either.
                 sightingsMock.verify(
                     () -> SectorColonySightings.recordSightingsByInhabitants(
-                        nullable(SectorAPI.class)),
+                        any(SectorAPI.class),
+                        any(StarSystemAPI.class),
+                        any(Colonies.class)),
                     times(2));
             }
         }
+    }
+
+    // One empty star system and nothing else. The snapshot scan and the motion walk are both
+    // stubbed away, so the only passenger that reads this is the observation write - which
+    // needs a system to be handed, having stopped sweeping for one. Nothing is staged in it:
+    // what each poll writes is the register's own suite's business, not this one's.
+    private static SectorAPI buildOneSystemSector() {
+
+        var sectorMock = mock(SectorAPI.class);
+
+        when(sectorMock.getStarSystems())
+            .thenReturn(List.of(mock(StarSystemAPI.class)));
+
+        return sectorMock;
     }
 
     private static PoliticalMapSectorSnapshot takeSnapshot(
@@ -247,15 +270,20 @@ final class PoliticalMapStalenessSourceTest {
     }
 
     // Polls the source pollCount times against the run's stubbed reads and reports how far
-    // each counter moved and which systems were marked politics-stale. Global is stubbed so
-    // the scan's sector read is inert and the source's logger is a no-op mock;
-    // MapLayerRefresh is left real so its counters and stale set record the requests. The
-    // stale set is drained first to isolate this run from earlier tests' marks.
+    // each counter moved and which systems were marked politics-stale. Global is stubbed to a
+    // bare one-system sector - enough for the poll's passengers to be handed something, with
+    // the two that read it stubbed away - and to a no-op logger; MapLayerRefresh is left real
+    // so its counters and stale set record the requests. The stale set is drained first to
+    // isolate this run from earlier tests' marks.
     //
     // The shared moving tracker is always stubbed to a mock instance rather than driven with
     // real positions, so every run reports its moving set explicitly and none of them depends
     // on the motion-detection math.
     private static RefreshOutcome pollThenReadRefreshOutcome(PollInputs inputs, int pollCount) {
+
+        // Wired before the static stubbing opens, so Mockito sees no stubbing nested inside
+        // another.
+        var sector = buildOneSystemSector();
 
         try (var globalMock = mockStatic(Global.class);
                 var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
@@ -265,7 +293,7 @@ final class PoliticalMapStalenessSourceTest {
 
             globalMock
                 .when(Global::getSector)
-                .thenReturn(null);
+                .thenReturn(sector);
             globalMock
                 .when(() -> Global.getLogger(any(Class.class)))
                 .thenReturn(mock(Logger.class));
@@ -278,7 +306,8 @@ final class PoliticalMapStalenessSourceTest {
 
             snapshotMock
                 .when(() -> PoliticalMapSectorSnapshot.scan(
-                    nullable(SectorAPI.class),
+                    any(SystemColoniesIndex.class),
+                    any(VisibleStars.class),
                     any(MapVisibilityRules.class)))
                 .thenReturn(inputs.firstSnapshot(), inputs.secondSnapshot());
 
@@ -290,12 +319,9 @@ final class PoliticalMapStalenessSourceTest {
 
             var movingSystemsMock = mock(MovingSystems.class);
 
-            // nullable(SectorAPI.class), not any(): it matches the null sector the
-            // stubbed Global.getSector() hands the source and pins the sector overload
-            // (the tracker also has a Map-typed updateMovingSystems, so a bare any() is
-            // ambiguous).
             when(movingSystemsMock.updateMovingSystems(
-                    nullable(SectorAPI.class),
+                    any(SystemColoniesIndex.class),
+                    any(VisibleStars.class),
                     any(MapVisibilityRules.class)))
                 .thenReturn(false, inputs.hasMovingSetChangedOnSecondPoll());
 

@@ -86,6 +86,14 @@ owner map is diffed to mark exactly the systems whose owner changed. It also tra
 the moving-system set and fingerprints the live alliance set. All four baselines are
 its own, so nothing about the diff lives in the loop.
 
+The poll is a pass, and is read as one. Each of its passengers - the snapshot, the
+moving-set walk, and the write that records what a system's own inhabitants can see -
+asks every system who lives there, so the poll opens a single KMLib `SystemColoniesIndex`
+and a single hyperspace scan and hands both down. That is what keeps the cost at one
+selection per system per poll: a passenger given the sector instead would walk every
+entity in every system again, and there are three of them. The index is discarded with
+the poll, a kept one being a reading of the sector the *previous* poll saw.
+
 The overlap is intentional. Both feed the same stale-system set, so a change a
 listener already marked and one the watcher's diff re-discovers collapse into a
 single re-shape - and a change no listener ever saw is still caught, just one poll
