@@ -81,7 +81,7 @@ public final class MapHoverInstaller {
         // host-blind: the box draws wherever the layer paints, which is the sector map and the intel
         // screen's map visor alike, and look-blind: some terrain surface paints the layers in either
         // look, so the Starscape filter changes what is under the box rather than whether there is one.
-        SectorListeners.installTransientListener(
+        SectorListeners.installListener(
             sector,
             MapLayerCellTooltip.class,
             () -> new MapLayerCellTooltip(
@@ -90,15 +90,16 @@ public final class MapHoverInstaller {
     }
 
     // Registers the input listener that reads the hover box's detail-mode toggle key. Transient,
-    // remove-then-add, for the dispatcher's reasons: it holds no save-relevant state, and a
-    // registration an older save carried would flip the mode twice per press.
+    // remove-then-add, for the dispatcher's reasons: it holds no save-relevant state, and a second
+    // registration alongside the first would flip the mode twice per press - leaving it where it
+    // started, so the key would look dead.
     static void installHoverTooltipDetailModeInput(SectorAPI sector) {
         // Handed the same permission the dispatcher is, so the key is claimed on exactly the screens
         // and looks the box it switches can draw on - which is the whole of what makes the toggle
         // honest, and is pinned against this composition in MapLayerCellTooltipGateIntegrationTest.
         // A permission each rather than one shared instance: it holds no state, both are built from
         // the same factory, and a listener reaching for another's field would outlive it.
-        SectorListeners.installTransientListener(
+        SectorListeners.installListener(
             sector,
             HoverTooltipDetailModeInput.class,
             () -> new HoverTooltipDetailModeInput(MapHoverPermission.createForLiveScreen()));

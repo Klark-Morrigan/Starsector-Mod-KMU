@@ -75,9 +75,13 @@ public final class NexerelinInvasionListenerInstaller {
             // Transient (true), not persisted (false): the listener is a KMU class
             // implementing a Nex interface, so serialising it into the save would fail to
             // load if Nex were later removed. It is re-added on each load instead, exactly
-            // when the gate in installIfPresent still passes. Remove-then-add keeps the
-            // install idempotent and also clears any persisted copy an older build wrote into
-            // the save (it registered this non-transiently), repairing that save on load.
+            // when the gate in installIfPresent still passes.
+            //
+            // Remove-then-add rather than a presence check, so a save that does carry a copy
+            // is repaired by the load rather than left holding it beside the fresh one. A save
+            // can only carry one if some build registered it persistently, which is exactly the
+            // mistake the flag above exists to prevent - and the one shape that survives having
+            // made it is this one.
             listenerManager.removeListenerOfClass(PoliticalMapMarketTransferListener.class);
             listenerManager.addListener(new PoliticalMapMarketTransferListener(), true);
         }

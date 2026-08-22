@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins how the render surfaces are stood up: the per-frame scripts as transient ones built fresh
@@ -130,6 +131,72 @@ class MapSurfaceInstallerTest {
     }
 
     @Nested
+    class UninstallAll {
+
+        @Test
+        void clearsTheFramePreparationClaimAndStopsTheReseat() {
+            // Within the session that registered them both are still running: the claim still
+            // arbitrating a frame nothing prepares, and the reseat still moving an entity that has
+            // just been removed. The terrain removal beside them is pinned on the terrain installer.
+            var listenerManager = new RecordingListenerManager();
+            var sectorMock = mock(SectorAPI.class);
+
+            when(sectorMock.getListenerManager())
+                .thenReturn(listenerManager);
+
+            MapSurfaceInstaller.installStarscapeTerrainReseater(sectorMock);
+
+            var installedReseater = ArgumentCaptor.forClass(MapIconReseater.class);
+
+            verify(sectorMock)
+                .addTransientScript(installedReseater.capture());
+
+            MapSurfaceInstaller.uninstallAll(sectorMock);
+
+            assertThat(listenerManager.getRemovedListenerClasses())
+                .containsExactly(MapFramePreparationClaim.class);
+
+            verify(sectorMock)
+                .removeTransientScript(installedReseater.getValue());
+        }
+
+        @Test
+        void toleratesANullSector() {
+
+            var surfaceUninstallOnNullSector = (Runnable) () ->
+                MapSurfaceInstaller.uninstallAll(null);
+
+            assertThatCode(surfaceUninstallOnNullSector::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class RemoveStarscapeTerrainReseater {
+
+        @Test
+        void takesOffTheScriptThisInstalledRatherThanEveryScriptOfItsClass() {
+            // MapIconReseater is KMLib's, so another mod may be running its own over the same
+            // sector, and a removal by class would take that one with it.
+            var sectorMock = mock(SectorAPI.class);
+
+            MapSurfaceInstaller.installStarscapeTerrainReseater(sectorMock);
+
+            var installedReseater = ArgumentCaptor.forClass(MapIconReseater.class);
+
+            verify(sectorMock)
+                .addTransientScript(installedReseater.capture());
+
+            MapSurfaceInstaller.removeStarscapeTerrainReseater(sectorMock);
+
+            verify(sectorMock)
+                .removeTransientScript(installedReseater.getValue());
+            verify(sectorMock, never())
+                .removeTransientScriptsOfClass(any());
+        }
+    }
+
+    @Nested
     class InstallMapFramePreparationClaim {
 
         @Test
@@ -137,7 +204,7 @@ class MapSurfaceInstallerTest {
             // Remove-then-add, transient: it holds where the current frame stands, which is live view
             // state that enters no save, and two registered would open the frame twice - releasing a
             // second preparation into the frame the first already handed out.
-            var listenerManager = new RecordingListenerManager(false);
+            var listenerManager = new RecordingListenerManager();
 
             MapSurfaceInstaller.installMapFramePreparationClaim(buildSector(listenerManager));
 

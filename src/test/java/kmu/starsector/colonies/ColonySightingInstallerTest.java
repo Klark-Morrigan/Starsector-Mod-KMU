@@ -24,9 +24,9 @@ class ColonySightingInstallerTest {
         @Test
         void reinstallsTheSightingRecorderFreshAsTransient() {
             // Remove-then-add rather than a has-check, because the recorder holds the sector it
-            // writes into: one restored from a save would go on recording against the sector it
-            // was built for while the loaded one learned nothing.
-            var listenerManager = new RecordingListenerManager(false);
+            // writes into: a kept registration would be the one built against whatever came
+            // before, going on recording there while the loaded sector learned nothing.
+            var listenerManager = new RecordingListenerManager();
 
             ColonySightingInstaller.installColonySightingRecorder(buildSector(listenerManager));
 

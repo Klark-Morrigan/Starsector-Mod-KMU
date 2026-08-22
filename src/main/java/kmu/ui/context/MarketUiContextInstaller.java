@@ -34,7 +34,7 @@ public final class MarketUiContextInstaller {
     }
 
     static void installMarketUiContextTracker(SectorAPI sector) {
-        SectorListeners.installListenerOnce(
+        SectorListeners.installListener(
             sector,
             StarsectorMarketUiContextTracker.class,
             StarsectorMarketUiContextTracker::new);

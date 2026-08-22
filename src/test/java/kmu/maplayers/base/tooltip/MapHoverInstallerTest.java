@@ -21,9 +21,9 @@ class MapHoverInstallerTest {
 
         @Test
         void reinstallsTheHoverTooltipDispatcherFreshAsTransient() {
-            // Remove-then-add, transient: the dispatcher caches GL text, which must never enter a save,
-            // and a registration an older save carried has to be cleared or two would draw the same box.
-            var listenerManager = new RecordingListenerManager(false);
+            // Remove-then-add, transient: the dispatcher caches GL text, which must never enter a
+            // save, and whatever is registered has to be cleared first or two would draw one box.
+            var listenerManager = new RecordingListenerManager();
 
             MapHoverInstaller.installMapLayerHoverTooltip(buildSector(listenerManager));
 
@@ -55,9 +55,9 @@ class MapHoverInstallerTest {
         @Test
         void reinstallsTheDetailModeInputListenerFreshAsTransient() {
             // Remove-then-add, transient: the toggle is a live view preference that enters no save,
-            // and a registration an older save carried would flip the mode twice per press - leaving
-            // it exactly where it started, so the key would look dead.
-            var listenerManager = new RecordingListenerManager(false);
+            // and a second registration alongside the first would flip the mode twice per press -
+            // leaving it exactly where it started, so the key would look dead.
+            var listenerManager = new RecordingListenerManager();
 
             MapHoverInstaller.installHoverTooltipDetailModeInput(buildSector(listenerManager));
 
@@ -79,6 +79,35 @@ class MapHoverInstallerTest {
                 MapHoverInstaller.installHoverTooltipDetailModeInput(buildSector(null));
 
             assertThatCode(detailModeInputInstallOnNullManager::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class UninstallAll {
+
+        @Test
+        void clearsBothHalvesOfTheBoxAndRegistersNothingBack() {
+            // Both, because they are separate registrations: leaving the input half behind would
+            // keep swallowing the toggle key for a box that is no longer drawn.
+            var listenerManager = new RecordingListenerManager();
+
+            MapHoverInstaller.uninstallAll(buildSector(listenerManager));
+
+            assertThat(listenerManager.getRemovedListenerClasses())
+                .containsExactly(MapLayerCellTooltip.class, HoverTooltipDetailModeInput.class);
+
+            assertThat(listenerManager.getAddedListeners())
+                .isEmpty();
+        }
+
+        @Test
+        void toleratesAMissingListenerManager() {
+
+            var hoverUninstallOnNullManager = (Runnable) () ->
+                MapHoverInstaller.uninstallAll(buildSector(null));
+
+            assertThatCode(hoverUninstallOnNullManager::run)
                 .doesNotThrowAnyException();
         }
     }

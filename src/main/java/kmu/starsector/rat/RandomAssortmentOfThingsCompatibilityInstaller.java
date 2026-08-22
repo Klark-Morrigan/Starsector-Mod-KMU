@@ -5,6 +5,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.ui.screen.VanillaScreen;
 import kmlib.starsector.ui.suppression.OffScreenWidgetSuppressor;
 
+import kmu.starsector.listeners.InstalledTransientScript;
+
 import static kmu.KmuWiringSteps.runGuardedStep;
 
 /**
@@ -40,13 +42,13 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  */
 public final class RandomAssortmentOfThingsCompatibilityInstaller {
 
-    // The script this installs, held so it can be taken out again by instance rather than by class.
-    // OffScreenWidgetSuppressor is KMLib's and another mod may be running its own over the same
-    // sector - and it hands the widget it silenced its opacity back as it goes, so a removal by
-    // class would write into a widget this mod never touched. Per process rather than per sector: a
-    // reference to a script from a sector since left is inert, removing it from another sector
-    // doing nothing, and the next install replaces it.
-    private static OffScreenWidgetSuppressor installedSuppressor;
+    // The script this installs, held so it can be taken off again by instance rather than by class.
+    // OffScreenWidgetSuppressor is KMLib's, another mod may be running its own over the same sector,
+    // and it hands the widget it silenced its opacity back as it goes - so a removal by class would
+    // write into a widget this mod never touched. The slot states that rule; this says which script
+    // is held under it.
+    private static final InstalledTransientScript<OffScreenWidgetSuppressor> installedSuppressor =
+        new InstalledTransientScript<>();
 
     private RandomAssortmentOfThingsCompatibilityInstaller() {
         // utility class, no instances.
@@ -86,25 +88,20 @@ public final class RandomAssortmentOfThingsCompatibilityInstaller {
 
     static void installParkedMinimapSuppressor(SectorAPI sector) {
 
-        if (sector == null) {
-            return;
-        }
-        var minimapSuppression = RandomAssortmentOfThingsMinimapSuppression.createForLiveScreen();
+        installedSuppressor.installOn(
+            sector,
+            () -> {
 
-        installedSuppressor = new OffScreenWidgetSuppressor(
-            minimapSuppression::resolveSuppressibleMinimap,
-            VanillaScreen::resolveScreenBox);
+                var minimapSuppression =
+                    RandomAssortmentOfThingsMinimapSuppression.createForLiveScreen();
 
-        sector.addTransientScript(installedSuppressor);
+                return new OffScreenWidgetSuppressor(
+                    minimapSuppression::resolveSuppressibleMinimap,
+                    VanillaScreen::resolveScreenBox);
+            });
     }
 
     static void removeParkedMinimapSuppressor(SectorAPI sector) {
-
-        if (sector == null || installedSuppressor == null) {
-            return;
-        }
-        sector.removeTransientScript(installedSuppressor);
-
-        installedSuppressor = null;
+        installedSuppressor.removeFrom(sector);
     }
 }

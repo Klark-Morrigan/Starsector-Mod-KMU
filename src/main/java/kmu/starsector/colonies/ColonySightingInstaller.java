@@ -48,11 +48,11 @@ public final class ColonySightingInstaller {
     // Registers the listener that records what the player sees as they travel, which is what the
     // map's revelation gates read to decide whether a derelict or a concealed base may be shown.
     //
-    // Transient, and re-created per load, because the recorder holds the sector it writes into: one
-    // carried into a save would come back beside the sector being loaded and go on writing to the
-    // sector it was built against.
+    // Built fresh per load, because the recorder holds the sector it writes into: one kept from an
+    // earlier load would go on writing to the sector it was built against while the loaded one
+    // learned nothing. Registered transient, as everything here is, so it enters no save.
     static void installColonySightingRecorder(SectorAPI sector) {
-        SectorListeners.installTransientListener(
+        SectorListeners.installListener(
             sector,
             ColonySightingRecorder.class,
             () -> new ColonySightingRecorder(sector));

@@ -72,11 +72,11 @@ public final class SidebarInstaller {
     // Registers the sidebar's render and input listeners for every screen it draws on, walking the one
     // roster the rest of the mod asks its host-blind questions of. One SidebarRenderer and one
     // SidebarInput per host - a render listener that draws the panel and an input listener that reads
-    // its clicks, notch, and hotkeys (a render pass gets no events to consume). All transient: each
-    // host's active-layer pick lives in sector memory and the render listeners' cached GL text must
-    // never enter a save, so all are re-added fresh each load. Remove-then-add per class clears any
-    // persistent registration an older save captured and re-adds every host, so exactly one of each
-    // renders per screen.
+    // its clicks, notch, and hotkeys (a render pass gets no events to consume). All transient, so
+    // none enters a save and each load stands its own up: the host's active-layer pick lives in
+    // sector memory rather than on the listener, and the render listeners' cached GL text has no
+    // business in a save. Remove-then-add clears whatever this session already registered before
+    // re-adding every host, so a second install cannot leave two of each drawing on one screen.
     //
     // Written out rather than made through SectorListeners, which registers one listener of one
     // class: here two classes are cleared before either is re-added, so a host is never left with

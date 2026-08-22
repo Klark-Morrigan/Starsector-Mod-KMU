@@ -36,6 +36,9 @@ public final class MapCoverReader {
     // then the console's settled flag, then arithmetic over a box this mod laid out, then the two
     // that walk the live widget tree - the map tab's own layout, and finally the surfaces another
     // mod put on screen, which is the dearest because its walk is rooted above every tab.
+    //
+    // How many there are is the composition's, not this field's: the two that belong to optional
+    // mods are absent on an install without them, and the order of whatever remains is unchanged.
     private final List<MapCover> covers;
 
     /**
@@ -51,6 +54,26 @@ public final class MapCoverReader {
      *         are worth asking in
      */
     public static MapCoverReader createForLiveScreen() {
+        return new MapCoverReader(composeLiveCovers());
+    }
+
+    /**
+     * @return whether the cell where the cursor rests is not what the player is pointing at -
+     *         because something is drawn over the map there, or because the cursor is outside the
+     *         only surface on the frame that could be pointed at
+     */
+    public boolean isMapCoveredAtCursor() {
+        for (var cover : covers) {
+            if (cover.isCoveringCursor()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // The composition itself, named apart from the reader it is handed to so which covers a given
+    // install actually has can be read - and asserted - without standing a reader up around them.
+    static List<MapCover> composeLiveCovers() {
 
         var covers = new ArrayList<MapCover>();
 
@@ -69,20 +92,6 @@ public final class MapCoverReader {
         if (RandomAssortmentOfThingsPresence.isModEnabled()) {
             covers.add(RandomAssortmentOfThingsMinimapCover.createForLiveScreen());
         }
-        return new MapCoverReader(covers);
-    }
-
-    /**
-     * @return whether the cell where the cursor rests is not what the player is pointing at -
-     *         because something is drawn over the map there, or because the cursor is outside the
-     *         only surface on the frame that could be pointed at
-     */
-    public boolean isMapCoveredAtCursor() {
-        for (var cover : covers) {
-            if (cover.isCoveringCursor()) {
-                return true;
-            }
-        }
-        return false;
+        return covers;
     }
 }

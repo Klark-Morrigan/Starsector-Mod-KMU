@@ -22,14 +22,14 @@ class SidebarInstallerTest {
         @Test
         void reinstallsEverySidebarListenerFreshAsTransient() {
 
-            var listenerManager = new RecordingListenerManager(false);
+            var listenerManager = new RecordingListenerManager();
 
             SidebarInstaller.installPoliticalMapSidebar(buildSector(listenerManager));
 
-            // Remove-then-add the sidebar's render and input listeners: one remove per class clears any
-            // registration an older save carried, then a fresh render+input instance is added for each of
-            // the two hosts (sector map and intel screen) transiently, so none enters the save and exactly
-            // one of each renders per screen.
+            // Remove-then-add the sidebar's render and input listeners: one remove per class clears
+            // whatever this session registered, then a fresh render+input instance is added for each
+            // of the two hosts (sector map and intel screen) transiently, so none enters a save and
+            // exactly one of each renders per screen.
             assertThat(listenerManager.getRemovedListenerClasses())
                 .containsExactly(SidebarRenderer.class, SidebarInput.class);
 
@@ -49,6 +49,36 @@ class SidebarInstallerTest {
                 SidebarInstaller.installPoliticalMapSidebar(buildSector(null));
 
             assertThatCode(sidebarInstallOnNullManager::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class UninstallAll {
+
+        @Test
+        void clearsBothSidebarClassesAndRegistersNothingBack() {
+            // What switching the map layers off owes the sidebar: within the session that
+            // registered them both listeners are still running, and declining to install again
+            // takes nothing back.
+            var listenerManager = new RecordingListenerManager();
+
+            SidebarInstaller.uninstallAll(buildSector(listenerManager));
+
+            assertThat(listenerManager.getRemovedListenerClasses())
+                .containsExactly(SidebarRenderer.class, SidebarInput.class);
+
+            assertThat(listenerManager.getAddedListeners())
+                .isEmpty();
+        }
+
+        @Test
+        void toleratesAMissingListenerManager() {
+
+            var sidebarUninstallOnNullManager = (Runnable) () ->
+                SidebarInstaller.uninstallAll(buildSector(null));
+
+            assertThatCode(sidebarUninstallOnNullManager::run)
                 .doesNotThrowAnyException();
         }
     }

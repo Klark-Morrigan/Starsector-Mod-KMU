@@ -4,6 +4,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
+import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonisationListener;
+import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
+import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
+import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
+import kmu.starsector.listeners.RecordingListenerManager;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,10 +21,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
- * Pins the political map's per-frame watcher as a transient script built fresh per load, over a
- * tracker flushed of whatever the previous save left in it.
+ * Pins the political map's per-frame watcher as a transient script built fresh per load over a
+ * tracker flushed of whatever the previous save left in it, and the taking back of every live
+ * repaint when the layers are switched off.
  */
 class PoliticalMapInstallerTest {
 
@@ -91,6 +98,72 @@ class PoliticalMapInstallerTest {
                 PoliticalMapInstaller.installMapLayerSectorWatcher(null);
 
             assertThatCode(watcherInstallOnNullSector::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class UninstallAll {
+
+        @Test
+        void clearsEveryLiveRepaintItRegisters() {
+            // All four listeners and the watcher, since each would otherwise go on marking an
+            // overlay stale that nothing is drawing - work paid for a feature switched off.
+            var listenerManager = new RecordingListenerManager();
+            var sectorMock = mock(SectorAPI.class);
+
+            when(sectorMock.getListenerManager())
+                .thenReturn(listenerManager);
+
+            PoliticalMapInstaller.uninstallAll(sectorMock);
+
+            assertThat(listenerManager.getRemovedListenerClasses())
+                .containsExactly(
+                    PoliticalMapDiscoveryListener.class,
+                    PoliticalMapColonySizeListener.class,
+                    PoliticalMapDecivListener.class,
+                    PoliticalMapColonisationListener.class);
+
+            assertThat(listenerManager.getAddedListeners())
+                .isEmpty();
+
+            verify(sectorMock)
+                .removeTransientScriptsOfClass(MapLayerSectorWatcher.class);
+        }
+
+        @Test
+        void toleratesANullSector() {
+
+            var politicalMapUninstallOnNullSector = (Runnable) () ->
+                PoliticalMapInstaller.uninstallAll(null);
+
+            assertThatCode(politicalMapUninstallOnNullSector::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class RemoveMapLayerSectorWatcher {
+
+        @Test
+        void stopsTheWatcherByClassSinceThisModOwnsIt() {
+            // By class rather than by instance, which is safe only because MapLayerSectorWatcher is
+            // the framework's own: no sibling mod is running one over the same sector.
+            var sectorMock = mock(SectorAPI.class);
+
+            PoliticalMapInstaller.removeMapLayerSectorWatcher(sectorMock);
+
+            verify(sectorMock)
+                .removeTransientScriptsOfClass(MapLayerSectorWatcher.class);
+        }
+
+        @Test
+        void toleratesANullSector() {
+
+            var watcherRemovalOnNullSector = (Runnable) () ->
+                PoliticalMapInstaller.removeMapLayerSectorWatcher(null);
+
+            assertThatCode(watcherRemovalOnNullSector::run)
                 .doesNotThrowAnyException();
         }
     }

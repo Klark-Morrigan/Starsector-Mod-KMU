@@ -8,10 +8,11 @@ import org.junit.jupiter.api.Test;
 import static kmu.starsector.listeners.SectorListenerFixtures.buildSector;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
- * Pins the market UI context tracker's registration shape: added when absent, and never added
- * beside a registration a reloaded save carried back.
+ * Pins the market UI context tracker's registration shape: its class cleared before one is added,
+ * and added transient, so a repeated install leaves exactly one and none enters a save.
  */
 class MarketUiContextInstallerTest {
 
@@ -19,11 +20,14 @@ class MarketUiContextInstallerTest {
     class InstallMarketUiContextTracker {
 
         @Test
-        void installsMarketUiContextTrackerWhenMissing() {
+        void registersTheTrackerFreshAsTransient() {
 
-            var listenerManager = new RecordingListenerManager(false);
+            var listenerManager = new RecordingListenerManager();
 
             MarketUiContextInstaller.installMarketUiContextTracker(buildSector(listenerManager));
+
+            assertThat(listenerManager.getRemovedListenerClasses())
+                .containsExactly(StarsectorMarketUiContextTracker.class);
 
             assertThat(listenerManager.getAddedListeners())
                 .singleElement()
@@ -34,14 +38,33 @@ class MarketUiContextInstallerTest {
         }
 
         @Test
-        void doesNotInstallDuplicateMarketUiContextTracker() {
+        void leavesExactlyOneTrackerWhenInstalledTwice() {
+            // The install is idempotent by clearing rather than by checking: whatever is already
+            // registered under the class goes before the fresh one is added, so a second install
+            // cannot leave two trackers answering the same market.
+            var listenerManager = new RecordingListenerManager();
+            var sector = buildSector(listenerManager);
 
-            var listenerManager = new RecordingListenerManager(true);
+            MarketUiContextInstaller.installMarketUiContextTracker(sector);
+            MarketUiContextInstaller.installMarketUiContextTracker(sector);
 
-            MarketUiContextInstaller.installMarketUiContextTracker(buildSector(listenerManager));
+            assertThat(listenerManager.getRemovedListenerClasses())
+                .containsExactly(
+                    StarsectorMarketUiContextTracker.class,
+                    StarsectorMarketUiContextTracker.class);
 
             assertThat(listenerManager.getAddedListeners())
-                .isEmpty();
+                .hasSize(2);
+        }
+
+        @Test
+        void toleratesAMissingListenerManager() {
+
+            var trackerInstallOnNullManager = (Runnable) () ->
+                MarketUiContextInstaller.installMarketUiContextTracker(buildSector(null));
+
+            assertThatCode(trackerInstallOnNullManager::run)
+                .doesNotThrowAnyException();
         }
     }
 }

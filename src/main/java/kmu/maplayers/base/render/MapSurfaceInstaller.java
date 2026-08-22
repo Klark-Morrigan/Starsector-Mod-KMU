@@ -8,6 +8,7 @@ import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 
+import kmu.starsector.listeners.InstalledTransientScript;
 import kmu.starsector.listeners.SectorListeners;
 
 import java.util.function.Supplier;
@@ -35,12 +36,11 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  */
 public final class MapSurfaceInstaller {
 
-    // The reseat this installs, held so it can be taken out again by instance. MapIconReseater is
-    // KMLib's and another mod may be running its own in the same sector, so a removal by class would
-    // reach further than this mod's own wiring. Per process rather than per sector: a reference to a
-    // script from a sector since left is inert, since removing it from another sector does nothing,
-    // and the next install overwrites it.
-    private static MapIconReseater installedReseater;
+    // The reseat this installs, held so it can be taken off again by instance rather than by class:
+    // MapIconReseater is KMLib's and another mod may be running its own in the same sector. The slot
+    // states why that matters; this only says which script is in it.
+    private static final InstalledTransientScript<MapIconReseater> installedReseater =
+        new InstalledTransientScript<>();
 
     private MapSurfaceInstaller() {
         // utility class, no instances.
@@ -114,17 +114,8 @@ public final class MapSurfaceInstaller {
             "Failed to remove KMU map layer frame preparation claim");
     }
 
-    // Stops the reseat, by the instance this installed rather than by class: MapIconReseater is
-    // KMLib's and another mod may be running its own over the same sector, which removing by class
-    // would take with it. Cleared after, so a later removal cannot reach a script belonging to a
-    // sector this one has since left.
     static void removeStarscapeTerrainReseater(SectorAPI sector) {
-
-        if (sector == null || installedReseater == null) {
-            return;
-        }
-        sector.removeTransientScript(installedReseater);
-        installedReseater = null;
+        installedReseater.removeFrom(sector);
     }
 
     // Registers the per-frame script that lifts the upper Starscape terrain over the map's nebula
@@ -150,9 +141,6 @@ public final class MapSurfaceInstaller {
     // enter a save, so it is re-added fresh each load and never duplicates across reloads.
     static void installStarscapeTerrainReseater(SectorAPI sector) {
 
-        if (sector == null) {
-            return;
-        }
         // Named once and used twice: the placement read has to be asked about the same entity the
         // move is aimed at, and two copies of the lookup would be two chances for one of them to be
         // repointed at the other surface.
@@ -161,12 +149,12 @@ public final class MapSurfaceInstaller {
 
         // A fresh script per load, so the previous save's spent lift attempts cannot carry into this
         // one and stand the move down over a sector it never tried.
-        installedReseater = new MapIconReseater(
-            new MapPresence()::isStarscapeMapShowing,
-            findAboveNebulaeTerrain,
-            () -> MapIconLayeringProbe.readLayeringOf(findAboveNebulaeTerrain.get()));
-
-        sector.addTransientScript(installedReseater);
+        installedReseater.installOn(
+            sector,
+            () -> new MapIconReseater(
+                new MapPresence()::isStarscapeMapShowing,
+                findAboveNebulaeTerrain,
+                () -> MapIconLayeringProbe.readLayeringOf(findAboveNebulaeTerrain.get())));
     }
 
     // Registers the render listener the map surfaces read their frame boundary from, and clears what
@@ -184,7 +172,7 @@ public final class MapSurfaceInstaller {
 
         // The shared instance rather than a fresh one: the surfaces that ask reach it through the
         // singleton, so a listener built beside it would be a second claim nothing consults.
-        SectorListeners.installTransientListener(
+        SectorListeners.installListener(
             sector,
             MapFramePreparationClaim.class,
             MapFramePreparationClaim::getInstance);

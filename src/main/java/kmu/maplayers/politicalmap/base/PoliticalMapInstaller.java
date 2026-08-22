@@ -127,7 +127,7 @@ public final class PoliticalMapInstaller {
     // discovers a map-relevant entity (a market, a jump point, or a gate), so
     // the overlay updates live rather than only on reload.
     static void installPoliticalMapDiscoveryListener(SectorAPI sector) {
-        SectorListeners.installListenerOnce(
+        SectorListeners.installListener(
             sector,
             PoliticalMapDiscoveryListener.class,
             PoliticalMapDiscoveryListener::new);
@@ -137,7 +137,7 @@ public final class PoliticalMapInstaller {
     // when one of its colonies resizes, so a size change that flips the dominant
     // faction repaints live rather than only on reload.
     static void installPoliticalMapColonySizeListener(SectorAPI sector) {
-        SectorListeners.installListenerOnce(
+        SectorListeners.installListener(
             sector,
             PoliticalMapColonySizeListener.class,
             PoliticalMapColonySizeListener::new);
@@ -147,7 +147,7 @@ public final class PoliticalMapInstaller {
     // when one of its colonies decivilises, so a dying colony sheds its faction
     // colour and repaints neutral live rather than only on reload.
     static void installPoliticalMapDecivListener(SectorAPI sector) {
-        SectorListeners.installListenerOnce(
+        SectorListeners.installListener(
             sector,
             PoliticalMapDecivListener.class,
             PoliticalMapDecivListener::new);
@@ -157,7 +157,7 @@ public final class PoliticalMapInstaller {
     // when the player founds or abandons a colony in it, so planting or dropping
     // a colony repaints its system live rather than only on reload.
     static void installPoliticalMapColonisationListener(SectorAPI sector) {
-        SectorListeners.installListenerOnce(
+        SectorListeners.installListener(
             sector,
             PoliticalMapColonisationListener.class,
             PoliticalMapColonisationListener::new);
