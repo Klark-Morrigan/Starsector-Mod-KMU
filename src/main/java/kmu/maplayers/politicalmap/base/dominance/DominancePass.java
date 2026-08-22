@@ -7,6 +7,8 @@ import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.claims.ClaimReader;
+import kmlib.starsector.systems.claims.ClaimReaderSource;
 
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 
@@ -152,6 +154,16 @@ public record DominancePass(
      */
     public SystemColoniesIndex colonies() {
         return holding.colonies();
+    }
+
+    /**
+     * Opens a claim reader over this pass - its walk of each system, under its colony rule.
+     *
+     * @param claimReaderSource the source to open through
+     * @return a reader answering off this pass, to be discarded with it
+     */
+    public ClaimReader openClaimReaderThrough(ClaimReaderSource claimReaderSource) {
+        return holding.openClaimReaderThrough(claimReaderSource);
     }
 
     /**

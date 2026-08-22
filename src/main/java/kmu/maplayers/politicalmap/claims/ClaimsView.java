@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
-import kmlib.starsector.systems.claims.VanillaClaimReader;
+import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
@@ -59,7 +59,7 @@ public final class ClaimsView implements PoliticalMapView {
     private final ClaimReaderSource claimReaderSource;
 
     private ClaimsView() {
-        this(VanillaClaimReader::new);
+        this(VanillaClaimBreakdownReader::new);
     }
 
     ClaimsView(ClaimReaderSource claimReaderSource) {
@@ -198,9 +198,7 @@ public final class ClaimsView implements PoliticalMapView {
                 grouping,
                 ClaimStatsAggregator.aggregateClaimStats(
                     pass,
-                    claimReaderSource.openReaderOver(
-                        pass.colonyVisibility(),
-                        pass.colonies())),
+                    pass.openClaimReaderThrough(claimReaderSource)),
                 blocId -> true),
             ClaimSortMode.MODES);
     }

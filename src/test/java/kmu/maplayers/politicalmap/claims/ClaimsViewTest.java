@@ -4,11 +4,17 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.starsector.colonies.ColonyVisibility;
+import kmlib.starsector.colonies.RevelationGate;
+import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.claims.ClaimReader;
+
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
@@ -30,8 +36,10 @@ import kmu.util.KmuStrings;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
@@ -290,6 +298,12 @@ final class ClaimsViewTest {
         // ride on is an ordinary full-strength one.
         private static final ClaimStats ANY_CLAIMANT_STATS = new ClaimStats(2, 7);
 
+        // A rule that is plainly not the fog alone, so a reader opened under a default of its own
+        // fails the pass-through case rather than passing it by coincidence.
+        private static final ColonyVisibility GATED_VISIBILITY = new ColonyVisibility(
+            false,
+            Set.of(RevelationGate.SPACE_DERELICTS, RevelationGate.HIDDEN_COLONIES));
+
         @Test
         void resolveBlocPickerCarriesEachClaimantsCrestShortNameAndStats() {
             // A claiming bloc becomes an option carrying its crest, short name, and the claim stats the
@@ -435,6 +449,46 @@ final class ClaimsViewTest {
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
                         .items())
                     .isEmpty();
+            }
+        }
+
+        @Test
+        void resolveBlocPickerOpensItsClaimReaderOverThePassItAggregatesThrough() {
+            // The claim half of the picker reads through the same pass the market half does, so the
+            // two metrics cost one walk of each system between them and describe the sector at one
+            // moment. Opening the reader under a rule of its own would also let a bloc's claim count
+            // be answered about colonies its market size was never shown.
+            var sectorMock = mock(SectorAPI.class);
+            var claimReaderMock = mock(ClaimReader.class);
+            var openedOver = new ArrayList<SystemColoniesIndex>();
+            var openedUnder = new ArrayList<ColonyVisibility>();
+
+            var aggregatedPasses = new ArrayList<DominancePass>();
+
+            var view = new ClaimsView((visibility, colonies) -> {
+                openedUnder.add(visibility);
+                openedOver.add(colonies);
+                return claimReaderMock;
+            });
+
+            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
+                    .thenAnswer(invocation -> {
+                        aggregatedPasses.add(invocation.getArgument(0));
+                        return Map.of();
+                    });
+
+                view.resolveBlocPicker(sectorMock, ANY_RULES, GATED_VISIBILITY);
+
+                assertThat(openedUnder)
+                    .containsExactly(GATED_VISIBILITY);
+
+                // The view opens its own pass, so the index cannot be named from out here. Pinned
+                // as the one the market half was handed instead, which is the sharing that matters.
+                assertThat(openedOver)
+                    .singleElement()
+                    .isSameAs(aggregatedPasses.get(0).colonies());
             }
         }
 

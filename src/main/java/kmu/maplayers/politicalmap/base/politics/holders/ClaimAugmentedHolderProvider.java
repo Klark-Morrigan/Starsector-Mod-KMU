@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics.holders;
 
 import kmlib.starsector.systems.claims.ClaimReaderSource;
-import kmlib.starsector.systems.claims.VanillaClaimReader;
+import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -48,7 +48,7 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
     public static final ClaimAugmentedHolderProvider INSTANCE =
         new ClaimAugmentedHolderProvider(
             DefaultHolderProvider.INSTANCE,
-            VanillaClaimReader::new);
+            VanillaClaimBreakdownReader::new);
 
     private final HolderProvider heldHolderProvider;
     private final ClaimReaderSource claimReaderSource;
@@ -68,11 +68,10 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
         // The claims arrive already under whatever spotlight is active, so the fold only has to
         // answer which claimed systems join the holder map, never which key each one carries.
         // The reader is opened over this pass rather than held across passes, so it reads the
-        // colonies the held half just read rather than walking every system a second time - and
-        // under the pass's own visibility rule, so it is shown the sector the held half was.
+        // colonies the held half just read rather than walking every system a second time.
         var claimingHolderBySystemId = FilteredClaims.resolveFilteredClaims(
             pass,
-            claimReaderSource.openReaderOver(pass.colonyVisibility(), pass.colonies()),
+            pass.openClaimReaderThrough(claimReaderSource),
             selectedBlocId);
 
         return foldClaimsIntoHeld(held, claimingHolderBySystemId);

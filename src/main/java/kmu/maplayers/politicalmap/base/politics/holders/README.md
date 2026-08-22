@@ -124,9 +124,9 @@ read that only answers inside a running game. What the two claim-reading sources
 reader but a `ClaimReaderSource`: a reader answers off the colonies behind it, so one is opened
 over the pass being resolved and discarded with it. A reader kept for the life of the game would
 go on answering off a sector that has since moved on, and would walk every system again for
-colonies the pass has already read. The pass's `ColonyVisibility` is handed over beside its walk,
-so the claim half is shown the sector the held half was rather than a reader picking a rule of its
-own. Its vanilla binding mirrors `Misc.getClaimingFaction`
+colonies the pass has already read. `HolderPass.openClaimReaderThrough` is what opens one, so the
+walk and the `ColonyVisibility` travel together and the claim half is always shown the sector the
+held half was. Its vanilla binding mirrors `Misc.getClaimingFaction`
 step for step rather than calling it, because one computation has to answer *who* claims a system
 for the fills here and *why* for the claims layer's hover box. Sharing it is what stops the fill
 and the box over it naming different claimants - on the memory-flag override, and on the

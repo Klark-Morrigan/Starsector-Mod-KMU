@@ -7,6 +7,8 @@ import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.claims.ClaimReader;
+import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.visibility.MapVisibilityRules;
@@ -156,6 +158,20 @@ public final class HolderPass {
      */
     public SystemColoniesIndex colonies() {
         return colonies;
+    }
+
+    /**
+     * Opens a claim reader over this pass - its walk of each system, under its colony rule.
+     *
+     * <p>Named here so the pair is never assembled at a call site. A reader given the walk but
+     * some other rule would score the sector this pass read while reporting a different sector's
+     * worth of it as known, and nothing on screen would say which half was wrong.
+     *
+     * @param claimReaderSource the source to open through
+     * @return a reader answering off this pass, to be discarded with it
+     */
+    public ClaimReader openClaimReaderThrough(ClaimReaderSource claimReaderSource) {
+        return claimReaderSource.openReaderOver(colonyVisibility, colonies);
     }
 
     /**

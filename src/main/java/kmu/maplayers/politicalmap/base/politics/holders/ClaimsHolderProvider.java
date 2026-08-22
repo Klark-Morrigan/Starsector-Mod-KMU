@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics.holders;
 
 import kmlib.starsector.systems.claims.ClaimReaderSource;
-import kmlib.starsector.systems.claims.VanillaClaimReader;
+import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.FilteredClaims;
@@ -45,7 +45,7 @@ public final class ClaimsHolderProvider implements HolderProvider {
      * Claims view resolves holding through it.
      */
     public static final ClaimsHolderProvider INSTANCE =
-        new ClaimsHolderProvider(VanillaClaimReader::new);
+        new ClaimsHolderProvider(VanillaClaimBreakdownReader::new);
 
     private final ClaimReaderSource claimReaderSource;
 
@@ -62,9 +62,7 @@ public final class ClaimsHolderProvider implements HolderProvider {
         return new HolderResolution(
             FilteredClaims.resolveFilteredClaims(
                 pass,
-                claimReaderSource.openReaderOver(
-                    pass.colonyVisibility(),
-                    pass.colonies()),
+                pass.openClaimReaderThrough(claimReaderSource),
                 selectedBlocId),
             Set.of(),
             Set.of());
