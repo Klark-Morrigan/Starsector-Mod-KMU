@@ -13,7 +13,7 @@ import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
-import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
+import kmlib.testfixtures.starsector.settings.ModStateScopes;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
@@ -75,18 +75,6 @@ final class IntelSidebarHostTest {
 
     @Nested
     class IsOverlayShowing {
-
-        // The gate answers "no console" on an install without Console Commands, so a case that
-        // opens one has to be posed on an install that has it.
-        @BeforeEach
-        void installEnabledConsoleCommands() {
-            StarsectorSettingsFake.installSettingsWithEnabledMods(CONSOLE_COMMANDS::equals);
-        }
-
-        @AfterEach
-        void clearGameSettings() {
-            StarsectorSettingsFake.clearSettings();
-        }
 
         @Test
         void isOverlayShowingIsTrueWhileTheMapVisorIsLitAndOutOfStarscapeMode() {
@@ -150,11 +138,12 @@ final class IntelSidebarHostTest {
 
             intelScreenFake.setIntelTabOpen(true);
             intelScreenFake.setMapVisorRect(MAP_VISOR);
-            
+
             consolePresenceFake.openConsole();
 
-            assertThat(new IntelSidebarHost(intelScreenFake, consoleOverlay).isOverlayShowing())
-                .isFalse();
+            ModStateScopes.runWithModEnabled(CONSOLE_COMMANDS, true, () ->
+                assertThat(new IntelSidebarHost(intelScreenFake, consoleOverlay).isOverlayShowing())
+                    .isFalse());
         }
     }
 

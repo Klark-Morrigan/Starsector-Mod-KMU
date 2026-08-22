@@ -9,7 +9,7 @@ import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
-import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
+import kmlib.testfixtures.starsector.settings.ModStateScopes;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
@@ -17,7 +17,6 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.settings.KmuMapLayerSettings;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -245,18 +244,6 @@ final class BaseSidebarHostTest {
     @Nested
     class IsOverlayShowing {
 
-        // The gate answers "no console" on an install without Console Commands, so a case that
-        // opens one has to be posed on an install that has it.
-        @BeforeEach
-        void installEnabledConsoleCommands() {
-            StarsectorSettingsFake.installSettingsWithEnabledMods(CONSOLE_COMMANDS::equals);
-        }
-
-        @AfterEach
-        void clearGameSettings() {
-            StarsectorSettingsFake.clearSettings();
-        }
-
         @Test
         void isOverlayShowingIsFalseWhileAConsoleIsUpOverTheHostsOwnScreen() {
             // The whole point of the gate: the panel draws after the entire core UI, so a console overlay
@@ -267,8 +254,9 @@ final class BaseSidebarHostTest {
 
             consolePresenceFake.openConsole();
 
-            assertThat(host.isOverlayShowing())
-                .isFalse();
+            ModStateScopes.runWithModEnabled(CONSOLE_COMMANDS, true, () ->
+                assertThat(host.isOverlayShowing())
+                    .isFalse());
         }
 
         @Test
@@ -299,7 +287,8 @@ final class BaseSidebarHostTest {
             var host = createHostOnAShowingScreen(new ConsoleCommandsOverlay(consolePresenceFake));
 
             consolePresenceFake.openConsole();
-            host.isOverlayShowing();
+
+            ModStateScopes.runWithModEnabled(CONSOLE_COMMANDS, true, () -> host.isOverlayShowing());
 
             assertThat(host.screenReadCount)
                 .isZero();

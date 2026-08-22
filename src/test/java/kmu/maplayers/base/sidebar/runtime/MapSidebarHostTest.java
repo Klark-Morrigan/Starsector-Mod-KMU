@@ -12,7 +12,7 @@ import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
-import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
+import kmlib.testfixtures.starsector.settings.ModStateScopes;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
@@ -70,18 +70,6 @@ final class MapSidebarHostTest {
     @Nested
     class IsOverlayShowing {
 
-        // The gate answers "no console" on an install without Console Commands, so a case that
-        // opens one has to be posed on an install that has it.
-        @BeforeEach
-        void installEnabledConsoleCommands() {
-            StarsectorSettingsFake.installSettingsWithEnabledMods(CONSOLE_COMMANDS::equals);
-        }
-
-        @AfterEach
-        void clearGameSettings() {
-            StarsectorSettingsFake.clearSettings();
-        }
-
         @Test
         void isOverlayShowingIsTrueWhileTheSectorMapIsUpWhicheverLookItWears() {
             // The Starscape terrain surfaces paint in that mode, so the overlay these
@@ -131,8 +119,9 @@ final class MapSidebarHostTest {
                     .when(CampaignMapView::isSectorMapShowing)
                     .thenReturn(true);
 
-                assertThat(new MapSidebarHost(consoleOverlay).isOverlayShowing())
-                    .isFalse();
+                ModStateScopes.runWithModEnabled(CONSOLE_COMMANDS, true, () ->
+                    assertThat(new MapSidebarHost(consoleOverlay).isOverlayShowing())
+                        .isFalse());
             }
         }
 

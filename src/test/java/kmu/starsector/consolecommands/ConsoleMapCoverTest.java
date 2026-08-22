@@ -2,10 +2,8 @@ package kmu.starsector.consolecommands;
 
 import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
 import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
-import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
+import kmlib.testfixtures.starsector.settings.ModStateScopes;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -22,18 +20,6 @@ final class ConsoleMapCoverTest {
     @Nested
     class IsCoveringCursor {
 
-        // The gate answers "no console" on an install without Console Commands, so a case that
-        // opens one has to be posed on an install that has it.
-        @BeforeEach
-        void installEnabledConsoleCommands() {
-            StarsectorSettingsFake.installSettingsWithEnabledMods(CONSOLE_COMMANDS::equals);
-        }
-
-        @AfterEach
-        void clearGameSettings() {
-            StarsectorSettingsFake.clearSettings();
-        }
-
         @Test
         void isCoveringCursorAnswersCoveredWhileAConsoleIsOpen() {
             // Asserted with no cursor arranged at all, which is the point: this cover reads no
@@ -43,14 +29,16 @@ final class ConsoleMapCoverTest {
 
             consolePresenceFake.openConsole();
 
-            assertThat(new ConsoleMapCover(consoleOverlay).isCoveringCursor())
-                .isTrue();
+            ModStateScopes.runWithModEnabled(CONSOLE_COMMANDS, true, () ->
+                assertThat(new ConsoleMapCover(consoleOverlay).isCoveringCursor())
+                    .isTrue());
         }
 
         @Test
         void isCoveringCursorAnswersUncoveredWhileNoConsoleIs() {
-            // Also the answer an install without Console Commands gets, the role failing open to
-            // "no console", so the map hovers as it did before this cover existed.
+            // Posed on an install without Console Commands, no scope reporting it enabled, so this
+            // is the gate's fail-open answer rather than a closed console: the map hovers exactly as
+            // it did before this cover existed.
             var consoleOverlay = new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake());
 
             assertThat(new ConsoleMapCover(consoleOverlay).isCoveringCursor())
