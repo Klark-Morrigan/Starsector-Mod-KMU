@@ -10,7 +10,7 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
-import kmlib.testfixtures.starsector.consolecommands.ConsoleOverlayFake;
+import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayFake;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;

@@ -2,8 +2,8 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
-import kmlib.starsector.consolecommands.ConsoleCommandsOverlay;
-import kmlib.starsector.consolecommands.ConsoleOverlay;
+import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
+import kmlib.mods.consolecommands.ConsoleOverlay;
 import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;

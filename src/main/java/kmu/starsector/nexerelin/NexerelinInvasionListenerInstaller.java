@@ -2,7 +2,7 @@ package kmu.starsector.nexerelin;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.nexerelin.NexerelinPresence;
+import kmlib.mods.nexerelin.NexerelinPresence;
 
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapMarketTransferListener;
 

@@ -1,6 +1,6 @@
 package kmu.starsector.rat;
 
-import kmlib.starsector.rat.RandomAssortmentOfThingsMinimap;
+import kmlib.mods.rat.RandomAssortmentOfThingsMinimap;
 import kmlib.starsector.ui.map.presence.CampaignMinimap;
 
 import kmu.settings.KmuMapLayerSettings;

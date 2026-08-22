@@ -4,11 +4,11 @@ import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.animation.TraverseDurations;
 import kmlib.math.geometry.BoxEdge;
-import kmlib.starsector.consolecommands.ConsoleOverlay;
+import kmlib.mods.consolecommands.ConsoleOverlay;
 import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
-import kmlib.testfixtures.starsector.consolecommands.ConsoleOverlayFake;
+import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayFake;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;

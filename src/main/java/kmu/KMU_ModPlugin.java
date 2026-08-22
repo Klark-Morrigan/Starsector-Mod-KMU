@@ -5,7 +5,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.settings.LunaSettingsReader;
-import kmlib.starsector.rat.RandomAssortmentOfThingsPresence;
+import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
 
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.render.MapSurfaceInstaller;

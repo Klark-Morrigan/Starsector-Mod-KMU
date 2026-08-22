@@ -1,7 +1,7 @@
 package kmu.maplayers.base.hover.cover;
 
-import kmlib.starsector.consolecommands.ConsoleCommandsPresence;
-import kmlib.starsector.rat.RandomAssortmentOfThingsPresence;
+import kmlib.mods.consolecommands.ConsoleCommandsPresence;
+import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

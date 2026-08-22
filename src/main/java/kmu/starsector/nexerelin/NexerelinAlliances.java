@@ -1,6 +1,6 @@
 package kmu.starsector.nexerelin;
 
-import kmlib.starsector.nexerelin.NexerelinPresence;
+import kmlib.mods.nexerelin.NexerelinPresence;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 

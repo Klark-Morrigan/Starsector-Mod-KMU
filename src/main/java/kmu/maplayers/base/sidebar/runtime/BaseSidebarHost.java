@@ -2,7 +2,7 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
-import kmlib.starsector.consolecommands.ConsoleOverlay;
+import kmlib.mods.consolecommands.ConsoleOverlay;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
