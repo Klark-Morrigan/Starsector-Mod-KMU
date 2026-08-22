@@ -344,6 +344,9 @@ public final class SectorPoliticsFixtures {
         when(entityMock.isDiscoverable())
             .thenReturn(isUndiscovered);
 
+        // The owner's id is read before the market's stubbing opens, so the two mocks do not nest
+        // into an unfinished-stubbing error.
+        var factionId = faction == null ? null : faction.getId();
         var marketMock = mock(MarketAPI.class);
 
         // Every market gets an id of its own, because a sighting is kept against one: markets
@@ -353,8 +356,14 @@ public final class SectorPoliticsFixtures {
 
         when(marketMock.getId())
             .thenReturn("market_" + builtMarketCount);
+        // The owner answers on both readings, as a real market's does. A rule asking the market for
+        // its faction id and one asking its faction object read the same fact in the game, so a
+        // fixture answering only one of them would have every market here share one owner as far as
+        // the other reading is concerned - and a rule that tells owners apart would see none.
         when(marketMock.getFaction())
             .thenReturn(faction);
+        when(marketMock.getFactionId())
+            .thenReturn(factionId);
         when(marketMock.getSize())
             .thenReturn(size);
         when(marketMock.getStabilityValue())
