@@ -4,6 +4,7 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segments;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,9 +47,15 @@ import java.util.Map;
  * which is the pair of corners actually facing each other across the gap.
  *
  * <p><b>Crossings are kept.</b> The settled search drops any span that crosses one already
- * laid, which leaves a tree - at most one route between any two places. Kept, they divide the
- * void they cross into a grid instead, which is the point: a piece of open sea bounded on four
- * sides is a pocket, where the same sea under a tree of spans is one shape with fingers.
+ * laid, which leaves a tree - at most one route between any two places. Kept, they draw a grid
+ * instead, and a grid is what divides open sea into pieces bounded on every side rather than
+ * into one shape with fingers.
+ *
+ * <p><b>Drawing that grid is all this does.</b> Finding the pieces it cuts is a separate job
+ * and not one {@link DiscUnionBoundary} can do: its walls run circle to circle and its walk
+ * has no vocabulary for the stretch of a span between two crossings, which is precisely what
+ * bounds a piece here. A trace of these spans therefore reports far fewer, larger shapes than
+ * are drawn, and reading pocket sizes off one is reading a different map.
  *
  * <p>Which is why the frontage floor matters to this. Every stretch the coast passes through
  * is another pair of corners and another set of spans, so a coast kept at every sliver makes a
@@ -56,9 +63,15 @@ import java.util.Map;
  */
 final class ContinentBridges {
 
-    // How many places along a span are asked whether they are inside a cell. The two ends sit
-    // ON a cell by construction, so only the middle is in question; a handful of samples
-    // catches a span clipping a corner without crossing the middle of anything.
+    // How finely a span is walked when something has to be asked of its whole length. A
+    // handful of steps catches a span clipping a cell's corner, or slipping off a wall for a
+    // stretch, without either question costing a sample per map unit.
+    //
+    // Which steps are asked differs by question, and the two conventions are not
+    // interchangeable: whether a span runs through a cell is a question about its MIDDLE,
+    // since both ends sit on a cell by construction, while whether it is already walled is
+    // asked of its ends as well, because a stretch left uncovered at either end is exactly
+    // the gap that makes a span worth laying.
     private static final int SPAN_SAMPLES = 8;
 
     private ContinentBridges() {
@@ -133,7 +146,7 @@ final class ContinentBridges {
             }
         }
 
-        laid.sort(java.util.Comparator
+        laid.sort(Comparator
             .comparingDouble(CellGap::width)
             .thenComparingInt(CellGap::fromSite)
             .thenComparingInt(CellGap::toSite));
@@ -150,9 +163,11 @@ final class ContinentBridges {
      * second answer, and the two constructions on screen would stop describing one map.
      *
      * @param traced the coast
-     * @return the continent each cell sits on, by cell, and -1 for a cell facing no void
+     * @return the continent each cell sits on, by cell. A cell facing no void is absent rather
+     *         than present under some sentinel, since "on no continent" and "on continent
+     *         number x" are not answers to one question and a caller has to tell them apart
      */
-    static Map<Integer, Integer> mapCellsToContinents(Coastlines.TracedCoasts traced) {
+    private static Map<Integer, Integer> mapCellsToContinents(Coastlines.TracedCoasts traced) {
 
         var continentOf = new LinkedHashMap<Integer, Integer>();
 
@@ -193,7 +208,8 @@ final class ContinentBridges {
      * @param traced the coast
      * @return each cell's corners, in the order the walk found them
      */
-    static Map<Integer, List<double[]>> collectCoastCorners(Coastlines.TracedCoasts traced) {
+    private static Map<Integer, List<double[]>> collectCoastCorners(
+            Coastlines.TracedCoasts traced) {
 
         var corners = new LinkedHashMap<Integer, List<double[]>>();
 
@@ -272,16 +288,23 @@ final class ContinentBridges {
 
         for (var step = 0; step <= SPAN_SAMPLES; step++) {
 
-            var along = (double) step / SPAN_SAMPLES;
-            var point = new double[] {
-                start[0] + (end[0] - start[0]) * along,
-                start[1] + (end[1] - start[1]) * along};
-
-            if (!isPointWalled(point, walls, tolerance)) {
+            if (!isPointWalled(findPointAlong(start, end, step), walls, tolerance)) {
                 return false;
             }
         }
         return true;
+    }
+
+    // One of the places along a span the sampling asks about, by step rather than by fraction
+    // so that both questions step the same way and cannot come to disagree about where the
+    // middle of a span is.
+    private static double[] findPointAlong(double[] start, double[] end, int step) {
+
+        var along = (double) step / SPAN_SAMPLES;
+
+        return new double[] {
+            start[0] + (end[0] - start[0]) * along,
+            start[1] + (end[1] - start[1]) * along};
     }
 
     private static boolean isPointWalled(
@@ -331,11 +354,11 @@ final class ContinentBridges {
      * which is the one covering ground a shorter span already walls - gives way. Taking them
      * in a settled order is also what makes the answer the same on every run.
      *
-     * <p>Asked once per span rather than of every pairing offered. A cell pair whose closest
-     * corners turn out to be already walled therefore drops out rather than falling back on a
-     * wider pairing of the same two cells - the cost of asking the question of every pairing
-     * was the whole pass taking most of a second, which on a knob that redraws while it is
-     * dragged is worse than the pairing occasionally not being reconsidered.
+     * <p>Asked once per span rather than of every pairing offered, which is a deliberate trade
+     * against completeness: a cell pair whose closest corners turn out to be already walled
+     * drops out here rather than falling back on a wider pairing of the same two cells. Asking
+     * it of every pairing costs the pass most of a second, and these knobs redraw while they
+     * are dragged, so a pairing occasionally left unreconsidered is the cheaper loss.
      *
      * @param spans      the spans, already sorted shortest first
      * @param coastWalls the coastline, which is walled before any span is laid
@@ -365,7 +388,6 @@ final class ContinentBridges {
         return kept;
     }
 
-
     // Whether a span passes through a cell rather than across the void between them.
     //
     // The two ends are not asked. A corner sits exactly ON the reach that decides what is
@@ -378,12 +400,7 @@ final class ContinentBridges {
 
         for (var step = 1; step < SPAN_SAMPLES; step++) {
 
-            var along = (double) step / SPAN_SAMPLES;
-            var point = new double[] {
-                start[0] + (end[0] - start[0]) * along,
-                start[1] + (end[1] - start[1]) * along};
-
-            if (union.isPointInside(point)) {
+            if (union.isPointInside(findPointAlong(start, end, step))) {
                 return true;
             }
         }

@@ -72,12 +72,11 @@ final class ViewerSettings {
     // The width a wall is drawn at, so two lines closer than this are drawn overlapping -
     // which is the state a reader calls doubled.
     //
-    // Not half of it, which was the first guess and too tight to work: a span shadowing a
-    // shorter one at a degree's divergence pulls a hundred units away by the far end, and a
-    // slack narrower than that leaves a gap where neither the shorter span nor the coastline
-    // quite covers, so the doubled line survives on a technicality.
+    // The full width rather than half of it. A span shadowing a shorter one at a degree's
+    // divergence pulls a hundred units away by the far end, so a slack narrower than the
+    // stroke leaves a gap where neither the shorter span nor the coastline quite covers, and
+    // the doubled line survives on a technicality.
     static final double CONTINENT_BRIDGE_COAST_SLACK_DEFAULT = MapLook.SPAN_STROKE;
-
 
     static final float JITTER_DEFAULT = 35;
     static final double JITTER_SCALE = 100.0;
@@ -116,10 +115,13 @@ final class ViewerSettings {
     // it is a rival construction being judged against the settled coast, not a part of it.
     boolean showContinentCoasts;
 
-    // The bridges v3 would lay once its coastlines are down. Off by default and apart from
-    // the coasts' own switch, because it is the next proposal rather than another view of
-    // this one - and it is only meaningful with the coasts traced, since the coastlines are
-    // what decides which bridges survive.
+    // The bridges v3 would lay once its coastlines are down - the same search the settled map
+    // uses, offered the same cells, so the only difference between the two sets is which spans
+    // the coastlines then refuse.
+    //
+    // Off by default and apart from the coasts' own switch, because it is the next proposal
+    // rather than another view of this one - and it is only meaningful with the coasts traced,
+    // since the coastlines are what decides which bridges survive.
     boolean showContinentBridges;
 
     // Every stretch of frontage the smoothing chose not to pass through, on whichever coasts
@@ -168,7 +170,7 @@ final class ViewerSettings {
     Color centrelineColour = CENTRELINE_DEFAULT;
     Color channelColour = CHANNEL_DEFAULT;
     Color channelEdge = CHANNEL_DEFAULT;
-    
+
     int channelOpacity = OWNER_FILL_ALPHA;
     int ownedCellOpacity = OWNER_FILL_ALPHA;
     int unownedCellOpacity = OWNER_FILL_ALPHA;
@@ -180,7 +182,7 @@ final class ViewerSettings {
     float jitterStrength = (float) (JITTER_DEFAULT / JITTER_SCALE);
 
     boolean showUnboundedCells;
-    
+
     SectorGeometryParameters parameters = SectorGeometryParameters.createDefaults();
 
     // One chosen colour for every owner, optionally spread in brightness so neighbours can
@@ -214,14 +216,6 @@ final class ViewerSettings {
         return new Coastlines.CoastRules(bridgeReachMultiple, coastMinFrontageShare);
     }
 
-    // How the v3 coast is traced. Its own rules rather than the settled coast's, because that
-    // is what having a separate skip cap MEANS - one method each, so which coast a knob
-    // reaches is decided here rather than at whichever overlay happens to read it.
-    //
-    // The bridge reach goes unread: no bridges are found for a continent coast, so it is the
-    // one field of the record with nothing on the other end of it. Passed through as the
-    // settled coast's rather than as some number of its own, so that if it ever comes to be
-    // read the two coasts are still looking at one sector.
     // How v3's bridges are offered and judged, asked of the settings for the same reason the
     // coast rules are: the overlay that lays them and anything that later reports on them
     // have to be describing one set, not two built from the same sliders a moment apart.
@@ -231,6 +225,14 @@ final class ViewerSettings {
             continentBridgeCoastSlack);
     }
 
+    // How the v3 coast is traced. Its own method rather than the settled coast's, because a
+    // separate frontage floor is only separate if something reads it - so which coast a knob
+    // reaches is decided here rather than at whichever overlay happens to read it.
+    //
+    // The bridge reach goes unread: no bridges are found while a continent coast is traced,
+    // so it is the one field of the record with nothing on the other end of it. Passed
+    // through as the settled coast's rather than as some number of its own, so that if it
+    // ever comes to be read the two coasts are still looking at one sector.
     Coastlines.CoastRules resolveContinentCoastRules() {
         return new Coastlines.CoastRules(bridgeReachMultiple, continentMinFrontageShare);
     }

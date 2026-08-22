@@ -67,7 +67,6 @@ final class ViewerSettingsPanel {
 
     private static final double BRIDGE_REACH_MAXIMUM = 10;
 
-
     // How little of its own border a cell may face the void with and still be walked through,
     // as a percentage of the whole turn. Zero is the bottom because it asks nothing, which is
     // the rule switched off and what every other knob is judged against.
@@ -104,6 +103,9 @@ final class ViewerSettingsPanel {
 
     private static final int PANEL_PADDING = 8;
 
+    // Held rather than passed to each row: every knob writes one and refreshes through the
+    // other, so threading them through would put the same two arguments on every call in the
+    // panel.
     private final ViewerSettings settings;
     private final ViewerRefreshes refreshes;
 
@@ -111,12 +113,6 @@ final class ViewerSettingsPanel {
         this.settings = settings;
         this.refreshes = refreshes;
     }
-
-    // Held rather than passed to each row: every knob needs it, and threading it through the
-    // three wrappers below would put the same argument on every call in the panel.
-
-
-
 
     JPanel buildRows() {
 
@@ -494,11 +490,8 @@ final class ViewerSettingsPanel {
             colour -> settings.continentCoastColour = colour,
             refreshes::repaintMap));
 
-        // v3's own frontage floor, and the first knob that makes this a construction rather
-        // than a second drawing of the settled one. Its own rather than the v2 one read
-        // twice, because with no bridges laid a continent's cells face the void through
-        // slivers far more often - so the share that clears them off here would take real
-        // frontage off the sector coast above.
+        // Asked as a percentage because that is how anyone reading a map thinks about how far
+        // a cell sticks out; what the floor means is documented at the field it writes.
         controls.add(ViewerSliders.buildSlider(
             "Continent least frontage",
             "Least frontage faced, in % of a cell",
@@ -513,31 +506,29 @@ final class ViewerSettingsPanel {
                 refreshes::refreshCoastlines,
                 () -> { })));
 
-        // The bridges v3 lays once its coastlines are down. The same search the settled map
-        // uses, offered the same cells - only the surviving set differs, because a span into
-        // void a coastline has already shut in is walling off the same emptiness twice.
+        // Named for the inlets they close rather than for the continents they sit on, which
+        // read as bridges BETWEEN continents and are nothing of the kind.
         //
-        // Rebuilt rather than repainted: the coasts have to be traced for this to be
-        // answerable at all, so switching it on is what makes the set exist.
+        // Rebuilt rather than repainted: the coasts have to be traced for the surviving set
+        // to be answerable at all, so switching this on is what makes the set exist.
         controls.add(ViewerControls.buildToggle(
-            "Continent bridges",
-            "Continent bridges",
+            "Inlet bridges",
+            "Inlet bridges",
             false,
             on -> settings.showContinentBridges = on,
             refreshes::refreshCoastlines));
 
         controls.add(ViewerSwatches.buildColour(
-            "Continent bridges colour",
-            "Continent bridges",
+            "Inlet bridges",
+            "Inlet bridges",
             ViewerSettings.CONTINENT_BRIDGE_DEFAULT,
             colour -> settings.continentBridgeColour = colour,
             refreshes::repaintMap));
 
-        // Its own reach rather than the settled bridges', because the two are offered to
-        // different maps: v3's are laid over a sector whose coastlines have already taken
-        // some of the void, so the reach that finds the right spans there is not this one.
+        // Scaled up for a slider that deals in whole steps; what the reach means is
+        // documented at the field it writes.
         controls.add(ViewerSliders.buildSlider(
-            "Continent bridge reach",
+            "Inlet bridge reach",
             "Bridge reach, in cell radii (x100)",
             new ViewerSliders.SliderRange(
                 BRIDGE_REACH_MINIMUM * ViewerSettings.BRIDGE_REACH_STEP_SCALE,
@@ -550,12 +541,10 @@ final class ViewerSettingsPanel {
                 refreshes::refreshCoastlines,
                 () -> { })));
 
-        // How near a wall already down a span may run before it counts as running ALONG it
-        // and is left out. What it removes is doubled line: a span whose length is covered,
-        // piece by piece, by a shorter span and then by the coastline, walling nothing that
-        // was not walled before it arrived.
+        // In map units, so the slider needs no scaling; what the slack means is documented at
+        // the field it writes.
         controls.add(ViewerSliders.buildSlider(
-            "Continent bridge coast slack",
+            "Inlet bridge coast slack",
             "Off a wall still counted as along it",
             new ViewerSliders.SliderRange(
                 COAST_SLACK_MINIMUM,

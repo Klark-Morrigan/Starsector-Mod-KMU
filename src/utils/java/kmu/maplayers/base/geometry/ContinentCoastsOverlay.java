@@ -5,8 +5,8 @@ import java.awt.Graphics2D;
 import java.util.List;
 
 /**
- * Preview of per-continent coastlines: each touching-connected run of cells traced as its
- * own closed coast, with no bridges laid.
+ * Preview of per-continent coastlines: each touching-connected run of cells traced as its own
+ * closed coast, with the inlet bridges that survive those coasts laid over them.
  *
  * <p>A rival construction being judged, not a part of the map. The settled coast treats a
  * bridge as connective tissue and traces one line round everything it joins; the proposal is

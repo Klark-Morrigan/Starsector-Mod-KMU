@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -54,7 +55,7 @@ final class CoastCrossings {
                 visible.add(crossing);
             }
         }
-        visible.sort(java.util.Comparator.comparingDouble(Penetration::depth).reversed());
+        visible.sort(Comparator.comparingDouble(Penetration::depth).reversed());
 
         return visible;
     }
@@ -141,7 +142,7 @@ final class CoastCrossings {
                 pierced.add(new Pierce(site, depth));
             }
         }
-        pierced.sort(java.util.Comparator.comparingDouble(Pierce::depth).reversed());
+        pierced.sort(Comparator.comparingDouble(Pierce::depth).reversed());
 
         return pierced;
     }

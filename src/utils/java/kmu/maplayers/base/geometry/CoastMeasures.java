@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -95,7 +96,7 @@ final class CoastMeasures {
         for (var crossing : CoastCrossings.findPenetrations(traced)) {
             rows.add(new double[] {crossing.depth(), measure.applyAsDouble(crossing)});
         }
-        rows.sort(java.util.Comparator.comparingDouble((double[] row) -> row[0]).reversed());
+        rows.sort(Comparator.comparingDouble((double[] row) -> row[0]).reversed());
 
         return rows;
     }
