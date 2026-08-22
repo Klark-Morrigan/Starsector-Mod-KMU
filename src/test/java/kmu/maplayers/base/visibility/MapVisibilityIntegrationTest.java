@@ -37,8 +37,8 @@ import static org.mockito.Mockito.when;
 /**
  * Integration coverage for the on-map rule: {@link MapVisibility} over the real
  * {@link StarSystems}, {@link Colonies}, {@link VisibleStars}, and
- * {@link DecivilisedMarkets}, assembled as {@link DrawnSystemPositions} assembles them - the
- * rule takes the answers, so the predicate that reads them is where the whole of it stands.
+ * {@link DecivilisedMarkets}, assembled as {@link MapVisibilityPass} assembles them - the rule
+ * takes the answers, so the pass that reads them is where the whole of it stands.
  * A reachable system appears; an unreachable one
  * appears once inhabited - a colony somebody lives on that the player knows of,
  * registered with the economy or not, or a revealed decivilised planet - and otherwise
@@ -80,59 +80,59 @@ class MapVisibilityIntegrationTest {
     private static final boolean IS_REVEALED_DECIVILISED = true;
 
     @Nested
-    class ShouldAppearOnMap {
+    class IsDrawn {
 
         @Test
-        void shouldAppearOnMapIsTrueForReachableSystem() {
+        void isDrawnIsTrueForReachableSystem() {
 
             var system = buildReachableSystem("a");
 
-            assertThat(shouldAppearOnMapUnderNoReveal(buildSectorWith(system), system))
+            assertThat(isDrawnUnderNoReveal(buildSectorWith(system), system))
                 .isTrue();
         }
 
         @Test
-        void shouldAppearOnMapIsTrueForUnreachableSystemHoldingAColony() {
+        void isDrawnIsTrueForUnreachableSystemHoldingAColony() {
             // No jump point, so unreachable by the access rule, but a discovered
             // colony makes it inhabited and admits it to the map.
             var system = buildUnreachableSystem("a");
 
-            assertThat(shouldAppearOnMapUnderNoReveal(
+            assertThat(isDrawnUnderNoReveal(
                     buildSectorWith(system, buildOwnedMarket()),
                     system))
                 .isTrue();
         }
 
         @Test
-        void shouldAppearOnMapIsTrueForUnreachableSystemWithARevealedDecivilisedPlanet() {
+        void isDrawnIsTrueForUnreachableSystemWithARevealedDecivilisedPlanet() {
 
             var system = buildUnreachableSystemWithDecivilisedPlanet("a");
 
-            assertThat(shouldAppearOnMapUnderNoReveal(buildSectorWith(system), system))
+            assertThat(isDrawnUnderNoReveal(buildSectorWith(system), system))
                 .isTrue();
         }
 
         @Test
-        void shouldAppearOnMapIsFalseForUnreachableUninhabitedSystem() {
+        void isDrawnIsFalseForUnreachableUninhabitedSystem() {
 
             var system = buildUnreachableSystem("a");
 
-            assertThat(shouldAppearOnMapUnderNoReveal(buildSectorWith(system), system))
+            assertThat(isDrawnUnderNoReveal(buildSectorWith(system), system))
                 .isFalse();
         }
 
         @Test
-        void shouldAppearOnMapIsFalseForReachableSystemWhoseStarIsHiddenOnMap() {
+        void isDrawnIsFalseForReachableSystemWhoseStarIsHiddenOnMap() {
             // Reachable by a jump point, but the vanilla map hides its star (an
             // abyssal rogue object), so reachability alone does not admit it.
             var system = buildReachableSystem("a");
 
-            assertThat(shouldAppearOnMapUnderNoReveal(buildSectorWithHiddenStar(system), system))
+            assertThat(isDrawnUnderNoReveal(buildSectorWithHiddenStar(system), system))
                 .isFalse();
         }
 
         @Test
-        void shouldAppearOnMapIsFalseForAStarHiddenSystemHoldingOnlyAnAbandonedStation() {
+        void isDrawnIsFalseForAStarHiddenSystemHoldingOnlyAnAbandonedStation() {
             // Membership is where reading habitation is visible rather than merely tidy. The
             // vanilla map draws no star for this system, so inhabitation was its only route on,
             // and a hulk is not inhabitation - a system hidden by its own design stops being
@@ -142,23 +142,23 @@ class MapVisibilityIntegrationTest {
 
             hangMarketsOnSystemEntities(system, buildAbandonedStation());
 
-            assertThat(shouldAppearOnMapUnderNoReveal(sector, system))
+            assertThat(isDrawnUnderNoReveal(sector, system))
                 .isFalse();
         }
 
         @Test
-        void shouldAppearOnMapIsTrueForReachableNebulaWithNoVisibleStar() {
+        void isDrawnIsTrueForReachableNebulaWithNoVisibleStar() {
             // A nebula has no star anchor, so it is never in the visible-star
             // index; the vanilla map draws it as a cloud, so the rule must admit it
             // on the access path without an inhabitation.
             var system = buildReachableNebula("a");
 
-            assertThat(shouldAppearOnMapUnderNoReveal(buildSectorWithoutStarAnchors(system), system))
+            assertThat(isDrawnUnderNoReveal(buildSectorWithoutStarAnchors(system), system))
                 .isTrue();
         }
 
         @Test
-        void shouldAppearOnMapIsTrueForUninhabitedSystemWhenForcedOntoMap() {
+        void isDrawnIsTrueForUninhabitedSystemWhenForcedOntoMap() {
             // The force override admits a system the normal rule omits - unreachable and
             // uninhabited - so the full partition can be inspected.
             var system = buildUnreachableSystem("a");
@@ -173,7 +173,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void shouldAppearOnMapIsFalseForUninhabitedSystemWhenNotForced() {
+        void isDrawnIsFalseForUninhabitedSystemWhenNotForced() {
             // Without the force override the same unreachable, uninhabited system
             // stays off, so the reveal is what admits it, not the fixture.
             var system = buildUnreachableSystem("a");
@@ -189,60 +189,60 @@ class MapVisibilityIntegrationTest {
     }
 
     @Nested
-    class IsInhabited {
+    class IsSystemInhabited {
 
         @Test
-        void isInhabitedIsTrueWhenADiscoveredColonyExists() {
+        void isSystemInhabitedIsTrueWhenADiscoveredColonyExists() {
 
             var system = buildUnreachableSystem("a");
 
-            assertThat(isInhabitedUnderNoReveal(buildSectorWith(system, buildOwnedMarket()), system))
+            assertThat(isSystemInhabitedUnderNoReveal(buildSectorWith(system, buildOwnedMarket()), system))
                 .isTrue();
         }
 
         @Test
-        void isInhabitedIsTrueWhenARevealedDecivilisedPlanetExists() {
+        void isSystemInhabitedIsTrueWhenARevealedDecivilisedPlanetExists() {
 
             var system = buildUnreachableSystemWithDecivilisedPlanet("a");
 
-            assertThat(isInhabitedUnderNoReveal(buildSectorWith(system), system))
+            assertThat(isSystemInhabitedUnderNoReveal(buildSectorWith(system), system))
                 .isTrue();
         }
 
         @Test
-        void isInhabitedIsFalseWhenNeitherColonyNorRuinExists() {
+        void isSystemInhabitedIsFalseWhenNeitherColonyNorRuinExists() {
 
             var system = buildUnreachableSystem("a");
 
-            assertThat(isInhabitedUnderNoReveal(buildSectorWith(system), system))
+            assertThat(isSystemInhabitedUnderNoReveal(buildSectorWith(system), system))
                 .isFalse();
         }
 
         @Test
-        void isInhabitedIsFalseForAnUndiscoveredColonyByDefault() {
+        void isSystemInhabitedIsFalseForAnUndiscoveredColonyByDefault() {
             // An undiscovered colony fails the normal known-to-player gate, so the system
             // reads as uninhabited until the reveal is on.
             var system = buildUnreachableSystem("a");
 
-            assertThat(isInhabitedUnderNoReveal(
+            assertThat(isSystemInhabitedUnderNoReveal(
                     buildSectorWith(system, buildUndiscoveredColony()),
                     system))
                 .isFalse();
         }
 
         @Test
-        void isInhabitedIsTrueForAColonyTheEconomyDoesNotList() {
+        void isSystemInhabitedIsTrueForAColonyTheEconomyDoesNotList() {
             // Galatia Academy's shape: a real colony on a real station vanilla never registers.
             // Reading the economy's listing alone would leave such a system classified as empty
             // backdrop while every box drawn over it names the faction holding it.
             var system = buildUnreachableSystemHoldingUnlistedColony("a");
 
-            assertThat(isInhabitedUnderNoReveal(buildSectorWith(system), system))
+            assertThat(isSystemInhabitedUnderNoReveal(buildSectorWith(system), system))
                 .isTrue();
         }
 
         @Test
-        void isInhabitedHonoursARevealedRuinTheCallerAlreadyRead() {
+        void isSystemInhabitedHonoursARevealedRuinTheCallerAlreadyRead() {
             // The composed entry, taken by every caller that read both facts for itself - the
             // sector scan, which holds the ruin flag anyway to salt the fingerprint, and a render
             // pass, which answers habitation off its own walk. The ruin is the arm no colony read
@@ -255,7 +255,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isInhabitedIsFalseForASystemHoldingOnlyAnAbandonedStation() {
+        void isSystemInhabitedIsFalseForASystemHoldingOnlyAnAbandonedStation() {
             // Nobody has ever been aboard a derelict, so a system with one hulk in it and nothing
             // else is empty space with a wreck in it. The fog admits the hulk - it is un-hidden and
             // its entity is found - which is what makes this the habitation read's own case rather
@@ -265,12 +265,12 @@ class MapVisibilityIntegrationTest {
 
             hangMarketsOnSystemEntities(system, buildAbandonedStation());
 
-            assertThat(isInhabitedUnderNoReveal(sector, system))
+            assertThat(isSystemInhabitedUnderNoReveal(sector, system))
                 .isFalse();
         }
 
         @Test
-        void isInhabitedIsTrueOnceAColonyStandsBesideTheAbandonedStation() {
+        void isSystemInhabitedIsTrueOnceAColonyStandsBesideTheAbandonedStation() {
             // The same system after somebody settles it. The hulk is staged unchanged, so what
             // turned the answer is the colony rather than anything the derelict stopped being.
             var system = buildUnreachableSystem("a");
@@ -278,17 +278,17 @@ class MapVisibilityIntegrationTest {
 
             hangMarketsOnSystemEntities(system, buildAbandonedStation());
 
-            assertThat(isInhabitedUnderNoReveal(sector, system))
+            assertThat(isSystemInhabitedUnderNoReveal(sector, system))
                 .isTrue();
         }
 
         @Test
-        void isInhabitedIsTrueForAnUndiscoveredColonyWhenTheyAreIncluded() {
+        void isSystemInhabitedIsTrueForAnUndiscoveredColonyWhenTheyAreIncluded() {
             // The widening folds the undiscovered colony in, so the system counts as
             // inhabited and earns a cell.
             var system = buildUnreachableSystem("a");
 
-            assertThat(isInhabitedUnder(
+            assertThat(isSystemInhabitedUnder(
                     buildSectorWith(system, buildUndiscoveredColony()),
                     system,
                     INCLUDING_UNDISCOVERED_MARKETS))
@@ -360,7 +360,7 @@ class MapVisibilityIntegrationTest {
     // rule's two walks are composed - the membership test itself takes the answers rather than
     // the sector - so a case asking the rule for real has to ask it of the thing that assembles
     // them. Bound here once so the scenarios below differ only in the fixture they stage.
-    private static boolean shouldAppearOnMapUnderNoReveal(
+    private static boolean isDrawnUnderNoReveal(
             SectorAPI sector,
             StarSystemAPI system) {
 
@@ -370,17 +370,17 @@ class MapVisibilityIntegrationTest {
     }
 
     // The inhabitation read with no reveal applied, so the normal known-to-player gate stands.
-    private static boolean isInhabitedUnderNoReveal(
+    private static boolean isSystemInhabitedUnderNoReveal(
             SectorAPI sector,
             StarSystemAPI system) {
 
-        return isInhabitedUnder(sector, system, MapVisibilityRules.BASE);
+        return isSystemInhabitedUnder(sector, system, MapVisibilityRules.BASE);
     }
 
     // The inhabitation read over a sector, asked of a pass rather than restated here: the rule
     // takes two answers, and a case stating for itself which walks produce them would be
     // asserting against its own copy of the rule.
-    private static boolean isInhabitedUnder(
+    private static boolean isSystemInhabitedUnder(
             SectorAPI sector,
             StarSystemAPI system,
             MapVisibilityRules visibilityRules) {
