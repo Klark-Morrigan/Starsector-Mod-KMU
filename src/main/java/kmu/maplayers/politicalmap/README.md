@@ -174,7 +174,10 @@ decide that the key names a bloc.
 
 The rest of `base` carries the supporting parts: `politics` (grouping and the held/claim resolvers),
 `refresh` (the economy-event listeners, `PoliticalMapStalenessSource` - what this layer counts
-as a change the engine fired no event for, answered into the framework's poll - and
+as a change the engine fired no event for, answered into the framework's poll, plus the one
+passenger that writes rather than reads: each system's own inhabitants observing the colonies a
+revelation gate holds back, recorded here because nothing in the engine announces a derelict
+arriving among witnesses - and
 `PoliticalMapRefreshSignal`, the coarse changes only this layer can raise on the shared board,
 alliance membership being the one),
 `render` (`PoliticalMapOverlayRenderer` - the order the sub-layers are stacked in, bottom to top,

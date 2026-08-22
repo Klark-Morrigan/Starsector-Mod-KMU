@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base.refresh;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.colonies.SectorColonySightings;
+
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
@@ -21,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 /**
@@ -32,6 +35,10 @@ import static org.mockito.Mockito.when;
  * counters' deltas and the real stale set rather than mocking {@link MapLayerRefresh}
  * (whose logger a static mock would null during class init), stubbing the snapshot scan and
  * the alliance fingerprint across polls.
+ *
+ * <p>Also pins the one passenger that writes rather than reads: the observation each system's own
+ * inhabitants make of the colonies a revelation gate holds back, which rides this sweep because
+ * nothing in the engine announces one.
  */
 final class PoliticalMapStalenessSourceTest {
 
@@ -203,6 +210,24 @@ final class PoliticalMapStalenessSourceTest {
 
             assertThat(outcome.allianceDelta())
                 .isZero();
+        }
+
+        @Test
+        void everyPollWritesWhatEachSystemsInhabitantsCanSee() {
+            // The one passenger that writes rather than reads. Nothing announces a derelict
+            // arriving among witnesses, so the observation rides this sweep - on every poll,
+            // the first included, having no baseline to seed and nothing to diff against.
+            try (var sightingsMock = mockStatic(SectorColonySightings.class)) {
+
+                pollThenReadRefreshOutcome(
+                    PollInputs.buildForSnapshotChange(STEADY_SNAPSHOT, STEADY_SNAPSHOT),
+                    2);
+
+                sightingsMock.verify(
+                    () -> SectorColonySightings.recordSightingsByInhabitants(
+                        nullable(SectorAPI.class)),
+                    times(2));
+            }
         }
     }
 

@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.refresh;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.starsector.colonies.SectorColonySightings;
+
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
@@ -47,6 +49,13 @@ import java.util.Map;
  *
  * <p>All four baselines live here rather than in the framework's poll, so the whole of "what
  * changed" is decided against this layer's own last read. The first poll only establishes them.
+ *
+ * <p>One further passenger writes rather than reads. A colony a revelation gate holds back is
+ * observed by the people living around it, and that observation has to be recorded or the colony
+ * drops off the map the day its last neighbour dies - yet nothing in the engine announces a
+ * derelict arriving among witnesses. So the observation write rides this poll, which is already
+ * the sector-wide sweep running on the cadence such an arrival deserves, in the way
+ * {@link MovingSystems} already rides it. It stales nothing and no baseline turns on it.
  */
 public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     private static final Logger LOG = Global.getLogger(PoliticalMapStalenessSource.class);
@@ -81,6 +90,15 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         var hasMovingSetChanged = MovingSystems.getInstance().updateMovingSystems(
             sector,
             visibilityRules);
+
+        // Writes down what each system's own inhabitants can see of the colonies a revelation
+        // gate holds back. It rides this poll because a colony arriving among witnesses raises
+        // no event to listen for, and this is already the sector-wide walk running on the
+        // cadence such an arrival deserves. Nothing downstream waits on it: the gate keeps its
+        // own live reading of the place, so an install where this never ran still shows what the
+        // player can plainly see - what the write buys is that the reading survives the
+        // witnesses.
+        SectorColonySightings.recordSightingsByInhabitants(sector);
 
         // One call per axis, each handed the same first-poll flag and each owning its own
         // baseline, so no axis can be read without seeing how it treats a baseline poll.
