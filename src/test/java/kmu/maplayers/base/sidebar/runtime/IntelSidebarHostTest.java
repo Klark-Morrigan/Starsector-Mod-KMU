@@ -7,11 +7,13 @@ import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
+import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
 import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
-import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayFake;
+import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
+import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
@@ -26,6 +28,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+
+import static kmlib.testfixtures.starsector.settings.StubbedModIds.CONSOLE_COMMANDS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -71,6 +75,18 @@ final class IntelSidebarHostTest {
 
     @Nested
     class IsOverlayShowing {
+
+        // The gate answers "no console" on an install without Console Commands, so a case that
+        // opens one has to be posed on an install that has it.
+        @BeforeEach
+        void installEnabledConsoleCommands() {
+            StarsectorSettingsFake.installSettingsWithEnabledMods(CONSOLE_COMMANDS::equals);
+        }
+
+        @AfterEach
+        void clearGameSettings() {
+            StarsectorSettingsFake.clearSettings();
+        }
 
         @Test
         void isOverlayShowingIsTrueWhileTheMapVisorIsLitAndOutOfStarscapeMode() {
@@ -129,14 +145,15 @@ final class IntelSidebarHostTest {
             // seam and answered on the visor alone would leave the panel drawn over the console overlay,
             // eating the keystrokes the console was opened to receive, with every case above still green.
             var intelScreenFake = new IntelScreenViewFake();
-            var consoleOverlayFake = new ConsoleOverlayFake();
+            var consolePresenceFake = new ConsoleOverlayPresenceFake();
+            var consoleOverlay = new ConsoleCommandsOverlay(consolePresenceFake);
 
             intelScreenFake.setIntelTabOpen(true);
             intelScreenFake.setMapVisorRect(MAP_VISOR);
             
-            consoleOverlayFake.openConsole();
+            consolePresenceFake.openConsole();
 
-            assertThat(new IntelSidebarHost(intelScreenFake, consoleOverlayFake).isOverlayShowing())
+            assertThat(new IntelSidebarHost(intelScreenFake, consoleOverlay).isOverlayShowing())
                 .isFalse();
         }
     }
@@ -491,6 +508,6 @@ final class IntelSidebarHostTest {
     // of its own rather than the live singleton, so the gate is read against a console this test states
     // rather than against Console Commands, which no test JVM has running.
     private static IntelSidebarHost createHostWithNoConsole(IntelScreenView intelScreen) {
-        return new IntelSidebarHost(intelScreen, new ConsoleOverlayFake());
+        return new IntelSidebarHost(intelScreen, new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake()));
     }
 }

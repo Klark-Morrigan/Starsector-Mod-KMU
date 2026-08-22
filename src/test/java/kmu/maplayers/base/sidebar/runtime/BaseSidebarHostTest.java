@@ -4,11 +4,12 @@ import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.animation.TraverseDurations;
 import kmlib.math.geometry.BoxEdge;
-import kmlib.mods.consolecommands.ConsoleOverlay;
+import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
 import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
-import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayFake;
+import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
+import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
@@ -16,6 +17,7 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.settings.KmuMapLayerSettings;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,8 @@ import org.mockito.MockedStatic;
 
 import java.util.List;
 import java.util.Set;
+
+import static kmlib.testfixtures.starsector.settings.StubbedModIds.CONSOLE_COMMANDS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -241,15 +245,27 @@ final class BaseSidebarHostTest {
     @Nested
     class IsOverlayShowing {
 
+        // The gate answers "no console" on an install without Console Commands, so a case that
+        // opens one has to be posed on an install that has it.
+        @BeforeEach
+        void installEnabledConsoleCommands() {
+            StarsectorSettingsFake.installSettingsWithEnabledMods(CONSOLE_COMMANDS::equals);
+        }
+
+        @AfterEach
+        void clearGameSettings() {
+            StarsectorSettingsFake.clearSettings();
+        }
+
         @Test
         void isOverlayShowingIsFalseWhileAConsoleIsUpOverTheHostsOwnScreen() {
             // The whole point of the gate: the panel draws after the entire core UI, so a console overlay
             // it did not stand down for would be drawn under it while its shortcut keys ate the keystrokes
             // the console was opened to receive.
-            var consoleOverlayFake = new ConsoleOverlayFake();
-            var host = createHostOnAShowingScreen(consoleOverlayFake);
+            var consolePresenceFake = new ConsoleOverlayPresenceFake();
+            var host = createHostOnAShowingScreen(new ConsoleCommandsOverlay(consolePresenceFake));
 
-            consoleOverlayFake.openConsole();
+            consolePresenceFake.openConsole();
 
             assertThat(host.isOverlayShowing())
                 .isFalse();
@@ -259,7 +275,8 @@ final class BaseSidebarHostTest {
         void isOverlayShowingIsTrueOnAShowingScreenWithNoConsoleUp() {
             // The console read is the only thing added to the screen read, so a closed console has to leave
             // the panel exactly where it was - a gate stuck shut would take the sidebar off every screen.
-            var host = createHostOnAShowingScreen(new ConsoleOverlayFake());
+            var host = createHostOnAShowingScreen(
+                new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake()));
 
             assertThat(host.isOverlayShowing())
                 .isTrue();
@@ -278,10 +295,10 @@ final class BaseSidebarHostTest {
         void isOverlayShowingLeavesTheScreenUnreadWhileAConsoleIsUp() {
             // A screen read walks live widgets, so the cheaper answer is asked first and the walk skipped
             // while the panel is standing down anyway.
-            var consoleOverlayFake = new ConsoleOverlayFake();
-            var host = createHostOnAShowingScreen(consoleOverlayFake);
+            var consolePresenceFake = new ConsoleOverlayPresenceFake();
+            var host = createHostOnAShowingScreen(new ConsoleCommandsOverlay(consolePresenceFake));
 
-            consoleOverlayFake.openConsole();
+            consolePresenceFake.openConsole();
             host.isOverlayShowing();
 
             assertThat(host.screenReadCount)
@@ -292,17 +309,20 @@ final class BaseSidebarHostTest {
     // A host carrying nothing but the plumbing under test: the shared key handling is the base's, so the
     // per-screen answers are stubbed out rather than bound to either live screen.
     private static SidebarHostFake createHost(ActiveLayerSelection layerSelection) {
-        return createHost(layerSelection, new ConsoleOverlayFake(), false);
+        return createHost(
+            layerSelection,
+            new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake()),
+            false);
     }
 
     // A host whose own screen is up, so what the gate then answers is down to the console alone.
-    private static SidebarHostFake createHostOnAShowingScreen(ConsoleOverlay consoleOverlay) {
+    private static SidebarHostFake createHostOnAShowingScreen(ConsoleCommandsOverlay consoleOverlay) {
         return createHost(mock(ActiveLayerSelection.class), consoleOverlay, true);
     }
 
     private static SidebarHostFake createHost(
             ActiveLayerSelection layerSelection,
-            ConsoleOverlay consoleOverlay,
+            ConsoleCommandsOverlay consoleOverlay,
             boolean isHostScreenShowing) {
 
         var foldSelectionMock = mock(SidebarFoldSelection.class);
@@ -390,7 +410,7 @@ final class BaseSidebarHostTest {
         private SidebarHostFake(
                 SidebarFoldSelection foldSelection,
                 ActiveLayerSelection layerSelection,
-                ConsoleOverlay consoleOverlay,
+                ConsoleCommandsOverlay consoleOverlay,
                 boolean isHostScreenShowing) {
 
             super(foldSelection, layerSelection, consoleOverlay);

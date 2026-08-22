@@ -2,7 +2,7 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
-import kmlib.mods.consolecommands.ConsoleOverlay;
+import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
@@ -56,7 +56,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
 
     // Whether a console has taken the keyboard this frame. Handed in rather than read from the console mod
     // here, so a host depends on the question and not on an optional mod.
-    private final ConsoleOverlay consoleOverlay;
+    private final ConsoleCommandsOverlay consoleOverlay;
 
     // The panel's scroll and collapse state. Seeded from the fold selection at construction so the panel is
     // safe to draw before any save is loaded, then replaced per load by restoreFoldFromSave.
@@ -65,7 +65,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
     protected BaseSidebarHost(
             SidebarFoldSelection foldSelection,
             ActiveLayerSelection layerSelection,
-            ConsoleOverlay consoleOverlay) {
+            ConsoleCommandsOverlay consoleOverlay) {
 
         this.foldSelection = foldSelection;
         this.layerSelection = layerSelection;

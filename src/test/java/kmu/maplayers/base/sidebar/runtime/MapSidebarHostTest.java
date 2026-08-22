@@ -6,11 +6,13 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.math.geometry.BoxEdge;
+import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
 import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
-import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayFake;
+import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
+import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
@@ -24,6 +26,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+
+import static kmlib.testfixtures.starsector.settings.StubbedModIds.CONSOLE_COMMANDS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -66,6 +70,18 @@ final class MapSidebarHostTest {
     @Nested
     class IsOverlayShowing {
 
+        // The gate answers "no console" on an install without Console Commands, so a case that
+        // opens one has to be posed on an install that has it.
+        @BeforeEach
+        void installEnabledConsoleCommands() {
+            StarsectorSettingsFake.installSettingsWithEnabledMods(CONSOLE_COMMANDS::equals);
+        }
+
+        @AfterEach
+        void clearGameSettings() {
+            StarsectorSettingsFake.clearSettings();
+        }
+
         @Test
         void isOverlayShowingIsTrueWhileTheSectorMapIsUpWhicheverLookItWears() {
             // The Starscape terrain surfaces paint in that mode, so the overlay these
@@ -104,9 +120,10 @@ final class MapSidebarHostTest {
             // The console the host was handed has to be the one its gate reads: a host that dropped the
             // seam and answered on the map alone would leave the panel drawn over the console overlay,
             // eating the keystrokes the console was opened to receive, with every case above still green.
-            var consoleOverlayFake = new ConsoleOverlayFake();
+            var consolePresenceFake = new ConsoleOverlayPresenceFake();
+            var consoleOverlay = new ConsoleCommandsOverlay(consolePresenceFake);
 
-            consoleOverlayFake.openConsole();
+            consolePresenceFake.openConsole();
 
             try (var mapViewMock = mockStatic(CampaignMapView.class)) {
 
@@ -114,7 +131,7 @@ final class MapSidebarHostTest {
                     .when(CampaignMapView::isSectorMapShowing)
                     .thenReturn(true);
 
-                assertThat(new MapSidebarHost(consoleOverlayFake).isOverlayShowing())
+                assertThat(new MapSidebarHost(consoleOverlay).isOverlayShowing())
                     .isFalse();
             }
         }
@@ -123,7 +140,7 @@ final class MapSidebarHostTest {
         // A host of its own rather than the live singleton, so the gate is read against a console this
         // test states rather than against Console Commands, which no test JVM has running.
         private static MapSidebarHost createHostWithNoConsole() {
-            return new MapSidebarHost(new ConsoleOverlayFake());
+            return new MapSidebarHost(new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake()));
         }
     }
 

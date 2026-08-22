@@ -3,7 +3,6 @@ package kmu.maplayers.base.sidebar.runtime;
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
 import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
-import kmlib.mods.consolecommands.ConsoleOverlay;
 import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
@@ -89,7 +88,7 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     // which binding backs it; INSTANCE is where the live one is named.
     private final IntelScreenView intelScreen;
 
-    IntelSidebarHost(IntelScreenView intelScreen, ConsoleOverlay consoleOverlay) {
+    IntelSidebarHost(IntelScreenView intelScreen, ConsoleCommandsOverlay consoleOverlay) {
         // Opens folded to the rail on a save that has never moved it, so the panel never covers the visor
         // uninvited - the player expands it by the collapse handle when they want the controls. The intel
         // screen's own pick goes with it: a switch on the map screen leaves it where it was, and reopening

@@ -4,8 +4,8 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.settings.LunaSettingsReader;
 import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
+import kmlib.settings.LunaSettingsReader;
 
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.render.MapSurfaceInstaller;

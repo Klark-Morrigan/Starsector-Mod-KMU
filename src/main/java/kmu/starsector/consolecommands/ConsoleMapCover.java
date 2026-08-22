@@ -1,7 +1,6 @@
 package kmu.starsector.consolecommands;
 
 import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
-import kmlib.mods.consolecommands.ConsoleOverlay;
 
 import kmu.maplayers.base.hover.cover.MapCover;
 
@@ -11,12 +10,12 @@ import kmu.maplayers.base.hover.cover.MapCover;
  */
 public final class ConsoleMapCover implements MapCover {
 
-    private final ConsoleOverlay consoleOverlay;
+    private final ConsoleCommandsOverlay consoleOverlay;
 
     /**
      * @param consoleOverlay the console state to read
      */
-    public ConsoleMapCover(ConsoleOverlay consoleOverlay) {
+    public ConsoleMapCover(ConsoleCommandsOverlay consoleOverlay) {
         this.consoleOverlay = consoleOverlay;
     }
 

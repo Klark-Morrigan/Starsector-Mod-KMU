@@ -68,10 +68,10 @@ Hiding is also the better look, a console dimming and blurring its own backdrop.
 gate goes false, the renderer's early return zeroes the frame clock and drops the input motions and
 the input listener cancels a dangling drag, so a console opened mid-drag leaves nothing stale behind.
 
-What answers "is a console up" is `kmlib.mods.consolecommands.ConsoleOverlay`, injected into each
-host so the sidebar depends on the question rather than on an optional mod (each `INSTANCE` names the
-one live `ConsoleCommandsOverlay.INSTANCE`; any other implementation states the answer outright).
-That read fails open - mod
+What answers "is a console up" is `kmlib.mods.consolecommands.ConsoleCommandsOverlay`, injected into
+each host rather than reached for statically, so what a host does while a console is up is settleable
+without one running (each `INSTANCE` names the one live `ConsoleCommandsOverlay.INSTANCE`; a suite
+hands in a gate over a stood-in `ConsoleOverlayPresence`). That read fails open - mod
 absent, class gone, accessor moved, read throwing - to "no console open", leaving the sidebar exactly
 as it behaves without the seam, and warns once per session naming the hop that broke. One shared
 reader rather than one per caller, so the settled enablement, the resolved presence and the spent

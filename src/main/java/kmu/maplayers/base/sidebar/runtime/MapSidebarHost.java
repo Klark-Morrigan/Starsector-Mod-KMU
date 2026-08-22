@@ -2,7 +2,6 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
-import kmlib.mods.consolecommands.ConsoleOverlay;
 import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
@@ -54,7 +53,7 @@ public final class MapSidebarHost extends BaseSidebarHost {
     // returns every existing save to the opening default.
     private static final String MAP_SIDEBAR_DOCKED_KEY = "$kmu_political_map_sidebar_docked";
 
-    MapSidebarHost(ConsoleOverlay consoleOverlay) {
+    MapSidebarHost(ConsoleCommandsOverlay consoleOverlay) {
         // Opens out on a save that has never folded it: this panel is the player's primary way in to the
         // map layers and has the screen width to sit open, so out is the useful first sight of it. The
         // map screen's own pick goes with it, so its tab is unmoved by a switch on the intel screen.
