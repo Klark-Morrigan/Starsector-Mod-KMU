@@ -10,8 +10,8 @@ import java.util.Locale;
  *
  * <p>The half of the report that is about the VOID rather than about the cells: how much the
  * smoothing bought, what the reaches closed behind them, and the three faults a closed pocket
- * can carry - out past the coast that shut it in, no room left to draw, or ground inside the
- * coast that nothing drew at all.
+ * can carry - out past the coast that shut it in, no room left to draw, or a patch of map
+ * inside the coast that nothing drew at all.
  *
  * <p>Its own class because it grows on its own. Every rule about a pocket that has been settled
  * so far arrived as one more measure here, while the counts of cells and channels next door
@@ -222,8 +222,8 @@ final class CoastVoidReport {
     //
     // Asked of the shaping the viewer opens on, because that is the picture being complained
     // about: the bands a fill gives up against the coast and against the cells are taken out
-    // of the question, so what is left is ground inside the coast that should have been
-    // painted and was not.
+    // of the question, so what is left is map inside the coast that should have been painted
+    // and was not.
     private static void reportUndrawnVoid(LaidCoast laid) {
 
         var unfilled = UndrawnVoid.findUnfilledVoid(

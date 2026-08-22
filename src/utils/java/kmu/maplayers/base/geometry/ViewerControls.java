@@ -37,29 +37,21 @@ import javax.swing.SwingConstants;
  */
 final class ViewerControls {
 
-
     private static final int ROW_PADDING = 4;
-
 
     // Wider than a row's own padding, so the rule reads as a break between subjects
     // rather than as one more gap in an evenly spaced column.
     private static final int DIVIDER_PADDING = 8;
 
-
     private static final int LABELLED_ROWS = 2;
-
 
     private static final int SINGLE_COLUMN = 1;
 
-
     private static final int SINGLE_ROW = 1;
-
 
     private static final int RESET_BUTTON_WIDTH = 22;
 
-
     private static final int RESET_BUTTON_HEIGHT = 18;
-
 
     // ASCII only: the viewer runs wherever the JDK's default font does, and a glyph that
     // renders as a box on one machine makes the control unreadable rather than merely plain.

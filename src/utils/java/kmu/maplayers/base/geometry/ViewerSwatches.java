@@ -19,19 +19,16 @@ import javax.swing.JPanel;
  * not to be one - it shows its value as its own background rather than as text beside it, which
  * takes a fixed size, a border and a hand-set foreground that none of the other controls need.
  *
- * <p>Half the height of a labelled row, deliberately. A swatch carries a colour and nothing
- * else, so it only has to be big enough to see and to hit; there are a dozen of these rows
- * competing with the sliders for the panel, and at full height they push the sliders off it.
+ * <p>Built shorter than a labelled row, deliberately, which is the one thing about a swatch
+ * that is not obvious from looking at one.
  */
 final class ViewerSwatches {
 
-
     private static final int SWATCH_WIDTH = 40;
 
-
-    // Half the height a labelled row takes. A swatch carries a colour and nothing else, so
-    // the height only has to be enough to see the colour and hit the button - and there are
-    // four of these rows competing with the sliders for the panel.
+    // Half the height a labelled row takes. A swatch carries a colour and nothing else, so it
+    // only has to be big enough to see and to hit - and there are fifteen of these rows
+    // competing with the sliders for the panel, which at full height push the sliders off it.
     private static final int SWATCH_HEIGHT = 11;
 
     private static final int SWATCH_ROW_PADDING = 1;

@@ -351,8 +351,8 @@ final class ContinentBridges {
      * Drops the spans that run along a line another span already covers.
      *
      * <p>Shortest first, so where two overlap the one kept is the tighter, and the longer -
-     * which is the one covering ground a shorter span already walls - gives way. Taking them
-     * in a settled order is also what makes the answer the same on every run.
+     * which is the one running where a shorter span already walls - gives way. Taking them in
+     * a settled order is also what makes the answer the same on every run.
      *
      * <p>Asked once per span rather than of every pairing offered, which is a deliberate trade
      * against completeness: a cell pair whose closest corners turn out to be already walled

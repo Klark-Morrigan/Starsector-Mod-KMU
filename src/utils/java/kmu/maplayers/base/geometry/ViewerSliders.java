@@ -23,10 +23,7 @@ import javax.swing.JTextField;
  */
 final class ViewerSliders {
 
-
-
     private static final int SLIDER_STEPS = 1000;
-
 
     private static final int VALUE_BOX_COLUMNS = 6;
 

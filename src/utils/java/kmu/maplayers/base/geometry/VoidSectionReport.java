@@ -96,7 +96,7 @@ final class VoidSectionReport {
     //
     // They are holes in one union, so they cannot overlap - which is exactly why it is worth
     // asking: an overlap here would mean the boundary walk had produced two rings over the same
-    // ground, and every measure taken per section would then be double-counting it.
+    // piece of map, and every measure taken per section would then be double-counting it.
     //
     // Asked of each section's own anchor, which sits inside it at its widest rather than near
     // an edge, so a hit is a genuinely shared middle rather than two rings agreeing about a

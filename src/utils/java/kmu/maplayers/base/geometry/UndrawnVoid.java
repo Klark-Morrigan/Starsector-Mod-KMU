@@ -24,7 +24,7 @@ import java.util.Locale;
  * against that line, clear of every cell at the reach fills are drawn against, and inside no
  * fill - so a patch reported here is black on screen, and a map with none has no black left in
  * it. Matching holes to pockets cannot say that: a pocket is shaped after the hole it came from,
- * so a hole with a pocket to its name can still leave ground uncovered.
+ * so a hole with a pocket to its name can still leave a patch of map uncovered.
  *
  * <p>Sampled on a grid, because area is what the question is about. The spacing decides the
  * smallest patch that can be seen and nothing else; a patch worth a reader's attention is
@@ -84,7 +84,7 @@ final class UndrawnVoid {
      * <p>Run with every site taken as unowned, because a pocket that one owner rings is pushed
      * out into that owner's fills instead of being drawn as void - so with a colouring in hand
      * the shapes move, and a patch would be reported or not depending on who happens to hold
-     * the cells around it rather than on whether anything drew the ground.
+     * the cells around it rather than on whether anything drew that patch of map.
      *
      * @param laid         the coast with its walls down - handed in rather than laid again,
      *                     since a patch judged against one laying says nothing about a map
@@ -100,7 +100,7 @@ final class UndrawnVoid {
 
         // The reach fills are drawn against, which is also the reach a patch has to be clear
         // of the cells at. At the drawn shaping that is a channel outside them, so the band
-        // every fill gives up is not counted as ground it failed to cover.
+        // every fill gives up is not counted as map it failed to cover.
         var clearOfCells = shaping.isAtTrueExtent()
             ? parameters.cellRadius()
             : parameters.measureDrawnReach();
@@ -162,7 +162,7 @@ final class UndrawnVoid {
     //
     // In the order the tests are cheapest, since all but a few per cent of the sector fails
     // one of the first two: the cells are a distance each, the coast is a ring walk, and the
-    // fills are only reached by a sample that has already turned out to be bare ground.
+    // fills are only reached by a sample that has already turned out to be bare.
     private static List<double[]> collectBareSamples(
             LaidCoast laid,
             List<List<double[]>> coasts,
@@ -171,9 +171,9 @@ final class UndrawnVoid {
             double clearOfCoast) {
 
         // The sites' own box, opened out by a cell's reach. A coast runs round the OUTSIDE of
-        // the outermost cells, so ground inside it lies up to a full reach beyond the last
-        // site - and a grid stopping at the sites would call that ground swept without ever
-        // having looked at it.
+        // the outermost cells, so map inside it lies up to a full reach beyond the last site -
+        // and a grid stopping at the sites would call that band swept without ever having
+        // looked at it.
         var sites = laid.sites();
         var cells = new DiscUnion(sites, clearOfCells);
         var box = Bounds.computeEnclosingBounds(sites);
@@ -204,8 +204,8 @@ final class UndrawnVoid {
 
     // Bare samples gathered into the patches they form, so one hole in the map is one line of
     // report rather than forty. Grown outward from each unclaimed sample through its
-    // neighbours, which is what makes a patch a patch: ground a reader's eye runs across
-    // without meeting a fill.
+    // neighbours, which is what makes a patch a patch: map a reader's eye runs across without
+    // meeting a fill.
     private static List<UnfilledPatch> collectPatches(List<double[]> bare) {
 
         var taken = new boolean[bare.size()];
@@ -327,7 +327,7 @@ final class UndrawnVoid {
     }
 
     // Whether any fill on the map covers a point, which is the last and dearest of the
-    // tests - and so the one asked only of ground that has already turned out to be bare.
+    // tests - and so the one asked only of a sample that has already turned out to be bare.
     private static boolean isCoveredByAny(List<BoxedFill> fills, double[] at) {
 
         for (var fill : fills) {

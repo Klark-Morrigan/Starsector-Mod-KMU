@@ -193,8 +193,8 @@ final class StraightRuns {
     // nearest place the other can see converges on the common tangent - or, where the two
     // circles cross, onto the crossing itself, which lies on both of them and which each end
     // can therefore see from the other trivially. Settled there, the run leaves one cell and
-    // arrives on the next without covering any ground, so the notch it exists to span is left
-    // open and the coast walks down into it instead.
+    // arrives on the next without crossing any distance, so the notch it exists to span is
+    // left open and the coast walks down into it instead.
     //
     // Refused on its own terms because the two tests beside it cannot see this: a run of no
     // length goes inside nothing, so it reads as clear of every cell, and its two ends make
