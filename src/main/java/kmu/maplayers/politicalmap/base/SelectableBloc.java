@@ -13,8 +13,8 @@ package kmu.maplayers.politicalmap.base;
  * what stops a layer's option from having to carry another layer's numbers.
  *
  * <p>Plain data with no Starsector types - the crest is the faction's crest sprite path, not a loaded
- * {@code SpriteAPI} - so the selectable list can be built and asserted on hand-built inputs and the
- * picker widget owns the actual sprite load. A faction bloc carries its own crest; an alliance bloc
+ * {@code SpriteAPI} - so the selectable list can be built from hand-built inputs with nothing
+ * loaded, and the picker widget owns the actual sprite load. A faction bloc carries its own crest; an alliance bloc
  * carries its lead (colour) member's crest, so both draw a crest and only a bloc whose crest faction
  * has no authored crest leaves {@code crestSpritePath} null and draws its name alone.
  *

@@ -80,7 +80,7 @@ public final class FactionlessStyleResolver {
      * <p>Such a cell stays at full strength <em>as it already draws</em> - neutral, in the settled
      * bundle, identical to how an unfiltered map paints it - rather than taking the spotlight's
      * colours. Nobody holds the system on this layer, so painting it in the bloc's own shades
-     * would assert exactly the claim the view is drawn to report it does not have.
+     * would state exactly the claim the view is drawn to report it does not have.
      *
      * @param category             the category the cell draws in
      * @param passRecede           the recede every non-spotlighted bloc takes this pass, which is

@@ -38,7 +38,7 @@ public final class HoverTooltipGates {
     /**
      * @param hoverPermission the frames the map layers may answer the cursor on, held rather than
      *                        read here because its two screen reads walk the running game's widget
-     *                        tree on the intel side, which no test can stand up
+     *                        tree on the intel side, which nothing outside a running game answers
      * @return whether a hover box could be drawn this frame
      */
     public static boolean canAnyBoxDraw(MapHoverPermission hoverPermission) {

@@ -7,7 +7,7 @@ package kmu;
  * <p>Held apart from {@link KMU_ModPlugin} so a class deep in the mod can say who it belongs to
  * without naming the entry point. Referring to the plugin for a constant loads the plugin - a
  * {@code BaseModPlugin} subclass with its own logger and its own imports - into anything that
- * touches the referring class, tests included, which is a large amount of machinery to drag in for
+ * touches the referring class, which is a large amount of machinery to drag in for
  * a string. This holds constants and nothing else, so importing it costs what importing a constant
  * should.
  */

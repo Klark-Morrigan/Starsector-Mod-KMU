@@ -75,7 +75,7 @@ in a contest it never entered.
 
 ## The two ports
 
-Both live reads the rule would otherwise make are inverted here, so every case above tests on
+Both live reads the rule would otherwise make are inverted here, so every case above turns on
 hand-built values:
 
 - `BlocPaletteReader` - a bloc's bright and dark shades. `SectorBlocPalettes` is the live

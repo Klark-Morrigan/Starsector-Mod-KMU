@@ -39,13 +39,13 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
     // Which frames the cursor can be located against - a vanilla map host up, or a permission the
     // player granted reaching further. Held as the shared type rather than as a boolean so this pass
     // cannot come to compose the screen reads differently from the map pass that resolves the hover
-    // it reports; handed in so a test can name the answer, the live reads walking the running game's
+    // it reports; handed in rather than composed here, the live reads walking the running game's
     // widget tree on the intel side.
     private final MapHoverPermission hoverPermission;
 
     // The live read this dispatcher steps aside for. Supplied rather than built here: it is the one
-    // collaborator whose answer changes what this draws, so a caller that can hand over a stub is
-    // what makes the step-aside checkable at all.
+    // collaborator whose answer changes what this draws, so the caller decides what the step-aside
+    // is judged against.
     private final VanillaMapTooltipProbe vanillaMapTooltipProbe;
 
     /**

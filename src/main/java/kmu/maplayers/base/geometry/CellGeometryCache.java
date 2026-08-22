@@ -58,8 +58,8 @@ import java.util.Set;
  * shared edge - so it belongs to the render pass, not to this ownership-agnostic
  * geometry that rebuilds only on an access change.
  *
- * <p>Geometry only, no GL: the partition can be reasoned about and tested on a
- * stub sector, independent of how the cells are drawn.
+ * <p>Geometry only, no GL: the partition can be reasoned about from the sector
+ * alone, independent of how the cells are drawn.
  */
 public final class CellGeometryCache {
     private static final Logger LOG = Global.getLogger(CellGeometryCache.class);

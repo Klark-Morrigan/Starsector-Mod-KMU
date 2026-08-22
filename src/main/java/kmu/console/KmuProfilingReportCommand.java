@@ -19,8 +19,10 @@ import java.util.Objects;
  * <p>The on-demand reporting surface for {@link KmuProfiling}'s profiler: it
  * formats the per-section stats (count, average / min / max / total ms) so the
  * cost of instrumented work - geometry build, ownership scan, per-frame draw -
- * can be read without flooding the log. The profiler and output sink are
- * injected so the formatting and reset behaviour test without the console.
+ * can be read without flooding the log. The profiler and output sink arrive as
+ * constructor arguments rather than being reached for, so a caller can point
+ * the same formatting and reset rules at a different profiler or a different
+ * sink.
  */
 public final class KmuProfilingReportCommand extends KmlibBaseConsoleCommand {
     private static final KmuProfilingSpec SPEC = new KmuProfilingSpec();

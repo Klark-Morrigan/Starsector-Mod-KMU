@@ -70,7 +70,8 @@ the input listener cancels a dangling drag, so a console opened mid-drag leaves 
 
 What answers "is a console up" is `kmu.starsector.consolecommands.ConsoleOverlay`, injected into each
 host so the sidebar depends on the question rather than on an optional mod (each `INSTANCE` names the
-one live `ConsoleCommandsOverlay.INSTANCE`; a test states the answer). That read fails open - mod
+one live `ConsoleCommandsOverlay.INSTANCE`; any other implementation states the answer outright).
+That read fails open - mod
 absent, class gone, accessor moved, read throwing - to "no console open", leaving the sidebar exactly
 as it behaves without the seam, and warns once per session naming the hop that broke. One shared
 reader rather than one per caller, so the settled enablement, the resolved presence and the spent
@@ -128,7 +129,7 @@ would otherwise move the drawn box out from under the hit-test.
 
 The two entry points (`resolveMapPlacement`, `resolveIntelPlacement`) differ only in the anchor
 padding; `computeIntelPadding` converts the visor rect into top-left-anchored padding, and is
-package-private so the anchor maths is testable without a live sector. The `TabStyle` is the host's
+package-private so the anchor maths stands apart from the sector read around it. The `TabStyle` is the host's
 and is injected, so the band a strip stands in stays with the rest of that host's look rather than
 being half here. Both return `null` when the tab font cannot load - the face taken off that injected
 style, so the tabs are snapped to the face they are painted in - since layout snaps tabs to measured
@@ -157,11 +158,11 @@ so only the hidden part is drawn twice and the tooltip reads at one opacity acro
 repaint that cannot be made (the read broke, or the draw threw) leaves the tooltip where vanilla drew
 it and warns once a session, so the failure costs the occlusion it was there to fix and nothing more.
 
-Both are ports rather than direct calls, and that is what makes the pass testable at all: the live
-binding reaches a core-UI draw entry point by name and writes to GL, which no test can stand under,
-while whether a repaint happens, which region it is clipped to, and how a failed draw is survived are
-decisions worth pinning. `ReflectiveCoreUiComponentRepainter.INSTANCE` is the binding the plugin wires
-in; `CoreUiComponentRepainterFake` is what the tests drive.
+Both are ports rather than direct calls, and that is what keeps the pass separable from the game: the
+live binding reaches a core-UI draw entry point by name and writes to GL, neither of which exists
+outside a running one, while whether a repaint happens, which region it is clipped to, and how a
+failed draw is survived are decisions that hold anywhere.
+`ReflectiveCoreUiComponentRepainter.INSTANCE` is the binding the plugin wires in.
 
 The animations run either side of the layout, which is why the frame's elapsed time is read once and
 spent on both sides: the fold has to advance *before* the placement, since it sizes it, and the input
@@ -598,7 +599,7 @@ the prose-highlight `hColor` the stock install happens to give the same value.
 `style/SidebarPalettes` maps both of the player's colour choices to shades: the
 `SidebarColourSchemeChoice` to the panel's three accent steps, and the `NotchChevronColourChoice` to the
 chevron's resting and lit shades. It is kept out of the renderer so the "which colour does this
-choice mean" rules stay a pure lookup a test can pin, with no live GL or screen needed. The handle
+choice mean" rules stay a pure lookup, with no live GL or screen needed. The handle
 travels between those shades on the same fade the tabs use, so the gold choice - one colour passed
 twice - answers a hover by its accent wash alone while the panel-accent choice brightens the glyph
 with it; that choice resolves through whichever scheme is set, which is why the two rows sit together

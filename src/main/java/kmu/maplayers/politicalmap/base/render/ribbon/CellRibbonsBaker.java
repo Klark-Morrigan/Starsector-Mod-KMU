@@ -163,7 +163,7 @@ public final class CellRibbonsBaker {
     // nothing on the map for a band to be interrupted by, whatever placements the anchor overlay
     // may still be holding; or the player would rather the bands ran whole beneath the names.
     // Nothing downstream branches on why - the builder takes the boxes and carves what it is
-    // handed, which is what keeps the carve testable on hand-built rings.
+    // handed, which is what keeps the carve a matter of the boxes and nothing else.
     //
     // How much room a name is then taken to need is the player's too, and the two readings differ
     // by more than they sound: a placement's fitted box is the chord the search accepted, which

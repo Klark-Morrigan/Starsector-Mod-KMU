@@ -58,7 +58,7 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
     // boolean, for the reason the dispatcher holds it that way: the key must be claimed on exactly
     // the frames the box can draw on, and two compositions of the same screen reads would be two
     // chances to disagree about which those are. Handed in because the live reads walk the running
-    // game's widget tree on the intel side, which no test can stand up.
+    // game's widget tree on the intel side, which nothing outside a running game answers.
     private final MapHoverPermission hoverPermission;
 
     /**

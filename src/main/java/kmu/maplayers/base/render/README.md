@@ -259,7 +259,7 @@ predated them. So the rule for the next rename is:
 - **Keep each alias** for as long as saves predating that rename might still exist. They are
   read-only bridges and cost nothing to hold.
 
-A rename shipped without one is not caught by the build, by a test, or by the mod's own logging.
+A rename shipped without one is not caught by the build or by the mod's own logging.
 It surfaces as a player reporting that their campaign will not load.
 
 ## What is not here

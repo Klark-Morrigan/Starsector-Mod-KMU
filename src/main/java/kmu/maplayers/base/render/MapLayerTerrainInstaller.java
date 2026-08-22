@@ -45,9 +45,9 @@ public final class MapLayerTerrainInstaller {
     // Which terrain in hyperspace belongs to which variant, and the whole of what tells the three
     // apart: the plugin class its entity carries. Not the type id, which two of them never report -
     // those entities answer with the engine's whitelisted map type instead, so nothing they say
-    // about themselves distinguishes one from the other. Package-private alongside the type ids
-    // because the presence guard is exercised directly, and has to be handed the wiring the install
-    // path uses rather than a restatement of it.
+    // about themselves distinguishes one from the other. Package-private alongside the type ids so
+    // the presence guard names the same constants the install path does rather than a restatement
+    // of them.
     private static final Class<? extends CampaignTerrainPlugin> SCHEMATIC_TERRAIN =
         SectorMapLayerTerrainPlugin.class;
 
@@ -177,10 +177,9 @@ public final class MapLayerTerrainInstaller {
     }
 
     // The terrain this location carries for the given variant, or null when it carries none.
-    // Takes the terrain list rather than the location so the decision can be exercised on its own:
-    // the Starscape variant's install cannot be driven from a test at all, its add step constructing
-    // an entity whose obfuscated supertype chain a verifying JVM refuses to load, which leaves this
-    // the one decision on that path a test can reach.
+    // Takes the terrain list rather than the location so the recognition rule stands on its own,
+    // apart from the walk that fetches a location's terrain and apart from the entity construction
+    // an install carries out around it.
     //
     // Answers with the entity rather than with a bare present/absent because the reseat needs the
     // entity itself to move, and a second by-plugin walk beside this one would be the same guard

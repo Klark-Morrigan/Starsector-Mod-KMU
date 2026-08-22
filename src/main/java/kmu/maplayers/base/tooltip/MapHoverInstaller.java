@@ -76,8 +76,8 @@ public final class MapHoverInstaller {
     // is re-added fresh each load and never duplicates. Mirrors the sidebar's contract so exactly one
     // renders.
     static void installMapLayerHoverTooltip(SectorAPI sector) {
-        // Both live reads are supplied rather than built by the dispatcher, so a test can stand
-        // stand-ins in their place and pin the step-aside and the on-screen gate. The map read is
+        // Both live reads are supplied rather than built by the dispatcher, so its two decisions -
+        // the step-aside and the on-screen gate - turn on what it is handed. The map read is
         // host-blind: the box draws wherever the layer paints, which is the sector map and the intel
         // screen's map visor alike, and look-blind: some terrain surface paints the layers in either
         // look, so the Starscape filter changes what is under the box rather than whether there is one.
@@ -96,9 +96,8 @@ public final class MapHoverInstaller {
     static void installHoverTooltipDetailModeInput(SectorAPI sector) {
         // Handed the same permission the dispatcher is, so the key is claimed on exactly the screens
         // and looks the box it switches can draw on - which is the whole of what makes the toggle
-        // honest, and is pinned against this composition in MapLayerCellTooltipGateIntegrationTest.
-        // A permission each rather than one shared instance: it holds no state, both are built from
-        // the same factory, and a listener reaching for another's field would outlive it.
+        // honest. A permission each rather than one shared instance: it holds no state, both are
+        // built from the same factory, and a listener reaching for another's field would outlive it.
         SectorListeners.installListener(
             sector,
             HoverTooltipDetailModeInput.class,

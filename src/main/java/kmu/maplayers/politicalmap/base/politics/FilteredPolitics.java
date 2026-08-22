@@ -85,7 +85,8 @@ public final class FilteredPolitics {
 
     /**
      * Classifies how the selected bloc stands in one system from the blocs present in it and their
-     * footprints - the pure rule the whole presence resolver turns on, testable on hand-built sets.
+     * footprints - the pure rule the whole presence resolver turns on, settled from what it is
+     * handed and nothing else.
      *
      * <p>Presence and dominance are two questions, and this takes an answer to each rather than
      * inferring the first from the second. A footprint is economy-fed in every term, so a bloc whose

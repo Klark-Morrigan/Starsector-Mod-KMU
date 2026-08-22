@@ -55,8 +55,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
     private final ActiveLayerSelection layerSelection;
 
     // Whether a console has taken the keyboard this frame. Handed in rather than read from the console mod
-    // here, so a host depends on the question and not on an optional mod, and a test can put a console up
-    // without one running.
+    // here, so a host depends on the question and not on an optional mod.
     private final ConsoleOverlay consoleOverlay;
 
     // The panel's scroll and collapse state. Seeded from the fold selection at construction so the panel is

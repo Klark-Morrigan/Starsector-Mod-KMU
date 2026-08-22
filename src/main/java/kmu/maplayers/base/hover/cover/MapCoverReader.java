@@ -72,7 +72,8 @@ public final class MapCoverReader {
     }
 
     // The composition itself, named apart from the reader it is handed to so which covers a given
-    // install actually has can be read - and asserted - without standing a reader up around them.
+    // install actually has is a question with its own answer, rather than one only a reader can be
+    // asked.
     static List<MapCover> composeLiveCovers() {
 
         var covers = new ArrayList<MapCover>();

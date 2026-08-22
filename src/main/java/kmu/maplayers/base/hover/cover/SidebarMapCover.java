@@ -25,7 +25,7 @@ public final class SidebarMapCover implements MapCover {
 
     private final SidebarPresence sidebarPresence;
 
-    /** Reads the live roster and the live mouse - the pairing outside a test. */
+    /** Reads the live roster and the live mouse - the pairing a running game gets. */
     public SidebarMapCover() {
         this(SidebarHosts::isPointOverAnySidebar, new VanillaCursorPosition());
     }

@@ -63,13 +63,13 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     private final SidebarHost host;
 
     // Locates the tooltip the core UI is showing right now, so this pass can lift it back over the panel
-    // it would otherwise be buried under. Supplied rather than built here so a test can stand a stub in
-    // its place, and one per renderer because the probe's broken-read warning is per instance.
+    // it would otherwise be buried under. Supplied rather than built here so the caller decides which
+    // probe this pass reads, and one per renderer because the probe's broken-read warning is per instance.
     private final VanillaMapTooltipProbe vanillaMapTooltipProbe;
 
     // Draws that tooltip a second time. A port rather than the draw itself, because the live binding
-    // reaches a core-UI entry point by name and writes to the GL surface - neither of which a test can
-    // stand under, while what this pass decides around it is worth pinning.
+    // reaches a core-UI entry point by name and writes to the GL surface - so what this pass decides
+    // around it stays separable from the two things only a running game can carry out.
     private final CoreUiComponentRepainter coreUiComponentRepainter;
 
     // Says once a session that the repaint broke. Per instance for the probe's reason, and once because

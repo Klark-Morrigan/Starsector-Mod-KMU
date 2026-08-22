@@ -18,7 +18,7 @@ import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
  * on a tie to the earlier listed. And which faction claims the system: the claimant is the
  * territorial faction whose standing market carries the top score, and on a tie the one the walk
  * reached first. Equal scores anywhere else - two rivals' lesser markets, say - were never compared
- * over anything, and marking them would assert a contest that did not happen.
+ * over anything, and marking them would state a contest that did not happen.
  *
  * <p>Several kinds of market carry a score yet never compete, and none of them are marked. A hidden
  * market is skipped by the walk outright - it reaches the contest only through the sibling term - and

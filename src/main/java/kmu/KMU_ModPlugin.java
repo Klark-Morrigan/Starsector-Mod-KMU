@@ -135,8 +135,8 @@ public class KMU_ModPlugin extends BaseModPlugin {
     }
 
     // Brings both switches to bear on the sector already wired, each acting only if it was the one
-    // that moved. Package-private so the pairing is pinned: a switch left out here is one the
-    // player can flip and see nothing happen until they reload.
+    // that moved. Every switched feature belongs in this one place: one left out is one the player
+    // can flip and see nothing happen until they reload.
     static void applySwitchedFeatures() {
 
         var sector = Global.getSector();

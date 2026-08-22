@@ -73,7 +73,7 @@ them. On the claims view that is routine: pirates, the Path, and independents ma
 their own colonies always land in a holderless cell.
 
 Such a cell paints the neutral **lifted toward white** by `presenceLightening`, not the bloc's
-colours - nobody holds the system on this layer, and its shades would assert exactly the claim the
+colours - nobody holds the system on this layer, and its shades would state exactly the claim the
 view reports it does not have. The lift is what makes sparing the recede visible at all: the
 neutral a factionless cell paints in and the Independent grey the background sinks from are the
 same grey, so a merely-unreceded cell sits at the value the background started at and reads as part

@@ -15,7 +15,7 @@ package kmu.maplayers.politicalmap.base.dominance;
  *
  * <p>Stated in the type rather than as a flag beside the score, so a presence-only standing carrying
  * a weight it was never given cannot be written. Kept to plain ids and an int with no Starsector
- * types, so the ranking is unit-testable on hand-built inputs; turning the id into a crest and a
+ * types, so the ranking is arithmetic over hand-built values; turning the id into a crest and a
  * display name is a later, separate step's job.
  *
  * <p>A presence-only standing can never take a system: dominance holding is resolved off footprints

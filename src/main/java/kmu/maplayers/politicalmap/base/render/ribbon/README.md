@@ -201,7 +201,7 @@ roomiest and that can be over a neighbour.
 Whether any of this happens is the player's: `CellRibbonsBaker.resolveNameBoxes` hands over no boxes
 when the names are switched off, and none when the player would rather keep the whole band. Nothing
 below that branches - `CellRibbonBuilder` takes boxes and knows nothing about why the list came back
-empty, which is what keeps the carve testable on hand-built rings.
+empty, which is what keeps the carve a matter of the boxes and nothing else.
 
 How much room a name is taken to need is the player's as well, and the same call answers it: the
 name's fitted box (`ClusterNameBoxes`) or the drawn words (`LabelLineBoxes`, the default), both from

@@ -15,7 +15,7 @@ import java.util.List;
  *
  * <p>The aggregate is the sum of the members' scores, so a group's ranking against another group
  * reads off the same weights its members are ranked by. Kept to plain ids and ints with no
- * Starsector types, so the ranking is unit-testable on hand-built inputs.
+ * Starsector types, so the ranking is arithmetic over hand-built values.
  *
  * @param blocId         the group's bloc id - a faction id in the faction view, an alliance bloc id
  *                       in the alliances view

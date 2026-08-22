@@ -40,13 +40,13 @@ public final class ForeignMapPassWarning {
 
     // What the live tree holds around any embedded map, or null when it could not be read. Supplied
     // rather than called for here, for the reason the presence read is: both walk a widget tree
-    // that only exists in a running game, and a class that reached for either directly could not be
-    // exercised at all.
+    // that only exists in a running game, so a class that reached for either directly would work
+    // only inside one.
     private final Supplier<String> describeEmbeddedMapHosts;
 
     // Whether a map is on screen at all, as a supplied read rather than one composed here: the
-    // hosts a map can be showing on are not this class's knowledge, and a supplied read is one a
-    // test can answer either way without a live widget tree to walk.
+    // hosts a map can be showing on are not this class's knowledge, and a supplied read is the
+    // caller's to answer without this class holding a widget tree to walk.
     private final BooleanSupplier isAnyMapShowing;
 
     private final SessionWarning warning;

@@ -69,7 +69,7 @@ public final class BlocStyleResolver {
      * to a muted background the spotlight reads against. The union (strongest mute, either
      * desaturate) applies once, so a bloc the view already recedes - a non-allied faction under
      * the alliances view - does not mute a second time when the filter recedes it too. Pure over
-     * its inputs so the rule pins without geometry.
+     * its inputs, so the rule needs no geometry.
      */
     public static ElementStyleAdjustment resolveFilterAdjustment(
             boolean isSpotlit,

@@ -29,8 +29,8 @@ import com.fs.starfarer.campaign.CampaignTerrain;
  *
  * <p>It stays a shell with no logic of its own. Its supertype chain reaches obfuscated core classes
  * carrying members whose names are not legal Java identifiers, so a verifying JVM refuses to load
- * it anywhere but in the running game; anything worth asserting therefore has to live in
- * {@link SectorMapLayerStarscapeTerrainPlugin} instead, where it can be reached.
+ * it anywhere but in the running game; every rule worth stating therefore lives in
+ * {@link SectorMapLayerStarscapeTerrainPlugin} instead, which loads anywhere.
  */
 public class SectorMapLayerStarscapeTerrain extends CampaignTerrain {
 

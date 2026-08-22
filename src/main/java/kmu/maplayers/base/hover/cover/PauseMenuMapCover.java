@@ -24,7 +24,7 @@ public final class PauseMenuMapCover implements MapCover {
 
     private final BooleanSupplier isPauseMenuShowing;
 
-    /** Reads the live campaign UI - the pairing outside a test. */
+    /** Reads the live campaign UI - the pairing a running game gets. */
     public PauseMenuMapCover() {
         this(PauseMenuMapCover::readLiveMenuState);
     }

@@ -10,7 +10,7 @@ import java.util.function.BooleanSupplier;
  * showing.
  *
  * <p>{@link MapHoverGates#isCursorLocatableOn} states the rule and stays free of any live read, so
- * it can be pinned against settings alone. This binds the two screen reads that rule needs - a
+ * the rule turns on settings alone. This binds the two screen reads that rule needs - a
  * vanilla map host being up, and the player looking at the campaign world itself - and is what a
  * caller in a running game holds.
  *

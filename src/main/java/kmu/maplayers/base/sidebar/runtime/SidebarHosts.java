@@ -47,9 +47,9 @@ public final class SidebarHosts {
         return REGISTERED_HOSTS;
     }
 
-    // The disjunction over a given roster, and the half of the answer a unit test can hold: the live
-    // roster is singletons that read the running game, so the rule is exercised through a roster
-    // handed in rather than through the one the game supplies.
+    // The disjunction over a given roster, stated apart from the roster the game supplies: those
+    // hosts are singletons that read the running game, so the rule is written over whatever roster
+    // it is handed rather than over that one.
     static boolean isPointOverAnySidebarOf(List<SidebarHost> hosts, float uiX, float uiY) {
         for (var host : hosts) {
             if (isPointOverSidebarOf(host, uiX, uiY)) {

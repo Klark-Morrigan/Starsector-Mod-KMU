@@ -12,8 +12,8 @@ import java.awt.Color;
 
 /**
  * Turns the sidebar's player colour choices into the concrete shades the widget library paints with.
- * Kept apart from the renderer so the "which colour does this choice mean" rules are a pure lookup a
- * test can pin, leaving the renderer to the wiring that needs a live GL context and a live screen.
+ * Kept apart from the renderer so the "which colour does this choice mean" rules are a pure lookup,
+ * leaving the renderer to the wiring that needs a live GL context and a live screen.
  */
 public final class SidebarPalettes {
 

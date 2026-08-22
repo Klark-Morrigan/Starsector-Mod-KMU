@@ -36,7 +36,7 @@ public final class VanillaChromeMapCover implements MapCover {
     // screen it was measured on, and the read behind this memoises that for itself.
     private final Supplier<MapSurfaceArea> resolveSurfaceArea;
 
-    /** Reads the live widget tree and the live mouse - the pairing outside a test. */
+    /** Reads the live widget tree and the live mouse - the pairing a running game gets. */
     public VanillaChromeMapCover() {
         this(MapSurfaceBounds::resolveSurfaceArea, new VanillaCursorPosition());
     }

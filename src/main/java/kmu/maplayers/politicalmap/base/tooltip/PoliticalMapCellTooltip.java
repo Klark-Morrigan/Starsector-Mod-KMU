@@ -44,8 +44,8 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
 
     /**
      * The claim read a body draws on - the whole scored contest, or the decree alone, whichever it
-     * has something to say about. Held rather than reached for statically so a body can be exercised
-     * against a known contest without a running game behind it.
+     * has something to say about. Held rather than reached for statically, so a body draws on the
+     * read it is handed rather than on whichever one a running game happens to have.
      */
     protected final ClaimBreakdownReader claimBreakdownReader;
 
