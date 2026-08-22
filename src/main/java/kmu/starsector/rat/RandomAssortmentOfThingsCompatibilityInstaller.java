@@ -18,11 +18,9 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  * which of the two a cursor read resolves through is the engine's child order rather than a
  * contract.
  *
- * <p>Named for the mod rather than for the widget, because nothing here is a rule about minimaps in
- * general. The generic half is KMLib's: {@code OffScreenWidgetSuppressor} reads any widget's box
- * against the screen and writes an opacity, and would read a minimap docked by the next mod exactly
- * the same way. What cannot be stated generally is whose widget this mod may write into, and that
- * is the whole of what this package is for.
+ * <p>Named for the mod rather than for the widget: nothing here is a rule about minimaps in
+ * general. The generic half is KMLib's {@code OffScreenWidgetSuppressor}, and whose widget this
+ * mod may write into is {@link RandomAssortmentOfThingsMinimapSuppression}'s.
  *
  * <p><b>Three conditions govern the suppression, and the switch that drives this installer
  * composes all of them</b>: {@link RandomAssortmentOfThingsCompatibilityMode#isEngaged()} is the

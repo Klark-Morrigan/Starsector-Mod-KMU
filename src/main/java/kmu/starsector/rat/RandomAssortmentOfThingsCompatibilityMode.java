@@ -74,7 +74,7 @@ public final class RandomAssortmentOfThingsCompatibilityMode {
      *         a minimap to adapt to, both
      */
     public boolean isEngaged() {
-        
+
         return isModeSwitchedOn.getAsBoolean()
             && minimap.isReplacingRadar();
     }

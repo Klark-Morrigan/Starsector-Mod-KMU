@@ -1,17 +1,19 @@
 package kmu.starsector.rat;
 
-import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.map.probes.EmbeddedMap;
 import kmlib.testfixtures.starsector.ui.input.CursorPositionFake;
-import kmlib.testfixtures.starsector.ui.layout.PositionFake;
-import kmlib.testfixtures.starsector.ui.map.presence.CampaignMinimapFake;
 import kmlib.testfixtures.starsector.ui.map.probes.PlacedSectorMapWidgetFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.function.BooleanSupplier;
+
+import static kmu.starsector.rat.RandomAssortmentOfThingsFixtures.FULLY_DRAWN;
+import static kmu.starsector.rat.RandomAssortmentOfThingsFixtures.createDisengagedMode;
+import static kmu.starsector.rat.RandomAssortmentOfThingsFixtures.createEmbeddedMapOf;
+import static kmu.starsector.rat.RandomAssortmentOfThingsFixtures.createEngagedMode;
+import static kmu.starsector.rat.RandomAssortmentOfThingsFixtures.createMinimapDrawnAt;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,7 +30,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class RandomAssortmentOfThingsMinimapCoverTest {
 
     private static final BooleanSupplier A_MAP_IS_SHOWING = () -> true;
-    private static final float FULLY_DRAWN = 1f;
     private static final BooleanSupplier NO_MAP_SHOWING = () -> false;
 
     @Nested
@@ -41,7 +42,10 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
             var cursorFake = new CursorPositionFake();
             cursorFake.restCursorAt(100f, 80f);
 
-            assertThat(buildCover(cursorFake, NO_MAP_SHOWING, createMinimapAt(20f, 30f, 200f, 150f))
+            assertThat(buildCover(
+                        cursorFake,
+                        NO_MAP_SHOWING,
+                        createMinimapDrawnAt(20f, 30f, 200f, 150f))
                     .isCoveringCursor())
                 .isFalse();
         }
@@ -53,7 +57,10 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
             var cursorFake = new CursorPositionFake();
             cursorFake.restCursorAt(500f, 400f);
 
-            assertThat(buildCover(cursorFake, NO_MAP_SHOWING, createMinimapAt(20f, 30f, 200f, 150f))
+            assertThat(buildCover(
+                        cursorFake,
+                        NO_MAP_SHOWING,
+                        createMinimapDrawnAt(20f, 30f, 200f, 150f))
                     .isCoveringCursor())
                 .isTrue();
         }
@@ -68,7 +75,7 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
             assertThat(buildCover(
                         cursorFake,
                         NO_MAP_SHOWING,
-                        createMinimapAt(-400f, 30f, 200f, 150f))
+                        createMinimapDrawnAt(-400f, 30f, 200f, 150f))
                     .isCoveringCursor())
                 .isTrue();
         }
@@ -81,9 +88,9 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
             cursorFake.restCursorAt(500f, 400f);
 
             assertThat(new RandomAssortmentOfThingsMinimapCover(
-                        buildDisengagedMode(),
+                        createDisengagedMode(),
                         NO_MAP_SHOWING,
-                        () -> createMinimapAt(20f, 30f, 200f, 150f),
+                        () -> createMinimapDrawnAt(20f, 30f, 200f, 150f),
                         cursorFake)
                     .isCoveringCursor())
                 .isFalse();
@@ -99,7 +106,7 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
             assertThat(buildCover(
                         cursorFake,
                         A_MAP_IS_SHOWING,
-                        createMinimapAt(20f, 30f, 200f, 150f))
+                        createMinimapDrawnAt(20f, 30f, 200f, 150f))
                     .isCoveringCursor())
                 .isFalse();
         }
@@ -115,7 +122,7 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
             cursorFake.restCursorAt(100f, 80f);
 
             assertThat(new RandomAssortmentOfThingsMinimapCover(
-                        buildEngagedMode(),
+                        createEngagedMode(),
                         NO_MAP_SHOWING,
                         () -> null,
                         cursorFake)
@@ -130,11 +137,11 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
             var cursorFake = new CursorPositionFake();
             cursorFake.restCursorAt(100f, 80f);
 
-            var unplacedMap = new EmbeddedMap(
-                new PlacedSectorMapWidgetFake(null, FULLY_DRAWN), List.of());
+            var unplacedMap = createEmbeddedMapOf(
+                new PlacedSectorMapWidgetFake(null, FULLY_DRAWN));
 
             assertThat(new RandomAssortmentOfThingsMinimapCover(
-                        buildEngagedMode(),
+                        createEngagedMode(),
                         NO_MAP_SHOWING,
                         () -> unplacedMap,
                         cursorFake)
@@ -152,36 +159,9 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
             EmbeddedMap minimap) {
 
         return new RandomAssortmentOfThingsMinimapCover(
-            buildEngagedMode(),
+            createEngagedMode(),
             isAnyMapShowing,
             () -> minimap,
             cursorFake);
-    }
-
-    // The player's switch on over a minimap standing in for the radar - both halves the mode ANDs.
-    private static RandomAssortmentOfThingsCompatibilityMode buildEngagedMode() {
-        return buildMode(true);
-    }
-
-    // The player's switch off over the same minimap, so what disengages the mode is the switch and
-    // not the absence of a map to adapt to - the half a case about the switch has to hold still.
-    private static RandomAssortmentOfThingsCompatibilityMode buildDisengagedMode() {
-        return buildMode(false);
-    }
-
-    private static RandomAssortmentOfThingsCompatibilityMode buildMode(boolean isModeSwitchedOn) {
-
-        var minimapFake = new CampaignMinimapFake();
-        minimapFake.replaceRadarWithMinimap();
-
-        return new RandomAssortmentOfThingsCompatibilityMode(() -> isModeSwitchedOn, minimapFake);
-    }
-
-    // A drawn map widget at a known box.
-    private static EmbeddedMap createMinimapAt(float x, float y, float width, float height) {
-        return new EmbeddedMap(
-            new PlacedSectorMapWidgetFake(
-                new PositionFake(new Rectangle(x, y, width, height)), FULLY_DRAWN),
-            List.of());
     }
 }

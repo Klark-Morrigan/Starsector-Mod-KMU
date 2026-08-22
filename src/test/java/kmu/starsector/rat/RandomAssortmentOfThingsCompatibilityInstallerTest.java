@@ -11,6 +11,7 @@ import org.mockito.ArgumentCaptor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -19,8 +20,76 @@ import static org.mockito.Mockito.verify;
  * Pins the script's lifetime: registered transient and fresh per load, and taken back by the
  * instance this installed rather than by its class. When any of this runs at all is the composed
  * switch's, pinned where the switch is.
+ *
+ * <p>The two entry points are pinned for what they route to and for the failure boundary around
+ * it. A step that throws must cost its own registration and nothing else, since the load carries
+ * on past this installer and every later step still has to run.
  */
-class RandomAssortmentOfThingsCompatibilityInstallerTest {
+final class RandomAssortmentOfThingsCompatibilityInstallerTest {
+
+    @Nested
+    class InstallAll {
+
+        @Test
+        void installsTheParkedMinimapSuppressor() {
+
+            var sectorMock = mock(SectorAPI.class);
+
+            RandomAssortmentOfThingsCompatibilityInstaller.installAll(sectorMock);
+
+            verify(sectorMock)
+                .addTransientScript(any(OffScreenWidgetSuppressor.class));
+        }
+
+        @Test
+        void swallowsWhateverTheStepThrows() {
+            // The failure boundary. A sector that rejects the registration costs this suppressor
+            // and leaves the rest of the load to finish - a throw here would take the wiring steps
+            // queued behind it with it.
+            var sectorMock = mock(SectorAPI.class);
+            doThrow(new IllegalStateException("registration refused"))
+                .when(sectorMock).addTransientScript(any());
+
+            var suppressorInstall = (Runnable) () ->
+                RandomAssortmentOfThingsCompatibilityInstaller.installAll(sectorMock);
+
+            assertThatCode(suppressorInstall::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class UninstallAll {
+
+        @Test
+        void takesBackTheParkedMinimapSuppressor() {
+
+            var sectorMock = mock(SectorAPI.class);
+
+            RandomAssortmentOfThingsCompatibilityInstaller.installAll(sectorMock);
+            RandomAssortmentOfThingsCompatibilityInstaller.uninstallAll(sectorMock);
+
+            verify(sectorMock)
+                .removeTransientScript(any(OffScreenWidgetSuppressor.class));
+        }
+
+        @Test
+        void swallowsWhateverTheStepThrows() {
+            // The same boundary on the way out. A removal runs whenever the composed switch reads
+            // off, including mid-session, so a throw would abort whatever else that switch drives.
+            var sectorMock = mock(SectorAPI.class);
+            doThrow(new IllegalStateException("removal refused"))
+                .when(sectorMock).removeTransientScript(any());
+
+            RandomAssortmentOfThingsCompatibilityInstaller.installAll(sectorMock);
+
+            var suppressorRemoval = (Runnable) () ->
+                RandomAssortmentOfThingsCompatibilityInstaller.uninstallAll(sectorMock);
+
+            assertThatCode(suppressorRemoval::run)
+                .doesNotThrowAnyException();
+        }
+    }
 
     @Nested
     class InstallParkedMinimapSuppressor {

@@ -1,17 +1,19 @@
 package kmu.starsector.rat;
 
-import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.map.probes.EmbeddedMap;
-import kmlib.testfixtures.starsector.ui.layout.PositionFake;
-import kmlib.testfixtures.starsector.ui.map.presence.CampaignMinimapFake;
-import kmlib.testfixtures.starsector.ui.map.probes.PlacedSectorMapWidgetFake;
 import kmlib.testfixtures.starsector.ui.map.probes.SectorMapWidgetFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.function.Supplier;
+
+import static kmu.starsector.rat.RandomAssortmentOfThingsFixtures.DRAWN_TO_NOTHING;
+import static kmu.starsector.rat.RandomAssortmentOfThingsFixtures.FULLY_DRAWN;
+import static kmu.starsector.rat.RandomAssortmentOfThingsFixtures.createDisengagedMode;
+import static kmu.starsector.rat.RandomAssortmentOfThingsFixtures.createEmbeddedMapOf;
+import static kmu.starsector.rat.RandomAssortmentOfThingsFixtures.createEngagedMode;
+import static kmu.starsector.rat.RandomAssortmentOfThingsFixtures.createMinimapWidgetDrawnTo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,9 +32,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class RandomAssortmentOfThingsMinimapSuppressionTest {
 
-    private static final float DRAWN_TO_NOTHING = 0f;
-    private static final float FULLY_DRAWN = 1f;
-
     // Faults if it is asked, so a case that must not reach the widget tree says so by construction.
     // The live walk costs a descent through the core UI, which an install without the mode must not
     // pay for.
@@ -47,9 +46,9 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
         void resolveSuppressibleMinimapAnswersTheOneEmbeddedMapWidget() {
             // What the mode permits: one docked minimap, which the script beside this switches off
             // for as long as its owner keeps it parked.
-            var minimapFake = createMinimapWidget(FULLY_DRAWN);
+            var minimapFake = createMinimapWidgetDrawnTo(FULLY_DRAWN);
 
-            assertThat(buildSuppression(() -> new EmbeddedMap(minimapFake, List.of()))
+            assertThat(buildSuppression(() -> createEmbeddedMapOf(minimapFake))
                     .resolveSuppressibleMinimap())
                 .isSameAs(minimapFake);
         }
@@ -59,9 +58,9 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
             // The read is the widget rather than what shows of it, and it has to stay that way: the
             // moment the suppression lands, a widget sifted by what it is drawn at would stop being
             // reported and the minimap would be parked for good.
-            var minimapFake = createMinimapWidget(DRAWN_TO_NOTHING);
+            var minimapFake = createMinimapWidgetDrawnTo(DRAWN_TO_NOTHING);
 
-            assertThat(buildSuppression(() -> new EmbeddedMap(minimapFake, List.of()))
+            assertThat(buildSuppression(() -> createEmbeddedMapOf(minimapFake))
                     .resolveSuppressibleMinimap())
                 .isSameAs(minimapFake);
         }
@@ -71,7 +70,7 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
             // Inert without the mode, and asked before the walk, so an install that never switched
             // the mode on pays one boolean.
             assertThat(new RandomAssortmentOfThingsMinimapSuppression(
-                        buildDisengagedMode(), MAP_NOT_TO_BE_WALKED_FOR)
+                        createDisengagedMode(), MAP_NOT_TO_BE_WALKED_FOR)
                     .resolveSuppressibleMinimap())
                 .isNull();
         }
@@ -90,7 +89,7 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
         void resolveSuppressibleMinimapAnswersNothingForAMapThatIsNotAWidget() {
             // A map is recognised by the map interface alone, which promises nothing about being a
             // component - and a widget is what an opacity is written to.
-            var embeddedMap = new EmbeddedMap(new SectorMapWidgetFake(), List.of());
+            var embeddedMap = createEmbeddedMapOf(new SectorMapWidgetFake());
 
             assertThat(buildSuppression(() -> embeddedMap).resolveSuppressibleMinimap())
                 .isNull();
@@ -102,31 +101,6 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
             Supplier<EmbeddedMap> findSingleEmbeddedMap) {
 
         return new RandomAssortmentOfThingsMinimapSuppression(
-            buildEngagedMode(), findSingleEmbeddedMap);
-    }
-
-    // The player's switch on over a minimap standing in for the radar - both halves the mode ANDs.
-    private static RandomAssortmentOfThingsCompatibilityMode buildEngagedMode() {
-        return buildMode(true);
-    }
-
-    // The player's switch off over the same minimap, so what disengages the mode is the switch and
-    // not the absence of a map to adapt to.
-    private static RandomAssortmentOfThingsCompatibilityMode buildDisengagedMode() {
-        return buildMode(false);
-    }
-
-    private static RandomAssortmentOfThingsCompatibilityMode buildMode(boolean isModeSwitchedOn) {
-
-        var minimapFake = new CampaignMinimapFake();
-        minimapFake.replaceRadarWithMinimap();
-
-        return new RandomAssortmentOfThingsCompatibilityMode(() -> isModeSwitchedOn, minimapFake);
-    }
-
-    // A placed map widget, at whatever it is currently drawn at.
-    private static PlacedSectorMapWidgetFake createMinimapWidget(float opacity) {
-        return new PlacedSectorMapWidgetFake(
-            new PositionFake(new Rectangle(20f, 30f, 200f, 150f)), opacity);
+            createEngagedMode(), findSingleEmbeddedMap);
     }
 }

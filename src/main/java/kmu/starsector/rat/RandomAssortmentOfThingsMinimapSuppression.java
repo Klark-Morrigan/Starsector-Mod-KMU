@@ -15,9 +15,9 @@ import java.util.function.Supplier;
  * <p>The permission half of the suppression, and the only half that names a mod. What being parked
  * means, and what switching a widget off consists of, are stated over any widget at all -
  * {@code OffScreenWidgetSuppressor} reads a box against the screen and writes an opacity, and would
- * read a minimap docked by the next mod - or any other parked widget - exactly the same way. What
- * cannot be stated generally is whether writing into somebody else's widget is wanted at all, which
- * is a per-mod question the player answers with the mode.
+ * read a minimap docked by the next mod - or any other parked widget - exactly the same way. Whose
+ * widget may be written into at all is the mode's to answer - see
+ * {@link RandomAssortmentOfThingsCompatibilityMode}.
  *
  * <p><b>Exactly one embedded map, and none of the reasons the confinement needs one.</b> There the
  * frame carries a single transform and a second map makes a hover unattributable. Here the mode
@@ -39,9 +39,8 @@ import java.util.function.Supplier;
  */
 public final class RandomAssortmentOfThingsMinimapSuppression {
 
-    // The single map surface on screen, asked afresh each frame, or null when there is not exactly
-    // one. A supplier rather than the reader itself so this class states its question and not where
-    // the answer is walked out of.
+    // SingleEmbeddedMapReader's reading, taken afresh each frame, as a supplier so this class
+    // states its question and not where the answer is walked out of.
     private final Supplier<EmbeddedMap> findSingleEmbeddedMap;
 
     private final RandomAssortmentOfThingsCompatibilityMode mode;

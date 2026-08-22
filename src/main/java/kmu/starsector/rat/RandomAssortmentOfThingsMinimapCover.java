@@ -53,18 +53,16 @@ import java.util.function.Supplier;
  * has to cover rather than open up, or the leak returns by way of the read meant to stop it. What
  * failing closed costs is the behaviour the player had before switching the mode on.
  *
- * <p>Named for the mod because the mode is - see {@link RandomAssortmentOfThingsCompatibilityMode}
- * - while nothing it reads names one: an embedded map is found structurally, and its box is the
- * game's own answer about a widget. So the reading would fit the next mod that docks a map surface;
- * what is per-mod is the switch that engages it.
+ * <p>Named for the mode rather than for what it reads - see
+ * {@link RandomAssortmentOfThingsCompatibilityMode}. Nothing here names a mod: an embedded map is
+ * found structurally, and its box is the game's own answer about a widget.
  */
 public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
 
     private final CursorPosition cursor;
 
-    // The single map surface on screen, asked afresh each frame, or null when there is not exactly
-    // one. A supplier rather than the reader itself so this class states its question and not where
-    // the answer is walked out of.
+    // SingleEmbeddedMapReader's reading, taken afresh each frame, as a supplier so this class
+    // states its question and not where the answer is walked out of.
     private final Supplier<EmbeddedMap> findSingleEmbeddedMap;
 
     private final BooleanSupplier isAnyMapShowing;
