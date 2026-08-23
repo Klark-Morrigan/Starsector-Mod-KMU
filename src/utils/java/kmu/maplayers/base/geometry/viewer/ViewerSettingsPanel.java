@@ -1,4 +1,6 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.viewer;
+
+import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;

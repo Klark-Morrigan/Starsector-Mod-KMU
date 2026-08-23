@@ -57,7 +57,7 @@ import java.util.Locale;
  * opaque handle - so the keys this produces over a fixture are longer and more mangled than the
  * ones it will produce over a sector. That is the fixture's doing, not the scheme's.
  */
-final class VoidSectionIds {
+public final class VoidSectionIds {
 
     // Marks the key as a region rather than a star, and says which kind of region. A section is
     // keyed into the same map as the cells, so the one thing its name must never do is collide

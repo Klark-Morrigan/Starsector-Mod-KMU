@@ -37,7 +37,7 @@ import java.util.List;
  * the whole of the mouth behind that end. One construction, and which of its parts carries
  * the answer depends on the reach it is asked at.
  */
-final class WallMouths {
+public final class WallMouths {
 
     private WallMouths() {
     }

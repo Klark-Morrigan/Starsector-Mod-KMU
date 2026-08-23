@@ -1,4 +1,12 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.viewer;
+
+import kmu.maplayers.base.geometry.CoastCrossings;
+import kmu.maplayers.base.geometry.CoastPocketFaults;
+import kmu.maplayers.base.geometry.CoastPockets;
+import kmu.maplayers.base.geometry.Coastlines;
+import kmu.maplayers.base.geometry.SectorFixture;
+import kmu.maplayers.base.geometry.VoidPockets;
+import kmu.maplayers.base.geometry.WalledPocket;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;

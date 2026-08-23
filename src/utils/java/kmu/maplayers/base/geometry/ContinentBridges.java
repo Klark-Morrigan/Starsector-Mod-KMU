@@ -62,7 +62,7 @@ import java.util.Map;
  * is another pair of corners and another set of spans, so a coast kept at every sliver makes a
  * grid too fine to read. Raising the floor coarsens the coast and the grid with it.
  */
-final class ContinentBridges {
+public final class ContinentBridges {
 
     private ContinentBridges() {
     }
@@ -78,7 +78,7 @@ final class ContinentBridges {
      *                          divide the void into a grid; refused, they leave a tree, which
      *                          is what the settled bridges do
      */
-    record BridgeRules(
+    public record BridgeRules(
         double reachMultiple,
         double coastSlack,
         boolean isCrossingAllowed) {
@@ -93,7 +93,7 @@ final class ContinentBridges {
      * @param rules      the reach to offer bridges at
      * @return the spans, shortest first
      */
-    static List<CellGap> findAnchoredBridges(
+    public static List<CellGap> findAnchoredBridges(
             Coastlines.TracedCoasts traced,
             SectorGeometryParameters parameters,
             BridgeRules rules) {

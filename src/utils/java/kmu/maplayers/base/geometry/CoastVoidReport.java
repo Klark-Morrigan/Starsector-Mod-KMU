@@ -21,7 +21,7 @@ import java.util.Locale;
  * exists at the void's true extent and vanishes a channel out is the one fault a single number
  * cannot show.
  */
-final class CoastVoidReport {
+public final class CoastVoidReport {
 
     // Area percentiles worth naming when describing how big the trapped pockets are.
     private static final double[] REPORTED_PERCENTILES = {0.5, 0.9, 1.0};
@@ -33,11 +33,21 @@ final class CoastVoidReport {
     private CoastVoidReport() {
     }
 
-    // What the smoothing takes out, as the two counts that say whether it did anything. Marks
-    // is how many stretches of coast the cells actually make; points is how many the smoothed
-    // line passes through. Equal counts mean the skip rules refused every candidate, which
-    // reads on screen exactly like the smoothing being switched off.
-    static void reportCoastlines(LaidCoast laid) {
+    /**
+     * What the smoothing takes out, as the two counts that say whether it did anything.
+     *
+     * <p>Marks is how many stretches of coast the cells actually make; points is how many the
+     * smoothed line passes through. Equal counts mean the skip rules refused every candidate,
+     * which reads on screen exactly like the smoothing being switched off.
+     *
+     * @param laid         the coast with its walls down
+     * @param borderStroke how wide a cell's border is drawn, which is what decides whether a
+     *                     crossing is deep enough for anyone to see. Handed in rather than
+     *                     read off the map's look: how a thing is DRAWN belongs to whatever
+     *                     draws it, and a report reaching into that would point this package
+     *                     at the window it is supposed to be independent of
+     */
+    public static void reportCoastlines(LaidCoast laid, double borderStroke) {
 
         var traced = laid.traced();
         var points = 0;
@@ -53,7 +63,7 @@ final class CoastVoidReport {
             traced.coasts().size(),
             CoastMeasures.countCoastMarks(traced),
             points,
-            CoastCrossings.findVisibleCrossings(traced, MapLook.RING_STROKE).size(),
+            CoastCrossings.findVisibleCrossings(traced, borderStroke).size(),
             CoastCrossings.measureDeepestIncursion(traced));
 
         System.out.printf(

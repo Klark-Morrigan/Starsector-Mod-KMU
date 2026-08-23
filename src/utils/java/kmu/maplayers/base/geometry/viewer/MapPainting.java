@@ -1,4 +1,7 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.viewer;
+
+import kmu.maplayers.base.geometry.CellGap;
+import kmu.maplayers.base.geometry.WalledPocket;
 
 import java.awt.BasicStroke;
 import java.awt.Color;

@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.viewer;
 
 import java.awt.BorderLayout;
 import java.awt.Color;

@@ -11,7 +11,7 @@ import java.util.Locale;
  * out of a sorted population, and a row of numbers to print - and each report that wrote its
  * own came to word an empty population differently from the one beside it.
  */
-final class ReportFigures {
+public final class ReportFigures {
 
     private ReportFigures() {
     }
@@ -27,7 +27,7 @@ final class ReportFigures {
      * @param fraction how far along it to read, from 0 to 1
      * @return the value there, or zero where there is no population
      */
-    static double findPercentile(List<Double> sorted, double fraction) {
+    public static double findPercentile(List<Double> sorted, double fraction) {
 
         if (sorted.isEmpty()) {
             return 0;
@@ -44,7 +44,7 @@ final class ReportFigures {
      * @param values the population, in any order
      * @return its median, or zero where there is no population
      */
-    static double findMedian(List<Double> values) {
+    public static double findMedian(List<Double> values) {
 
         var sorted = new ArrayList<>(values);
         sorted.sort(Double::compare);

@@ -44,7 +44,7 @@ import java.util.List;
  * along a shared edge instead is where seams, slivers and outlines that disagree with their own
  * walls come from.
  */
-final class SmallPieceFolding {
+public final class SmallPieceFolding {
 
     // The three things every step of a fold needs: the walls it takes out, the index that says
     // what stands between what, and the running measurements. Held rather than threaded through
@@ -85,7 +85,7 @@ final class SmallPieceFolding {
      *                        since the rest of each wall stays standing across it. Zero asks
      *                        nothing
      */
-    record FoldRules(
+    public record FoldRules(
         double leastArea,
         double leastWidth,
         double leastWholeWidth) {

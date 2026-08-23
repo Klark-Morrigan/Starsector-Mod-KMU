@@ -33,7 +33,7 @@ import java.util.List;
  * @param kind    which of the two ways it came to be shut in, which is what tells a reader
  *                looking at its name whether to expect it among the cells or out at the edge
  */
-record VoidSection(
+public record VoidSection(
     List<double[]> outline,
     List<Integer> cells,
     SectionKind kind) {
@@ -42,7 +42,7 @@ record VoidSection(
     // thing that cannot be true of a section.
     private static final int MIN_CELLS = 1;
 
-    VoidSection {
+    public VoidSection {
         if (cells.size() < MIN_CELLS) {
             throw new IllegalArgumentException(
                 "a section runs on at least " + MIN_CELLS + " cell, not " + cells.size());
@@ -79,7 +79,7 @@ record VoidSection(
      * proposal about the gaps between cells, and judging either means seeing it without the
      * other.
      */
-    enum SectionKind {
+    public enum SectionKind {
 
         /**
          * Void the cells closed around, on their own or with a bridge across the gap. Inside

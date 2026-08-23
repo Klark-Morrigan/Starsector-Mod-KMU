@@ -32,7 +32,7 @@ import java.util.List;
  * one claimant holds more of than another is between them, which is what void between owners
  * means. Reported as contested so a reader can see it was a tie rather than a walkover.
  */
-final class VoidSectionOwners {
+public final class VoidSectionOwners {
 
     // The claim to beat when a section has exactly one claimant. Nobody else is standing, so
     // the bar is any claim at all.
@@ -47,7 +47,7 @@ final class VoidSectionOwners {
      * @param owner the claimant, or null for the unowned cells voting together
      * @param cells how many of the section's cells are its
      */
-    record OwnerClaim(
+    public record OwnerClaim(
         String owner,
         int cells) {
     }
@@ -63,7 +63,7 @@ final class VoidSectionOwners {
      *               claimant was ahead
      * @param claims every claim on it, largest first, with the unowned cells among them
      */
-    record SectionOwner(
+    public record SectionOwner(
         String owner,
         List<OwnerClaim> claims) {
 

@@ -16,7 +16,7 @@ import java.util.List;
  * @param pocket  the pocket
  * @param reaches the coast reaches it closes on
  */
-record WalledPocket(
+public record WalledPocket(
     VoidPockets.VoidPocket pocket,
     List<DiscUnionBoundary.Chord> reaches) {
 }

@@ -15,7 +15,7 @@ import java.util.List;
  * <p>Both kinds together and in one list. Which of them a caller draws, or whether it draws any,
  * is the caller's business; what there IS does not change with a toggle.
  */
-final class VoidSections {
+public final class VoidSections {
 
     private VoidSections() {
     }
@@ -30,7 +30,7 @@ final class VoidSections {
      * @param section the section
      * @param region  it as a named piece of map
      */
-    record NamedSection(
+    public record NamedSection(
         VoidSection section,
         NamedRegion region) {
 
@@ -48,7 +48,7 @@ final class VoidSections {
      * @param systemIdBySite each site's system id, index-aligned with the coast's own sites
      * @return every section, in the order the boundary walk found them
      */
-    static List<NamedSection> collectNamedSections(
+    public static List<NamedSection> collectNamedSections(
             LaidCoast laid,
             List<String> systemIdBySite) {
 

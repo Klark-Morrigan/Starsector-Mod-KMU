@@ -38,7 +38,7 @@ import java.util.Locale;
  * apart from {@link Coastlines}: the construction's job is to build the best shape it can, and
  * this one's job is to say whether it managed. One class doing both grades its own work.
  */
-final class CoastPocketFaults {
+public final class CoastPocketFaults {
 
     // A pocket closed by a reach of coast runs ALONG that piece of coast for most of its
     // length, a channel inside it. Only a run that has crossed to the far side is at fault,
@@ -126,7 +126,7 @@ final class CoastPocketFaults {
      *              the line by a unit and a sliver shooting a cell's width out to sea look
      *              identical to a count, and are not the same fault
      */
-    record Spill(
+    public record Spill(
         List<double[]> run,
         double depth) {
 
@@ -154,7 +154,7 @@ final class CoastPocketFaults {
      * @param coasts  the drawn coast, as the rings the map puts on screen
      * @return one entry per offending run, deepest first
      */
-    static List<Spill> findSpills(
+    public static List<Spill> findSpills(
             List<WalledPocket> pockets,
             List<List<double[]>> coasts) {
 

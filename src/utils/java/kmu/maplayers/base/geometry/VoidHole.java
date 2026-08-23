@@ -35,7 +35,7 @@ import java.util.List;
  *                 shut in come out of one walk, and the wall is the only thing that says
  *                 which is which
  */
-record VoidHole(
+public record VoidHole(
     List<double[]> boundary,
     List<double[]> corners,
     List<Integer> ringing,

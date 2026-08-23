@@ -1,4 +1,9 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.viewer;
+
+import kmu.maplayers.base.geometry.SectorFixture;
+import kmu.maplayers.base.geometry.SectorGeometry;
+import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.VoidPockets;
 
 import java.nio.file.Path;
 

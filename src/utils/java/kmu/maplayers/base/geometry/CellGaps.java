@@ -29,7 +29,7 @@ import java.util.List;
  * each of them, along the line joining them, so the nearest point on it to either site is
  * that site's own end of it at exactly the reach. Neither can come in under.
  */
-final class CellGaps {
+public final class CellGaps {
 
     // Slack on "is this site far enough from the corridor", in world units. A site whose
     // circle grazes it is on the boundary of the test, and the sector is measured in tens of

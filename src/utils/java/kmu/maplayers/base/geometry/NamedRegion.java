@@ -26,7 +26,7 @@ import java.util.List;
  * @param box     the box it lies in, which is both the cheap half of a hit test and what says
  *                whether there is room on screen to write the name at all
  */
-record NamedRegion(
+public record NamedRegion(
     String name,
     List<double[]> outline,
     double[] anchor,
@@ -43,7 +43,7 @@ record NamedRegion(
      * @param outline its closed boundary, which must enclose an area
      * @return the named region
      */
-    static NamedRegion nameRegion(String name, List<double[]> outline) {
+    public static NamedRegion nameRegion(String name, List<double[]> outline) {
 
         return new NamedRegion(
             name,
@@ -62,7 +62,7 @@ record NamedRegion(
      * @param y the same
      * @return whether the point is inside
      */
-    boolean holds(double x, double y) {
+    public boolean holds(double x, double y) {
 
         return x >= box.minX()
             && x <= box.maxX()

@@ -73,7 +73,7 @@ import java.util.Set;
  * a cell nothing else knows about can sit in the gap a jump opens up, so every jump is tested
  * against every cell, and whichever one blocks it is put back.
  */
-final class Coastlines {
+public final class Coastlines {
 
     // A skip put back changes the jump either side of it, which can expose a different cell.
     // Bounded rather than run to a fixed point, because each pass keeps strictly more cells
@@ -117,7 +117,7 @@ final class Coastlines {
      *                            to be worth passing through, as a share of the whole turn.
      *                            Zero asks nothing and drops nobody
      */
-    record CoastRules(
+    public record CoastRules(
         double bridgeReachMultiple,
         double minFrontageShare) {
     }
@@ -129,7 +129,7 @@ final class Coastlines {
      * how a report comes to describe a different map from the one on screen without either of
      * them saying so.
      */
-    static final CoastRules DEFAULT_RULES =
+    public static final CoastRules DEFAULT_RULES =
         new CoastRules(DEFAULT_BRIDGE_REACH_MULTIPLE, DEFAULT_MIN_FRONTAGE_SHARE);
 
     /**
@@ -158,7 +158,7 @@ final class Coastlines {
      *                    from the knobs, they are a second answer that can differ from the
      *                    one the coast was actually walked against
      */
-    record TracedCoasts(
+    public record TracedCoasts(
         List<List<CoastVertex>> coasts,
         List<List<DiscUnionBoundary.CoastMark>> silhouettes,
         List<DiscUnionBoundary.CoastMark> dropped,
@@ -178,7 +178,7 @@ final class Coastlines {
      * @param arcSegments how finely a half-turn of arc is sampled
      * @return one open run of points per dropped stretch
      */
-    static List<List<double[]>> collectDroppedRuns(TracedCoasts traced, int arcSegments) {
+    public static List<List<double[]>> collectDroppedRuns(TracedCoasts traced, int arcSegments) {
 
         var runs = new ArrayList<List<double[]>>(traced.dropped().size());
 
@@ -215,7 +215,7 @@ final class Coastlines {
      * @param rules      the knobs the coast is traced under
      * @return the coast, and what it was traced against
      */
-    static TracedCoasts traceSectorCoasts(
+    public static TracedCoasts traceSectorCoasts(
             List<double[]> sites,
             SectorGeometryParameters parameters,
             CoastRules rules) {
@@ -256,7 +256,7 @@ final class Coastlines {
      *                   since there are no bridges to find
      * @return the coasts, one closed run of points per continent
      */
-    static TracedCoasts traceContinentCoasts(
+    public static TracedCoasts traceContinentCoasts(
             List<double[]> sites,
             SectorGeometryParameters parameters,
             CoastRules rules) {
@@ -345,7 +345,7 @@ final class Coastlines {
      * @param point  where the coast passes
      * @param circle whose cell's border it is on
      */
-    record CoastVertex(
+    public record CoastVertex(
         double[] point,
         int circle) {
     }
@@ -415,7 +415,7 @@ final class Coastlines {
      * @param from the vertex it leaves
      * @param to   the vertex it arrives at
      */
-    record CoastReach(
+    public record CoastReach(
         CoastVertex from,
         CoastVertex to) {
     }
@@ -479,7 +479,7 @@ final class Coastlines {
      * @param traced the coast
      * @return one ring per stretch of coast, in the order they were traced
      */
-    static List<List<double[]>> collectCoastRings(TracedCoasts traced) {
+    public static List<List<double[]>> collectCoastRings(TracedCoasts traced) {
 
         var rings = new ArrayList<List<double[]>>(traced.coasts().size());
 
@@ -513,7 +513,7 @@ final class Coastlines {
      * @param coast a smoothed coast
      * @return its points, in order
      */
-    static List<double[]> collectPoints(List<CoastVertex> coast) {
+    public static List<double[]> collectPoints(List<CoastVertex> coast) {
 
         var points = new ArrayList<double[]>(coast.size());
 

@@ -22,7 +22,7 @@ import java.util.Locale;
  * that session, and a file that accumulated across runs would put yesterday's answers beside
  * today's with nothing to tell them apart.
  */
-final class PickLog {
+public final class PickLog {
 
     private static final Path PICK_FILE =
         Path.of("build", "reports", "political-map", "viewer-picks.txt");
@@ -35,7 +35,7 @@ final class PickLog {
      *
      * @return the log
      */
-    static PickLog startPickLog() {
+    public static PickLog startPickLog() {
 
         try {
             Files.createDirectories(PICK_FILE.getParent());
@@ -55,7 +55,7 @@ final class PickLog {
      *
      * @return the file, which need not exist yet
      */
-    static Path getPickFile() {
+    public static Path getPickFile() {
         return PICK_FILE;
     }
 
@@ -70,7 +70,7 @@ final class PickLog {
      * @param worldY     the same
      * @param picked     the colour under it
      */
-    void appendPick(String sectorName, double worldX, double worldY, Color picked) {
+    public void appendPick(String sectorName, double worldX, double worldY, Color picked) {
 
         var line = String.format(
             Locale.ROOT,

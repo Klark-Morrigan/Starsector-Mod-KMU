@@ -29,7 +29,7 @@ import java.util.List;
  * reaches are walls of one kind and the trace closes both in one walk, so the wall a hole
  * closes on is the only thing that distinguishes what shut it in.
  */
-final class CoastPockets {
+public final class CoastPockets {
 
     private CoastPockets() {
     }
@@ -49,7 +49,7 @@ final class CoastPockets {
      *                     reach applied afterwards
      * @return the pockets, each with a closed outline and the reaches that walled it
      */
-    static List<WalledPocket> findCoastPockets(
+    public static List<WalledPocket> findCoastPockets(
             Coastlines.TracedCoasts traced,
             List<String> ownerBySite,
             VoidPockets.PocketRules rules) {
@@ -190,7 +190,7 @@ final class CoastPockets {
      * @param sites the sites
      * @return one null per site
      */
-    static List<String> markEverySiteUnowned(List<double[]> sites) {
+    public static List<String> markEverySiteUnowned(List<double[]> sites) {
 
         var unowned = new ArrayList<String>(sites.size());
 

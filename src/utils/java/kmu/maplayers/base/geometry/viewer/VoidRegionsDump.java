@@ -1,8 +1,30 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.viewer;
 
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.VoronoiCellBuilder;
+
+import kmu.maplayers.base.geometry.CellBoundSeams;
+import kmu.maplayers.base.geometry.CellEdges;
+import kmu.maplayers.base.geometry.CellGap;
+import kmu.maplayers.base.geometry.CoastVoidReport;
+import kmu.maplayers.base.geometry.CoastWallReport;
+import kmu.maplayers.base.geometry.Coastlines;
+import kmu.maplayers.base.geometry.DiscUnion;
+import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.EdgeTarget;
+import kmu.maplayers.base.geometry.LaidCoast;
+import kmu.maplayers.base.geometry.PickedPointCheck;
+import kmu.maplayers.base.geometry.ReportFigures;
+import kmu.maplayers.base.geometry.SectorFixture;
+import kmu.maplayers.base.geometry.SectorGeometry;
+import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.ShippedMap;
+import kmu.maplayers.base.geometry.VoidBridgePockets;
+import kmu.maplayers.base.geometry.VoidBridges;
+import kmu.maplayers.base.geometry.VoidPockets;
+import kmu.maplayers.base.geometry.VoidSectionReport;
+import kmu.maplayers.base.geometry.WallRefusals;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -21,7 +43,7 @@ import java.util.Locale;
  *
  * <p>Run it with {@code gradlew writeVoidRegions}.
  */
-final class VoidRegionsDump {
+public final class VoidRegionsDump {
 
     // A share printed as a percentage rather than a fraction, which is how every share in
     // this report reads.
@@ -69,10 +91,12 @@ final class VoidRegionsDump {
             reportChannelWidths(fixture);
             reportHolesAtReach(fixture);
             reportBoundSeams(fixture);
+
             CoastWallReport.reportCoastWalls(laid);
             PickedPointCheck.reportPickedPoints(fixture, sectorName, laid);
-            CoastVoidReport.reportCoastlines(laid);
+            CoastVoidReport.reportCoastlines(laid, MapLook.RING_STROKE);
             VoidSectionReport.reportSections(fixture, laid);
+            
             reportPockets(
                 VoidPockets.findVoidPockets(
                     sites,

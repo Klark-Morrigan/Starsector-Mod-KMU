@@ -20,7 +20,7 @@ import kmlib.math.geometry.VoronoiCellBuilder;
  *                        into one when chaining a cluster's boundary
  * @param miterSpikeLimit multiple of the inset past which a sharp corner bevels
  */
-record SectorGeometryParameters(
+public record SectorGeometryParameters(
         double cellRadius,
         int boundSegments,
         double borderInset,
@@ -32,7 +32,7 @@ record SectorGeometryParameters(
 
     // KmuPoliticalMapSettings' DEFAULT_CELL_RADIUS. Duplicated rather than read, because reading
     // it would drag LunaLib into a pipeline that is otherwise pure geometry.
-    static final double DEFAULT_CELL_RADIUS = 4000.0;
+    public static final double DEFAULT_CELL_RADIUS = 4000.0;
     // KmuMapLayerSettings' DEFAULT_BORDER_WELD_TOLERANCE. Real cells need this: two neighbours
     // each carry their own polygonal radius bound, so a shared bisector meets those two arcs
     // about a chord's sagitta apart, and welding tighter than that leaves every multi-system
@@ -46,7 +46,7 @@ record SectorGeometryParameters(
      *
      * @return the default parameters
      */
-    static SectorGeometryParameters createDefaults() {
+    public static SectorGeometryParameters createDefaults() {
         return new SectorGeometryParameters(
                 DEFAULT_CELL_RADIUS,
                 VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS,
@@ -63,7 +63,7 @@ record SectorGeometryParameters(
      *
      * @return the reach to trace a drawn void shape at
      */
-    double measureDrawnReach() {
+    public double measureDrawnReach() {
         return cellRadius + borderInset;
     }
 
@@ -84,7 +84,7 @@ record SectorGeometryParameters(
      *
      * @return the sample count a fillet should be drawn at
      */
-    int measureArcSegments() {
+    public int measureArcSegments() {
         return boundSegments() / HALF_TURNS_PER_CIRCLE;
     }
 
@@ -97,7 +97,7 @@ record SectorGeometryParameters(
      *
      * @return the reach to trace a filled cell at
      */
-    double measureFilledReach() {
+    public double measureFilledReach() {
         return cellRadius - borderInset;
     }
 }

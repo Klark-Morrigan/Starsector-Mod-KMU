@@ -1,4 +1,11 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.viewer;
+
+import kmu.maplayers.base.geometry.Coastlines;
+import kmu.maplayers.base.geometry.LaidCoast;
+import kmu.maplayers.base.geometry.NamedRegion;
+import kmu.maplayers.base.geometry.SectorFixture;
+import kmu.maplayers.base.geometry.VoidSection;
+import kmu.maplayers.base.geometry.VoidSections;
 
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;

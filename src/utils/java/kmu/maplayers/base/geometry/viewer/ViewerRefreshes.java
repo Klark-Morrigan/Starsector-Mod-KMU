@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.viewer;
 
 /**
  * What the settings panel can ask the viewer to redo when a knob moves.

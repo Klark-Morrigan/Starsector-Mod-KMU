@@ -37,7 +37,7 @@ import java.util.TreeMap;
  * @param shapedCellByCellId each cell after the border channel is cut inward
  * @param ringsByOwner       each owner's traced cluster rings
  */
-record SectorGeometry(
+public record SectorGeometry(
         Map<String, List<CellEdge>> cellEdgesByCellId,
         Map<String, String> ownerByCellId,
         Map<String, ShapedCell> shapedCellByCellId,
@@ -50,7 +50,7 @@ record SectorGeometry(
      * @param parameters the knobs to build it under
      * @return the assembled geometry
      */
-    static SectorGeometry buildSectorGeometry(
+    public static SectorGeometry buildSectorGeometry(
             SectorFixture fixture, SectorGeometryParameters parameters) {
         var cellEdges = fixture.buildCellEdgesBySystemId(
                 parameters.cellRadius(), parameters.boundSegments());

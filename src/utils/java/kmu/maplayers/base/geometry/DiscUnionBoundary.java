@@ -58,7 +58,7 @@ import java.util.Map;
  * right up to them. Every consumer that wants a pocket at some reach wants this, and there is
  * now more than one of them.
  */
-final class DiscUnionBoundary {
+public final class DiscUnionBoundary {
 
     // Stands in for a neighbouring circle where there is none: a disc that overlaps nothing
     // contributes its whole circle as one arc, with no disc entered or left at either end.
@@ -101,7 +101,7 @@ final class DiscUnionBoundary {
      * @param kind       which sort of wall it is, which decides only whether it is still on
      *                   the boundary - everything else here treats the two alike
      */
-    record Chord(
+    public record Chord(
         int fromCircle,
         int toCircle,
         DirectedLine line,
@@ -136,7 +136,7 @@ final class DiscUnionBoundary {
      * the walk asks - both open a mouth, both take a stretch of circle out of the boundary,
      * and both close a cycle.
      */
-    enum WallKind {
+    public enum WallKind {
 
         /**
          * The line joining two sites, spanning the gap between their cells. It crosses its
@@ -196,7 +196,7 @@ final class DiscUnionBoundary {
      * @param chords  the walls, as pairs of circles
      * @param channel how far each side of a wall holds back from it
      */
-    record Walls(
+    public record Walls(
         List<Chord> chords,
         double channel) {
 
@@ -205,9 +205,9 @@ final class DiscUnionBoundary {
         // rather than built at each of them, because the pair is only legal together: the
         // channel is zero, which the constructor refuses for any real wall and does not
         // need here, since with no chords there is no mouth for a channel to size.
-        static final Walls NONE = new Walls(List.of(), 0);
+        public static final Walls NONE = new Walls(List.of(), 0);
 
-        Walls {
+        public Walls {
             if (!chords.isEmpty() && channel <= 0) {
                 throw new IllegalArgumentException("walls need a channel to keep");
             }
@@ -231,7 +231,7 @@ final class DiscUnionBoundary {
      *                      arc is flattened onto
      * @return the holes, wound the way any other filled shape is
      */
-    static List<VoidHole> traceHoles(DiscUnion union, int boundSegments) {
+    public static List<VoidHole> traceHoles(DiscUnion union, int boundSegments) {
         return traceHolesAcrossWalls(union, Walls.NONE, boundSegments);
     }
 
@@ -438,7 +438,7 @@ final class DiscUnionBoundary {
      * @param circle  whose cell's border it ran along
      * @param endedOn what it ran on to, which is the name nothing began at
      */
-    record BrokenLink(
+    public record BrokenLink(
         double[] at,
         int circle,
         String endedOn) {
@@ -606,7 +606,7 @@ final class DiscUnionBoundary {
      * @param detail which cell or which rival wall made that the answer, or null where the
      *               reason says the whole of it
      */
-    record ChordRefusal(RefusalReason reason, String detail) {
+    public record ChordRefusal(RefusalReason reason, String detail) {
 
         @Override
         public String toString() {
@@ -615,7 +615,7 @@ final class DiscUnionBoundary {
     }
 
     /** The verdicts the walk can reach about a wall it was offered. */
-    enum RefusalReason {
+    public enum RefusalReason {
 
         /** Laid, and the boundary runs along it. */
         LAID("laid"),
@@ -1427,7 +1427,7 @@ final class DiscUnionBoundary {
      * @param fromAngle the angle it begins at
      * @param toAngle   the angle it ends at, always greater than {@code fromAngle}
      */
-    record CoastMark(
+    public record CoastMark(
         int circle,
         double fromAngle,
         double toAngle) {

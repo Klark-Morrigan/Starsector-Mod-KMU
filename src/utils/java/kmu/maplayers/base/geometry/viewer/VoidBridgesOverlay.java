@@ -1,4 +1,9 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.viewer;
+
+import kmu.maplayers.base.geometry.CellGap;
+import kmu.maplayers.base.geometry.SectorFixture;
+import kmu.maplayers.base.geometry.VoidBridgePockets;
+import kmu.maplayers.base.geometry.VoidBridges;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;

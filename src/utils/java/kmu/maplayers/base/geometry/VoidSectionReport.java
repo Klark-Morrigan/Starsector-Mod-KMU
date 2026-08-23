@@ -22,7 +22,7 @@ import java.util.TreeSet;
  * <p>Run with the fixture's real owners rather than with every site unowned, since who holds a
  * section is the whole question. The unowned baseline stays where it is, on the shapes.
  */
-final class VoidSectionReport {
+public final class VoidSectionReport {
 
     // The middle, the far end, and the worst - which is what a population of shapes wants
     // read out of it. A mean would hide the one section that is nothing like the rest, and
@@ -47,7 +47,7 @@ final class VoidSectionReport {
      *                are claimed by
      * @param laid    the coast with its walls down, which is what shuts the void into sections
      */
-    static void reportSections(SectorFixture fixture, LaidCoast laid) {
+    public static void reportSections(SectorFixture fixture, LaidCoast laid) {
 
         var systemIds = fixture.getSystemIds();
         var ownerBySite = fixture.getOwnerBySite();

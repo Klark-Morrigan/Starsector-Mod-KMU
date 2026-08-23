@@ -40,7 +40,7 @@ import java.util.Set;
  * distance to the cells proves nothing about the part that can go wrong; the distance from
  * each chord end to the outline that should carry it is the number that can fail.
  */
-final class VoidBridgePockets {
+public final class VoidBridgePockets {
 
     private VoidBridgePockets() {
     }
@@ -67,7 +67,7 @@ final class VoidBridgePockets {
      * @param reach   how far a cell reaches, to know which cells already touch
      * @return the bridges that complete a ring, in the order they were offered
      */
-    static List<CellGap> findCapturingBridges(
+    public static List<CellGap> findCapturingBridges(
             List<double[]> sites,
             List<CellGap> bridges,
             double reach) {
@@ -138,7 +138,7 @@ final class VoidBridgePockets {
      *                   afterwards, so at its true extent it is the discs that move
      * @return one outline per captured pocket
      */
-    static List<List<double[]>> findCapturedPockets(
+    public static List<List<double[]>> findCapturedPockets(
             List<double[]> sites,
             List<CellGap> bridges,
             SectorGeometryParameters parameters,
@@ -172,7 +172,7 @@ final class VoidBridgePockets {
      * @param parameters the knobs the cells are built under
      * @return the chords actually laid, in the order the bridges were offered
      */
-    static List<DiscUnionBoundary.Chord> findLaidChords(
+    public static List<DiscUnionBoundary.Chord> findLaidChords(
             List<double[]> sites,
             List<CellGap> bridges,
             SectorGeometryParameters parameters) {
@@ -213,7 +213,7 @@ final class VoidBridgePockets {
      * @return the largest distance from any chord end to the nearest vertex of any captured
      *         outline, which is zero when every fill closes on its own bridge
      */
-    static double measureWorstChordStray(
+    public static double measureWorstChordStray(
             List<List<double[]>> captured,
             List<double[]> sites,
             List<CellGap> bridges,
@@ -271,7 +271,7 @@ final class VoidBridgePockets {
      * @param parameters the knobs the cells are built under
      * @return the walls, at the channel a pocket keeps against them
      */
-    static DiscUnionBoundary.Walls buildBridgeWalls(
+    public static DiscUnionBoundary.Walls buildBridgeWalls(
             List<CellGap> bridges,
             SectorGeometryParameters parameters) {
 

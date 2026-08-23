@@ -36,7 +36,7 @@ import java.util.Map;
  * Which construction drew which line, and what any of it means, belongs to whatever handed the
  * runs in.
  */
-final class PlanarGraph {
+public final class PlanarGraph {
 
     /**
      * One face as the walk found it, with the runs that bound it still named.
@@ -50,7 +50,7 @@ final class PlanarGraph {
      *                  faces joined along a shared run have the sum of their perimeters less
      *                  twice what they shared - and a second measurement would drift from that
      */
-    record WalkedFace(
+    public record WalkedFace(
         List<Integer> edges,
         List<double[]> boundary,
         double area,
@@ -69,7 +69,7 @@ final class PlanarGraph {
      *                    whole run is expressible: the stretches between crossings are what
      *                    the walk needs, and the run they came from is what a reader sees
      */
-    record Run(
+    public record Run(
         double[] start,
         double[] end,
         boolean isRemovable,

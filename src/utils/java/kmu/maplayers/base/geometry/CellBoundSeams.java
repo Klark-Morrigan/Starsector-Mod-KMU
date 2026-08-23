@@ -34,7 +34,7 @@ import java.util.List;
  *       a cell can be made to share an edge outright.</li>
  * </ul>
  */
-final class CellBoundSeams {
+public final class CellBoundSeams {
 
     // How far apart two reports of one vertex may be and still be the same vertex. The two
     // are worked out from the same angle by the same arithmetic, so they are either the same
@@ -68,7 +68,7 @@ final class CellBoundSeams {
      *                         sits on - the residual the convention cannot remove, since a
      *                         corner is a crossing and no cell has a vertex there
      */
-    record BoundSeams(
+    public record BoundSeams(
         int samples,
         int onBoundVertex,
         double worstSampleStray,
@@ -90,7 +90,7 @@ final class CellBoundSeams {
      * @param parameters the knobs the cells are built under
      * @return the agreement, over every hole at once
      */
-    static BoundSeams measureSeamsAgainstCells(
+    public static BoundSeams measureSeamsAgainstCells(
             List<VoidHole> holes,
             List<double[]> sites,
             SectorGeometryParameters parameters) {

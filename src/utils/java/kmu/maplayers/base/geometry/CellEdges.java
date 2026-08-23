@@ -11,7 +11,7 @@ import java.util.List;
  * offset, so the true edge nearest a fill edge's midpoint is the edge it was pulled off, and
  * that edge carries the target.
  */
-final class CellEdges {
+public final class CellEdges {
 
     private CellEdges() {
     }
@@ -26,7 +26,7 @@ final class CellEdges {
      * @param edges the cell's true edges, in order round it
      * @return the ring
      */
-    static List<double[]> convertEdgesToRing(List<CellEdge> edges) {
+    public static List<double[]> convertEdgesToRing(List<CellEdge> edges) {
 
         return edges.stream()
             .map(edge -> new double[] {edge.x1(), edge.y1()})
@@ -41,7 +41,7 @@ final class CellEdges {
      * @param y     the point's y coordinate
      * @return the nearest edge, or null when there are none
      */
-    static CellEdge findNearestEdge(List<CellEdge> edges, double x, double y) {
+    public static CellEdge findNearestEdge(List<CellEdge> edges, double x, double y) {
 
         CellEdge nearest = null;
         var shortest = Double.MAX_VALUE;
@@ -71,7 +71,7 @@ final class CellEdges {
      * @param y    the point's y coordinate
      * @return the distance
      */
-    static double measureGapToEdge(CellEdge edge, double x, double y) {
+    public static double measureGapToEdge(CellEdge edge, double x, double y) {
 
         var spanX = edge.x2() - edge.x1();
         var spanY = edge.y2() - edge.y1();

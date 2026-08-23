@@ -27,7 +27,7 @@ import java.util.Locale;
  * of question. The report describes the whole map in numbers; this one answers about one point
  * a person put their cursor on, and the two grow in different directions.
  */
-final class PickedPointCheck {
+public final class PickedPointCheck {
 
     // No ring in the set holds the point, which is a verdict rather than a failure: void with
     // nothing round it is exactly what several of the questions here are looking for.
@@ -56,7 +56,7 @@ final class PickedPointCheck {
      *                   Handed in rather than laid again here, because the walk answers about
      *                   the walls it was given and a second laying is a second answer
      */
-    static void reportPickedPoints(SectorFixture fixture, String sectorName, LaidCoast laid) {
+    public static void reportPickedPoints(SectorFixture fixture, String sectorName, LaidCoast laid) {
 
         var picks = readPicks(sectorName);
 

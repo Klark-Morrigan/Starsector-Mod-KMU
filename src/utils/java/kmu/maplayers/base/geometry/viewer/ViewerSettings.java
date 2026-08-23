@@ -1,4 +1,10 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.viewer;
+
+import kmu.maplayers.base.geometry.Coastlines;
+import kmu.maplayers.base.geometry.ContinentBridges;
+import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.SmallPieceFolding;
+import kmu.maplayers.base.geometry.VoidPockets;
 
 import java.awt.Color;
 

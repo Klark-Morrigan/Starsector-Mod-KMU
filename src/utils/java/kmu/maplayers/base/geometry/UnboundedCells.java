@@ -22,7 +22,7 @@ import java.util.List;
  * bisector inside the sector survives and only the outermost cells are cut, well away from
  * anything being looked at.
  */
-final class UnboundedCells {
+public final class UnboundedCells {
 
     // How far past the sector's own extent to put the bound, as a multiple of that extent.
     // Large enough that the clip cannot reach any bisector between real sites, small enough
@@ -39,7 +39,7 @@ final class UnboundedCells {
      * @param boundSegments how many sides approximate the far-off bound
      * @return one cell per site, index-aligned
      */
-    static List<List<double[]>> buildUnboundedCells(List<double[]> sites, int boundSegments) {
+    public static List<List<double[]>> buildUnboundedCells(List<double[]> sites, int boundSegments) {
 
         var bounds = Bounds.computeEnclosingBounds(sites);
         var radius = Math.max(

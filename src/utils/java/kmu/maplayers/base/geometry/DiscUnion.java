@@ -21,7 +21,7 @@ import java.util.List;
  * @param sites where each disc is centred
  * @param reach how far every disc reaches - the one radius all of them share
  */
-record DiscUnion(
+public record DiscUnion(
     List<double[]> sites,
     double reach) {
 
@@ -44,7 +44,7 @@ record DiscUnion(
      * <p>A unit against a reach of thousands: far too small to admit anything that genuinely
      * overlaps, far too large for any rounding to cross.
      */
-    static final double TOUCHING_TOLERANCE = 1;
+    public static final double TOUCHING_TOLERANCE = 1;
 
     /**
      * Whether a point lies inside the union rather than in the void.

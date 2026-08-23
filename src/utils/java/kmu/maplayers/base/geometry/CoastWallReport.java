@@ -19,7 +19,7 @@ import java.util.Locale;
  * whether or not anyone has picked a point on it: what decides whether a rule is worth changing
  * is how many reaches it refuses, not that it refused this one.
  */
-final class CoastWallReport {
+public final class CoastWallReport {
 
     // How near two of the coast's landings on one cell must be to count as a tight turn: a
     // mouth's width, which is how far round a circle a tangent wall must go to be a channel
@@ -34,7 +34,7 @@ final class CoastWallReport {
      *
      * @param laid the coast with its walls down
      */
-    static void reportCoastWalls(LaidCoast laid) {
+    public static void reportCoastWalls(LaidCoast laid) {
 
         var offered = laid.offered();
         var walls = laid.walls();

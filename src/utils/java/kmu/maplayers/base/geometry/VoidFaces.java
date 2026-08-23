@@ -35,7 +35,7 @@ import java.util.List;
  * holds its cells, and water holds none - so that is what is asked, and the sites have to be
  * handed in for it to be askable.
  */
-final class VoidFaces {
+public final class VoidFaces {
 
     // How far along a line a crossing must fall to be a crossing rather than an endpoint two
     // lines share. Relative, because it is asked of a parameter along the line rather than of
@@ -61,7 +61,7 @@ final class VoidFaces {
      *                   own inside from the water around it. One piece per continent holds
      *                   cells; every other piece is void
      */
-    record Face(
+    public record Face(
         List<double[]> boundary,
         double area,
         boolean holdsCells) {
@@ -80,7 +80,7 @@ final class VoidFaces {
      *                      coastlines are not among them: they were never removable, so they
      *                      stand as the caller drew them
      */
-    record CutMap(
+    public record CutMap(
         List<Face> pieces,
         List<double[][]> standingWalls) {
     }
@@ -104,7 +104,7 @@ final class VoidFaces {
      *                   every setting of them is judged against
      * @return the pieces, and the walls left standing to cut them
      */
-    static CutMap cutMapIntoPieces(
+    public static CutMap cutMapIntoPieces(
             List<List<double[]>> coastRings,
             List<CellGap> spans,
             List<double[]> sites,

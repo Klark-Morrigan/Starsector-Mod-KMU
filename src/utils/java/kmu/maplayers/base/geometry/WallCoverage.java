@@ -24,7 +24,7 @@ import java.util.List;
  * that finds the pieces and needs nothing from it. Kept together with the span search, it read
  * as part of a rule about bridges when it is a rule about lines.
  */
-final class WallCoverage {
+public final class WallCoverage {
 
     // How many places along a line are asked about when something has to be asked of its whole
     // length. A handful of steps catches a line clipping a cell's corner, or slipping off a

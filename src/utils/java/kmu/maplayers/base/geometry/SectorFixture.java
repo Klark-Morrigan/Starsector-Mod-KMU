@@ -35,7 +35,7 @@ import java.util.TreeSet;
  * {@code DominanceRules} weight - the fixture's own header says so. It is here to shape
  * geometry, never to assert what dominance resolves to.
  */
-final class SectorFixture {
+public final class SectorFixture {
 
     // No leading slash: the classloader resolves against the classpath roots, which is what
     // lets every root be scanned rather than only the first.
@@ -72,7 +72,7 @@ final class SectorFixture {
      *
      * @return each fixture's file name, sorted so a failure names the same one run to run
      */
-    static List<String> listSectorNames() {
+    public static List<String> listSectorNames() {
 
         // Every classpath root is scanned, not just the first. This resource path mirrors a
         // package, so it exists twice at test time - once under the compiled-classes output,
@@ -111,7 +111,7 @@ final class SectorFixture {
      * @param name the fixture's file name, as {@link #listSectorNames} reports it
      * @return the fixture, its systems in the resource's own order
      */
-    static SectorFixture loadSector(String name) {
+    public static SectorFixture loadSector(String name) {
 
         var resource = "/" + DIRECTORY + "/" + name;
         var fixture = new SectorFixture();
@@ -135,11 +135,11 @@ final class SectorFixture {
         return fixture;
     }
 
-    List<String> getSystemIds() {
+    public List<String> getSystemIds() {
         return systemIds;
     }
 
-    List<double[]> getSites() {
+    public List<double[]> getSites() {
         return sites;
     }
 
@@ -148,7 +148,7 @@ final class SectorFixture {
      *
      * @return the owner per site, null where the site is unowned
      */
-    List<String> getOwnerBySite() {
+    public List<String> getOwnerBySite() {
 
         var owners = new ArrayList<String>(systemIds.size());
 

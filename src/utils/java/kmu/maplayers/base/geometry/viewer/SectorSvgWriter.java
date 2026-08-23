@@ -1,7 +1,20 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.viewer;
 
 import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Limits;
+
+import kmu.maplayers.base.geometry.CellEdge;
+import kmu.maplayers.base.geometry.CellEdges;
+import kmu.maplayers.base.geometry.CoastCrossings;
+import kmu.maplayers.base.geometry.CoastPockets;
+import kmu.maplayers.base.geometry.Coastlines;
+import kmu.maplayers.base.geometry.DiscUnion;
+import kmu.maplayers.base.geometry.SectorFixture;
+import kmu.maplayers.base.geometry.SectorGeometry;
+import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.VoidBridgePockets;
+import kmu.maplayers.base.geometry.VoidBridges;
+import kmu.maplayers.base.geometry.VoidPockets;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

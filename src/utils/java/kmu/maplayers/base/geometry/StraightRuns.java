@@ -19,7 +19,7 @@ import kmlib.math.ranges.Ranges;
  * one set of rules. Two copies of the clamp is how a jump gets approved that the drawing then
  * refuses, with neither able to see the disagreement.
  */
-final class StraightRuns {
+public final class StraightRuns {
 
     // Each pass slides one end to the furthest the other allows, so the two close on the
     // common tangent from opposite directions. Four is past the point where the movement
@@ -65,7 +65,7 @@ final class StraightRuns {
      * @param from  the stretch it leaves
      * @param to    the stretch it lands on
      */
-    record StraightRun(
+    public record StraightRun(
         DiscUnion union,
         DiscUnionBoundary.CoastMark from,
         DiscUnionBoundary.CoastMark to) {
@@ -111,7 +111,7 @@ final class StraightRuns {
      * @param departAngle where on the near cell's border it leaves
      * @param arriveAngle where on the far cell's border it lands
      */
-    record EdgeAngles(
+    public record EdgeAngles(
         double departAngle,
         double arriveAngle) {
     }

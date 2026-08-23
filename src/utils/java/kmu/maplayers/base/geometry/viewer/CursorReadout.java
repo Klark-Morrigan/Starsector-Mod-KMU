@@ -1,4 +1,6 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.viewer;
+
+import kmu.maplayers.base.geometry.NamedRegion;
 
 import java.awt.Color;
 import java.awt.Dimension;

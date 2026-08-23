@@ -50,6 +50,17 @@ sourceSets {
 // Common-Java's - see its README for the declaration's shape.
 enforcePackageLayering {
     forbidImport under: 'kmu.maplayers.base', of: 'kmu.maplayers.politicalmap'
+
+    // The geometry prototype's own arrow: the viewer is built on the constructions,
+    // and the constructions know nothing of the window. That is what lets a reader
+    // ask "what does v2 do" and "how is a coast traced" in two different files, and
+    // what stops a look constant - a stroke width, a colour - becoming an input to a
+    // shape. It has already been broken once by accident, by a report reaching for
+    // the width a border is drawn at to decide whether a fault was visible; the
+    // reading was fair and the dependency was backwards, which is exactly the pair a
+    // gate catches and a reviewer does not.
+    forbidImport under: 'kmu.maplayers.base.geometry',
+                 of: 'kmu.maplayers.base.geometry.viewer'
 }
 
 // The same rule one level in, on the words rather than the imports. The carve
@@ -120,9 +131,9 @@ enforcePackageVocabulary {
     // package's types is not this package speaking the word for itself, and the
     // names are not ours to reword.
     allowWord word: 'territory',
-            inFile: 'src/utils/java/kmu/maplayers/base/geometry/SectorGeometryViewer.java'
+            inFile: 'src/utils/java/kmu/maplayers/base/geometry/viewer/SectorGeometryViewer.java'
     allowWord word: 'territories',
-            inFile: 'src/utils/java/kmu/maplayers/base/geometry/SectorGeometryViewer.java'
+            inFile: 'src/utils/java/kmu/maplayers/base/geometry/viewer/SectorGeometryViewer.java'
 }
 
 // On-demand Java formatting (`gradlew spotlessApply`). Applied after the source
@@ -275,7 +286,7 @@ tasks.register('viewSectorGeometry', JavaExec) {
     group = 'help'
     description = 'Opens the sector geometry viewer (live sliders over a real sector).'
     classpath = sourceSets.utils.runtimeClasspath
-    mainClass = 'kmu.maplayers.base.geometry.SectorGeometryViewer'
+    mainClass = 'kmu.maplayers.base.geometry.viewer.SectorGeometryViewer'
 }
 
 // The same shapes the viewer draws, written straight to file with the frontier off and on. The
@@ -285,7 +296,7 @@ tasks.register('writeSectorSvg', JavaExec) {
     group = 'help'
     description = 'Writes every sector fixture to SVG, frontier off and on, into build/reports.'
     classpath = sourceSets.utils.runtimeClasspath
-    mainClass = 'kmu.maplayers.base.geometry.SectorSvgDump'
+    mainClass = 'kmu.maplayers.base.geometry.viewer.SectorSvgDump'
 }
 
 // Walks the void between cells directly, with no raster in the way. Replaces the earlier
@@ -295,5 +306,5 @@ tasks.register('writeVoidRegions', JavaExec) {
     group = 'help'
     description = 'Traces the void between cells exactly and reports how it divides.'
     classpath = sourceSets.utils.runtimeClasspath
-    mainClass = 'kmu.maplayers.base.geometry.VoidRegionsDump'
+    mainClass = 'kmu.maplayers.base.geometry.viewer.VoidRegionsDump'
 }

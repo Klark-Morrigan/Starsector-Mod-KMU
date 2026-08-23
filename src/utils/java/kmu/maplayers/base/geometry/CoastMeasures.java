@@ -18,7 +18,7 @@ import java.util.List;
  * than in which cells get skipped - but they answer a question that is currently closed, and
  * scaffolding left standing among the load-bearing parts stops looking like scaffolding.
  */
-final class CoastMeasures {
+public final class CoastMeasures {
 
     private CoastMeasures() {
     }

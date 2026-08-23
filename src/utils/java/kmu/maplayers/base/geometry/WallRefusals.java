@@ -20,7 +20,7 @@ import java.util.Locale;
  * wall refused at the reach a shape is drawn at is a pocket the reader never sees, however
  * well the void was traced at its own extent.
  */
-final class WallRefusals {
+public final class WallRefusals {
 
     private WallRefusals() {
     }
@@ -36,7 +36,7 @@ final class WallRefusals {
      * @param offered the ones to count, which must be among them
      * @return the counts, as one line
      */
-    static String summariseRefusals(
+    public static String summariseRefusals(
             DiscUnion union,
             DiscUnionBoundary.Walls walls,
             List<DiscUnionBoundary.Chord> offered) {
@@ -84,7 +84,7 @@ final class WallRefusals {
      * @param kind    what to call one in the report, since a bridge and a reach of coast read
      *                as different things to anyone looking for the one being described
      */
-    static void reportEachRefusal(
+    public static void reportEachRefusal(
             DiscUnion union,
             DiscUnionBoundary.Walls walls,
             List<DiscUnionBoundary.Chord> offered,

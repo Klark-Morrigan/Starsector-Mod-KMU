@@ -34,7 +34,7 @@ import java.util.Locale;
  * put their cursor on. This one asks it of the whole map, so the answer arrives without anyone
  * having to find the patch first.
  */
-final class UndrawnVoid {
+public final class UndrawnVoid {
 
     // How far apart the samples are. Well inside the smallest pocket worth drawing, so no
     // patch a reader would notice can fall between two of them, and coarse enough that the
@@ -61,7 +61,7 @@ final class UndrawnVoid {
      * @param across  how far apart its two most distant samples are
      * @param samples how many samples it holds, which is its area in units of the grid
      */
-    record UnfilledPatch(
+    public record UnfilledPatch(
         double[] at,
         double across,
         int samples) {

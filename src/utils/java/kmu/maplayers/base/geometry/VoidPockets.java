@@ -61,7 +61,7 @@ import java.util.List;
  * <p>How many cells ring a pocket is not a special case: it is however many arcs the cycle
  * turned out to have.
  */
-final class VoidPockets {
+public final class VoidPockets {
 
     /**
      * One pocket of void, bound by the cells around it.
@@ -91,7 +91,7 @@ final class VoidPockets {
      *                       corridor of void into separate holes, so a pocket IS a section and
      *                       there is nothing left to divide
      */
-    record VoidPocket(
+    public record VoidPocket(
         List<List<double[]>> outlines,
         double[] centre,
         double span,
@@ -107,7 +107,7 @@ final class VoidPockets {
      * {@link #AT_TRUE_EXTENT} hands back the void itself. A caller has to say which of the
      * two maps it is asking about.
      */
-    enum PocketShaping {
+    public enum PocketShaping {
 
         /**
          * The channel taken out by moving the reach - out by one where the void lies between
@@ -134,7 +134,7 @@ final class VoidPockets {
          *
          * @return whether this is the extent itself rather than a channel inside it
          */
-        boolean isAtTrueExtent() {
+        public boolean isAtTrueExtent() {
             return this == AT_TRUE_EXTENT;
         }
     }
@@ -151,7 +151,7 @@ final class VoidPockets {
      *                   that decides where it begins and the channel the cells leave
      * @param shaping    how much of the channel each pocket takes out of its own outline
      */
-    record PocketRules(
+    public record PocketRules(
         SectorGeometryParameters parameters,
         PocketShaping shaping) {
     }
@@ -169,7 +169,7 @@ final class VoidPockets {
      * @param rules       the knobs to build them under
      * @return the pockets, each with a closed outline
      */
-    static List<VoidPocket> findVoidPockets(
+    public static List<VoidPocket> findVoidPockets(
             List<double[]> sites,
             List<String> ownerBySite,
             PocketRules rules) {
@@ -279,7 +279,7 @@ final class VoidPockets {
      * @param parameters the knobs the cells are built under
      * @return the discs
      */
-    static DiscUnion buildDrawnUnion(
+    public static DiscUnion buildDrawnUnion(
             List<double[]> sites,
             SectorGeometryParameters parameters) {
 

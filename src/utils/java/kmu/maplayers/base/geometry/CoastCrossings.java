@@ -19,7 +19,7 @@ import java.util.List;
  * wrong: loosen the first and the construction stops trying to do better, tighten the second
  * and the map fills with marks over nothing, which teaches its reader to stop looking.
  */
-final class CoastCrossings {
+public final class CoastCrossings {
 
     private CoastCrossings() {
     }
@@ -45,7 +45,7 @@ final class CoastCrossings {
      * @param borderStroke how wide a cell's border is drawn
      * @return the crossings that show, deepest first
      */
-    static List<Penetration> findVisibleCrossings(Coastlines.TracedCoasts traced, double borderStroke) {
+    public static List<Penetration> findVisibleCrossings(Coastlines.TracedCoasts traced, double borderStroke) {
 
         var visible = new ArrayList<Penetration>();
 
@@ -116,7 +116,7 @@ final class CoastCrossings {
      *                grazing a border it is already leaving from is worth a unit or two, and
      *                a run cutting a cell in half is worth hundreds
      */
-    record Penetration(
+    public record Penetration(
         Coastlines.CoastVertex from,
         Coastlines.CoastVertex to,
         List<Integer> circles,

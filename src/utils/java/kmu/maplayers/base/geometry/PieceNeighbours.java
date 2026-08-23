@@ -28,7 +28,7 @@ import java.util.function.IntUnaryOperator;
  * wall as being around a piece, because it is; whether it may be OPENED is a different question
  * and belongs to the rule.
  */
-final class PieceNeighbours {
+public final class PieceNeighbours {
 
     // The direction of a stretch that no piece walked, which is a direction the open sea
     // walked. Its own name because it comes back from an array of piece indexes, where a bare

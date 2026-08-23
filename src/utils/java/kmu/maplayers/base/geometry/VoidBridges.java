@@ -42,7 +42,7 @@ import java.util.List;
  * two leaving the same cell start at two different points on its rim and only register when
  * they genuinely cross.
  */
-final class VoidBridges {
+public final class VoidBridges {
 
     private VoidBridges() {
     }
@@ -56,7 +56,7 @@ final class VoidBridges {
      *                       them, centre to centre
      * @return the bridges, narrowest first, none of them crossing another
      */
-    static List<CellGap> findVoidBridges(
+    public static List<CellGap> findVoidBridges(
             List<double[]> sites,
             double reach,
             double maxSeparation) {

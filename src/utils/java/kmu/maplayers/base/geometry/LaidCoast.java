@@ -21,7 +21,7 @@ import java.util.List;
  * @param offered    its own straight reaches, as the walls they are offered as
  * @param walls      those reaches together with the bridges, which is what the walk lays
  */
-record LaidCoast(
+public record LaidCoast(
     Coastlines.TracedCoasts traced,
     SectorGeometryParameters parameters,
     List<DiscUnionBoundary.Chord> offered,
@@ -34,7 +34,7 @@ record LaidCoast(
      * @param parameters the knobs it was traced under
      * @return the coast with its walls down
      */
-    static LaidCoast layCoast(
+    public static LaidCoast layCoast(
             Coastlines.TracedCoasts traced,
             SectorGeometryParameters parameters) {
 

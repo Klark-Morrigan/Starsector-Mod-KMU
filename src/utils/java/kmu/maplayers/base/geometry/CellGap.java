@@ -21,7 +21,7 @@ package kmu.maplayers.base.geometry;
  *                 rather than any reach something is drawn at, so two gaps stay comparable when
  *                 the channel width changes
  */
-record CellGap(
+public record CellGap(
     int fromSite,
     int toSite,
     double[] start,
