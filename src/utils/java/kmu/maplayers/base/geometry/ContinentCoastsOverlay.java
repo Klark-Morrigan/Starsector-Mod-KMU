@@ -23,6 +23,9 @@ import java.util.List;
  */
 final class ContinentCoastsOverlay {
 
+    // An odd multiplier, so the two coordinates of a place cannot cancel on a diagonal.
+    private static final int PLACE_HASH_MIX = 31;
+
     private final ViewerSettings settings;
 
     // What the last trace found, held rather than recomputed while painting: a frame that
@@ -186,9 +189,6 @@ final class ContinentCoastsOverlay {
 
         return Double.hashCode(corner[0]) * PLACE_HASH_MIX + Double.hashCode(corner[1]);
     }
-
-    // An odd multiplier, so the two coordinates cannot cancel for a point on a diagonal.
-    private static final int PLACE_HASH_MIX = 31;
 
     /**
      * The bridges that survived the coastlines, drawn end to end at their true extent.

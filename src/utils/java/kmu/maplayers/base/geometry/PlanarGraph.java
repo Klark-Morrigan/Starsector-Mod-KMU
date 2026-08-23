@@ -417,9 +417,6 @@ final class PlanarGraph {
      */
     private static final class CornerIndex {
 
-        // How near two points must be to be the same corner.
-        private static final double SAME_PLACE = DiscUnion.TOUCHING_TOLERANCE;
-
         // Far wider than any sector is in cells of the tolerance, so two different cells
         // cannot pack to one key.
         private static final int PACKED_CELL_BITS = 32;
@@ -441,8 +438,8 @@ final class PlanarGraph {
 
         int findOrAddCorner(double[] at) {
 
-            var cellX = (long) Math.floor(at[0] / SAME_PLACE);
-            var cellY = (long) Math.floor(at[1] / SAME_PLACE);
+            var cellX = (long) Math.floor(at[0] / DiscUnion.TOUCHING_TOLERANCE);
+            var cellY = (long) Math.floor(at[1] / DiscUnion.TOUCHING_TOLERANCE);
 
             // The neighbouring cells as well as its own, since two points a hair apart can
             // still fall either side of a cell edge.
@@ -469,7 +466,7 @@ final class PlanarGraph {
 
             for (var corner : cornersByCell.getOrDefault(packCell(cellX, cellY), List.of())) {
 
-                if (Points.computeDistance(corners.get(corner), at) <= SAME_PLACE) {
+                if (Points.computeDistance(corners.get(corner), at) <= DiscUnion.TOUCHING_TOLERANCE) {
                     return corner;
                 }
             }

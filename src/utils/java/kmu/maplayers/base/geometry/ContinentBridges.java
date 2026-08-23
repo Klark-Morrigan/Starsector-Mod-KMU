@@ -64,17 +64,6 @@ import java.util.Map;
  */
 final class ContinentBridges {
 
-    // How finely a span is walked when something has to be asked of its whole length. A
-    // handful of steps catches a span clipping a cell's corner, or slipping off a wall for a
-    // stretch, without either question costing a sample per map unit.
-    //
-    // Which steps are asked differs by question, and the two conventions are not
-    // interchangeable: whether a span runs through a cell is a question about its MIDDLE,
-    // since both ends sit on a cell by construction, while whether it is already walled is
-    // asked of its ends as well, because a stretch left uncovered at either end is exactly
-    // the gap that makes a span worth laying.
-    private static final int SPAN_SAMPLES = 8;
-
     private ContinentBridges() {
     }
 
@@ -121,7 +110,7 @@ final class ContinentBridges {
 
         // Gathered once. Every candidate pairing is checked against these, and rebuilding
         // them per candidate would be the same answer found tens of thousands of times.
-        var coastWalls = collectCoastWalls(traced);
+        var coastWalls = WallCoverage.collectRingWalls(Coastlines.collectCoastRings(traced));
         var reach = parameters.cellRadius() * rules.reachMultiple();
         var laid = new ArrayList<CellGap>();
 
@@ -262,97 +251,6 @@ final class ContinentBridges {
     }
 
     /**
-     * Whether every part of a line is already walled by something.
-     *
-     * <p>A span laid where walls already run closes nothing: the void either side of it was
-     * divided before it arrived, by the coastline or by a span laid earlier. Drawn, it is one
-     * line under another.
-     *
-     * <p><b>Covered piecewise, not matched to one wall.</b> The line that has to go is rarely
-     * a copy of any single wall - it is a long span whose first half runs beside a shorter
-     * span and whose second half runs beside the coast, so no one wall covers it and every
-     * one of them covers some. Asking each wall in turn whether IT covers the whole span
-     * misses exactly that, which is why this asks the question the other way round: walk the
-     * span, and let any wall answer for the stretch under it.
-     *
-     * <p>Its ends prove nothing on their own. Corners are where walls meet, so almost every
-     * span begins and ends on one; a span that leaves a corner and strikes out across open
-     * void is the ordinary case, and only one that never leaves the walls is a doubling.
-     *
-     * @param start     one corner
-     * @param end       the other
-     * @param walls     the walls already down, as pairs of endpoints
-     * @param tolerance how far off a wall a place may be and still count as walled
-     * @return whether the whole line is already walled
-     */
-    private static boolean isAlreadyWalled(
-            double[] start,
-            double[] end,
-            List<double[][]> walls,
-            double tolerance) {
-
-        for (var step = 0; step <= SPAN_SAMPLES; step++) {
-
-            if (!isPointWalled(findPointAlong(start, end, step), walls, tolerance)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // One of the places along a span the sampling asks about, by step rather than by fraction
-    // so that both questions step the same way and cannot come to disagree about where the
-    // middle of a span is.
-    private static double[] findPointAlong(double[] start, double[] end, int step) {
-
-        var along = (double) step / SPAN_SAMPLES;
-
-        return new double[] {
-            start[0] + (end[0] - start[0]) * along,
-            start[1] + (end[1] - start[1]) * along};
-    }
-
-    private static boolean isPointWalled(
-            double[] point,
-            List<double[][]> walls,
-            double tolerance) {
-
-        for (var wall : walls) {
-
-            if (Segments.computeDistanceToPoint(wall[0], wall[1], point) <= tolerance) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * The drawn coastline as the wall it is, segment by segment.
-     *
-     * <p>The whole line rather than its straight reaches alone. A span can run beside a
-     * fillet as readily as beside a reach - the coast is one line to the eye and one wall to
-     * the void, and which of its parts a span happens to shadow is not a distinction anything
-     * downstream makes.
-     *
-     * @param traced the coast
-     * @return every segment of every coast ring
-     */
-    private static List<double[][]> collectCoastWalls(Coastlines.TracedCoasts traced) {
-
-        var walls = new ArrayList<double[][]>();
-
-        for (var ring : Coastlines.collectCoastRings(traced)) {
-            for (var index = 0; index < ring.size(); index++) {
-
-                walls.add(new double[][] {
-                    ring.get(index),
-                    ring.get((index + 1) % ring.size())});
-            }
-        }
-        return walls;
-    }
-
-    /**
      * Drops the spans that run along a line another span already covers.
      *
      * <p>Shortest first, so where two overlap the one kept is the tighter, and the longer -
@@ -391,7 +289,7 @@ final class ContinentBridges {
 
         for (var span : spans) {
 
-            if (isAlreadyWalled(span.start(), span.end(), walls, rules.coastSlack())
+            if (WallCoverage.isAlreadyWalled(span.start(), span.end(), walls, rules.coastSlack())
                     || !rules.isCrossingAllowed() && doesCrossAnyKept(span, kept)) {
 
                 continue;
@@ -455,9 +353,9 @@ final class ContinentBridges {
             double[] end,
             DiscUnion union) {
 
-        for (var step = 1; step < SPAN_SAMPLES; step++) {
+        for (var step = 1; step < WallCoverage.LINE_SAMPLES; step++) {
 
-            if (union.isPointInside(findPointAlong(start, end, step))) {
+            if (union.isPointInside(WallCoverage.findPointAlong(start, end, step))) {
                 return true;
             }
         }

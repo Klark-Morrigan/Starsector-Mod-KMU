@@ -1,11 +1,7 @@
 package kmu.maplayers.base.geometry;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Which walls to take out so the void is not left cut into slivers.
@@ -15,10 +11,18 @@ import java.util.Map;
  * can see and nothing can be said about. What is wanted is fewer, larger pieces, and the way to
  * get them is to leave a wall out.
  *
- * <p><b>A stretch, not a span.</b> What separates two pieces is rarely a whole span: a span
- * crossed by two others is three stretches, and only the middle one stands between the two
- * pieces either side of it. Dropping the whole span would open three walls to fix one, and take
- * with it the pieces at either end that had nothing to do with the complaint.
+ * <p><b>A stretch or a whole wall, and the two buy different things.</b> What separates two
+ * pieces is rarely a whole wall: a wall crossed by two others is three stretches, and only the
+ * middle one stands between the two pieces either side of it. Opening that stretch alone is the
+ * precise move - it fixes one complaint and leaves the pieces at either end, which had nothing
+ * to do with it, exactly as they were.
+ *
+ * <p>What the precise move cannot do is un-fan a bay. A bay crossed by several walls is cut
+ * into a fan of wedges all bounded by stretches of the SAME few walls, so opening one stretch
+ * joins two wedges and leaves the rest of that wall standing straight across the piece it just
+ * made. Only taking a wall out entire opens the bay along its whole length. So there are two
+ * moves under two settings: whole walls first, while a piece is thin enough to want the coarse
+ * one, then stretches for what is left.
  *
  * <p><b>Too small OR too thin.</b> Area alone cannot see shape: a wedge four thousand long and
  * two hundred wide covers as much map as a compact blob nine hundred across, so no cap that
@@ -42,7 +46,23 @@ import java.util.Map;
  */
 final class SmallPieceFolding {
 
-    private SmallPieceFolding() {
+    // The three things every step of a fold needs: the walls it takes out, the index that says
+    // what stands between what, and the running measurements. Held rather than threaded through
+    // every method, which is what they were - the same three arguments on every signature is
+    // the shape that wants to be an object.
+    private final PlanarGraph graph;
+    private final PieceNeighbours neighbours;
+    private final FoldingPile pile;
+
+    private SmallPieceFolding(
+            PlanarGraph graph,
+            List<PlanarGraph.WalkedFace> pieces,
+            boolean[] isFoldable,
+            FoldRules rules) {
+
+        this.graph = graph;
+        this.pile = new FoldingPile(pieces, isFoldable, rules);
+        this.neighbours = new PieceNeighbours(graph, pieces, pile::findRoot);
     }
 
     /**
@@ -72,7 +92,7 @@ final class SmallPieceFolding {
     }
 
     /**
-     * Takes out the stretches whose removal folds a piece not worth having on its own into a
+     * Takes out the walls whose removal folds a piece not worth having on its own into a
      * neighbour.
      *
      * <p>The graph is left with those stretches dropped. What shape that leaves is not answered
@@ -85,33 +105,35 @@ final class SmallPieceFolding {
      *                   and is not a piece anything should be folding
      * @param rules      what a piece has to be to be left alone
      */
-    static void dropStretchesAroundSmallPieces(
+    static void dropWallsAroundPoorPieces(
             PlanarGraph graph,
             List<PlanarGraph.WalkedFace> pieces,
             boolean[] isFoldable,
             FoldRules rules) {
 
-        var neighbours = new PieceNeighbours(graph, pieces);
-        var pile = new FoldingPile(pieces, isFoldable, rules);
+        new SmallPieceFolding(graph, pieces, isFoldable, rules).dropWalls(pieces.size());
+    }
+
+    private void dropWalls(int mostPasses) {
 
         // Whole walls first, then stretches. The coarse move opens a bay along a wall's whole
         // length; the fine one tidies what is left. Run the other way round, the fine pass
         // spends itself joining wedges the coarse pass was about to open anyway, and the
         // result depends on which happened to go first.
-        openWholeWallsAroundThinPieces(graph, neighbours, pile);
+        openWholeWallsAroundThinPieces();
 
         // Smallest first, over and over, so the order the pieces came out of the walk in
         // cannot change the answer. Bounded by the pieces themselves: every pass either folds
         // two together or gives one up, and neither can happen more often than there are
         // pieces to fold.
-        for (var pass = 0; pass < pieces.size(); pass++) {
+        for (var pass = 0; pass < mostPasses; pass++) {
 
             var worst = pile.findSmallestWanting();
 
             if (worst < 0) {
                 return;
             }
-            foldUntilItPasses(graph, neighbours, pile, worst);
+            foldUntilItPasses(worst);
         }
     }
 
@@ -134,10 +156,7 @@ final class SmallPieceFolding {
      * <p>Area is not consulted. This exists for long thin slivers, and a sliver can cover as
      * much map as anything else.
      */
-    private static void openWholeWallsAroundThinPieces(
-            PlanarGraph graph,
-            PieceNeighbours neighbours,
-            FoldingPile pile) {
+    private void openWholeWallsAroundThinPieces() {
 
         // Bounded by the walls: every pass takes one out, and none comes back.
         for (var pass = 0; pass < neighbours.countWalls(); pass++) {
@@ -148,7 +167,7 @@ final class SmallPieceFolding {
                 return;
             }
 
-            var wall = findFattestWallToOpen(graph, neighbours, pile, thinnest);
+            var wall = findFattestWallToOpen(thinnest);
 
             if (wall < 0) {
 
@@ -157,29 +176,25 @@ final class SmallPieceFolding {
                 pile.stopOpeningWholeWalls(thinnest);
                 continue;
             }
-            openWall(graph, neighbours, pile, wall);
+            openWall(wall);
         }
     }
 
     // The wall whose removal leaves the widest piece, or -1 where none around this one may go.
-    private static int findFattestWallToOpen(
-            PlanarGraph graph,
-            PieceNeighbours neighbours,
-            FoldingPile pile,
-            int piece) {
+    private int findFattestWallToOpen(int piece) {
 
         var fattest = -1;
         var widest = Double.NEGATIVE_INFINITY;
 
-        for (var wall : neighbours.listWallsAround(graph, pile, piece)) {
+        for (var wall : neighbours.listWallsAround(piece)) {
 
-            if (!neighbours.isWallWhollyBetweenFoldablePieces(graph, pile, wall)) {
+            if (!isWallOpenable(wall)) {
                 continue;
             }
 
-            var width = pile.measureWidthIfWallOpened(
-                neighbours.listPiecesAlongWall(graph, wall),
-                neighbours.measureWallLength(graph, wall));
+            var width = pile.measureWidthIfJoined(
+                neighbours.listPiecesAlongWall(wall),
+                neighbours.measureTotalLength(neighbours.listStandingStretchesOf(wall)));
 
             if (width > widest) {
                 widest = width;
@@ -189,20 +204,43 @@ final class SmallPieceFolding {
         return fattest;
     }
 
+    /**
+     * Whether a wall may be taken out entire.
+     *
+     * <p>Two refusals, asked of two different things. The open sea beyond it is the index's
+     * question - a wall across a bay mouth would not join two pieces, it would give the water
+     * away. Land beyond it is this rule's - a bridge that cut into a continent has a continent's
+     * inside on one side, and folding water into land is not a merge of pieces of void.
+     *
+     * <p>Both have to hold along the wall's WHOLE standing length. A wall that is water-to-water
+     * for most of its run and land-to-water at one end is still a wall that cannot come out
+     * entire, and taking it out on the strength of the good part is how land ends up flooded.
+     */
+    private boolean isWallOpenable(int wall) {
+
+        if (!neighbours.isWallWhollyBetweenPieces(wall)) {
+            return false;
+        }
+
+        for (var piece : neighbours.listPiecesAlongWall(wall)) {
+
+            if (!pile.isFoldable(piece)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // One wall out, and everything it stood between joined.
-    private static void openWall(
-            PlanarGraph graph,
-            PieceNeighbours neighbours,
-            FoldingPile pile,
-            int wall) {
+    private void openWall(int wall) {
 
-        var joined = neighbours.listPiecesAlongWall(graph, wall);
-        var length = neighbours.measureWallLength(graph, wall);
+        var joined = neighbours.listPiecesAlongWall(wall);
+        var length = neighbours.measureTotalLength(neighbours.listStandingStretchesOf(wall));
 
-        for (var edge : neighbours.listStandingStretchesOf(graph, wall)) {
+        for (var edge : neighbours.listStandingStretchesOf(wall)) {
             graph.dropEdge(edge);
         }
-        pile.joinAlongWall(joined, length);
+        pile.joinPieces(joined, length);
     }
 
     /**
@@ -218,15 +256,11 @@ final class SmallPieceFolding {
      * along its side; joining the end-on one leaves something longer and no wider, and the only
      * thing that tells the two apart is measuring the result rather than the candidate.
      */
-    private static void foldUntilItPasses(
-            PlanarGraph graph,
-            PieceNeighbours neighbours,
-            FoldingPile pile,
-            int piece) {
+    private void foldUntilItPasses(int piece) {
 
         while (pile.isWanting(piece)) {
 
-            var fattest = findFattestMerge(graph, neighbours, pile, piece);
+            var fattest = findFattestMerge(piece);
 
             if (fattest < 0) {
 
@@ -240,12 +274,12 @@ final class SmallPieceFolding {
             // Every stretch the two share, not just one. Two pieces can meet along several
             // stretches at once, and opening one of them leaves the rest standing as walls
             // through the middle of what is now a single piece.
-            var shared = neighbours.listStretchesBetween(pile, piece, fattest);
+            var shared = neighbours.listStretchesBetween(piece, fattest);
 
             for (var edge : shared) {
                 graph.dropEdge(edge);
             }
-            pile.joinPieces(piece, fattest, measureTotalLength(graph, shared));
+            pile.joinPieces(List.of(piece, fattest), neighbours.measureTotalLength(shared));
         }
     }
 
@@ -257,24 +291,20 @@ final class SmallPieceFolding {
      * less twice what they shared. So each candidate is a few arithmetic operations rather than
      * a trial merge.
      */
-    private static int findFattestMerge(
-            PlanarGraph graph,
-            PieceNeighbours neighbours,
-            FoldingPile pile,
-            int piece) {
+    private int findFattestMerge(int piece) {
 
         var fattest = -1;
         var widest = Double.NEGATIVE_INFINITY;
 
-        for (var beside : neighbours.listPiecesBeside(pile, piece)) {
+        for (var beside : neighbours.listPiecesBeside(piece)) {
 
             if (!pile.isFoldable(beside)) {
                 continue;
             }
 
-            var shared = measureTotalLength(
-                graph, neighbours.listStretchesBetween(pile, piece, beside));
-            var width = pile.measureWidthIfJoined(piece, beside, shared);
+            var shared = neighbours.measureTotalLength(
+                neighbours.listStretchesBetween(piece, beside));
+            var width = pile.measureWidthIfJoined(List.of(piece, beside), shared);
 
             if (width > widest) {
                 widest = width;
@@ -282,16 +312,6 @@ final class SmallPieceFolding {
             }
         }
         return fattest;
-    }
-
-    private static double measureTotalLength(PlanarGraph graph, List<Integer> edges) {
-
-        var total = 0.0;
-
-        for (var edge : edges) {
-            total += graph.measureEdgeLength(edge);
-        }
-        return total;
     }
 
     /**
@@ -310,6 +330,9 @@ final class SmallPieceFolding {
      */
     private static final class FoldingPile {
 
+        // A shared wall leaves both boundaries when they join: it was walked once by each.
+        private static final int BOTH_SIDES = 2;
+
         private final double[] areas;
         private final double[] perimeters;
         private final int[] joinedTo;
@@ -326,6 +349,16 @@ final class SmallPieceFolding {
         private final boolean[] hasStopped;
 
         private final FoldRules rules;
+
+        // Twice the area over the perimeter. For a long thin shape this is its width, and for a
+        // round one its radius - so one number covers a wedge and a bay, in map units a reader
+        // can hold against the cell radius.
+        //
+        // Guarded because a piece with no perimeter has no width to speak of, and a join that
+        // cancelled a boundary entirely would otherwise divide by nothing.
+        private static double measureMeanWidth(double area, double perimeter) {
+            return perimeter <= 0 ? 0 : area * BOTH_SIDES / perimeter;
+        }
 
         FoldingPile(
                 List<PlanarGraph.WalkedFace> pieces,
@@ -442,14 +475,25 @@ final class SmallPieceFolding {
             hasStopped[findRoot(piece)] = true;
         }
 
-        // How wide the pieces along a wall would be as one, without opening it to find out.
-        double measureWidthIfWallOpened(List<Integer> along, double wallLength) {
+        /**
+         * How wide a run of pieces would be as one, without joining them to find out.
+         *
+         * <p>Any number of them, because both moves come down to the same sum. Two pieces
+         * either side of a stretch and five along a whole wall differ only in how many are
+         * named and how much wall comes out, and writing the arithmetic twice would put the
+         * easy-to-mistake half of it - the perimeter - in two places.
+         *
+         * @param joining    the pieces, which may name the same one more than once
+         * @param wallLength how much wall would be taken out between them
+         * @return the mean width of what they would leave
+         */
+        double measureWidthIfJoined(List<Integer> joining, double wallLength) {
 
             var area = 0.0;
             var perimeter = 0.0;
             var counted = new LinkedHashSet<Integer>();
 
-            for (var piece : along) {
+            for (var piece : joining) {
 
                 var root = findRoot(piece);
 
@@ -461,12 +505,17 @@ final class SmallPieceFolding {
             return measureMeanWidth(area, perimeter - wallLength * BOTH_SIDES);
         }
 
-        // Every piece a wall stood between, joined into one.
-        void joinAlongWall(List<Integer> along, double wallLength) {
+        /**
+         * Joins a run of pieces into one.
+         *
+         * @param joining    the pieces, which may name the same one more than once
+         * @param wallLength how much wall came out between them
+         */
+        void joinPieces(List<Integer> joining, double wallLength) {
 
-            var kept = findRoot(along.get(0));
+            var kept = findRoot(joining.get(0));
 
-            for (var piece : along) {
+            for (var piece : joining) {
 
                 var folded = findRoot(piece);
 
@@ -484,250 +533,9 @@ final class SmallPieceFolding {
             perimeters[kept] -= wallLength * BOTH_SIDES;
         }
 
-        // How wide these two would be as one piece, without joining them to find out.
-        double measureWidthIfJoined(int one, int other, double sharedLength) {
-
-            var kept = findRoot(one);
-            var folded = findRoot(other);
-
-            return measureMeanWidth(
-                areas[kept] + areas[folded],
-                perimeters[kept] + perimeters[folded] - sharedLength * BOTH_SIDES);
-        }
-
-        void joinPieces(int one, int other, double sharedLength) {
-
-            var kept = findRoot(one);
-            var folded = findRoot(other);
-
-            if (kept == folded) {
-                return;
-            }
-            joinedTo[folded] = kept;
-            areas[kept] += areas[folded];
-            perimeters[kept] += perimeters[folded] - sharedLength * BOTH_SIDES;
-        }
-
         void giveUp(int piece) {
             hasGivenUp[findRoot(piece)] = true;
         }
-
-        // A shared wall leaves both boundaries when they join: it was walked once by each.
-        private static final int BOTH_SIDES = 2;
-
-        // Twice the area over the perimeter. For a long thin shape this is its width, and for
-        // a round one its radius - so one number covers a wedge and a bay, in map units a
-        // reader can hold against the cell radius.
-        //
-        // Guarded because a piece with no perimeter has no width to speak of, and a merge that
-        // cancelled a boundary entirely would otherwise divide by nothing.
-        private static double measureMeanWidth(double area, double perimeter) {
-            return perimeter <= 0 ? 0 : area * BOTH_SIDES / perimeter;
-        }
     }
 
-    /**
-     * Which pieces each removable stretch stands between.
-     *
-     * <p>Read off the walk rather than worked out again. Each direction of a run was walked by
-     * exactly one face, so the two directions of one run name the two faces either side of it -
-     * the whole adjacency is already there, and asking the geometry a second time would be a
-     * second answer.
-     *
-     * <p>A stretch naming only one piece has the open sea on its other side. Folding a piece
-     * into the sea is a different act from joining two pieces, so those are left alone.
-     */
-    private static final class PieceNeighbours {
-
-        // Which piece walked each direction, or -1 for a direction the open sea walked.
-        private final int[] pieceOfEdge;
-
-        // Every removable stretch that stands between two different pieces, by one direction.
-        private final List<Integer> joins = new ArrayList<>();
-
-        // Which stretches each whole wall was cut into, by one direction each. What lets a
-        // wall be taken out entire rather than a stretch at a time.
-        private final Map<Integer, List<Integer>> stretchesOfWall = new LinkedHashMap<>();
-
-        PieceNeighbours(PlanarGraph graph, List<PlanarGraph.WalkedFace> pieces) {
-
-            // Sized from the graph rather than from the highest edge the pieces mention. The
-            // open sea walks edges too, and those are exactly the ones no piece names - so a
-            // table sized to fit the pieces is a table that stops short of the edges it is
-            // then asked about.
-            pieceOfEdge = new int[graph.countEdges()];
-
-            Arrays.fill(pieceOfEdge, -1);
-
-            for (var piece = 0; piece < pieces.size(); piece++) {
-                for (var edge : pieces.get(piece).edges()) {
-
-                    pieceOfEdge[edge] = piece;
-                }
-            }
-
-            for (var edge = 0; edge < pieceOfEdge.length; edge += 2) {
-
-                if (!graph.isRemovableEdge(edge)) {
-                    continue;
-                }
-                stretchesOfWall
-                    .computeIfAbsent(graph.readGroupOfEdge(edge), wall -> new ArrayList<>())
-                    .add(edge);
-
-                if (pieceOfEdge[edge] >= 0
-                        && pieceOfEdge[edge ^ 1] >= 0
-                        && pieceOfEdge[edge] != pieceOfEdge[edge ^ 1]) {
-
-                    joins.add(edge);
-                }
-            }
-        }
-
-        // Every piece this one currently shares an openable wall with, once each. A neighbour
-        // met along several stretches is one neighbour, and offering it once per stretch would
-        // have it scored - and possibly folded - several times over.
-        List<Integer> listPiecesBeside(FoldingPile pile, int piece) {
-
-            var beside = new LinkedHashSet<Integer>();
-            var root = pile.findRoot(piece);
-
-            for (var edge : joins) {
-
-                var one = pile.findRoot(pieceOfEdge[edge]);
-                var other = pile.findRoot(pieceOfEdge[edge ^ 1]);
-
-                if (one == other) {
-                    continue;
-                }
-                if (one == root) {
-                    beside.add(other);
-                } else if (other == root) {
-                    beside.add(one);
-                }
-            }
-            return new ArrayList<>(beside);
-        }
-
-        private static boolean isRootOf(FoldingPile pile, int piece, int root) {
-            return piece >= 0 && pile.findRoot(piece) == root;
-        }
-
-        // How many whole walls there are to take out, which bounds the coarse pass.
-        int countWalls() {
-            return stretchesOfWall.size();
-        }
-
-        // Every whole wall with a standing stretch bounding this piece, once each.
-        List<Integer> listWallsAround(PlanarGraph graph, FoldingPile pile, int piece) {
-
-            var around = new LinkedHashSet<Integer>();
-            var root = pile.findRoot(piece);
-
-            for (var wall : stretchesOfWall.keySet()) {
-                for (var edge : listStandingStretchesOf(graph, wall)) {
-
-                    // Either side can be the open sea, which is no piece and has no root to
-                    // ask for. A wall with the sea on one side still counts as being AROUND
-                    // this piece; whether it may be opened is a separate question, asked once
-                    // the candidates are in hand.
-                    if (isRootOf(pile, pieceOfEdge[edge], root)
-                            || isRootOf(pile, pieceOfEdge[edge ^ 1], root)) {
-
-                        around.add(wall);
-                        break;
-                    }
-                }
-            }
-            return new ArrayList<>(around);
-        }
-
-        // Whether every standing stretch of a wall has a piece that may be folded on both
-        // sides of it.
-        //
-        // What this refuses is a wall that is partly the edge of the construction: a bridge
-        // across a bay mouth has the open sea beyond it, and one that cut into a continent has
-        // land. Taking either out entire would not join two pieces of water - it would give
-        // the water away, which is a different act and not one a fold is entitled to.
-        boolean isWallWhollyBetweenFoldablePieces(PlanarGraph graph, FoldingPile pile, int wall) {
-
-            var standing = listStandingStretchesOf(graph, wall);
-
-            if (standing.isEmpty()) {
-                return false;
-            }
-
-            for (var edge : standing) {
-
-                if (pieceOfEdge[edge] < 0
-                        || pieceOfEdge[edge ^ 1] < 0
-                        || !pile.isFoldable(pieceOfEdge[edge])
-                        || !pile.isFoldable(pieceOfEdge[edge ^ 1])) {
-
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        // Every piece a wall currently stands between, once each.
-        List<Integer> listPiecesAlongWall(PlanarGraph graph, int wall) {
-
-            var along = new LinkedHashSet<Integer>();
-
-            for (var edge : listStandingStretchesOf(graph, wall)) {
-
-                along.add(pieceOfEdge[edge]);
-                along.add(pieceOfEdge[edge ^ 1]);
-            }
-            return new ArrayList<>(along);
-        }
-
-        // How much wall would come out, which is what the joined pieces stop having a boundary
-        // along.
-        double measureWallLength(PlanarGraph graph, int wall) {
-
-            var length = 0.0;
-
-            for (var edge : listStandingStretchesOf(graph, wall)) {
-                length += graph.measureEdgeLength(edge);
-            }
-            return length;
-        }
-
-        // The stretches of one wall that have not already been taken out, one direction each.
-        List<Integer> listStandingStretchesOf(PlanarGraph graph, int wall) {
-
-            var standing = new ArrayList<Integer>();
-
-            for (var edge : stretchesOfWall.getOrDefault(wall, List.of())) {
-
-                if (!graph.isDroppedEdge(edge)) {
-                    standing.add(edge);
-                }
-            }
-            return standing;
-        }
-
-        // Every stretch standing between these two pieces, as they now stand.
-        List<Integer> listStretchesBetween(FoldingPile pile, int one, int other) {
-
-            var between = new ArrayList<Integer>();
-            var keptRoot = pile.findRoot(one);
-            var foldedRoot = pile.findRoot(other);
-
-            for (var edge : joins) {
-
-                var sideOne = pile.findRoot(pieceOfEdge[edge]);
-                var sideOther = pile.findRoot(pieceOfEdge[edge ^ 1]);
-
-                if (sideOne == keptRoot && sideOther == foldedRoot
-                        || sideOne == foldedRoot && sideOther == keptRoot) {
-
-                    between.add(edge);
-                }
-            }
-            return between;
-        }
-    }
 }

@@ -23,16 +23,10 @@ import java.util.List;
  * sees. Which construction drew which line does not come into it: two lines that cross,
  * cross.
  *
- * <p><b>The faces are found by turning, not by filling.</b> At each vertex the edges are put
- * in angular order; arriving along one, the walk leaves by the next one clockwise. Following
- * that rule to a cycle traces one face, and doing it from every edge traces all of them
- * exactly once - so the pieces cost one pass over the edges rather than a sampled sweep whose
- * grid decides what is too small to notice.
- *
- * <p><b>Which cycles are pieces of void.</b> Traversed this way a bounded face comes back
- * anticlockwise and the open sea comes back clockwise, so a cycle's own signed area says which
- * it is - and a graph in several pieces gives one clockwise cycle per piece, all of them the
- * same open sea.
+ * <p>Cutting the lines is the whole of what happens here. Finding the faces those cut lines
+ * enclose is {@link PlanarGraph}'s job and is documented there; what this adds is everything
+ * that walk deliberately knows nothing about - which lines are coast and which are spans,
+ * which spans may be taken out again, and which of the faces are land.
  *
  * <p><b>Land is told from water by the cells, and by nothing else.</b> Whether a span bounds a
  * face looks like the same question and is not: a span that crosses a coastline puts itself on
@@ -42,11 +36,6 @@ import java.util.List;
  * handed in for it to be askable.
  */
 final class VoidFaces {
-
-    // How near two points must be to be the same corner. The package's "same place" unit: a
-    // span is anchored on a coast corner by construction, so its end and the coast's vertex
-    // are one point that arithmetic has moved apart, not two places.
-    private static final double SAME_PLACE = DiscUnion.TOUCHING_TOLERANCE;
 
     // How far along a line a crossing must fall to be a crossing rather than an endpoint two
     // lines share. Relative, because it is asked of a parameter along the line rather than of
@@ -150,50 +139,65 @@ final class VoidFaces {
         }
 
         var found = graph.walkFaces();
+        var isLand = markPiecesHoldingCells(found, sites);
 
         if (rules.leastArea() <= 0 && rules.leastWidth() <= 0 && rules.leastWholeWidth() <= 0) {
-            return new CutMap(toFaces(found, sites), graph.listStandingRemovableRuns());
+            return new CutMap(toFaces(found, isLand), graph.listStandingRemovableRuns());
         }
 
-        // Which stretches to take out, worked out over the pieces as first found; then the
-        // pieces found again with those stretches gone. Deciding and re-finding are kept apart
-        // because a fold changes what the neighbours ARE, and a rule acting on a picture it was
-        // in the middle of changing would be answering about neither.
+        // Which walls to take out, worked out over the pieces as first found; then the pieces
+        // found again with those walls gone. Deciding and re-finding are kept apart because a
+        // fold changes what the neighbours ARE, and a rule acting on a picture it was in the
+        // middle of changing would be answering about neither.
         //
         // Only the water is offered for folding. A continent's inside is a piece of this
         // arrangement like any other, and folding one into the sea beside it would take out a
         // stretch of coastline to do it.
-        SmallPieceFolding.dropStretchesAroundSmallPieces(
-            graph, found, markWaterPieces(found, sites), rules);
+        SmallPieceFolding.dropWallsAroundPoorPieces(graph, found, negate(isLand), rules);
 
         graph.dropRunsLeftDangling();
 
+        var recut = graph.walkFaces();
+
         return new CutMap(
-            toFaces(graph.walkFaces(), sites), graph.listStandingRemovableRuns());
+            toFaces(recut, markPiecesHoldingCells(recut, sites)),
+            graph.listStandingRemovableRuns());
     }
 
-    // Which of the pieces are water, by index, which is what may be folded.
-    private static boolean[] markWaterPieces(
+    // Which pieces hold a cell, by index. Asked once per walk and carried, rather than asked
+    // again wherever the answer is wanted: it is the dearest question in the pass, walking a
+    // ring per cell, and it has one answer per piece.
+    private static boolean[] markPiecesHoldingCells(
             List<PlanarGraph.WalkedFace> pieces, List<double[]> sites) {
 
-        var isWater = new boolean[pieces.size()];
+        var holdsCells = new boolean[pieces.size()];
 
         for (var piece = 0; piece < pieces.size(); piece++) {
-            isWater[piece] = !isHoldingAnyCell(pieces.get(piece).boundary(), sites);
+            holdsCells[piece] = isHoldingAnyCell(pieces.get(piece).boundary(), sites);
         }
-        return isWater;
+        return holdsCells;
+    }
+
+    private static boolean[] negate(boolean[] flags) {
+
+        var negated = new boolean[flags.length];
+
+        for (var index = 0; index < flags.length; index++) {
+            negated[index] = !flags[index];
+        }
+        return negated;
     }
 
     private static List<Face> toFaces(
-            List<PlanarGraph.WalkedFace> walked, List<double[]> sites) {
+            List<PlanarGraph.WalkedFace> walked, boolean[] holdsCells) {
 
         var faces = new ArrayList<Face>(walked.size());
 
-        for (var face : walked) {
+        for (var piece = 0; piece < walked.size(); piece++) {
             faces.add(new Face(
-                face.boundary(),
-                face.area(),
-                isHoldingAnyCell(face.boundary(), sites)));
+                walked.get(piece).boundary(),
+                walked.get(piece).area(),
+                holdsCells[piece]));
         }
         return List.copyOf(faces);
     }
@@ -264,7 +268,7 @@ final class VoidFaces {
 
             if (isWithinTheRun(along)
                     && Segments.computeDistanceToPoint(
-                        piece.start(), piece.end(), corner) <= SAME_PLACE) {
+                        piece.start(), piece.end(), corner) <= DiscUnion.TOUCHING_TOLERANCE) {
 
                 cuts.add(along);
             }
@@ -427,13 +431,13 @@ final class VoidFaces {
             // A cut landing on the piece's own start leaves nothing between them. Dropped
             // rather than kept, since a run of no length has no direction and the angular
             // order a face walk turns on cannot be asked of it.
-            if (Points.computeDistance(from, at) > SAME_PLACE) {
+            if (Points.computeDistance(from, at) > DiscUnion.TOUCHING_TOLERANCE) {
                 pieces.add(new Wall(from, at, wall.spanIndex()));
                 from = at;
             }
         }
 
-        if (Points.computeDistance(from, wall.end()) > SAME_PLACE) {
+        if (Points.computeDistance(from, wall.end()) > DiscUnion.TOUCHING_TOLERANCE) {
             pieces.add(new Wall(from, wall.end(), wall.spanIndex()));
         }
         return pieces;

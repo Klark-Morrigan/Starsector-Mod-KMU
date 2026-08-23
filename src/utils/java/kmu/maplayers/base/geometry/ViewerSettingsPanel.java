@@ -491,6 +491,15 @@ final class ViewerSettingsPanel {
     // reads in: what to show, what to draw it with, then the knobs that decide its shape.
     private void addVoidPocketV3Rows(JPanel controls) {
 
+        addContinentCoastRows(controls);
+        addInletBridgeRows(controls);
+        addVoidPieceRows(controls);
+    }
+
+    // What the v3 coastlines are and how they are drawn, which is what everything below is
+    // laid over.
+    private void addContinentCoastRows(JPanel controls) {
+
         // Outside the v2 toggle tree on purpose - that tree's switches show parts of the one
         // settled construction, and a roll-up that could hide or show this too would misstate
         // what "all of it" means.
@@ -523,6 +532,11 @@ final class ViewerSettingsPanel {
                     percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
                 refreshes::refreshCoastlines,
                 () -> { })));
+    }
+
+    // The spans laid across the inlets those coastlines leave, and the rules deciding which
+    // of them survive.
+    private void addInletBridgeRows(JPanel controls) {
 
         // Named for the inlets they close rather than for the continents they sit on, which
         // read as bridges BETWEEN continents and are nothing of the kind.
@@ -583,6 +597,11 @@ final class ViewerSettingsPanel {
                 slack -> settings.continentBridgeCoastSlack = slack,
                 refreshes::refreshCoastlines,
                 () -> { })));
+    }
+
+    // The pieces the coastlines and the bridges cut between them, and what a piece has to be
+    // to be left standing on its own.
+    private void addVoidPieceRows(JPanel controls) {
 
         // Rebuilt rather than repainted: the pieces are cut by the coasts and the bridges
         // together, so switching this on is what makes them exist.
