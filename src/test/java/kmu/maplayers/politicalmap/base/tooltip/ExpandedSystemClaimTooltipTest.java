@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
@@ -87,6 +88,10 @@ final class ExpandedSystemClaimTooltipTest {
     // resolver's and pinned there; the cases below are about which faction gets an account at all.
     private static final boolean IS_KNOWN_TO_PLAYER = true;
 
+    // Somewhere people live, on every market posed here. What kind of place a colony is reaches no
+    // term of the contest, so a case about the arithmetic states it once rather than varying it.
+    private static final ColonyKind ORDINARY_COLONY = ColonyKind.COLONY;
+
     private static final boolean IS_TERRITORIAL = true;
 
     // A system the contest itself settled - no decree over it - which is the state an account is
@@ -114,7 +119,7 @@ final class ExpandedSystemClaimTooltipTest {
         // stood in as absent - a populated system - for every case but the one about it.
         statusRowMock = Mockito.mockStatic(SystemStatusRow.class);
         statusRowMock
-            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any()))
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any()))
             .thenReturn(Optional.empty());
 
         // The reveal is a live LunaLib read, unreachable from the test JVM; stood in as off, the state
@@ -334,7 +339,7 @@ final class ExpandedSystemClaimTooltipTest {
         var statusRow = CellTooltipRows.buildBannerRow(null, "Unpopulated");
 
         statusRowMock
-            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any()))
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any()))
             .thenReturn(Optional.of(statusRow));
 
         return statusRow;
@@ -367,6 +372,7 @@ final class ExpandedSystemClaimTooltipTest {
     private static MarketClaimBreakdown buildConcealedMarket(String marketName, int listingPosition) {
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
+            ORDINARY_COLONY,
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.HIDDEN,
@@ -384,6 +390,7 @@ final class ExpandedSystemClaimTooltipTest {
         // are actually about.
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
+            ORDINARY_COLONY,
             FIRST_LISTED,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.WEIGHED,

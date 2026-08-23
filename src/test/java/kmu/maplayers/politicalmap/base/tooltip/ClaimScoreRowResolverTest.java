@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.entities.EntityMapIcon;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
@@ -91,6 +92,10 @@ final class ClaimScoreRowResolverTest {
     // market is a hidden one, the two arms of "known" being discovery and being held in the open, so
     // a case posing one poses both.
     private static final boolean IS_KNOWN_TO_PLAYER = true;
+
+    // Somewhere people live, on every market posed here. What kind of place a colony is reaches no
+    // term of the contest, so a case about the arithmetic states it once rather than varying it.
+    private static final ColonyKind ORDINARY_COLONY = ColonyKind.COLONY;
     private static final boolean IS_UNFOUND_BY_PLAYER = false;
 
     // A market the sector map marks with a glyph, and one it marks with none - the two readings a
@@ -167,6 +172,7 @@ final class ClaimScoreRowResolverTest {
                         Optional.of(new EntityMapIcon(
                             "graphics/warroom/icon_planet.png",
                             new Color(120, 200, 90)))),
+                    ORDINARY_COLONY,
                     SECOND_LISTED,
                     IS_KNOWN_TO_PLAYER,
                     ContestAdmission.HIDDEN,
@@ -553,6 +559,37 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
+        void resolveMarketRowsCallsADeadWorldOutBesideItsNought() {
+            // The one thing this box says about a colony the mechanic passed over, and the pair is
+            // what makes it necessary: a ruin and a concealed base both arrive at nought, and only
+            // the ruin is a fact about the world rather than about the contest.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(NO_SIBLING_MARKETS),
+                List.of(buildOffEconomyDeadWorld(
+                    "Tibicena",
+                    STRONGEST_MARKET_SIZE,
+                    SECOND_LISTED))));
+
+            assertThat(rows.get(1).line().qualifierText())
+                .isEqualTo("Decivilised");
+        }
+
+        @Test
+        void resolveMarketRowsCallsNothingOutBesideAnOffEconomyColonysNought() {
+            // The same line for a colony that is merely unregistered: nothing about it is a
+            // finding, so the nought stands alone.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(NO_SIBLING_MARKETS),
+                List.of(buildOffEconomyMarket(
+                    "Galatia Academy",
+                    STRONGEST_MARKET_SIZE,
+                    SECOND_LISTED))));
+
+            assertThat(rows.get(1).line().qualifierText())
+                .isNull();
+        }
+
+        @Test
         void resolveMarketRowsCallsOutNoMarketOfAFactionThatTookNothing() {
             // Every faction is represented by its strongest market, but only one of those won
             // anything. A rival's is called out nowhere, since the line would credit it with an
@@ -699,6 +736,7 @@ final class ClaimScoreRowResolverTest {
             var garrisoned = resolveContestedRows(buildStanding(
                 new MarketClaimBreakdown(
                     UNMARKED_MARKET,
+                    ORDINARY_COLONY,
                     FIRST_LISTED,
                     IS_KNOWN_TO_PLAYER,
                     ContestAdmission.WEIGHED,
@@ -858,6 +896,7 @@ final class ClaimScoreRowResolverTest {
 
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
+            ORDINARY_COLONY,
             listingPosition,
             IS_UNFOUND_BY_PLAYER,
             ContestAdmission.HIDDEN,
@@ -921,6 +960,7 @@ final class ClaimScoreRowResolverTest {
 
         return new MarketClaimBreakdown(
             UNMARKED_MARKET,
+            ORDINARY_COLONY,
             FIRST_LISTED,
             isKnownToPlayer,
             admitAsFound(isKnownToPlayer),
@@ -935,6 +975,7 @@ final class ClaimScoreRowResolverTest {
     private static MarketClaimBreakdown buildMarkedMarket(EntityNameplate market) {
         return new MarketClaimBreakdown(
             market,
+            ORDINARY_COLONY,
             FIRST_LISTED,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.WEIGHED,
@@ -953,6 +994,7 @@ final class ClaimScoreRowResolverTest {
 
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
+            ORDINARY_COLONY,
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.HIDDEN,
@@ -971,6 +1013,26 @@ final class ClaimScoreRowResolverTest {
 
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
+            ORDINARY_COLONY,
+            listingPosition,
+            IS_KNOWN_TO_PLAYER,
+            ContestAdmission.OFF_ECONOMY,
+            marketSize,
+            NO_SIBLING_MARKETS,
+            OptionalInt.empty());
+    }
+
+    // The same shape as the world people left, for the cases about what a kind states on the line
+    // naming it. Posed against the hulk above, which reaches the list identically and states
+    // nothing.
+    private static MarketClaimBreakdown buildOffEconomyDeadWorld(
+            String marketName,
+            int marketSize,
+            int listingPosition) {
+
+        return new MarketClaimBreakdown(
+            EntityNameplate.createUnmarkedNameplate(marketName),
+            ColonyKind.DEAD_COLONY,
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.OFF_ECONOMY,
@@ -984,6 +1046,7 @@ final class ClaimScoreRowResolverTest {
     private static MarketClaimBreakdown buildFullyScoredMarket() {
         return new MarketClaimBreakdown(
             UNMARKED_MARKET,
+            ORDINARY_COLONY,
             FIRST_LISTED,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.WEIGHED,
@@ -1018,6 +1081,7 @@ final class ClaimScoreRowResolverTest {
 
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
+            ORDINARY_COLONY,
             listingPosition,
             isKnownToPlayer,
             admitAsFound(isKnownToPlayer),

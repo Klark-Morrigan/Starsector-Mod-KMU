@@ -169,7 +169,7 @@ public final class StandingsTooltipSeamsFake {
         var statusRow = CellTooltipRows.buildBannerRow(null, statusText);
 
         statusRowMock
-            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any(ColonyVisibility.class)))
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(ColonyVisibility.class)))
             .thenReturn(Optional.of(statusRow));
 
         return statusRow;
@@ -208,25 +208,19 @@ public final class StandingsTooltipSeamsFake {
      * box's business and is covered where that box reads for real, while what this pins is the
      * rule, which is the one thing the line and the standings must share.
      *
-     * @param system           the hovered system
      * @param colonyVisibility the rule the status is expected to have been judged under
      */
-    public static void verifyStatusJudgedUnderVisibility(
-            StarSystemAPI system,
-            ColonyVisibility colonyVisibility) {
+    public static void verifyStatusJudgedUnderVisibility(ColonyVisibility colonyVisibility) {
 
         statusRowMock.verify(
-            () -> SystemStatusRow.resolveStatusRow(
-                any(),
-                same(system),
-                eq(colonyVisibility)));
+            () -> SystemStatusRow.resolveStatusRow(any(), eq(colonyVisibility)));
     }
 
     // A system with nothing to say about itself beyond its standings, which is the ordinary case and
     // what keeps the line above the contest out of the way of cases about the contest.
     private static void stubNoStatus() {
         statusRowMock
-            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(), any(ColonyVisibility.class)))
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(ColonyVisibility.class)))
             .thenReturn(Optional.empty());
     }
 }

@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
+import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
 import kmlib.math.geometry.VoronoiCellBuilder;
@@ -444,15 +445,24 @@ final class CellGeometryCacheTest {
 
     private static SectorAPI buildSectorOf(StarSystemAPI... systems) {
 
-        // The hyperspace mock is built before the getHyperspace() stubbing so its
-        // own stubbing is not nested inside this one.
+        // The hyperspace and economy mocks are built before the stubbings that
+        // return them, so their own stubbing is not nested inside this one.
         var hyperspaceMock = buildHyperspaceWithVisibleStarAnchorsFor(systems);
+
+        // Listing nothing, which is the state every case here poses: the colonies
+        // that decide inhabitation hang on a system's own entities. The economy is
+        // stubbed all the same because the walk that finds those reads it to tell a
+        // listed market from an unlisted one, and answers empty without one - so an
+        // unstubbed economy would leave every case posing an empty sector.
+        var economyMock = mock(EconomyAPI.class);
         var sectorMock = mock(SectorAPI.class);
 
         when(sectorMock.getStarSystems())
             .thenReturn(List.of(systems));
         when(sectorMock.getHyperspace())
             .thenReturn(hyperspaceMock);
+        when(sectorMock.getEconomy())
+            .thenReturn(economyMock);
 
         return sectorMock;
     }
@@ -511,17 +521,16 @@ final class CellGeometryCacheTest {
 
         // No jump point (Mockito defaults the list empty) and not cut off, so the
         // access rule rejects it; the revealed decivilised planet is its only
-        // route onto the map. The planet is built before the getPlanets() stubbing
-        // so Mockito does not see one stubbing nested inside another.
-        var planet = DecivilisedPlanetFixtures.buildRevealedDecivilisedPlanet();
+        // route onto the map. The ruin is placed among the system's entities as
+        // well as its planets, that walk being how a colony set reaches it.
         var systemMock = mock(StarSystemAPI.class);
 
         when(systemMock.getId())
             .thenReturn(id);
         when(systemMock.getLocation())
             .thenReturn(new Vector2f(x, y));
-        when(systemMock.getPlanets())
-            .thenReturn(List.of(planet));
+
+        DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(systemMock);
 
         return systemMock;
     }

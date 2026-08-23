@@ -83,7 +83,6 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             sections,
             SystemStatusRow.resolveStatusRow(
                 pass.readColoniesIn(system),
-                system,
                 pass.colonyVisibility()));
 
         // The account is settled once for the whole box, before any group is named, so a box reading
@@ -116,7 +115,6 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         if (SystemStatusRow
                 .resolveStatusRow(
                     pass.readColoniesIn(system),
-                    system,
                     pass.colonyVisibility())
                 .isPresent()) {
             return Optional.empty();

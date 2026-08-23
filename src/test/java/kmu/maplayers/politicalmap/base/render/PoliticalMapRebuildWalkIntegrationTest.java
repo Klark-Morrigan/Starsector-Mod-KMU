@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.ColonyVisibility;
+import kmlib.starsector.colonies.VisibilityReveal;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
@@ -93,8 +94,9 @@ final class PoliticalMapRebuildWalkIntegrationTest {
 
     // The dev reveal lifted, for the case that flips a rule between two rebuilds: it admits an
     // undiscovered colony, which moves the drawn set, the fills and the counts together.
-    private static final MapVisibilityRules UNDISCOVERED_REVEALED =
-        new MapVisibilityRules(new ColonyVisibility(true, Set.of()), false);
+    private static final MapVisibilityRules UNDISCOVERED_REVEALED = new MapVisibilityRules(
+        new ColonyVisibility(Set.of(VisibilityReveal.UNDISCOVERED_MARKETS), Set.of()),
+        false);
 
     // Closed in reverse on the way out, so a seam opened over another is never left standing when
     // the inner one is already gone.

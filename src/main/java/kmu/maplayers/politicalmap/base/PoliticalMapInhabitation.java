@@ -2,8 +2,6 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.markets.DecivilisedMarkets;
-
 import kmu.maplayers.base.visibility.MapVisibility;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 
@@ -22,9 +20,10 @@ import java.util.Set;
  * the walk each system was already read by.
  *
  * <p>It sits in the political layer rather than beside the framework's own visibility because these
- * are this feature's cells. The framework's {@link MapVisibility} states what inhabitation
- * <em>is</em> for any layer; which reading of the sector answers it is the layer's own business, and
- * a scan folded into the framework would put one layer's pass under every layer that shares it.
+ * are this feature's cells. What inhabitation <em>is</em> belongs to the colony set, which the
+ * framework's {@link MapVisibility} spends without restating; which reading of the sector answers it
+ * is the layer's own business, and a scan folded into the framework would put one layer's pass under
+ * every layer that shares it.
  */
 public final class PoliticalMapInhabitation {
 
@@ -59,18 +58,19 @@ public final class PoliticalMapInhabitation {
      *
      * <p>The single-system arm of the scan above, for the incremental refresh: a colony event marks
      * the systems it moved, and re-deriving those keeps the standing inhabited set in step with the
-     * sector between rebuilds. Answered here rather than at that caller so both arms compose the
-     * same two facts - a per-system read that dropped the ruin arm would take a decivilised system
-     * off the map the moment an event happened to mark it.
+     * sector between rebuilds. Answered here rather than at that caller so both arms read the same
+     * projection - a per-system read that took a different one would take a system off the map the
+     * moment an event happened to mark it.
+     *
+     * <p>The habitation projection is the whole of it, a dead world being one of the colonies it
+     * admits. There is no second reading of the system to compose, which is what keeps the cell
+     * and the box over it from ever parting on who is present.
      *
      * @param pass   the reading of the sector the answer is taken from
      * @param system the system to read; null yields false
      * @return true when the system holds a colony somebody lives on or a known ruin
      */
     public static boolean isSystemInhabited(HolderPass pass, StarSystemAPI system) {
-
-        return MapVisibility.isInhabited(
-            pass.readHabitationIn(system).hasInhabitingColony(),
-            DecivilisedMarkets.hasRevealedDecivilisedPlanet(system));
+        return pass.readHabitationIn(system).hasInhabitingColony();
     }
 }

@@ -141,14 +141,14 @@ decided anyway. And the membership rule takes an inhabitation *answer* rather th
 to read one from, which is what keeps a second walk from hiding inside the drawn-set test
 the moving-set walk applies per system.
 
-What the colony index does not cover is the revealed-ruin read, which walks a system's
-*planets* rather than its entities: it does not run through the colony set at all, having its
-own walk and its own survey-based reveal, and folding it in means giving a dead world a colony
-kind - a change to what the map counts as habitation rather than a caching one. So the pass
-carries a second memo of its own for it, beside the index, which is what keeps that walk to one
-per system too: the fingerprint scan needs the flag on its own to salt a drawn system's
-contribution, and both that scan and the motion walk reach it again through the inhabitation
-read.
+The revealed-ruin read used to sit outside that index, walking a system's *planets* rather
+than its entities, with a survey-based reveal of its own - so the pass carried a second memo
+beside the index to keep that walk to one per system. It no longer does. A dead world is a
+colony kind (`ColonyKind.DEAD_COLONY`), admitted to the set on the decivilised condition and
+fogged by the survey read, so the ruin comes off the one walk everything else does and the
+second memo is gone. The fingerprint scan still needs the flag on its own, to salt a drawn
+system's contribution when a live-to-dead flip leaves the drawn set unchanged; it asks the
+pass, which answers off the same set membership was composed from.
 
 The overlap is intentional. Both feed the same stale-system set, so a change a
 listener already marked and one the watcher's diff re-discovers collapse into a

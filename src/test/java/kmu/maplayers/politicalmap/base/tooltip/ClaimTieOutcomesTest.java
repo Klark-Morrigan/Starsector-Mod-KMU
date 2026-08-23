@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
@@ -60,6 +61,10 @@ final class ClaimTieOutcomesTest {
     // outright, so a tie is posed by one number rather than assembled from three.
     private static final int NO_SIBLING_MARKETS = 0;
     private static final boolean IS_KNOWN_TO_PLAYER = true;
+
+    // Somewhere people live, on every market posed here. What kind of place a colony is reaches no
+    // term of the contest, so a case about the arithmetic states it once rather than varying it.
+    private static final ColonyKind ORDINARY_COLONY = ColonyKind.COLONY;
 
     @Nested
     class ResolveOutcome {
@@ -290,6 +295,7 @@ final class ClaimTieOutcomesTest {
         // on, and this suite reads no line at all - only the outcome a place carries.
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate("Market " + listingPosition),
+            ORDINARY_COLONY,
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             new ContestAdmission(isHiddenMarket, isOffEconomyMarket),

@@ -1,15 +1,15 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import com.fs.starfarer.api.campaign.StarSystemAPI;
-
 import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.colonies.Colony;
+import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.colonies.ColonyVisibility;
-import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.util.KmuStrings;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -61,8 +61,12 @@ public final class SystemStatusRow {
      * A caller with no walk behind it selects one and hands it over, which is the same work it was
      * paying before and is now visible where it is paid.
      *
+     * <p>The ruin comes out of that same projection rather than off a walk of the system's planets.
+     * A dead world is one of the colonies habitation admits, so the line and the breakdown beneath
+     * it are answered from one reading - where two readings could have headed a system Decivilised
+     * over a box that named nothing dead in it.
+     *
      * @param colonies         the hovered system's colonies, as one walk of it reported
-     * @param system           the hovered system, read for the ruin no colony set reports
      * @param colonyVisibility what the player may be shown of a colony, passed by the caller so
      *                         the status agrees with whatever that caller's own reads admit
      * @return the Decivilised or Unpopulated row, or empty when the player knows of somebody
@@ -70,13 +74,17 @@ public final class SystemStatusRow {
      */
     public static Optional<TooltipRow.CentredRow> resolveStatusRow(
             Colonies colonies,
-            StarSystemAPI system,
             ColonyVisibility colonyVisibility) {
 
-        if (colonies.hasInhabitingColony(colonyVisibility)) {
+        var inhabitingColonies = colonies.readInhabitingColonies(colonyVisibility);
+
+        // Habitation admits the dead world along with the living colonies, so its emptiness is not
+        // the question here: a system whose ruins are all that is left of it holds one and is still
+        // a system nobody lives in. What settles the line is which of the two the projection found.
+        if (hasLivingColony(inhabitingColonies)) {
             return Optional.empty();
         }
-        var statusKey = DecivilisedMarkets.hasRevealedDecivilisedPlanet(system)
+        var statusKey = hasDeadColony(inhabitingColonies)
             ? KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED
             : KmuStrings.POLITICAL_MAP_TOOLTIP_UNPOPULATED;
 
@@ -86,5 +94,32 @@ public final class SystemStatusRow {
         return Optional.of(CellTooltipRows.buildBannerRow(
             NO_CREST,
             KmuStrings.get(statusKey)));
+    }
+
+    // Whether anybody is there now. Stated as the exclusion of the one kind that inhabits its place
+    // without anybody being on it, so a kind added later reads as somebody living there unless it
+    // says otherwise - which is the same direction habitation itself is written in, and the safer
+    // one: a line calling a settled system unpopulated is worse than one declining to.
+    private static boolean hasLivingColony(List<Colony> inhabitingColonies) {
+
+        for (var colony : inhabitingColonies) {
+            if (colony.kind() != ColonyKind.DEAD_COLONY) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Whether what is left of the place is ruins. Asked only once nobody is found living there, so
+    // a dead world beside a living colony never heads the box - the system is populated, and the
+    // breakdown beneath names the ruins along with everything else.
+    private static boolean hasDeadColony(List<Colony> inhabitingColonies) {
+
+        for (var colony : inhabitingColonies) {
+            if (colony.kind() == ColonyKind.DEAD_COLONY) {
+                return true;
+            }
+        }
+        return false;
     }
 }

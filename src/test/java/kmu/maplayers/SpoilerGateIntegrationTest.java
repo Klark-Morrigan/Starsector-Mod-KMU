@@ -7,6 +7,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
+import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -39,6 +40,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * what decides: a gate in force still shows its colony once somebody has seen it, whether that is
  * the player arriving or the people already living there. A suite that moved only the toggles would
  * pass over a map that had stopped revealing anything at all.
+ *
+ * <p>The reveals are here on the same grounds, and for one rule beyond it: each toggle on this tab
+ * clears the one thing it names and nothing beside it. That is the failure a player cannot
+ * diagnose - they turn one thing on and a second thing they never asked about appears with it - and
+ * it is invisible to any case that moves one toggle over a colony only that toggle could reach.
  *
  * <p>At {@code kmu.maplayers} rather than beside the rule it drives, because it reads that rule
  * through the political map's pass and fixtures and the layering gate forbids {@code maplayers.base}
@@ -136,6 +142,52 @@ final class SpoilerGateIntegrationTest {
             assertThat(readKnownOwnerIds(sector))
                 .containsExactly(CONCEALED_HOLDER_ID);
         }
+
+        @Test
+        void namesNeitherWhereOnlyTheDiscoveryRevealIsTurnedOn() {
+            // The rule every one of these toggles is written to: each clears the one thing it names
+            // and nothing beside it. This reveal says both markets may be shown though nobody found
+            // them, which is no answer at all to whether anybody has seen them standing here - so
+            // both gates go on holding, and a player who asked for one thing is shown one thing.
+            settingsMock
+                .when(KmuMapLayerSettings::shouldShowUndiscoveredMarkets)
+                .thenReturn(true);
+
+            var sector = buildUnvisitedSectorHoldingGatedPair(SYSTEM_ID);
+
+            assertThat(readKnownOwnerIds(sector))
+                .isEmpty();
+        }
+
+        @Test
+        void withholdsAnUnsurveyedDeadWorldUntilTheSurveyRevealIsTurnedOn() {
+            // The ruin's own arm of the fog, and its own toggle. Nothing gates a dead world - the
+            // survey read leaks nothing - so what the reveal lifts is the fog itself, and it lifts
+            // no other arm: the world's planet is found throughout.
+            var sector = buildSectorHoldingAnUnsurveyedRuin();
+
+            assertThat(readKnownOwnerIds(sector))
+                .isEmpty();
+
+            settingsMock
+                .when(KmuMapLayerSettings::shouldShowUnsurveyedDeadWorlds)
+                .thenReturn(true);
+
+            assertThat(readKnownOwnerIds(sector))
+                .containsExactly(Factions.NEUTRAL);
+        }
+    }
+
+    // A sector of one system whose only market is the ruin of a colony nobody has read. Its economy
+    // lists nothing, which is what a dead world always reaches a reader as: vanilla drops the market
+    // from the economy as the colony dies.
+    private static SectorAPI buildSectorHoldingAnUnsurveyedRuin() {
+
+        var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID);
+
+        DecivilisedPlanetFixtures.placeUnsurveyedDecivilisedPlanetIn(buildOnlySystem(sector));
+
+        return sector;
     }
 
     // An ordinary colony nobody conceals: what makes the system somewhere people live, and so

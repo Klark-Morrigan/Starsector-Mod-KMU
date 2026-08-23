@@ -3,13 +3,10 @@ package kmu.maplayers.base.visibility;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.map.VisibleStars;
-import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.SystemColoniesIndex;
-import kmlib.text.KmlibStrings;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -28,28 +25,16 @@ import java.util.Objects;
  * caller running several walks in one tick pays for one reading per system between them -
  * a walk given the sector could open a reading of its own.
  *
- * <p>A class rather than a record because it remembers as well as carries. Both the memo
- * and the index are a snapshot of one moment, which is why a pass is discarded with the
- * tick that opened it - a kept one would answer the next tick off the sector this one saw,
- * which is the change a poll exists to notice. Not safe for concurrent use, a tick being
- * one thread's work.
+ * <p>Every read goes through the index, which remembers each system's colonies for the
+ * pass - so the pass is a snapshot of one moment, and is discarded with the tick that
+ * opened it. A kept one would answer the next tick off the sector this one saw, which is
+ * the change a poll exists to notice. Not safe for concurrent use, a tick being one
+ * thread's work.
  *
  * <p>The sector is the index's rather than a field of its own, so a pass cannot be built
  * naming one sector while answering out of another.
  */
 public final class MapVisibilityPass {
-
-    // Each system's revealed-ruin answer, resolved on first ask and remembered for the rest of
-    // the pass. The one read beneath a pass that has no memo of its own: the colony walk is
-    // memoised in the index, while this walks every planet in the system afresh each time.
-    //
-    // It is asked of the same system more than once per tick - the fingerprint scan needs it to
-    // salt a drawn system's contribution, and both that scan and the motion walk reach it again
-    // through the inhabitation read.
-    //
-    // Keyed by system id on the same terms the colony index is, and for the same reason: an
-    // unkeyable system is resolved afresh rather than pooled with every other under a shared key.
-    private final Map<String, Boolean> ruinBySystemId = new HashMap<>();
 
     private final SystemColoniesIndex colonies;
     private final VisibleStars visibleStars;
@@ -157,41 +142,40 @@ public final class MapVisibilityPass {
     }
 
     /**
-     * Whether the system holds a dead colony the player has already seen.
+     * Whether the system holds a dead colony the player may be shown.
      *
      * <p>Published rather than kept private because inhabitation folds it in and cannot report
      * it, and a reader hashing the drawn set needs it on its own - a live-to-dead flip has to
-     * move that hash without the drawn set changing. Asking here rather than reading the planets
-     * again is what keeps the ruin walk to one per system per pass.
+     * move that hash without the drawn set changing.
+     *
+     * <p>Read off the pass's own colony walk rather than off the system's planets, which is what
+     * makes it the same answer the cell and the box beside it are drawn from. A ruin is a kind of
+     * colony, so the set already knows both that it is one and whether the player has surveyed it
+     * closely enough to be told - and a planet walk of its own would be a second reading of both,
+     * free to disagree with the one the map is painted by.
      *
      * @param system the system to read; null yields false
-     * @return true when a planet there carries a revealed decivilised condition
+     * @return true when the system's colonies include a dead world this pass's rule admits
      */
     public boolean isRevealedDecivilised(StarSystemAPI system) {
 
-        if (system == null) {
-            return DecivilisedMarkets.hasRevealedDecivilisedPlanet(null);
-        }
-        var systemId = system.getId();
+        for (var colony : colonies
+                .readColoniesIn(system)
+                .readInhabitingColonies(rules.colonyVisibility())) {
 
-        if (!KmlibStrings.hasText(systemId)) {
-            // Nothing to key the memo on. Reading afresh costs a planet walk a later ask would
-            // have saved, which is the honest price of an unkeyable system - pooling every one of
-            // them under a shared key would hand one system's ruins to another.
-            return DecivilisedMarkets.hasRevealedDecivilisedPlanet(system);
+            if (colony.kind() == ColonyKind.DEAD_COLONY) {
+                return true;
+            }
         }
-        return ruinBySystemId.computeIfAbsent(
-            systemId,
-            id -> DecivilisedMarkets.hasRevealedDecivilisedPlanet(system));
+        return false;
     }
 
     /**
-     * Whether anybody lives in one system, composed off this pass's own reading of it.
+     * Whether anybody lives in one system, or did, off this pass's own reading of it.
      *
-     * <p>{@link MapVisibility} owns what inhabitation <em>is</em> and takes the two answers rather
-     * than the walks that produce them - which is what keeps a second walk of every system out of
-     * a membership test - so somewhere has to make those two reads, and a pass holding the index
-     * and the ruin memo is that place.
+     * <p>The habitation projection is the whole of the answer, a dead world being one of the
+     * colonies it admits - so there is nothing to compose here beyond choosing the projection,
+     * and no second reading of who is present for the box over the same cell to disagree with.
      *
      * <p>Only the colony half of the rules is read here, since forcing a system onto the map does
      * not make it inhabited.
@@ -201,10 +185,8 @@ public final class MapVisibilityPass {
      */
     public boolean isSystemInhabited(StarSystemAPI system) {
 
-        return MapVisibility.isInhabited(
-            colonies
-                .readColoniesIn(system)
-                .hasInhabitingColony(rules.colonyVisibility()),
-            isRevealedDecivilised(system));
+        return colonies
+            .readColoniesIn(system)
+            .hasInhabitingColony(rules.colonyVisibility());
     }
 }

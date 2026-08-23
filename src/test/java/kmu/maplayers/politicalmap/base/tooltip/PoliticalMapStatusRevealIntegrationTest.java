@@ -8,6 +8,7 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.ColonyVisibility;
+import kmlib.starsector.colonies.VisibilityReveal;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
@@ -192,10 +193,15 @@ final class PoliticalMapStatusRevealIntegrationTest {
     }
 
     private void setReveal(boolean shouldIncludeUndiscoveredMarkets) {
+
+        var reveals = shouldIncludeUndiscoveredMarkets
+            ? Set.of(VisibilityReveal.UNDISCOVERED_MARKETS)
+            : Set.<VisibilityReveal>of();
+
         visibilityRulesMock
             .when(MapVisibilityRules::readFromLunaSettings)
             .thenReturn(new MapVisibilityRules(
-                new ColonyVisibility(shouldIncludeUndiscoveredMarkets, Set.of()),
+                new ColonyVisibility(reveals, Set.of()),
                 false));
     }
 

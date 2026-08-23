@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
@@ -76,6 +77,7 @@ final class ExpandedSystemDominationTooltipTest {
     // faction a colony is listed under rather than about what its line leads with.
     private static final UnweighedColony UNLISTED_COLONY = new UnweighedColony(
         "galatia_academy",
+        ColonyKind.COLONY,
         EntityNameplate.createUnmarkedNameplate("Galatia Academy"));
 
     // Stability is left unweighed throughout, so a colony breaks down into the one factor each case is

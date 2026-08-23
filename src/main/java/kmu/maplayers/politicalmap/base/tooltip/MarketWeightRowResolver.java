@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.text.KmlibNumbers;
 
@@ -53,6 +54,11 @@ import java.util.List;
  * The player can see the station on the map in a faction's colours, so an account of the system that
  * omitted it would be withholding something they are looking straight at - and the nought is the
  * whole of what the account has to say about it: it is there, and it moved nothing.
+ *
+ * <p>Where such a colony is a world people left rather than a place somebody keeps, the line says
+ * so ({@link ColonyKindQualifier}). A ruin and a derelict hulk reach this list identically - both
+ * unowned, both off-economy, both at nought - and nothing else on either line would tell them
+ * apart.
  *
  * <p>A factor that did not run has no line. Which of them ran is already settled by the breakdown
  * read - the station and patrol parts are absent when the player has the factor off - and only the
@@ -166,14 +172,35 @@ public final class MarketWeightRowResolver {
             UnweighedColony colony,
             ColonyObservationNotes notes) {
 
-        return CellTooltipEntry.createEntry(remarkOnColony(
-            createMapEntityLine(
-                    colony.nameplate(),
-                    colony.nameplate().displayName(),
-                    KmlibNumbers.formatGroupedInteger(NO_WEIGHT))
-                .statesUncountedValue(),
-            colony.marketId(),
-            notes));
+        // The kind is called out here and on no weighed line above, and the absence is the
+        // subject matter rather than an omission: a dead world is off-economy by construction, so
+        // the pass can never have weighed one, and the kinds that are weighed are already told
+        // apart by the numbers beneath them.
+        return CellTooltipEntry.createEntry(qualifyByKind(
+            remarkOnColony(
+                createMapEntityLine(
+                        colony.nameplate(),
+                        colony.nameplate().displayName(),
+                        KmlibNumbers.formatGroupedInteger(NO_WEIGHT))
+                    .statesUncountedValue(),
+                colony.marketId(),
+                notes),
+            colony.kind()));
+    }
+
+    // Runs a colony's line on into what its kind calls out, where the kind states anything.
+    //
+    // Layered after the remark rather than before it because the two are stated in different
+    // shades and at different ends of the line - the remark quiet, run on after the name; the
+    // qualifier a finding, at the end - so neither can displace the other.
+    private static CellTooltipEntryLine qualifyByKind(
+            CellTooltipEntryLine line,
+            ColonyKind kind) {
+
+        return ColonyKindQualifier
+            .resolveKindQualifier(kind)
+            .map(line::qualifiedWith)
+            .orElse(line);
     }
 
     // Runs a colony's line on into when it was last seen, where nobody is looking at it now.

@@ -40,7 +40,7 @@ final class ClaimAugmentedHolderProviderTest {
     // A rule that is plainly not the fog alone, so a reader opened under a default of its own
     // fails the pass-through case rather than passing it by coincidence.
     private static final ColonyVisibility GATED_VISIBILITY = new ColonyVisibility(
-        false,
+        Set.of(),
         Set.of(RevelationGate.SPACE_DERELICTS, RevelationGate.HIDDEN_COLONIES));
 
     private static final Color PRIMARY = Color.RED;

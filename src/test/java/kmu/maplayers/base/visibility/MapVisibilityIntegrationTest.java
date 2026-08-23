@@ -75,10 +75,6 @@ class MapVisibilityIntegrationTest {
     // decided the system holds nothing, so admission rests on access or the force override.
     private static final boolean UNINHABITED = false;
 
-    // The ruin flag a caller that already read the system's planets hands to the inhabitation
-    // rule, so the colony set is the only other thing that could be answering.
-    private static final boolean IS_REVEALED_DECIVILISED = true;
-
     @Nested
     class IsDrawn {
 
@@ -239,19 +235,6 @@ class MapVisibilityIntegrationTest {
 
             assertThat(isSystemInhabitedUnderNoReveal(buildSectorWith(system), system))
                 .isTrue();
-        }
-
-        @Test
-        void isSystemInhabitedHonoursARevealedRuinTheCallerAlreadyRead() {
-            // The composed entry, taken by every caller that read both facts for itself - the
-            // sector scan, which holds the ruin flag anyway to salt the fingerprint, and a render
-            // pass, which answers habitation off its own walk. The ruin is the arm no colony read
-            // can carry, nobody owning a dead world, so this is the one place it could be dropped
-            // and the only place the composition is stated.
-            assertThat(MapVisibility.isInhabited(false, IS_REVEALED_DECIVILISED))
-                .isTrue();
-            assertThat(MapVisibility.isInhabited(false, false))
-                .isFalse();
         }
 
         @Test
@@ -556,14 +539,14 @@ class MapVisibilityIntegrationTest {
             .thenReturn(entities);
     }
 
+    // A system whose one market is the ruin of a colony. Placed among the system's entities as
+    // well as its planets, that walk being how a colony set reaches an unlisted market at all -
+    // wired to the planets alone, this would pose an empty system while reading as a ruined one.
     private static StarSystemAPI buildUnreachableSystemWithDecivilisedPlanet(String id) {
-        // Build the planet (and its own stubs) before the getPlanets() stubbing,
-        // so Mockito does not see one stubbing nested inside another.
-        var planet = DecivilisedPlanetFixtures.buildRevealedDecivilisedPlanet();
+
         var systemMock = buildUnreachableSystem(id);
 
-        when(systemMock.getPlanets())
-            .thenReturn(List.of(planet));
+        DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(systemMock);
 
         return systemMock;
     }

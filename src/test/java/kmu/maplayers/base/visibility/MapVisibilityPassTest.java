@@ -84,9 +84,10 @@ class MapVisibilityPassTest {
     class IsRevealedDecivilised {
 
         @Test
-        void readsOneSystemsPlanetsOnceHoweverOftenTheRuinIsAsked() {
-            // Both public reads reach this one, so the count covers a poll's whole use of a
-            // system: the salt asks it outright, and membership asks it through inhabitation.
+        void readsOneSystemsColoniesOnceHoweverOftenTheRuinIsAsked() {
+            // Every public read reaches the pass's one walk of the system, so the count covers a
+            // poll's whole use of it: the salt asks the ruin outright, and membership asks it
+            // through inhabitation.
             var system = buildSystem("a");
             var pass = MapVisibilityPass.over(buildSectorHolding(system), MapVisibilityRules.BASE);
 
@@ -94,16 +95,16 @@ class MapVisibilityPassTest {
             pass.isSystemInhabited(system);
             pass.isDrawn(system);
 
-            verify(system, times(ONE_READ)).getPlanets();
+            verify(system, times(ONE_READ)).getAllEntities();
         }
 
         @Test
-        void answersEachUnkeyableSystemOnItsOwnReadingRatherThanPoolingThem() {
-            // A system with no id cannot key the memo. Pooling every such system under one key
-            // would hand the first one's answer to the next, so a ruined system would report an
-            // empty neighbour as settled - which is why the unkeyable case resolves afresh.
-            var ruinedSystem = buildSystem("");
-            var emptySystem = buildSystem("");
+        void answersOffTheColonySetRatherThanOffTheSystemsPlanets() {
+            // A ruin is a kind of colony, so the pass reads it where it reads everything else -
+            // which is what keeps the salt, the cell and the box over it from ever parting on
+            // whether a system is drawn as ruins.
+            var ruinedSystem = buildSystem("ruined");
+            var emptySystem = buildSystem("empty");
 
             DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(ruinedSystem);
 

@@ -81,8 +81,48 @@ class MapVisibilityRulesTest {
 
                 assertThat(visibilityRules.colonyVisibility().shouldIncludeUndiscoveredMarkets())
                     .isTrue();
+                assertThat(visibilityRules.colonyVisibility().shouldIncludeUnsurveyedDeadWorlds())
+                    .isFalse();
                 assertThat(visibilityRules.isForcedOntoMap())
                     .isFalse();
+            }
+        }
+
+        @Test
+        void widensTheColonyRuleForTheUnsurveyedDeadWorldsToggleAlone() {
+
+            // The two reveals answer different arms of the fog, so each has to reach its own and
+            // neither the other's: a world flown past but never surveyed is discovered and unread
+            // at once, which is exactly the world a folded pair would leave unreachable.
+            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+
+                settingsMock
+                    .when(KmuMapLayerSettings::shouldShowUnsurveyedDeadWorlds)
+                    .thenReturn(true);
+                settingsMock
+                    .when(KmuMapLayerSettings::shouldShowUndiscoveredMarkets)
+                    .thenReturn(false);
+
+                var visibilityRules = MapVisibilityRules.readFromLunaSettings();
+
+                assertThat(visibilityRules.colonyVisibility().shouldIncludeUnsurveyedDeadWorlds())
+                    .isTrue();
+                assertThat(visibilityRules.colonyVisibility().shouldIncludeUndiscoveredMarkets())
+                    .isFalse();
+            }
+        }
+
+        @Test
+        void holdsBothFogArmsWhereNeitherRevealToggleIsOn() {
+
+            // The shipped state: nothing shown that has not been found, and nothing said of a ruin
+            // nobody has read.
+            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+
+                var visibilityRules = MapVisibilityRules.readFromLunaSettings();
+
+                assertThat(visibilityRules.colonyVisibility().reveals())
+                    .isEmpty();
             }
         }
 

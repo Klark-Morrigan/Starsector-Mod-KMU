@@ -28,7 +28,7 @@ import java.util.List;
 
 import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 
-import static kmu.maplayers.DecivilisedPlanetFixtures.buildRevealedDecivilisedPlanet;
+import static kmu.maplayers.DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
@@ -91,7 +91,7 @@ final class SystemStatusRowTest {
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingMarkets(system, buildColony());
 
-            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), BASE_FOG))
                 .isEmpty();
         }
 
@@ -102,7 +102,6 @@ final class SystemStatusRowTest {
             var row = SystemStatusRow
                 .resolveStatusRow(
                     readColoniesIn(buildSectorHoldingMarkets(system), system),
-                    system,
                     BASE_FOG);
 
             assertThat(readLabelTextRun(row.orElseThrow(), STATUS_RUN).text())
@@ -112,17 +111,35 @@ final class SystemStatusRowTest {
         @Test
         void resolveStatusRowNamesASystemWithARevealedRuinDecivilised() {
 
-            // The dead colony is gone from the economy, so the system is empty either way - what the
-            // ruin changes is which status the player is told.
-            var system = buildSystemWithPlanets(buildRevealedDecivilisedPlanet());
+            // The ruin is a colony the set holds and nobody is living on, so it reaches this line
+            // through habitation like any other - and what it changes is which status the player is
+            // told, the system holding nobody either way.
+            var system = buildSystemWithPlanets();
+
+            placeRevealedDecivilisedPlanetIn(system);
+
             var row = SystemStatusRow
                 .resolveStatusRow(
                     readColoniesIn(buildSectorHoldingMarkets(system), system),
-                    system,
                     BASE_FOG);
 
             assertThat(readLabelTextRun(row.orElseThrow(), STATUS_RUN).text())
                 .isEqualTo("Decivilised");
+        }
+
+        @Test
+        void resolveStatusRowIsEmptyForALivingColonyBesideARuin() {
+            // A ruin never heads a system somebody still lives in. Habitation admits both, so the
+            // line has to part them by kind rather than by the projection's emptiness - and the box
+            // beneath goes on naming the dead world along with the colony.
+            var system = buildSystemWithPlanets();
+
+            placeRevealedDecivilisedPlanetIn(system);
+
+            var sector = buildSectorHoldingMarkets(system, buildColony());
+
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), BASE_FOG))
+                .isEmpty();
         }
 
         @Test
@@ -134,7 +151,6 @@ final class SystemStatusRowTest {
             var row = SystemStatusRow
                 .resolveStatusRow(
                     readColoniesIn(buildSectorHoldingMarkets(system), system),
-                    system,
                     BASE_FOG)
                 .orElseThrow();
 
@@ -149,7 +165,7 @@ final class SystemStatusRowTest {
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingMarkets(system, buildFoundConcealedBase());
 
-            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), BASE_FOG))
                 .isEmpty();
         }
 
@@ -163,7 +179,7 @@ final class SystemStatusRowTest {
             var sector = buildSectorHoldingMarkets(system, buildUnfoundListedColony());
 
             var row = SystemStatusRow
-                .resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG)
+                .resolveStatusRow(readColoniesIn(sector, system), BASE_FOG)
                 .orElseThrow();
 
             assertThat(readLabelTextRun(row, STATUS_RUN).text())
@@ -178,7 +194,7 @@ final class SystemStatusRowTest {
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingUnlistedColony(system, buildUnlistedColony());
 
-            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), BASE_FOG))
                 .isEmpty();
         }
 
@@ -196,7 +212,7 @@ final class SystemStatusRowTest {
             hangMarketsOnSystemEntities(system, buildAbandonedStationMarket(DERELICT_SIZE));
 
             var row = SystemStatusRow
-                .resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG)
+                .resolveStatusRow(readColoniesIn(sector, system), BASE_FOG)
                 .orElseThrow();
 
             assertThat(readLabelTextRun(row, STATUS_RUN).text())
@@ -213,7 +229,7 @@ final class SystemStatusRowTest {
 
             hangMarketsOnSystemEntities(system, buildAbandonedStationMarket(DERELICT_SIZE));
 
-            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), BASE_FOG))
                 .isEmpty();
         }
 
@@ -224,9 +240,9 @@ final class SystemStatusRowTest {
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingMarkets(system, buildUndiscoveredColony());
 
-            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, UNDER_THE_REVEAL))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), UNDER_THE_REVEAL))
                 .isEmpty();
-            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), BASE_FOG))
                 .isPresent();
         }
     }

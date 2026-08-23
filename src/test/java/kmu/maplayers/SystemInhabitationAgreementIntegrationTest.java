@@ -101,7 +101,7 @@ final class SystemInhabitationAgreementIntegrationTest {
 
             assertThat(isInhabited(sector, system, BASE_FOG))
                 .isTrue();
-            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), BASE_FOG))
                 .isEmpty();
         }
 
@@ -131,7 +131,7 @@ final class SystemInhabitationAgreementIntegrationTest {
 
             assertThat(isInhabited(sector, system, BASE_FOG))
                 .isTrue();
-            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), system, BASE_FOG))
+            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), BASE_FOG))
                 .isEmpty();
         }
 
@@ -159,7 +159,6 @@ final class SystemInhabitationAgreementIntegrationTest {
                 .isTrue();
             assertThat(SystemStatusRow.resolveStatusRow(
                     readColoniesIn(sector, system),
-                    system,
                     UNDER_THE_REVEAL))
                 .isEmpty();
         }
@@ -213,7 +212,7 @@ final class SystemInhabitationAgreementIntegrationTest {
             ColonyVisibility colonyVisibility) {
 
         var row = SystemStatusRow
-            .resolveStatusRow(readColoniesIn(sector, system), system, colonyVisibility)
+            .resolveStatusRow(readColoniesIn(sector, system), colonyVisibility)
             .orElseThrow();
 
         return readLabelTextRun(row, STATUS_RUN).text();

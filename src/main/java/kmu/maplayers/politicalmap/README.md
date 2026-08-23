@@ -316,6 +316,13 @@ is an abandoned station is headed `Unpopulated` over a box that names the statio
 That is the true reading of a system with one wreck in it rather than the contradiction the two lines
 look like side by side: nobody has ever been aboard a derelict, and somebody has seen it. The cell
 under the box reads habitation too, so the line and the backdrop it is drawn over always agree.
+The one shape habitation admits that nobody lives on is the dead world (`ColonyKind.DEAD_COLONY`),
+which is why the line reads the kinds out of that projection rather than asking its emptiness: a
+system whose ruins are all that is left of it is inhabited - drawn as ruins rather than dropped as
+empty space - and still headed `Decivilised`. Both boxes then say so on the line naming the world
+(`ColonyKindQualifier`, gold, the status row's own wording): a ruin and a hulk reach a listing
+identically - unowned, off-economy, at nought - and nothing else on either line would tell them
+apart.
 The claims box has a counterpart of its own on the same terms - `ExpandedSystemClaimTooltip`, which
 opens every faction the contest names into the markets it holds the system with and each market
 into the terms its claim score is built from. Both claim boxes sit on `SystemClaimContestTooltip`,

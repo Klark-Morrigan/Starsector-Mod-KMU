@@ -1,6 +1,7 @@
 package kmu.maplayers.base.visibility;
 
 import kmlib.starsector.colonies.ColonyVisibility;
+import kmlib.starsector.colonies.VisibilityReveal;
 
 import java.util.Set;
 
@@ -21,15 +22,17 @@ import java.util.Set;
 public final class ColonyVisibilityFixtures {
 
     /**
-     * The "show all factions" reveal on: the fog lifted outright, and no gate held, which is the
-     * widest rule any surface reads under.
+     * The "show all factions" reveal on: the discovery arm of the fog lifted, and no gate held,
+     * which is the widest rule any surface reads under.
      *
-     * <p>Not what the player's live read returns with the toggle on - that holds every gate,
-     * since a gate has no setting of its own yet. A case wanting the shipped state has to say so
-     * itself, and {@code MapVisibilityRulesTest} is where that state is pinned.
+     * <p>Not what the player's live read returns with that toggle on - a reveal drops the one arm
+     * it names and clears no gate beside it, so the shipped state holds every gate whatever the
+     * reveals say. A case wanting that state has to say so itself, and {@code MapVisibilityRulesTest}
+     * is where it is pinned.
      */
-    public static final ColonyVisibility UNDER_THE_REVEAL =
-        new ColonyVisibility(true, Set.of());
+    public static final ColonyVisibility UNDER_THE_REVEAL = new ColonyVisibility(
+        Set.of(VisibilityReveal.UNDISCOVERED_MARKETS),
+        Set.of());
 
     // Constants only; never instantiated.
     private ColonyVisibilityFixtures() {

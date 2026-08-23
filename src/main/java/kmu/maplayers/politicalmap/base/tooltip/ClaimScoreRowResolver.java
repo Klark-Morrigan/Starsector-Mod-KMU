@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
@@ -48,6 +49,11 @@ import java.util.Optional;
  * took the system. Both are listed all the same rather than dropped: a colony the player can see on
  * the map, in a faction's colours, has to appear in the account of who holds the system. Nothing calls
  * out which of the two it is, the nought being the whole of what the contest has to say about either.
+ *
+ * <p>What such a line does say is what kind of place it names ({@link ColonyKindQualifier}), which
+ * is a fact about the world rather than about the contest. A dead world and a derelict hulk both
+ * reach the list unowned, off-economy and at nought, so without it the account could not tell a
+ * ruin somebody lived on from a wreck nobody ever did.
  *
  * <p>Every market line leads with the glyph the sector map marks that market's entity with, scored or
  * not, so a reader can tie a name in the list back to something they are looking at rather than to
@@ -292,13 +298,28 @@ public final class ClaimScoreRowResolver {
             MarketClaimBreakdown market,
             boolean isHoldingTheClaim) {
 
+        // The two statuses cannot contend for the line's end. A market that took the system is a
+        // colony somebody holds and the economy lists; the one kind that states anything here is a
+        // world people left, which is unowned and off-economy and so was never weighed at all.
         var marketLine = isHoldingTheClaim
             ? line.qualifiedWith(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER))
-            : line;
+            : qualifyByKind(line, market.colonyKind());
 
         return CellTooltipEntry
             .createEntry(marketLine)
             .nesting(resolveTermEntries(market));
+    }
+
+    // Runs a market's line on into what its kind calls out, where the kind states anything - the
+    // same read the domination box makes, so the two boxes cannot call one world different things.
+    private static CellTooltipEntryLine qualifyByKind(
+            CellTooltipEntryLine line,
+            ColonyKind kind) {
+
+        return ColonyKindQualifier
+            .resolveKindQualifier(kind)
+            .map(line::qualifiedWith)
+            .orElse(line);
     }
 
     // The shape every market's own line takes: led by the glyph the map marks its entity with, named,

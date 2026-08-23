@@ -93,7 +93,6 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // is no shared walk here to take, and the cost is stated where it is paid.
         var statusRow = SystemStatusRow.resolveStatusRow(
             SystemColonies.readColoniesIn(sector, system),
-            system,
             colonyVisibility);
 
         CellTooltipSections.appendBannerSection(sections, statusRow);

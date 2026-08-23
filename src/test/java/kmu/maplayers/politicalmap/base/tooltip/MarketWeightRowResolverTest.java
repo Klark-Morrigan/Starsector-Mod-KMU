@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.entities.EntityMapIcon;
 import kmlib.starsector.entities.EntityNameplate;
 
@@ -550,6 +551,26 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
+        void resolveMarketRowsCallsADeadWorldOutBesideItsNought() {
+            // The one thing the account does say about a colony it never weighed, and the pair is
+            // what makes it necessary: a ruin and a hulk arrive identically - unowned, off-economy,
+            // at nought - so without the word the reader cannot tell a world people left from a
+            // wreck nobody ever lived on.
+            // Listed by name, so the hulk leads and the ruin follows it.
+            var rows = resolveUnremarkedRows(
+                List.of(),
+                List.of(
+                    buildUnweighedDeadWorld("Tibicena"),
+                    buildUnweighedColony("Sentinel Gantries")),
+                buildRules());
+
+            assertThat(rows.get(0).line().qualifierText())
+                .isNull();
+            assertThat(rows.get(1).line().qualifierText())
+                .isEqualTo("Decivilised");
+        }
+
+        @Test
         void resolveMarketRowsDrawsAnUnweighedColonysNoughtInTheQuietShade() {
             // The nought is the pass's statement about the colony rather than anything the colony
             // scored; in the list's own colour it would pass for a weight competed with and lost on.
@@ -734,15 +755,33 @@ final class MarketWeightRowResolverTest {
 
     // A colony the economy does not list, under the name a case needs and marked with nothing.
     private static UnweighedColony buildUnweighedColony(String marketName) {
+        return buildUnweighedColonyOfKind(marketName, ColonyKind.SPACE_DERELICT);
+    }
+
+    // The same as the world people left, for the cases about what a kind states on the line naming
+    // it. Posed against the hulk above, which reaches the list identically and states nothing.
+    private static UnweighedColony buildUnweighedDeadWorld(String marketName) {
+        return buildUnweighedColonyOfKind(marketName, ColonyKind.DEAD_COLONY);
+    }
+
+    // A colony the economy does not list, of a stated kind and marked with nothing.
+    private static UnweighedColony buildUnweighedColonyOfKind(
+            String marketName,
+            ColonyKind kind) {
+
         return new UnweighedColony(
             nameColonyId(marketName),
+            kind,
             EntityNameplate.createUnmarkedNameplate(marketName));
     }
 
     // The same, marked with the glyph vanilla gives a world, for the cases about what an unweighed
     // colony's line leads with.
     private static UnweighedColony buildMarkedUnweighedColony(String marketName) {
-        return new UnweighedColony(nameColonyId(marketName), buildMarkedColony(marketName));
+        return new UnweighedColony(
+            nameColonyId(marketName),
+            ColonyKind.SPACE_DERELICT,
+            buildMarkedColony(marketName));
     }
 
     // The id a colony is known by, which no case here reads: a line is placed by its name and its

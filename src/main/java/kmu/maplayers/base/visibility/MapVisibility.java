@@ -3,8 +3,8 @@ package kmu.maplayers.base.visibility;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.math.hashing.Avalanche;
+import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.map.VisibleStars;
-import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.StarSystems;
 
 /**
@@ -14,15 +14,21 @@ import kmlib.starsector.systems.StarSystems;
  * <p>Two independent reasons put a system on the map, and reachability
  * ({@link StarSystems#isReachable}) is only one of them. A system appears when it
  * has a normal means of arrival OR when it is inhabited - somebody living there the
- * player knows of, or a revealed decivilised planet. What "knows of" admits is the
+ * player knows of, a dead world's ruins among them. What "knows of" admits is the
  * pass's own colony rule rather than anything decided here, so the cell, the band
  * inside it and the box over it are all reading the one rule.
  *
- * <p>Inhabited means somebody lives there, which a derelict hulk is exactly the case
- * against: a system drawn as settled because an abandoned station orbits its star says
- * something false about that system, quite apart from whether the player has been near
- * it. So the reads below take the habitation projection rather than the wider listing
- * of what the player may be told about.
+ * <p>Inhabitation is not asked here at all, and that is the change a ruin being a
+ * colony bought: it is {@link Colonies#hasInhabitingColony}'s answer, over the one
+ * walk of the system a pass already made. A rule composed here instead would be a
+ * second reading of who is present, free to disagree with the listing the box over the
+ * same cell names its factions out of.
+ *
+ * <p>Inhabited means somebody lives there or did, which a derelict hulk is exactly the
+ * case against: a system drawn as settled because an abandoned station orbits its star
+ * says something false about that system, quite apart from whether the player has been
+ * near it. So the callers below take the habitation projection rather than the wider
+ * listing of what the player may be told about.
  *
  * <p>The inhabitation path is what admits
  * an otherwise unreachable system: a transverse-only or abyssal world, hidden
@@ -31,9 +37,8 @@ import kmlib.starsector.systems.StarSystems;
  *
  * <p>Affiliation is a separate axis owned elsewhere: a decivilised-only system
  * is inhabited (it seeds a cell and always draws) yet unaffiliated (no faction
- * colour, no dominance) - see the ownership pipeline and
- * {@link DecivilisedMarkets}. Reading inhabitation here lets the geometry
- * seeding and the refresh fingerprint share one rule.
+ * colour, no dominance) - see the ownership pipeline. Taking inhabitation as an
+ * answer here lets the geometry seeding and the refresh fingerprint share one rule.
  */
 public final class MapVisibility {
 
@@ -77,38 +82,6 @@ public final class MapVisibility {
         return visibilityRules.isForcedOntoMap()
             || hasVisibleMapAccess(system, visibleStars)
             || isInhabited;
-    }
-
-    /**
-     * Whether the system counts as inhabited: somebody the player knows of lives there, or a dead
-     * colony the player has already seen does. The rule itself, and the only statement of it.
-     *
-     * <p>A disjunction because the two are two ways a system holds people rather than two
-     * requirements - and the ruin is the arm no colony read can answer, nobody owning a dead
-     * world, which is why it has to be composed rather than looked up.
-     *
-     * <p>Habitation rather than the wider known listing, which is what a hover box names its
-     * factions out of. The two part over the derelict: a hulk somebody has seen belongs in a
-     * listing of what the player may be told about, and nobody has ever lived on it, so a
-     * system holding one and nothing else is empty space with a wreck in it.
-     *
-     * <p>Both arrive as facts already read rather than as a colony set and a system to walk. A
-     * pass has them off its own one reading of the system, so taking the answers is what keeps
-     * this from being a second walk hidden inside a rule.
-     *
-     * @param hasInhabitingColony   whether the system holds a colony somebody lives on that the
-     *                              player may be shown, as the caller's own habitation read
-     *                              reported it
-     * @param isRevealedDecivilised whether the system holds a dead colony the player has already
-     *                              seen; counts under any rules, a revealed ruin being known for
-     *                              good
-     * @return true when the system holds a colony somebody lives on or a known dead colony
-     */
-    public static boolean isInhabited(
-            boolean hasInhabitingColony,
-            boolean isRevealedDecivilised) {
-
-        return hasInhabitingColony || isRevealedDecivilised;
     }
 
     /**

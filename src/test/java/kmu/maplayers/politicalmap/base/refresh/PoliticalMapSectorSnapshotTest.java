@@ -264,11 +264,9 @@ class PoliticalMapSectorSnapshotTest {
     // dead colony, yet unowned, so it drives visibility without an holder.
     private static StarSystemAPI buildDecivilisedSystem(String id) {
 
-        var planet = DecivilisedPlanetFixtures.buildRevealedDecivilisedPlanet();
         var systemMock = buildSystem(id);
 
-        when(systemMock.getPlanets())
-            .thenReturn(List.of(planet));
+        DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(systemMock);
 
         return systemMock;
     }

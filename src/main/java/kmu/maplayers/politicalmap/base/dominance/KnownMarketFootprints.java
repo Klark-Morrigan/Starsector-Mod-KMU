@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.dominance;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.markets.Markets;
 
@@ -205,10 +206,14 @@ public final class KnownMarketFootprints {
             ColonyVisibility colonyVisibility) {
 
         var coloniesByFactionId = new LinkedHashMap<String, List<UnweighedColony>>();
-        for (var market : readUnweighedColonies(colonies, colonyVisibility)) {
+        for (var colony : readUnweighedColonies(colonies, colonyVisibility)) {
+            var market = colony.market();
             coloniesByFactionId
                 .computeIfAbsent(market.getFaction().getId(), factionId -> new ArrayList<>())
-                .add(new UnweighedColony(market.getId(), Markets.readNameplate(market)));
+                .add(new UnweighedColony(
+                    market.getId(),
+                    colony.kind(),
+                    Markets.readNameplate(market)));
         }
         return coloniesByFactionId;
     }
@@ -232,16 +237,26 @@ public final class KnownMarketFootprints {
             Colonies colonies,
             ColonyVisibility colonyVisibility) {
 
-        return selectMarkets(colonies, colonyVisibility, true);
+        var markets = new ArrayList<MarketAPI>();
+
+        for (var colony : selectColonies(colonies, colonyVisibility, true)) {
+            markets.add(colony.market());
+        }
+        return markets;
     }
 
     // The colonies present that the economy does not list - what the weighed read passes over, and
     // nothing it takes, the two dividing the projection between them.
-    private static List<MarketAPI> readUnweighedColonies(
+    //
+    // Answered as colonies rather than as markets, unlike the weighed side, because these are the
+    // ones a box names and nothing else: what kind of place each is has to travel with it, an
+    // account listing an unowned ruin beside an unowned hulk having nothing else to tell them
+    // apart with. The weighed side is fed to arithmetic that reads the market alone.
+    private static List<Colony> readUnweighedColonies(
             Colonies colonies,
             ColonyVisibility colonyVisibility) {
 
-        return selectMarkets(colonies, colonyVisibility, false);
+        return selectColonies(colonies, colonyVisibility, false);
     }
 
     // One side of the known projection's one division, the flag naming which. Written once with
@@ -251,18 +266,18 @@ public final class KnownMarketFootprints {
     // The projection is taken here rather than by the caller because the rule is per-read: the
     // same system is read under the player's own rule for the map and under a widened one for a
     // box, and a projection cached across the pair would answer one of them wrongly.
-    private static List<MarketAPI> selectMarkets(
+    private static List<Colony> selectColonies(
             Colonies colonies,
             ColonyVisibility colonyVisibility,
             boolean shouldSelectListedByEconomy) {
 
-        var markets = new ArrayList<MarketAPI>();
+        var selectedColonies = new ArrayList<Colony>();
 
         for (var colony : colonies.readKnownColonies(colonyVisibility)) {
             if (colony.isListedByEconomy() == shouldSelectListedByEconomy) {
-                markets.add(colony.market());
+                selectedColonies.add(colony);
             }
         }
-        return markets;
+        return selectedColonies;
     }
 }
