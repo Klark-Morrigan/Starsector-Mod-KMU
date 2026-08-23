@@ -42,8 +42,19 @@ public class PoliticalMapDecivListener implements ColonyDecivListener {
     // The colony is still faction-owned at this point, so re-deriving now would
     // read the pre-deciv holder. The stale mark is deferred to the completed
     // event below, which sees the neutral, economy-removed market.
+    //
+    // What cannot be deferred is the sighting: this colony is about to stop
+    // vouching for whatever else stands in its system, and the moment it does
+    // there is nobody left to date the observation by. So the system is recorded
+    // here, while the dying colony can still be read as the observer it is - which
+    // is what leaves a derelict beside it saying "last seen" on the day the
+    // system emptied rather than on the day it was last recorded by anything else.
     @Override
     public void reportColonyAboutToBeDecivilized(MarketAPI market, boolean fullyDestroyed) {
+
+        if (market != null) {
+            MarketPoliticsRefresh.recordObservationsIn(market.getStarSystem());
+        }
     }
 
     @Override

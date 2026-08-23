@@ -172,7 +172,8 @@ final class TooltipDensityDepthIntegrationTest {
             standing -> MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildPatrolledColony()),
                 List.of(),
-                WEIGHING_RULES));
+                WEIGHING_RULES,
+                ColonyObservationNotes.NONE));
 
         var sections = new ArrayList<TooltipSection>();
         
@@ -185,6 +186,7 @@ final class TooltipDensityDepthIntegrationTest {
     // so each row index above names exactly one line.
     private static MarketWeightBreakdown buildPatrolledColony() {
         return new MarketWeightBreakdown(
+            "jangala",
             EntityNameplate.createUnmarkedNameplate("Jangala"),
             VISIBLE_COLONY,
             PLANET_COLONY,

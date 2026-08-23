@@ -8,10 +8,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Pins what a listed thing is composed of and what it leaves unstated: a plain line calls nothing out
- * and shows its number alone, a qualifier and a working are each layered onto one without disturbing
- * what it already carried, and a line with no name or no value is refused where the caller that
- * composed it is still on the stack rather than surfacing inside a draw with nothing to say which line
- * was meant.
+ * and shows its number alone, a qualifier, a remark and a working are each layered onto one without
+ * disturbing what it already carried, and a line with no name or no value is refused where the caller
+ * that composed it is still on the stack rather than surfacing inside a draw with nothing to say which
+ * line was meant.
  *
  * <p>What the line's mark is and how it is coloured is {@link CellTooltipMarkTest}'s: the line holds a
  * mark or holds none, and cannot state anything about one it does not have.
@@ -28,6 +28,10 @@ final class CellTooltipEntryLineTest {
     // What a line with no place in any ordering carries there - the plain case, and what every line
     // built through the factory has until one is stated on it.
     private static final CellTooltipIndexPlace NO_PLACE = null;
+
+    // What a line remarking nothing about the thing on it carries in the note slot, which is again
+    // every line until one is remarked on.
+    private static final String NO_NOTE = null;
 
     // What every line built through the factory is: one of the things a block lists rather than a note
     // about them, carrying a number it earned rather than one an account recorded for it.
@@ -48,6 +52,7 @@ final class CellTooltipEntryLineTest {
                         CREST_MARK,
                         "The Hegemony",
                         NO_PLACE,
+                        NO_NOTE,
                         null,
                         "1,200",
                         null,
@@ -117,6 +122,7 @@ final class CellTooltipEntryLineTest {
                         CREST_MARK,
                         "The Hegemony",
                         NO_PLACE,
+                        NO_NOTE,
                         "(core)",
                         "1,200",
                         null,
@@ -137,6 +143,56 @@ final class CellTooltipEntryLineTest {
     }
 
     @Nested
+    class NotedWith {
+
+        @Test
+        void notedWithRemarksOnTheLineLeavingTheRestOfItAsItWas() {
+
+            var line = CellTooltipEntryLine
+                .createLine(CREST_MARK, "Sentinel Gantries", "0")
+                .notedWith("last seen 34 days ago, c206.05.12");
+
+            assertThat(line)
+                .isEqualTo(
+                    new CellTooltipEntryLine(
+                        CREST_MARK,
+                        "Sentinel Gantries",
+                        NO_PLACE,
+                        "last seen 34 days ago, c206.05.12",
+                        null,
+                        "0",
+                        null,
+                        IS_LISTED_IN_ITS_OWN_RIGHT,
+                        IS_VALUE_EARNED));
+        }
+
+        @Test
+        void notedWithKeepsAStatusTheLineAlreadyCallsOut() {
+            // The two runs answer different questions - what the box has found about the thing on
+            // the line, and how current the box's account of it is - so a line carrying both keeps
+            // both rather than the later refinement dropping the first.
+            var line = CellTooltipEntryLine
+                .createLine(CREST_MARK, "Sentinel Gantries", "0")
+                .qualifiedWith("(core)")
+                .notedWith("last seen 34 days ago, c206.05.12");
+
+            assertThat(line.qualifierText())
+                .isEqualTo("(core)");
+        }
+
+        @Test
+        void notedWithLeavesTheLineItWasBuiltFromRemarkingNothing() {
+            // A refinement returns a new value, so a caller remarking on one line of a resolved
+            // list cannot reach into the line another caller is still holding.
+            var plainLine = CellTooltipEntryLine.createLine(CREST_MARK, "Sentinel Gantries", "0");
+            plainLine.notedWith("last seen 34 days ago, c206.05.12");
+
+            assertThat(plainLine.noteText())
+                .isNull();
+        }
+    }
+
+    @Nested
     class IndexedAt {
 
         @Test
@@ -152,6 +208,7 @@ final class CellTooltipEntryLineTest {
                         CREST_MARK,
                         "The Hegemony",
                         new CellTooltipIndexPlace("[2]", CellTooltipIndexOutcome.WON),
+                        NO_NOTE,
                         null,
                         "1,200",
                         null,
@@ -276,6 +333,7 @@ final class CellTooltipEntryLineTest {
                         NO_MARK,
                         "Small: 2",
                         NO_PLACE,
+                        NO_NOTE,
                         null,
                         "500",
                         "0.25 /",

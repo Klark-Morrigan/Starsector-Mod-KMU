@@ -1405,6 +1405,7 @@ class KnownMarketFootprintsIntegrationTest {
             assertThat(colonies)
                 .containsOnlyKeys("independent");
             assertThat(colonies.get("independent"))
+                .extracting(UnweighedColony::nameplate)
                 .containsExactly(UNLISTED_ACADEMY);
         }
 
@@ -1425,6 +1426,7 @@ class KnownMarketFootprintsIntegrationTest {
                     readColoniesIn(sector),
                     BASE_FOG)
                 .get("independent"))
+                .extracting(UnweighedColony::nameplate)
                 .containsExactly(new EntityNameplate(
                     "Galatia Academy",
                     Optional.of(new EntityMapIcon(
@@ -1450,6 +1452,7 @@ class KnownMarketFootprintsIntegrationTest {
                     readColoniesIn(sector),
                     BASE_FOG)
                 .get("independent"))
+                .extracting(UnweighedColony::nameplate)
                 .containsExactly(
                     EntityNameplate.createUnmarkedNameplate("Tibicena"),
                     UNLISTED_ACADEMY);
@@ -1517,7 +1520,29 @@ class KnownMarketFootprintsIntegrationTest {
                     readColoniesIn(sector),
                     BASE_FOG)
                 .get("independent"))
+                .extracting(UnweighedColony::nameplate)
                 .containsExactly(UNLISTED_ACADEMY);
+        }
+
+        @Test
+        void readUnweighedColoniesByFactionCarriesTheColonysOwnId() {
+            // The identity a box matches this line against anything else it knows about the same
+            // colony - how current its news of it is, say. A display name cannot serve: vanilla
+            // names a station colony and its defending station alike.
+            var academy = withId(
+                withName(buildVisibleMarket(buildFaction("independent"), 3), "Galatia Academy"),
+                "galatia_academy");
+
+            var sector = buildSectorWith("galatia");
+
+            placeMarketsOnSystemEntities(buildOnlySystem(sector), academy);
+
+            assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
+                    readColoniesIn(sector),
+                    BASE_FOG)
+                .get("independent"))
+                .extracting(UnweighedColony::marketId)
+                .containsExactly("galatia_academy");
         }
 
         @Test
@@ -1613,11 +1638,11 @@ class KnownMarketFootprintsIntegrationTest {
 
                 colonies.add(breakdown.marketNameplate().displayName());
             }
-            for (var nameplate : KnownMarketFootprints
+            for (var colony : KnownMarketFootprints
                     .readUnweighedColoniesByFaction(systemColonies, BASE_FOG)
                     .get("hegemony")) {
 
-                colonies.add(nameplate.displayName());
+                colonies.add(colony.nameplate().displayName());
             }
 
             // Every colony the projection holds, named once between the two reads.
@@ -1646,6 +1671,16 @@ class KnownMarketFootprintsIntegrationTest {
 
         when(market.getName())
             .thenReturn(name);
+
+        return market;
+    }
+
+    // Stubs the id the economy knows a colony by, which a plain stubbed market answers null for.
+    // Given only where a case reads it, since nothing else about a colony turns on it.
+    private static MarketAPI withId(MarketAPI market, String marketId) {
+
+        when(market.getId())
+            .thenReturn(marketId);
 
         return market;
     }

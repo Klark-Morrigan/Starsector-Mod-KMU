@@ -208,7 +208,7 @@ public final class CellTooltipRows {
     }
 
     // Finishes a listed line once its label is open: its number, where the line sits and how loudly it
-    // speaks, then the place and the status it runs on into.
+    // speaks, then the place, the remark and the status it runs on into.
     //
     // Shared by both tiers rather than spelled at each, because everything here is the same at either -
     // which leaves the two shapes differing in exactly what they are meant to differ in, the colours
@@ -221,8 +221,10 @@ public final class CellTooltipRows {
             Color valueColour) {
 
         return appendQualifier(
-            appendIndex(
-                placeRow(appendValue(row, line, valueColour), level),
+            appendNote(
+                appendIndex(
+                    placeRow(appendValue(row, line, valueColour), level),
+                    line),
                 line),
             line);
     }
@@ -363,6 +365,27 @@ public final class CellTooltipRows {
             case LOST -> StarsectorUiColour.VANILLA_HIGHLIGHT_RED.resolve();
             case UNCONTESTED -> StarsectorUiColour.VANILLA_GRAY.resolve();
         };
+    }
+
+    // Runs a line on into whatever it remarks about the thing on it. Laid after the place and before
+    // any qualifier, so a reader meets the line's identity, then what the box has to say about its own
+    // account of it, then what the box has found - each in the shade that says which it is.
+    //
+    // In the quiet shade, and that is the whole of what parts it from the gold run after it. A remark
+    // about how current the account is would be read as a finding drawn in gold, which invites the
+    // reader to weigh it against the numbers on the line rather than against the line's standing.
+    //
+    // Applied at every tier through one helper, for the reason the runs around it are.
+    private static TooltipRow.TableRow appendNote(
+            TooltipRow.TableRow row,
+            CellTooltipEntryLine line) {
+
+        if (!KmlibStrings.hasText(line.noteText())) {
+            return row;
+        }
+        return row.continuesWith(new TextSpan(
+            line.noteText(),
+            StarsectorUiColour.VANILLA_GRAY.resolve()));
     }
 
     // Runs a line on into whatever it calls out. Applied at every tier through one helper, so a status

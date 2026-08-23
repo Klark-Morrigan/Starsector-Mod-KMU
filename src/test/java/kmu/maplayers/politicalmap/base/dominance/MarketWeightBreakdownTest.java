@@ -23,6 +23,7 @@ class MarketWeightBreakdownTest {
 
     // The colony and the station the parts below belong to, each named and marked with no glyph: what
     // a box leads a name with says nothing about what the parts beneath it add up to.
+    private static final String COLONY_ID = "chicomoztoc";
     private static final EntityNameplate COLONY = EntityNameplate.createUnmarkedNameplate("Chicomoztoc");
     private static final EntityNameplate STATION = EntityNameplate.createUnmarkedNameplate("Fort Ludd");
 
@@ -39,6 +40,7 @@ class MarketWeightBreakdownTest {
         void sumsEveryFactorThatRan() {
 
             var breakdown = new MarketWeightBreakdown(
+                COLONY_ID,
                 COLONY,
                 VISIBLE_COLONY,
                 PLANET_COLONY,
@@ -94,6 +96,7 @@ class MarketWeightBreakdownTest {
             // parts preserves.
             var third = 1.0 / 3.0 / DOMINANCE_WEIGHT_SCALE;
             var breakdown = new MarketWeightBreakdown(
+                COLONY_ID,
                 COLONY,
                 VISIBLE_COLONY,
                 PLANET_COLONY,
@@ -124,6 +127,7 @@ class MarketWeightBreakdownTest {
     // for the sums that turn on the base-size factor alone.
     private static MarketWeightBreakdown buildBaseSizeOnlyBreakdown(double contribution) {
         return new MarketWeightBreakdown(
+            COLONY_ID,
             COLONY,
             VISIBLE_COLONY,
             PLANET_COLONY,

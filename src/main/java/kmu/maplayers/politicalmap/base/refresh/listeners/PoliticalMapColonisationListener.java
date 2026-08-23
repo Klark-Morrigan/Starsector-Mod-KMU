@@ -54,6 +54,14 @@ public class PoliticalMapColonisationListener implements PlayerColonizationListe
         // Abandonment pulls the market from the economy but leaves its planet, so
         // the system still resolves post-removal and the re-derivation reads the
         // now colonyless economy, dropping the faction fill.
+        //
+        // The observation this records is therefore taken after the abandoned
+        // colony has stopped vouching for whatever else stands in its system:
+        // vanilla fires this from AbandonMarketPluginImpl after DecivTracker has
+        // already removed the colony, so there is no earlier moment to read here.
+        // A derelict beside it keeps the sighting it already had, and is dated
+        // afresh whenever something else observes it. That is the whole of the
+        // resolution, not a gap left to be filled in.
         MarketPoliticsRefresh.markSystemStaleForMarket(
             market,
             "colony abandoned", // Event.

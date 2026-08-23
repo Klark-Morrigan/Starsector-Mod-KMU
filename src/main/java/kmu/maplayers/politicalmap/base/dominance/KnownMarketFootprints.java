@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.ColonyVisibility;
-import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.markets.Markets;
 
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -34,7 +33,7 @@ import java.util.Map;
  * <p>Beside those two sits a third read that weighs nothing:
  * {@link #readUnweighedColoniesByFaction}, the colonies present in the system that the economy
  * does not list. They reach a caller describing the system and no caller computing it, so they
- * come back as nameplates alone. The two sets partition the projection - every colony is either
+ * come back named and identified and nothing more. The two sets partition the projection - every colony is either
  * economy-listed and weighed or unlisted and merely named - which is what a colony being read
  * once and sorted, rather than sought by two walks, buys: neither set can gain a colony the
  * other keeps, nor lose one both pass over.
@@ -186,12 +185,12 @@ public final class KnownMarketFootprints {
      * set on the one fact that tells them apart - whether the economy lists the colony - so the
      * two are exact complements and no colony can be admitted by one and refused by the other.
      *
-     * <p>Each colony comes back as its nameplate alone rather than as a zeroed
+     * <p>Each colony comes back as an {@link UnweighedColony} rather than as a zeroed
      * {@link MarketWeightBreakdown}, and that is the guarantee the separation turns on: zero weight
      * is not absence on this side - a weightless colony still marks presence and paints its system
      * unopposed - so a value that could be summed into a footprint would leave the pass one
-     * forgotten branch away from painting a system for a faction the mechanic never counted. A name
-     * and a glyph cannot be summed into anything.
+     * forgotten branch away from painting a system for a faction the mechanic never counted. An
+     * identity and a nameplate cannot be summed into anything.
      *
      * @param colonies         the system's colony set, as one walk of it reported; empty yields
      *                         an empty map
@@ -201,15 +200,15 @@ public final class KnownMarketFootprints {
      *         faction id and in the system's own entity order; empty when every colony present is
      *         one the economy lists
      */
-    public static Map<String, List<EntityNameplate>> readUnweighedColoniesByFaction(
+    public static Map<String, List<UnweighedColony>> readUnweighedColoniesByFaction(
             Colonies colonies,
             ColonyVisibility colonyVisibility) {
 
-        var coloniesByFactionId = new LinkedHashMap<String, List<EntityNameplate>>();
+        var coloniesByFactionId = new LinkedHashMap<String, List<UnweighedColony>>();
         for (var market : readUnweighedColonies(colonies, colonyVisibility)) {
             coloniesByFactionId
                 .computeIfAbsent(market.getFaction().getId(), factionId -> new ArrayList<>())
-                .add(Markets.readNameplate(market));
+                .add(new UnweighedColony(market.getId(), Markets.readNameplate(market)));
         }
         return coloniesByFactionId;
     }

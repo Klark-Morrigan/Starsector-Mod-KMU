@@ -10,6 +10,7 @@ import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
 import kmu.maplayers.politicalmap.base.dominance.StationFactor;
+import kmu.maplayers.politicalmap.base.dominance.UnweighedColony;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.settings.HiddenMarketScalingChoice;
 import kmu.util.KmuStrings;
@@ -76,8 +77,8 @@ public final class MarketWeightRowResolver {
     // A colony the pass never weighed is ranked by name alone, having no weight to be ranked by -
     // which is the rule the weighed colonies fall back on at a tie, so one order runs down the
     // whole list rather than two.
-    private static final Comparator<EntityNameplate> UNWEIGHED_ORDER =
-        Comparator.comparing(EntityNameplate::displayName);
+    private static final Comparator<UnweighedColony> UNWEIGHED_ORDER =
+        Comparator.comparing(colony -> colony.nameplate().displayName());
 
     // A term of arithmetic is named rather than marked: a stability, a size or a patrol tier has
     // nothing on the map to point at, so a glyph there would stand in for a number. The two lines that
@@ -106,20 +107,23 @@ public final class MarketWeightRowResolver {
      *                          them
      * @param rules             the weighting rules the pass resolved under, which decide whether
      *                          stability is a cause worth stating
+     * @param notes             how old the box's news of each colony is, so a colony nobody is
+     *                          looking at says when it was last seen
      * @return one entry per colony, the weighed ones ranked ahead of the unweighed; empty when the
      *         faction holds no colony at all in the system
      */
     public static List<CellTooltipEntry> resolveMarketRows(
             List<MarketWeightBreakdown> breakdowns,
-            List<EntityNameplate> unweighedColonies,
-            DominanceRules rules) {
+            List<UnweighedColony> unweighedColonies,
+            DominanceRules rules,
+            ColonyObservationNotes notes) {
 
         var entries = new ArrayList<CellTooltipEntry>();
 
         breakdowns
             .stream()
             .sorted(MARKET_ORDER)
-            .forEach(breakdown -> entries.add(resolveMarketEntry(breakdown, rules)));
+            .forEach(breakdown -> entries.add(resolveMarketEntry(breakdown, rules, notes)));
 
         // Last whatever they would rank at, because they never ranked: sorted in among the weighed
         // colonies by a nought they were never given, they would sit above a colony that was
@@ -127,7 +131,7 @@ public final class MarketWeightRowResolver {
         unweighedColonies
             .stream()
             .sorted(UNWEIGHED_ORDER)
-            .forEach(colony -> entries.add(resolveUnweighedEntry(colony)));
+            .forEach(colony -> entries.add(resolveUnweighedEntry(colony, notes)));
 
         return List.copyOf(entries);
     }
@@ -136,13 +140,17 @@ public final class MarketWeightRowResolver {
     // factors that weight is the sum of.
     private static CellTooltipEntry resolveMarketEntry(
             MarketWeightBreakdown breakdown,
-            DominanceRules rules) {
+            DominanceRules rules,
+            ColonyObservationNotes notes) {
 
         return CellTooltipEntry
-            .createEntry(createMapEntityLine(
-                breakdown.marketNameplate(),
-                breakdown.marketNameplate().displayName(),
-                KmlibNumbers.formatGroupedInteger(breakdown.computeTotalWeight())))
+            .createEntry(remarkOnColony(
+                createMapEntityLine(
+                    breakdown.marketNameplate(),
+                    breakdown.marketNameplate().displayName(),
+                    KmlibNumbers.formatGroupedInteger(breakdown.computeTotalWeight())),
+                breakdown.marketId(),
+                notes))
             .nesting(resolveFactorEntries(breakdown, rules));
     }
 
@@ -154,12 +162,37 @@ public final class MarketWeightRowResolver {
     // statement about the colony rather than anything the colony scored, so it reads in the quiet
     // shade: in the list's own colour it would pass for a weight competed with and lost on, which is
     // the one thing it is not.
-    private static CellTooltipEntry resolveUnweighedEntry(EntityNameplate colony) {
-        return CellTooltipEntry.createEntry(createMapEntityLine(
-                colony,
-                colony.displayName(),
-                KmlibNumbers.formatGroupedInteger(NO_WEIGHT))
-            .statesUncountedValue());
+    private static CellTooltipEntry resolveUnweighedEntry(
+            UnweighedColony colony,
+            ColonyObservationNotes notes) {
+
+        return CellTooltipEntry.createEntry(remarkOnColony(
+            createMapEntityLine(
+                    colony.nameplate(),
+                    colony.nameplate().displayName(),
+                    KmlibNumbers.formatGroupedInteger(NO_WEIGHT))
+                .statesUncountedValue(),
+            colony.marketId(),
+            notes));
+    }
+
+    // Runs a colony's line on into when it was last seen, where nobody is looking at it now.
+    //
+    // Applied to both kinds of colony line through one helper, because how current the box's news
+    // of a colony is has nothing to do with whether the economy lists it - and the derelict that
+    // most needs the remark is exactly the kind no weight was worked out for.
+    //
+    // Nothing beneath a colony takes one: a stability or a patrol tier is arithmetic over the
+    // colony's own line, so a date there would be answering for the line above it twice.
+    private static CellTooltipEntryLine remarkOnColony(
+            CellTooltipEntryLine line,
+            String marketId,
+            ColonyObservationNotes notes) {
+
+        return notes
+            .resolveLastSeenNote(marketId)
+            .map(line::notedWith)
+            .orElse(line);
     }
 
     // A line naming something the sector map draws - a colony or the station defending it - led by

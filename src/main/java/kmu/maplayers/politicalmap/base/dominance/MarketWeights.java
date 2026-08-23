@@ -132,6 +132,7 @@ public final class MarketWeights {
     // factor is built: that is the half that runs twice.
     private static WeighedMarket readWeighedMarket(MarketAPI market, DominanceRules rules) {
         return new WeighedMarket(
+            market.getId(),
             Markets.readNameplate(market),
             market.isHidden(),
 
@@ -154,6 +155,7 @@ public final class MarketWeights {
             StabilityScaling stabilityScaling) {
 
         return new MarketWeightBreakdown(
+            market.marketId(),
             market.nameplate(),
             market.isHidden(),
             market.isStation(),
@@ -336,6 +338,7 @@ public final class MarketWeights {
      * @param patrols   the market's patrol-tier counts, when the patrol factor admitted them
      */
     private record WeighedMarket(
+        String marketId,
         EntityNameplate nameplate,
         boolean isHidden,
         boolean isStation,

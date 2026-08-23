@@ -23,6 +23,9 @@ import java.util.Objects;
  * @param indexPlace       where the line falls in the ordering it belongs to and what that place
  *                         decided, run on after its name, or null where the line has no place worth
  *                         stating
+ * @param noteText         a remark about the thing on the line that is not a finding about it -
+ *                         how current what the box says about it is, say - run on after its name,
+ *                         or null where the line makes none
  * @param qualifierText    the status called out at the end of the line, or null when it states none
  * @param valueText        what the block counts this line in, or {@link CellTooltipRows#NO_SCORE} for a
  *                         line carrying no number
@@ -40,6 +43,7 @@ public record CellTooltipEntryLine(
     CellTooltipMark mark,
     String labelText,
     CellTooltipIndexPlace indexPlace,
+    String noteText,
     String qualifierText,
     String valueText,
     String valueWorkingText,
@@ -55,6 +59,11 @@ public record CellTooltipEntryLine(
     // carrying a number it earned. Both are the plain case and what every factory below builds.
     private static final boolean IS_LISTED_IN_ITS_OWN_RIGHT = false;
     private static final boolean IS_VALUE_EARNED = false;
+
+    // What a line remarking nothing about the thing on it carries in the note slot. Named for the
+    // reason the two absences around it are: the factory says the line remarks nothing rather than
+    // passing an unexplained null.
+    private static final String NO_NOTE = null;
 
     // What a line states nothing beside its name and its number carries in the qualifier slot. Named
     // rather than passed as a bare null, so the factory below reads as "this line calls nothing out"
@@ -102,6 +111,7 @@ public record CellTooltipEntryLine(
             mark,
             labelText,
             NO_PLACE,
+            NO_NOTE,
             NO_QUALIFIER,
             valueText,
             NO_WORKING,
@@ -132,6 +142,25 @@ public record CellTooltipEntryLine(
     public CellTooltipEntryLine qualifiedWith(String qualifierText) {
         var parts = new LineParts(this);
         parts.qualifierText = qualifierText;
+        return parts.buildLine();
+    }
+
+    /**
+     * Returns a copy of this line remarking {@code noteText} after its name - something about the
+     * thing on the line that is not a finding about it, such as how current what the box says
+     * about it is.
+     *
+     * <p>Read in the quiet shade rather than the qualifier's gold, on the same reasoning a value's
+     * working is: the box parts what it has found from what it is saying about its own account,
+     * and a note is the second. A reader scanning for findings should pass over it, and a reader
+     * asking how much to trust the line should find it exactly where the line is.
+     *
+     * @param noteText the remark, unspaced - the line parts it from the name when it is laid out
+     * @return an otherwise-identical line carrying that remark
+     */
+    public CellTooltipEntryLine notedWith(String noteText) {
+        var parts = new LineParts(this);
+        parts.noteText = noteText;
         return parts.buildLine();
     }
 
@@ -234,6 +263,7 @@ public record CellTooltipEntryLine(
         private CellTooltipMark mark;
         private String labelText;
         private CellTooltipIndexPlace indexPlace;
+        private String noteText;
         private String qualifierText;
         private String valueText;
         private String valueWorkingText;
@@ -244,6 +274,7 @@ public record CellTooltipEntryLine(
             mark = line.mark();
             labelText = line.labelText();
             indexPlace = line.indexPlace();
+            noteText = line.noteText();
             qualifierText = line.qualifierText();
             valueText = line.valueText();
             valueWorkingText = line.valueWorkingText();
@@ -256,6 +287,7 @@ public record CellTooltipEntryLine(
                 mark,
                 labelText,
                 indexPlace,
+                noteText,
                 qualifierText,
                 valueText,
                 valueWorkingText,

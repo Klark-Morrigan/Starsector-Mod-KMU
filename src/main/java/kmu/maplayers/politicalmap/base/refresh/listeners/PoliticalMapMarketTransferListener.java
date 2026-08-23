@@ -57,6 +57,13 @@ public class PoliticalMapMarketTransferListener implements InvasionListener {
         // The from/to factions and capture flag ride along in the log so a cell
         // that does (or does not) repaint on conquest can be traced to this
         // transfer; the shared refresh filters an unseated market.
+        //
+        // Nex reports the transfer once it has happened, so the observation the
+        // refresh records is taken under the new owner. Where the conquest is what
+        // stopped a colony vouching for a rival's concealed base beside it - the
+        // two now sharing an owner - there is no earlier moment to read from here.
+        // That base keeps the sighting it already had, and is dated afresh by
+        // whatever observes it next. That is the resolution, not a gap.
         MarketPoliticsRefresh.markSystemStaleForMarket(
             market,
             "market transferred", // Event.

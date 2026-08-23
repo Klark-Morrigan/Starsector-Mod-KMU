@@ -13,6 +13,7 @@ import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PresenceOnlyFactionStanding;
+import kmu.maplayers.politicalmap.base.dominance.UnweighedColony;
 import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -73,8 +74,9 @@ final class ExpandedSystemDominationTooltipTest {
 
     // The one colony the economy does not list, marked with no glyph: every case here is about which
     // faction a colony is listed under rather than about what its line leads with.
-    private static final EntityNameplate UNLISTED_COLONY =
-        EntityNameplate.createUnmarkedNameplate("Galatia Academy");
+    private static final UnweighedColony UNLISTED_COLONY = new UnweighedColony(
+        "galatia_academy",
+        EntityNameplate.createUnmarkedNameplate("Galatia Academy"));
 
     // Stability is left unweighed throughout, so a colony breaks down into the one factor each case is
     // about rather than into a stability line every assertion would have to step over.
@@ -346,7 +348,7 @@ final class ExpandedSystemDominationTooltipTest {
     // Stands in the second read, the colonies present that the economy does not list. Stubbed apart
     // from the weighed ones because that is how the box reads them: two selections over the one set,
     // so nothing an unlisted colony says can reach the pass.
-    private void stubUnweighedColonies(Map<String, List<EntityNameplate>> coloniesByFactionId) {
+    private void stubUnweighedColonies(Map<String, List<UnweighedColony>> coloniesByFactionId) {
         footprintsMock
             .when(() -> KnownMarketFootprints.readUnweighedColoniesByFaction(
                 any(),
@@ -358,6 +360,7 @@ final class ExpandedSystemDominationTooltipTest {
     // one number it is ranked against its siblings by.
     private static MarketWeightBreakdown buildBreakdown(String marketName, double contribution) {
         return new MarketWeightBreakdown(
+            marketName,
             EntityNameplate.createUnmarkedNameplate(marketName),
             VISIBLE_COLONY,
             PLANET_COLONY,

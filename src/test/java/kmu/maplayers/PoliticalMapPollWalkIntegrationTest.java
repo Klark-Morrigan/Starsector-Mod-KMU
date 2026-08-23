@@ -125,7 +125,8 @@ final class PoliticalMapPollWalkIntegrationTest {
             runOnePoll(sector);
 
             assertThat(SectorColonySightings.readSightings(sector)
-                    .readSightedLocationId(derelict.getId()))
+                    .readObservation(derelict.getId())
+                    .locationId())
                 .isEqualTo(ALPHA_ID);
         }
 

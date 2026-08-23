@@ -10,6 +10,7 @@ import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
 import kmu.maplayers.politicalmap.base.dominance.StationFactor;
+import kmu.maplayers.politicalmap.base.dominance.UnweighedColony;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -24,12 +25,15 @@ import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins which lines a colony breaks down into and what hangs beneath what: the colonies ranked under
@@ -61,13 +65,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class MarketWeightRowResolverTest {
 
+    // What a colony nobody is looking at says about how old the box's news of it is. Stated
+    // verbatim rather than composed, this suite being about which line carries the remark rather
+    // than about how one reads.
+    private static final String LAST_SEEN = "last seen 34 days ago, c206.05.12";
+
     // A plain colony's parts: size four at full worth, no station, no patrols. The baseline the
     // cases below add one factor at a time to.
     private static final BaseSizeFactor PLAIN_SIZE = new BaseSizeFactor(4, 4.0, 4.0, 0.0);
 
     // A faction every one of whose colonies here the economy lists, which is the ordinary system
     // and so every case bar the ones about the colonies it does not.
-    private static final List<EntityNameplate> NO_UNWEIGHED_COLONIES = List.of();
+    private static final List<UnweighedColony> NO_UNWEIGHED_COLONIES = List.of();
 
     // The station a stationed colony's factor names. Marked with a glyph of its own, held apart from
     // the colony's so a case reading a marked station line cannot pass on the colony's icon having
@@ -105,7 +114,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsRanksTheStrongestColonyFirst() {
             // The colonies read strongest first for the same reason the blocs above them do: the
             // account of a score opens on what most of it came from.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(
                     buildBreakdown("Culann", new BaseSizeFactor(3, 3.0, 3.0, 0.0)),
                     buildBreakdown("Jangala", new BaseSizeFactor(6, 6.0, 6.0, 0.0))),
@@ -122,7 +131,7 @@ final class MarketWeightRowResolverTest {
             // handed them over the box would list them one way on one hover and the other on the next.
             var evenSize = new BaseSizeFactor(4, 4.0, 4.0, 0.0);
 
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(
                     buildBreakdown("Jangala", evenSize),
                     buildBreakdown("Culann", evenSize)),
@@ -137,7 +146,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsStatesTheColonysOwnWeightBesideIt() {
             // The colony's line carries the number its factors below add up to, so the account can be
             // checked one level at a time rather than only at the bloc.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -150,7 +159,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsLeadsAColonyWithTheGlyphTheMapMarksItBy() {
             // The reader has a list of names and a map, and the glyph is the one thing the two share
             // at a glance.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildMarkedBreakdown(buildMarkedColony("Jangala"))),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -164,7 +173,7 @@ final class MarketWeightRowResolverTest {
             // The map's shades are authored to tell one world from another against black, and carried
             // into the box unchanged they arrive brighter than the numbers the account is about - a
             // column of coloured glyphs reads as the finding when what it is is a bullet point.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildMarkedBreakdown(buildMarkedColony("Jangala"))),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -177,7 +186,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsOpensAColonyOnItsNameWhereTheMapMarksItWithNoGlyph() {
             // An entity carrying no authored icon hands the absence straight over, so the line is
             // built from its words rather than from an image run with nothing to load.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildMarkedBreakdown(EntityNameplate.createUnmarkedNameplate("Jangala"))),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -190,8 +199,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsMarksNoTermOfArithmeticBeneathAColony() {
             // A stability, a size or a patrol tier is a term of arithmetic with nothing on the map to
             // point at, so a glyph there would be standing in for a number.
-            var factors = MarketWeightRowResolver
-                .resolveMarketRows(
+            var factors = resolveUnremarkedRows(
                     List.of(buildMarkedBreakdown(buildMarkedColony("Jangala"))),
                     NO_UNWEIGHED_COLONIES,
                     buildRules())
@@ -208,7 +216,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsOpensAColonyOnTheStabilityBehindItsCuts() {
             // Stability heads the factors because it is the cause of every cut beneath it; read after
             // them it would explain deductions the reader has already passed.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -221,7 +229,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsDropsTheStabilityLineWhenStabilityWeighsNothing() {
             // With the master weighting off stability moves no factor, so a line for it would state a
             // cause of cuts that are all zero.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
                 NO_UNWEIGHED_COLONIES,
                 new DominanceRules(
@@ -238,8 +246,9 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsCallsOutAHiddenColonyOnItsSizeLine() {
             // Being hidden is not a further factor but the reason two of them rate the colony as they
             // do, so it is said on the line it changes rather than on one of its own.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(new MarketWeightBreakdown(
+                    nameColonyId("Selkie Station"),
                     EntityNameplate.createUnmarkedNameplate("Selkie Station"),
                     true,
                     PLANET_COLONY,
@@ -278,7 +287,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsStatesNoRealSizeWhereTheColonyCountedByItsOwn() {
             // An openly held colony's rating is its size, so opening the line on it would state the
             // same number twice and imply a change that never happened.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -291,7 +300,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsNamesTheStationThatEarnedTheBonus() {
             // The station's own name is what ties the number to something the player can find on the
             // map, which a line reading "Station" would not.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildStationedBreakdown(UNMARKED_STATION)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -305,7 +314,7 @@ final class MarketWeightRowResolverTest {
             // The station line names an entity the map draws, and a system's stations are told apart
             // there by their glyph as much as by their name - so the mark settles more here than it
             // does on the colony line above.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildStationedBreakdown(MARKED_STATION)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -318,7 +327,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsDrawsTheStationsGlyphInTheStationNamesOwnColour() {
             // A station's authored shade is as loud in a text box as a colony's, and the line means
             // no more by it: the glyph is the identifier, and the finding is the number opposite.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildStationedBreakdown(MARKED_STATION)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -331,7 +340,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsOpensTheStationLineOnItsNameWhereTheMapMarksItWithNoGlyph() {
             // A station carrying no authored icon hands the absence straight over, so the line is
             // built from the station's name rather than from an image run with nothing to load.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildStationedBreakdown(UNMARKED_STATION)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -344,7 +353,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsTellsAStationColonysOwnStationApartFromIt() {
             // A colony on a station is one place to the player and two entries to the economy, named
             // alike, so the account states the same words at two levels for two different things.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildNamesakeStationBreakdown(
                     "Selkie Station",
                     "Selkie Station",
@@ -360,7 +369,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsNamesAPlanetColonysNamesakeStationPlainly() {
             // A planet and a station that happen to share a name are two places the player can see
             // apart on the map, so a clarifier would answer a question they never had.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildNamesakeStationBreakdown("Jangala", "Jangala", PLANET_COLONY)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -373,7 +382,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsNamesAStationColonysDifferentlyNamedStationPlainly() {
             // The station's own name already tells the two apart, and a clarifier on top of it would
             // be qualifying a line nothing was ambiguous about.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildNamesakeStationBreakdown(
                     "Selkie Station",
                     "Fort Ludd",
@@ -389,7 +398,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsStatesTheStationClarifierInTheLinesOwnColour() {
             // The parentheses already say the run is an aside; drawn in the qualifier's shade it
             // would read as loudly as the findings the box marks that way.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildNamesakeStationBreakdown(
                     "Selkie Station",
                     "Selkie Station",
@@ -405,8 +414,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsMarksTheStationLineAloneBeneathAColony() {
             // The station is the only subject of the breakdown the player can go and find; every
             // other line beneath the colony states a term of the arithmetic behind its weight.
-            var factors = MarketWeightRowResolver
-                .resolveMarketRows(
+            var factors = resolveUnremarkedRows(
                     List.of(buildFortifiedBreakdown(MARKED_STATION)),
                     NO_UNWEIGHED_COLONIES,
                     buildRules())
@@ -427,7 +435,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsListsAColonysFieldedTiersBeneathThePatrolLine() {
             // One heavy patrol and four light ones can be worth the same and are not the same force
             // fielded, so the tiers are what make the total explicable.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildPatrollingBreakdown(2, 1, 0)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -444,7 +452,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsStatesATiersRateApartFromWhatItCameTo() {
             // The two halves reach the box separately so it can draw the rate quieter than the total
             // it explains; run together they would read as one number with a stray separator in it.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildPatrollingBreakdown(2, 0, 0)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -462,8 +470,7 @@ final class MarketWeightRowResolverTest {
             // Only the tiers split. The patrol line is the weight alone - there is no working
             // behind it worth drawing quieter, since a headcount summed over tiers that count for
             // different amounts explains nothing about the number beside it.
-            var patrolLine = MarketWeightRowResolver
-                .resolveMarketRows(
+            var patrolLine = resolveUnremarkedRows(
                     List.of(buildPatrollingBreakdown(2, 0, 0)),
                     NO_UNWEIGHED_COLONIES,
                     buildRules())
@@ -481,7 +488,7 @@ final class MarketWeightRowResolverTest {
         @Test
         void resolveMarketRowsListsNoTierTheColonyFieldsNoneOf() {
             // A tier line for patrols that do not exist states a force the colony does not field.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildPatrollingBreakdown(0, 0, 3)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -494,7 +501,7 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsGivesAFactorThatNeverRanNoLine() {
             // The station and patrol factors are absent from the parts when the player has them off,
             // and a colony explained by lines for both would say they counted for nothing instead.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -505,7 +512,7 @@ final class MarketWeightRowResolverTest {
 
         @Test
         void resolveMarketRowsListsNothingForABlocHoldingNoColony() {
-            assertThat(MarketWeightRowResolver.resolveMarketRows(
+            assertThat(resolveUnremarkedRows(
                     List.of(),
                     NO_UNWEIGHED_COLONIES,
                     buildRules()))
@@ -517,9 +524,9 @@ final class MarketWeightRowResolverTest {
             // The player can see the station on the map in the faction's colours, so an account
             // omitting it would withhold something they are looking straight at. Nought is what it
             // brought to the score - it is present, and it moved nothing.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(),
-                List.of(EntityNameplate.createUnmarkedNameplate("Galatia Academy")),
+                List.of(buildUnweighedColony("Galatia Academy")),
                 buildRules());
 
             assertThat(rows.get(0).line().labelText())
@@ -533,9 +540,9 @@ final class MarketWeightRowResolverTest {
             // The nought is the whole of what the account has to say about it, exactly as on the
             // claims side: a word for why it was passed over would raise a question about the rule
             // that the box would then owe an answer to.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(),
-                List.of(EntityNameplate.createUnmarkedNameplate("Galatia Academy")),
+                List.of(buildUnweighedColony("Galatia Academy")),
                 buildRules());
 
             assertThat(rows.get(0).line().qualifierText())
@@ -546,9 +553,9 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsDrawsAnUnweighedColonysNoughtInTheQuietShade() {
             // The nought is the pass's statement about the colony rather than anything the colony
             // scored; in the list's own colour it would pass for a weight competed with and lost on.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(),
-                List.of(EntityNameplate.createUnmarkedNameplate("Galatia Academy")),
+                List.of(buildUnweighedColony("Galatia Academy")),
                 buildRules());
 
             assertThat(rows.get(0).line().isValueUncounted())
@@ -559,9 +566,9 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsBreaksAnUnweighedColonyDownIntoNoFactors() {
             // None of the three factors ran for it - there is nothing beneath the line to state, and
             // factor lines at nought would invite adding up to a total nobody computed.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(),
-                List.of(EntityNameplate.createUnmarkedNameplate("Galatia Academy")),
+                List.of(buildUnweighedColony("Galatia Academy")),
                 buildRules());
 
             assertThat(rows.get(0).children())
@@ -573,9 +580,9 @@ final class MarketWeightRowResolverTest {
             // Including one that weighed nothing: that colony was weighed and came to nought, which
             // is a different finding from one that was never weighed, and ranking them together by a
             // number only one of them earned would put the unweighed above it.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildBreakdown("Culann", new BaseSizeFactor(0, 0.0, 0.0, 1.0))),
-                List.of(EntityNameplate.createUnmarkedNameplate("Galatia Academy")),
+                List.of(buildUnweighedColony("Galatia Academy")),
                 buildRules());
 
             assertThat(readLabelTexts(rows))
@@ -589,9 +596,9 @@ final class MarketWeightRowResolverTest {
             // should be left without it. It reads in the line's colour like every other colony's, a
             // glyph at the foot of the list in the map's own shade being the loudest thing in a box
             // about the colony that counted for nothing.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(),
-                List.of(buildMarkedColony("Galatia Academy")),
+                List.of(buildMarkedUnweighedColony("Galatia Academy")),
                 buildRules());
 
             assertThat(rows.get(0).line().mark().spritePath())
@@ -604,11 +611,11 @@ final class MarketWeightRowResolverTest {
         void resolveMarketRowsRanksUnweighedColoniesByName() {
             // They have no weight to be ranked by, so they take the rule the weighed ones fall back
             // on at a tie - one order down the whole list rather than two.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(),
                 List.of(
-                    EntityNameplate.createUnmarkedNameplate("Tibicena"),
-                    EntityNameplate.createUnmarkedNameplate("Galatia Academy")),
+                    buildUnweighedColony("Tibicena"),
+                    buildUnweighedColony("Galatia Academy")),
                 buildRules());
 
             assertThat(readLabelTexts(rows))
@@ -620,7 +627,7 @@ final class MarketWeightRowResolverTest {
             // The shared line vocabulary can state where something falls in an ordering, and this box
             // has no use for one: dominance is settled by weight and distance, with no tie rule a
             // listing order could explain. A place stated here would be a number meaning nothing.
-            var rows = MarketWeightRowResolver.resolveMarketRows(
+            var rows = resolveUnremarkedRows(
                 List.of(buildPatrollingBreakdown(2, 1, 0)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
@@ -629,6 +636,60 @@ final class MarketWeightRowResolverTest {
                 .isNull();
             assertThat(rows.get(0).children())
                 .allSatisfy(factor -> assertThat(factor.line().indexPlace()).isNull());
+        }
+
+        @Test
+        void resolveMarketRowsRemarksHowOldTheNewsOfAWeighedColonyIs() {
+            // The remark is matched to the line by the colony's own id rather than by its name,
+            // which is what carrying the id this far is for.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules(),
+                buildNotesRemarkingOn("jangala"));
+
+            assertThat(rows.get(0).line().noteText())
+                .isEqualTo(LAST_SEEN);
+        }
+
+        @Test
+        void resolveMarketRowsRemarksHowOldTheNewsOfAnUnweighedColonyIs() {
+            // The kind that most needs it: a derelict is admitted on the strength of somebody
+            // having seen it, and no weight was ever worked out to say anything else about it.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(),
+                List.of(buildUnweighedColony("Galatia Academy")),
+                buildRules(),
+                buildNotesRemarkingOn("galatia_academy"));
+
+            assertThat(rows.get(0).line().noteText())
+                .isEqualTo(LAST_SEEN);
+        }
+
+        @Test
+        void resolveMarketRowsRemarksNothingBeneathARemarkedColony() {
+            // A stability or a size is arithmetic over the colony's own line, so a date there
+            // would answer for the line above it twice.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildMarkedBreakdown(buildMarkedColony("Jangala"))),
+                NO_UNWEIGHED_COLONIES,
+                buildRules(),
+                buildNotesRemarkingOn("jangala"));
+
+            assertThat(rows.get(0).children())
+                .allSatisfy(factor -> assertThat(factor.line().noteText()).isNull());
+        }
+
+        @Test
+        void resolveMarketRowsRemarksNothingOnAColonyBeingLookedAtNow() {
+            // The ordinary case: in sight, the name stands alone.
+            var rows = resolveUnremarkedRows(
+                List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules());
+
+            assertThat(rows.get(0).line().noteText())
+                .isNull();
         }
     }
 
@@ -641,6 +702,54 @@ final class MarketWeightRowResolverTest {
     // counted colony carries.
     private static CellTooltipEntryLine readStationLine(List<CellTooltipEntry> rows) {
         return rows.get(0).children().get(2).line();
+    }
+
+    // Notes remarking on exactly one colony, mocked because what makes a remark due is the notes'
+    // own question and is pinned by {@link ColonyObservationNotesTest}: what this suite is about is
+    // which line carries the answer.
+    private static ColonyObservationNotes buildNotesRemarkingOn(String marketId) {
+
+        var notesMock = mock(ColonyObservationNotes.class);
+
+        when(notesMock.resolveLastSeenNote(marketId))
+            .thenReturn(Optional.of(LAST_SEEN));
+
+        return notesMock;
+    }
+
+    // The rows of an account where nobody is remarked on: every colony is being looked at as the
+    // box is drawn, so no line says when it was last seen. The ordinary case, and the one every
+    // case below bar the ones about the remark itself poses.
+    private static List<CellTooltipEntry> resolveUnremarkedRows(
+            List<MarketWeightBreakdown> breakdowns,
+            List<UnweighedColony> unweighedColonies,
+            DominanceRules rules) {
+
+        return MarketWeightRowResolver.resolveMarketRows(
+            breakdowns,
+            unweighedColonies,
+            rules,
+            ColonyObservationNotes.NONE);
+    }
+
+    // A colony the economy does not list, under the name a case needs and marked with nothing.
+    private static UnweighedColony buildUnweighedColony(String marketName) {
+        return new UnweighedColony(
+            nameColonyId(marketName),
+            EntityNameplate.createUnmarkedNameplate(marketName));
+    }
+
+    // The same, marked with the glyph vanilla gives a world, for the cases about what an unweighed
+    // colony's line leads with.
+    private static UnweighedColony buildMarkedUnweighedColony(String marketName) {
+        return new UnweighedColony(nameColonyId(marketName), buildMarkedColony(marketName));
+    }
+
+    // The id a colony is known by, which no case here reads: a line is placed by its name and its
+    // depth. Taken from the name so two colonies posed in one case cannot share an id, that being
+    // the one way a field nothing asserts on could still change a result.
+    private static String nameColonyId(String marketName) {
+        return marketName.toLowerCase(Locale.ROOT).replace(' ', '_');
     }
 
     // A colony under the name a case needs, marked with the glyph vanilla gives a world. The authored
@@ -657,6 +766,7 @@ final class MarketWeightRowResolverTest {
     // A plain colony's parts - no station, no patrols - at full stability.
     private static MarketWeightBreakdown buildBreakdown(String marketName, BaseSizeFactor baseSize) {
         return new MarketWeightBreakdown(
+            nameColonyId(marketName),
             EntityNameplate.createUnmarkedNameplate(marketName),
             VISIBLE_COLONY,
             PLANET_COLONY,
@@ -671,6 +781,7 @@ final class MarketWeightRowResolverTest {
     // read, the rule being that no term of arithmetic takes one.
     private static MarketWeightBreakdown buildMarkedBreakdown(EntityNameplate colony) {
         return new MarketWeightBreakdown(
+            nameColonyId(colony.displayName()),
             colony,
             VISIBLE_COLONY,
             PLANET_COLONY,
@@ -688,8 +799,9 @@ final class MarketWeightRowResolverTest {
     // size the colony actually is part company, which is what both halves of its size line are read
     // from. Built here rather than at each case, since neither is about how the colony was composed.
     private static List<CellTooltipEntry> resolveFixedRatedHiddenMarketRows() {
-        return MarketWeightRowResolver.resolveMarketRows(
+        return resolveUnremarkedRows(
             List.of(new MarketWeightBreakdown(
+                nameColonyId("Selkie Station"),
                 EntityNameplate.createUnmarkedNameplate("Selkie Station"),
                 true,
                 PLANET_COLONY,
@@ -710,6 +822,7 @@ final class MarketWeightRowResolverTest {
     // the station's.
     private static MarketWeightBreakdown buildStationedBreakdown(EntityNameplate station) {
         return new MarketWeightBreakdown(
+            nameColonyId("Jangala"),
             EntityNameplate.createUnmarkedNameplate("Jangala"),
             VISIBLE_COLONY,
             PLANET_COLONY,
@@ -728,6 +841,7 @@ final class MarketWeightRowResolverTest {
             boolean isStationMarket) {
 
         return new MarketWeightBreakdown(
+            nameColonyId(colonyName),
             EntityNameplate.createUnmarkedNameplate(colonyName),
             VISIBLE_COLONY,
             isStationMarket,
@@ -747,6 +861,7 @@ final class MarketWeightRowResolverTest {
     // a tier of its own a level deeper.
     private static MarketWeightBreakdown buildFortifiedBreakdown(EntityNameplate station) {
         return new MarketWeightBreakdown(
+            nameColonyId("Jangala"),
             EntityNameplate.createUnmarkedNameplate("Jangala"),
             VISIBLE_COLONY,
             PLANET_COLONY,
@@ -764,6 +879,7 @@ final class MarketWeightRowResolverTest {
     // own defaults, so a case reads the counts it set rather than arithmetic of its own.
     private static MarketWeightBreakdown buildPatrollingBreakdown(int small, int medium, int large) {
         return new MarketWeightBreakdown(
+            nameColonyId("Jangala"),
             EntityNameplate.createUnmarkedNameplate("Jangala"),
             VISIBLE_COLONY,
             PLANET_COLONY,

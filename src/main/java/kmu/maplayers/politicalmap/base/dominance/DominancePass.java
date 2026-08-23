@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.ColonyVisibility;
-import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
@@ -240,7 +239,7 @@ public record DominancePass(
 
     /**
      * The colonies in this system the economy does not list, per faction - the ones no weight was
-     * ever worked out for, so they arrive as nameplates and nothing more.
+     * ever worked out for, so they arrive named and identified and nothing more.
      *
      * <p>The complement of the weighed read above, taken under the same rule off the same walk,
      * which is what makes the two exact complements: no colony can be admitted by one and refused
@@ -251,7 +250,7 @@ public record DominancePass(
      * @return each faction's unlisted colonies there, identified and nothing more; empty when
      *         every colony present is one the economy lists
      */
-    public Map<String, List<EntityNameplate>> readUnweighedColoniesByFaction(
+    public Map<String, List<UnweighedColony>> readUnweighedColoniesByFaction(
             StarSystemAPI system) {
 
         return KnownMarketFootprints.readUnweighedColoniesByFaction(

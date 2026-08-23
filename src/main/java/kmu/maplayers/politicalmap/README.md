@@ -177,7 +177,12 @@ The rest of `base` carries the supporting parts: `politics` (grouping and the he
 as a change the engine fired no event for, answered into the framework's poll, plus the one
 passenger that writes rather than reads: each system's own inhabitants observing the colonies a
 revelation gate holds back, recorded here because nothing in the engine announces a derelict
-arriving among witnesses - and
+arriving among witnesses. The economy-event listeners record the same thing for the one system they
+name (`MarketPoliticsRefresh`), the event being the moment the observation is worth dating rather
+than a poll cycle later - and a decivilisation is recorded on the `aboutToBe` phase, since once the
+colony has died there is nobody left to date what it vouched for. Where an event fires too late to
+read the system as it was - an abandonment, a Nex transfer - the comment at that listener says so,
+and the colony keeps the sighting it already had - and
 `PoliticalMapRefreshSignal`, the coarse changes only this layer can raise on the shared board,
 alliance membership being the one),
 `render` (`PoliticalMapOverlayRenderer` - the order the sub-layers are stacked in, bottom to top,
@@ -266,7 +271,8 @@ which a disambiguation is not.
 That box lists one kind of colony no score above it accounts for: one the economy does not list,
 which the weight read has nothing to weigh. It is the other half of the one colony set the weighed
 read selects from - the colonies the economy does not list
-(`KnownMarketFootprints.readUnweighedColoniesByFaction`), carried as an `EntityNameplate` alone rather
+(`KnownMarketFootprints.readUnweighedColoniesByFaction`), carried as an `UnweighedColony` - a
+nameplate and the colony's own id - rather
 than as a zeroed `MarketWeightBreakdown` - zero weight is not absence on this side, a weightless
 colony still marking presence and painting its system unopposed, so a value that could be summed into
 a footprint would leave the pass one forgotten branch away from painting a system for a faction the
@@ -275,6 +281,21 @@ other colony - it being the only trace of such a colony the player has beside th
 the quiet shade, and breaks down into no factors - the same sentence the claims box speaks for a
 market its own mechanic never weighed, and for the same reason: the colony is there and it moved
 nothing, which is the whole of what the account has to say about it.
+Every colony line, weighed or not, says how old the box's news of it is where nobody is looking at
+the colony as the box is drawn (`ColonyObservationNotes`, run onto the line as a grey remark through
+`CellTooltipEntryLine.notedWith`). In sight the name stands alone; out of sight it carries
+`last seen 34 days ago, c206.05.12`. Two things count as looking at it, being the two routes an
+observation is ever made by: the player's fleet is in the system, or the system's own inhabitants
+can see the colony - the owner-aware reading the visibility rule itself uses. Only then is the
+sighting register reached for, so the ordinary case costs a location comparison and an owner-set
+read, and the elapsed span and the date are built off `CampaignClockAPI` per remarked line. That
+matters most for the colonies a revelation gate admitted on the strength of an observation - a
+derelict, a concealed base - which would otherwise be listed exactly as a colony the player is
+standing over. No visibility rule reads the time: the moment being shown turned on how recent an
+observation was, a colony would blink out of a box the player was reading it in. Which is also why
+the remark is matched to its line by the colony's own id (`MarketWeightBreakdown.marketId`,
+`UnweighedColony.marketId`) rather than by name - vanilla names a station colony and its defending
+station alike.
 A faction whose only colony in the system is one of these is listed all the same, at a nought of its
 own. Presence and weight are two questions, so the ranking (`SystemStandings`) is handed both: who is
 in the system (`HolderPass.readKnownColonyFactionIds` - the owners of everything the box may name,

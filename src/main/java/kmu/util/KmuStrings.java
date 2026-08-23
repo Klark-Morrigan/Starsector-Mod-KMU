@@ -70,6 +70,13 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_TOOLTIP_CLAIM_BONUS = "political_map_tooltip_claim_bonus";
     public static final String POLITICAL_MAP_TOOLTIP_DETAIL_CONTRIBUTIONS =
         "political_map_tooltip_detail_contributions";
+    public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN = "political_map_tooltip_last_seen";
+    public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN_TODAY =
+        "political_map_tooltip_last_seen_today";
+    public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN_A_DAY_AGO =
+        "political_map_tooltip_last_seen_a_day_ago";
+    public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN_DAYS_AGO =
+        "political_map_tooltip_last_seen_days_ago";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_CLAIM = "political_map_tooltip_section_claim";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED = "political_map_tooltip_section_contested";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL =

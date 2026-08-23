@@ -26,6 +26,11 @@ import java.util.Optional;
  * <p>Plain values with no Starsector types, so the whole breakdown is built and read on
  * hand-made inputs.
  *
+ * @param marketId        which colony this is, as the economy and the sector's own records name
+ *                        it. Carried because a box that says more about a colony than its weight -
+ *                        how current the player's knowledge of it is, say - has to match this line
+ *                        against something read elsewhere, and a display name is not an identity:
+ *                        vanilla names a station colony and its defending station alike
  * @param marketNameplate  how the colony is identified to a reader - its name and the glyph the
  *                        sector map marks it with. Recorded on the walk that counted the colony
  *                        rather than looked up again by whatever draws the name, so the pair shown
@@ -45,6 +50,7 @@ import java.util.Optional;
  * @param patrols         the fielded-patrol part, present only when the patrol rule ran
  */
 public record MarketWeightBreakdown(
+    String marketId,
     EntityNameplate marketNameplate,
     boolean isHiddenMarket,
     boolean isStationMarket,
