@@ -75,7 +75,7 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_SHOW, "show %s");
         stringsByKey.put(KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_HIDE, "hide %s");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_DETAIL_CONTRIBUTIONS, "score contributions");
-        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN, "last seen %s, %s");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN, "last seen %s (%s)");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_TODAY, "today");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_A_DAY_AGO, "a day ago");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_DAYS_AGO, "%d days ago");

@@ -59,7 +59,7 @@
     "political_map_tooltip_claim_bonus": "+%s",
     "political_map_tooltip_detail_contributions": "score contributions",
 
-    "political_map_tooltip_last_seen": "last seen %s, %s",
+    "political_map_tooltip_last_seen": "last seen %s (%s)",
     "political_map_tooltip_last_seen_today": "today",
     "political_map_tooltip_last_seen_a_day_ago": "a day ago",
     "political_map_tooltip_last_seen_days_ago": "%d days ago",

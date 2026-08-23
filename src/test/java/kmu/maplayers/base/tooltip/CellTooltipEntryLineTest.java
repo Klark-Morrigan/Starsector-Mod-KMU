@@ -150,7 +150,7 @@ final class CellTooltipEntryLineTest {
 
             var line = CellTooltipEntryLine
                 .createLine(CREST_MARK, "Sentinel Gantries", "0")
-                .notedWith("last seen 34 days ago, c206.05.12");
+                .notedWith("last seen 34 days ago (c206.05.12)");
 
             assertThat(line)
                 .isEqualTo(
@@ -158,7 +158,7 @@ final class CellTooltipEntryLineTest {
                         CREST_MARK,
                         "Sentinel Gantries",
                         NO_PLACE,
-                        "last seen 34 days ago, c206.05.12",
+                        "last seen 34 days ago (c206.05.12)",
                         null,
                         "0",
                         null,
@@ -174,7 +174,7 @@ final class CellTooltipEntryLineTest {
             var line = CellTooltipEntryLine
                 .createLine(CREST_MARK, "Sentinel Gantries", "0")
                 .qualifiedWith("(core)")
-                .notedWith("last seen 34 days ago, c206.05.12");
+                .notedWith("last seen 34 days ago (c206.05.12)");
 
             assertThat(line.qualifierText())
                 .isEqualTo("(core)");
@@ -185,7 +185,7 @@ final class CellTooltipEntryLineTest {
             // A refinement returns a new value, so a caller remarking on one line of a resolved
             // list cannot reach into the line another caller is still holding.
             var plainLine = CellTooltipEntryLine.createLine(CREST_MARK, "Sentinel Gantries", "0");
-            plainLine.notedWith("last seen 34 days ago, c206.05.12");
+            plainLine.notedWith("last seen 34 days ago (c206.05.12)");
 
             assertThat(plainLine.noteText())
                 .isNull();

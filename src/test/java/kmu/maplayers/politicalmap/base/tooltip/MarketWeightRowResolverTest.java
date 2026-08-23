@@ -68,7 +68,7 @@ final class MarketWeightRowResolverTest {
     // What a colony nobody is looking at says about how old the box's news of it is. Stated
     // verbatim rather than composed, this suite being about which line carries the remark rather
     // than about how one reads.
-    private static final String LAST_SEEN = "last seen 34 days ago, c206.05.12";
+    private static final String LAST_SEEN = "last seen 34 days ago (c206.05.12)";
 
     // A plain colony's parts: size four at full worth, no station, no patrols. The baseline the
     // cases below add one factor at a time to.

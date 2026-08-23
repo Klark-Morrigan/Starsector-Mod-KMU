@@ -284,7 +284,7 @@ nothing, which is the whole of what the account has to say about it.
 Every colony line, weighed or not, says how old the box's news of it is where nobody is looking at
 the colony as the box is drawn (`ColonyObservationNotes`, run onto the line as a grey remark through
 `CellTooltipEntryLine.notedWith`). In sight the name stands alone; out of sight it carries
-`last seen 34 days ago, c206.05.12`. Two things count as looking at it, being the two routes an
+`last seen 34 days ago (c206.05.12)`. Two things count as looking at it, being the two routes an
 observation is ever made by: the player's fleet is in the system, or the system's own inhabitants
 can see the colony - the owner-aware reading the visibility rule itself uses. Only then is the
 sighting register reached for, so the ordinary case costs a location comparison and an owner-set

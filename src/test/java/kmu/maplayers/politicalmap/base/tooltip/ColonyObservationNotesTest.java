@@ -113,7 +113,7 @@ final class ColonyObservationNotesTest {
             var notes = readNotesOver(buildDerelictSet(observedDaysAgo(34.0f)));
 
             assertThat(notes.resolveLastSeenNote(DERELICT_ID))
-                .contains("last seen 34 days ago, c206.05.12");
+                .contains("last seen 34 days ago (c206.05.12)");
         }
 
         @Test
@@ -123,7 +123,7 @@ final class ColonyObservationNotesTest {
             var notes = readNotesOver(buildDerelictSet(observedDaysAgo(0.4f)));
 
             assertThat(notes.resolveLastSeenNote(DERELICT_ID))
-                .contains("last seen today, c206.05.12");
+                .contains("last seen today (c206.05.12)");
         }
 
         @Test
@@ -132,7 +132,7 @@ final class ColonyObservationNotesTest {
             var notes = readNotesOver(buildDerelictSet(observedDaysAgo(1.5f)));
 
             assertThat(notes.resolveLastSeenNote(DERELICT_ID))
-                .contains("last seen a day ago, c206.05.12");
+                .contains("last seen a day ago (c206.05.12)");
         }
 
         @Test
