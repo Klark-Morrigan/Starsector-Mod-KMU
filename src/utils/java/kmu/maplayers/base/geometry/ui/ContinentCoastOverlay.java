@@ -11,6 +11,8 @@ import kmu.maplayers.base.geometry.WalledPocket;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 
+import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
+
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.geom.Line2D;

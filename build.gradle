@@ -49,31 +49,37 @@ sourceSets {
 // what keeps it holding once someone who does not adds a file. The mechanism is
 // Common-Java's - see its README for the declaration's shape.
 enforcePackageLayering {
-    forbidImport under: 'kmu.maplayers.base', of: 'kmu.maplayers.politicalmap'
 
-    // The geometry prototype's own arrows. The constructions know nothing of how
-    // anything is drawn or written; the drawing vocabulary knows nothing of the
-    // window or the files; and the writers know nothing of the window. So a reader
-    // can ask "what does v2 do", "how is a coast traced" and "what is it drawn in"
-    // in three different places, and a look constant - a stroke width, a colour -
-    // can never become an input to a shape.
-    //
-    // The third is what forced `render` to exist rather than living in `ui`: the
-    // window writes an SVG, and the SVG writer reads the palette, so a palette kept
-    // with the window would have made the two mutually dependent.
-    // Nothing anywhere may import the window. `under` matches a package and
-    // everything beneath it, so this one declaration covers the constructions, the
-    // drawing vocabulary and the writers at once - and it is exact rather than
-    // merely broad, because the only code that legitimately names the window is the
-    // window, which needs no import to do it.
-    forbidImport under: 'kmu.maplayers.base.geometry',
+    // Group bans:
+
+    forbidImport under: 'kmu.maplayers.base',
+                 of: 'kmu.maplayers.politicalmap'
+
+    forbidImport under: 'kmu.maplayers.base.geometry.output',
                  of: 'kmu.maplayers.base.geometry.ui'
 
-    // And the drawing vocabulary may not reach for the writers. The window may -
-    // exporting an SVG is something a window does - so this is stated of `render`
-    // alone rather than of everything under `geometry`.
     forbidImport under: 'kmu.maplayers.base.geometry.render',
                  of: 'kmu.maplayers.base.geometry.output'
+    forbidImport under: 'kmu.maplayers.base.geometry.render',
+                 of: 'kmu.maplayers.base.geometry.ui'
+
+    forbidImport under: 'kmu.svg',
+                 of: 'kmu.maplayers'
+                 
+    forbidImport under: 'kmu.ui',
+                 of: 'kmu.maplayers'
+
+    // Exact bans:
+
+    forbidImport exactly: 'kmu.maplayers.base.geometry',
+                 of: 'kmu.maplayers.base.geometry.output'
+    forbidImport exactly: 'kmu.maplayers.base.geometry',
+                 of: 'kmu.maplayers.base.geometry.render'
+    forbidImport exactly: 'kmu.maplayers.base.geometry',
+                 of: 'kmu.maplayers.base.geometry.ui'
+
+    forbidImport exactly: 'kmu.maplayers.base.geometry.ui.settings',
+                 of: 'kmu.maplayers.base.geometry.ui'
 }
 
 // The same rule one level in, on the words rather than the imports. The carve

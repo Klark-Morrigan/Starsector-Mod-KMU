@@ -4,6 +4,7 @@ import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidPockets;
+import kmu.svg.SvgRasteriser;
 
 import java.nio.file.Path;
 

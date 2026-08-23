@@ -20,6 +20,10 @@ import kmu.ui.ControlRows;
 import kmu.ui.SavedValues;
 import kmu.ui.WindowLayout;
 
+import kmu.maplayers.base.geometry.ui.settings.ViewerRefreshes;
+import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
+import kmu.maplayers.base.geometry.ui.settings.ViewerSettingsPanel;
+
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -84,7 +88,7 @@ import javax.swing.SwingUtilities;
  *       cache, its diffing, or the incremental refresh.</li>
  *   <li><i>Deciding who owns it</i> - {@code SectorPolitics.resolveDominantOwnerBySystemId},
  *       {@code SystemDominance}, {@code DominantOwner.mapFactionIdBySystemId},
- *       {@code DecivilisedMarkets.findRevealedDecivilisedSystemIds},
+ *       {@code DecivilisedMarkets.isRevealedDecivilised},
  *       {@code FilteredPolitics}, {@code FilterSelection}. Ownership is the fixture's
  *       dominant-owner column, whose score is summed market size rather than the real
  *       {@code DominanceRules} weight - so who owns what is approximately, not exactly, what

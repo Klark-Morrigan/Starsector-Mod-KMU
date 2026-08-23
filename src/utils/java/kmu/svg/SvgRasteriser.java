@@ -1,11 +1,10 @@
-package kmu.maplayers.base.geometry.output;
-
-import kmu.maplayers.base.geometry.render.MapPainting;
+package kmu.svg;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -21,17 +20,16 @@ import javax.imageio.ImageIO;
 /**
  * Turns an SVG this package wrote into a PNG, so the shape it describes can be looked at.
  *
- * <p>{@link SectorSvgWriter} produces the one drawing everything here is judged against, and
- * an SVG is the right thing to keep: diffable, deterministic, and it opens in a browser. What
- * it is not is viewable by anything that only understands raster images, which is why the
- * geometry kept growing a second, bespoke drawing routine every time somebody needed to see
- * it - two drawers that could disagree about the very shape under test.
+ * <p>An SVG is the right thing to keep: diffable, deterministic, and it opens in a browser.
+ * What it is not is viewable by anything that only understands raster images, and the answer
+ * reached for every time somebody needs one is a second, bespoke drawing routine - two drawers
+ * that can disagree about the very shape under test.
  *
- * <p>So this converts rather than redraws. It reads back only what that writer emits - the
- * root, one backdrop rectangle, one flipping group, polygons, paths of straight segments, and
- * circles - and that narrowness is the point: a general SVG renderer would be a dependency
- * and a surface, where a reader of this file can check in a minute that it draws what the
- * writer wrote.
+ * <p>So this converts rather than redraws. It reads back exactly what {@link SvgDrawing} emits
+ * - the root, one backdrop rectangle, one flipping group, polygons, polylines, paths of
+ * straight segments, and circles - and that narrowness is the point: a general SVG renderer
+ * would be a dependency and a surface, where a reader of these two files together can check in
+ * a minute that the picture shows what was drawn.
  *
  * <p>Anything outside that subset is ignored rather than guessed at, so a drawing that grows a
  * feature this cannot render comes out visibly missing it instead of subtly wrong.
@@ -80,6 +78,9 @@ public final class SvgRasteriser {
     private static final int RED_SHIFT = 16;
     private static final int GREEN_SHIFT = 8;
     private static final int PAIRED_HEX_DIGITS = 2;
+
+    // A radius either side of the centre makes the box a circle is drawn in.
+    private static final int DIAMETERS = 2;
 
     // Mid grey, for a colour notation this does not know. Visible and obviously not chosen,
     // so an unrendered shade reads as one rather than as a decision.
@@ -291,7 +292,11 @@ public final class SvgRasteriser {
         var centreY = Double.parseDouble(findAttribute(CENTRE_Y, attributes, "0"));
         var radius = Double.parseDouble(findAttribute(RADIUS, attributes, "0"));
 
-        return MapPainting.buildCircle(new double[] {centreX, centreY}, radius);
+        // Java2D takes the box a circle sits in rather than its centre and radius. Done here
+        // rather than borrowed from the map's own drawing helpers, because reaching into those
+        // for two subtractions would tie a reader of SVG to a package about political maps.
+        return new Ellipse2D.Double(
+            centreX - radius, centreY - radius, radius * DIAMETERS, radius * DIAMETERS);
     }
 
     // The three notations the writer uses: a short hex, a long hex, and the hsl the owner

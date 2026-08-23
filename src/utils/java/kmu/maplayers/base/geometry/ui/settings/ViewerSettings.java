@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.ui;
+package kmu.maplayers.base.geometry.ui.settings;
 
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.ContinentBridges;
@@ -120,25 +120,25 @@ public final class ViewerSettings {
     // about the sector's outer shape - so a reader weighing one wants the other out of the way.
     public boolean showInlandBridges = true;
     public boolean showInlandFill = true;
-    boolean showInlandNames;
+    public boolean showInlandNames;
 
     public boolean showCoastline = true;
     public boolean showCoastalFill = true;
-    boolean showCoastalNames;
+    public boolean showCoastalNames;
 
     // The cells' own names, whose system ids the void's names are built out of. Not part of the
     // void group: a cell is there whatever the void is doing.
-    boolean showCellNames;
+    public boolean showCellNames;
 
     // The per-continent coast preview. Not part of the void group either, and off by default:
     // it is a rival construction being judged against the settled coast, not a part of it.
-    boolean showContinentCoasts;
+    public boolean showContinentCoasts;
 
     // The void each continent coast shuts in behind it, filled. The same construction the
     // settled coast's fill comes from, asked of the other coast - which is what makes the two
     // worth putting on screen together, since the difference between them is then the coast
     // rather than the way the void behind it was worked out.
-    boolean showContinentCoastalFill;
+    public boolean showContinentCoastalFill;
 
     // Whether a v3 bridge may cross one already laid. On, they draw a grid and the void comes
     // apart into pieces bounded on every side; off, they leave a tree, which is what the
@@ -156,18 +156,18 @@ public final class ViewerSettings {
     // Off by default and apart from the coasts' own switch, because it is the next proposal
     // rather than another view of this one - and it is only meaningful with the coasts traced,
     // since the coastlines are what decides which bridges survive.
-    boolean showContinentBridges;
+    public boolean showContinentBridges;
 
     // The pieces the coastlines and the inlet bridges cut the void into, each filled in its
     // own shade. Off by default and apart from the lines' own switches, because it answers a
     // different question from either: the lines say where a wall was laid, and this says what
     // the walls between them ENCLOSE - which is the thing a merge rule would be acting on.
-    boolean showVoidFaces;
+    public boolean showVoidFaces;
 
     // Every stretch of frontage the smoothing chose not to pass through, on whichever coasts
     // are being drawn. One switch rather than one per coast: it shows a DECISION rather than a
     // layer, and the answer it gives - what the rules left out - is the same question of both.
-    boolean showDroppedStretches;
+    public boolean showDroppedStretches;
 
     // How little of its own border a cell may face the void with before it is dropped from
     // the walk outright, as a share of the whole turn. The whole of how the settled coast is
@@ -249,11 +249,11 @@ public final class ViewerSettings {
     public int unboundedCellOpacity = OWNER_FILL_ALPHA;
 
     public boolean jitterOwned = true;
-    boolean jitterUnowned;
+    public boolean jitterUnowned;
 
     public float jitterStrength = (float) (JITTER_DEFAULT / JITTER_SCALE);
 
-    boolean showUnboundedCells;
+    public boolean showUnboundedCells;
 
     public SectorGeometryParameters parameters = SectorGeometryParameters.createDefaults();
 

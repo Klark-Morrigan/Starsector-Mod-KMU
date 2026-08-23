@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.ui;
+package kmu.maplayers.base.geometry.ui.settings;
 
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
