@@ -99,6 +99,21 @@ final class MapLook {
     // actually bought. A shade of the coast's own colour would read as part of the coast.
     static final Color DROPPED_STRETCH = new Color(0xff, 0x60, 0xc0);
 
+    // One piece of water the coastlines and the inlet bridges cut between them. Filled rather
+    // than outlined, and each piece jittered off this base, because the question it is on
+    // screen to answer is how finely the map has been cut - which is a question about where
+    // one piece ENDS and the next begins, and neighbouring pieces in one flat colour read as a
+    // single shape whatever their outlines say.
+    static final Color VOID_FACE = new Color(0x40, 0xa0, 0x90);
+
+    // Enough spread that two pieces meeting along an edge are told apart at a glance, without
+    // the darkest of them going to black or the lightest washing the coastline out.
+    static final float VOID_FACE_JITTER = 0.55f;
+
+    // Translucent, because these are laid over the map rather than instead of it: what a piece
+    // covers is as much the point as where its edges are.
+    static final int VOID_FACE_ALPHA = 130;
+
     // The two halves of a coast crossing a cell, in colours nothing else on the map uses: the
     // run that goes where it should not, and the cell it goes into. Diagnostic rather than
     // decorative - when the construction is right, neither is ever drawn.

@@ -79,6 +79,24 @@ final class ViewerSettingsPanel {
 
     private static final double MIN_FRONTAGE_MAXIMUM = 25;
 
+    // The smallest piece of water the walls may leave, as a percentage of one cell's area.
+    // Zero is the rule off - every wall standing, slivers and all - which is what any cap has
+    // to be judged against. The ceiling is a whole cell: past that the fold is taking out
+    // walls to make pieces the size of the things they were drawn between.
+    private static final double LEAST_PIECE_MINIMUM = 0;
+
+    private static final double LEAST_PIECE_MAXIMUM = 100;
+
+    // The narrowest piece of water the walls may leave, in map units. Zero is the rule off.
+    //
+    // The ceiling is a quarter of a cell across. Pieces run a few hundred units wide against a
+    // cell radius in the thousands, so this reaches well past the whole population - and a
+    // piece a quarter of a cell wide is not a sliver by any reading, so past there the knob
+    // would be folding on width what the area cap is for.
+    private static final double LEAST_WIDTH_MINIMUM = 0;
+
+    private static final double LEAST_WIDTH_MAXIMUM = 1000;
+
     // How far off a wall already down a span may run and still count as running along it, in
     // map units. Zero asks for lines that coincide exactly, which catches only the spans that
     // repeat a wall end for end. The ceiling is several stroke widths - past that the rule is
@@ -541,6 +559,17 @@ final class ViewerSettingsPanel {
                 refreshes::refreshCoastlines,
                 () -> { })));
 
+        // The one switch that decides whether there are pieces to fold at all: a tree of
+        // bridges holds the void together as one shape, and only a grid cuts it up. Sits with
+        // the bridges rather than with the pieces because it is a rule about which SPANS
+        // survive, and the pieces follow from that.
+        controls.add(ViewerControls.buildToggle(
+            "Permit bridge crossings",
+            "Permit bridge crossings",
+            true,
+            on -> settings.allowBridgeCrossings = on,
+            refreshes::refreshCoastlines));
+
         // In map units, so the slider needs no scaling; what the slack means is documented at
         // the field it writes.
         controls.add(ViewerSliders.buildSlider(
@@ -552,6 +581,68 @@ final class ViewerSettingsPanel {
                 ViewerSettings.CONTINENT_BRIDGE_COAST_SLACK_DEFAULT),
             new ViewerSliders.SliderWork(
                 slack -> settings.continentBridgeCoastSlack = slack,
+                refreshes::refreshCoastlines,
+                () -> { })));
+
+        // Rebuilt rather than repainted: the pieces are cut by the coasts and the bridges
+        // together, so switching this on is what makes them exist.
+        controls.add(ViewerControls.buildToggle(
+            "Void pieces",
+            "Void pieces",
+            false,
+            on -> settings.showVoidFaces = on,
+            refreshes::refreshCoastlines));
+
+        // The base each piece's own shade is spread from, rather than the colour any piece is
+        // actually drawn in - which is why the swatch and the map never quite match.
+        controls.add(ViewerSwatches.buildColour(
+            "Void pieces",
+            "Void pieces",
+            ViewerSettings.VOID_FACE_DEFAULT,
+            colour -> settings.voidFaceColour = colour,
+            refreshes::repaintMap));
+
+        // Asked as a percentage of a cell, which is how anyone reading a map judges whether a
+        // piece is worth having; what the cap means is documented at the field it writes.
+        controls.add(ViewerSliders.buildSlider(
+            "Least void piece",
+            "Smallest piece kept, in % of a cell",
+            new ViewerSliders.SliderRange(
+                LEAST_PIECE_MINIMUM,
+                LEAST_PIECE_MAXIMUM,
+                ViewerSettings.LEAST_PIECE_SHARE_DEFAULT
+                    * ViewerSettings.PIECE_SHARE_PERCENT_SCALE),
+            new ViewerSliders.SliderWork(
+                percent -> settings.leastPieceShare =
+                    percent / ViewerSettings.PIECE_SHARE_PERCENT_SCALE,
+                refreshes::refreshCoastlines,
+                () -> { })));
+
+        // In map units, so the slider needs no scaling and reads against the cell radius; what
+        // the width means and why it is a second test are documented at the field it writes.
+        controls.add(ViewerSliders.buildSlider(
+            "Least void width",
+            "Narrowest piece kept, in map units",
+            new ViewerSliders.SliderRange(
+                LEAST_WIDTH_MINIMUM,
+                LEAST_WIDTH_MAXIMUM,
+                ViewerSettings.LEAST_PIECE_WIDTH_DEFAULT),
+            new ViewerSliders.SliderWork(
+                width -> settings.leastPieceWidth = width,
+                refreshes::refreshCoastlines,
+                () -> { })));
+
+        // The coarse move, on the same scale as the fine one: what a piece has to be thinner
+        // than before a whole bridge comes out rather than one stretch of it.
+        controls.add(ViewerSliders.buildSlider(
+            "Least width for whole bridges",
+            "Under this, a whole bridge comes out",
+            new ViewerSliders.SliderRange(
+                LEAST_WIDTH_MINIMUM,
+                LEAST_WIDTH_MAXIMUM,
+                ViewerSettings.LEAST_WHOLE_WALL_WIDTH_DEFAULT),
+            new ViewerSliders.SliderWork(
+                width -> settings.leastWholeWallWidth = width,
                 refreshes::refreshCoastlines,
                 () -> { })));
     }

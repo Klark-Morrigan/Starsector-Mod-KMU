@@ -2,6 +2,7 @@ package kmu.maplayers.base.geometry;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
+import java.awt.geom.Line2D;
 import java.util.List;
 
 /**
@@ -37,6 +38,12 @@ final class ContinentCoastsOverlay {
     // THAT trace and a frame that asked it again could answer about a different one.
     private List<CellGap> bridges = List.of();
 
+    // The pieces those lines cut the map into, and the walls left standing to cut them. Held
+    // for the same reason and found from the same two lists: a piece is bounded by the coast
+    // and the bridges as they came out, so pieces found against any other pair of them would
+    // be pieces of a different map.
+    private VoidFaces.CutMap cut;
+
     ContinentCoastsOverlay(ViewerSettings settings) {
         this.settings = settings;
     }
@@ -54,11 +61,16 @@ final class ContinentCoastsOverlay {
 
         traced = null;
         bridges = List.of();
+        cut = null;
 
-        // The coasts are traced while either they or the bridges are wanted, because the
-        // bridges are filtered against them: switching the bridges on without the line that
-        // decides which of them survive would show a set nothing on screen accounts for.
-        if (!settings.showContinentCoasts && !settings.showContinentBridges) {
+        // The coasts are traced while any of the three is wanted, because each is built on the
+        // one before: the bridges are filtered against the coasts, and the pieces are cut by
+        // both. Switching a later one on without the lines that decide it would show a set
+        // nothing on screen accounts for.
+        if (!settings.showContinentCoasts
+                && !settings.showContinentBridges
+                && !settings.showVoidFaces) {
+
             return;
         }
 
@@ -67,12 +79,24 @@ final class ContinentCoastsOverlay {
             settings.parameters,
             settings.resolveContinentCoastRules());
 
-        if (settings.showContinentBridges) {
+        // Found whenever the pieces are wanted, whether or not the bridges are DRAWN. A piece
+        // is cut by every line laid, so pieces found from the coasts alone while the bridges
+        // were merely hidden would be pieces of a map nobody proposed.
+        if (settings.showContinentBridges || settings.showVoidFaces) {
 
             bridges = ContinentBridges.findAnchoredBridges(
                 traced,
                 settings.parameters,
                 settings.resolveContinentBridgeRules());
+        }
+
+        if (settings.showVoidFaces) {
+
+            cut = VoidFaces.cutMapIntoPieces(
+                Coastlines.collectCoastRings(traced),
+                bridges,
+                fixture.getSites(),
+                settings.resolveFoldRules());
         }
     }
 
@@ -87,6 +111,7 @@ final class ContinentCoastsOverlay {
             return;
         }
 
+        paintFaces(g2);
         paintBridges(g2);
 
         if (settings.showContinentCoasts) {
@@ -112,10 +137,71 @@ final class ContinentCoastsOverlay {
             settings.droppedStretchColour);
     }
 
-    // The bridges that survived the coastlines, drawn end to end at their true extent.
-    //
-    // Under the coast rather than over it, because the coastline is what JUDGED them: where
-    // the two meet, the line that did the refusing is the one worth being able to see.
+    /**
+     * The water each piece covers, filled, each piece in its own shade.
+     *
+     * <p>Filled and not outlined. An outline of a piece is a line where the coast or a bridge
+     * already runs, so outlining draws the walls a second time and says nothing the lines did
+     * not already say; what is not on screen without this is which side of a wall belongs with
+     * which, and only a fill can show that.
+     *
+     * <p>The shade comes off the piece's own place on the map, so it is the same shade on
+     * every frame and on every run - a piece that changed colour when something elsewhere
+     * moved would read as having changed.
+     *
+     * <p>Under everything, since it is a backdrop to the lines rather than a thing drawn over
+     * them, and the lines are what a reader is checking it against.
+     *
+     * <p>Land is left out. One piece per continent comes back holding that continent's cells,
+     * and filling it would paint over the cells in a colour that means "one piece of water".
+     */
+    private void paintFaces(Graphics2D g2) {
+
+        if (!settings.showVoidFaces || cut == null) {
+            return;
+        }
+
+        for (var face : cut.pieces()) {
+
+            if (face.holdsCells()) {
+                continue;
+            }
+
+            g2.setColor(MapPainting.applyAlpha(
+                MapPainting.jitterBrightness(
+                    settings.voidFaceColour,
+                    hashPlace(face),
+                    MapLook.VOID_FACE_JITTER),
+                MapLook.VOID_FACE_ALPHA));
+
+            g2.fill(MapPainting.buildPath(face.boundary()));
+        }
+    }
+
+    // A piece's first corner, as a number to spread its shade from. Its place rather than its
+    // index, so the shades do not all move when a piece is added or dropped somewhere else.
+    private static int hashPlace(VoidFaces.Face face) {
+
+        var corner = face.boundary().get(0);
+
+        return Double.hashCode(corner[0]) * PLACE_HASH_MIX + Double.hashCode(corner[1]);
+    }
+
+    // An odd multiplier, so the two coordinates cannot cancel for a point on a diagonal.
+    private static final int PLACE_HASH_MIX = 31;
+
+    /**
+     * The bridges that survived the coastlines, drawn end to end at their true extent.
+     *
+     * <p>Under the coast rather than over it, because the coastline is what JUDGED them: where
+     * the two meet, the line that did the refusing is the one worth being able to see.
+     *
+     * <p><b>What still stands, once the pieces have been cut.</b> A fold takes out a STRETCH
+     * of a bridge, so drawing the bridges as they were laid would put a line across a piece
+     * nothing divides there any more - which reads as a wall that failed rather than as one
+     * deliberately taken out. With no pieces asked for there is nothing to have folded, and
+     * the bridges as laid are what stands.
+     */
     private void paintBridges(Graphics2D g2) {
 
         if (!settings.showContinentBridges) {
@@ -127,8 +213,17 @@ final class ContinentCoastsOverlay {
             settings.continentBridgeColour,
             MapLook.OPAQUE_ALPHA));
 
-        for (var bridge : bridges) {
-            g2.draw(MapPainting.buildSpanLine(bridge));
+        if (cut == null) {
+
+            for (var bridge : bridges) {
+                g2.draw(MapPainting.buildSpanLine(bridge));
+            }
+            return;
+        }
+
+        for (var standing : cut.standingWalls()) {
+            g2.draw(new Line2D.Double(
+                standing[0][0], standing[0][1], standing[1][0], standing[1][1]));
         }
     }
 }

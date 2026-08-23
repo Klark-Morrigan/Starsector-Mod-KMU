@@ -46,10 +46,11 @@ import java.util.Map;
  * corner per frontage, so two cells can be joined several ways; the one taken is the shortest,
  * which is the pair of corners actually facing each other across the gap.
  *
- * <p><b>Crossings are kept.</b> The settled search drops any span that crosses one already
- * laid, which leaves a tree - at most one route between any two places. Kept, they draw a grid
- * instead, and a grid is what divides open sea into pieces bounded on every side rather than
- * into one shape with fingers.
+ * <p><b>Crossings are kept or refused, and it is a real choice.</b> Refused - which is what the
+ * settled search does - the spans leave a tree, at most one route between any two places, and
+ * the water they enclose is one shape with fingers. Kept, they draw a grid, and a grid divides
+ * that water into pieces bounded on every side. Neither is right in general: a tree keeps the
+ * lines few and the shapes large, a grid gives every piece a boundary to be judged by.
  *
  * <p><b>Drawing that grid is all this does.</b> Finding the pieces it cuts is a separate job
  * and not one {@link DiscUnionBoundary} can do: its walls run circle to circle and its walk
@@ -80,13 +81,18 @@ final class ContinentBridges {
     /**
      * The knobs a grid of spans is laid under.
      *
-     * @param reachMultiple how far apart two cells may sit and still be bridged, in cell radii
-     * @param coastSlack    how far off an existing wall a span may run and still count as
-     *                      running along it, in map units
+     * @param reachMultiple     how far apart two cells may sit and still be bridged, in cell
+     *                          radii
+     * @param coastSlack        how far off an existing wall a span may run and still count as
+     *                          running along it, in map units
+     * @param isCrossingAllowed whether a span may cross one already laid. Allowed, the spans
+     *                          divide the void into a grid; refused, they leave a tree, which
+     *                          is what the settled bridges do
      */
     record BridgeRules(
         double reachMultiple,
-        double coastSlack) {
+        double coastSlack,
+        boolean isCrossingAllowed) {
     }
 
     /**
@@ -116,13 +122,12 @@ final class ContinentBridges {
         // Gathered once. Every candidate pairing is checked against these, and rebuilding
         // them per candidate would be the same answer found tens of thousands of times.
         var coastWalls = collectCoastWalls(traced);
-        var tolerance = rules.coastSlack();
         var reach = parameters.cellRadius() * rules.reachMultiple();
         var laid = new ArrayList<CellGap>();
 
-        // Every pair of cells on ONE continent, once. No pair is refused for crossing another
-        // - that is what leaves a grid rather than a tree - so nothing here depends on the
-        // order they are tried in.
+        // Every pair of cells on ONE continent, once. Nothing is refused here for crossing
+        // anything: what the offer is depends only on the cells, and which of the offers
+        // survive is settled afterwards, in one place, against one rule.
         for (var from : corners.keySet()) {
             for (var to : corners.keySet()) {
 
@@ -151,7 +156,7 @@ final class ContinentBridges {
             .thenComparingInt(CellGap::fromSite)
             .thenComparingInt(CellGap::toSite));
 
-        return List.copyOf(keepOneSpanPerLine(laid, coastWalls, tolerance));
+        return List.copyOf(keepSpansWorthLaying(laid, coastWalls, rules));
     }
 
     /**
@@ -360,15 +365,22 @@ final class ContinentBridges {
      * it of every pairing costs the pass most of a second, and these knobs redraw while they
      * are dragged, so a pairing occasionally left unreconsidered is the cheaper loss.
      *
+     * <p><b>And, where crossings are refused, the spans that cross one already laid.</b> Two
+     * spans over the same stretch of void are two claims on it; taken shortest first, keeping
+     * each that clears what is already kept leaves the tighter claim standing and costs one
+     * loss per crossing. What that leaves is a tree - at most one route between any two places
+     * - where allowing them leaves a grid. Which of the two is wanted is a question about the
+     * shape of the pockets, not about any one span, so it is asked of the rules.
+     *
      * @param spans      the spans, already sorted shortest first
      * @param coastWalls the coastline, which is walled before any span is laid
-     * @param tolerance  how far off a wall a span may run and still count as along it
-     * @return one span per line actually walled
+     * @param rules      the slack to judge doubling at, and whether crossings are allowed
+     * @return the spans worth laying
      */
-    private static List<CellGap> keepOneSpanPerLine(
+    private static List<CellGap> keepSpansWorthLaying(
             List<CellGap> spans,
             List<double[][]> coastWalls,
-            double tolerance) {
+            BridgeRules rules) {
 
         var kept = new ArrayList<CellGap>(spans.size());
 
@@ -379,13 +391,58 @@ final class ContinentBridges {
 
         for (var span : spans) {
 
-            if (isAlreadyWalled(span.start(), span.end(), walls, tolerance)) {
+            if (isAlreadyWalled(span.start(), span.end(), walls, rules.coastSlack())
+                    || !rules.isCrossingAllowed() && doesCrossAnyKept(span, kept)) {
+
                 continue;
             }
             kept.add(span);
             walls.add(new double[][] {span.start(), span.end()});
         }
         return kept;
+    }
+
+    /**
+     * Whether a span crosses one already kept.
+     *
+     * <p><b>Two spans that merely share an anchor do not count.</b> A span here is anchored on
+     * a coastline corner, and several of them leave the same corner - that is what a fan across
+     * a bay IS. The shared-endpoint case is a touch rather than a crossing, and counting it
+     * would have every fan knock all but one of itself out, which is not what refusing
+     * crossings is for.
+     *
+     * <p>The settled bridges need no such exemption because they run rim to rim: two leaving
+     * one cell start at two different points on its edge and only register when they genuinely
+     * cross. Anchoring on corners is what makes this a case at all.
+     *
+     * @param span the span being offered
+     * @param kept the spans already laid
+     * @return whether it crosses one of them
+     */
+    private static boolean doesCrossAnyKept(CellGap span, List<CellGap> kept) {
+
+        for (var held : kept) {
+
+            if (!isSharingAnAnchor(span, held)
+                    && Segments.intersectSegments(
+                        span.start(), span.end(), held.start(), held.end()) != null) {
+
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isSharingAnAnchor(CellGap span, CellGap held) {
+
+        return isSamePlace(span.start(), held.start())
+            || isSamePlace(span.start(), held.end())
+            || isSamePlace(span.end(), held.start())
+            || isSamePlace(span.end(), held.end());
+    }
+
+    private static boolean isSamePlace(double[] one, double[] other) {
+        return Points.computeDistance(one, other) <= DiscUnion.TOUCHING_TOLERANCE;
     }
 
     // Whether a span passes through a cell rather than across the void between them.
