@@ -16,6 +16,10 @@ import kmu.maplayers.base.geometry.output.SectorSvgWriter;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 
+import kmu.ui.ControlRows;
+import kmu.ui.SavedValues;
+import kmu.ui.WindowLayout;
+
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -111,6 +115,12 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
     private static final Path SVG_DIRECTORY = Path.of("build", "reports", "political-map");
 
+    // Under the user's home rather than in the checkout, so a knob survives a clean, a branch
+    // switch and a fresh clone - which is what it did when the JDK kept it, and losing that
+    // would be trading one silent forgetting for another.
+    private static final Path SAVED_VALUES_FILE = Path.of(
+        System.getProperty("user.home"), ".kmu", "sector-geometry-viewer.json");
+
     private static final String WINDOW_TITLE = "KMU political map";
     private static final String CSV_EXTENSION = ".csv";
     private static final String SVG_EXTENSION = ".svg";
@@ -176,6 +186,12 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
      *             remembers what was last chosen
      */
     public static void main(String[] args) {
+
+        // Where the knobs are remembered, said once here because it is this application's
+        // decision and not the rows' - and said before any row is built, since a row reads
+        // its remembered value as it is built.
+        SavedValues.rememberIn(SAVED_VALUES_FILE);
+
         SwingUtilities.invokeLater(() -> new SectorGeometryViewer().showWindow());
     }
 
@@ -216,12 +232,12 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         frame.add(split, BorderLayout.CENTER);
         frame.add(canvas.cursorBar, BorderLayout.SOUTH);
 
-        ViewerWindowLayout.restoreLayout(frame, split);
+        WindowLayout.restoreLayout(frame, split);
 
         frame.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent event) {
-                ViewerWindowLayout.saveLayout(frame, split);
+                WindowLayout.saveLayout(frame, split);
             }
         });
 
@@ -241,8 +257,8 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
         controls.setLayout(new BoxLayout(controls, BoxLayout.Y_AXIS));
 
-        controls.add(ViewerControls.buildChoice(
-            "Sector fixture",
+        controls.add(ControlRows.buildChoice(
+            "sectorFixture",
             "Sector",
             SectorFixture.listSectorNames(),
             this::loadSector,

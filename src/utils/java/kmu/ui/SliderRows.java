@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.ui;
+package kmu.ui;
 
 import java.awt.Dimension;
 import java.util.Locale;
@@ -21,7 +21,7 @@ import javax.swing.JTextField;
  * harmless; moving the slider from a typed value would rewrite the box mid-edit and fight the
  * caret, so a typed value sets a flag the slider's own listener reads.
  */
-public final class ViewerSliders {
+public final class SliderRows {
 
     private static final int SLIDER_STEPS = 1000;
 
@@ -31,7 +31,7 @@ public final class ViewerSliders {
 
     private static final int VALUE_BOX_HEIGHT = 20;
 
-    private ViewerSliders() {
+    private SliderRows() {
     }
 
     /**
@@ -109,7 +109,7 @@ public final class ViewerSliders {
 
         Runnable reset = () -> applyValue(parts, key, range, work, range.fallback());
 
-        return ViewerControls.layOutLabelledRow(
+        return ControlRows.layOutLabelledRow(
             title, parts.valueBox(), reset, parts.slider());
     }
 
@@ -210,11 +210,11 @@ public final class ViewerSliders {
     }
 
     private static double readDouble(String key, double fallback) {
-        return ViewerControls.findSavedValues().getDouble(key, fallback);
+        return SavedValues.findSavedValues().getDouble(key, fallback);
     }
 
     private static void writeDouble(String key, double value) {
-        ViewerControls.findSavedValues().putDouble(key, value);
+        SavedValues.findSavedValues().putDouble(key, value);
     }
 
     // Out-of-range clamps rather than being rejected, so typing a round number past the end

@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.ui;
+package kmu.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -22,7 +22,7 @@ import javax.swing.JPanel;
  * <p>Built shorter than a labelled row, deliberately, which is the one thing about a swatch
  * that is not obvious from looking at one.
  */
-public final class ViewerSwatches {
+public final class ColourRows {
 
     private static final int SWATCH_WIDTH = 40;
 
@@ -39,7 +39,7 @@ public final class ViewerSwatches {
 
     private static final int SWATCH_ROW_COLUMNS = 2;
 
-    private ViewerSwatches() {
+    private ColourRows() {
     }
 
     /**
@@ -84,7 +84,7 @@ public final class ViewerSwatches {
         var trailing = new JPanel(new BorderLayout());
 
         trailing.add(swatch, BorderLayout.CENTER);
-        trailing.add(ViewerControls.buildResetButton(
+        trailing.add(ControlRows.buildResetButton(
             () -> {
 
                 resetSwatch(swatch, key, fallback, apply);
@@ -151,7 +151,7 @@ public final class ViewerSwatches {
         var trailing = new JPanel(new BorderLayout());
 
         trailing.add(swatches, BorderLayout.CENTER);
-        trailing.add(ViewerControls.buildResetButton(
+        trailing.add(ControlRows.buildResetButton(
             () -> {
 
                 resetSwatch(fillSwatch, key + " fill", fill.fallback(), fill.apply());
@@ -183,7 +183,7 @@ public final class ViewerSwatches {
             Runnable onChange) {
 
         var saved = new Color(
-            ViewerControls.findSavedValues().getInt(key, fallback.getRGB()),
+            SavedValues.findSavedValues().getInt(key, fallback.getRGB()),
             true);
 
         var swatch = new JButton();
@@ -206,7 +206,7 @@ public final class ViewerSwatches {
             swatch.setBackground(chosen);
             apply.accept(chosen);
 
-            ViewerControls.findSavedValues().putInt(key, chosen.getRGB());
+            SavedValues.findSavedValues().putInt(key, chosen.getRGB());
 
             onChange.run();
         });
@@ -222,6 +222,6 @@ public final class ViewerSwatches {
         swatch.setBackground(fallback);
         apply.accept(fallback);
 
-        ViewerControls.findSavedValues().putInt(key, fallback.getRGB());
+        SavedValues.findSavedValues().putInt(key, fallback.getRGB());
     }
 }

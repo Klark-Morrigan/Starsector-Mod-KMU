@@ -1,18 +1,20 @@
-package kmu.maplayers.base.geometry.ui;
-
-import java.util.prefs.Preferences;
+package kmu.ui;
 
 import javax.swing.JFrame;
 import javax.swing.JSplitPane;
 
 /**
- * How big the window was and where its divider sat, kept across runs.
+ * How big a window was and where its divider sat, kept across runs.
  *
- * <p>Its own class because it is remembered like a knob but is not one: nothing about the
- * map is drawn differently for it, so it belongs neither in the settings the viewer draws
- * with nor in the panel that edits them.
+ * <p>Its own class because it is remembered like a knob but is not one: nothing an
+ * application draws is drawn differently for it, so it belongs neither with the settings a
+ * window draws with nor in the panel that edits them.
+ *
+ * <p>Remembered under the same node the rows are, so a window and its knobs are forgotten
+ * together or not at all. Which file that is belongs to {@link SavedValues}, since a package
+ * that remembers things in two places is a package that can be half-cleared.
  */
-public final class ViewerWindowLayout {
+public final class WindowLayout {
 
     private static final int WINDOW_WIDTH = 1500;
 
@@ -28,7 +30,7 @@ public final class ViewerWindowLayout {
 
     private static final String CONTROL_WIDTH_KEY = "controlWidth";
 
-    private ViewerWindowLayout() {
+    private WindowLayout() {
     }
 
     // Window size and divider, kept across runs. A geometry knob is only worth anything at a
@@ -37,7 +39,7 @@ public final class ViewerWindowLayout {
     // otherwise have checked.
     public static void restoreLayout(JFrame frame, JSplitPane split) {
 
-        var saved = Preferences.userNodeForPackage(ViewerSettings.class);
+        var saved = SavedValues.findSavedValues();
 
         frame.setSize(
             saved.getInt(WINDOW_WIDTH_KEY, WINDOW_WIDTH),
@@ -53,7 +55,7 @@ public final class ViewerWindowLayout {
 
     public static void saveLayout(JFrame frame, JSplitPane split) {
 
-        var saved = Preferences.userNodeForPackage(ViewerSettings.class);
+        var saved = SavedValues.findSavedValues();
 
         saved.putInt(WINDOW_WIDTH_KEY, frame.getWidth());
         saved.putInt(WINDOW_HEIGHT_KEY, frame.getHeight());

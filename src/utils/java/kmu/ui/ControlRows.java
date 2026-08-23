@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.ui;
+package kmu.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -6,7 +6,6 @@ import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.prefs.Preferences;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -27,7 +26,7 @@ import javax.swing.SwingConstants;
  * twenty ends up with two that quietly do not persist. So where the value is KEPT, what a reset
  * button looks like, and how a labelled row is laid out live here, and the controls that are
  * substantial enough to have their own arithmetic or their own look live beside this in
- * {@link ViewerSliders} and {@link ViewerSwatches}.
+ * {@link SliderRows} and {@link ColourRows}.
  *
  * <p>Persistence is deliberate rather than a convenience. A geometric knob is only meaningful
  * at a particular zoom on a particular sector, and re-establishing a dozen of them before
@@ -35,7 +34,7 @@ import javax.swing.SwingConstants;
  * checked. The reset button is the other half: a knob that cannot be put back is a knob
  * people stop turning.
  */
-public final class ViewerControls {
+public final class ControlRows {
 
     private static final int ROW_PADDING = 4;
 
@@ -58,7 +57,7 @@ public final class ViewerControls {
     private static final String RESET_LABEL = "R";
     private static final String RESET_TOOLTIP = "Reset to default";
 
-    private ViewerControls() {
+    private ControlRows() {
     }
 
     /**
@@ -102,7 +101,7 @@ public final class ViewerControls {
             Consumer<Boolean> apply,
             Runnable onChange) {
 
-        var saved = findSavedValues().getBoolean(key, fallback);
+        var saved = SavedValues.findSavedValues().getBoolean(key, fallback);
 
         var toggle = new JCheckBox(title, saved);
 
@@ -110,7 +109,7 @@ public final class ViewerControls {
 
             apply.accept(toggle.isSelected());
 
-            findSavedValues().putBoolean(key, toggle.isSelected());
+            SavedValues.findSavedValues().putBoolean(key, toggle.isSelected());
 
             onChange.run();
         });
@@ -126,7 +125,7 @@ public final class ViewerControls {
                 toggle.setSelected(fallback);
                 apply.accept(fallback);
 
-                findSavedValues().putBoolean(key, fallback);
+                SavedValues.findSavedValues().putBoolean(key, fallback);
 
                 onChange.run();
 
@@ -167,7 +166,7 @@ public final class ViewerControls {
     public static JPanel buildToggleRow(Runnable onChange, Toggle... toggles) {
 
         var boxes = new JPanel(new GridLayout(SINGLE_ROW, toggles.length));
-        var saved = findSavedValues();
+        var saved = SavedValues.findSavedValues();
         var checks = new ArrayList<JCheckBox>(toggles.length);
 
         for (var toggle : toggles) {
@@ -242,7 +241,7 @@ public final class ViewerControls {
         // A remembered pick can name something that is no longer there - a fixture renamed or
         // removed between sessions - and a dropdown set to a value not in its own list shows
         // blank and cannot be put back except by picking something else.
-        var saved = findSavedValues().get(key, fallback);
+        var saved = SavedValues.findSavedValues().get(key, fallback);
 
         var picked = options.contains(saved) ? saved : fallback;
         var choice = new JComboBox<>(options.toArray(new String[0]));
@@ -255,7 +254,7 @@ public final class ViewerControls {
 
             apply.accept(selected);
 
-            findSavedValues().put(key, selected);
+            SavedValues.findSavedValues().put(key, selected);
 
             onChange.run();
         });
@@ -277,10 +276,6 @@ public final class ViewerControls {
     // different class would have split the panel's memory in two without failing anything.
     //
     // Shared with the toggle block next door for exactly that reason: its switches are knobs
-    // like any other and have to be remembered in the same node, not in one of their own.
-    public static Preferences findSavedValues() {
-        return Preferences.userNodeForPackage(ViewerControls.class);
-    }
 
     public static JButton buildResetButton(Runnable reset) {
 

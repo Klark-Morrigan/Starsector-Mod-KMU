@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.ui;
+package kmu.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -9,7 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.prefs.Preferences;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -42,7 +41,7 @@ import javax.swing.UIManager;
  * roll-up names the switches it covers rather than owning a subtree, and the indentation is
  * layout rather than structure.
  */
-public final class ViewerToggleTree {
+public final class ToggleTree {
 
     // Tighter than the padding a slider or a colour row takes. A block of a dozen switches
     // is read as a block, and spacing them like the knobs below would push the last of them
@@ -57,7 +56,7 @@ public final class ViewerToggleTree {
     // are - named because a bare 1 in a GridLayout says nothing about which axis it fixes.
     private static final int SINGLE_COLUMN = 1;
 
-    private ViewerToggleTree() {
+    private ToggleTree() {
     }
 
     /**
@@ -84,7 +83,7 @@ public final class ViewerToggleTree {
      * list; nothing else about them is alike, and a reader taking a row apart is made to say
      * which one it has.
      */
-    sealed interface Row permits SwitchRow, RollUpRow {
+    public sealed interface Row permits SwitchRow, RollUpRow {
 
         /** @return how many levels in it sits, for layout only */
         int indent();
@@ -150,7 +149,7 @@ public final class ViewerToggleTree {
     public static JPanel buildToggleTree(Runnable onChange, Row... rows) {
 
         var block = new JPanel(new GridLayout(rows.length, SINGLE_COLUMN));
-        var saved = ViewerControls.findSavedValues();
+        var saved = SavedValues.findSavedValues();
 
         // Every switch by key, so a roll-up can find the ones it covers without holding them
         // and so the redraw below can walk all of them once.
@@ -226,7 +225,7 @@ public final class ViewerToggleTree {
     private static void applyAll(
             Map<String, JCheckBox> switches,
             Row[] rows,
-            Preferences saved) {
+            SavedValues saved) {
 
         for (var row : rows) {
 

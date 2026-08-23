@@ -2,6 +2,11 @@ package kmu.maplayers.base.geometry.ui;
 
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
+import kmu.ui.ColourRows;
+import kmu.ui.ControlRows;
+import kmu.ui.SliderRows;
+import kmu.ui.ToggleTree;
+
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 
@@ -54,12 +59,12 @@ public final class ViewerSettingsPanel {
     // What each void switch is remembered under. Named here rather than written at the two
     // places each of them appears - once as the switch, once in whichever roll-ups cover it -
     // because a roll-up that named a key the switch does not would cover nothing, silently.
-    private static final String INLAND_BRIDGES = "Inland void bridges";
-    private static final String INLAND_FILL = "Inland void fill";
-    private static final String INLAND_NAMES = "Inland void names";
-    private static final String COASTLINE = "Coastline";
-    private static final String COASTAL_FILL = "Coastal void fill";
-    private static final String COASTAL_NAMES = "Coastal void names";
+    private static final String INLAND_BRIDGES = "showInlandBridges";
+    private static final String INLAND_FILL = "showInlandFill";
+    private static final String INLAND_NAMES = "showInlandNames";
+    private static final String COASTLINE = "showCoastline";
+    private static final String COASTAL_FILL = "showCoastalFill";
+    private static final String COASTAL_NAMES = "showCoastalNames";
 
     // How far apart two cells may sit and still be taken to hold the void between them, in
     // cell radii from centre to centre. Four is the width at which a whole further cell
@@ -149,11 +154,11 @@ public final class ViewerSettingsPanel {
         addCellPaintRows(controls);
         addMapChromeRows(controls);
 
-        controls.add(ViewerControls.buildDivider());
+        controls.add(ControlRows.buildDivider());
 
         addVoidPocketRows(controls);
 
-        controls.add(ViewerControls.buildDivider());
+        controls.add(ControlRows.buildDivider());
 
         addVoidPocketV3Rows(controls);
 
@@ -165,6 +170,7 @@ public final class ViewerSettingsPanel {
     private void addCellGeometryRows(JPanel controls) {
 
         controls.add(buildSlider(
+            "cellRadius",
             "Cell reach (cell radius)",
             REACH_MINIMUM,
             REACH_MAXIMUM,
@@ -177,6 +183,7 @@ public final class ViewerSettingsPanel {
                 settings.parameters.miterSpikeLimit())));
 
         controls.add(buildSlider(
+            "borderInset",
             "Border channel (inset)",
             INSET_MINIMUM,
             INSET_MAXIMUM,
@@ -189,6 +196,7 @@ public final class ViewerSettingsPanel {
                 settings.parameters.miterSpikeLimit())));
 
         controls.add(buildSlider(
+            "weldTolerance",
             "Weld tolerance",
             WELD_MINIMUM,
             WELD_MAXIMUM,
@@ -201,6 +209,7 @@ public final class ViewerSettingsPanel {
                 settings.parameters.miterSpikeLimit())));
 
         controls.add(buildSlider(
+            "miterSpikeLimit",
             "Miter spike limit",
             MITER_MINIMUM,
             MITER_MAXIMUM,
@@ -213,6 +222,7 @@ public final class ViewerSettingsPanel {
                 value)));
 
         controls.add(buildSlider(
+            "cellBoundSegments",
             "Cell bound segments",
             SEGMENTS_MINIMUM,
             SEGMENTS_MAXIMUM,
@@ -228,37 +238,40 @@ public final class ViewerSettingsPanel {
     // What the cells are painted with, and how solidly.
     private void addCellPaintRows(JPanel controls) {
 
-        controls.add(ViewerSwatches.buildColourPair(
+        controls.add(ColourRows.buildColourPair(
+            "ownedCell",
             "Owned cells",
-            "Owned cells",
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.OWNED_CELL_DEFAULT,
                 colour -> settings.ownedCellColour = colour),
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.OWNED_CELL_DEFAULT,
                 colour -> settings.ownedCellEdge = colour),
             refreshes::repaintMap));
 
         controls.add(buildOpacitySlider(
+            "ownedCellOpacity",
             "Owned opacity",
             opacity -> settings.ownedCellOpacity = (int) opacity));
 
-        controls.add(ViewerSwatches.buildColourPair(
+        controls.add(ColourRows.buildColourPair(
+            "unownedCell",
             "Unowned cells",
-            "Unowned cells",
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.UNOWNED_CELL_DEFAULT,
                 colour -> settings.unownedCellColour = colour),
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.UNOWNED_CELL_DEFAULT,
                 colour -> settings.unownedCellEdge = colour),
             refreshes::repaintMap));
 
         controls.add(buildOpacitySlider(
+            "unownedCellOpacity",
             "Unowned opacity",
             opacity -> settings.unownedCellOpacity = (int) opacity));
 
         controls.add(buildToggle(
+            "showUnboundedCells",
             "Trace unbounded cells",
             false,
             on -> {
@@ -267,35 +280,37 @@ public final class ViewerSettingsPanel {
                 refreshes.refreshVoidBridges();
             }));
 
-        controls.add(ViewerSwatches.buildColourPair(
+        controls.add(ColourRows.buildColourPair(
+            "unboundedCell",
             "Unbounded cells",
-            "Unbounded cells",
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.UNBOUNDED_CELL_DEFAULT,
                 colour -> settings.unboundedCellColour = colour),
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.UNBOUNDED_CELL_DEFAULT,
                 colour -> settings.unboundedCellEdge = colour),
             refreshes::repaintMap));
 
         controls.add(buildOpacitySlider(
+            "unboundedCellOpacity",
             "Unbounded opacity",
             opacity -> settings.unboundedCellOpacity = (int) opacity));
 
-        controls.add(ViewerControls.buildToggleRow(
+        controls.add(ControlRows.buildToggleRow(
             refreshes::repaintMap,
-            new ViewerControls.Toggle(
+            new ControlRows.Toggle(
                 "Jitter owned",
                 "Jitter owned",
                 true,
                 on -> settings.jitterOwned = on),
-            new ViewerControls.Toggle(
+            new ControlRows.Toggle(
                 "Jitter unowned",
                 "Jitter unowned",
                 false,
                 on -> settings.jitterUnowned = on)));
 
         controls.add(buildSlider(
+            "jitterStrength",
             "Jitter strength",
             JITTER_MINIMUM,
             JITTER_MAXIMUM,
@@ -308,46 +323,47 @@ public final class ViewerSettingsPanel {
     // from, the channel between two fills, and the names written over any of it.
     private void addMapChromeRows(JPanel controls) {
 
-        controls.add(ViewerSwatches.buildColour(
-            "Site dots",
+        controls.add(ColourRows.buildColour(
+            "siteDots",
             "Site dots",
             ViewerSettings.SITE_COLOUR,
             colour -> settings.siteColour = colour,
             refreshes::repaintMap));
 
-        controls.add(ViewerSwatches.buildColour(
-            "Cell centrelines",
+        controls.add(ColourRows.buildColour(
+            "cellCentrelines",
             "Cell centrelines",
             ViewerSettings.CENTRELINE_DEFAULT,
             colour -> settings.centrelineColour = colour,
             refreshes::repaintMap));
 
-        controls.add(ViewerSwatches.buildColourPair(
+        controls.add(ColourRows.buildColourPair(
+            "insetChannel",
             "Inset channels",
-            "Inset channels",
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.CHANNEL_DEFAULT,
                 colour -> settings.channelColour = colour),
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.CHANNEL_DEFAULT,
                 colour -> settings.channelEdge = colour),
             refreshes::repaintMap));
 
         controls.add(buildOpacitySlider(
+            "channelOpacity",
             "Channel opacity",
             opacity -> settings.channelOpacity = (int) opacity));
 
         // Zoom in to read the names: one is only drawn once its region is wide enough on
         // screen to hold it, so at the zoom the map opens on none of them appear.
-        controls.add(ViewerControls.buildToggle(
-            "Show cell names",
+        controls.add(ControlRows.buildToggle(
+            "showCellNames",
             "Cell names",
             false,
             on -> settings.showCellNames = on,
             refreshes::repaintMap));
 
-        controls.add(ViewerSwatches.buildColour(
-            "Region names",
+        controls.add(ColourRows.buildColour(
+            "regionNames",
             "Region names",
             ViewerSettings.REGION_NAME_DEFAULT,
             colour -> settings.regionNameColour = colour,
@@ -365,8 +381,8 @@ public final class ViewerSettingsPanel {
         // Keyed as bridges rather than as cuts, which is what this swatch has actually
         // coloured all along. A saved value under the old key belongs to the line it was
         // chosen for, and letting it carry over would silently colour the cuts with it.
-        controls.add(ViewerSwatches.buildColour(
-            "Void bridges",
+        controls.add(ColourRows.buildColour(
+            "voidBridgeColour",
             "Void bridges",
             ViewerSettings.VOID_BRIDGE_DEFAULT,
             colour -> settings.voidBridgeColour = colour,
@@ -378,32 +394,32 @@ public final class ViewerSettingsPanel {
         // Recomputed rather than merely repainted, unlike every other knob down here, because
         // this one decides where the walls go, and a wall is what shuts one piece of void off
         // from the next.
-        controls.add(ViewerSliders.buildSlider(
-            "Bridge reach multiple",
+        controls.add(SliderRows.buildSlider(
+            "bridgeReachMultiple",
             "Bridge reach, in cell radii (x100)",
-            new ViewerSliders.SliderRange(
+            new SliderRows.SliderRange(
                 BRIDGE_REACH_MINIMUM * ViewerSettings.BRIDGE_REACH_STEP_SCALE,
                 BRIDGE_REACH_MAXIMUM * ViewerSettings.BRIDGE_REACH_STEP_SCALE,
                 ViewerSettings.BRIDGE_REACH_DEFAULT * ViewerSettings.BRIDGE_REACH_STEP_SCALE),
-            new ViewerSliders.SliderWork(
+            new SliderRows.SliderWork(
                 multiple -> settings.bridgeReachMultiple =
                     multiple / ViewerSettings.BRIDGE_REACH_STEP_SCALE,
                 refreshes::refreshVoidBridges,
                 () -> { })));
 
-        controls.add(ViewerSwatches.buildColourPair(
+        controls.add(ColourRows.buildColourPair(
+            "inlandVoidFill",
             "Inland void fill",
-            "Inland void fill",
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.INLAND_VOID_DEFAULT,
                 colour -> settings.inlandVoidColour = colour),
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.INLAND_VOID_DEFAULT,
                 colour -> settings.inlandVoidEdge = colour),
             refreshes::repaintMap));
 
-        controls.add(ViewerSwatches.buildColour(
-            "Coastline",
+        controls.add(ColourRows.buildColour(
+            "coastlineColour",
             "Coastline",
             ViewerSettings.COASTLINE_DEFAULT,
             colour -> settings.coastlineColour = colour,
@@ -412,28 +428,28 @@ public final class ViewerSettingsPanel {
         // Its own colour rather than the coastline's, so the two kinds of pocket read the same
         // way: a wall colour and a fill colour each. Sharing one made the coastal fill the only
         // fill on the map painted in the colour of the line that closed it.
-        controls.add(ViewerSwatches.buildColourPair(
+        controls.add(ColourRows.buildColourPair(
+            "coastalVoidFill",
             "Coastal void fill",
-            "Coastal void fill",
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.COASTAL_VOID_DEFAULT,
                 colour -> settings.coastalVoidColour = colour),
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.COASTAL_VOID_DEFAULT,
                 colour -> settings.coastalVoidEdge = colour),
             refreshes::repaintMap));
 
         // The whole of how the settled coast is smoothed: a stretch is dropped for what it
         // offers on its own, so what goes does not depend on which cells came before it.
-        controls.add(ViewerSliders.buildSlider(
-            "Coast least frontage",
+        controls.add(SliderRows.buildSlider(
+            "coastLeastFrontage",
             "Least frontage faced, in % of a cell",
-            new ViewerSliders.SliderRange(
+            new SliderRows.SliderRange(
                 MIN_FRONTAGE_MINIMUM,
                 MIN_FRONTAGE_MAXIMUM,
                 ViewerSettings.COAST_MIN_FRONTAGE_DEFAULT
                     * ViewerSettings.FRONTAGE_PERCENT_SCALE),
-            new ViewerSliders.SliderWork(
+            new SliderRows.SliderWork(
                 percent -> settings.coastMinFrontageShare =
                     percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
                 refreshes::refreshCoastlines,
@@ -447,15 +463,15 @@ public final class ViewerSettingsPanel {
         // One row for both constructions, and here rather than in either section, because
         // the question is the same of each and the answer is told apart by the coast each
         // mark sits beside.
-        controls.add(ViewerControls.buildToggle(
-            "Dropped stretches",
+        controls.add(ControlRows.buildToggle(
+            "showDroppedStretches",
             "Dropped stretches",
             false,
             on -> settings.showDroppedStretches = on,
             refreshes::repaintMap));
 
-        controls.add(ViewerSwatches.buildColour(
-            "Dropped stretches colour",
+        controls.add(ColourRows.buildColour(
+            "droppedStretchColour",
             "Dropped stretches",
             ViewerSettings.DROPPED_STRETCH_DEFAULT,
             colour -> settings.droppedStretchColour = colour,
@@ -464,13 +480,13 @@ public final class ViewerSettingsPanel {
         // A pair rather than one, because the two say different halves of the same thing:
         // which run went where it should not, and which cell it went into. Nothing is drawn
         // in either once the construction stops crossing anything.
-        controls.add(ViewerSwatches.buildColourPair(
-            "Coast crossings",
+        controls.add(ColourRows.buildColourPair(
+            "coastCrossings",
             "Coast crossing / crossed cell",
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.COAST_CROSSING_DEFAULT,
                 colour -> settings.coastCrossingColour = colour),
-            new ViewerSwatches.Choice(
+            new ColourRows.Choice(
                 ViewerSettings.PIERCED_CELL_DEFAULT,
                 colour -> settings.piercedCellColour = colour),
             refreshes::repaintMap));
@@ -478,6 +494,7 @@ public final class ViewerSettingsPanel {
         // Last because it is the one knob that reaches both kinds, so it belongs to neither
         // group above it.
         controls.add(buildOpacitySlider(
+            "voidFillOpacity",
             "Void fill opacity",
             opacity -> settings.voidFillOpacity = (int) opacity));
     }
@@ -505,15 +522,15 @@ public final class ViewerSettingsPanel {
         // Outside the v2 toggle tree on purpose - that tree's switches show parts of the one
         // settled construction, and a roll-up that could hide or show this too would misstate
         // what "all of it" means.
-        controls.add(ViewerControls.buildToggle(
-            "Continent coasts preview",
+        controls.add(ControlRows.buildToggle(
+            "showContinentCoasts",
             "Continent coasts preview",
             false,
             on -> settings.showContinentCoasts = on,
             refreshes::refreshCoastlines));
 
-        controls.add(ViewerSwatches.buildColour(
-            "Continent coasts",
+        controls.add(ColourRows.buildColour(
+            "continentCoastColour",
             "Continent coasts",
             ViewerSettings.CONTINENT_COAST_DEFAULT,
             colour -> settings.continentCoastColour = colour,
@@ -524,15 +541,15 @@ public final class ViewerSettingsPanel {
         // coast has two: a line is a proposal about where a boundary goes and a fill is what
         // that proposal encloses, and judging either means being able to see it without the
         // other.
-        controls.add(ViewerControls.buildToggle(
-            "Continent coastal fill",
+        controls.add(ControlRows.buildToggle(
+            "showContinentCoastalFill",
             "Continent coastal fill",
             false,
             on -> settings.showContinentCoastalFill = on,
             refreshes::refreshCoastlines));
 
-        controls.add(ViewerSwatches.buildColour(
-            "Continent coastal fill",
+        controls.add(ColourRows.buildColour(
+            "continentCoastalVoidColour",
             "Continent coastal fill",
             ViewerSettings.CONTINENT_COASTAL_VOID_DEFAULT,
             colour -> {
@@ -543,15 +560,15 @@ public final class ViewerSettingsPanel {
 
         // Asked as a percentage because that is how anyone reading a map thinks about how far
         // a cell sticks out; what the floor means is documented at the field it writes.
-        controls.add(ViewerSliders.buildSlider(
-            "Continent least frontage",
+        controls.add(SliderRows.buildSlider(
+            "continentLeastFrontage",
             "Least frontage faced, in % of a cell",
-            new ViewerSliders.SliderRange(
+            new SliderRows.SliderRange(
                 MIN_FRONTAGE_MINIMUM,
                 MIN_FRONTAGE_MAXIMUM,
                 ViewerSettings.CONTINENT_MIN_FRONTAGE_DEFAULT
                     * ViewerSettings.FRONTAGE_PERCENT_SCALE),
-            new ViewerSliders.SliderWork(
+            new SliderRows.SliderWork(
                 percent -> settings.continentMinFrontageShare =
                     percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
                 refreshes::refreshCoastlines,
@@ -567,15 +584,15 @@ public final class ViewerSettingsPanel {
         //
         // Rebuilt rather than repainted: the coasts have to be traced for the surviving set
         // to be answerable at all, so switching this on is what makes the set exist.
-        controls.add(ViewerControls.buildToggle(
-            "Inlet bridges",
+        controls.add(ControlRows.buildToggle(
+            "showContinentBridges",
             "Inlet bridges",
             false,
             on -> settings.showContinentBridges = on,
             refreshes::refreshCoastlines));
 
-        controls.add(ViewerSwatches.buildColour(
-            "Inlet bridges",
+        controls.add(ColourRows.buildColour(
+            "continentBridgeColour",
             "Inlet bridges",
             ViewerSettings.CONTINENT_BRIDGE_DEFAULT,
             colour -> settings.continentBridgeColour = colour,
@@ -583,15 +600,15 @@ public final class ViewerSettingsPanel {
 
         // Scaled up for a slider that deals in whole steps; what the reach means is
         // documented at the field it writes.
-        controls.add(ViewerSliders.buildSlider(
-            "Inlet bridge reach",
+        controls.add(SliderRows.buildSlider(
+            "continentBridgeReach",
             "Bridge reach, in cell radii (x100)",
-            new ViewerSliders.SliderRange(
+            new SliderRows.SliderRange(
                 BRIDGE_REACH_MINIMUM * ViewerSettings.BRIDGE_REACH_STEP_SCALE,
                 BRIDGE_REACH_MAXIMUM * ViewerSettings.BRIDGE_REACH_STEP_SCALE,
                 ViewerSettings.CONTINENT_BRIDGE_REACH_DEFAULT
                     * ViewerSettings.BRIDGE_REACH_STEP_SCALE),
-            new ViewerSliders.SliderWork(
+            new SliderRows.SliderWork(
                 multiple -> settings.continentBridgeReachMultiple =
                     multiple / ViewerSettings.BRIDGE_REACH_STEP_SCALE,
                 refreshes::refreshCoastlines,
@@ -601,8 +618,8 @@ public final class ViewerSettingsPanel {
         // bridges holds the void together as one shape, and only a grid cuts it up. Sits with
         // the bridges rather than with the pieces because it is a rule about which SPANS
         // survive, and the pieces follow from that.
-        controls.add(ViewerControls.buildToggle(
-            "Permit bridge crossings",
+        controls.add(ControlRows.buildToggle(
+            "allowBridgeCrossings",
             "Permit bridge crossings",
             true,
             on -> settings.allowBridgeCrossings = on,
@@ -610,14 +627,14 @@ public final class ViewerSettingsPanel {
 
         // In map units, so the slider needs no scaling; what the slack means is documented at
         // the field it writes.
-        controls.add(ViewerSliders.buildSlider(
-            "Inlet bridge coast slack",
+        controls.add(SliderRows.buildSlider(
+            "continentBridgeCoastSlack",
             "Off a wall still counted as along it",
-            new ViewerSliders.SliderRange(
+            new SliderRows.SliderRange(
                 COAST_SLACK_MINIMUM,
                 COAST_SLACK_MAXIMUM,
                 ViewerSettings.CONTINENT_BRIDGE_COAST_SLACK_DEFAULT),
-            new ViewerSliders.SliderWork(
+            new SliderRows.SliderWork(
                 slack -> settings.continentBridgeCoastSlack = slack,
                 refreshes::refreshCoastlines,
                 () -> { })));
@@ -629,8 +646,8 @@ public final class ViewerSettingsPanel {
 
         // Rebuilt rather than repainted: the pieces are cut by the coasts and the bridges
         // together, so switching this on is what makes them exist.
-        controls.add(ViewerControls.buildToggle(
-            "Void pieces",
+        controls.add(ControlRows.buildToggle(
+            "showVoidFaces",
             "Void pieces",
             false,
             on -> settings.showVoidFaces = on,
@@ -638,8 +655,8 @@ public final class ViewerSettingsPanel {
 
         // The base each piece's own shade is spread from, rather than the colour any piece is
         // actually drawn in - which is why the swatch and the map never quite match.
-        controls.add(ViewerSwatches.buildColour(
-            "Void pieces",
+        controls.add(ColourRows.buildColour(
+            "voidFaceColour",
             "Void pieces",
             ViewerSettings.VOID_FACE_DEFAULT,
             colour -> settings.voidFaceColour = colour,
@@ -647,15 +664,15 @@ public final class ViewerSettingsPanel {
 
         // Asked as a percentage of a cell, which is how anyone reading a map judges whether a
         // piece is worth having; what the cap means is documented at the field it writes.
-        controls.add(ViewerSliders.buildSlider(
-            "Least void piece",
+        controls.add(SliderRows.buildSlider(
+            "leastPieceShare",
             "Smallest piece kept, in % of a cell",
-            new ViewerSliders.SliderRange(
+            new SliderRows.SliderRange(
                 LEAST_PIECE_MINIMUM,
                 LEAST_PIECE_MAXIMUM,
                 ViewerSettings.LEAST_PIECE_SHARE_DEFAULT
                     * ViewerSettings.PIECE_SHARE_PERCENT_SCALE),
-            new ViewerSliders.SliderWork(
+            new SliderRows.SliderWork(
                 percent -> settings.leastPieceShare =
                     percent / ViewerSettings.PIECE_SHARE_PERCENT_SCALE,
                 refreshes::refreshCoastlines,
@@ -663,28 +680,28 @@ public final class ViewerSettingsPanel {
 
         // In map units, so the slider needs no scaling and reads against the cell radius; what
         // the width means and why it is a second test are documented at the field it writes.
-        controls.add(ViewerSliders.buildSlider(
-            "Least void width",
+        controls.add(SliderRows.buildSlider(
+            "leastPieceWidth",
             "Narrowest piece kept, in map units",
-            new ViewerSliders.SliderRange(
+            new SliderRows.SliderRange(
                 LEAST_WIDTH_MINIMUM,
                 LEAST_WIDTH_MAXIMUM,
                 ViewerSettings.LEAST_PIECE_WIDTH_DEFAULT),
-            new ViewerSliders.SliderWork(
+            new SliderRows.SliderWork(
                 width -> settings.leastPieceWidth = width,
                 refreshes::refreshCoastlines,
                 () -> { })));
 
         // The coarse move, on the same scale as the fine one: what a piece has to be thinner
         // than before a whole bridge comes out rather than one stretch of it.
-        controls.add(ViewerSliders.buildSlider(
-            "Least width for whole bridges",
+        controls.add(SliderRows.buildSlider(
+            "leastWholeWallWidth",
             "Under this, a whole bridge comes out",
-            new ViewerSliders.SliderRange(
+            new SliderRows.SliderRange(
                 LEAST_WIDTH_MINIMUM,
                 LEAST_WIDTH_MAXIMUM,
                 ViewerSettings.LEAST_WHOLE_WALL_WIDTH_DEFAULT),
-            new ViewerSliders.SliderWork(
+            new SliderRows.SliderWork(
                 width -> settings.leastWholeWallWidth = width,
                 refreshes::refreshCoastlines,
                 () -> { })));
@@ -702,34 +719,34 @@ public final class ViewerSettingsPanel {
     // theirs is on screen - so turning one on is what makes it exist, not merely what shows it.
     private JPanel buildVoidPocketToggles() {
 
-        return ViewerToggleTree.buildToggleTree(
+        return ToggleTree.buildToggleTree(
             () -> {
                 refreshes.refreshVoidBridges();
                 refreshes.refreshCoastlines();
             },
-            ViewerToggleTree.Row.ofRollUp(
+            ToggleTree.Row.ofRollUp(
                 0,
                 "Void pockets",
                 INLAND_BRIDGES, INLAND_FILL, INLAND_NAMES,
                 COASTLINE, COASTAL_FILL, COASTAL_NAMES),
-            ViewerToggleTree.Row.ofRollUp(
+            ToggleTree.Row.ofRollUp(
                 1, "Inland void pockets", INLAND_BRIDGES, INLAND_FILL, INLAND_NAMES),
-            ViewerToggleTree.Row.ofSwitch(2, new ViewerToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INLAND_BRIDGES, "Bridges", true, on -> settings.showInlandBridges = on)),
-            ViewerToggleTree.Row.ofSwitch(2, new ViewerToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INLAND_FILL, "Fill", true, on -> settings.showInlandFill = on)),
-            ViewerToggleTree.Row.ofSwitch(2, new ViewerToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INLAND_NAMES, "Pocket names", false, on -> settings.showInlandNames = on)),
-            ViewerToggleTree.Row.ofRollUp(
+            ToggleTree.Row.ofRollUp(
                 1, "Coastal void pockets", COASTLINE, COASTAL_FILL, COASTAL_NAMES),
-            ViewerToggleTree.Row.ofSwitch(2, new ViewerToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 COASTLINE, "Coastline", true, on -> settings.showCoastline = on)),
-            ViewerToggleTree.Row.ofSwitch(2, new ViewerToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 COASTAL_FILL, "Fill", true, on -> settings.showCoastalFill = on)),
-            ViewerToggleTree.Row.ofSwitch(2, new ViewerToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 COASTAL_NAMES, "Pocket names", false, on -> settings.showCoastalNames = on)),
-            ViewerToggleTree.Row.ofRollUp(1, "Pocket borders", INLAND_BRIDGES, COASTLINE),
-            ViewerToggleTree.Row.ofRollUp(1, "Pocket names", INLAND_NAMES, COASTAL_NAMES));
+            ToggleTree.Row.ofRollUp(1, "Pocket borders", INLAND_BRIDGES, COASTLINE),
+            ToggleTree.Row.ofRollUp(1, "Pocket names", INLAND_NAMES, COASTAL_NAMES));
     }
 
     // Every geometry knob rebuilds; that is what makes it a geometry knob rather than a
@@ -740,25 +757,33 @@ public final class ViewerSettingsPanel {
     // added without being remembered - which is how the last panel ended up with several
     // that were not.
     private JPanel buildSlider(
+            String key,
             String title,
             double minimum,
             double maximum,
             double initial,
             DoubleConsumer apply) {
-        return ViewerSliders.buildSlider(
+        return SliderRows.buildSlider(
+            key,
             title,
-            title,
-            new ViewerSliders.SliderRange(minimum, maximum, initial),
-            new ViewerSliders.SliderWork(apply, refreshes::rebuildGeometry, () -> { }));
+            new SliderRows.SliderRange(minimum, maximum, initial),
+            new SliderRows.SliderWork(apply, refreshes::rebuildGeometry, () -> { }));
     }
 
-    private JPanel buildOpacitySlider(String title, DoubleConsumer apply) {
+    private JPanel buildOpacitySlider(String key, String title, DoubleConsumer apply) {
         return buildSlider(
-            title, OPACITY_MINIMUM, OPACITY_MAXIMUM, ViewerSettings.OWNER_FILL_ALPHA, apply);
+            key,
+            title,
+            OPACITY_MINIMUM,
+            OPACITY_MAXIMUM,
+            ViewerSettings.OWNER_FILL_ALPHA,
+            apply);
     }
 
-    private JPanel buildToggle(String title, boolean initial, Consumer<Boolean> apply) {
-        return ViewerControls.buildToggle(
-            title, title, initial, apply, refreshes::rebuildGeometry);
+    private JPanel buildToggle(
+            String key, String title, boolean initial, Consumer<Boolean> apply) {
+
+        return ControlRows.buildToggle(
+            key, title, initial, apply, refreshes::rebuildGeometry);
     }
 }
