@@ -85,13 +85,16 @@ public final class SystemStatusRow {
 
         // Habitation admits the collapsed colony along with the governed ones, so its emptiness is
         // not the question here: a system holding only a collapse is inhabited and still has nobody
-        // running it. What settles the line is which of the two the projection found.
+        // running it.
         if (hasGovernedColony(inhabitingColonies)) {
             return Optional.empty();
         }
-        var statusKey = hasUngovernedColony(inhabitingColonies)
-            ? KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED
-            : KmuStrings.POLITICAL_MAP_TOOLTIP_UNPOPULATED;
+        // Emptiness settles the rest, no second read of the kinds needed: habitation admits the
+        // governed colonies and the collapsed one and nothing else, so with no governed colony
+        // found anything still in hand is a collapse, and nothing in hand is nobody at all.
+        var statusKey = inhabitingColonies.isEmpty()
+            ? KmuStrings.POLITICAL_MAP_TOOLTIP_UNPOPULATED
+            : KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED;
 
         // Set across the box, crestless: the status qualifies the whole system rather than being one
         // entry of a list, so it is spoken for the box the way the decree above it is - laid in the
@@ -109,19 +112,6 @@ public final class SystemStatusRow {
 
         for (var colony : inhabitingColonies) {
             if (colony.kind() != ColonyKind.UNGOVERNED_COLONY) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // Whether what is here is a colony nobody runs. Asked only once no governed one is found, so a
-    // collapse beside a governed colony never heads the box - the system has a polity in it, and
-    // the breakdown beneath names the collapsed colony along with everything else.
-    private static boolean hasUngovernedColony(List<Colony> inhabitingColonies) {
-
-        for (var colony : inhabitingColonies) {
-            if (colony.kind() == ColonyKind.UNGOVERNED_COLONY) {
                 return true;
             }
         }

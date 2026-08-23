@@ -30,8 +30,8 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.ma
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the two spoiler toggles from the settings read to the colony listing every painting surface
- * composes over - the one link in that chain with nothing behind it until the toggles shipped.
+ * Pins the Map - Visibility knobs from the settings read to the colony listing every painting
+ * surface composes over - the one link in that chain with nothing behind it until they shipped.
  *
  * <p>Driven through the live {@link MapVisibilityRules#readFromLunaSettings()} rather than a rule
  * written out here, because the wiring between a toggle and a colony is the subject. A case handing

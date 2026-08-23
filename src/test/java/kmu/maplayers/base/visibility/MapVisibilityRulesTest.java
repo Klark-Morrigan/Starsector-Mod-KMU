@@ -21,9 +21,9 @@ import static org.mockito.Mockito.mockStatic;
  * passes. A widening defaulting to on would open the map up with nothing at the call site to
  * show it, so the default is worth asserting rather than assuming.
  *
- * <p>Beside it, the settings read: the two toggles in the same order, so a transposed mapping
- * would compile and read correctly while silently trading one for the other. Each case raises
- * exactly one toggle, which is what makes that swap fail.
+ * <p>Beside it, the settings read: every knob mapped to the one thing it names, so a transposed
+ * mapping would compile and read correctly while silently trading one for another. Each case moves
+ * exactly one knob and asserts the others stayed put, which is what makes that swap fail.
  *
  * <p>The two spoiler toggles are held the same way, and one thing more: each is named for what
  * switching it on shows, so it is the toggle left off that carries a gate. A read that took them

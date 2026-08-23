@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins {@link SystemStatusRow}: a populated system yields no status at all, an empty one names itself
- * Decivilised or Unpopulated depending on whether the player has seen a dead colony there, and the
+ * Decivilised or Unpopulated depending on whether a colony there has collapsed, and the
  * reveal decides whether an undiscovered colony already counts as populating the system. Both arms of
  * the known projection are pinned - a found base populates its system however concealed it stays, and
  * an open colony does so before it is reached - along with the shape that satisfies neither, since a
@@ -131,7 +131,7 @@ final class SystemStatusRowTest {
         void resolveStatusRowIsEmptyForALivingColonyBesideARuin() {
             // A ruin never heads a system somebody still lives in. Habitation admits both, so the
             // line has to part them by kind rather than by the projection's emptiness - and the box
-            // beneath goes on naming the dead world along with the colony.
+            // beneath goes on naming the collapsed colony along with the governed one.
             var system = buildSystemWithPlanets();
 
             placeRevealedDecivilisedPlanetIn(system);

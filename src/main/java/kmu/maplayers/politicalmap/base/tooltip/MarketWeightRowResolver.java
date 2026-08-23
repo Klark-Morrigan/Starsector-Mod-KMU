@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.text.KmlibNumbers;
 
@@ -176,7 +175,7 @@ public final class MarketWeightRowResolver {
         // subject matter rather than an omission: a collapse is off-economy by construction, so
         // the pass can never have weighed one, and the kinds that are weighed are already told
         // apart by the numbers beneath them.
-        return CellTooltipEntry.createEntry(qualifyByKind(
+        return CellTooltipEntry.createEntry(ColonyKindQualifier.qualifyByKind(
             remarkOnColony(
                 createMapEntityLine(
                         colony.nameplate(),
@@ -186,21 +185,6 @@ public final class MarketWeightRowResolver {
                 colony.marketId(),
                 notes),
             colony.kind()));
-    }
-
-    // Runs a colony's line on into what its kind calls out, where the kind states anything.
-    //
-    // Layered after the remark rather than before it because the two are stated in different
-    // shades and at different ends of the line - the remark quiet, run on after the name; the
-    // qualifier a finding, at the end - so neither can displace the other.
-    private static CellTooltipEntryLine qualifyByKind(
-            CellTooltipEntryLine line,
-            ColonyKind kind) {
-
-        return ColonyKindQualifier
-            .resolveKindQualifier(kind)
-            .map(line::qualifiedWith)
-            .orElse(line);
     }
 
     // Runs a colony's line on into when it was last seen, where nobody is looking at it now.

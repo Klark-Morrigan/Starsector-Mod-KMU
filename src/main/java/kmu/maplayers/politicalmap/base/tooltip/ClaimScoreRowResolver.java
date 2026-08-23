@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
@@ -303,23 +302,11 @@ public final class ClaimScoreRowResolver {
         // world people left, which is unowned and off-economy and so was never weighed at all.
         var marketLine = isHoldingTheClaim
             ? line.qualifiedWith(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER))
-            : qualifyByKind(line, market.colonyKind());
+            : ColonyKindQualifier.qualifyByKind(line, market.colonyKind());
 
         return CellTooltipEntry
             .createEntry(marketLine)
             .nesting(resolveTermEntries(market));
-    }
-
-    // Runs a market's line on into what its kind calls out, where the kind states anything - the
-    // same read the domination box makes, so the two boxes cannot call one world different things.
-    private static CellTooltipEntryLine qualifyByKind(
-            CellTooltipEntryLine line,
-            ColonyKind kind) {
-
-        return ColonyKindQualifier
-            .resolveKindQualifier(kind)
-            .map(line::qualifiedWith)
-            .orElse(line);
     }
 
     // The shape every market's own line takes: led by the glyph the map marks its entity with, named,
