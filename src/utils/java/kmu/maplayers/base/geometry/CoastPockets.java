@@ -66,7 +66,16 @@ final class CoastPockets {
         if (reaches.isEmpty()) {
             return List.of();
         }
-        var walls = layCoastWalls(traced, reaches);
+        // The channel comes from the knobs rather than off the coast's own walls. A coast
+        // traced WITHOUT bridges has no walls to read one from - its channel is zero, which
+        // is legal only while there are no chords - and the reaches laid here are chords. So
+        // reading it off the trace worked for as long as every coast happened to carry
+        // bridges, and refused outright for the one that does not.
+        //
+        // The right source either way: how far a wall holds its two sides back from its line
+        // is a property of how walls are DRAWN, and has nothing to do with whether the trace
+        // that produced the coast had bridges to lay.
+        var walls = layCoastWalls(traced, reaches, parameters.borderInset());
 
         // A coast pocket gives up the channel against the cells by being WALKED a channel
         // outside them, so at its true extent the discs move rather than the outline: walked
@@ -149,12 +158,13 @@ final class CoastPockets {
      */
     static DiscUnionBoundary.Walls layCoastWalls(
             Coastlines.TracedCoasts traced,
-            List<DiscUnionBoundary.Chord> reaches) {
+            List<DiscUnionBoundary.Chord> reaches,
+            double channel) {
 
         var laid = new ArrayList<>(traced.walls().chords());
         laid.addAll(reaches);
 
-        return new DiscUnionBoundary.Walls(laid, traced.walls().channel());
+        return new DiscUnionBoundary.Walls(laid, channel);
     }
 
     // Which of the coast's reaches shut one hole in, which is none for a hole the cells

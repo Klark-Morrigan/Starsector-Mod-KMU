@@ -6,7 +6,21 @@ import java.awt.geom.Line2D;
 import java.util.List;
 
 /**
- * The smoothed outer edge, drawn: one line round each run of connected cells.
+ * <b>The settled coast (v2), orchestrated.</b> One line round each run of cells that the
+ * bridges have joined, and the void that line shuts in behind it.
+ *
+ * <p>The pair to {@link ContinentCoastOverlay}, which is the rival construction (v3). Between
+ * them, these two classes are the only places that say which construction is which: everything
+ * they call - {@link Coastlines}, {@link CoastPockets}, {@link MapPainting} - is shared by
+ * both and takes no view. So a reader asking "what IS v2" reads this class, and a reader asking
+ * "how is a coast traced" reads the machinery, and neither question is answered in the other's
+ * file.
+ *
+ * <p>What makes this one the settled coast is two choices and nothing else: it traces with the
+ * bridges laid, so runs of cells a bridge joins come back as one shape, and it traces under the
+ * settled coast rules. Every step after that is the same code v3 runs.
+ *
+ * <p>The smoothed outer edge, drawn: one line round each run of connected cells.
  *
  * <p>Its own class alongside {@link VoidBridgesOverlay}, and switched on and off like it,
  * because it is a proposal about the same map rather than a settled part of it - and the
@@ -18,7 +32,7 @@ import java.util.List;
  * at it is for. The outline it hands back is an ordinary closed ring, so filling it later
  * needs nothing this class does not already produce.
  */
-final class CoastlinesOverlay {
+final class SectorCoastOverlay {
 
     private final ViewerSettings settings;
 
@@ -33,7 +47,7 @@ final class CoastlinesOverlay {
     // measured against, rather than against whatever the sliders have been moved to since.
     private Coastlines.TracedCoasts traced;
 
-    CoastlinesOverlay(ViewerSettings settings) {
+    SectorCoastOverlay(ViewerSettings settings) {
         this.settings = settings;
     }
 
@@ -96,19 +110,12 @@ final class CoastlinesOverlay {
             return;
         }
 
-        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
-
-        for (var walled : pockets) {
-            for (var outline : walled.pocket().outlines()) {
-
-                MapPainting.paintFilledShape(
-                    g2,
-                    MapPainting.buildPath(outline),
-                    settings.coastalVoidColour,
-                    settings.voidFillOpacity,
-                    settings.coastalVoidEdge);
-            }
-        }
+        MapPainting.paintPocketFills(
+            g2,
+            pockets,
+            settings.coastalVoidColour,
+            settings.voidFillOpacity,
+            settings.coastalVoidEdge);
     }
 
     /**

@@ -68,6 +68,39 @@ final class MapPainting {
         g2.draw(shape);
     }
 
+    /**
+     * The one way a set of pockets is filled here: each outline as a translucent body under an
+     * opaque edge, at fill weight.
+     *
+     * <p>Shared by every construction that shuts void in, because they exist to be compared. A
+     * coast round the whole sector and a coast round each continent close off the same kind of
+     * thing, and two of these written separately is how the two come to be drawn at different
+     * weights - at which point the difference on screen is the drawing rather than the
+     * construction, and looking at them side by side stops answering anything.
+     *
+     * @param g2      what to draw with
+     * @param pockets the pockets, each of which may carry more than one outline
+     * @param fill    what to fill them with
+     * @param alpha   how solid the body is
+     * @param edge    what to outline them in
+     */
+    static void paintPocketFills(
+            Graphics2D g2,
+            List<WalledPocket> pockets,
+            Color fill,
+            int alpha,
+            Color edge) {
+
+        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
+
+        for (var walled : pockets) {
+            for (var outline : walled.pocket().outlines()) {
+
+                paintFilledShape(g2, buildPath(outline), fill, alpha, edge);
+            }
+        }
+    }
+
     // The one way a proposed line is drawn here: closed rings stroked at span weight in one
     // opaque colour, filled with nothing. Shared by the settled coast and the continent
     // preview because the two exist to be compared, and two stanzas of stroke-and-colour

@@ -99,6 +99,11 @@ final class MapLook {
     // actually bought. A shade of the coast's own colour would read as part of the coast.
     static final Color DROPPED_STRETCH = new Color(0xff, 0x60, 0xc0);
 
+    // The void a continent coast shuts in, filled. Its own colour rather than the settled
+    // coast's, for the reason its line has one: the two constructions are on screen together
+    // to be compared, and one colour for both would hide the difference being looked at.
+    static final Color CONTINENT_COASTAL_VOID = new Color(0x90, 0x50, 0xc0);
+
     // One piece of water the coastlines and the inlet bridges cut between them. Filled rather
     // than outlined, and each piece jittered off this base, because the question it is on
     // screen to answer is how finely the map has been cut - which is a question about where

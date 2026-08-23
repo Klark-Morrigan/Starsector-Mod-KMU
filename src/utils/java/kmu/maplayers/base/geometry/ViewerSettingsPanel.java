@@ -517,6 +517,28 @@ final class ViewerSettingsPanel {
             colour -> settings.continentCoastColour = colour,
             refreshes::repaintMap));
 
+        // The void behind those coasts, filled - the settled coast's own fill construction
+        // asked of this trace. Its own switch beside the line's, for the reason the settled
+        // coast has two: a line is a proposal about where a boundary goes and a fill is what
+        // that proposal encloses, and judging either means being able to see it without the
+        // other.
+        controls.add(ViewerControls.buildToggle(
+            "Continent coastal fill",
+            "Continent coastal fill",
+            false,
+            on -> settings.showContinentCoastalFill = on,
+            refreshes::refreshCoastlines));
+
+        controls.add(ViewerSwatches.buildColour(
+            "Continent coastal fill",
+            "Continent coastal fill",
+            ViewerSettings.CONTINENT_COASTAL_VOID_DEFAULT,
+            colour -> {
+                settings.continentCoastalVoidColour = colour;
+                settings.continentCoastalVoidEdge = colour;
+            },
+            refreshes::repaintMap));
+
         // Asked as a percentage because that is how anyone reading a map thinks about how far
         // a cell sticks out; what the floor means is documented at the field it writes.
         controls.add(ViewerSliders.buildSlider(

@@ -141,8 +141,8 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     // Opened with the window and emptied there, so a session's picks are its own.
     private final PickLog picks = PickLog.startPickLog();
     private final VoidBridgesOverlay voidBridges = new VoidBridgesOverlay(settings);
-    private final CoastlinesOverlay coastlines = new CoastlinesOverlay(settings);
-    private final ContinentCoastsOverlay continentCoasts = new ContinentCoastsOverlay(settings);
+    private final SectorCoastOverlay sectorCoasts = new SectorCoastOverlay(settings);
+    private final ContinentCoastOverlay continentCoasts = new ContinentCoastOverlay(settings);
     private final VoidSectionsOverlay voidSections = new VoidSectionsOverlay(settings);
 
     // The cells as named regions, so the pointer can be told which one it is over and a name
@@ -313,7 +313,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
     @Override
     public void refreshCoastlines() {
 
-        coastlines.refresh(fixture);
+        sectorCoasts.refresh(fixture);
 
         // The preview rides the same refresh because it is traced under the same coast knobs:
         // a knob that moved one line without the other would show two coasts that were never
@@ -607,7 +607,7 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             paintFillContours(g2);
             paintCentrelines(g2);
             voidBridges.paintSpans(g2);
-            coastlines.paintCoasts(g2);
+            sectorCoasts.paintCoasts(g2);
 
             // Topmost of the lines, so where the preview and the settled coast coincide the
             // preview reads unbroken - what is being looked for is where they DIVERGE, and a
@@ -631,7 +631,12 @@ final class SectorGeometryViewer implements ViewerRefreshes {
             }
 
             voidBridges.paintFills(g2);
-            coastlines.paintPocketFills(g2);
+            sectorCoasts.paintPocketFills(g2);
+
+            // Over the settled coast's fill, matching the order the two LINES are drawn in.
+            // Where the two constructions shut in the same void the preview is what shows,
+            // and where they differ the difference is a patch of one colour beside the other.
+            continentCoasts.paintPocketFills(g2);
         }
 
         // The channel is the ring a cell leaves between its true edge and its inset fill, so

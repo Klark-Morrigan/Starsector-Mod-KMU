@@ -57,6 +57,8 @@ final class ViewerSettings {
 
     static final Color VOID_FACE_DEFAULT = MapLook.VOID_FACE;
 
+    static final Color CONTINENT_COASTAL_VOID_DEFAULT = MapLook.CONTINENT_COASTAL_VOID;
+
     // The fold opens switched off on both tests, so the pieces are first seen as the walls
     // alone make them - which is the thing every setting of either is judged against.
     static final double LEAST_PIECE_SHARE_DEFAULT = 0;
@@ -123,6 +125,12 @@ final class ViewerSettings {
     // The per-continent coast preview. Not part of the void group either, and off by default:
     // it is a rival construction being judged against the settled coast, not a part of it.
     boolean showContinentCoasts;
+
+    // The void each continent coast shuts in behind it, filled. The same construction the
+    // settled coast's fill comes from, asked of the other coast - which is what makes the two
+    // worth putting on screen together, since the difference between them is then the coast
+    // rather than the way the void behind it was worked out.
+    boolean showContinentCoastalFill;
 
     // Whether a v3 bridge may cross one already laid. On, they draw a grid and the void comes
     // apart into pieces bounded on every side; off, they leave a tree, which is what the
@@ -208,6 +216,8 @@ final class ViewerSettings {
 
     Color continentBridgeColour = CONTINENT_BRIDGE_DEFAULT;
     Color voidFaceColour = VOID_FACE_DEFAULT;
+    Color continentCoastalVoidColour = CONTINENT_COASTAL_VOID_DEFAULT;
+    Color continentCoastalVoidEdge = CONTINENT_COASTAL_VOID_DEFAULT;
 
     Color coastlineColour = COASTLINE_DEFAULT;
     Color droppedStretchColour = DROPPED_STRETCH_DEFAULT;

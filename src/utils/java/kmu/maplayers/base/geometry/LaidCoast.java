@@ -41,7 +41,10 @@ record LaidCoast(
         var offered = CoastPockets.buildCoastWalls(traced);
 
         return new LaidCoast(
-            traced, parameters, offered, CoastPockets.layCoastWalls(traced, offered));
+            traced,
+            parameters,
+            offered,
+            CoastPockets.layCoastWalls(traced, offered, parameters.borderInset()));
     }
 
     // The sites the coast was walked against, taken off the coast rather than carried
