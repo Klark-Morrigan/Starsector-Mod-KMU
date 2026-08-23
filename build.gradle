@@ -41,13 +41,6 @@ sourceSets {
     }
 }
 
-// The map-layer framework's headline rule, and the only convention in this mod a
-// reviewer could break by accident and still get a green build: `maplayers.base`
-// is the substrate every layer sits on, so an import pointing at the political
-// map inverts the dependency arrow the whole framework is defined by. It held for
-// the length of the carve because the people writing the code knew it; a gate is
-// what keeps it holding once someone who does not adds a file. The mechanism is
-// Common-Java's - see its README for the declaration's shape.
 enforcePackageLayering {
 
     // Group bans:
@@ -63,9 +56,15 @@ enforcePackageLayering {
     forbidImport under: 'kmu.maplayers.base.geometry.render',
                  of: 'kmu.maplayers.base.geometry.ui'
 
+    forbidImport under: 'kmu.maplayers.base.geometry.ui.overlays.voidpockets.v2',
+                 of: 'kmu.maplayers.base.geometry.ui.overlays.voidpockets.v3'
+
+    forbidImport under: 'kmu.maplayers.base.geometry.ui.overlays.voidpockets.v3',
+                 of: 'kmu.maplayers.base.geometry.ui.overlays.voidpockets.v2'
+
     forbidImport under: 'kmu.svg',
                  of: 'kmu.maplayers'
-                 
+
     forbidImport under: 'kmu.ui',
                  of: 'kmu.maplayers'
 
@@ -78,31 +77,16 @@ enforcePackageLayering {
     forbidImport exactly: 'kmu.maplayers.base.geometry',
                  of: 'kmu.maplayers.base.geometry.ui'
 
+    forbidImport exactly: 'kmu.maplayers.base.geometry.ui.overlays.voidpockets',
+                 of: 'kmu.maplayers.base.geometry.ui.overlays.voidpockets.v2'
+    forbidImport exactly: 'kmu.maplayers.base.geometry.ui.overlays.voidpockets',
+                 of: 'kmu.maplayers.base.geometry.ui.overlays.voidpockets.v3'
+
     forbidImport exactly: 'kmu.maplayers.base.geometry.ui.settings',
                  of: 'kmu.maplayers.base.geometry.ui'
 }
 
-// The same rule one level in, on the words rather than the imports. The carve
-// that produced `maplayers.base` moved the code and left the political nouns
-// behind in comments, Javadoc and READMEs, and a hand sweep against the
-// vocabulary table in `src/main/java/kmu/maplayers/README.md` missed both a
-// prose use and a method name - a leaked import stops compiling the day a
-// package moves, while a leaked noun survives every move in silence and is what
-// a reader of the framework actually reads.
-//
-// The list is that table's substitutions plus the bloc row, and it stops there:
-// faction, alliance and claim are political too, but `geometry/README.md` and
-// `labels/README.md` name all three as examples of what an opaque owner could
-// be, which is the argument for the opacity rather than a leak of it. A list
-// that fired mostly on legitimate prose would train its next reader to
-// allowlist rather than to read. Plurals are their own words to the gate, so
-// both spellings are declared.
 enforceNoTestVocabulary {
-    // The utils tree is developer tooling that is neither shipped nor a test,
-    // and the fixture and assembly path in it are shared with the assertions -
-    // which is the whole reason it exists, and cannot be explained without
-    // saying so. Nothing in it reaches the mod's jar, so no reader of the
-    // shipped code meets these words.
     exemptSourceSet name: 'utils'
 }
 

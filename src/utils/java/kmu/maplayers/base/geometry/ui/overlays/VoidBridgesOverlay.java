@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.ui;
+package kmu.maplayers.base.geometry.ui.overlays;
 
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.SectorFixture;

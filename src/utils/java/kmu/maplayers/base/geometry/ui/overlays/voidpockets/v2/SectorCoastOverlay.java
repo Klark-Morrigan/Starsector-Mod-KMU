@@ -1,15 +1,12 @@
-package kmu.maplayers.base.geometry.ui;
+package kmu.maplayers.base.geometry.ui.overlays.voidpockets.v2;
 
 import kmu.maplayers.base.geometry.CoastCrossings;
 import kmu.maplayers.base.geometry.CoastPocketFaults;
-import kmu.maplayers.base.geometry.CoastPockets;
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.SectorFixture;
-import kmu.maplayers.base.geometry.VoidPockets;
-import kmu.maplayers.base.geometry.WalledPocket;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
-
+import kmu.maplayers.base.geometry.ui.overlays.voidpockets.TracedCoastPockets;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 
 import java.awt.BasicStroke;
@@ -21,46 +18,42 @@ import java.util.List;
  * <b>The settled coast (v2), orchestrated.</b> One line round each run of cells that the
  * bridges have joined, and the void that line shuts in behind it.
  *
- * <p>The pair to {@link ContinentCoastOverlay}, which is the rival construction (v3). Between
- * them, these two classes are the only places that say which construction is which: everything
- * they call - {@link Coastlines}, {@link CoastPockets}, {@link MapPainting} - is shared by
- * both and takes no view. So a reader asking "what IS v2" reads this class, and a reader asking
- * "how is a coast traced" reads the machinery, and neither question is answered in the other's
- * file.
- *
  * <p>What makes this one the settled coast is two choices and nothing else: it traces with the
  * bridges laid, so runs of cells a bridge joins come back as one shape, and it traces under the
- * settled coast rules. Every step after that is the same code v3 runs.
+ * settled coast rules. Those two lines are the whole of v2. Every step after them is
+ * {@link TracedCoastPockets}, which the continent coast in the neighbouring package runs
+ * exactly as well - so a difference between the two on screen is a difference between the
+ * coasts rather than between two copies of the drawing.
  *
- * <p>The smoothed outer edge, drawn: one line round each run of connected cells.
+ * <p>The marks below the coast are this construction's own, and are why it is a class rather
+ * than a call: crossings and spills are faults a coast traced THIS way can have, and there is
+ * nowhere else they would mean anything.
  *
- * <p>Its own class alongside {@link VoidBridgesOverlay}, and switched on and off like it,
- * because it is a proposal about the same map rather than a settled part of it - and the
- * only way to judge a smoothed edge is against the scalloped one it replaces, both on
- * screen at once.
- *
- * <p>Drawn as a line over everything rather than as a fill under it, for that reason. A fill
- * would hide the arcs the line is meant to be compared with, which is the one thing looking
- * at it is for. The outline it hands back is an ordinary closed ring, so filling it later
- * needs nothing this class does not already produce.
+ * <p>Drawn as a line over everything rather than as a fill under it. A fill would hide the arcs
+ * the line is meant to be compared with, which is the one thing looking at it is for. The
+ * outline it hands back is an ordinary closed ring, so filling it later needs nothing this
+ * class does not already produce.
  */
 public final class SectorCoastOverlay {
 
     private final ViewerSettings settings;
 
+    // The half of this overlay the rival construction runs identically. Held rather than
+    // inherited from, because what v2 and v3 share is a sequence of steps rather than an
+    // identity - neither is a kind of the other, and nothing ever asks for "a coast overlay"
+    // without knowing which.
+    private final TracedCoastPockets coast;
+
     // What the last trace found, held rather than recomputed while painting: a frame that
     // rebuilt any of these would be drawing marks measured against geometry the rest of the
     // frame is not being drawn from.
     private List<CoastCrossings.Penetration> penetrations = List.of();
-    private List<WalledPocket> pockets = List.of();
     private List<CoastPocketFaults.Spill> spills = List.of();
 
-    // Held from the last trace so the marks are drawn against the same discs the coast was
-    // measured against, rather than against whatever the sliders have been moved to since.
-    private Coastlines.TracedCoasts traced;
-
     public SectorCoastOverlay(ViewerSettings settings) {
+
         this.settings = settings;
+        this.coast = new TracedCoastPockets(settings);
     }
 
     /**
@@ -78,41 +71,31 @@ public final class SectorCoastOverlay {
         // showing one of them has already paid for both.
         if (!settings.showCoastline && !settings.showCoastalFill) {
 
-            traced = null;
+            coast.acceptTrace(null);
             penetrations = List.of();
-            pockets = List.of();
             spills = List.of();
             return;
         }
 
-        traced = Coastlines.traceSectorCoasts(
+        // The two lines that make this v2: bridges laid, settled rules.
+        coast.acceptTrace(Coastlines.traceSectorCoasts(
             fixture.getSites(),
             settings.parameters,
-            settings.resolveCoastRules());
+            settings.resolveCoastRules()));
+
+        coast.findPockets(fixture);
 
         penetrations = CoastCrossings.findVisibleCrossings(
-            traced,
+            coast.getTrace(),
             MapLook.RING_STROKE);
 
-        pockets = CoastPockets.findCoastPockets(
-            traced,
-            fixture.getOwnerBySite(),
-            new VoidPockets.PocketRules(
-                settings.parameters,
-                settings.resolvePocketShaping()));
-
         spills = CoastPocketFaults.findSpills(
-            pockets,
-            Coastlines.collectCoastRings(traced));
+            coast.getPockets(),
+            Coastlines.collectCoastRings(coast.getTrace()));
     }
 
     /**
      * Draws the void the coast shut in, beneath the cells.
-     *
-     * <p>Under them like every other void fill, so a stray edge reads as the mistake it is
-     * rather than painting over the shape it got wrong. Unlike the coast LINE, which goes over
-     * everything: the line is a proposal to be judged against the arcs underneath it, and a
-     * fill of the space it closed off hides none of them.
      *
      * @param g2 what to draw with
      */
@@ -122,12 +105,8 @@ public final class SectorCoastOverlay {
             return;
         }
 
-        MapPainting.paintPocketFills(
-            g2,
-            pockets,
-            settings.coastalVoidColour,
-            settings.voidFillOpacity,
-            settings.coastalVoidEdge);
+        coast.paintPocketFills(
+            g2, settings.coastalVoidColour, settings.coastalVoidEdge);
     }
 
     /**
@@ -137,38 +116,15 @@ public final class SectorCoastOverlay {
      */
     public void paintCoasts(Graphics2D g2) {
 
-        if (traced == null || !settings.showCoastline) {
+        if (!coast.hasTrace() || !settings.showCoastline) {
             return;
         }
 
-        MapPainting.paintLineRings(
-            g2,
-            Coastlines.collectCoastRings(traced),
-            settings.coastlineColour);
+        coast.paintCoastRings(g2, settings.coastlineColour);
+        coast.paintDroppedStretches(g2);
 
-        paintDroppedStretches(g2);
         paintPenetrations(g2);
         paintSpills(g2);
-    }
-
-    // The frontages the smoothing left out, drawn on the borders they sit on.
-    //
-    // Over the coast rather than under it, because the two are read together: what a drop
-    // bought is the gap between the stretch and the line that replaced it, and a mark hidden
-    // beneath that line says nothing. Off the same trace as the coast, so a stretch shown as
-    // dropped is one THIS line was built without rather than one from a stale walk.
-    private void paintDroppedStretches(Graphics2D g2) {
-
-        if (!settings.showDroppedStretches) {
-            return;
-        }
-
-        MapPainting.paintLineRuns(
-            g2,
-            Coastlines.collectDroppedRuns(
-                traced,
-                settings.parameters.measureArcSegments()),
-            settings.droppedStretchColour);
     }
 
     // Only the stretch of a pocket outline that is outside the drawn coast, not the pocket it
@@ -195,6 +151,8 @@ public final class SectorCoastOverlay {
             return;
         }
 
+        var union = coast.getTrace().union();
+
         g2.setStroke(new BasicStroke(MapLook.SPAN_STROKE));
         g2.setColor(MapPainting.applyAlpha(
             settings.piercedCellColour,
@@ -204,8 +162,8 @@ public final class SectorCoastOverlay {
             for (var circle : penetration.circles()) {
 
                 g2.draw(MapPainting.buildCircle(
-                    traced.union().sites().get(circle),
-                    traced.union().reach()));
+                    union.sites().get(circle),
+                    union.reach()));
             }
         }
 

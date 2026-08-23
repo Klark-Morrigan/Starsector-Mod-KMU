@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry.ui;
 
 import kmu.maplayers.base.geometry.NamedRegion;
+import kmu.maplayers.base.geometry.ui.overlays.NamedRegions;
 
 import java.awt.Color;
 import java.awt.Dimension;

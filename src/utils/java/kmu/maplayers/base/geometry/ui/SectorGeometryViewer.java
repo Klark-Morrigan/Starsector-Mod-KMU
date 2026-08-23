@@ -20,6 +20,11 @@ import kmu.ui.ControlRows;
 import kmu.ui.SavedValues;
 import kmu.ui.WindowLayout;
 
+import kmu.maplayers.base.geometry.ui.overlays.NamedRegions;
+import kmu.maplayers.base.geometry.ui.overlays.VoidBridgesOverlay;
+import kmu.maplayers.base.geometry.ui.overlays.VoidSectionsOverlay;
+import kmu.maplayers.base.geometry.ui.overlays.voidpockets.v2.SectorCoastOverlay;
+import kmu.maplayers.base.geometry.ui.overlays.voidpockets.v3.ContinentCoastOverlay;
 import kmu.maplayers.base.geometry.ui.settings.ViewerRefreshes;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettingsPanel;

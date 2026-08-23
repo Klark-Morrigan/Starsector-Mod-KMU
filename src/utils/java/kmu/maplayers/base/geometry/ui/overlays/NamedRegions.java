@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.ui;
+package kmu.maplayers.base.geometry.ui.overlays;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.render.gl.UiElementPaint;

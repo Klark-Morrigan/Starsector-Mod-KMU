@@ -1,16 +1,13 @@
-package kmu.maplayers.base.geometry.ui;
+package kmu.maplayers.base.geometry.ui.overlays.voidpockets.v3;
 
 import kmu.maplayers.base.geometry.CellGap;
-import kmu.maplayers.base.geometry.CoastPockets;
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.ContinentBridges;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidFaces;
-import kmu.maplayers.base.geometry.VoidPockets;
-import kmu.maplayers.base.geometry.WalledPocket;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
-
+import kmu.maplayers.base.geometry.ui.overlays.voidpockets.TracedCoastPockets;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 
 import java.awt.BasicStroke;
@@ -23,28 +20,19 @@ import java.util.List;
  * its own closed coast, the inlet bridges that survive those coasts, the pieces those lines cut
  * the void into, and the void each coast shuts in.
  *
- * <p>The pair to {@link SectorCoastOverlay}, which is the settled construction (v2). Between
- * them, these two classes are the only places that say which construction is which: everything
- * they call - {@link Coastlines}, {@link ContinentBridges}, {@link VoidFaces},
- * {@link CoastPockets}, {@link MapPainting} - is shared or is machinery neither owns. So the
- * difference between v2 and v3 is legible as the difference between two short files, rather
- * than as a flag threaded through the ones underneath.
- *
  * <p>What makes this one the continent coast is that it traces with NO bridges laid, so a run
  * of cells a bridge would have joined comes back as several shapes rather than one, and under
- * its own coast rules. The fill below it is the settled coast's own construction asked of this
- * trace - which is the point: with the same code on both sides, a difference on screen is a
- * difference between the coasts.
+ * its own coast rules. That is the whole of v3's disagreement with the settled coast. The fill
+ * below it is {@link TracedCoastPockets}, which the settled coast in the neighbouring package
+ * runs exactly as well - which is the point: with the same code on both sides, a difference on
+ * screen is a difference between the coasts.
  *
- * <p>Preview of per-continent coastlines, over the settled map rather than instead of it.
- *
- * <p>A rival construction being judged, not a part of the map. The settled coast treats a
- * bridge as connective tissue and traces one line round everything it joins; the proposal is
+ * <p>The bridges and the pieces they cut are this construction's own. The settled coast treats
+ * a bridge as connective tissue and traces one line round everything it joins; the proposal is
  * to give each continent its own smoothed coast and let the bridges cross those lines where
- * they must, with each crossing cutting the pocket behind it in two. Whether that is worth
- * building turns on where and how often the crossings actually fall, which is only legible
- * on screen - so this draws the lines and nothing else. No pockets are built from it,
- * nothing downstream reads it, and switching it on moves nothing but paint.
+ * they must, with each crossing cutting the piece behind it in two. Whether that is worth
+ * building turns on where and how often the crossings actually fall, which is only legible on
+ * screen.
  *
  * <p>Drawn as a line over everything for the same reason the settled coast is: it is a
  * proposal, and the only way to judge it is against the bridges and the coast it would
@@ -57,13 +45,11 @@ public final class ContinentCoastOverlay {
 
     private final ViewerSettings settings;
 
-    // What the last trace found, held rather than recomputed while painting: a frame that
-    // rebuilt these would be drawing lines traced against geometry the rest of the frame is
-    // not being drawn from.
-    //
-    // The whole trace rather than the rings alone, because what the smoothing LEFT OUT is
-    // part of what a reader is judging and can only be had from the walk that left it out.
-    private Coastlines.TracedCoasts traced;
+    // The half of this overlay the settled construction runs identically. Held rather than
+    // inherited from, because what v2 and v3 share is a sequence of steps rather than an
+    // identity - neither is a kind of the other, and nothing ever asks for "a coast overlay"
+    // without knowing which.
+    private final TracedCoastPockets coast;
 
     // The bridges that survive those coastlines. Held beside the trace they were filtered
     // against rather than found while painting, since which ones survive is a question about
@@ -76,13 +62,10 @@ public final class ContinentCoastOverlay {
     // be pieces of a different map.
     private VoidFaces.CutMap cut;
 
-    // The void those coastlines shut in, found the way the settled coast's is. Held beside the
-    // trace for the same reason as everything else here: a fill measured against one trace and
-    // drawn over another is a fill of a map nobody built.
-    private List<WalledPocket> pockets = List.of();
-
     public ContinentCoastOverlay(ViewerSettings settings) {
+
         this.settings = settings;
+        this.coast = new TracedCoastPockets(settings);
     }
 
     /**
@@ -96,10 +79,9 @@ public final class ContinentCoastOverlay {
      */
     public void refresh(SectorFixture fixture) {
 
-        traced = null;
+        coast.acceptTrace(null);
         bridges = List.of();
         cut = null;
-        pockets = List.of();
 
         // The coasts are traced while any of the three is wanted, because each is built on the
         // one before: the bridges are filtered against the coasts, and the pieces are cut by
@@ -113,22 +95,18 @@ public final class ContinentCoastOverlay {
             return;
         }
 
-        traced = Coastlines.traceContinentCoasts(
+        // The one line that makes this v3: continent coasts, which lay no bridges.
+        coast.acceptTrace(Coastlines.traceContinentCoasts(
             fixture.getSites(),
             settings.parameters,
-            settings.resolveContinentCoastRules());
+            settings.resolveContinentCoastRules()));
 
         // The void behind the coast, worked out by the same construction the settled coast's
         // fill comes from. Not a second way of arriving at the same thing: a coast reach is a
         // wall, and what a wall shuts in is one question however the coast that offered it was
         // traced.
         if (settings.showContinentCoastalFill) {
-
-            pockets = CoastPockets.findCoastPockets(
-                traced,
-                fixture.getOwnerBySite(),
-                new VoidPockets.PocketRules(
-                    settings.parameters, settings.resolvePocketShaping()));
+            coast.findPockets(fixture);
         }
 
         // Found whenever the pieces are wanted, whether or not the bridges are DRAWN. A piece
@@ -137,7 +115,7 @@ public final class ContinentCoastOverlay {
         if (settings.showContinentBridges || settings.showVoidFaces) {
 
             bridges = ContinentBridges.findAnchoredBridges(
-                traced,
+                coast.getTrace(),
                 settings.parameters,
                 settings.resolveContinentBridgeRules());
         }
@@ -145,7 +123,7 @@ public final class ContinentCoastOverlay {
         if (settings.showVoidFaces) {
 
             cut = VoidFaces.cutMapIntoPieces(
-                Coastlines.collectCoastRings(traced),
+                Coastlines.collectCoastRings(coast.getTrace()),
                 bridges,
                 fixture.getSites(),
                 settings.resolveFoldRules());
@@ -155,9 +133,9 @@ public final class ContinentCoastOverlay {
     /**
      * Draws the void each continent coast shut in, beneath the cells.
      *
-     * <p>Under them, and drawn at the same weight and in the same way as the settled coast's
-     * fill, because the two are on screen to be compared: any difference between them should
-     * be the coast, not the drawing.
+     * <p>At the same weight and in the same way as the settled coast's fill, because the two
+     * are on screen to be compared: any difference between them should be the coast, not the
+     * drawing.
      *
      * @param g2 what to draw with
      */
@@ -167,12 +145,8 @@ public final class ContinentCoastOverlay {
             return;
         }
 
-        MapPainting.paintPocketFills(
-            g2,
-            pockets,
-            settings.continentCoastalVoidColour,
-            settings.voidFillOpacity,
-            settings.continentCoastalVoidEdge);
+        coast.paintPocketFills(
+            g2, settings.continentCoastalVoidColour, settings.continentCoastalVoidEdge);
     }
 
     /**
@@ -182,34 +156,19 @@ public final class ContinentCoastOverlay {
      */
     public void paintCoasts(Graphics2D g2) {
 
-        if (traced == null) {
+        if (!coast.hasTrace()) {
             return;
         }
 
         paintFaces(g2);
         paintBridges(g2);
 
-        if (settings.showContinentCoasts) {
-
-            MapPainting.paintLineRings(
-                g2,
-                Coastlines.collectCoastRings(traced),
-                settings.continentCoastColour);
-        }
-
-        if (!settings.showDroppedStretches || !settings.showContinentCoasts) {
+        if (!settings.showContinentCoasts) {
             return;
         }
 
-        // In the same colour the settled coast marks its own drops with. The two
-        // constructions are told apart by the line each drop sits beside, and a second
-        // colour would imply the drops themselves differ in kind, which they do not.
-        MapPainting.paintLineRuns(
-            g2,
-            Coastlines.collectDroppedRuns(
-                traced,
-                settings.parameters.measureArcSegments()),
-            settings.droppedStretchColour);
+        coast.paintCoastRings(g2, settings.continentCoastColour);
+        coast.paintDroppedStretches(g2);
     }
 
     /**
