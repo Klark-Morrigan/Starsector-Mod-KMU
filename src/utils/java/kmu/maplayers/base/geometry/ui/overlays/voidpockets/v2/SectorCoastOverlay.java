@@ -6,7 +6,7 @@ import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
-import kmu.maplayers.base.geometry.ui.overlays.voidpockets.TracedCoastPockets;
+import kmu.maplayers.base.geometry.ui.overlays.voidpockets.CoastalPocketsOverlay;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 
 import java.awt.BasicStroke;
@@ -21,7 +21,7 @@ import java.util.List;
  * <p>What makes this one the settled coast is two choices and nothing else: it traces with the
  * bridges laid, so runs of cells a bridge joins come back as one shape, and it traces under the
  * settled coast rules. Those two lines are the whole of v2. Every step after them is
- * {@link TracedCoastPockets}, which the continent coast in the neighbouring package runs
+ * {@link CoastalPocketsOverlay}, which the continent coast in the neighbouring package runs
  * exactly as well - so a difference between the two on screen is a difference between the
  * coasts rather than between two copies of the drawing.
  *
@@ -42,7 +42,7 @@ public final class SectorCoastOverlay {
     // inherited from, because what v2 and v3 share is a sequence of steps rather than an
     // identity - neither is a kind of the other, and nothing ever asks for "a coast overlay"
     // without knowing which.
-    private final TracedCoastPockets coast;
+    private final CoastalPocketsOverlay coast;
 
     // What the last trace found, held rather than recomputed while painting: a frame that
     // rebuilt any of these would be drawing marks measured against geometry the rest of the
@@ -53,7 +53,7 @@ public final class SectorCoastOverlay {
     public SectorCoastOverlay(ViewerSettings settings) {
 
         this.settings = settings;
-        this.coast = new TracedCoastPockets(settings);
+        this.coast = new CoastalPocketsOverlay(settings);
     }
 
     /**

@@ -7,7 +7,7 @@ import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidFaces;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
-import kmu.maplayers.base.geometry.ui.overlays.voidpockets.TracedCoastPockets;
+import kmu.maplayers.base.geometry.ui.overlays.voidpockets.CoastalPocketsOverlay;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 
 import java.awt.BasicStroke;
@@ -23,9 +23,9 @@ import java.util.List;
  * <p>What makes this one the continent coast is that it traces with NO bridges laid, so a run
  * of cells a bridge would have joined comes back as several shapes rather than one, and under
  * its own coast rules. That is the whole of v3's disagreement with the settled coast. The fill
- * below it is {@link TracedCoastPockets}, which the settled coast in the neighbouring package
- * runs exactly as well - which is the point: with the same code on both sides, a difference on
- * screen is a difference between the coasts.
+ * below it is {@link CoastalPocketsOverlay}, which the settled coast in the neighbouring
+ * package runs exactly as well - which is the point: with the same code on both sides, a
+ * difference on screen is a difference between the coasts.
  *
  * <p>The bridges and the pieces they cut are this construction's own. The settled coast treats
  * a bridge as connective tissue and traces one line round everything it joins; the proposal is
@@ -49,7 +49,7 @@ public final class ContinentCoastOverlay {
     // inherited from, because what v2 and v3 share is a sequence of steps rather than an
     // identity - neither is a kind of the other, and nothing ever asks for "a coast overlay"
     // without knowing which.
-    private final TracedCoastPockets coast;
+    private final CoastalPocketsOverlay coast;
 
     // The bridges that survive those coastlines. Held beside the trace they were filtered
     // against rather than found while painting, since which ones survive is a question about
@@ -65,7 +65,7 @@ public final class ContinentCoastOverlay {
     public ContinentCoastOverlay(ViewerSettings settings) {
 
         this.settings = settings;
-        this.coast = new TracedCoastPockets(settings);
+        this.coast = new CoastalPocketsOverlay(settings);
     }
 
     /**

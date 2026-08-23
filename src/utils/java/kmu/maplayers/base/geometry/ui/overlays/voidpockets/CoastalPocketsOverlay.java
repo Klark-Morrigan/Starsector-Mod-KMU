@@ -13,7 +13,12 @@ import java.awt.Graphics2D;
 import java.util.List;
 
 /**
- * A traced coast and the void it shut in: everything the rival constructions do identically.
+ * The half of a coast overlay that both rival constructions run identically: a traced coast,
+ * the void it shut in, and the drawing of the two.
+ *
+ * <p>Not driven from the window itself. Each construction holds one of these and drives it,
+ * because what a construction is IS the trace it makes, and the trace is the one thing this
+ * cannot do for itself.
  *
  * <p>Two constructions are on screen to be compared, and they differ in exactly one thing -
  * how the coast is traced. Everything after that trace is one answer to one question: what a
@@ -30,7 +35,7 @@ import java.util.List;
  * while the window is open, and a set captured when this was built would go on drawing the map
  * in whatever the colours were at startup.
  */
-public final class TracedCoastPockets {
+public final class CoastalPocketsOverlay {
 
     private final ViewerSettings settings;
 
@@ -40,7 +45,7 @@ public final class TracedCoastPockets {
     private Coastlines.TracedCoasts traced;
     private List<WalledPocket> pockets = List.of();
 
-    public TracedCoastPockets(ViewerSettings settings) {
+    public CoastalPocketsOverlay(ViewerSettings settings) {
         this.settings = settings;
     }
 
