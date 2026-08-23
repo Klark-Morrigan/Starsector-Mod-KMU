@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -22,7 +22,7 @@ import javax.swing.JPanel;
  * <p>Built shorter than a labelled row, deliberately, which is the one thing about a swatch
  * that is not obvious from looking at one.
  */
-final class ViewerSwatches {
+public final class ViewerSwatches {
 
     private static final int SWATCH_WIDTH = 40;
 
@@ -54,7 +54,7 @@ final class ViewerSwatches {
      * @param fallback the colour to start at and to reset to
      * @param apply    records the new colour
      */
-    record Choice(
+    public record Choice(
         Color fallback,
         Consumer<Color> apply) {
     }
@@ -73,7 +73,7 @@ final class ViewerSwatches {
      * @param onChange what to run once it changes
      * @return the row
      */
-    static JPanel buildColour(
+    public static JPanel buildColour(
             String key,
             String title,
             Color fallback,
@@ -122,7 +122,7 @@ final class ViewerSwatches {
      * @param onChange what to run once either changes
      * @return the row
      */
-    static JPanel buildColourPair(
+    public static JPanel buildColourPair(
             String key,
             String title,
             Choice fill,

@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.output;
 
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.PolygonRegions;
@@ -25,6 +25,7 @@ import kmu.maplayers.base.geometry.VoidBridges;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.VoidSectionReport;
 import kmu.maplayers.base.geometry.WallRefusals;
+import kmu.maplayers.base.geometry.render.MapLook;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

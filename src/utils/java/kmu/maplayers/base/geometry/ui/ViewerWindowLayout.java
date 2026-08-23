@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 import java.util.prefs.Preferences;
 
@@ -12,7 +12,7 @@ import javax.swing.JSplitPane;
  * map is drawn differently for it, so it belongs neither in the settings the viewer draws
  * with nor in the panel that edits them.
  */
-final class ViewerWindowLayout {
+public final class ViewerWindowLayout {
 
     private static final int WINDOW_WIDTH = 1500;
 
@@ -35,7 +35,7 @@ final class ViewerWindowLayout {
     // particular zoom and a particular amount of screen, and having to re-establish both
     // before every session is enough friction to stop someone checking a shape they would
     // otherwise have checked.
-    static void restoreLayout(JFrame frame, JSplitPane split) {
+    public static void restoreLayout(JFrame frame, JSplitPane split) {
 
         var saved = Preferences.userNodeForPackage(ViewerSettings.class);
 
@@ -51,7 +51,7 @@ final class ViewerWindowLayout {
             - saved.getInt(CONTROL_WIDTH_KEY, CONTROL_WIDTH));
     }
 
-    static void saveLayout(JFrame frame, JSplitPane split) {
+    public static void saveLayout(JFrame frame, JSplitPane split) {
 
         var saved = Preferences.userNodeForPackage(ViewerSettings.class);
 

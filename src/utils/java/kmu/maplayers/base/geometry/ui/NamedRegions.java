@@ -1,9 +1,10 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.geometry.NamedRegion;
+import kmu.maplayers.base.geometry.render.MapPainting;
 
 import java.awt.Color;
 import java.awt.FontMetrics;
@@ -40,7 +41,7 @@ import java.util.List;
  * far-off region stays a whisper. The reader gets a density reading for free out of the same
  * pass that writes the names, and it is honest by construction: what looks crowded is crowded.
  */
-final class NamedRegions {
+public final class NamedRegions {
 
     // Small enough that a name takes little of the region it names, large enough to read at
     // a glance. Fixed rather than scaled with the zoom: a name sized by the zoom would grow
@@ -87,7 +88,7 @@ final class NamedRegions {
      * @param regions       the regions to name
      * @param colour        what to write them in
      */
-    static void paintNames(
+    public static void paintNames(
             Graphics2D g2,
             AffineTransform worldToScreen,
             List<NamedRegion> regions,
@@ -142,7 +143,7 @@ final class NamedRegions {
      * @param y       the same
      * @return the region holding the point, or null
      */
-    static NamedRegion findRegionAt(List<NamedRegion> regions, double x, double y) {
+    public static NamedRegion findRegionAt(List<NamedRegion> regions, double x, double y) {
 
         for (var region : regions) {
 

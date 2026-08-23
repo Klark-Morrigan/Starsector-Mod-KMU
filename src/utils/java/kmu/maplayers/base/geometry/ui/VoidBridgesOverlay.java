@@ -1,9 +1,11 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidBridgePockets;
 import kmu.maplayers.base.geometry.VoidBridges;
+import kmu.maplayers.base.geometry.render.MapLook;
+import kmu.maplayers.base.geometry.render.MapPainting;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
@@ -21,14 +23,14 @@ import java.util.List;
  * <p>See {@link VoidBridgePockets} for why the bridges can be turned back into a reach and
  * traced rather than offset.
  */
-final class VoidBridgesOverlay {
+public final class VoidBridgesOverlay {
 
     private final ViewerSettings settings;
 
     private List<CellGap> bridges = List.of();
     private List<List<double[]>> captured = List.of();
 
-    VoidBridgesOverlay(ViewerSettings settings) {
+    public VoidBridgesOverlay(ViewerSettings settings) {
         this.settings = settings;
     }
 
@@ -37,7 +39,7 @@ final class VoidBridgesOverlay {
      *
      * @param fixture the sector to find them in
      */
-    void refresh(SectorFixture fixture) {
+    public void refresh(SectorFixture fixture) {
 
         // Built while either half of it is on screen. The walls and the fills are one
         // construction seen twice, so a frame showing one of them has already paid for both.
@@ -67,7 +69,7 @@ final class VoidBridgesOverlay {
      *
      * @param g2 what to draw with
      */
-    void paintFills(Graphics2D g2) {
+    public void paintFills(Graphics2D g2) {
 
         if (!settings.showInlandFill) {
             return;
@@ -94,7 +96,7 @@ final class VoidBridgesOverlay {
      *
      * @param g2 what to draw with
      */
-    void paintSpans(Graphics2D g2) {
+    public void paintSpans(Graphics2D g2) {
 
         if (!settings.showInlandBridges) {
             return;

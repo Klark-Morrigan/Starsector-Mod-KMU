@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 /**
  * What the settings panel can ask the viewer to redo when a knob moves.
@@ -13,20 +13,20 @@ package kmu.maplayers.base.geometry.viewer;
  * does at the point a knob is wired to it, and so the viewer's obligations to its panel are
  * stated in one place instead of inferred from a constructor's argument order.
  */
-interface ViewerRefreshes {
+public interface ViewerRefreshes {
 
     /** Builds the partition again and everything downstream of it. */
-    void rebuildGeometry();
+    public void rebuildGeometry();
 
     /** Finds the void held between facing cells again. */
-    void refreshVoidBridges();
+    public void refreshVoidBridges();
 
     /** Traces the smoothed outer edge again, and the continent preview beside it. */
-    void refreshCoastlines();
+    public void refreshCoastlines();
 
     /** Traces the unclipped partition again. */
-    void refreshUnboundedCells();
+    public void refreshUnboundedCells();
 
     /** Draws the map again, with nothing recomputed. */
-    void repaintMap();
+    public void repaintMap();
 }

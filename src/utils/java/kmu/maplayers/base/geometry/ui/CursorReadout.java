@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 import kmu.maplayers.base.geometry.NamedRegion;
 
@@ -27,7 +27,7 @@ import java.util.function.Function;
  * <p>In screen space throughout, deliberately: the map is drawn under a scaled and y-flipped
  * transform, and text put through that comes out mirrored and sized by the zoom.
  */
-final class CursorReadout {
+public final class CursorReadout {
 
     // How far the box sits from the pointer, and the margin inside it. Clear enough of the
     // tip that the pointer is not standing on the very thing it is reporting, and down-right
@@ -58,7 +58,7 @@ final class CursorReadout {
     private List<NamedRegion> cells = List.of();
     private List<NamedRegion> sections = List.of();
 
-    CursorReadout(Function<Point, double[]> findWorldPoint) {
+    public CursorReadout(Function<Point, double[]> findWorldPoint) {
         this.findWorldPoint = findWorldPoint;
     }
 
@@ -68,7 +68,7 @@ final class CursorReadout {
      * @param cells    the cells, asked first
      * @param sections the pieces of void
      */
-    void nameRegionsFrom(List<NamedRegion> cells, List<NamedRegion> sections) {
+    public void nameRegionsFrom(List<NamedRegion> cells, List<NamedRegion> sections) {
 
         this.cells = cells;
         this.sections = sections;
@@ -83,7 +83,7 @@ final class CursorReadout {
      * @param at where the pointer is, or null where it is off the canvas
      * @return the coordinates, and the name of whatever is there
      */
-    List<String> describeLines(Point at) {
+    public List<String> describeLines(Point at) {
 
         if (at == null) {
             return NOTHING;
@@ -102,7 +102,7 @@ final class CursorReadout {
      * @param at where the pointer is, or null
      * @return the coordinates with the name to the RIGHT of them rather than under them
      */
-    String describeOnOneLine(Point at) {
+    public String describeOnOneLine(Point at) {
         return String.join("   ", describeLines(at));
     }
 
@@ -114,7 +114,7 @@ final class CursorReadout {
      * @param canvas  how big the canvas is, to keep the box on it
      * @return the box it covers
      */
-    Rectangle findBox(Point at, FontMetrics metrics, Dimension canvas) {
+    public Rectangle findBox(Point at, FontMetrics metrics, Dimension canvas) {
 
         var lines = describeLines(at);
         var width = measureWidestLine(lines, metrics) + 2 * PADDING;
@@ -143,7 +143,7 @@ final class CursorReadout {
      * @param canvas  how big the canvas is
      * @return the box to repaint
      */
-    Rectangle findEraseBox(Point at, FontMetrics metrics, Dimension canvas) {
+    public Rectangle findEraseBox(Point at, FontMetrics metrics, Dimension canvas) {
 
         var box = findBox(at, metrics, canvas);
 
@@ -161,7 +161,7 @@ final class CursorReadout {
      * @param at     where the pointer is
      * @param canvas how big the canvas is
      */
-    void paintAt(Graphics2D g2, Point at, Dimension canvas) {
+    public void paintAt(Graphics2D g2, Point at, Dimension canvas) {
 
         var metrics = g2.getFontMetrics();
         var lines = describeLines(at);

@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -35,7 +35,7 @@ import javax.swing.SwingConstants;
  * checked. The reset button is the other half: a knob that cannot be put back is a knob
  * people stop turning.
  */
-final class ViewerControls {
+public final class ViewerControls {
 
     private static final int ROW_PADDING = 4;
 
@@ -70,7 +70,7 @@ final class ViewerControls {
      *
      * @return the rule, as a row
      */
-    static JPanel buildDivider() {
+    public static JPanel buildDivider() {
 
         var row = new JPanel(new BorderLayout());
 
@@ -95,7 +95,7 @@ final class ViewerControls {
      * @param onChange what to run once it changes
      * @return the row
      */
-    static JPanel buildToggle(
+    public static JPanel buildToggle(
             String key,
             String title,
             boolean fallback,
@@ -146,7 +146,7 @@ final class ViewerControls {
      * @param fallback the state to start in and to reset to
      * @param apply    records the new state
      */
-    record Toggle(
+    public record Toggle(
         String key,
         String title,
         boolean fallback,
@@ -164,7 +164,7 @@ final class ViewerControls {
      * @param toggles  the checkboxes, left to right
      * @return the row
      */
-    static JPanel buildToggleRow(Runnable onChange, Toggle... toggles) {
+    public static JPanel buildToggleRow(Runnable onChange, Toggle... toggles) {
 
         var boxes = new JPanel(new GridLayout(SINGLE_ROW, toggles.length));
         var saved = findSavedValues();
@@ -230,7 +230,7 @@ final class ViewerControls {
      * @param onChange what to run once it changes
      * @return the row
      */
-    static JPanel buildChoice(
+    public static JPanel buildChoice(
             String key,
             String title,
             List<String> options,
@@ -278,11 +278,11 @@ final class ViewerControls {
     //
     // Shared with the toggle block next door for exactly that reason: its switches are knobs
     // like any other and have to be remembered in the same node, not in one of their own.
-    static Preferences findSavedValues() {
+    public static Preferences findSavedValues() {
         return Preferences.userNodeForPackage(ViewerControls.class);
     }
 
-    static JButton buildResetButton(Runnable reset) {
+    public static JButton buildResetButton(Runnable reset) {
 
         var button = new JButton(RESET_LABEL);
 
@@ -294,7 +294,7 @@ final class ViewerControls {
         return button;
     }
 
-    static JPanel layOutLabelledRow(
+    public static JPanel layOutLabelledRow(
             String title,
             JTextField valueBox,
             Runnable reset,

@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -42,7 +42,7 @@ import javax.swing.UIManager;
  * roll-up names the switches it covers rather than owning a subtree, and the indentation is
  * layout rather than structure.
  */
-final class ViewerToggleTree {
+public final class ViewerToggleTree {
 
     // Tighter than the padding a slider or a colour row takes. A block of a dozen switches
     // is read as a block, and spacing them like the knobs below would push the last of them
@@ -68,7 +68,7 @@ final class ViewerToggleTree {
      * @param fallback the state to start in when nothing was remembered
      * @param apply    records the new state
      */
-    record Switch(
+    public record Switch(
         String key,
         String title,
         boolean fallback,
@@ -122,7 +122,7 @@ final class ViewerToggleTree {
      * @param indent how many levels in it sits
      * @param toggle the switch it stands for
      */
-    record SwitchRow(int indent, Switch toggle) implements Row {
+    public record SwitchRow(int indent, Switch toggle) implements Row {
 
         @Override
         public String title() {
@@ -137,7 +137,7 @@ final class ViewerToggleTree {
      * @param title  what it is called
      * @param covers the keys of the switches it rolls up
      */
-    record RollUpRow(int indent, String title, List<String> covers) implements Row {
+    public record RollUpRow(int indent, String title, List<String> covers) implements Row {
     }
 
     /**
@@ -147,7 +147,7 @@ final class ViewerToggleTree {
      * @param rows     the rows, top to bottom
      * @return the block
      */
-    static JPanel buildToggleTree(Runnable onChange, Row... rows) {
+    public static JPanel buildToggleTree(Runnable onChange, Row... rows) {
 
         var block = new JPanel(new GridLayout(rows.length, SINGLE_COLUMN));
         var saved = ViewerControls.findSavedValues();

@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.CoastPockets;
@@ -8,6 +8,8 @@ import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidFaces;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.WalledPocket;
+import kmu.maplayers.base.geometry.render.MapLook;
+import kmu.maplayers.base.geometry.render.MapPainting;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
@@ -46,7 +48,7 @@ import java.util.List;
  * proposal, and the only way to judge it is against the bridges and the coast it would
  * replace, all on screen at once.
  */
-final class ContinentCoastOverlay {
+public final class ContinentCoastOverlay {
 
     // An odd multiplier, so the two coordinates of a place cannot cancel on a diagonal.
     private static final int PLACE_HASH_MIX = 31;
@@ -77,7 +79,7 @@ final class ContinentCoastOverlay {
     // drawn over another is a fill of a map nobody built.
     private List<WalledPocket> pockets = List.of();
 
-    ContinentCoastOverlay(ViewerSettings settings) {
+    public ContinentCoastOverlay(ViewerSettings settings) {
         this.settings = settings;
     }
 
@@ -90,7 +92,7 @@ final class ContinentCoastOverlay {
      *
      * @param fixture the sector to trace in
      */
-    void refresh(SectorFixture fixture) {
+    public void refresh(SectorFixture fixture) {
 
         traced = null;
         bridges = List.of();
@@ -157,7 +159,7 @@ final class ContinentCoastOverlay {
      *
      * @param g2 what to draw with
      */
-    void paintPocketFills(Graphics2D g2) {
+    public void paintPocketFills(Graphics2D g2) {
 
         if (!settings.showContinentCoastalFill) {
             return;
@@ -176,7 +178,7 @@ final class ContinentCoastOverlay {
      *
      * @param g2 what to draw with
      */
-    void paintCoasts(Graphics2D g2) {
+    public void paintCoasts(Graphics2D g2) {
 
         if (traced == null) {
             return;

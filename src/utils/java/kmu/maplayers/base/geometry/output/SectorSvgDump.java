@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.output;
 
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
@@ -10,12 +10,12 @@ import java.nio.file.Path;
 /**
  * Writes every sector fixture's geometry to SVG without opening a window.
  *
- * <p>{@link SectorGeometryViewer} already draws these shapes and can save one on request, but it
+ * <p>the geometry viewer already draws these shapes and can save one on request, but it
  * needs someone sitting at it. A shape often has to be looked at when nobody is: to attach to a
  * plan, to diff two runs of a geometry change against each other, or to hand to someone else.
  * Run it with {@code gradlew writeSectorSvg}.
  */
-final class SectorSvgDump {
+public final class SectorSvgDump {
 
     private static final Path SVG_DIRECTORY = Path.of("build", "reports", "political-map");
 

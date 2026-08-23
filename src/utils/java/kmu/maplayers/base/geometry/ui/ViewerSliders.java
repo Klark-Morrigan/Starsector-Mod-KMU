@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 import java.awt.Dimension;
 import java.util.Locale;
@@ -21,7 +21,7 @@ import javax.swing.JTextField;
  * harmless; moving the slider from a typed value would rewrite the box mid-edit and fight the
  * caret, so a typed value sets a flag the slider's own listener reads.
  */
-final class ViewerSliders {
+public final class ViewerSliders {
 
     private static final int SLIDER_STEPS = 1000;
 
@@ -45,12 +45,12 @@ final class ViewerSliders {
      * @param maximum  the value at the far right, and the ceiling
      * @param fallback the value to start at and to reset to
      */
-    record SliderRange(
+    public record SliderRange(
         double minimum,
         double maximum,
         double fallback) {
 
-        SliderRange {
+        public SliderRange {
             if (fallback < minimum || fallback > maximum) {
                 throw new IllegalArgumentException(
                     "a slider cannot start at " + fallback
@@ -71,7 +71,7 @@ final class ViewerSliders {
      * @param onChanged cheap work to redo per movement, such as a repaint
      * @param onSettled expensive work to redo once the handle is released or a value typed
      */
-    record SliderWork(
+    public record SliderWork(
         DoubleConsumer apply,
         Runnable onChanged,
         Runnable onSettled) {
@@ -86,7 +86,7 @@ final class ViewerSliders {
      * @param work  what to do as it moves
      * @return the row
      */
-    static JPanel buildSlider(
+    public static JPanel buildSlider(
             String key,
             String title,
             SliderRange range,

@@ -1,4 +1,6 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.output;
+
+import kmu.maplayers.base.geometry.render.MapPainting;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -34,7 +36,7 @@ import javax.imageio.ImageIO;
  * <p>Anything outside that subset is ignored rather than guessed at, so a drawing that grows a
  * feature this cannot render comes out visibly missing it instead of subtly wrong.
  */
-final class SvgRasteriser {
+public final class SvgRasteriser {
 
     // The writer's root carries the world size in its viewBox and the pixel size in its width
     // and height, which between them are the whole transform from one to the other.
@@ -104,7 +106,7 @@ final class SvgRasteriser {
      * @param source the SVG to read
      * @param target where to write the PNG
      */
-    static void rasteriseToPng(Path source, Path target) {
+    public static void rasteriseToPng(Path source, Path target) {
 
         var svg = readSvg(source);
         var root = matchOrFail(ROOT, svg, source);

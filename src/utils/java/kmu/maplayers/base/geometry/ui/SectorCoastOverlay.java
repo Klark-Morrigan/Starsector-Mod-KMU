@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 import kmu.maplayers.base.geometry.CoastCrossings;
 import kmu.maplayers.base.geometry.CoastPocketFaults;
@@ -7,6 +7,8 @@ import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.WalledPocket;
+import kmu.maplayers.base.geometry.render.MapLook;
+import kmu.maplayers.base.geometry.render.MapPainting;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
@@ -40,7 +42,7 @@ import java.util.List;
  * at it is for. The outline it hands back is an ordinary closed ring, so filling it later
  * needs nothing this class does not already produce.
  */
-final class SectorCoastOverlay {
+public final class SectorCoastOverlay {
 
     private final ViewerSettings settings;
 
@@ -55,7 +57,7 @@ final class SectorCoastOverlay {
     // measured against, rather than against whatever the sliders have been moved to since.
     private Coastlines.TracedCoasts traced;
 
-    SectorCoastOverlay(ViewerSettings settings) {
+    public SectorCoastOverlay(ViewerSettings settings) {
         this.settings = settings;
     }
 
@@ -67,7 +69,7 @@ final class SectorCoastOverlay {
      *
      * @param fixture the sector to trace in
      */
-    void refresh(SectorFixture fixture) {
+    public void refresh(SectorFixture fixture) {
 
         // Traced while either half of it is on screen. The line and the void it shuts in are
         // one construction seen twice, and the pockets come off this same trace - so a frame
@@ -112,7 +114,7 @@ final class SectorCoastOverlay {
      *
      * @param g2 what to draw with
      */
-    void paintPocketFills(Graphics2D g2) {
+    public void paintPocketFills(Graphics2D g2) {
 
         if (!settings.showCoastalFill) {
             return;
@@ -131,7 +133,7 @@ final class SectorCoastOverlay {
      *
      * @param g2 what to draw with
      */
-    void paintCoasts(Graphics2D g2) {
+    public void paintCoasts(Graphics2D g2) {
 
         if (traced == null || !settings.showCoastline) {
             return;

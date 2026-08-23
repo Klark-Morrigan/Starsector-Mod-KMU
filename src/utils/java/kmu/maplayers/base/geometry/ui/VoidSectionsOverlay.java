@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.LaidCoast;
@@ -29,7 +29,7 @@ import java.util.List;
  * a piece of void is and what it is called are facts about the void itself; the shaping decides
  * only how much of it is drawn.
  */
-final class VoidSectionsOverlay {
+public final class VoidSectionsOverlay {
 
     private final ViewerSettings settings;
 
@@ -39,7 +39,7 @@ final class VoidSectionsOverlay {
     private List<NamedRegion> inland = List.of();
     private List<NamedRegion> coastal = List.of();
 
-    VoidSectionsOverlay(ViewerSettings settings) {
+    public VoidSectionsOverlay(ViewerSettings settings) {
         this.settings = settings;
     }
 
@@ -49,7 +49,7 @@ final class VoidSectionsOverlay {
      * @param fixture the sector to name in, which carries the system ids a section is named
      *                from as well as the sites it is measured against
      */
-    void refresh(SectorFixture fixture) {
+    public void refresh(SectorFixture fixture) {
 
         // Walls laid, because a wall closes void the cells did not close on their own and those
         // pieces are sections like any other. Traced here rather than taken from the coast
@@ -84,7 +84,7 @@ final class VoidSectionsOverlay {
      *
      * @return the named sections
      */
-    List<NamedRegion> getSections() {
+    public List<NamedRegion> getSections() {
 
         var all = new ArrayList<NamedRegion>(inland.size() + coastal.size());
 
@@ -100,7 +100,7 @@ final class VoidSectionsOverlay {
      * @param g2            what to draw with, untransformed - this is screen space
      * @param worldToScreen the transform the map was drawn under
      */
-    void paintNames(Graphics2D g2, AffineTransform worldToScreen) {
+    public void paintNames(Graphics2D g2, AffineTransform worldToScreen) {
 
         if (settings.showInlandNames) {
             NamedRegions.paintNames(g2, worldToScreen, inland, settings.regionNameColour);

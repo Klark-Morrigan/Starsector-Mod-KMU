@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
@@ -25,7 +25,7 @@ import javax.swing.JPanel;
  * <p>The ranges are here rather than with the settings: how far a slider may travel is a
  * property of the widget, where the value it starts at is a property of the setting.
  */
-final class ViewerSettingsPanel {
+public final class ViewerSettingsPanel {
 
     // Slider ranges: wide enough either side of the shipped defaults to see a knob's effect
     // break down, not just vary. The reach floor sits below any real system spacing and the
@@ -129,12 +129,12 @@ final class ViewerSettingsPanel {
     private final ViewerSettings settings;
     private final ViewerRefreshes refreshes;
 
-    ViewerSettingsPanel(ViewerSettings settings, ViewerRefreshes refreshes) {
+    public ViewerSettingsPanel(ViewerSettings settings, ViewerRefreshes refreshes) {
         this.settings = settings;
         this.refreshes = refreshes;
     }
 
-    JPanel buildRows() {
+    public JPanel buildRows() {
 
         var controls = new JPanel();
 

@@ -1,20 +1,20 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.ui;
 
 import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Limits;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellEdges;
-import kmu.maplayers.base.geometry.CellShaper;
-import kmu.maplayers.base.geometry.EdgeClassifier;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.NamedRegion;
 import kmu.maplayers.base.geometry.PickLog;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
-import kmu.maplayers.base.geometry.SystemClusterBorders;
 import kmu.maplayers.base.geometry.UnboundedCells;
+import kmu.maplayers.base.geometry.output.SectorSvgWriter;
+import kmu.maplayers.base.geometry.render.MapLook;
+import kmu.maplayers.base.geometry.render.MapPainting;
 
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
@@ -107,7 +107,7 @@ import javax.swing.SwingUtilities;
  * pocket closes over, and this map's history is of exactly those being found late, from a
  * screenshot, after a feature had been built on them.
  */
-final class SectorGeometryViewer implements ViewerRefreshes {
+public final class SectorGeometryViewer implements ViewerRefreshes {
 
     private static final Path SVG_DIRECTORY = Path.of("build", "reports", "political-map");
 

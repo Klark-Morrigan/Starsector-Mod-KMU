@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.viewer;
+package kmu.maplayers.base.geometry.output;
 
 import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Limits;
@@ -15,6 +15,7 @@ import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidBridgePockets;
 import kmu.maplayers.base.geometry.VoidBridges;
 import kmu.maplayers.base.geometry.VoidPockets;
+import kmu.maplayers.base.geometry.render.MapLook;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -42,7 +43,7 @@ import java.util.Map;
  * drawing. Those depend on the state Starsector's renderer is in when it calls the map,
  * which only the game can supply, so they stay an in-game check.
  */
-final class SectorSvgWriter {
+public final class SectorSvgWriter {
 
     // A trapped pocket's outline is read against its own fill rather than against the
     // black, so it wants a fraction of the weight the coast line itself needs.
@@ -80,7 +81,7 @@ final class SectorSvgWriter {
      * @param fixture  the sector the geometry was built from
      * @param geometry the assembled geometry to draw
      */
-    static void writeSectorSvg(
+    public static void writeSectorSvg(
             Path target,
             SectorFixture fixture,
             SectorGeometry geometry,

@@ -51,16 +51,29 @@ sourceSets {
 enforcePackageLayering {
     forbidImport under: 'kmu.maplayers.base', of: 'kmu.maplayers.politicalmap'
 
-    // The geometry prototype's own arrow: the viewer is built on the constructions,
-    // and the constructions know nothing of the window. That is what lets a reader
-    // ask "what does v2 do" and "how is a coast traced" in two different files, and
-    // what stops a look constant - a stroke width, a colour - becoming an input to a
-    // shape. It has already been broken once by accident, by a report reaching for
-    // the width a border is drawn at to decide whether a fault was visible; the
-    // reading was fair and the dependency was backwards, which is exactly the pair a
-    // gate catches and a reviewer does not.
+    // The geometry prototype's own arrows. The constructions know nothing of how
+    // anything is drawn or written; the drawing vocabulary knows nothing of the
+    // window or the files; and the writers know nothing of the window. So a reader
+    // can ask "what does v2 do", "how is a coast traced" and "what is it drawn in"
+    // in three different places, and a look constant - a stroke width, a colour -
+    // can never become an input to a shape.
+    //
+    // The third is what forced `render` to exist rather than living in `ui`: the
+    // window writes an SVG, and the SVG writer reads the palette, so a palette kept
+    // with the window would have made the two mutually dependent.
+    // Nothing anywhere may import the window. `under` matches a package and
+    // everything beneath it, so this one declaration covers the constructions, the
+    // drawing vocabulary and the writers at once - and it is exact rather than
+    // merely broad, because the only code that legitimately names the window is the
+    // window, which needs no import to do it.
     forbidImport under: 'kmu.maplayers.base.geometry',
-                 of: 'kmu.maplayers.base.geometry.viewer'
+                 of: 'kmu.maplayers.base.geometry.ui'
+
+    // And the drawing vocabulary may not reach for the writers. The window may -
+    // exporting an SVG is something a window does - so this is stated of `render`
+    // alone rather than of everything under `geometry`.
+    forbidImport under: 'kmu.maplayers.base.geometry.render',
+                 of: 'kmu.maplayers.base.geometry.output'
 }
 
 // The same rule one level in, on the words rather than the imports. The carve
@@ -131,9 +144,9 @@ enforcePackageVocabulary {
     // package's types is not this package speaking the word for itself, and the
     // names are not ours to reword.
     allowWord word: 'territory',
-            inFile: 'src/utils/java/kmu/maplayers/base/geometry/viewer/SectorGeometryViewer.java'
+            inFile: 'src/utils/java/kmu/maplayers/base/geometry/ui/SectorGeometryViewer.java'
     allowWord word: 'territories',
-            inFile: 'src/utils/java/kmu/maplayers/base/geometry/viewer/SectorGeometryViewer.java'
+            inFile: 'src/utils/java/kmu/maplayers/base/geometry/ui/SectorGeometryViewer.java'
 }
 
 // On-demand Java formatting (`gradlew spotlessApply`). Applied after the source
@@ -286,7 +299,7 @@ tasks.register('viewSectorGeometry', JavaExec) {
     group = 'help'
     description = 'Opens the sector geometry viewer (live sliders over a real sector).'
     classpath = sourceSets.utils.runtimeClasspath
-    mainClass = 'kmu.maplayers.base.geometry.viewer.SectorGeometryViewer'
+    mainClass = 'kmu.maplayers.base.geometry.ui.SectorGeometryViewer'
 }
 
 // The same shapes the viewer draws, written straight to file with the frontier off and on. The
@@ -296,7 +309,7 @@ tasks.register('writeSectorSvg', JavaExec) {
     group = 'help'
     description = 'Writes every sector fixture to SVG, frontier off and on, into build/reports.'
     classpath = sourceSets.utils.runtimeClasspath
-    mainClass = 'kmu.maplayers.base.geometry.viewer.SectorSvgDump'
+    mainClass = 'kmu.maplayers.base.geometry.output.SectorSvgDump'
 }
 
 // Walks the void between cells directly, with no raster in the way. Replaces the earlier
@@ -306,5 +319,5 @@ tasks.register('writeVoidRegions', JavaExec) {
     group = 'help'
     description = 'Traces the void between cells exactly and reports how it divides.'
     classpath = sourceSets.utils.runtimeClasspath
-    mainClass = 'kmu.maplayers.base.geometry.viewer.VoidRegionsDump'
+    mainClass = 'kmu.maplayers.base.geometry.output.VoidRegionsDump'
 }
