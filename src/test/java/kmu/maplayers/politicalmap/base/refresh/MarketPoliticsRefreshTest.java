@@ -10,22 +10,15 @@ import kmlib.starsector.colonies.SectorColonySightings;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-
-import java.util.List;
 
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockUnseatedMarket;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins {@link MarketPoliticsRefresh}, the shared seat guard the politics
@@ -51,11 +44,11 @@ final class MarketPoliticsRefreshTest {
     }
 
     @Nested
-    class MarkSystemStaleForMarket {
+    class ReportMarketChange {
 
         @Test
         void marksTheMarketsSystemStale() {
-            MarketPoliticsRefresh.markSystemStaleForMarket(mockMarketInSystem("sys"),
+            MarketPoliticsRefresh.reportMarketChange(mockMarketInSystem("sys"),
                     "colony resize", "prevSize=3");
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
@@ -63,7 +56,7 @@ final class MarketPoliticsRefreshTest {
 
         @Test
         void marksTheMarketsSystemStaleWithEmptyContext() {
-            MarketPoliticsRefresh.markSystemStaleForMarket(mockMarketInSystem("sys"),
+            MarketPoliticsRefresh.reportMarketChange(mockMarketInSystem("sys"),
                     "colony resize", "");
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
@@ -71,7 +64,7 @@ final class MarketPoliticsRefreshTest {
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
-            MarketPoliticsRefresh.markSystemStaleForMarket(mockUnseatedMarket(), "colony resize",
+            MarketPoliticsRefresh.reportMarketChange(mockUnseatedMarket(), "colony resize",
                     "prevSize=3");
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
@@ -79,7 +72,7 @@ final class MarketPoliticsRefreshTest {
 
         @Test
         void marksNothingForNullMarket() {
-            MarketPoliticsRefresh.markSystemStaleForMarket(null, "colony resize", "prevSize=3");
+            MarketPoliticsRefresh.reportMarketChange(null, "colony resize", "prevSize=3");
 
             assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
         }
@@ -96,10 +89,10 @@ final class MarketPoliticsRefreshTest {
 
             try (var globalMock = mockStatic(Global.class)) {
 
-                stubSector(globalMock, sector);
+                SectorPoliticsFixtures.stubGlobalSector(globalMock, sector);
 
-                MarketPoliticsRefresh.markSystemStaleForMarket(
-                    seatColonyInItsSystem(sector),
+                MarketPoliticsRefresh.reportMarketChange(
+                    findColonyIn(sector),
                     "colony resize",
                     "");
             }
@@ -122,7 +115,7 @@ final class MarketPoliticsRefreshTest {
 
             try (var globalMock = mockStatic(Global.class)) {
 
-                stubSector(globalMock, sector);
+                SectorPoliticsFixtures.stubGlobalSector(globalMock, sector);
 
                 MarketPoliticsRefresh.recordObservationsIn(
                     SectorPoliticsFixtures.findSystemIn(sector, SYSTEM_ID));
@@ -141,7 +134,7 @@ final class MarketPoliticsRefreshTest {
 
             try (var globalMock = mockStatic(Global.class)) {
 
-                stubSector(globalMock, sector);
+                SectorPoliticsFixtures.stubGlobalSector(globalMock, sector);
 
                 MarketPoliticsRefresh.recordObservationsIn(null);
             }
@@ -153,20 +146,10 @@ final class MarketPoliticsRefreshTest {
     // One system holding a Hegemony colony and a derelict its people can see - the arrangement the
     // whole write exists for, since a derelict alone is observed by nobody.
     private static SectorAPI buildSettledSystemWithADerelict() {
-
-        var hegemony = SectorPoliticsFixtures.buildFaction("hegemony");
-
-        var sector = SectorPoliticsFixtures.buildSectorWithSystems(
-            List.of(hegemony),
-            SectorPoliticsFixtures.listSystemMarkets(
-                SYSTEM_ID,
-                SectorPoliticsFixtures.buildVisibleMarket(hegemony, COLONY_SIZE)));
-
-        SectorPoliticsFixtures.placeMarketsOnSystemEntities(
-            SectorPoliticsFixtures.findSystemIn(sector, SYSTEM_ID),
-            SectorPoliticsFixtures.buildAbandonedStationMarket(DERELICT_SIZE));
-
-        return sector;
+        return SectorPoliticsFixtures.buildSystemHoldingAColonyAndADerelict(
+            SYSTEM_ID,
+            COLONY_SIZE,
+            DERELICT_SIZE);
     }
 
     // The derelict, which stands on one of the system's own entities rather than in its economy.
@@ -178,28 +161,12 @@ final class MarketPoliticsRefreshTest {
             .getMarket();
     }
 
-    // The colony an economy event names as its subject, seated in its system - which the seat
-    // guard reads and the fixture's plain market answers null for.
-    private static MarketAPI seatColonyInItsSystem(SectorAPI sector) {
-
-        var system = SectorPoliticsFixtures.findSystemIn(sector, SYSTEM_ID);
-        var colony = sector.getEconomy().getMarkets(system).get(0);
-
-        when(colony.getStarSystem())
-            .thenReturn(system);
-
-        return colony;
-    }
-
-    // The sector every read behind the event reaches, and a logger for the class to open with:
-    // the trace line is written where the class is first touched, and a null one there would
-    // leave the field null for every later case in the same JVM.
-    private static void stubSector(MockedStatic<Global> globalMock, SectorAPI sector) {
-
-        globalMock.when(Global::getSector)
-            .thenReturn(sector);
-        globalMock.when(() -> Global.getLogger(any(Class.class)))
-            .thenReturn(mock(Logger.class));
+    // The colony an economy event names as its subject.
+    private static MarketAPI findColonyIn(SectorAPI sector) {
+        return sector
+            .getEconomy()
+            .getMarkets(SectorPoliticsFixtures.findSystemIn(sector, SYSTEM_ID))
+            .get(0);
     }
 
     private static ColonyObservation readObservationOf(SectorAPI sector, MarketAPI colony) {

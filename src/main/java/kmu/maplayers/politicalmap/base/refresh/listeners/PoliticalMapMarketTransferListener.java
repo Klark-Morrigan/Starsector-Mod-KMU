@@ -64,7 +64,7 @@ public class PoliticalMapMarketTransferListener implements InvasionListener {
         // two now sharing an owner - there is no earlier moment to read from here.
         // That base keeps the sighting it already had, and is dated afresh by
         // whatever observes it next. That is the resolution, not a gap.
-        MarketPoliticsRefresh.markSystemStaleForMarket(
+        MarketPoliticsRefresh.reportMarketChange(
             market,
             "market transferred", // Event.
             "from=" + resolveFactionId(oldHolder)

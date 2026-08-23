@@ -51,7 +51,7 @@ public final class MarketPoliticsRefresh {
      * @param context extra {@code key=value} detail for the log line, e.g.
      *                "prevSize=3"; empty appends nothing
      */
-    public static void markSystemStaleForMarket(MarketAPI market, String event, String context) {
+    public static void reportMarketChange(MarketAPI market, String event, String context) {
         if (market == null) {
             return;
         }

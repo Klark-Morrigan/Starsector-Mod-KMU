@@ -64,7 +64,7 @@ public class PoliticalMapDecivListener implements ColonyDecivListener {
         // system still resolves post-removal since the primary entity (the planet)
         // is preserved. The full-destroy flag rides along in the log so a cell that
         // does (or does not) repaint neutral on death can be traced to this event.
-        MarketPoliticsRefresh.markSystemStaleForMarket(
+        MarketPoliticsRefresh.reportMarketChange(
             market,
             "decivilised colony", // Event.
             "fullyDestroyed=" + fullyDestroyed); // Context.

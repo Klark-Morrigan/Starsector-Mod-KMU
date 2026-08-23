@@ -147,6 +147,20 @@ final class ColonyObservationNotesTest {
         }
 
         @Test
+        void remarksNothingWhereThereIsNoClockToDateTheObservationBy() {
+            // A box drawn before the campaign clock is up. The observation stands and the colony
+            // is listed as it always was; only the remark is withheld, there being nothing to
+            // work the span or the date out of.
+            when(sectorMock.getClock())
+                .thenReturn(null);
+
+            var notes = readNotesOver(buildDerelictSet(observedDaysAgo(34.0f)));
+
+            assertThat(notes.resolveLastSeenNote(DERELICT_ID))
+                .isEmpty();
+        }
+
+        @Test
         void remarksNothingOnAColonyNobodyHasEverObserved() {
 
             var notes = readNotesOver(buildDerelictSet(ColonySightings.NONE));

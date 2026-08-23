@@ -84,6 +84,12 @@ final class CellTooltipRowsTest {
     private static final int INDEX_RUN = 1;
     private static final int INDEXED_QUALIFIER_RUN = 2;
 
+    // Where a line's remark sits, alone and after a place - and where a qualifier lands once both
+    // runs before it are spent. Stated as the counts they are, for the reason the levels above are.
+    private static final int NOTE_RUN = 1;
+    private static final int INDEXED_NOTE_RUN = 2;
+    private static final int INDEXED_NOTED_QUALIFIER_RUN = 3;
+
     // The same two runs on a line led by a mark, each pushed along by the image it opens on.
     private static final int MARKED_INDEX_RUN = 2;
     private static final int MARKED_INDEXED_QUALIFIER_RUN = 3;
@@ -404,6 +410,42 @@ final class CellTooltipRowsTest {
             assertThat(readLabelTextRun(row, INDEX_RUN))
                 .isEqualTo(new TextSpan("[2]", GRAY));
             assertThat(readLabelTextRun(row, INDEXED_QUALIFIER_RUN))
+                .isEqualTo(new TextSpan("strongest", HIGHLIGHT));
+        }
+
+        @Test
+        void buildListedRowRunsWhatTheLineRemarksInTheQuietShade() {
+            // A remark is what the box says about its own account of the line rather than something
+            // it has found, so it takes the shade a value's working does. In the qualifier's gold a
+            // reader would weigh it against the numbers on the line.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(null, "Sentinel Gantries", "0")
+                    .notedWith("last seen 34 days ago (c206.05.12)"),
+                LISTED_LEVEL);
+
+            assertThat(readLabelTextRun(row, NOTE_RUN))
+                .isEqualTo(new TextSpan("last seen 34 days ago (c206.05.12)", GRAY));
+        }
+
+        @Test
+        void buildListedRowRunsARemarkBetweenAPlaceAndWhatTheLineCallsOut() {
+            // Three runs answering three questions, in the order a reader meets them: which one this
+            // is, how current the account of it is, and what the box has found about it. The remark
+            // sits inside because it belongs to neither neighbour.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(null, "Sentinel Gantries", "0")
+                    .indexedAt("[2]", CellTooltipIndexOutcome.UNCONTESTED)
+                    .notedWith("last seen 34 days ago (c206.05.12)")
+                    .qualifiedWith("strongest"),
+                MEMBER_LEVEL);
+
+            assertThat(readLabelTextRun(row, INDEX_RUN))
+                .isEqualTo(new TextSpan("[2]", GRAY));
+            assertThat(readLabelTextRun(row, INDEXED_NOTE_RUN))
+                .isEqualTo(new TextSpan("last seen 34 days ago (c206.05.12)", GRAY));
+            assertThat(readLabelTextRun(row, INDEXED_NOTED_QUALIFIER_RUN))
                 .isEqualTo(new TextSpan("strongest", HIGHLIGHT));
         }
 

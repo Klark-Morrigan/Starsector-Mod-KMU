@@ -34,7 +34,7 @@ public class PoliticalMapDiscoveryListener implements DiscoverEntityListener {
         if (entity == null) {
             return;
         }
-        MarketPoliticsRefresh.markSystemStaleForMarket(
+        MarketPoliticsRefresh.reportMarketChange(
             entity.getMarket(),
             "discovered market", // Event.
             "entity=" + entity.getId()); // Context.

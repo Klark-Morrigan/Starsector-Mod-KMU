@@ -43,7 +43,7 @@ public class PoliticalMapColonisationListener implements PlayerColonizationListe
         // founding can be traced to it.
         MarketAPI market = planet == null ? null : planet.getMarket();
         String planetId = planet == null ? "null" : planet.getId();
-        MarketPoliticsRefresh.markSystemStaleForMarket(
+        MarketPoliticsRefresh.reportMarketChange(
             market,
             "colony founded", // Event.
             "planet=" + planetId); // Context.
@@ -62,7 +62,7 @@ public class PoliticalMapColonisationListener implements PlayerColonizationListe
         // A derelict beside it keeps the sighting it already had, and is dated
         // afresh whenever something else observes it. That is the whole of the
         // resolution, not a gap left to be filled in.
-        MarketPoliticsRefresh.markSystemStaleForMarket(
+        MarketPoliticsRefresh.reportMarketChange(
             market,
             "colony abandoned", // Event.
             ""); // Context.

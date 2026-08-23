@@ -7,21 +7,15 @@ import kmlib.starsector.colonies.SectorColonySightings;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockUnseatedMarket;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins {@link PoliticalMapDecivListener}: a completed decivilisation marks its
@@ -93,32 +87,22 @@ final class PoliticalMapDecivListenerTest {
             // The one write that cannot be deferred. The colony is about to stop vouching for the
             // derelict beside it, and once it has there is nobody left to date that observation
             // by - so it is taken here, while the colony can still be read as the observer it is.
-            var hegemony = SectorPoliticsFixtures.buildFaction("hegemony");
-            var colony = SectorPoliticsFixtures.buildVisibleMarket(hegemony, COLONY_SIZE);
-
-            var sector = SectorPoliticsFixtures.buildSectorWithSystems(
-                List.of(hegemony),
-                SectorPoliticsFixtures.listSystemMarkets(SYSTEM_ID, colony));
+            var sector = SectorPoliticsFixtures.buildSystemHoldingAColonyAndADerelict(
+                SYSTEM_ID,
+                COLONY_SIZE,
+                DERELICT_SIZE);
 
             var system = SectorPoliticsFixtures.findSystemIn(sector, SYSTEM_ID);
 
-            SectorPoliticsFixtures.placeMarketsOnSystemEntities(
-                system,
-                SectorPoliticsFixtures.buildAbandonedStationMarket(DERELICT_SIZE));
-
             SectorPoliticsFixtures.openSectorMemory(sector);
-
-            when(colony.getStarSystem())
-                .thenReturn(system);
 
             try (var globalMock = mockStatic(Global.class)) {
 
-                globalMock.when(Global::getSector)
-                    .thenReturn(sector);
-                globalMock.when(() -> Global.getLogger(any(Class.class)))
-                    .thenReturn(mock(Logger.class));
+                SectorPoliticsFixtures.stubGlobalSector(globalMock, sector);
 
-                listener.reportColonyAboutToBeDecivilized(colony, false);
+                listener.reportColonyAboutToBeDecivilized(
+                    sector.getEconomy().getMarkets(system).get(0),
+                    false);
             }
             var derelict = system.getAllEntities().get(0).getMarket();
 

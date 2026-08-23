@@ -32,7 +32,7 @@ public class PoliticalMapColonySizeListener implements ColonySizeChangeListener 
 
         // The previous size rides along in the log so a colony that does (or does
         // not) repaint on growth can be traced to this resize.
-        MarketPoliticsRefresh.markSystemStaleForMarket(
+        MarketPoliticsRefresh.reportMarketChange(
             market,
             "colony resize", // Event.
             "prevSize=" + prevSize); // Context.
