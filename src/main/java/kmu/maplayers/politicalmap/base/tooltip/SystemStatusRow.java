@@ -13,13 +13,18 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * The line naming why nobody lives in a hovered system: a dead colony the player has already seen
- * reads "Decivilised", any other system nobody lives in "Unpopulated".
+ * The line naming why no faction runs anything in a hovered system: a colony whose government has
+ * collapsed reads "Decivilised", a system with nobody in it at all "Unpopulated".
  *
- * <p>A shared row rather than each tooltip's own empty state, because the emptiness is a fact about
- * the system, not about the layer looking at it - a layer that says nothing else about a dead system
+ * <p>The two are different facts, which is why one line states which. A collapsed colony is still
+ * populated - what it lacks is anybody the political map can attribute the place to - so calling
+ * its system unpopulated would be false, and saying nothing would leave a cell drawn as settled
+ * with no account of who is there.
+ *
+ * <p>A shared row rather than each tooltip's own empty state, because it is a fact about the
+ * system, not about the layer looking at it - a layer that says nothing else about such a system
  * still has to say that much, and two layers wording or placing it differently would read as two
- * different facts. The row resolves empty for a populated system, so a body can offer the status
+ * different facts. The row resolves empty for a governed system, so a body can offer the status
  * unconditionally and let the system decide whether it appears.
  *
  * <p>It is a banner rather than an entry for the same reason: what the system <em>is</em> holds over
@@ -61,16 +66,16 @@ public final class SystemStatusRow {
      * A caller with no walk behind it selects one and hands it over, which is the same work it was
      * paying before and is now visible where it is paid.
      *
-     * <p>The ruin comes out of that same projection rather than off a walk of the system's planets.
-     * A dead world is one of the colonies habitation admits, so the line and the breakdown beneath
-     * it are answered from one reading - where two readings could have headed a system Decivilised
-     * over a box that named nothing dead in it.
+     * <p>The collapse comes out of that same projection rather than off a walk of the system's
+     * planets. A collapsed colony is one of the colonies habitation admits, so the line and the
+     * breakdown beneath it are answered from one reading - where two readings could have headed a
+     * system Decivilised over a box that named no such colony in it.
      *
      * @param colonies         the hovered system's colonies, as one walk of it reported
      * @param colonyVisibility what the player may be shown of a colony, passed by the caller so
      *                         the status agrees with whatever that caller's own reads admit
-     * @return the Decivilised or Unpopulated row, or empty when the player knows of somebody
-     *         living here
+     * @return the Decivilised or Unpopulated row, or empty when the player knows of a governed
+     *         colony here
      */
     public static Optional<TooltipRow.CentredRow> resolveStatusRow(
             Colonies colonies,
@@ -78,13 +83,13 @@ public final class SystemStatusRow {
 
         var inhabitingColonies = colonies.readInhabitingColonies(colonyVisibility);
 
-        // Habitation admits the dead world along with the living colonies, so its emptiness is not
-        // the question here: a system whose ruins are all that is left of it holds one and is still
-        // a system nobody lives in. What settles the line is which of the two the projection found.
-        if (hasLivingColony(inhabitingColonies)) {
+        // Habitation admits the collapsed colony along with the governed ones, so its emptiness is
+        // not the question here: a system holding only a collapse is inhabited and still has nobody
+        // running it. What settles the line is which of the two the projection found.
+        if (hasGovernedColony(inhabitingColonies)) {
             return Optional.empty();
         }
-        var statusKey = hasDeadColony(inhabitingColonies)
+        var statusKey = hasUngovernedColony(inhabitingColonies)
             ? KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED
             : KmuStrings.POLITICAL_MAP_TOOLTIP_UNPOPULATED;
 
@@ -96,27 +101,27 @@ public final class SystemStatusRow {
             KmuStrings.get(statusKey)));
     }
 
-    // Whether anybody is there now. Stated as the exclusion of the one kind that inhabits its place
-    // without anybody being on it, so a kind added later reads as somebody living there unless it
-    // says otherwise - which is the same direction habitation itself is written in, and the safer
-    // one: a line calling a settled system unpopulated is worse than one declining to.
-    private static boolean hasLivingColony(List<Colony> inhabitingColonies) {
+    // Whether anybody is running a colony here. Stated as the exclusion of the one kind that
+    // inhabits its place under nobody's authority, so a kind added later reads as governed unless
+    // it says otherwise - which is the same direction habitation itself is written in, and the
+    // safer one: a line calling a governed system unpopulated is worse than one declining to.
+    private static boolean hasGovernedColony(List<Colony> inhabitingColonies) {
 
         for (var colony : inhabitingColonies) {
-            if (colony.kind() != ColonyKind.DEAD_COLONY) {
+            if (colony.kind() != ColonyKind.UNGOVERNED_COLONY) {
                 return true;
             }
         }
         return false;
     }
 
-    // Whether what is left of the place is ruins. Asked only once nobody is found living there, so
-    // a dead world beside a living colony never heads the box - the system is populated, and the
-    // breakdown beneath names the ruins along with everything else.
-    private static boolean hasDeadColony(List<Colony> inhabitingColonies) {
+    // Whether what is here is a colony nobody runs. Asked only once no governed one is found, so a
+    // collapse beside a governed colony never heads the box - the system has a polity in it, and
+    // the breakdown beneath names the collapsed colony along with everything else.
+    private static boolean hasUngovernedColony(List<Colony> inhabitingColonies) {
 
         for (var colony : inhabitingColonies) {
-            if (colony.kind() == ColonyKind.DEAD_COLONY) {
+            if (colony.kind() == ColonyKind.UNGOVERNED_COLONY) {
                 return true;
             }
         }

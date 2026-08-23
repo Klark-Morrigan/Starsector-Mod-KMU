@@ -55,10 +55,10 @@ import java.util.List;
  * omitted it would be withholding something they are looking straight at - and the nought is the
  * whole of what the account has to say about it: it is there, and it moved nothing.
  *
- * <p>Where such a colony is a world people left rather than a place somebody keeps, the line says
- * so ({@link ColonyKindQualifier}). A ruin and a derelict hulk reach this list identically - both
- * unowned, both off-economy, both at nought - and nothing else on either line would tell them
- * apart.
+ * <p>Where such a colony is one nobody runs rather than a place somebody keeps, the line says so
+ * ({@link ColonyKindQualifier}). A collapsed colony and a derelict hulk reach this list identically
+ * - both unowned, both off-economy, both at nought - and nothing else on either line would tell
+ * them apart.
  *
  * <p>A factor that did not run has no line. Which of them ran is already settled by the breakdown
  * read - the station and patrol parts are absent when the player has the factor off - and only the
@@ -173,7 +173,7 @@ public final class MarketWeightRowResolver {
             ColonyObservationNotes notes) {
 
         // The kind is called out here and on no weighed line above, and the absence is the
-        // subject matter rather than an omission: a dead world is off-economy by construction, so
+        // subject matter rather than an omission: a collapse is off-economy by construction, so
         // the pass can never have weighed one, and the kinds that are weighed are already told
         // apart by the numbers beneath them.
         return CellTooltipEntry.createEntry(qualifyByKind(

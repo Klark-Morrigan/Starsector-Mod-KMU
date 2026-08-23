@@ -250,7 +250,7 @@ public final class KnownMarketFootprints {
     //
     // Answered as colonies rather than as markets, unlike the weighed side, because these are the
     // ones a box names and nothing else: what kind of place each is has to travel with it, an
-    // account listing an unowned ruin beside an unowned hulk having nothing else to tell them
+    // account listing an unowned collapse beside an unowned hulk having nothing else to tell them
     // apart with. The weighed side is fed to arithmetic that reads the market alone.
     private static List<Colony> readUnweighedColonies(
             Colonies colonies,

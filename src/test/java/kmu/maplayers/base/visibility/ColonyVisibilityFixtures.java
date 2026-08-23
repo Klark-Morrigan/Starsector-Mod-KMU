@@ -1,7 +1,7 @@
 package kmu.maplayers.base.visibility;
 
 import kmlib.starsector.colonies.ColonyVisibility;
-import kmlib.starsector.colonies.VisibilityReveal;
+import kmlib.starsector.markets.DecivilisedMarkets;
 
 import java.util.Set;
 
@@ -31,7 +31,8 @@ public final class ColonyVisibilityFixtures {
      * is where it is pinned.
      */
     public static final ColonyVisibility UNDER_THE_REVEAL = new ColonyVisibility(
-        Set.of(VisibilityReveal.UNDISCOVERED_MARKETS),
+        true,
+        DecivilisedMarkets.DEFAULT_SURVEY_LEVEL,
         Set.of());
 
     // Constants only; never instantiated.

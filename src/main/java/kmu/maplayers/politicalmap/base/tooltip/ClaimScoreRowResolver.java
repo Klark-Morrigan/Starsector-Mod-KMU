@@ -51,9 +51,9 @@ import java.util.Optional;
  * out which of the two it is, the nought being the whole of what the contest has to say about either.
  *
  * <p>What such a line does say is what kind of place it names ({@link ColonyKindQualifier}), which
- * is a fact about the world rather than about the contest. A dead world and a derelict hulk both
- * reach the list unowned, off-economy and at nought, so without it the account could not tell a
- * ruin somebody lived on from a wreck nobody ever did.
+ * is a fact about the world rather than about the contest. A collapsed colony and a derelict hulk
+ * both reach the list unowned, off-economy and at nought, so without it the account could not tell
+ * a place people still live from a wreck nobody ever did.
  *
  * <p>Every market line leads with the glyph the sector map marks that market's entity with, scored or
  * not, so a reader can tie a name in the list back to something they are looking at rather than to

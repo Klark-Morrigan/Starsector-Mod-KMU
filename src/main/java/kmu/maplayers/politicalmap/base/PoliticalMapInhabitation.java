@@ -38,7 +38,7 @@ public final class PoliticalMapInhabitation {
      * nothing and reports nothing rather than guarding a sector it was never given.
      *
      * @param pass the rebuild's reading of the sector, whose walk of each system this scan shares
-     * @return the ids of every system holding a colony somebody lives on or a known ruin
+     * @return the ids of every system holding a colony somebody lives on or a known collapsed one
      */
     public static Set<String> readInhabitedSystemIds(HolderPass pass) {
 
@@ -62,13 +62,13 @@ public final class PoliticalMapInhabitation {
      * projection - a per-system read that took a different one would take a system off the map the
      * moment an event happened to mark it.
      *
-     * <p>The habitation projection is the whole of it, a dead world being one of the colonies it
+     * <p>The habitation projection is the whole of it, a collapsed colony being one of the colonies it
      * admits. There is no second reading of the system to compose, which is what keeps the cell
      * and the box over it from ever parting on who is present.
      *
      * @param pass   the reading of the sector the answer is taken from
      * @param system the system to read; null yields false
-     * @return true when the system holds a colony somebody lives on or a known ruin
+     * @return true when the system holds a colony somebody lives on or a known collapsed one
      */
     public static boolean isSystemInhabited(HolderPass pass, StarSystemAPI system) {
         return pass.readHabitationIn(system).hasInhabitingColony();

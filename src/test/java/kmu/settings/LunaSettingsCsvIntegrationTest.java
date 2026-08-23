@@ -120,14 +120,16 @@ final class LunaSettingsCsvIntegrationTest {
     // The visibility overrides, held to shipping off for the reason the hover tiers above are
     // held to shipping on, and with more riding on it. Every one is named for what switching it
     // on reveals, so off is the whole section's safe state: a row shipped on would put an
-    // abandoned station, a hidden base, an undiscovered colony or an unread ruin on the map from
-    // the first day of a campaign, which is a thing a player cannot un-see once the map has drawn
-    // it.
+    // abandoned station, a hidden base or an undiscovered colony on the map from the first day of
+    // a campaign, which is a thing a player cannot un-see once the map has drawn it.
+    //
+    // The section's survey-level row is not among them and cannot be: it is a Radio, and there is
+    // no "off" for it to ship at - a survey bar always applies. What holds its shipped value is the
+    // choice-backed table above, which pins it to the constant the getter falls back on.
     private static final List<String> VISIBILITY_OVERRIDE_FIELD_IDS = List.of(
         "kmu_map_visibility_overrides_showUnseenAbandonedStations",
         "kmu_map_visibility_overrides_showUnseenHiddenMarkets",
         "kmu_map_visibility_overrides_showUndiscoveredMarkets",
-        "kmu_map_visibility_overrides_showUnsurveyedDeadWorlds",
         "kmu_map_visibility_overrides_showHiddenSystems");
 
     // The tabs the settings screen is laid out into. LunaLib creates a tab by being asked for one,
@@ -178,6 +180,10 @@ final class LunaSettingsCsvIntegrationTest {
             "kmu_politicalMapHiddenMarketScaling",
             "DEFAULT_HIDDEN_MARKET_SCALING",
             HiddenMarketScalingChoice.values()),
+        new ChoiceBackedRadio(
+            "kmu_map_visibility_overrides_showDecivilisedWorldsAtSurveyLevel",
+            "DEFAULT_DECIVILISED_WORLD_SURVEY_LEVEL",
+            SurveyLevelChoice.values()),
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_presenceRibbons_nameClearance",
             "DEFAULT_RIBBON_NAME_CLEARANCE",

@@ -13,10 +13,10 @@ import java.util.Optional;
  * a kind resolved separately at each could have the domination box call a world dead while the
  * claims box lists it as living, which is the one disagreement a shared account cannot survive.
  *
- * <p>Only the dead world says anything. A colony, an outpost and a derelict are each already told
- * by what the line carries - a weight, a nought, the glyph the map marks them with - while a ruin
- * and a hulk arrive identically: unowned, off-economy and listed at nought. The qualifier is the
- * only thing parting them, which is why it is stated rather than left to the reader.
+ * <p>Only the collapsed colony says anything. A colony, an outpost and a derelict are each already
+ * told by what the line carries - a weight, a nought, the glyph the map marks them with - while a
+ * collapse and a hulk arrive identically: unowned, off-economy and listed at nought. The qualifier
+ * is the only thing parting them, which is why it is stated rather than left to the reader.
  *
  * <p>A qualifier rather than a note, so it reads in the finding's shade: what the place <em>is</em>
  * is something the box has found out about it, where the remark beside it - how current the news
@@ -41,7 +41,7 @@ public final class ColonyKindQualifier {
      */
     public static Optional<String> resolveKindQualifier(ColonyKind kind) {
 
-        return kind == ColonyKind.DEAD_COLONY
+        return kind == ColonyKind.UNGOVERNED_COLONY
             ? Optional.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED))
             : Optional.empty();
     }

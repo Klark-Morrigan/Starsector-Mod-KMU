@@ -6,6 +6,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.colonies.RevelationGate;
+import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 
@@ -301,7 +302,8 @@ final class ClaimsViewTest {
         // A rule that is plainly not the fog alone, so a reader opened under a default of its own
         // fails the pass-through case rather than passing it by coincidence.
         private static final ColonyVisibility GATED_VISIBILITY = new ColonyVisibility(
-            Set.of(),
+            false,
+            DecivilisedMarkets.DEFAULT_SURVEY_LEVEL,
             Set.of(RevelationGate.SPACE_DERELICTS, RevelationGate.HIDDEN_COLONIES));
 
         @Test

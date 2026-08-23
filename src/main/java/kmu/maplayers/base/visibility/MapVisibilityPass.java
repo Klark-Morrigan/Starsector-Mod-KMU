@@ -142,20 +142,20 @@ public final class MapVisibilityPass {
     }
 
     /**
-     * Whether the system holds a dead colony the player may be shown.
+     * Whether the system holds a collapsed colony the player may be shown.
      *
      * <p>Published rather than kept private because inhabitation folds it in and cannot report
      * it, and a reader hashing the drawn set needs it on its own - a live-to-dead flip has to
      * move that hash without the drawn set changing.
      *
      * <p>Read off the pass's own colony walk rather than off the system's planets, which is what
-     * makes it the same answer the cell and the box beside it are drawn from. A ruin is a kind of
+     * makes it the same answer the cell and the box beside it are drawn from. A collapse is a kind of
      * colony, so the set already knows both that it is one and whether the player has surveyed it
      * closely enough to be told - and a planet walk of its own would be a second reading of both,
      * free to disagree with the one the map is painted by.
      *
      * @param system the system to read; null yields false
-     * @return true when the system's colonies include a dead world this pass's rule admits
+     * @return true when the system's colonies include a collapsed one this pass's rule admits
      */
     public boolean isRevealedDecivilised(StarSystemAPI system) {
 
@@ -163,7 +163,7 @@ public final class MapVisibilityPass {
                 .readColoniesIn(system)
                 .readInhabitingColonies(rules.colonyVisibility())) {
 
-            if (colony.kind() == ColonyKind.DEAD_COLONY) {
+            if (colony.kind() == ColonyKind.UNGOVERNED_COLONY) {
                 return true;
             }
         }
@@ -173,7 +173,7 @@ public final class MapVisibilityPass {
     /**
      * Whether anybody lives in one system, or did, off this pass's own reading of it.
      *
-     * <p>The habitation projection is the whole of the answer, a dead world being one of the
+     * <p>The habitation projection is the whole of the answer, a collapsed colony being one of the
      * colonies it admits - so there is nothing to compose here beyond choosing the projection,
      * and no second reading of who is present for the box over the same cell to disagree with.
      *
@@ -181,7 +181,7 @@ public final class MapVisibilityPass {
      * not make it inhabited.
      *
      * @param system the system to read; null yields false
-     * @return true when the system holds a colony somebody lives on or a known dead colony
+     * @return true when the system holds a colony somebody lives on or a known collapsed one
      */
     public boolean isSystemInhabited(StarSystemAPI system) {
 

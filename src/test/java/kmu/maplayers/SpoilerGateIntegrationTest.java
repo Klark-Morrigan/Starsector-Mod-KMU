@@ -2,6 +2,7 @@ package kmu.maplayers;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.base.visibility.MapVisibilityRules;
@@ -160,28 +161,28 @@ final class SpoilerGateIntegrationTest {
         }
 
         @Test
-        void withholdsAnUnsurveyedDeadWorldUntilTheSurveyRevealIsTurnedOn() {
-            // The ruin's own arm of the fog, and its own toggle. Nothing gates a dead world - the
-            // survey read leaks nothing - so what the reveal lifts is the fog itself, and it lifts
-            // no other arm: the world's planet is found throughout.
-            var sector = buildSectorHoldingAnUnsurveyedRuin();
+        void withholdsAnUnsurveyedDecivilisedWorldUntilNoSurveyIsAskedFor() {
+            // The collapsed colony's own arm of the fog, and its own knob. Nothing gates it - the
+            // survey read leaks nothing - so what the knob moves is the fog itself, and it moves no
+            // other arm: the world's planet is found throughout.
+            var sector = buildSectorHoldingAnUnsurveyedDecivilisedWorld();
 
             assertThat(readKnownOwnerIds(sector))
                 .isEmpty();
 
             settingsMock
-                .when(KmuMapLayerSettings::shouldShowUnsurveyedDeadWorlds)
-                .thenReturn(true);
+                .when(KmuMapLayerSettings::getDecivilisedWorldSurveyLevel)
+                .thenReturn(SurveyLevel.NONE);
 
             assertThat(readKnownOwnerIds(sector))
                 .containsExactly(Factions.NEUTRAL);
         }
     }
 
-    // A sector of one system whose only market is the ruin of a colony nobody has read. Its economy
-    // lists nothing, which is what a dead world always reaches a reader as: vanilla drops the market
-    // from the economy as the colony dies.
-    private static SectorAPI buildSectorHoldingAnUnsurveyedRuin() {
+    // A sector of one system whose only market is a collapsed colony nobody has looked at. Its
+    // economy lists nothing, which is what such a world always reaches a reader as: vanilla drops
+    // the market from the economy as the colony falls.
+    private static SectorAPI buildSectorHoldingAnUnsurveyedDecivilisedWorld() {
 
         var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID);
 

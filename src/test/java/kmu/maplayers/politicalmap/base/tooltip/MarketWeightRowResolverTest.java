@@ -560,7 +560,7 @@ final class MarketWeightRowResolverTest {
             var rows = resolveUnremarkedRows(
                 List.of(),
                 List.of(
-                    buildUnweighedDeadWorld("Tibicena"),
+                    buildUnweighedUngovernedColony("Tibicena"),
                     buildUnweighedColony("Sentinel Gantries")),
                 buildRules());
 
@@ -760,8 +760,8 @@ final class MarketWeightRowResolverTest {
 
     // The same as the world people left, for the cases about what a kind states on the line naming
     // it. Posed against the hulk above, which reaches the list identically and states nothing.
-    private static UnweighedColony buildUnweighedDeadWorld(String marketName) {
-        return buildUnweighedColonyOfKind(marketName, ColonyKind.DEAD_COLONY);
+    private static UnweighedColony buildUnweighedUngovernedColony(String marketName) {
+        return buildUnweighedColonyOfKind(marketName, ColonyKind.UNGOVERNED_COLONY);
     }
 
     // A colony the economy does not list, of a stated kind and marked with nothing.

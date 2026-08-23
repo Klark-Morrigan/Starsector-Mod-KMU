@@ -17,9 +17,9 @@ import kmlib.starsector.entities.EntityNameplate;
  * box saying more about a colony than the account did - how current the player's knowledge of it
  * is, say - matches this against something read elsewhere, and a display name is not an identity.
  *
- * <p>The kind travels with it because this is the shape a ruin and a hulk both arrive in - each
- * unowned, off-economy and listed at nought - and the account has no other way to say that one is
- * a world people left and the other a wreck nobody ever lived on.
+ * <p>The kind travels with it because this is the shape a collapsed colony and a hulk both arrive
+ * in - each unowned, off-economy and listed at nought - and the account has no other way to say
+ * that one is a place people still live and the other a wreck nobody ever lived on.
  *
  * @param marketId  which colony this is, as the economy and the sector's own records name it
  * @param kind      what kind of place the colony is, read on the walk that met it so it can only

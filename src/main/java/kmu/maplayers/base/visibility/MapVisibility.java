@@ -14,11 +14,11 @@ import kmlib.starsector.systems.StarSystems;
  * <p>Two independent reasons put a system on the map, and reachability
  * ({@link StarSystems#isReachable}) is only one of them. A system appears when it
  * has a normal means of arrival OR when it is inhabited - somebody living there the
- * player knows of, a dead world's ruins among them. What "knows of" admits is the
+ * player knows of, the people left on a collapsed colony among them. What "knows of" admits is the
  * pass's own colony rule rather than anything decided here, so the cell, the band
  * inside it and the box over it are all reading the one rule.
  *
- * <p>Inhabitation is not asked here at all, and that is the change a ruin being a
+ * <p>Inhabitation is not asked here at all, and that is the change a collapsed colony being a
  * colony bought: it is {@link Colonies#hasInhabitingColony}'s answer, over the one
  * walk of the system a pass already made. A rule composed here instead would be a
  * second reading of who is present, free to disagree with the listing the box over the
@@ -33,7 +33,7 @@ import kmlib.starsector.systems.StarSystems;
  * <p>The inhabitation path is what admits
  * an otherwise unreachable system: a transverse-only or abyssal world, hidden
  * from the map by its own design, still shows once it holds a colony or a known
- * dead colony, regardless of the star-hidden / abyssal tags it carries.
+ * collapsed colony, regardless of the star-hidden / abyssal tags it carries.
  *
  * <p>Affiliation is a separate axis owned elsewhere: a decivilised-only system
  * is inhabited (it seeds a cell and always draws) yet unaffiliated (no faction
@@ -43,7 +43,7 @@ import kmlib.starsector.systems.StarSystems;
 public final class MapVisibility {
 
     // Salt XORed into a decivilised system's id hash before the avalanche, so a
-    // revealed ruin - a draw-class change on a system already on the map - lands a
+    // shown collapse - a draw-class change on a system already on the map - lands a
     // different contribution from that same system drawn live, and the fingerprint
     // moves even when the membership set does not.
     private static final int DECIVILISED_FINGERPRINT_SALT = 31;
@@ -69,7 +69,7 @@ public final class MapVisibility {
      * @param system          the system to test
      * @param visibleStars    the index of systems whose star the map draws
      * @param isInhabited     whether the system holds a colony somebody lives on or a
-     *                     revealed dead colony, decided by the caller
+     *                     collapsed colony the player may be shown, decided by the caller
      * @param visibilityRules the pass's visibility rules, resolved once by the caller
      * @return true when the system should seed a map cell
      */
@@ -91,7 +91,7 @@ public final class MapVisibility {
      * the visibility fingerprint the sector watcher polls: order-independent, so it
      * still moves when one system enters as another leaves, and collision-resistant
      * because each contribution is avalanched before the sum - a freshly revealed
-     * ruin, a draw-class flip on a system already shown, shifts it without the
+     * collapse, a draw-class flip on a system already shown, shifts it without the
      * membership set changing.
      *
      * <p>The ownership half of the picture (who holds each system) is tracked
@@ -100,7 +100,7 @@ public final class MapVisibility {
      *
      * @param systemId              the on-map system's id
      * @param isRevealedDecivilised whether the system is drawn only as a revealed
-     *                              dead colony, which salts its contribution so a
+     *                              collapsed colony, which salts its contribution so a
      *                              live-to-dead flip is caught
      * @return the value to add into the visibility fingerprint
      */

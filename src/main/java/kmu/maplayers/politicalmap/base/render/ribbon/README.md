@@ -76,8 +76,8 @@ The gate is **wider** than the holding it replaced, which is a real cost and not
 Inhabitation is the larger set, so the systems the holding left out each pay their first walk of the
 pass's colony index - and `readMarketsUnlistedByEconomy` walks every entity in the system. For a
 pirate haven or a player colony that walk buys the band it exists for. A **decivilised** system now
-buys one too: the shared set admits a revealed dead world as the colony kind it is
-(`ColonyKind.DEAD_COLONY`), so the ruin counts toward habitation and lays a run of its own - unowned,
+buys one too: the shared set admits a surveyed decivilised world as the colony kind it is
+(`ColonyKind.UNGOVERNED_COLONY`), so it counts toward habitation and lays a run of its own - unowned,
 so the run draws in the colours nobody's holding gets, which is the same thing the cell beneath it
 says.
 

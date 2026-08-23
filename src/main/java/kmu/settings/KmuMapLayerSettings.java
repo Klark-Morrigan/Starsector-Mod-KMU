@@ -1,5 +1,7 @@
 package kmu.settings;
 
+import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
+
 /**
  * The map-layer framework's own LunaLib knobs: the chrome and the geometry every map
  * layer shares, whichever layer is drawing.
@@ -34,8 +36,9 @@ package kmu.settings;
  * {@code Map - Keybinds} carries the layer shortcuts, which are controls rather than
  * appearance. {@code Map - Visibility} carries how much of the sector the map may show -
  * the two gates that decide whether an abandoned station or a hidden market has to have
- * been seen before any layer will say it is there, and the three reveals that drop an arm of
- * the fog or the map's admission rule outright. Its own tab rather than a section of the visuals
+ * been seen before any layer will say it is there, the survey a decivilised world has to have
+ * had before any layer will say its colony collapsed, and the two reveals that drop the
+ * discovery fog or the map's admission rule outright. Its own tab rather than a section of the visuals
  * one because it is not a look and not a control: it is what the map is permitted to say,
  * which is the one question a player answers once and for every layer at once.
  * {@code Map - Compatibility} carries what the layers may do on a map this mod
@@ -277,10 +280,10 @@ public final class KmuMapLayerSettings {
     private static final String SHOW_UNBIASED_AXES_FIELD =
         "kmu_map_dev_diagnostics_labels_boxes_areUnbiasedShown";
 
-    // Visibility overrides (Map - Visibility tab): the five toggles that decide how much of the
-    // sector any map layer may show, each naming what turning it on reveals so the section reads
-    // one way down the screen. What each does to the colony rule is RevelationGate's and
-    // VisibilityReveal's word, not theirs; these are named for what the player is asking to see.
+    // Visibility overrides (Map - Visibility tab): the five knobs that decide how much of the
+    // sector any map layer may show, each naming what moving it reveals so the section reads one
+    // way down the screen. What each does to the colony rule is RevelationGate's and
+    // ColonyVisibility's word, not theirs; these are named for what the player is asking to see.
     //
     // The first two are the spoiler gates, and they are the shapes the discovery fog alone leaks:
     // an unowned station nobody ever lived on, and a market that conceals itself. Both are placed
@@ -290,14 +293,16 @@ public final class KmuMapLayerSettings {
     //
     // The last three widen rather than gate. Show-undiscovered-markets drops the discovery arm of
     // the fog, so a colony the player has not found still counts as inhabitation - and, on a layer
-    // that weighs colonies, toward what it weighs; show-unsurveyed-dead-worlds drops the survey
-    // arm, which is the only fog over a ruin and a wholly independent axis from discovery, a world
-    // flown past being discovered whether or not anybody read its ruins; show-hidden-systems
-    // bypasses the map's own admission rule so every star system seeds a cell. All three reseed the
-    // geometry, so a change forces a geometry rebuild rather than the restyle a styling knob
-    // triggers.
+    // that weighs colonies, toward what it weighs; show-hidden-systems bypasses the map's own
+    // admission rule so every star system seeds a cell. Between them sits the one knob that is not
+    // a switch: how far a decivilised world must have been surveyed before the map says its colony
+    // collapsed. A level rather than an on/off because there is no "off" to have - a survey bar
+    // always applies, and what a player wants to move is where it sits, not whether it exists. It
+    // is its own axis from discovery, a world flown past being discovered however little anybody
+    // has read of it. All three reseed the geometry, so a change forces a geometry rebuild rather
+    // than the restyle a styling knob triggers.
     //
-    // Each clears exactly the one thing it names. A toggle that also cleared a neighbour's gate
+    // Each reaches exactly the one thing it names. A knob that also cleared a neighbour's gate
     // would show a player a second thing they never asked for, with nothing on screen saying why.
     //
     // The ids are the framework's own rather than inherited, unlike most above, and the two that
@@ -310,8 +315,8 @@ public final class KmuMapLayerSettings {
         "kmu_map_visibility_overrides_showUnseenHiddenMarkets";
     private static final String SHOW_UNDISCOVERED_MARKETS_FIELD =
         "kmu_map_visibility_overrides_showUndiscoveredMarkets";
-    private static final String SHOW_UNSURVEYED_DEAD_WORLDS_FIELD =
-        "kmu_map_visibility_overrides_showUnsurveyedDeadWorlds";
+    private static final String SHOW_DECIVILISED_WORLDS_AT_SURVEY_LEVEL_FIELD =
+        "kmu_map_visibility_overrides_showDecivilisedWorldsAtSurveyLevel";
     private static final String SHOW_HIDDEN_SYSTEMS_FIELD =
         "kmu_map_visibility_overrides_showHiddenSystems";
 
@@ -477,8 +482,15 @@ public final class KmuMapLayerSettings {
     private static final boolean DEFAULT_SHOW_UNSEEN_ABANDONED_STATIONS = false;
     private static final boolean DEFAULT_SHOW_UNSEEN_HIDDEN_MARKETS = false;
     private static final boolean DEFAULT_SHOW_UNDISCOVERED_MARKETS = false;
-    private static final boolean DEFAULT_SHOW_UNSURVEYED_DEAD_WORLDS = false;
     private static final boolean DEFAULT_SHOW_HIDDEN_SYSTEMS = false;
+
+    // The survey a decivilised world has to have had before the map says its colony collapsed.
+    // Not an "off" the way its neighbours are - a level always applies, and this one is the level
+    // vanilla itself shows a condition from, so the shipped state says exactly what the game does
+    // and no more. A player moves it up to keep the map behind their survey ship, or down to see
+    // the sector laid out.
+    private static final SurveyLevelChoice DEFAULT_DECIVILISED_WORLD_SURVEY_LEVEL =
+        SurveyLevelChoice.SEEN;
 
     private KmuMapLayerSettings() {
     }
@@ -917,15 +929,18 @@ public final class KmuMapLayerSettings {
     }
 
     /**
-     * @return whether a decivilised world nobody has surveyed closely enough to see is dead still
-     *         counts - so its system draws as ruins and the box over it names the world; off by
-     *         default. A separate axis from discovery: a planet flown past is discovered whatever
-     *         its survey level says, and that is exactly the world whose ruins are still unread
+     * @return how far a decivilised world must have been surveyed before the map will say its
+     *         colony has collapsed - so its system draws as settled and the box over it names the
+     *         world; SEEN by default, which is what vanilla itself asks before showing a
+     *         condition. A separate axis from discovery: a planet flown past is discovered
+     *         whatever its survey level says, and that is exactly the world still unread
      */
-    public static boolean shouldShowUnsurveyedDeadWorlds() {
-        return KmuLunaSettings.readBoolean(
-            SHOW_UNSURVEYED_DEAD_WORLDS_FIELD,
-            DEFAULT_SHOW_UNSURVEYED_DEAD_WORLDS);
+    public static SurveyLevel getDecivilisedWorldSurveyLevel() {
+        return KmuLunaSettings
+            .readChoice(
+                SHOW_DECIVILISED_WORLDS_AT_SURVEY_LEVEL_FIELD,
+                DEFAULT_DECIVILISED_WORLD_SURVEY_LEVEL)
+            .resolveSurveyLevel();
     }
 
     /**

@@ -565,7 +565,7 @@ final class ClaimScoreRowResolverTest {
             // the ruin is a fact about the world rather than about the contest.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(NO_SIBLING_MARKETS),
-                List.of(buildOffEconomyDeadWorld(
+                List.of(buildOffEconomyUngovernedColony(
                     "Tibicena",
                     STRONGEST_MARKET_SIZE,
                     SECOND_LISTED))));
@@ -1025,14 +1025,14 @@ final class ClaimScoreRowResolverTest {
     // The same shape as the world people left, for the cases about what a kind states on the line
     // naming it. Posed against the hulk above, which reaches the list identically and states
     // nothing.
-    private static MarketClaimBreakdown buildOffEconomyDeadWorld(
+    private static MarketClaimBreakdown buildOffEconomyUngovernedColony(
             String marketName,
             int marketSize,
             int listingPosition) {
 
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
-            ColonyKind.DEAD_COLONY,
+            ColonyKind.UNGOVERNED_COLONY,
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.OFF_ECONOMY,

@@ -2,7 +2,6 @@ package kmu.maplayers.base.visibility;
 
 import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.colonies.RevelationGate;
-import kmlib.starsector.colonies.VisibilityReveal;
 
 import kmu.settings.KmuMapLayerSettings;
 
@@ -33,8 +32,9 @@ import java.util.Set;
  * fixes it for the whole pass, so every system is admitted under the same rules even if the
  * player moves a toggle mid-walk.
  *
- * @param colonyVisibility the rule this pass reads colonies under - the reveals that lift an arm
- *                         of the fog, and the gates holding back the shapes a bare fog leaks
+ * @param colonyVisibility the rule this pass reads colonies under - the reveal that lifts the
+ *                         discovery fog, the survey a collapsed colony is asked for, and the
+ *                         gates holding back the shapes a bare fog leaks
  * @param isForcedOntoMap  whether a star system is admitted to the map regardless of access or
  *                         inhabitation
  */
@@ -79,27 +79,11 @@ public record MapVisibilityRules(
      */
     public static MapVisibilityRules readFromLunaSettings() {
         return new MapVisibilityRules(
-            new ColonyVisibility(resolveReveals(), resolveRevelationGates()),
+            new ColonyVisibility(
+                KmuMapLayerSettings.shouldShowUndiscoveredMarkets(),
+                KmuMapLayerSettings.getDecivilisedWorldSurveyLevel(),
+                resolveRevelationGates()),
             KmuMapLayerSettings.shouldShowHiddenSystems());
-    }
-
-    // The arms of the fog the player's settings drop. Each toggle answers one arm and no other,
-    // which is what lets a player ask for the one thing they meant: a world flown past but never
-    // surveyed is discovered and unread at once, so folding the two would leave that world
-    // reachable by neither toggle alone.
-    //
-    // Copied on the way out for the reason the gates below are.
-    private static Set<VisibilityReveal> resolveReveals() {
-
-        var reveals = EnumSet.noneOf(VisibilityReveal.class);
-
-        if (KmuMapLayerSettings.shouldShowUndiscoveredMarkets()) {
-            reveals.add(VisibilityReveal.UNDISCOVERED_MARKETS);
-        }
-        if (KmuMapLayerSettings.shouldShowUnsurveyedDeadWorlds()) {
-            reveals.add(VisibilityReveal.UNSURVEYED_DEAD_WORLDS);
-        }
-        return Set.copyOf(reveals);
     }
 
     // The gates the player's settings leave in force. Each toggle grants rather than withholds,
