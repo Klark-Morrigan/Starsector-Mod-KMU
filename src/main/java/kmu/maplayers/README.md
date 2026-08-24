@@ -290,7 +290,17 @@ about what the overlay means.
   frame the cursor can be located against, stepping aside for the vanilla star
   tooltip) and draws whichever `MapHoverTooltip` the active layer's renderer injects - so a layer
   with none, a layer whose own tooltip switch is off, and a switch-only tab with no renderer at all
-  show nothing for the same reason. How much detail the drawn box states is one shared fact rather
+  show nothing for the same reason. That step-aside is rooted at whichever surface owns the frame
+  (`ShownMapSurface` in `kmu.starsector.ui`: the map tab when one is up, and the panel a mod docked
+  a map into otherwise) rather than at the core tab, because a docked panel hangs off the core UI
+  and is up on exactly the frames where no tab is - so the one place a tab-rooted walk cannot look
+  is the only place such a tooltip is raised, and ours would draw a second box naming the same star.
+  Nothing about it reads the compatibility mode: that mode settles where the cursor means anything,
+  this settles which of two boxes describing one star the player sees, and a switch named for one
+  mod would leave the double box standing for every other mod that docks a map. Which surfaces exist
+  is this mod's knowledge, so KMLib's probe takes its search root as a port and KMU composes the
+  reading - the same split the hover permission and the RAT mode already make.
+  How much detail the drawn box states is one shared fact rather
   than a per-layer one: `HoverTooltipDetailModeState` carries the mode, and the dispatcher draws the
   richer counterpart the injected tooltip offers for it (`MapHoverTooltip.resolveExpandedVariant`) or
   that tooltip itself when it offers none - so the choice holds across hovers and layer switches, and

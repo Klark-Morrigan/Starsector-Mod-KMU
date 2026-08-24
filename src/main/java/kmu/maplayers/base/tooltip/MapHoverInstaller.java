@@ -85,7 +85,7 @@ public final class MapHoverInstaller {
             sector,
             MapLayerCellTooltip.class,
             () -> new MapLayerCellTooltip(
-                new VanillaMapTooltipProbe(),
+                new VanillaMapTooltipProbe(ShownMapSurface::resolveShownMapSurface),
                 MapHoverPermission.createForLiveScreen()));
     }
 
