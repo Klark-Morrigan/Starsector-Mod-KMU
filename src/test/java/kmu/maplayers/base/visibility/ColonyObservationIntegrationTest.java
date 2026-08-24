@@ -7,7 +7,7 @@ import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
-import kmu.maplayers.ColonyShapeFixtures;
+import kmlib.testfixtures.starsector.colonies.ColonyPlacementFixture;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -84,7 +84,7 @@ final class ColonyObservationIntegrationTest {
 
             var elsewhere = buildSystemElsewhere();
 
-            ColonyShapeFixtures.placeColoniesInSystem(elsewhere, derelict);
+            ColonyPlacementFixture.placeColonies(elsewhere, derelict);
 
             assertThat(readKnownColoniesIn(fixture, elsewhere))
                 .isEmpty();
@@ -149,7 +149,7 @@ final class ColonyObservationIntegrationTest {
 
             var elsewhere = buildSystemElsewhere();
 
-            ColonyShapeFixtures.placeColoniesInSystem(elsewhere, mover);
+            ColonyPlacementFixture.placeColonies(elsewhere, mover);
             SectorColonySightings.recordSightingsIn(fixture.getSector(), elsewhere);
 
             assertThat(readKnownColoniesIn(fixture, elsewhere))

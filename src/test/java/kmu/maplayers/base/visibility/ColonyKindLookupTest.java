@@ -4,8 +4,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
-
-import kmu.maplayers.ColonyShapeFixtures;
+import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,9 +39,9 @@ final class ColonyKindLookupTest {
         @Test
         void names_each_colony_of_the_place_by_the_kind_it_is() {
 
-            var derelict = nameColony(ColonyShapeFixtures.buildDerelictStation(), DERELICT_ID);
+            var derelict = nameColony(ColonyMarketFixture.buildDerelictStation(), DERELICT_ID);
             var neighbour = nameColony(
-                ColonyShapeFixtures.buildVisibleColony("hegemony"),
+                ColonyMarketFixture.buildVisibleColony("hegemony"),
                 NEIGHBOUR_ID);
 
             var lookup = ColonyKindLookup.readKindsIn(
@@ -63,7 +62,7 @@ final class ColonyKindLookupTest {
             // asking has already decided which rows it lists, so narrowing here would leave a
             // listed row unanswered for reasons that reader had nothing to do with.
             var unfoundDerelict = nameColony(
-                ColonyShapeFixtures.buildUnfoundDerelictStation(),
+                ColonyMarketFixture.buildUnfoundDerelictStation(),
                 DERELICT_ID);
 
             var lookup = ColonyKindLookup.readKindsIn(

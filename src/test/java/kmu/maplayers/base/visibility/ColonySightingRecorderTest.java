@@ -6,7 +6,8 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
-import kmu.maplayers.ColonyShapeFixtures;
+import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
+import kmlib.testfixtures.starsector.colonies.ColonyPlacementFixture;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -109,7 +110,7 @@ final class ColonySightingRecorderTest {
     // walked the wrong places from one that walked none.
     private static MarketAPI buildGatedColony(String colonyId) {
 
-        var marketMock = ColonyShapeFixtures.buildFoundConcealedColony("pirates");
+        var marketMock = ColonyMarketFixture.buildFoundConcealedColony("pirates");
 
         when(marketMock.getId())
             .thenReturn(colonyId);
@@ -126,7 +127,7 @@ final class ColonySightingRecorderTest {
         when(systemMock.getId())
             .thenReturn(systemId);
 
-        ColonyShapeFixtures.listColoniesInEconomy(economyMock, systemMock, colonies);
+        ColonyPlacementFixture.listColonies(economyMock, systemMock, colonies);
 
         return systemMock;
     }

@@ -3,8 +3,7 @@ package kmu.maplayers.base.visibility;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.Colony;
-
-import kmu.maplayers.ColonyShapeFixtures;
+import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins what each {@link RevelationGate} covers, and which colonies are gated by any of them at
  * all - the second being what decides whose observations are worth writing down. The cases live in
  * a {@link Nested} group per method so the suite reports as a per-method tree, and the colonies
- * they are posed against are {@link ColonyShapeFixtures}'s.
+ * they are posed against are {@link ColonyMarketFixture}'s.
  *
  * <p>Pinned apart from the rule that applies them because the two gates read different facts -
  * one the kind of place, the other whether the market conceals itself - and a gate quietly
@@ -35,7 +34,7 @@ final class RevelationGateTest {
         void space_derelicts_covers_a_derelict() {
 
             assertThat(RevelationGate.SPACE_DERELICTS.coversColony(
-                    buildColony(ColonyShapeFixtures.buildDerelictStation()),
+                    buildColony(ColonyMarketFixture.buildDerelictStation()),
                     ColonyKind.SPACE_DERELICT))
                 .isTrue();
         }
@@ -44,7 +43,7 @@ final class RevelationGateTest {
         void space_derelicts_passes_over_a_colony_somebody_lives_on() {
 
             assertThat(RevelationGate.SPACE_DERELICTS.coversColony(
-                    buildColony(ColonyShapeFixtures.buildVisibleColony("hegemony")),
+                    buildColony(ColonyMarketFixture.buildVisibleColony("hegemony")),
                     ColonyKind.COLONY))
                 .isFalse();
         }
@@ -54,7 +53,7 @@ final class RevelationGateTest {
             // The other gate's shape. A derelict gate that covered concealment would hide a
             // raided pirate base for the player who raided it.
             assertThat(RevelationGate.SPACE_DERELICTS.coversColony(
-                    buildColony(ColonyShapeFixtures.buildFoundConcealedColony("pirates")),
+                    buildColony(ColonyMarketFixture.buildFoundConcealedColony("pirates")),
                     ColonyKind.COLONY))
                 .isFalse();
         }
@@ -65,7 +64,7 @@ final class RevelationGateTest {
             // parts it from the hulk and this gate is not about it - it answers to concealment
             // alone, exactly as an ordinary colony does.
             assertThat(RevelationGate.SPACE_DERELICTS.coversColony(
-                    buildColony(ColonyShapeFixtures.buildOutpost("hegemony")),
+                    buildColony(ColonyMarketFixture.buildOutpost("hegemony")),
                     ColonyKind.OUTPOST))
                 .isFalse();
         }
@@ -74,7 +73,7 @@ final class RevelationGateTest {
         void hidden_colonies_covers_a_concealed_colony() {
 
             assertThat(RevelationGate.HIDDEN_COLONIES.coversColony(
-                    buildColony(ColonyShapeFixtures.buildFoundConcealedColony("rat_exotech")),
+                    buildColony(ColonyMarketFixture.buildFoundConcealedColony("rat_exotech")),
                     ColonyKind.COLONY))
                 .isTrue();
         }
@@ -83,7 +82,7 @@ final class RevelationGateTest {
         void hidden_colonies_passes_over_a_colony_held_in_the_open() {
 
             assertThat(RevelationGate.HIDDEN_COLONIES.coversColony(
-                    buildColony(ColonyShapeFixtures.buildVisibleColony("hegemony")),
+                    buildColony(ColonyMarketFixture.buildVisibleColony("hegemony")),
                     ColonyKind.COLONY))
                 .isFalse();
         }
@@ -93,7 +92,7 @@ final class RevelationGateTest {
             // The ordinary derelict: open, and covered by the other gate alone. Concealment and
             // kind are separate facts, and this is the case that says so.
             assertThat(RevelationGate.HIDDEN_COLONIES.coversColony(
-                    buildColony(ColonyShapeFixtures.buildDerelictStation()),
+                    buildColony(ColonyMarketFixture.buildDerelictStation()),
                     ColonyKind.SPACE_DERELICT))
                 .isFalse();
         }
@@ -106,7 +105,7 @@ final class RevelationGateTest {
         void reports_a_derelict_as_gated() {
 
             assertThat(RevelationGate.isGatedColony(
-                    buildColony(ColonyShapeFixtures.buildDerelictStation()),
+                    buildColony(ColonyMarketFixture.buildDerelictStation()),
                     ColonyKind.SPACE_DERELICT))
                 .isTrue();
         }
@@ -115,7 +114,7 @@ final class RevelationGateTest {
         void reports_a_concealed_colony_as_gated() {
 
             assertThat(RevelationGate.isGatedColony(
-                    buildColony(ColonyShapeFixtures.buildFoundConcealedColony("pirates")),
+                    buildColony(ColonyMarketFixture.buildFoundConcealedColony("pirates")),
                     ColonyKind.COLONY))
                 .isTrue();
         }
@@ -125,7 +124,7 @@ final class RevelationGateTest {
             // The shape the register must not fill up with. An open colony the economy lists is
             // permanently in the sector's own sight, so an observation of one answers nothing.
             assertThat(RevelationGate.isGatedColony(
-                    buildColony(ColonyShapeFixtures.buildVisibleColony("hegemony")),
+                    buildColony(ColonyMarketFixture.buildVisibleColony("hegemony")),
                     ColonyKind.COLONY))
                 .isFalse();
         }
@@ -134,7 +133,7 @@ final class RevelationGateTest {
         void reports_an_open_station_a_faction_keeps_as_ungated() {
             // Neither gate is about it: its owner parts it from the hulk, and nothing conceals it.
             assertThat(RevelationGate.isGatedColony(
-                    buildColony(ColonyShapeFixtures.buildOutpost("hegemony")),
+                    buildColony(ColonyMarketFixture.buildOutpost("hegemony")),
                     ColonyKind.OUTPOST))
                 .isFalse();
         }

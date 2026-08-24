@@ -12,6 +12,8 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
+
 import kmu.maplayers.base.visibility.SectorColonySightings;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -80,8 +82,6 @@ public final class SectorPoliticsFixtures {
 
     // Runs across the whole test JVM rather than per sector, which is all it has to do: the ids it
     // hands out only need to differ from one another within whatever sector a case builds.
-    private static int builtMarketCount;
-
     private SectorPoliticsFixtures() {
     }
 
@@ -151,20 +151,7 @@ public final class SectorPoliticsFixtures {
      * @return the faction mock
      */
     public static FactionAPI buildFaction(String id) {
-
-        var factionMock = mock(FactionAPI.class);
-
-        when(factionMock.getId())
-            .thenReturn(id);
-
-        // Whether this is the neutral faction is answered off the faction, as the engine answers
-        // it, rather than left false: the colony kind read parts an unowned hulk from a station
-        // somebody keeps on exactly this question, so a fixture that had neutral deny being
-        // neutral would pose every derelict as a manned outpost.
-        when(factionMock.isNeutralFaction())
-            .thenReturn(Factions.NEUTRAL.equals(id));
-
-        return factionMock;
+        return ColonyMarketFixture.buildFaction(id);
     }
 
     /**
@@ -195,7 +182,7 @@ public final class SectorPoliticsFixtures {
      * @return the market mock
      */
     public static MarketAPI buildVisibleMarket(FactionAPI faction, int size) {
-        return buildMarket(faction, size, false, false, false, FULL_STABILITY);
+        return atStability(ColonyMarketFixture.buildVisibleColonyOfSize(faction, size));
     }
 
     /**
@@ -208,7 +195,9 @@ public final class SectorPoliticsFixtures {
      * @return the market mock
      */
     public static MarketAPI buildMarketAtStability(FactionAPI faction, int size, float stability) {
-        return buildMarket(faction, size, false, false, false, stability);
+        return atStability(
+            ColonyMarketFixture.buildVisibleColonyOfSize(faction, size),
+            stability);
     }
 
     /**
@@ -221,7 +210,7 @@ public final class SectorPoliticsFixtures {
      * @return the market mock
      */
     public static MarketAPI buildConditionOnlyMarket(FactionAPI faction, int size) {
-        return buildMarket(faction, size, true, false, false, FULL_STABILITY);
+        return atStability(ColonyMarketFixture.buildConditionOnlyMarket(faction, size));
     }
 
     /**
@@ -251,7 +240,9 @@ public final class SectorPoliticsFixtures {
             int size,
             float stability) {
 
-        return buildMarket(faction, size, false, true, false, stability);
+        return atStability(
+            ColonyMarketFixture.buildFoundConcealedColony(faction, size),
+            stability);
     }
 
     /**
@@ -263,7 +254,7 @@ public final class SectorPoliticsFixtures {
      * @return the market mock
      */
     public static MarketAPI buildUndiscoveredHiddenMarket(FactionAPI faction, int size) {
-        return buildMarket(faction, size, false, true, true, FULL_STABILITY);
+        return atStability(ColonyMarketFixture.buildUnfoundConcealedColony(faction, size));
     }
 
     /**
@@ -277,7 +268,7 @@ public final class SectorPoliticsFixtures {
      * @return the market mock
      */
     public static MarketAPI buildUndiscoveredOpenMarket(FactionAPI faction, int size) {
-        return buildMarket(faction, size, false, false, true, FULL_STABILITY);
+        return atStability(ColonyMarketFixture.buildUnfoundOpenColony(faction, size));
     }
 
     /**
@@ -296,7 +287,7 @@ public final class SectorPoliticsFixtures {
      * @return the market mock
      */
     public static MarketAPI buildAbandonedStationMarket(int size) {
-        return buildStationCarryingDerelictCondition(buildFaction(Factions.NEUTRAL), size);
+        return atStability(ColonyMarketFixture.buildDerelictStation(size));
     }
 
     /**
@@ -309,73 +300,25 @@ public final class SectorPoliticsFixtures {
      * @return the market mock
      */
     public static MarketAPI buildOutpostMarket(FactionAPI faction, int size) {
-        return buildStationCarryingDerelictCondition(faction, size);
+        return atStability(ColonyMarketFixture.buildOutpost(faction, size));
     }
 
-    // The derelict condition on an ordinary colony's shape, which the owner then decides the kind
-    // of. Stated once so the hulk and the kept station cannot drift into differing on anything but
-    // that owner, which is the whole of what the kind read parts them on.
-    private static MarketAPI buildStationCarryingDerelictCondition(FactionAPI faction, int size) {
-
-        var marketMock = buildMarket(faction, size, false, false, false, FULL_STABILITY);
-
-        when(marketMock.hasCondition(Conditions.ABANDONED_STATION))
-            .thenReturn(true);
-
-        return marketMock;
-    }
-
-    // The base market stub the named builders above wrap: exactly the fields the "counts as a
-    // colony" filter and the weight read touch, so a suite adds only the extra stubs its variant
-    // needs.
+    // The one fact a dominance weight reads that a market read does not, laid over a colony the
+    // shared fixture built. Stability is this layer's alone: KMLib poses what a market *is*, and
+    // what it is worth to a weighting rule is the political map's question.
     //
-    // Private, and the flags stay behind that boundary. Three adjacent booleans are transposable
-    // without failing, and a suite setting them directly says nothing about which of the resulting
-    // shapes it meant - so a case reads as the market it poses rather than as a flag triple the
-    // reader has to decode.
-    private static MarketAPI buildMarket(
-            FactionAPI faction,
-            int size,
-            boolean isConditionOnly,
-            boolean isHidden,
-            boolean isUndiscovered,
-            float stability) {
+    // Full unless a case says otherwise, so a suite about any other term is not also posing a
+    // scaling factor it never mentions.
+    private static MarketAPI atStability(MarketAPI market) {
+        return atStability(market, FULL_STABILITY);
+    }
 
-        var entityMock = mock(SectorEntityToken.class);
+    private static MarketAPI atStability(MarketAPI market, float stability) {
 
-        when(entityMock.isDiscoverable())
-            .thenReturn(isUndiscovered);
-
-        // The owner's id is read before the market's stubbing opens, so the two mocks do not nest
-        // into an unfinished-stubbing error.
-        var factionId = faction == null ? null : faction.getId();
-        var marketMock = mock(MarketAPI.class);
-
-        // Every market gets an id of its own, because a sighting is kept against one: markets
-        // sharing the null a mock answers by default would share one entry in the register, and a
-        // case marking one seen would silently mark the lot.
-        builtMarketCount++;
-
-        when(marketMock.getId())
-            .thenReturn("market_" + builtMarketCount);
-        // The owner answers on both readings, as a real market's does - they are one fact in the
-        // game, and a rule that tells owners apart would see none if only one of them answered.
-        when(marketMock.getFaction())
-            .thenReturn(faction);
-        when(marketMock.getFactionId())
-            .thenReturn(factionId);
-        when(marketMock.getSize())
-            .thenReturn(size);
-        when(marketMock.getStabilityValue())
+        when(market.getStabilityValue())
             .thenReturn(stability);
-        when(marketMock.isPlanetConditionMarketOnly())
-            .thenReturn(isConditionOnly);
-        when(marketMock.isHidden())
-            .thenReturn(isHidden);
-        when(marketMock.getPrimaryEntity())
-            .thenReturn(entityMock);
 
-        return marketMock;
+        return market;
     }
 
     /**

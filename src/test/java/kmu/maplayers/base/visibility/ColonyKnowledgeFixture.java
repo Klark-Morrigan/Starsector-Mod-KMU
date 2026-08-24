@@ -2,16 +2,14 @@ package kmu.maplayers.base.visibility;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.ColonyShapeFixtures;
+import kmlib.testfixtures.starsector.colonies.ColonyFixture;
+
 import kmu.maplayers.DecivilisedPlanetFixtures;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * The world a projection is posed against: one star system, the colonies standing in it, and what
@@ -22,7 +20,7 @@ import static org.mockito.Mockito.mock;
  * {@link #markColoniesAsSighted}, and a colony given only the first is the shape a gate holds back.
  * Folding them into one call would leave every case unable to pose that difference.
  *
- * <p>Colony shapes themselves are {@link ColonyShapeFixtures}'s and {@link DecivilisedPlanetFixtures}'s,
+ * <p>Colony shapes themselves are {@link ColonyFixture}'s and {@link DecivilisedPlanetFixtures}'s,
  * forwarded here so a suite holding this fixture builds and places them through the one object.
  * What a colony is does not depend on the world it stands in.
  *
@@ -33,12 +31,10 @@ import static org.mockito.Mockito.mock;
 public final class ColonyKnowledgeFixture {
 
     /** The size every colony takes unless a case asks for another. */
-    public static final int DEFAULT_COLONY_SIZE = ColonyShapeFixtures.DEFAULT_COLONY_SIZE;
+    public static final int DEFAULT_COLONY_SIZE = ColonyFixture.DEFAULT_COLONY_SIZE;
 
-    private final EconomyAPI economyMock;
     private final Map<String, ColonyObservation> observationsByColonyId = new HashMap<>();
-    private final SectorAPI sectorMock;
-    private final StarSystemAPI systemMock;
+    private final ColonyFixture world;
 
     /**
      * Opens a world holding exactly one system.
@@ -46,20 +42,17 @@ public final class ColonyKnowledgeFixture {
      * @param systemId the system's id, as {@code StarSystemAPI#getId} reports it
      */
     public ColonyKnowledgeFixture(String systemId) {
-
-        systemMock = ColonyShapeFixtures.buildSystem(systemId);
-        economyMock = mock(EconomyAPI.class);
-        sectorMock = ColonyShapeFixtures.buildSectorHolding(systemMock, economyMock);
+        world = new ColonyFixture(systemId);
     }
 
     /** The sector the world stands in. */
     public SectorAPI getSector() {
-        return sectorMock;
+        return world.getSector();
     }
 
     /** The one system the world holds. */
     public StarSystemAPI getSystem() {
-        return systemMock;
+        return world.getSystem();
     }
 
     /**
@@ -71,12 +64,12 @@ public final class ColonyKnowledgeFixture {
      * given somewhere to put one.
      */
     public void openSectorMemory() {
-        ColonyShapeFixtures.openSectorMemory(sectorMock);
+        world.openSectorMemory();
     }
 
     /** Registers the colonies with the economy, in the order it will list them. */
     public void listColoniesInEconomy(MarketAPI... colonies) {
-        ColonyShapeFixtures.listColoniesInEconomy(economyMock, systemMock, colonies);
+        world.listColoniesInEconomy(colonies);
     }
 
     /**
@@ -92,7 +85,7 @@ public final class ColonyKnowledgeFixture {
      * a gate answerable about them at all.
      */
     public void placeColoniesInSystem(MarketAPI... colonies) {
-        ColonyShapeFixtures.placeColoniesInSystem(systemMock, colonies);
+        world.placeColoniesInSystem(colonies);
     }
 
     /**
@@ -111,7 +104,7 @@ public final class ColonyKnowledgeFixture {
         for (var colony : colonies) {
             observationsByColonyId.put(
                 colony.getId(),
-                ColonyObservation.createUndatedObservation(systemMock.getId()));
+                ColonyObservation.createUndatedObservation(world.getSystem().getId()));
         }
     }
 
@@ -133,7 +126,7 @@ public final class ColonyKnowledgeFixture {
     // accounts of one colony a rename apart.
 
     public MarketAPI buildConditionOnlyMarket() {
-        return ColonyShapeFixtures.buildConditionOnlyMarket();
+        return world.buildConditionOnlyMarket();
     }
 
     public MarketAPI buildDecivilisedWorld() {
@@ -145,27 +138,27 @@ public final class ColonyKnowledgeFixture {
     }
 
     public MarketAPI buildDerelictStation() {
-        return ColonyShapeFixtures.buildDerelictStation();
+        return world.buildDerelictStation();
     }
 
     public MarketAPI buildUnfoundDerelictStation() {
-        return ColonyShapeFixtures.buildUnfoundDerelictStation();
+        return world.buildUnfoundDerelictStation();
     }
 
     public MarketAPI buildOutpost(String factionId) {
-        return ColonyShapeFixtures.buildOutpost(factionId);
+        return world.buildOutpost(factionId);
     }
 
     public MarketAPI buildFoundConcealedColony(String factionId) {
-        return ColonyShapeFixtures.buildFoundConcealedColony(factionId);
+        return world.buildFoundConcealedColony(factionId);
     }
 
     public MarketAPI buildSiblingMarketOn(MarketAPI colony, int size) {
-        return ColonyShapeFixtures.buildSiblingMarketOn(colony, size);
+        return world.buildSiblingMarketOn(colony, size);
     }
 
     public MarketAPI buildUnfoundConcealedColony(String factionId) {
-        return ColonyShapeFixtures.buildUnfoundConcealedColony(factionId);
+        return world.buildUnfoundConcealedColony(factionId);
     }
 
     public MarketAPI buildUnfoundUnsurveyedDecivilisedWorld() {
@@ -177,14 +170,14 @@ public final class ColonyKnowledgeFixture {
     }
 
     public MarketAPI buildUnfoundOpenColony(String factionId) {
-        return ColonyShapeFixtures.buildUnfoundOpenColony(factionId);
+        return world.buildUnfoundOpenColony(factionId);
     }
 
     public MarketAPI buildVisibleColony(String factionId) {
-        return ColonyShapeFixtures.buildVisibleColony(factionId);
+        return world.buildVisibleColony(factionId);
     }
 
     public MarketAPI buildVisibleColonyOfSize(String factionId, int size) {
-        return ColonyShapeFixtures.buildVisibleColonyOfSize(factionId, size);
+        return world.buildVisibleColonyOfSize(factionId, size);
     }
 }

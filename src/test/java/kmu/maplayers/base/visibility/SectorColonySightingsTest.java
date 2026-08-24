@@ -11,7 +11,8 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.SystemColonies;
 
-import kmu.maplayers.ColonyShapeFixtures;
+import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
+import kmlib.testfixtures.starsector.colonies.ColonyPlacementFixture;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -39,7 +40,7 @@ import static org.mockito.Mockito.when;
  * every case here is about how the register accumulates across calls - a stubbed read could not
  * show a second visit overwriting the first, nor a reconciliation removing an entry.
  *
- * <p>The colonies are {@link ColonyShapeFixtures}'s, gated shapes for the most part: an ungated
+ * <p>The colonies are {@link ColonyMarketFixture}'s, gated shapes for the most part: an ungated
  * colony is never recorded, so a suite posing only those could not tell a working recorder from
  * one that wrote nothing at all.
  */
@@ -395,18 +396,18 @@ final class SectorColonySightingsTest {
     // A derelict nobody ever lived on - the commonest gated shape, and the one the register was
     // introduced for.
     private static MarketAPI buildDerelict(String colonyId) {
-        return nameColony(ColonyShapeFixtures.buildDerelictStation(), colonyId);
+        return nameColony(ColonyMarketFixture.buildDerelictStation(), colonyId);
     }
 
     // A base that conceals itself: the other gated shape, held by a real faction.
     private static MarketAPI buildConcealedColony(String colonyId, String factionId) {
-        return nameColony(ColonyShapeFixtures.buildFoundConcealedColony(factionId), colonyId);
+        return nameColony(ColonyMarketFixture.buildFoundConcealedColony(factionId), colonyId);
     }
 
     // An ordinary colony, gated by nothing. Posed both as the shape that must never reach the
     // register and as the neighbour whose people do the observing.
     private static MarketAPI buildOpenColony(String colonyId, String factionId) {
-        return nameColony(ColonyShapeFixtures.buildVisibleColony(factionId), colonyId);
+        return nameColony(ColonyMarketFixture.buildVisibleColony(factionId), colonyId);
     }
 
     // The id a sighting is kept against. Given here rather than by the colony builders, none of
@@ -432,11 +433,11 @@ final class SectorColonySightingsTest {
     }
 
     private void listColoniesInSystem(MarketAPI... colonies) {
-        ColonyShapeFixtures.listColoniesInEconomy(economyMock, systemMock, colonies);
+        ColonyPlacementFixture.listColonies(economyMock, systemMock, colonies);
     }
 
     private void placeColoniesOnSystemEntities(MarketAPI... colonies) {
-        ColonyShapeFixtures.hangColoniesOnSystemEntities(systemMock, colonies);
+        ColonyPlacementFixture.hangColoniesOnEntitiesIn(systemMock, colonies);
     }
 
     // Opens the register the way a first sighting would, so a case can seed it and then assert
