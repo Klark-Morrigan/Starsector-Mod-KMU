@@ -10,21 +10,26 @@ import java.util.function.Supplier;
  * The one map surface another mod has put on screen, or nothing when there is not exactly one of
  * them.
  *
- * <p>Two rules in this mod act on such a surface - the cursor is confined to it, and it is switched
- * off while its owner has it parked - and both can only act while there is no question which surface
- * is meant. Their reasons differ and are stated where each acts; what they share is this reading,
- * and sharing it is what stops the two acting on different answers. A count rule that lived in both
- * could be changed in one, leaving the cursor confined to a widget the other had already switched
- * off.
+ * <p>Three readings in this mod turn on such a surface - the cursor is confined to it, it is
+ * switched off while its owner has it parked, and the tooltip step-aside is rooted at it - and none
+ * of them can act while there is a question which surface is meant. Their reasons differ and are
+ * stated where each acts; what they share is this reading, and sharing it is what stops them acting
+ * on different answers. A count rule that lived in each could be changed in one, leaving the cursor
+ * confined to a widget another had already switched off.
  *
  * <p>One walk behind both, which is the other half of why this is shared. The finder remembers what
  * it found against the widget tree it walked, but walks afresh at every ask while it has found
  * nothing - so two holders asking per frame walk the whole core UI twice per frame on exactly the
  * installs these rules exist for, where the panel has yet to be built.
  *
- * <p>Nothing here decides what "exactly one" is worth: it is the precondition both rules happen to
- * share, not a policy of its own. Neither does it read the compatibility mode - a caller asks that
- * first, so a walk is not paid for on an install that switched the mode off.
+ * <p>Nothing here decides what "exactly one" is worth: it is the precondition the three happen to
+ * share, not a policy of its own. Neither does it read the compatibility mode. For the two rules
+ * named after a mod that is the caller's to ask first, so an install with the mode off pays for no
+ * walk on their account. The step-aside is deliberately not one of them - which of two boxes
+ * describes a star is no question about any one mod - so it reaches this with nothing asked
+ * beforehand, and a walk is paid for on each frame its own gates open: game space, where the
+ * finder has nothing to remember because there is nothing embedded to find, and where the tree
+ * below the core UI is small for the same reason no tab is up.
  *
  * <p>Session-scoped, and needs no clearing per load: the finder keys what it remembers on the widget
  * tree it walked, and a load stands up a new one.

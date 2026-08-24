@@ -21,8 +21,9 @@ import kmu.maplayers.base.hover.MapHoverPermission;
  *
  * <p>The dispatcher owns only the gates every hover tooltip shares - the conditions under which any
  * box could draw at all ({@link HoverTooltipGates}), which it shares with the pass claiming the
- * detail-mode key, plus its own two: a hovered cell, and stepping aside while the vanilla map draws
- * its own tooltip. It then resolves the hovered system and hands it to the injected tooltip. A
+ * detail-mode key, plus its own two: a hovered cell, and stepping aside while the map surface on
+ * screen draws its own tooltip. It then resolves the hovered system and hands it to the injected
+ * tooltip. A
  * layer's own tooltip switch stays with the layer, which withholds its box by injecting none. The
  * pass is read-only over the hover state and consumes no input, so the vanilla star-system tooltip
  * keeps drawing; the tooltip a layer injects owns its own content, look, and any further
@@ -84,9 +85,10 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         if (!HoverTooltipGates.canAnyBoxDraw(hoverPermission)) {
             return;
         }
-        // Step aside when the vanilla map screen is drawing its own tooltip (the player is over a
-        // star icon), so only one box shows there. Read live from the map's UI tree; a read that
-        // fails on some game build draws ours anyway rather than hiding it.
+        // Step aside when the map surface on screen is drawing its own tooltip (the player is over a
+        // star icon), so only one box shows there. That surface is a vanilla map host or a map
+        // another mod docked, the probe being rooted at whichever owns the frame. Read live from its
+        // UI tree; a read that fails on some game build draws ours anyway rather than hiding it.
         if (vanillaMapTooltipProbe.isTooltipShowing()) {
             return;
         }

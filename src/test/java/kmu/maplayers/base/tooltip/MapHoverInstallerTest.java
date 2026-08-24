@@ -1,5 +1,8 @@
 package kmu.maplayers.base.tooltip;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
+
+import kmu.maplayers.base.hover.MapHoverExpirer;
 import kmu.starsector.listeners.RecordingListenerManager;
 
 import org.junit.jupiter.api.Nested;
@@ -9,10 +12,16 @@ import static kmu.starsector.listeners.SectorListenerFixtures.buildSector;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
- * Pins the hover box's two halves as separate registrations, each replaced outright per load: the
- * render pass that draws it, and the input pass that switches its detail.
+ * Pins the hover box's three halves as separate registrations, each replaced outright per load: the
+ * render pass that draws it, the input pass that switches its detail, and the per-frame tick that
+ * lets a hover go once no map pass is resolving one.
  */
 class MapHoverInstallerTest {
 
@@ -84,18 +93,84 @@ class MapHoverInstallerTest {
     }
 
     @Nested
+    class InstallMapHoverExpirer {
+
+        @Test
+        void installsTheExpirerAsATransientScriptClearedFirst() {
+            // addTransientScript, never addScript: an EveryFrameScript that entered the save would
+            // be restored alongside the one added on load, stacking another tick per reload and
+            // baking this class's name into the file. Cleared first for the same reason the
+            // listeners are - a second tick would close the window twice per frame, taking a hover
+            // away on the frame the map published it.
+            var sectorMock = mock(SectorAPI.class);
+
+            MapHoverInstaller.installMapHoverExpirer(sectorMock);
+
+            verify(sectorMock)
+                .removeTransientScriptsOfClass(MapHoverExpirer.class);
+            verify(sectorMock)
+                .addTransientScript(any(MapHoverExpirer.class));
+            verify(sectorMock, never())
+                .addScript(any());
+        }
+
+        @Test
+        void toleratesAMissingSector() {
+
+            var expirerInstallOnNoSector = (Runnable) () ->
+                MapHoverInstaller.installMapHoverExpirer(null);
+
+            assertThatCode(expirerInstallOnNoSector::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class RemoveMapHoverExpirer {
+
+        @Test
+        void removesTheExpirerByItsOwnClass() {
+            // By class rather than by instance, which is safe only because this script is this
+            // mod's own: no sibling mod runs one over the same sector to be taken out with it.
+            var sectorMock = mock(SectorAPI.class);
+
+            MapHoverInstaller.removeMapHoverExpirer(sectorMock);
+
+            verify(sectorMock)
+                .removeTransientScriptsOfClass(MapHoverExpirer.class);
+        }
+
+        @Test
+        void toleratesAMissingSector() {
+
+            var expirerRemovalOnNoSector = (Runnable) () ->
+                MapHoverInstaller.removeMapHoverExpirer(null);
+
+            assertThatCode(expirerRemovalOnNoSector::run)
+                .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
     class UninstallAll {
 
         @Test
-        void clearsBothHalvesOfTheBoxAndRegistersNothingBack() {
-            // Both, because they are separate registrations: leaving the input half behind would
-            // keep swallowing the toggle key for a box that is no longer drawn.
+        void clearsEveryHalfOfTheBoxAndRegistersNothingBack() {
+            // All three, because they are separate registrations: leaving the input half behind
+            // would keep swallowing the toggle key for a box that is no longer drawn, and leaving
+            // the tick behind would go on closing a window nothing publishes into.
             var listenerManager = new RecordingListenerManager();
+            var sectorMock = mock(SectorAPI.class);
+            when(sectorMock.getListenerManager())
+                .thenReturn(listenerManager);
 
-            MapHoverInstaller.uninstallAll(buildSector(listenerManager));
+            MapHoverInstaller.uninstallAll(sectorMock);
 
             assertThat(listenerManager.getRemovedListenerClasses())
                 .containsExactly(MapLayerCellTooltip.class, HoverTooltipDetailModeInput.class);
+
+            verify(sectorMock)
+                .removeTransientScriptsOfClass(MapHoverExpirer.class);
 
             assertThat(listenerManager.getAddedListeners())
                 .isEmpty();

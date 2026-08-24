@@ -4,8 +4,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 
+import kmu.maplayers.base.hover.MapHoverExpirer;
 import kmu.maplayers.base.hover.MapHoverPermission;
+import kmu.maplayers.base.hover.MapHoverState;
 import kmu.starsector.listeners.SectorListeners;
+import kmu.starsector.ui.ShownMapSurface;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 
@@ -13,9 +16,10 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  * Standing up the box that follows the cursor over the map: the pass that draws it, the key that
  * switches its detail, and the discard that stops the previous save's choice opening this one.
  *
- * <p>Two registrations rather than one, because the two are different listener kinds claiming
- * different halves of the same feature - a render pass gets no events to consume and an input pass
- * gets no GL context - so a failure to install either must cost only its own half.
+ * <p>Three registrations rather than one, because each claims a different half of the same feature
+ * and can only be made where that half lives - a render pass gets no events to consume, an input
+ * pass gets no GL context, and the tick that lets a hover go has to run on the frames neither of
+ * them does. So a failure to install any of them costs only its own half.
  *
  * <p>Installed after the surfaces, whose frame preparation claim the box asks for a frame.
  *
@@ -49,6 +53,10 @@ public final class MapHoverInstaller {
         runGuardedStep(
             () -> installHoverTooltipDetailModeInput(sector),
             "Failed to install KMU hover tooltip detail mode input");
+
+        runGuardedStep(
+            () -> installMapHoverExpirer(sector),
+            "Failed to install KMU map hover expirer");
     }
 
     /**
@@ -68,6 +76,10 @@ public final class MapHoverInstaller {
                 SectorListeners.removeListener(sector, HoverTooltipDetailModeInput.class);
             },
             "Failed to remove KMU map layer hover tooltip");
+
+        runGuardedStep(
+            () -> removeMapHoverExpirer(sector),
+            "Failed to remove KMU map hover expirer");
     }
 
     // Registers the hover-tooltip dispatcher - the render listener that draws whichever tooltip the
@@ -81,12 +93,42 @@ public final class MapHoverInstaller {
         // host-blind: the box draws wherever the layer paints, which is the sector map and the intel
         // screen's map visor alike, and look-blind: some terrain surface paints the layers in either
         // look, so the Starscape filter changes what is under the box rather than whether there is one.
+        //
+        // The step-aside is rooted at the shown surface rather than at the core tab, because the box
+        // now draws over a map another mod docked as well - and the frames such a panel is up are
+        // frames where no tab is up at all, so a walk fixed at the tab could never reach the tooltip
+        // it has to stand aside for.
         SectorListeners.installListener(
             sector,
             MapLayerCellTooltip.class,
             () -> new MapLayerCellTooltip(
                 new VanillaMapTooltipProbe(ShownMapSurface::resolveShownMapSurface),
                 MapHoverPermission.createForLiveScreen()));
+    }
+
+    // Registers the per-frame tick that closes each frame's hover window, so a hover the map has
+    // stopped resolving is let go of rather than named for the rest of the session. A script rather
+    // than a listener because the frames it answers for are the ones no map pass runs on - the map
+    // screen closed with nothing else drawing one - which is exactly when a pass-borne park cannot
+    // happen. Transient, and removed by class: this script is this mod's own, so no sibling mod's
+    // instance can be taken out with it.
+    static void installMapHoverExpirer(SectorAPI sector) {
+
+        if (sector == null) {
+            return;
+        }
+        removeMapHoverExpirer(sector);
+
+        // The shared holder, since it is the one every pass publishes to and every box reads.
+        sector.addTransientScript(new MapHoverExpirer(MapHoverState.getInstance()));
+    }
+
+    static void removeMapHoverExpirer(SectorAPI sector) {
+
+        if (sector == null) {
+            return;
+        }
+        sector.removeTransientScriptsOfClass(MapHoverExpirer.class);
     }
 
     // Registers the input listener that reads the hover box's detail-mode toggle key. Transient,
