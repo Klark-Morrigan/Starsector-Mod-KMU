@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.dominance;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.Colony;
-import kmlib.starsector.colonies.ColonyKind;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -105,6 +104,6 @@ final class SystemHabitationTest {
     // A colony this value merely carries. Nothing here reads a market, so the kind and the listing
     // are the ordinary ones and no case reads as being about which colony it holds.
     private static Colony buildColony() {
-        return new Colony(mock(MarketAPI.class), ColonyKind.COLONY, true);
+        return new Colony(mock(MarketAPI.class), true);
     }
 }

@@ -4,10 +4,9 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.starsector.colonies.ColonyObservation;
-import kmlib.starsector.colonies.SectorColonySightings;
-
 import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.visibility.ColonyObservation;
+import kmu.maplayers.base.visibility.SectorColonySightings;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 
 import org.junit.jupiter.api.BeforeEach;

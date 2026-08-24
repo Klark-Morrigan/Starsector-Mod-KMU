@@ -2,9 +2,8 @@ package kmu.maplayers.politicalmap.base.refresh.listeners;
 
 import com.fs.starfarer.api.Global;
 
-import kmlib.starsector.colonies.SectorColonySightings;
-
 import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.visibility.SectorColonySightings;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 
 import org.junit.jupiter.api.BeforeEach;

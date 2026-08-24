@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

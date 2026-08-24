@@ -1,9 +1,6 @@
-package kmu.starsector.colonies;
+package kmu.maplayers.base.visibility;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
-
-import kmlib.starsector.colonies.ColonySightingRecorder;
-import kmlib.starsector.colonies.SectorColonySightings;
 
 import kmu.starsector.listeners.SectorListeners;
 

@@ -4,11 +4,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
+import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
@@ -33,9 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
-
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
+import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.VIEW_GROUPING;
@@ -247,7 +246,7 @@ final class ExpandedSystemDominationTooltipTest {
                 () -> KnownMarketFootprints.readBreakdownByFaction(
                     Colonies.NONE,
                     ANY_RULES,
-                    BASE_FOG));
+                    ANY_PASS.colonyKnowledge()));
         }
 
         @Test
@@ -269,7 +268,7 @@ final class ExpandedSystemDominationTooltipTest {
                 () -> KnownMarketFootprints.readBreakdownByFaction(
                     Colonies.NONE,
                     ANY_RULES,
-                    BASE_FOG),
+                    ANY_PASS.colonyKnowledge()),
                 Mockito.times(1));
         }
 
@@ -286,7 +285,7 @@ final class ExpandedSystemDominationTooltipTest {
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
                     Colonies.NONE,
-                    UNDER_THE_REVEAL));
+                    REVEALED_PASS.colonyKnowledge()));
         }
 
         @Test
@@ -310,7 +309,7 @@ final class ExpandedSystemDominationTooltipTest {
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
                     Colonies.NONE,
-                    BASE_FOG),
+                    ANY_PASS.colonyKnowledge()),
                 Mockito.times(1));
         }
     }

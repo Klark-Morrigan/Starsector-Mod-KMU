@@ -3,11 +3,12 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.visibility.ColonyKnowledge;
+import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -24,7 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -169,7 +170,7 @@ public final class StandingsTooltipSeamsFake {
         var statusRow = CellTooltipRows.buildBannerRow(null, statusText);
 
         statusRowMock
-            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(ColonyVisibility.class)))
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(ColonyKnowledge.class)))
             .thenReturn(Optional.of(statusRow));
 
         return statusRow;
@@ -212,15 +213,21 @@ public final class StandingsTooltipSeamsFake {
      */
     public static void verifyStatusJudgedUnderVisibility(ColonyVisibility colonyVisibility) {
 
+        // Matched on the rule the knowledge carries rather than on the knowledge itself: the box
+        // pairs the rule with the sector's register where it draws, so the value handed over is
+        // never one a case could state.
         statusRowMock.verify(
-            () -> SystemStatusRow.resolveStatusRow(any(), eq(colonyVisibility)));
+            () -> SystemStatusRow.resolveStatusRow(
+                any(),
+                argThat(knowledge -> knowledge != null
+                    && colonyVisibility.equals(knowledge.rule()))));
     }
 
     // A system with nothing to say about itself beyond its standings, which is the ordinary case and
     // what keeps the line above the contest out of the way of cases about the contest.
     private static void stubNoStatus() {
         statusRowMock
-            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(ColonyVisibility.class)))
+            .when(() -> SystemStatusRow.resolveStatusRow(any(), any(ColonyKnowledge.class)))
             .thenReturn(Optional.empty());
     }
 }

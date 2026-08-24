@@ -59,7 +59,7 @@ public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
 
         return new ClaimedSystemRibbonPlanner(
             new VanillaClaimBreakdownReader(
-                inputs.pass().colonyVisibility(),
+                inputs.pass().colonyKnowledge(),
                 inputs.pass().colonies()),
             inputs);
     }

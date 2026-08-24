@@ -1,8 +1,7 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmlib.starsector.colonies.ColonyKind;
-
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.util.KmuStrings;
 
 import java.util.Optional;

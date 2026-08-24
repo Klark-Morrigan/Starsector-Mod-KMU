@@ -6,8 +6,7 @@ import kmu.maplayers.base.visibility.MapVisibilityRules;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
-
+import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 
 import static org.assertj.core.api.Assertions.assertThat;

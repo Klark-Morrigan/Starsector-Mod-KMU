@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.refresh;
 
 import com.fs.starfarer.api.Global;
 
-import kmlib.starsector.colonies.SectorColonySightings;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
@@ -10,6 +9,7 @@ import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.visibility.MapVisibilityPass;
+import kmu.maplayers.base.visibility.SectorColonySightings;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import org.apache.log4j.Logger;

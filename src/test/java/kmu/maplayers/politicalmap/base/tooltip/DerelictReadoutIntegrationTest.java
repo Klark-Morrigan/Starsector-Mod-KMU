@@ -29,9 +29,8 @@ import org.mockito.Mockito;
 
 import java.util.List;
 
-import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
-
 import static kmu.maplayers.SectorScenarioFixtures.placeDerelictIn;
+import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStabilityWeightedRules;
@@ -184,7 +183,7 @@ final class DerelictReadoutIntegrationTest {
 
         var pass = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
 
-        return new VanillaClaimBreakdownReader(pass.colonyVisibility(), pass.colonies())
+        return new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.colonies())
             .readBreakdown(buildOnlySystem(sector));
     }
 

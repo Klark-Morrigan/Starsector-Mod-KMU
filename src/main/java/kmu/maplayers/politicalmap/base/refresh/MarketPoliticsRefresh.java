@@ -4,10 +4,10 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.starsector.colonies.SectorColonySightings;
 import kmlib.starsector.colonies.SystemColonies;
 
 import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.visibility.SectorColonySightings;
 
 import org.apache.log4j.Logger;
 

@@ -3,7 +3,6 @@ package kmu.maplayers.base.visibility;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
@@ -36,6 +35,7 @@ import java.util.Objects;
  */
 public final class MapVisibilityPass {
 
+    private final ColonyKnowledge colonyKnowledge;
     private final SystemColoniesIndex colonies;
     private final VisibleStars visibleStars;
     private final MapVisibilityRules rules;
@@ -62,6 +62,13 @@ public final class MapVisibilityPass {
         this.colonies = Objects.requireNonNull(colonies, "colonies");
         this.visibleStars = Objects.requireNonNull(visibleStars, "visibleStars");
         this.rules = Objects.requireNonNull(rules, "rules");
+
+        // The rule is paired with the sector's sighting register here, which is the one point at
+        // which both are in hand: the index names the sector, and a projection asked of a colony
+        // set later would have nowhere to read what has been observed from.
+        this.colonyKnowledge = ColonyKnowledge.over(
+            colonies.getSector(),
+            rules.colonyVisibility());
     }
 
     /**
@@ -114,6 +121,21 @@ public final class MapVisibilityPass {
     }
 
     /**
+     * What the player may be told about the colonies this pass walks: its rule, read against the
+     * sector's own record of what has been seen and where.
+     *
+     * <p>Published so a reader taking something of its own off the same walk - a fingerprint scan
+     * folding market weights, say - projects the colonies exactly as this pass's own membership
+     * answer did. A reader pairing the rule with a register for itself is a reader that can pair
+     * them differently.
+     *
+     * @return the knowledge every colony projection through this pass is taken under
+     */
+    public ColonyKnowledge colonyKnowledge() {
+        return colonyKnowledge;
+    }
+
+    /**
      * The sector this pass reads, as the index it walks names it.
      *
      * @return the sector; null when the pass was opened over none
@@ -159,11 +181,10 @@ public final class MapVisibilityPass {
      */
     public boolean isRevealedDecivilised(StarSystemAPI system) {
 
-        for (var colony : colonies
-                .readColoniesIn(system)
-                .readInhabitingColonies(rules.colonyVisibility())) {
+        for (var colony : colonyKnowledge
+                .readInhabitingColonies(colonies.readColoniesIn(system))) {
 
-            if (colony.kind() == ColonyKind.UNGOVERNED_COLONY) {
+            if (colonyKnowledge.readKindOf(colony) == ColonyKind.UNGOVERNED_COLONY) {
                 return true;
             }
         }
@@ -185,8 +206,6 @@ public final class MapVisibilityPass {
      */
     public boolean isSystemInhabited(StarSystemAPI system) {
 
-        return colonies
-            .readColoniesIn(system)
-            .hasInhabitingColony(rules.colonyVisibility());
+        return colonyKnowledge.hasInhabitingColony(colonies.readColoniesIn(system));
     }
 }

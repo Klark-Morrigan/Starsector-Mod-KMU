@@ -1,6 +1,5 @@
 package kmu.maplayers.base.visibility;
 
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
 import java.util.Set;
@@ -35,7 +34,29 @@ public final class ColonyVisibilityFixtures {
         DecivilisedMarkets.DEFAULT_SURVEY_LEVEL,
         Set.of());
 
-    // Constants only; never instantiated.
     private ColonyVisibilityFixtures() {
+    }
+
+    /**
+     * The knowledge a surface reads under where nothing is widened and nothing has been seen -
+     * what a case poses when the projection is a step on the way to whatever it is really about.
+     *
+     * <p>Built per call rather than shared, because knowledge remembers each colony's kind for the
+     * pass it belongs to: one instance handed to every case in a run would carry a growing memo of
+     * colonies those cases have finished with.
+     *
+     * @return the fog, against an empty register
+     */
+    public static ColonyKnowledge buildKnowledgeUnderTheFog() {
+        return new ColonyKnowledge(ColonyVisibility.BASE_FOG, ColonySightings.NONE);
+    }
+
+    /**
+     * The same, with the "show all factions" reveal on - the widest rule any surface reads under.
+     *
+     * @return the reveal, against an empty register
+     */
+    public static ColonyKnowledge buildKnowledgeUnderTheReveal() {
+        return new ColonyKnowledge(UNDER_THE_REVEAL, ColonySightings.NONE);
     }
 }

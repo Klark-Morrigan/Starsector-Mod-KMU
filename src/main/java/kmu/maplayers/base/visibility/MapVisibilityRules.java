@@ -1,8 +1,5 @@
 package kmu.maplayers.base.visibility;
 
-import kmlib.starsector.colonies.ColonyVisibility;
-import kmlib.starsector.colonies.RevelationGate;
-
 import kmu.settings.KmuMapLayerSettings;
 
 import java.util.EnumSet;

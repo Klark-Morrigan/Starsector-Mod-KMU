@@ -77,7 +77,8 @@ public final class ExpandedSystemDominationTooltip extends SystemStandingsToolti
         var notes = ColonyObservationNotes.readNotesFor(
             pass.sector(),
             system,
-            pass.readColoniesIn(system));
+            pass.readColoniesIn(system),
+            pass.colonyKnowledge().sightings());
 
         // A faction the reads found nothing for is listed as its line alone rather than as a heading
         // over an empty account, which is what an empty answer means to the shape above.

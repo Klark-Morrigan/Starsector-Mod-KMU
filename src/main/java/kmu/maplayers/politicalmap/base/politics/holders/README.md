@@ -125,8 +125,10 @@ reader but a `ClaimReaderSource`: a reader answers off the colonies behind it, s
 over the pass being resolved and discarded with it. A reader kept for the life of the game would
 go on answering off a sector that has since moved on, and would walk every system again for
 colonies the pass has already read. `HolderPass.openClaimReaderThrough` is what opens one, so the
-walk and the `ColonyVisibility` travel together and the claim half is always shown the sector the
-held half was. Its vanilla binding mirrors `Misc.getClaimingFaction`
+walk and the pass's own `ColonyKnowledge` travel together and the claim half is always shown the
+sector the held half was. The reader is handed that knowledge through KMLib's `KnownColonyReader`
+port rather than naming the rule itself: what may be told of a colony is the map's judgement, and a
+library reader given one to invent would be answering a question nobody asked it. Its vanilla binding mirrors `Misc.getClaimingFaction`
 step for step rather than calling it, because one computation has to answer *who* claims a system
 for the fills here and *why* for the claims layer's hover box. Sharing it is what stops the fill
 and the box over it naming different claimants - on the memory-flag override, and on the

@@ -4,9 +4,9 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.markets.Markets;
 
+import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 
 import java.util.ArrayList;
@@ -63,7 +63,7 @@ public final class KnownMarketFootprints {
      *                         scales each rating and whether an attached station lifts it. The
      *                         player's LunaLib toggles, read once per pass by the caller so a
      *                         whole pass resolves under one rule
-     * @param colonyVisibility what the player may be shown of a colony, read once per pass by
+     * @param colonyKnowledge what the player may be shown of a colony, read once per pass by
      *                         the caller; the fold runs over the known projection, so a colony
      *                         the rule withholds hands its owner no weight
      * @return each faction's footprint in the system, keyed by faction id; empty
@@ -72,7 +72,7 @@ public final class KnownMarketFootprints {
     public static Map<String, MarketFootprint> readByFaction(
             Colonies colonies,
             DominanceRules rules,
-            ColonyVisibility colonyVisibility) {
+            ColonyKnowledge colonyKnowledge) {
 
         // The dominance-only projection of the fuller contribution read: a footprint-only caller
         // (the dominance resolve, the watcher's diff) drops the raw market size the picker's stats
@@ -82,7 +82,7 @@ public final class KnownMarketFootprints {
         for (var entry : readContributionsByFaction(
                     colonies,
                     rules,
-                    colonyVisibility)
+                    colonyKnowledge)
                 .entrySet()) {
 
             footprintByFactionId.put(
@@ -106,7 +106,7 @@ public final class KnownMarketFootprints {
      *                         an empty map
      * @param rules            the dominance-weighting rules for this pass, read once per pass by
      *                         the caller so a whole pass resolves under one rule
-     * @param colonyVisibility what the player may be shown of a colony, read once per pass by the
+     * @param colonyKnowledge what the player may be shown of a colony, read once per pass by the
      *                         caller so every fold in the pass runs over the one set of colonies
      * @return each faction's contribution in the system, keyed by faction id; empty when the system
      *         holds no folded market
@@ -114,10 +114,10 @@ public final class KnownMarketFootprints {
     public static Map<String, FactionMarketContribution> readContributionsByFaction(
             Colonies colonies,
             DominanceRules rules,
-            ColonyVisibility colonyVisibility) {
+            ColonyKnowledge colonyKnowledge) {
 
         var contributionByFactionId = new LinkedHashMap<String, FactionMarketContribution>();
-        for (var market : readWeighedColonies(colonies, colonyVisibility)) {
+        for (var market : readWeighedColonies(colonies, colonyKnowledge)) {
             var factionId = market.getFaction().getId();
             var breakdown = MarketWeights.readBreakdown(market, rules);
             var contribution = contributionByFactionId.getOrDefault(
@@ -150,7 +150,7 @@ public final class KnownMarketFootprints {
      *                         an empty map
      * @param rules            the dominance-weighting rules for this pass, read once per pass by
      *                         the caller so a whole pass resolves under one rule
-     * @param colonyVisibility what the player may be shown of a colony, the same rule the totals
+     * @param colonyKnowledge what the player may be shown of a colony, the same rule the totals
      *                         this explains were folded under
      * @return each faction's counted markets in the system with the breakdown of each market's
      *         weight, keyed by faction id and in the economy's own market order; empty when the
@@ -159,10 +159,10 @@ public final class KnownMarketFootprints {
     public static Map<String, List<MarketWeightBreakdown>> readBreakdownByFaction(
             Colonies colonies,
             DominanceRules rules,
-            ColonyVisibility colonyVisibility) {
+            ColonyKnowledge colonyKnowledge) {
 
         var breakdownsByFactionId = new LinkedHashMap<String, List<MarketWeightBreakdown>>();
-        for (var market : readWeighedColonies(colonies, colonyVisibility)) {
+        for (var market : readWeighedColonies(colonies, colonyKnowledge)) {
             breakdownsByFactionId
                 .computeIfAbsent(market.getFaction().getId(), factionId -> new ArrayList<>())
                 .add(MarketWeights.readBreakdown(market, rules));
@@ -195,7 +195,7 @@ public final class KnownMarketFootprints {
      *
      * @param colonies         the system's colony set, as one walk of it reported; empty yields
      *                         an empty map
-     * @param colonyVisibility what the player may be shown of a colony, the same rule the weighed
+     * @param colonyKnowledge what the player may be shown of a colony, the same rule the weighed
      *                         half is selected under so the two stay exact complements
      * @return each faction's unlisted colonies in the system, identified and nothing more, keyed by
      *         faction id and in the system's own entity order; empty when every colony present is
@@ -203,16 +203,16 @@ public final class KnownMarketFootprints {
      */
     public static Map<String, List<UnweighedColony>> readUnweighedColoniesByFaction(
             Colonies colonies,
-            ColonyVisibility colonyVisibility) {
+            ColonyKnowledge colonyKnowledge) {
 
         var coloniesByFactionId = new LinkedHashMap<String, List<UnweighedColony>>();
-        for (var colony : readUnweighedColonies(colonies, colonyVisibility)) {
+        for (var colony : readUnweighedColonies(colonies, colonyKnowledge)) {
             var market = colony.market();
             coloniesByFactionId
                 .computeIfAbsent(market.getFaction().getId(), factionId -> new ArrayList<>())
                 .add(new UnweighedColony(
                     market.getId(),
-                    colony.kind(),
+                    colonyKnowledge.readKindOf(colony),
                     Markets.readNameplate(market)));
         }
         return coloniesByFactionId;
@@ -229,17 +229,17 @@ public final class KnownMarketFootprints {
      *
      * @param colonies         the system's colony set, as one walk of it reported; empty yields
      *                         an empty list
-     * @param colonyVisibility what the player may be shown of a colony, so a reader ordering the
+     * @param colonyKnowledge what the player may be shown of a colony, so a reader ordering the
      *                         blocs this class ranked reads the very colonies they were ranked on
      * @return the weighed colonies' markets, in the economy's own order
      */
     public static List<MarketAPI> readWeighedColonies(
             Colonies colonies,
-            ColonyVisibility colonyVisibility) {
+            ColonyKnowledge colonyKnowledge) {
 
         var markets = new ArrayList<MarketAPI>();
 
-        for (var colony : selectColonies(colonies, colonyVisibility, true)) {
+        for (var colony : selectColonies(colonies, colonyKnowledge, true)) {
             markets.add(colony.market());
         }
         return markets;
@@ -254,9 +254,9 @@ public final class KnownMarketFootprints {
     // apart with. The weighed side is fed to arithmetic that reads the market alone.
     private static List<Colony> readUnweighedColonies(
             Colonies colonies,
-            ColonyVisibility colonyVisibility) {
+            ColonyKnowledge colonyKnowledge) {
 
-        return selectColonies(colonies, colonyVisibility, false);
+        return selectColonies(colonies, colonyKnowledge, false);
     }
 
     // One side of the known projection's one division, the flag naming which. Written once with
@@ -268,12 +268,12 @@ public final class KnownMarketFootprints {
     // box, and a projection cached across the pair would answer one of them wrongly.
     private static List<Colony> selectColonies(
             Colonies colonies,
-            ColonyVisibility colonyVisibility,
+            ColonyKnowledge colonyKnowledge,
             boolean shouldSelectListedByEconomy) {
 
         var selectedColonies = new ArrayList<Colony>();
 
-        for (var colony : colonies.readKnownColonies(colonyVisibility)) {
+        for (var colony : colonyKnowledge.readKnownColonies(colonies)) {
             if (colony.isListedByEconomy() == shouldSelectListedByEconomy) {
                 selectedColonies.add(colony);
             }

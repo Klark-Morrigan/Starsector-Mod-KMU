@@ -2,7 +2,6 @@ package kmu.maplayers.base.visibility;
 
 import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
 
-import kmlib.starsector.colonies.RevelationGate;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
 import kmu.settings.KmuMapLayerSettings;
@@ -10,7 +9,7 @@ import kmu.settings.KmuMapLayerSettings;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

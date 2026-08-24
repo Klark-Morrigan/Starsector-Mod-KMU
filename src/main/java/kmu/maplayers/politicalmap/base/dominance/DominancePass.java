@@ -4,11 +4,12 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 
+import kmu.maplayers.base.visibility.ColonyKnowledge;
+import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 
 import java.util.Comparator;
@@ -146,6 +147,18 @@ public record DominancePass(
     }
 
     /**
+     * What the player may be told about the colonies this pass walks - the rule above read against
+     * the sector's own record of what has been seen, which is what every projection through this
+     * pass is taken under.
+     *
+     * @return the holder pass's own knowledge, so a read taken beside a pass read applies the very
+     *         projection the painting did
+     */
+    public ColonyKnowledge colonyKnowledge() {
+        return holding.colonyKnowledge();
+    }
+
+    /**
      * This pass's one walk of each system, for a reader that has to be handed the walk itself
      * rather than a read made through it.
      *
@@ -211,7 +224,7 @@ public record DominancePass(
         return KnownMarketFootprints.readByFaction(
             readColoniesIn(system),
             rules,
-            colonyVisibility());
+            colonyKnowledge());
     }
 
     /**
@@ -234,7 +247,7 @@ public record DominancePass(
         return KnownMarketFootprints.readBreakdownByFaction(
             readColoniesIn(system),
             rules,
-            colonyVisibility());
+            colonyKnowledge());
     }
 
     /**
@@ -255,7 +268,7 @@ public record DominancePass(
 
         return KnownMarketFootprints.readUnweighedColoniesByFaction(
             readColoniesIn(system),
-            colonyVisibility());
+            colonyKnowledge());
     }
 
     /**
@@ -332,7 +345,7 @@ public record DominancePass(
             KnownMarketFootprints.readContributionsByFaction(
                 readColoniesIn(system),
                 rules,
-                colonyVisibility()),
+                colonyKnowledge()),
             FactionMarketContribution.EMPTY,
             FactionMarketContribution::merge);
     }
@@ -355,7 +368,7 @@ public record DominancePass(
         return MarketProximityTieBreak.forSystem(
             system,
             readColoniesIn(system),
-            colonyVisibility(),
+            colonyKnowledge(),
             grouping());
     }
 }

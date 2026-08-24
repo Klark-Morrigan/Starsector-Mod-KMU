@@ -23,8 +23,7 @@ import org.mockito.Mockito;
 
 import java.util.List;
 
-import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
-
+import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
@@ -118,7 +117,7 @@ final class ClaimPresenceReadoutIntegrationTest {
             // One reader for both surfaces, over the one walk of the system, exactly as a live bake
             // and the hover above it read a claim.
             var claimBreakdownReader = new VanillaClaimBreakdownReader(
-                inputs.pass().colonyVisibility(),
+                inputs.pass().colonyKnowledge(),
                 inputs.pass().colonies());
 
             var band = new ClaimedSystemRibbonPlanner(claimBreakdownReader, inputs)

@@ -3,9 +3,10 @@ package kmu.maplayers.politicalmap.base.dominance;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.entities.EntityOrbits;
 import kmlib.starsector.systems.StarSystems;
+
+import kmu.maplayers.base.visibility.ColonyKnowledge;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -60,7 +61,7 @@ public final class MarketProximityTieBreak {
      * @param colonies         the system's colony set, as the pass's one walk of it reported -
      *                         the same colonies every other surface reads, so a dead heat cannot
      *                         be settled among a set of markets nothing else in the pass saw
-     * @param colonyVisibility what the player may be shown of a colony, matching the pass's own
+     * @param colonyKnowledge what the player may be shown of a colony, matching the pass's own
      *                         projection so the tie weighs the markets the ranking above it did
      * @param grouping         the active grouping, so a market's bloc and the colour-faction
      *                         backstop resolve as the pass grouped them
@@ -69,7 +70,7 @@ public final class MarketProximityTieBreak {
     public static Comparator<String> forSystem(
             StarSystemAPI system,
             Colonies colonies,
-            ColonyVisibility colonyVisibility,
+            ColonyKnowledge colonyKnowledge,
             HolderGrouping grouping) {
 
         return new Comparator<>() {
@@ -83,7 +84,7 @@ public final class MarketProximityTieBreak {
                     minDistanceByBlocId = computeMinDistanceByBlocId(
                         system,
                         colonies,
-                        colonyVisibility,
+                        colonyKnowledge,
                         grouping);
                 }
                 // Primitive doubles so the comparison below is by value; a boxed Double would
@@ -113,7 +114,7 @@ public final class MarketProximityTieBreak {
     private static Map<String, Double> computeMinDistanceByBlocId(
             StarSystemAPI system,
             Colonies colonies,
-            ColonyVisibility colonyVisibility,
+            ColonyKnowledge colonyKnowledge,
             HolderGrouping grouping) {
 
         var centremostStar = StarSystems.getCentremostStar(system);
@@ -121,7 +122,7 @@ public final class MarketProximityTieBreak {
 
         for (var market : KnownMarketFootprints.readWeighedColonies(
                 colonies,
-                colonyVisibility)) {
+                colonyKnowledge)) {
 
             var blocId = grouping.resolveBlocId(market.getFaction().getId());
 

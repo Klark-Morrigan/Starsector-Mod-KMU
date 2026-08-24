@@ -83,7 +83,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             sections,
             SystemStatusRow.resolveStatusRow(
                 pass.readColoniesIn(system),
-                pass.colonyVisibility()));
+                pass.colonyKnowledge()));
 
         // The account is settled once for the whole box, before any group is named, so a box reading
         // the economy to build one reads it once however many groups hold the system - and every
@@ -115,7 +115,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         if (SystemStatusRow
                 .resolveStatusRow(
                     pass.readColoniesIn(system),
-                    pass.colonyVisibility())
+                    pass.colonyKnowledge())
                 .isPresent()) {
             return Optional.empty();
         }

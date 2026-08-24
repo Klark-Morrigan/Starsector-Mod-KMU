@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.entities.EntityMapIcon;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
@@ -12,6 +11,8 @@ import kmlib.starsector.systems.claims.WeighedClaimStanding;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
+import kmu.maplayers.base.visibility.ColonyKind;
+import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
@@ -21,6 +22,8 @@ import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -95,7 +98,14 @@ final class ClaimScoreRowResolverTest {
 
     // Somewhere people live, on every market posed here. What kind of place a colony is reaches no
     // term of the contest, so a case about the arithmetic states it once rather than varying it.
-    private static final ColonyKind ORDINARY_COLONY = ColonyKind.COLONY;
+    // Nothing in the system is anything but an ordinary colony, which is what an unstated id reads
+    // as - so a case about the arithmetic poses no kinds at all and one about a qualifier poses the
+    // one market it is calling out.
+    private static final ColonyKindLookup EVERY_MARKET_A_COLONY = ColonyKindLookup.NONE;
+
+    // The world people left, as the box's own walk of the system classified it.
+    private static final ColonyKindLookup TIBICENA_IS_A_DEAD_WORLD = new ColonyKindLookup(
+        Map.of("tibicena", ColonyKind.UNGOVERNED_COLONY));
     private static final boolean IS_UNFOUND_BY_PLAYER = false;
 
     // A market the sector map marks with a glyph, and one it marks with none - the two readings a
@@ -172,7 +182,7 @@ final class ClaimScoreRowResolverTest {
                         Optional.of(new EntityMapIcon(
                             "graphics/warroom/icon_planet.png",
                             new Color(120, 200, 90)))),
-                    ORDINARY_COLONY,
+                    nameMarketId("Tigra City"),
                     SECOND_LISTED,
                     IS_KNOWN_TO_PLAYER,
                     ContestAdmission.HIDDEN,
@@ -259,11 +269,13 @@ final class ClaimScoreRowResolverTest {
             var claimantRows = ClaimScoreRowResolver.resolveMarketRows(
                 breakdown,
                 claimant,
+                EVERY_MARKET_A_COLONY,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             var rivalRows = ClaimScoreRowResolver.resolveMarketRows(
                 breakdown,
                 rival,
+                EVERY_MARKET_A_COLONY,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(claimantRows.get(0).line().indexPlace().outcome())
@@ -281,6 +293,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 new SystemClaimBreakdown(null, HEGEMONY, List.of(claimant, rival)),
                 claimant,
+                EVERY_MARKET_A_COLONY,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().indexPlace().outcome())
@@ -304,10 +317,12 @@ final class ClaimScoreRowResolverTest {
             var claimantRows = ClaimScoreRowResolver.resolveMarketRows(
                 breakdown,
                 claimant,
+                EVERY_MARKET_A_COLONY,
                 WITHHOLDING_UNFOUND_MARKETS);
             var outsiderRows = ClaimScoreRowResolver.resolveMarketRows(
                 breakdown,
                 outsider,
+                EVERY_MARKET_A_COLONY,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(claimantRows.get(0).line().indexPlace().outcome())
@@ -325,6 +340,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of(claimant, rival)),
                 claimant,
+                EVERY_MARKET_A_COLONY,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().indexPlace().outcome())
@@ -542,6 +558,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
+                EVERY_MARKET_A_COLONY,
                 LISTING_UNFOUND_MARKETS);
 
             assertThat(readLabelTexts(rows))
@@ -563,12 +580,14 @@ final class ClaimScoreRowResolverTest {
             // The one thing this box says about a colony the mechanic passed over, and the pair is
             // what makes it necessary: a ruin and a concealed base both arrive at nought, and only
             // the ruin is a fact about the world rather than about the contest.
-            var rows = resolveContestedRows(buildStanding(
-                buildStrongestMarket(NO_SIBLING_MARKETS),
-                List.of(buildOffEconomyUngovernedColony(
-                    "Tibicena",
-                    STRONGEST_MARKET_SIZE,
-                    SECOND_LISTED))));
+            var rows = resolveContestedRows(
+                buildStanding(
+                    buildStrongestMarket(NO_SIBLING_MARKETS),
+                    List.of(buildOffEconomyUngovernedColony(
+                        "Tibicena",
+                        STRONGEST_MARKET_SIZE,
+                        SECOND_LISTED))),
+                TIBICENA_IS_A_DEAD_WORLD);
 
             assertThat(rows.get(1).line().qualifierText())
                 .isEqualTo("Decivilised");
@@ -599,6 +618,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
+                EVERY_MARKET_A_COLONY,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().qualifierText())
@@ -614,6 +634,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of(standing)),
                 standing,
+                EVERY_MARKET_A_COLONY,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().qualifierText())
@@ -629,6 +650,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
+                EVERY_MARKET_A_COLONY,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(readLabelTexts(rows))
@@ -736,7 +758,7 @@ final class ClaimScoreRowResolverTest {
             var garrisoned = resolveContestedRows(buildStanding(
                 new MarketClaimBreakdown(
                     UNMARKED_MARKET,
-                    ORDINARY_COLONY,
+                    nameMarketId(STRONGEST_MARKET),
                     FIRST_LISTED,
                     IS_KNOWN_TO_PLAYER,
                     ContestAdmission.WEIGHED,
@@ -820,12 +842,14 @@ final class ClaimScoreRowResolverTest {
             assertThat(readLabelTexts(ClaimScoreRowResolver.resolveMarketRows(
                     buildBreakdownClaimedBy(HEGEMONY, standing),
                     standing,
+                    EVERY_MARKET_A_COLONY,
                     WITHHOLDING_UNFOUND_MARKETS)))
                 .containsExactly("Kanta's Den");
 
             assertThat(readLabelTexts(ClaimScoreRowResolver.resolveMarketRows(
                     buildBreakdownClaimedBy(HEGEMONY, standing),
                     standing,
+                    EVERY_MARKET_A_COLONY,
                     LISTING_UNFOUND_MARKETS)))
                 .containsExactly("Kanta's Den", "Chalcedon");
         }
@@ -847,10 +871,27 @@ final class ClaimScoreRowResolverTest {
     // found - the ordinary state, and what every case but the rivalled, decreed and withheld ones
     // is posed over.
     private static List<CellTooltipEntry> resolveContestedRows(WeighedClaimStanding standing) {
+        return resolveContestedRows(standing, EVERY_MARKET_A_COLONY);
+    }
+
+    // The same, for a case that is about what a colony's kind states on the line naming it - the
+    // kinds come off the box's own walk of the system, which is a separate read from the contest.
+    private static List<CellTooltipEntry> resolveContestedRows(
+            WeighedClaimStanding standing,
+            ColonyKindLookup colonyKinds) {
+
         return ClaimScoreRowResolver.resolveMarketRows(
             buildBreakdownClaimedBy(HEGEMONY, standing),
             standing,
+            colonyKinds,
             WITHHOLDING_UNFOUND_MARKETS);
+    }
+
+    // The id the walk that met a colony recorded for it, derived from its name so a case naming a
+    // market on the list and a case posing that market's kind agree without stating the pairing
+    // twice.
+    private static String nameMarketId(String marketName) {
+        return marketName.toLowerCase(Locale.ROOT).replace(' ', '_');
     }
 
     // A contest the given faction won on the scores, holding the one standing posed against it. The
@@ -875,6 +916,7 @@ final class ClaimScoreRowResolverTest {
         return ClaimScoreRowResolver.resolveMarketRows(
             buildBreakdownClaimedBy(TRITACHYON, standing),
             standing,
+            EVERY_MARKET_A_COLONY,
             WITHHOLDING_UNFOUND_MARKETS);
     }
 
@@ -896,7 +938,7 @@ final class ClaimScoreRowResolverTest {
 
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
-            ORDINARY_COLONY,
+            nameMarketId(marketName),
             listingPosition,
             IS_UNFOUND_BY_PLAYER,
             ContestAdmission.HIDDEN,
@@ -960,7 +1002,7 @@ final class ClaimScoreRowResolverTest {
 
         return new MarketClaimBreakdown(
             UNMARKED_MARKET,
-            ORDINARY_COLONY,
+            nameMarketId(STRONGEST_MARKET),
             FIRST_LISTED,
             isKnownToPlayer,
             admitAsFound(isKnownToPlayer),
@@ -975,7 +1017,7 @@ final class ClaimScoreRowResolverTest {
     private static MarketClaimBreakdown buildMarkedMarket(EntityNameplate market) {
         return new MarketClaimBreakdown(
             market,
-            ORDINARY_COLONY,
+            nameMarketId(market.displayName()),
             FIRST_LISTED,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.WEIGHED,
@@ -994,7 +1036,7 @@ final class ClaimScoreRowResolverTest {
 
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
-            ORDINARY_COLONY,
+            nameMarketId(marketName),
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.HIDDEN,
@@ -1013,7 +1055,7 @@ final class ClaimScoreRowResolverTest {
 
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
-            ORDINARY_COLONY,
+            nameMarketId(marketName),
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.OFF_ECONOMY,
@@ -1032,7 +1074,7 @@ final class ClaimScoreRowResolverTest {
 
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
-            ColonyKind.UNGOVERNED_COLONY,
+            nameMarketId(marketName),
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.OFF_ECONOMY,
@@ -1046,7 +1088,7 @@ final class ClaimScoreRowResolverTest {
     private static MarketClaimBreakdown buildFullyScoredMarket() {
         return new MarketClaimBreakdown(
             UNMARKED_MARKET,
-            ORDINARY_COLONY,
+            nameMarketId(STRONGEST_MARKET),
             FIRST_LISTED,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.WEIGHED,
@@ -1081,7 +1123,7 @@ final class ClaimScoreRowResolverTest {
 
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
-            ORDINARY_COLONY,
+            nameMarketId(marketName),
             listingPosition,
             isKnownToPlayer,
             admitAsFound(isKnownToPlayer),

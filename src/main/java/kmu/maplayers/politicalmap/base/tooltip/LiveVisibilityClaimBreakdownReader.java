@@ -1,12 +1,14 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.colonies.ColonyVisibility;
+import kmlib.starsector.colonies.KnownColonyReader;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
+import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 /**
@@ -33,16 +35,17 @@ import kmu.maplayers.base.visibility.MapVisibilityRules;
  */
 public final class LiveVisibilityClaimBreakdownReader implements ClaimBreakdownReader {
 
-    // The decree read consults no colony rule: it answers off the system's own memory flag,
-    // and reaches no colony for a rule to be applied to. So one reader serves every ask of it,
-    // and the rule it was opened under is never read.
+    // The decree read consults no colony knowledge: it answers off the system's own memory flag,
+    // and reaches no colony for a projection to be applied to. So one reader serves every ask of
+    // it, and it is opened naming nothing - the conservative statement, and the honest one for a
+    // reader whose breakdowns nobody ever reads.
     //
     // Held rather than opened per ask because the port undertakes that this question stays a
     // single memory read - a caller heading a box with a decree is promised it does not pay for
     // the scoring - and a settings lookup and an allocation in front of it would quietly make
     // that untrue for every box drawn.
     private static final ClaimBreakdownReader DECREE_READER =
-        new VanillaClaimBreakdownReader(ColonyVisibility.BASE_FOG);
+        new VanillaClaimBreakdownReader(KnownColonyReader.NOTHING_KNOWN);
 
     @Override
     public SystemClaimBreakdown readBreakdown(StarSystemAPI system) {
@@ -58,7 +61,8 @@ public final class LiveVisibilityClaimBreakdownReader implements ClaimBreakdownR
     // so the rule can never be older than the answer given under it.
     private static ClaimBreakdownReader openReaderUnderLiveVisibility() {
 
-        return new VanillaClaimBreakdownReader(
-            MapVisibilityRules.readFromLunaSettings().colonyVisibility());
+        return new VanillaClaimBreakdownReader(ColonyKnowledge.over(
+            Global.getSector(),
+            MapVisibilityRules.readFromLunaSettings().colonyVisibility()));
     }
 }

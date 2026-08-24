@@ -5,6 +5,7 @@ import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
+import kmu.maplayers.base.visibility.ColonyKindLookup;
 
 import java.util.List;
 
@@ -40,7 +41,8 @@ public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip 
     @Override
     protected List<CellTooltipEntry> resolveAccountEntries(
             SystemClaimBreakdown breakdown,
-            FactionClaimStanding standing) {
+            FactionClaimStanding standing,
+            ColonyKindLookup colonyKinds) {
 
         // The mechanic settles a claim over colonies nobody has found, and the box declines to
         // repeat what it learned there. Asked through the shared read, so the account withholds
@@ -52,6 +54,7 @@ public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip 
         return ClaimScoreRowResolver.resolveMarketRows(
             breakdown,
             standing,
+            colonyKinds,
             readColonyVisibility().shouldIncludeUndiscoveredMarkets());
     }
 }

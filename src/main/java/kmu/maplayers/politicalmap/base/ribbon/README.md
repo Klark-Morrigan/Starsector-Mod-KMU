@@ -44,7 +44,7 @@ side's question, which is what lets this whole package be exercised on literals.
 `ColonyCellRibbons` counts every cell on every layer: the pass's **habitation projection** of the
 system's colonies, folded into a count per bloc under the pass's grouping.
 
-That projection is the pass's `ColonyVisibility` plus the one kind test habitation turns on: the
+That projection is the pass's `ColonyKnowledge` plus the one kind test habitation turns on: the
 fog (`MarketVisibility.isCountedAsColony`), the gates holding back the shapes a bare fog would
 leak, and then the derelicts nobody has ever been aboard. It is the same reading the cell beneath
 is classified on, sampled once per bake, so a colony the player has not found is left out of band

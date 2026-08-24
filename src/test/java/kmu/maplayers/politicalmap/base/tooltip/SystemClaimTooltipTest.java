@@ -15,6 +15,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.junit.jupiter.api.AfterEach;
@@ -27,7 +28,6 @@ import org.mockito.Mockito;
 import java.util.List;
 import java.util.Optional;
 
-import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildPresenceOnlyStanding;
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildStandingOnOneMarket;
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildUnfoundPresenceOnlyStanding;
@@ -43,13 +43,14 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
+import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -582,8 +583,12 @@ final class SystemClaimTooltipTest {
 
             tooltip.buildBodySections(sectorMock, systemMock);
 
+            // Matched on the rule the knowledge carries: the box pairs it with the sector's own
+            // register where it draws, so the value handed over is never one a case could state.
             statusRowMock.verify(
-                () -> SystemStatusRow.resolveStatusRow(any(), eq(BASE_FOG)));
+                () -> SystemStatusRow.resolveStatusRow(
+                    any(),
+                    argThat(knowledge -> BASE_FOG.equals(knowledge.rule()))));
         }
 
         @Test
@@ -599,7 +604,9 @@ final class SystemClaimTooltipTest {
             tooltip.buildBodySections(sectorMock, systemMock);
 
             statusRowMock.verify(
-                () -> SystemStatusRow.resolveStatusRow(any(), eq(UNDER_THE_REVEAL)));
+                () -> SystemStatusRow.resolveStatusRow(
+                    any(),
+                    argThat(knowledge -> UNDER_THE_REVEAL.equals(knowledge.rule()))));
         }
 
         @Test
@@ -626,7 +633,8 @@ final class SystemClaimTooltipTest {
             // scores are the counterpart's, an F1 away.
             assertThat(tooltip.resolveAccountEntries(
                     new SystemClaimBreakdown(null, HEGEMONY, List.of()),
-                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true)))
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
+                    ColonyKindLookup.NONE))
                 .isEmpty();
         }
     }

@@ -1,6 +1,4 @@
-package kmu.starsector.colonies;
-
-import kmlib.starsector.colonies.ColonySightingRecorder;
+package kmu.maplayers.base.visibility;
 
 import kmu.starsector.listeners.RecordingListenerManager;
 

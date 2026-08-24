@@ -4,14 +4,16 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.starsector.colonies.ColonyVisibility;
-import kmlib.starsector.colonies.RevelationGate;
+import kmlib.starsector.colonies.KnownColonyReader;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.base.visibility.ColonyKnowledge;
+import kmu.maplayers.base.visibility.ColonyVisibility;
+import kmu.maplayers.base.visibility.RevelationGate;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
@@ -42,10 +44,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 
+import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -463,12 +467,12 @@ final class ClaimsViewTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var openedOver = new ArrayList<SystemColoniesIndex>();
-            var openedUnder = new ArrayList<ColonyVisibility>();
+            var openedUnder = new ArrayList<KnownColonyReader>();
 
             var aggregatedPasses = new ArrayList<DominancePass>();
 
-            var view = new ClaimsView((visibility, colonies) -> {
-                openedUnder.add(visibility);
+            var view = new ClaimsView((knownColonyReader, colonies) -> {
+                openedUnder.add(knownColonyReader);
                 openedOver.add(colonies);
                 return claimReaderMock;
             });
@@ -483,8 +487,13 @@ final class ClaimsViewTest {
 
                 view.resolveBlocPicker(sectorMock, ANY_RULES, GATED_VISIBILITY);
 
+                // The port is the pass's own knowledge, so what it was opened under is read back
+                // off the rule that knowledge carries - stated against the literal the view was
+                // asked with rather than against the pass a second time.
                 assertThat(openedUnder)
-                    .containsExactly(GATED_VISIBILITY);
+                    .singleElement(as(type(ColonyKnowledge.class)))
+                    .extracting(ColonyKnowledge::rule)
+                    .isEqualTo(GATED_VISIBILITY);
 
                 // The view opens its own pass, so the index cannot be named from out here. Pinned
                 // as the one the market half was handed instead, which is the sharing that matters.

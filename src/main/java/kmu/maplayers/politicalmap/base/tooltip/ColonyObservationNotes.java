@@ -5,8 +5,9 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.ColonySightings;
 
+import kmu.maplayers.base.visibility.ColonyKnowledge;
+import kmu.maplayers.base.visibility.ColonySightings;
 import kmu.util.KmuStrings;
 
 import java.util.HashSet;
@@ -89,17 +90,22 @@ public final class ColonyObservationNotes {
      * system is one fact about the box, and which colonies the inhabitants can see is one fold
      * over the set the lines come from.
      *
-     * @param sector   the sector the system stands in - where the player's fleet is, and what
-     *                 clock the dates are read on; null yields notes for nothing
-     * @param system   the hovered system; null yields notes for nothing
-     * @param colonies that system's colony set, as the box's own pass walked it; null yields
-     *                 notes for nothing
+     * @param sector    the sector the system stands in - where the player's fleet is, and what
+     *                  clock the dates are read on; null yields notes for nothing
+     * @param system    the hovered system; null yields notes for nothing
+     * @param colonies  that system's colony set, as the box's own pass walked it; null yields
+     *                  notes for nothing
+     * @param sightings what has been observed of those colonies and where, as the box's own pass
+     *                  read the register - handed in rather than opened here, so the dates stated
+     *                  come off the very observations the pass resolved its projection against;
+     *                  null reads as nothing observed
      * @return the remarks due on that system's colonies; never null
      */
     public static ColonyObservationNotes readNotesFor(
             SectorAPI sector,
             StarSystemAPI system,
-            Colonies colonies) {
+            Colonies colonies,
+            ColonySightings sightings) {
 
         if (sector == null || system == null || colonies == null) {
             return NONE;
@@ -108,7 +114,7 @@ public final class ColonyObservationNotes {
             sector.getClock(),
             Objects.equals(sector.getCurrentLocation(), system),
             readColonyIdsObservedByInhabitants(colonies),
-            colonies.sightings());
+            sightings == null ? ColonySightings.NONE : sightings);
     }
 
     /**
@@ -133,13 +139,20 @@ public final class ColonyObservationNotes {
             .map(this::formatLastSeenNote);
     }
 
-    // The gated colonies the system's own people can see, by id. Folded off the set rather than
-    // re-derived, so the box's reading of who can see what is the rule's own.
+    // The gated colonies the system's own people can see, by id. Asked of the visibility rule's own
+    // reading rather than re-derived here, so the box's account of who can see what is the same one
+    // the map is drawn under.
+    //
+    // Under the fog alone, as every observation reading is: who can see a colony is a fact about the
+    // place, and a reveal that reached it would date a colony the player was never told about.
     private static Set<String> readColonyIdsObservedByInhabitants(Colonies colonies) {
 
         var colonyIds = new HashSet<String>();
 
-        for (var colony : colonies.readColoniesObservedByInhabitants()) {
+        for (var colony : ColonyKnowledge
+                .observingUnderTheFog()
+                .readColoniesObservedByInhabitants(colonies)) {
+
             colonyIds.add(colony.market().getId());
         }
         return colonyIds;

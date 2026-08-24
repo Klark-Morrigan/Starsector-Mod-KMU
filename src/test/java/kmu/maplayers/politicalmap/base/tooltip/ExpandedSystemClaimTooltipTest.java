@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.colonies.ColonyKind;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
@@ -18,6 +17,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -90,7 +90,8 @@ final class ExpandedSystemClaimTooltipTest {
 
     // Somewhere people live, on every market posed here. What kind of place a colony is reaches no
     // term of the contest, so a case about the arithmetic states it once rather than varying it.
-    private static final ColonyKind ORDINARY_COLONY = ColonyKind.COLONY;
+    // No case here is about what a colony's kind states on a line, so every account is resolved
+    // over a lookup that names nothing - an unstated id reads as the ordinary colony.
 
     private static final boolean IS_TERRITORIAL = true;
 
@@ -159,7 +160,11 @@ final class ExpandedSystemClaimTooltipTest {
                 buildMarket("Chicomoztoc", TOP_SCORE),
                 List.of(buildMarket("Culann", LESSER_SCORE)));
 
-            assertThat(readLabelTexts(tooltip.resolveAccountEntries(CONTESTED_SYSTEM, standing)))
+            assertThat(readLabelTexts(
+                    tooltip.resolveAccountEntries(
+                        CONTESTED_SYSTEM,
+                        standing,
+                        ColonyKindLookup.NONE)))
                 .containsExactly("Chicomoztoc", "Culann");
         }
 
@@ -169,7 +174,8 @@ final class ExpandedSystemClaimTooltipTest {
             // built its score hang beneath it rather than the number being left to be taken on trust.
             var entries = tooltip.resolveAccountEntries(
                 CONTESTED_SYSTEM,
-                buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL));
+                buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                ColonyKindLookup.NONE);
 
             assertThat(readLabelTexts(entries.get(0).children()))
                 .containsExactly("Size");
@@ -181,7 +187,8 @@ final class ExpandedSystemClaimTooltipTest {
             // drawing, so the call-out lands on the one market in the whole box that won anything.
             var entries = tooltip.resolveAccountEntries(
                 CONTESTED_SYSTEM,
-                buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL));
+                buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                ColonyKindLookup.NONE);
 
             assertThat(entries.get(0).line().qualifierText())
                 .isEqualTo("claim holder");
@@ -193,7 +200,8 @@ final class ExpandedSystemClaimTooltipTest {
             // called out, it would read as a second holder of a system that can only have one.
             var entries = tooltip.resolveAccountEntries(
                 CONTESTED_SYSTEM,
-                buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL));
+                buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL),
+                ColonyKindLookup.NONE);
 
             assertThat(entries.get(0).line().qualifierText())
                 .isNull();
@@ -211,7 +219,11 @@ final class ExpandedSystemClaimTooltipTest {
                     buildConcealedMarket("Kanta's Den", FIRST_LISTED),
                     buildConcealedMarket("Chalcedon", SECOND_LISTED)));
 
-            assertThat(readLabelTexts(tooltip.resolveAccountEntries(CONTESTED_SYSTEM, standing)))
+            assertThat(readLabelTexts(
+                    tooltip.resolveAccountEntries(
+                        CONTESTED_SYSTEM,
+                        standing,
+                        ColonyKindLookup.NONE)))
                 .containsExactly("Kanta's Den", "Chalcedon");
         }
 
@@ -221,7 +233,8 @@ final class ExpandedSystemClaimTooltipTest {
             // anything and none is called out for it - the claimant's least of all.
             var entries = tooltip.resolveAccountEntries(
                 new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()),
-                buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL));
+                buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                ColonyKindLookup.NONE);
 
             assertThat(entries.get(0).line().qualifierText())
                 .isNull();
@@ -372,13 +385,19 @@ final class ExpandedSystemClaimTooltipTest {
     private static MarketClaimBreakdown buildConcealedMarket(String marketName, int listingPosition) {
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
-            ORDINARY_COLONY,
+            nameMarketId(marketName),
             listingPosition,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.HIDDEN,
             LESSER_SCORE,
             NO_SIBLING_MARKETS,
             OptionalInt.empty());
+    }
+
+    // The id the walk that met a colony recorded for it, derived from its name so a case naming a
+    // market on the list has one identity for it throughout.
+    private static String nameMarketId(String marketName) {
+        return marketName.toLowerCase(java.util.Locale.ROOT).replace(' ', '_');
     }
 
     // A market scoring its size alone, for a standing a case states by the markets under it rather
@@ -390,7 +409,7 @@ final class ExpandedSystemClaimTooltipTest {
         // are actually about.
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
-            ORDINARY_COLONY,
+            nameMarketId(marketName),
             FIRST_LISTED,
             IS_KNOWN_TO_PLAYER,
             ContestAdmission.WEIGHED,

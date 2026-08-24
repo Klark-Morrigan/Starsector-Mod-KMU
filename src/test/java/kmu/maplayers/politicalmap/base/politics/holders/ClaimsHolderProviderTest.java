@@ -2,12 +2,14 @@ package kmu.maplayers.politicalmap.base.politics.holders;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.colonies.ColonyVisibility;
-import kmlib.starsector.colonies.RevelationGate;
+import kmlib.starsector.colonies.KnownColonyReader;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 
+import kmu.maplayers.base.visibility.ColonyKnowledge;
+import kmu.maplayers.base.visibility.ColonyVisibility;
+import kmu.maplayers.base.visibility.RevelationGate;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -23,9 +25,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 
+import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
@@ -208,10 +212,10 @@ final class ClaimsHolderProviderTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var pass = HolderPass.over(sectorMock, GATED_VISIBILITY, HolderGrouping.identity());
-            var openedUnder = new ArrayList<ColonyVisibility>();
+            var openedUnder = new ArrayList<KnownColonyReader>();
 
-            var provider = new ClaimsHolderProvider((visibility, colonies) -> {
-                openedUnder.add(visibility);
+            var provider = new ClaimsHolderProvider((knownColonyReader, colonies) -> {
+                openedUnder.add(knownColonyReader);
                 return claimReaderMock;
             });
 
@@ -223,8 +227,13 @@ final class ClaimsHolderProviderTest {
 
                 provider.resolveHolder(pass, null);
 
+                // The port itself is the pass's own knowledge, so what it was opened under is
+                // read back off the rule that knowledge carries - stated against the literal the
+                // pass was built with rather than against the pass a second time.
                 assertThat(openedUnder)
-                    .containsExactly(GATED_VISIBILITY);
+                    .singleElement(as(type(ColonyKnowledge.class)))
+                    .extracting(ColonyKnowledge::rule)
+                    .isEqualTo(GATED_VISIBILITY);
             }
         }
     }

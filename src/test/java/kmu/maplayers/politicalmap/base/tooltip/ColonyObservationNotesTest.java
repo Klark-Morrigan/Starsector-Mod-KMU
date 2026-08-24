@@ -5,13 +5,14 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Conditions;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
-import kmlib.starsector.colonies.ColonyKind;
-import kmlib.starsector.colonies.ColonyObservation;
-import kmlib.starsector.colonies.ColonySightings;
 
+import kmu.maplayers.base.visibility.ColonyObservation;
+import kmu.maplayers.base.visibility.ColonySightings;
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
@@ -90,7 +91,7 @@ final class ColonyObservationNotesTest {
             when(sectorMock.getCurrentLocation())
                 .thenReturn(systemMock);
 
-            var notes = readNotesOver(buildDerelictSet(observedDaysAgo(34.0f)));
+            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(34.0f));
 
             assertThat(notes.resolveLastSeenNote(DERELICT_ID))
                 .isEmpty();
@@ -100,7 +101,7 @@ final class ColonyObservationNotesTest {
         void remarksNothingOnAColonyItsNeighboursCanSee() {
             // The other live route. A hulk in orbit over an inhabited world is common knowledge
             // there, so the box's news of it is as current as the system it stands in.
-            var notes = readNotesOver(buildSettledDerelictSet(observedDaysAgo(34.0f)));
+            var notes = readNotesOver(buildSettledDerelictSet(), observedDaysAgo(34.0f));
 
             assertThat(notes.resolveLastSeenNote(DERELICT_ID))
                 .isEmpty();
@@ -110,7 +111,7 @@ final class ColonyObservationNotesTest {
         void remarksHowLongAgoAndOnWhatDateAColonyNobodyIsLookingAtWasSeen() {
             // The whole of what the time decides. Both halves are stated: the span is what a
             // reader judges the news by, and the date is what they hold it against.
-            var notes = readNotesOver(buildDerelictSet(observedDaysAgo(34.0f)));
+            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(34.0f));
 
             assertThat(notes.resolveLastSeenNote(DERELICT_ID))
                 .contains("last seen 34 days ago (c206.05.12)");
@@ -120,7 +121,7 @@ final class ColonyObservationNotesTest {
         void remarksTodayOnAColonySeenWithinTheDay() {
             // A span short of a day named rather than rounded to nought: "0 days ago" reads as a
             // fault in the box, and the reader is being told the news is fresh.
-            var notes = readNotesOver(buildDerelictSet(observedDaysAgo(0.4f)));
+            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(0.4f));
 
             assertThat(notes.resolveLastSeenNote(DERELICT_ID))
                 .contains("last seen today (c206.05.12)");
@@ -129,7 +130,7 @@ final class ColonyObservationNotesTest {
         @Test
         void remarksADayAgoOnAColonySeenTheDayBefore() {
 
-            var notes = readNotesOver(buildDerelictSet(observedDaysAgo(1.5f)));
+            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(1.5f));
 
             assertThat(notes.resolveLastSeenNote(DERELICT_ID))
                 .contains("last seen a day ago (c206.05.12)");
@@ -139,8 +140,9 @@ final class ColonyObservationNotesTest {
         void remarksNothingOnAColonyWhoseObservationCarriesNoTime() {
             // Every value recorded before observations were timed. The colony goes on being shown
             // exactly as it was - only the remark is withheld, there being no date to state.
-            var notes = readNotesOver(buildDerelictSet(
-                colonyId -> ColonyObservation.createUndatedObservation(SYSTEM_ID)));
+            var notes = readNotesOver(
+                buildDerelictSet(),
+                colonyId -> ColonyObservation.createUndatedObservation(SYSTEM_ID));
 
             assertThat(notes.resolveLastSeenNote(DERELICT_ID))
                 .isEmpty();
@@ -154,7 +156,7 @@ final class ColonyObservationNotesTest {
             when(sectorMock.getClock())
                 .thenReturn(null);
 
-            var notes = readNotesOver(buildDerelictSet(observedDaysAgo(34.0f)));
+            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(34.0f));
 
             assertThat(notes.resolveLastSeenNote(DERELICT_ID))
                 .isEmpty();
@@ -163,7 +165,7 @@ final class ColonyObservationNotesTest {
         @Test
         void remarksNothingOnAColonyNobodyHasEverObserved() {
 
-            var notes = readNotesOver(buildDerelictSet(ColonySightings.NONE));
+            var notes = readNotesOver(buildDerelictSet(), ColonySightings.NONE);
 
             assertThat(notes.resolveLastSeenNote(DERELICT_ID))
                 .isEmpty();
@@ -173,38 +175,49 @@ final class ColonyObservationNotesTest {
         void remarksNothingWhereThereIsNoSystemToReadAtAll() {
             // A box built before the sector stands up. Nothing can be dated, and nothing faults.
             assertThat(ColonyObservationNotes
-                    .readNotesFor(null, null, null)
+                    .readNotesFor(null, null, null, ColonySightings.NONE)
                     .resolveLastSeenNote(DERELICT_ID))
                 .isEmpty();
         }
     }
 
     // The notes a box over the one system reads, the player's fleet being elsewhere unless a case
-    // has said otherwise.
-    private ColonyObservationNotes readNotesOver(Colonies colonies) {
-        return ColonyObservationNotes.readNotesFor(sectorMock, systemMock, colonies);
+    // has said otherwise. The register travels beside the set, as the box's own pass hands the
+    // pair over.
+    private ColonyObservationNotes readNotesOver(
+            Colonies colonies,
+            ColonySightings sightings) {
+
+        return ColonyObservationNotes.readNotesFor(sectorMock, systemMock, colonies, sightings);
     }
 
     // A system holding one derelict and nobody else: nothing living stands here to see it, so the
     // remark turns on the register alone.
-    private static Colonies buildDerelictSet(ColonySightings sightings) {
-
-        return new Colonies(
-            List.of(new Colony(
-                buildMarket(DERELICT_ID, "neutral"),
-                ColonyKind.SPACE_DERELICT,
-                false)),
-            sightings);
+    private static Colonies buildDerelictSet() {
+        return new Colonies(List.of(new Colony(buildDerelictMarket(DERELICT_ID), false)));
     }
 
     // The same derelict standing beside another faction's open colony, whose people can see it.
-    private static Colonies buildSettledDerelictSet(ColonySightings sightings) {
+    private static Colonies buildSettledDerelictSet() {
 
-        return new Colonies(
-            List.of(
-                new Colony(buildMarket(DERELICT_ID, "neutral"), ColonyKind.SPACE_DERELICT, false),
-                new Colony(buildMarket(NEIGHBOUR_ID, "hegemony"), ColonyKind.COLONY, true)),
-            sightings);
+        return new Colonies(List.of(
+            new Colony(buildDerelictMarket(DERELICT_ID), false),
+            new Colony(buildMarket(NEIGHBOUR_ID, "hegemony"), true)));
+    }
+
+    // A hulk nobody was ever aboard: neutral's, and carrying vanilla's abandoned-station condition,
+    // which is what the kind read parts a derelict from a station somebody keeps on. Posed as the
+    // real shape rather than declared, the kind being resolved off the market now.
+    private static MarketAPI buildDerelictMarket(String marketId) {
+
+        var marketMock = buildMarket(marketId, Factions.NEUTRAL);
+
+        when(marketMock.getFaction().isNeutralFaction())
+            .thenReturn(true);
+        when(marketMock.hasCondition(Conditions.ABANDONED_STATION))
+            .thenReturn(true);
+
+        return marketMock;
     }
 
     // A register holding one dated observation of the derelict where it stands, the clock

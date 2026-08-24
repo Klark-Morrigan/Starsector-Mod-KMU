@@ -11,6 +11,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
+import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -141,18 +142,25 @@ public final class ClaimScoreRowResolver {
      * strongest first, each carrying the terms of its own score - closed by the presence its several
      * holdings earned every one of them.
      *
-     * @param breakdown              the whole contest the standing was ranked in - what settles who
-     *                               the claim holder is and which listing ties actually decided
-     *                               something, neither of which one faction's standing can answer
-     * @param standing               the faction's ranked place in that contest, of either kind
+     * @param breakdown               the whole contest the standing was ranked in - what settles
+     *                                who the claim holder is and which listing ties actually
+     *                                decided something, neither of which one faction's standing
+     *                                can answer
+     * @param standing                the faction's ranked place in that contest, of either kind
+     * @param colonyKinds             what kind of place each colony in the system is, folded once
+     *                                for the whole box. A claim row carries the id of the market
+     *                                it was scored from and nothing of the place behind it, so
+     *                                this is the only thing parting an unowned collapse from an
+     *                                unowned hulk on the list
      * @param isListingUnfoundMarkets whether a market the player has not found may be listed. False
-     *                               is the ordinary state and leaves those markets off; true is the
-     *                               dev reveal, under which the account is stated in full
+     *                                is the ordinary state and leaves those markets off; true is
+     *                                the dev reveal, under which the account is stated in full
      * @return the entries in the order they are read
      */
     public static List<CellTooltipEntry> resolveMarketRows(
             SystemClaimBreakdown breakdown,
             FactionClaimStanding standing,
+            ColonyKindLookup colonyKinds,
             boolean isListingUnfoundMarkets) {
 
         var heldMarkets = standing.readHeldMarkets();
@@ -163,9 +171,14 @@ public final class ClaimScoreRowResolver {
         // weighed one. The other arm is the presence-only kind, the standing being sealed over the
         // two.
         if (standing instanceof WeighedClaimStanding weighedStanding) {
-            return resolveWeighedRows(breakdown, weighedStanding, listedMarkets, heldMarkets);
+            return resolveWeighedRows(
+                breakdown,
+                weighedStanding,
+                colonyKinds,
+                listedMarkets,
+                heldMarkets);
         }
-        return resolvePresenceOnlyRows(listedMarkets);
+        return resolvePresenceOnlyRows(colonyKinds, listedMarkets);
     }
 
     // The markets an account lists, in the order the contest would settle them.
@@ -192,6 +205,7 @@ public final class ClaimScoreRowResolver {
     private static List<CellTooltipEntry> resolveWeighedRows(
             SystemClaimBreakdown breakdown,
             WeighedClaimStanding standing,
+            ColonyKindLookup colonyKinds,
             List<MarketClaimBreakdown> listedMarkets,
             List<MarketClaimBreakdown> heldMarkets) {
 
@@ -210,6 +224,7 @@ public final class ClaimScoreRowResolver {
                     standing,
                     market)),
                 market,
+                colonyKinds,
                 isHoldingTheClaim && market == standing.standingMarket()));
         }
 
@@ -232,6 +247,7 @@ public final class ClaimScoreRowResolver {
     // judgement would give it one: the mechanic passed over every colony behind such a standing, so
     // none of them won or lost a tie against anything.
     private static List<CellTooltipEntry> resolvePresenceOnlyRows(
+            ColonyKindLookup colonyKinds,
             List<MarketClaimBreakdown> listedMarkets) {
 
         var entries = new ArrayList<CellTooltipEntry>(listedMarkets.size());
@@ -240,6 +256,7 @@ public final class ClaimScoreRowResolver {
             entries.add(resolveMarketEntry(
                 createMarketLine(market, CellTooltipIndexOutcome.UNCONTESTED),
                 market,
+                colonyKinds,
                 NOTHING_TOOK_THE_SYSTEM));
         }
         return List.copyOf(entries);
@@ -295,6 +312,7 @@ public final class ClaimScoreRowResolver {
     private static CellTooltipEntry resolveMarketEntry(
             CellTooltipEntryLine line,
             MarketClaimBreakdown market,
+            ColonyKindLookup colonyKinds,
             boolean isHoldingTheClaim) {
 
         // The two statuses cannot contend for the line's end. A market that took the system is a
@@ -302,7 +320,7 @@ public final class ClaimScoreRowResolver {
         // world people left, which is unowned and off-economy and so was never weighed at all.
         var marketLine = isHoldingTheClaim
             ? line.qualifiedWith(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER))
-            : ColonyKindQualifier.qualifyByKind(line, market.colonyKind());
+            : ColonyKindQualifier.qualifyByKind(line, colonyKinds.readKindOf(market.marketId()));
 
         return CellTooltipEntry
             .createEntry(marketLine)

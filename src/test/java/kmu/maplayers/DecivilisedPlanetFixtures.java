@@ -93,6 +93,53 @@ public final class DecivilisedPlanetFixtures {
         placePlanetIn(system, buildUnsurveyedDecivilisedPlanet());
     }
 
+    /**
+     * The ruin's market rather than its planet, for a suite posing a colony set directly instead of
+     * a system to be walked.
+     *
+     * @return the market mock, surveyed far enough for the condition to read
+     */
+    public static MarketAPI buildRevealedDecivilisedMarket() {
+        return buildRevealedDecivilisedPlanet().getMarket();
+    }
+
+    /**
+     * The same world seen and no more - the lowest survey vanilla shows a condition at, and so the
+     * one a case raising the map's own bar past vanilla's has to pose.
+     *
+     * @return the market mock
+     */
+    public static MarketAPI buildSeenDecivilisedMarket() {
+        return buildDecivilisedPlanet(MarketAPI.SurveyLevel.SEEN).getMarket();
+    }
+
+    /**
+     * The same world with nobody having looked at it at all: the condition is there, and the player
+     * has no way of knowing it. Its planet is found all the same, discovery and survey being
+     * independent - which is the pair a case about the survey bar turns on.
+     *
+     * @return the market mock
+     */
+    public static MarketAPI buildUnsurveyedDecivilisedMarket() {
+        return buildUnsurveyedDecivilisedPlanet().getMarket();
+    }
+
+    /**
+     * A ruin whose planet is neither surveyed nor found - the world both fog arms hold back at once,
+     * and so the case that shows each reveal reaches its own arm and no other.
+     *
+     * @return the market mock
+     */
+    public static MarketAPI buildUnfoundUnsurveyedDecivilisedMarket() {
+
+        var planetMock = buildUnsurveyedDecivilisedPlanet();
+
+        when(planetMock.isDiscoverable())
+            .thenReturn(true);
+
+        return planetMock.getMarket();
+    }
+
     // The ruin at a stated survey level, which is the one axis the two builders above differ on.
     private static PlanetAPI buildDecivilisedPlanet(MarketAPI.SurveyLevel surveyLevel) {
 

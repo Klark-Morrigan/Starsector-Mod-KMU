@@ -4,9 +4,10 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.impl.campaign.ids.MemFlags;
 
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
+import kmu.maplayers.base.visibility.ColonyKnowledge;
+import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.junit.jupiter.api.Nested;
@@ -16,8 +17,7 @@ import org.mockito.MockedConstruction;
 import java.util.ArrayList;
 import java.util.List;
 
-import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
-
+import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -132,16 +132,27 @@ class LiveVisibilityClaimBreakdownReaderTest {
         }
     }
 
-    // Stands in every reader the binding opens, recording the rule it was handed. The rule is
-    // read nowhere else - it reaches the breakdown as a filter over markets - so intercepting
-    // construction is what makes "which rule was this answered under" assertable at all.
+    // Stands in every reader the binding opens, recording the rule behind the knowledge it was
+    // handed. The knowledge is read nowhere else - it reaches the breakdown as a flag on each
+    // market - so intercepting construction is what makes "which rule was this answered under"
+    // assertable at all.
+    //
+    // The rule rather than the knowledge itself, because the binding pairs the rule with the
+    // sector's own register where it opens a reader: the value handed over is never one a case
+    // could state, while the rule inside it is the one thing the binding decides.
     private static MockedConstruction<VanillaClaimBreakdownReader> captureOpenedRules(
             List<ColonyVisibility> openedRules) {
 
         return mockConstruction(
             VanillaClaimBreakdownReader.class,
-            (readerMock, context) ->
-                openedRules.add((ColonyVisibility) context.arguments().get(0)));
+            (readerMock, context) -> {
+
+                var knownColonyReader = context.arguments().get(0);
+
+                if (knownColonyReader instanceof ColonyKnowledge knowledge) {
+                    openedRules.add(knowledge.rule());
+                }
+            });
     }
 
     // A system whose memory carries the vanilla claiming-faction flag, which is the whole of what

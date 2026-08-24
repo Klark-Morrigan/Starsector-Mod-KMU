@@ -113,7 +113,7 @@ public record PoliticalMapSectorSnapshot(
             var footprintByFactionId = KnownMarketFootprints.readByFaction(
                 systemColonies,
                 rules,
-                pass.rules().colonyVisibility());
+                pass.colonyKnowledge());
 
             // Asked of the pass rather than derived from the footprints below, which is the
             // narrower question: a footprint is only ever weighed for an economy-listed colony,

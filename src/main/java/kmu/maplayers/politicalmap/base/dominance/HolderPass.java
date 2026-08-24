@@ -5,12 +5,13 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.text.KmlibStrings;
 
+import kmu.maplayers.base.visibility.ColonyKnowledge;
+import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import java.util.HashMap;
@@ -42,8 +43,9 @@ import java.util.Set;
  * <p>The sector is the index's rather than a field of its own, so a pass cannot be built naming
  * one sector while answering out of another.
  *
- * <p>A class rather than a record because it remembers as well as carries: the colony walk was
- * always memoised inside the index it holds, and habitation is memoised here beside it. Both are a
+ * <p>A class rather than a record because it remembers as well as carries: the colony walk is
+ * memoised inside the index it holds, each colony's kind inside the knowledge it opened, and
+ * habitation here beside them. All three are a
  * snapshot of one moment, which is why a pass is discarded with the rebuild that opened it - and
  * why value equality would be wrong for it, two passes over one sector being two separate readings
  * however alike the knobs they were built from. Not safe for concurrent use, a rebuild being one
@@ -63,8 +65,8 @@ public final class HolderPass {
     // unkeyable system is resolved afresh rather than pooled with every other under a shared key.
     private final Map<String, SystemHabitation> habitationBySystemId = new HashMap<>();
 
+    private final ColonyKnowledge colonyKnowledge;
     private final HolderGrouping grouping;
-    private final ColonyVisibility colonyVisibility;
     private final SystemColoniesIndex colonies;
 
     /**
@@ -87,9 +89,15 @@ public final class HolderPass {
             ColonyVisibility colonyVisibility,
             SystemColoniesIndex colonies) {
 
+        Objects.requireNonNull(colonyVisibility, "colonyVisibility");
+
         this.grouping = Objects.requireNonNull(grouping, "grouping");
-        this.colonyVisibility = Objects.requireNonNull(colonyVisibility, "colonyVisibility");
         this.colonies = Objects.requireNonNull(colonies, "colonies");
+
+        // The rule is paired with the sector's sighting register here, which is the one point at
+        // which both are in hand: the index names the sector, and a projection asked of a colony
+        // set later would have nowhere to read what has been observed from.
+        this.colonyKnowledge = ColonyKnowledge.over(colonies.getSector(), colonyVisibility);
     }
 
     /**
@@ -148,7 +156,23 @@ public final class HolderPass {
      * @return the dev reveal and the revelation gates every colony read through this pass takes
      */
     public ColonyVisibility colonyVisibility() {
-        return colonyVisibility;
+        return colonyKnowledge.rule();
+    }
+
+    /**
+     * What the player may be told about the colonies this pass walks: its rule, read against the
+     * sector's own record of what has been seen and where.
+     *
+     * <p>Published so a reader needing a projection of its own - one this pass does not name -
+     * takes the pass's own knowledge rather than pairing a rule with a register for itself. The
+     * pair assembled at a call site is a pair that can be assembled wrongly, and a surface reading
+     * one pass's rule against another's observations would withhold colonies nothing else on the
+     * map is withholding.
+     *
+     * @return the knowledge every colony projection through this pass is taken under
+     */
+    public ColonyKnowledge colonyKnowledge() {
+        return colonyKnowledge;
     }
 
     /**
@@ -171,7 +195,7 @@ public final class HolderPass {
      * @return a reader answering off this pass, to be discarded with it
      */
     public ClaimReader openClaimReaderThrough(ClaimReaderSource claimReaderSource) {
-        return claimReaderSource.openReaderOver(colonyVisibility, colonies);
+        return claimReaderSource.openReaderOver(colonyKnowledge, colonies);
     }
 
     /**
@@ -240,7 +264,7 @@ public final class HolderPass {
      * @return the system's colonies the rule admits, in the set's own order
      */
     public List<Colony> readKnownColoniesIn(StarSystemAPI system) {
-        return readColoniesIn(system).readKnownColonies(colonyVisibility);
+        return colonyKnowledge.readKnownColonies(readColoniesIn(system));
     }
 
     /**
@@ -257,7 +281,7 @@ public final class HolderPass {
      * @return the system's known colonies somebody lives on, in the set's own order
      */
     public List<Colony> readInhabitingColoniesIn(StarSystemAPI system) {
-        return readColoniesIn(system).readInhabitingColonies(colonyVisibility);
+        return colonyKnowledge.readInhabitingColonies(readColoniesIn(system));
     }
 
     /**

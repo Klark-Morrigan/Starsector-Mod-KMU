@@ -2,11 +2,11 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
-import kmlib.starsector.colonies.ColonyKind;
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.visibility.ColonyKind;
+import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.util.KmuStrings;
 
 import java.util.List;
@@ -71,22 +71,22 @@ public final class SystemStatusRow {
      * breakdown beneath it are answered from one reading - where two readings could have headed a
      * system Decivilised over a box that named no such colony in it.
      *
-     * @param colonies         the hovered system's colonies, as one walk of it reported
-     * @param colonyVisibility what the player may be shown of a colony, passed by the caller so
-     *                         the status agrees with whatever that caller's own reads admit
+     * @param colonies        the hovered system's colonies, as one walk of it reported
+     * @param colonyKnowledge what the player may be told about a colony, passed by the caller so
+     *                        the status agrees with whatever that caller's own reads admit
      * @return the Decivilised or Unpopulated row, or empty when the player knows of a governed
      *         colony here
      */
     public static Optional<TooltipRow.CentredRow> resolveStatusRow(
             Colonies colonies,
-            ColonyVisibility colonyVisibility) {
+            ColonyKnowledge colonyKnowledge) {
 
-        var inhabitingColonies = colonies.readInhabitingColonies(colonyVisibility);
+        var inhabitingColonies = colonyKnowledge.readInhabitingColonies(colonies);
 
         // Habitation admits the collapsed colony along with the governed ones, so its emptiness is
         // not the question here: a system holding only a collapse is inhabited and still has nobody
         // running it.
-        if (hasGovernedColony(inhabitingColonies)) {
+        if (hasGovernedColony(colonyKnowledge, inhabitingColonies)) {
             return Optional.empty();
         }
         // Emptiness settles the rest, no second read of the kinds needed: habitation admits the
@@ -108,10 +108,12 @@ public final class SystemStatusRow {
     // inhabits its place under nobody's authority, so a kind added later reads as governed unless
     // it says otherwise - which is the same direction habitation itself is written in, and the
     // safer one: a line calling a governed system unpopulated is worse than one declining to.
-    private static boolean hasGovernedColony(List<Colony> inhabitingColonies) {
+    private static boolean hasGovernedColony(
+            ColonyKnowledge colonyKnowledge,
+            List<Colony> inhabitingColonies) {
 
         for (var colony : inhabitingColonies) {
-            if (colony.kind() != ColonyKind.UNGOVERNED_COLONY) {
+            if (colonyKnowledge.readKindOf(colony) != ColonyKind.UNGOVERNED_COLONY) {
                 return true;
             }
         }

@@ -163,6 +163,18 @@ about what the overlay means.
   at all. `MapVisibilityRules` pairs the colony rule that judges that with the force override a
   caller may admit a system outright by, so a layer can widen what is drawn without the rule knowing
   why it wanted to.
+
+  The colony framing those answers are composed from lives here too, because it is the map's own
+  and not the sector's. KMLib states which colonies a place holds; `ColonyKind` says what kind of
+  place each one stands for, `ColonyVisibility` and `RevelationGate` say what may be shown of it,
+  and `ColonyKnowledge` pairs that rule with the sector's record of what has been observed and
+  publishes the two projections every surface reads - the known listing a box may name, and the
+  habitation reading a cell is settled by. Each pass opens one and classifies each colony once
+  through it. `ColonyKindLookup` folds those kinds by colony id for a reader that meets a colony as
+  a row rather than as a colony. The register behind the observations is `ColonySightings` over
+  `SectorColonySightings`, written by `ColonySightingRecorder` as the player travels and by the
+  political map's staleness poll for what a place's own inhabitants can see; `ColonySightingInstaller`
+  stands both up on load.
 - **[Cell geometry](base/geometry/README.md)** - the cells, edges, and clusters any painting layer
   is shaped out of, partitioned from the drawn systems and cached against them.
 - **[Cluster-name overlay](base/labels/README.md)** - where a name is placed across a cluster and

@@ -8,10 +8,12 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.ColonyVisibility;
 import kmlib.starsector.colonies.SystemColonies;
+import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
+import kmu.maplayers.base.visibility.ColonyKnowledge;
+import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -24,10 +26,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-
-import static kmlib.starsector.colonies.ColonyVisibility.BASE_FOG;
+import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
+import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
 
@@ -101,7 +103,7 @@ final class SystemInhabitationAgreementIntegrationTest {
 
             assertThat(isInhabited(sector, system, BASE_FOG))
                 .isTrue();
-            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), BASE_FOG))
+            assertThat(resolveStatusRowIn(sector, system, BASE_FOG))
                 .isEmpty();
         }
 
@@ -131,7 +133,7 @@ final class SystemInhabitationAgreementIntegrationTest {
 
             assertThat(isInhabited(sector, system, BASE_FOG))
                 .isTrue();
-            assertThat(SystemStatusRow.resolveStatusRow(readColoniesIn(sector, system), BASE_FOG))
+            assertThat(resolveStatusRowIn(sector, system, BASE_FOG))
                 .isEmpty();
         }
 
@@ -157,9 +159,7 @@ final class SystemInhabitationAgreementIntegrationTest {
 
             assertThat(isInhabited(sector, system, UNDER_THE_REVEAL))
                 .isTrue();
-            assertThat(SystemStatusRow.resolveStatusRow(
-                    readColoniesIn(sector, system),
-                    UNDER_THE_REVEAL))
+            assertThat(resolveStatusRowIn(sector, system, UNDER_THE_REVEAL))
                 .isEmpty();
         }
 
@@ -211,11 +211,23 @@ final class SystemInhabitationAgreementIntegrationTest {
             StarSystemAPI system,
             ColonyVisibility colonyVisibility) {
 
-        var row = SystemStatusRow
-            .resolveStatusRow(readColoniesIn(sector, system), colonyVisibility)
+        var row = resolveStatusRowIn(sector, system, colonyVisibility)
             .orElseThrow();
 
         return readLabelTextRun(row, STATUS_RUN).text();
+    }
+
+    // The status line the box resolves for one system: its colonies walked once, read under the
+    // rule a case poses against that same sector's record of what has been seen. Paired here so a
+    // case cannot hand the row one sector's colonies and another's observations.
+    private static Optional<TooltipRow.CentredRow> resolveStatusRowIn(
+            SectorAPI sector,
+            StarSystemAPI system,
+            ColonyVisibility colonyVisibility) {
+
+        return SystemStatusRow.resolveStatusRow(
+            readColoniesIn(sector, system),
+            ColonyKnowledge.over(sector, colonyVisibility));
     }
 
     // A sector whose economy lists exactly these markets in the system.
