@@ -1,75 +1,40 @@
 package kmu.maplayers.base.visibility;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.testfixtures.starsector.colonies.ColonyFixture;
-
-import kmu.maplayers.DecivilisedPlanetFixtures;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The world a projection is posed against: one star system, the colonies standing in it, and what
- * has been observed of each.
+ * The world a projection is posed against: KMLib's colony world, plus what has been observed of
+ * the colonies standing in it.
  *
- * <p>Presence and observation are stated separately, because that split is the thing under test. A
- * colony is stood in the system by {@link #placeColoniesInSystem} and recorded as seen by
- * {@link #markColoniesAsSighted}, and a colony given only the first is the shape a gate holds back.
- * Folding them into one call would leave every case unable to pose that difference.
+ * <p>Extends that world rather than wrapping it, so the shapes and the placement a case poses are
+ * the library's own statement of them and this adds the one fact the library has no business
+ * holding - what somebody has seen, which is the map's framing and nothing the sector answers.
  *
- * <p>Colony shapes themselves are {@link ColonyFixture}'s and {@link DecivilisedPlanetFixtures}'s,
- * forwarded here so a suite holding this fixture builds and places them through the one object.
- * What a colony is does not depend on the world it stands in.
+ * <p>Presence and observation stay separate calls, because that split is the thing under test. A
+ * colony is stood in the system by {@code placeColoniesInSystem} and recorded as seen by
+ * {@link #markColoniesAsSighted}, and a colony given only the first is the shape a gate holds
+ * back. Folding them into one call would leave every case unable to pose that difference.
  *
  * <p>Nothing here states a kind. The classification is resolved off the market, so a case posing a
  * derelict poses the shape a derelict really wears - which is what keeps a case from passing on a
  * kind no sector would ever produce.
  */
-public final class ColonyKnowledgeFixture {
-
-    /** The size every colony takes unless a case asks for another. */
-    public static final int DEFAULT_COLONY_SIZE = ColonyFixture.DEFAULT_COLONY_SIZE;
+public final class ColonyKnowledgeFixture extends ColonyFixture {
 
     private final Map<String, ColonyObservation> observationsByColonyId = new HashMap<>();
-    private final ColonyFixture world;
 
     /**
-     * Opens a world holding exactly one system.
+     * Opens a world holding exactly one system, with nothing observed of it yet.
      *
      * @param systemId the system's id, as {@code StarSystemAPI#getId} reports it
      */
     public ColonyKnowledgeFixture(String systemId) {
-        world = new ColonyFixture(systemId);
-    }
-
-    /** The sector the world stands in. */
-    public SectorAPI getSector() {
-        return world.getSector();
-    }
-
-    /** The one system the world holds. */
-    public StarSystemAPI getSystem() {
-        return world.getSystem();
-    }
-
-    /**
-     * Backs the sector's memory with a real map, so a production recorder writes where it really
-     * writes and a later read finds it there.
-     *
-     * <p>What a case exercising the recorders needs, as against one merely stating what has been
-     * seen: {@link #markColoniesAsSighted} hands a projection an answer, while a recorder has to be
-     * given somewhere to put one.
-     */
-    public void openSectorMemory() {
-        world.openSectorMemory();
-    }
-
-    /** Registers the colonies with the economy, in the order it will list them. */
-    public void listColoniesInEconomy(MarketAPI... colonies) {
-        world.listColoniesInEconomy(colonies);
+        super(systemId);
     }
 
     /**
@@ -78,14 +43,6 @@ public final class ColonyKnowledgeFixture {
      */
     public ColonySightings getSightings() {
         return observationsByColonyId::get;
-    }
-
-    /**
-     * Stands the colonies in the system, each on the entity it was built with - which is what makes
-     * a gate answerable about them at all.
-     */
-    public void placeColoniesInSystem(MarketAPI... colonies) {
-        world.placeColoniesInSystem(colonies);
     }
 
     /**
@@ -100,12 +57,7 @@ public final class ColonyKnowledgeFixture {
      * carries no observation of however often the player has crossed it.
      */
     public void markColoniesAsSighted(MarketAPI... colonies) {
-
-        for (var colony : colonies) {
-            observationsByColonyId.put(
-                colony.getId(),
-                ColonyObservation.createUndatedObservation(world.getSystem().getId()));
-        }
+        recordObservations(getSystem().getId(), colonies);
     }
 
     /**
@@ -113,71 +65,17 @@ public final class ColonyKnowledgeFixture {
      * where they stand, which is what a colony that has moved since carries.
      */
     public void markColoniesAsSightedElsewhere(String otherSystemId, MarketAPI... colonies) {
+        recordObservations(otherSystemId, colonies);
+    }
+
+    // One observation apiece, naming where it was made. Undated throughout: no rule reads the
+    // time, and a case that is about how old the news is stamps its own.
+    private void recordObservations(String locationId, MarketAPI... colonies) {
 
         for (var colony : colonies) {
             observationsByColonyId.put(
                 colony.getId(),
-                ColonyObservation.createUndatedObservation(otherSystemId));
+                ColonyObservation.createUndatedObservation(locationId));
         }
-    }
-
-    // Each colony builder below forwards to the one named for it on the shared shape fixtures,
-    // which is where the shape is described. Restating those descriptions here would put two
-    // accounts of one colony a rename apart.
-
-    public MarketAPI buildConditionOnlyMarket() {
-        return world.buildConditionOnlyMarket();
-    }
-
-    public MarketAPI buildDecivilisedWorld() {
-        return DecivilisedPlanetFixtures.buildRevealedDecivilisedMarket();
-    }
-
-    public MarketAPI buildSeenDecivilisedWorld() {
-        return DecivilisedPlanetFixtures.buildSeenDecivilisedMarket();
-    }
-
-    public MarketAPI buildDerelictStation() {
-        return world.buildDerelictStation();
-    }
-
-    public MarketAPI buildUnfoundDerelictStation() {
-        return world.buildUnfoundDerelictStation();
-    }
-
-    public MarketAPI buildOutpost(String factionId) {
-        return world.buildOutpost(factionId);
-    }
-
-    public MarketAPI buildFoundConcealedColony(String factionId) {
-        return world.buildFoundConcealedColony(factionId);
-    }
-
-    public MarketAPI buildSiblingMarketOn(MarketAPI colony, int size) {
-        return world.buildSiblingMarketOn(colony, size);
-    }
-
-    public MarketAPI buildUnfoundConcealedColony(String factionId) {
-        return world.buildUnfoundConcealedColony(factionId);
-    }
-
-    public MarketAPI buildUnfoundUnsurveyedDecivilisedWorld() {
-        return DecivilisedPlanetFixtures.buildUnfoundUnsurveyedDecivilisedMarket();
-    }
-
-    public MarketAPI buildUnsurveyedDecivilisedWorld() {
-        return DecivilisedPlanetFixtures.buildUnsurveyedDecivilisedMarket();
-    }
-
-    public MarketAPI buildUnfoundOpenColony(String factionId) {
-        return world.buildUnfoundOpenColony(factionId);
-    }
-
-    public MarketAPI buildVisibleColony(String factionId) {
-        return world.buildVisibleColony(factionId);
-    }
-
-    public MarketAPI buildVisibleColonyOfSize(String factionId, int size) {
-        return world.buildVisibleColonyOfSize(factionId, size);
     }
 }

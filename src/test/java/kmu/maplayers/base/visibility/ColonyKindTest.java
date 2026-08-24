@@ -4,7 +4,6 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
 
-import kmu.maplayers.DecivilisedPlanetFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -86,7 +85,7 @@ final class ColonyKindTest {
         @Test
         void reads_a_decivilised_world_as_a_dead_colony() {
 
-            var decivilisedWorld = DecivilisedPlanetFixtures.buildRevealedDecivilisedMarket();
+            var decivilisedWorld = ColonyMarketFixture.buildDecivilisedWorld();
 
             assertThat(ColonyKind.resolveKind(decivilisedWorld, UNLISTED_BY_ECONOMY))
                 .isEqualTo(ColonyKind.UNGOVERNED_COLONY);
@@ -97,7 +96,7 @@ final class ColonyKindTest {
             // What the world is and whether the player may be told are different questions asked at
             // different layers, so an unread ruin is classified as the ruin it is and withheld by
             // the fog above rather than by being misfiled here.
-            var decivilisedWorld = DecivilisedPlanetFixtures.buildUnsurveyedDecivilisedMarket();
+            var decivilisedWorld = ColonyMarketFixture.buildUnsurveyedDecivilisedWorld();
 
             assertThat(ColonyKind.resolveKind(decivilisedWorld, UNLISTED_BY_ECONOMY))
                 .isEqualTo(ColonyKind.UNGOVERNED_COLONY);
