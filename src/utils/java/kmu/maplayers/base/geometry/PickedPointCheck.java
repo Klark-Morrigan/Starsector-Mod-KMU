@@ -277,7 +277,6 @@ public final class PickedPointCheck {
             DiscUnionBoundary.Walls walls,
             double[] pick) {
 
-        var sites = union.sites();
         var laid = DiscUnionBoundary.findAttachableChords(union, walls);
 
         for (var step = 0; step < ESCAPE_DIRECTIONS; step++) {

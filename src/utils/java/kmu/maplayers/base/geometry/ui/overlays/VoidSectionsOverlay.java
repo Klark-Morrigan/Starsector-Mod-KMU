@@ -6,7 +6,6 @@ import kmu.maplayers.base.geometry.NamedRegion;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidSection;
 import kmu.maplayers.base.geometry.VoidSections;
-
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 
 import java.awt.Graphics2D;

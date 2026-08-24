@@ -15,11 +15,6 @@ import kmu.maplayers.base.geometry.UnboundedCells;
 import kmu.maplayers.base.geometry.output.SectorSvgWriter;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
-
-import kmu.ui.ControlRows;
-import kmu.ui.SavedValues;
-import kmu.ui.WindowLayout;
-
 import kmu.maplayers.base.geometry.ui.overlays.NamedRegions;
 import kmu.maplayers.base.geometry.ui.overlays.VoidBridgesOverlay;
 import kmu.maplayers.base.geometry.ui.overlays.VoidSectionsOverlay;
@@ -28,6 +23,9 @@ import kmu.maplayers.base.geometry.ui.overlays.voidpockets.v3.ContinentCoastOver
 import kmu.maplayers.base.geometry.ui.settings.ViewerRefreshes;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettingsPanel;
+import kmu.ui.ControlRows;
+import kmu.ui.SavedValues;
+import kmu.ui.WindowLayout;
 
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
