@@ -87,10 +87,14 @@ public final class ContinentCoastOverlay {
         // one before: the bridges are filtered against the coasts, and the pieces are cut by
         // both. Switching a later one on without the lines that decide it would show a set
         // nothing on screen accounts for.
-        if (!settings.showContinentCoasts
-                && !settings.showContinentCoastalFill
-                && !settings.showContinentBridges
-                && !settings.showVoidFaces) {
+        //
+        // Under the switch over the whole continent construction, which suppresses this
+        // without touching any of its own - so what was showing comes back when it is lifted.
+        if (!settings.showContinentVoid
+                || (!settings.showContinentCoasts
+                    && !settings.showContinentCoastalFill
+                    && !settings.showContinentBridges
+                    && !settings.showVoidFaces)) {
 
             return;
         }
@@ -141,7 +145,7 @@ public final class ContinentCoastOverlay {
      */
     public void paintPocketFills(Graphics2D g2) {
 
-        if (!settings.showContinentCoastalFill) {
+        if (!settings.showContinentVoid || !settings.showContinentCoastalFill) {
             return;
         }
 
@@ -156,7 +160,7 @@ public final class ContinentCoastOverlay {
      */
     public void paintCoasts(Graphics2D g2) {
 
-        if (!coast.hasTrace()) {
+        if (!settings.showContinentVoid || !coast.hasTrace()) {
             return;
         }
 

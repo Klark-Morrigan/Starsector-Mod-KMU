@@ -69,7 +69,10 @@ public final class SectorCoastOverlay {
         // Traced while either half of it is on screen. The line and the void it shuts in are
         // one construction seen twice, and the pockets come off this same trace - so a frame
         // showing one of them has already paid for both.
-        if (!settings.showCoastline && !settings.showCoastalFill) {
+        // Under the switch over the whole settled construction, which suppresses this without
+        // touching either of its own - so what was showing comes back when it is lifted.
+        if (!settings.showSectorVoid
+                || (!settings.showCoastline && !settings.showCoastalFill)) {
 
             coast.acceptTrace(null);
             penetrations = List.of();
@@ -101,7 +104,7 @@ public final class SectorCoastOverlay {
      */
     public void paintPocketFills(Graphics2D g2) {
 
-        if (!settings.showCoastalFill) {
+        if (!settings.showSectorVoid || !settings.showCoastalFill) {
             return;
         }
 
@@ -116,7 +119,7 @@ public final class SectorCoastOverlay {
      */
     public void paintCoasts(Graphics2D g2) {
 
-        if (!coast.hasTrace() || !settings.showCoastline) {
+        if (!settings.showSectorVoid || !coast.hasTrace() || !settings.showCoastline) {
             return;
         }
 

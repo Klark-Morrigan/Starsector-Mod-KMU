@@ -2,6 +2,7 @@ package kmu.maplayers.base.geometry.ui.settings;
 
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
+import kmu.ui.CollapsibleSection;
 import kmu.ui.ColourRows;
 import kmu.ui.ControlRows;
 import kmu.ui.SliderRows;
@@ -65,6 +66,19 @@ public final class ViewerSettingsPanel {
     private static final String COASTLINE = "showCoastline";
     private static final String COASTAL_FILL = "showCoastalFill";
     private static final String COASTAL_NAMES = "showCoastalNames";
+
+    private static final String CONTINENT_COASTS = "showContinentCoasts";
+    private static final String CONTINENT_FILL = "showContinentCoastalFill";
+    private static final String CONTINENT_BRIDGES = "showContinentBridges";
+    private static final String VOID_FACES = "showVoidFaces";
+
+    // What each section remembers its switch and its folded state under. Named for the
+    // construction rather than taken from the heading, which is copy and gets reworded.
+    private static final CollapsibleSection.SectionKeys SECTOR_VOID_KEYS =
+        CollapsibleSection.SectionKeys.forSection("sectorVoid");
+
+    private static final CollapsibleSection.SectionKeys CONTINENT_VOID_KEYS =
+        CollapsibleSection.SectionKeys.forSection("continentVoid");
 
     // How far apart two cells may sit and still be taken to hold the void between them, in
     // cell radii from centre to centre. Four is the width at which a whole further cell
@@ -156,13 +170,50 @@ public final class ViewerSettingsPanel {
 
         controls.add(ControlRows.buildDivider());
 
-        addVoidPocketRows(controls);
+        // The two rival constructions, each foldable away under a switch of its own. They are
+        // the two longest runs in the panel and only one of them is usually being worked on,
+        // so a reader who cannot put one down is reading it on the way to the other every time.
+        controls.add(CollapsibleSection.buildSection(
+            SECTOR_VOID_KEYS,
+            "Sector coast void (v2)",
+            true,
+            on -> settings.showSectorVoid = on,
+            this::refreshBothConstructions,
+            buildSectionBody(this::addVoidPocketRows)));
 
         controls.add(ControlRows.buildDivider());
 
-        addVoidPocketV3Rows(controls);
+        controls.add(CollapsibleSection.buildSection(
+            CONTINENT_VOID_KEYS,
+            "Continent coast void (v3)",
+            true,
+            on -> settings.showContinentVoid = on,
+            refreshes::refreshCoastlines,
+            buildSectionBody(this::addVoidPocketV3Rows)));
 
         return controls;
+    }
+
+    // A column for one section to hold, filled by whichever run of rows it is the section for.
+    // The rows add themselves to whatever they are handed, so a section body is only the
+    // container plus the layout the panel itself uses.
+    private static JPanel buildSectionBody(Consumer<JPanel> addRows) {
+
+        var body = new JPanel();
+
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        addRows.accept(body);
+
+        return body;
+    }
+
+    // Both, because the settled construction is drawn by two overlays: the bridges and their
+    // fills are one, the coast and its pockets the other. Refreshing one would leave the
+    // section half-suppressed, which reads as a fault in whichever half was left showing.
+    private void refreshBothConstructions() {
+
+        refreshes.refreshVoidBridges();
+        refreshes.refreshCoastlines();
     }
 
     // The five knobs that decide what shape the cells are. Every one of them rebuilds the
@@ -510,24 +561,47 @@ public final class ViewerSettingsPanel {
     // reads in: what to show, what to draw it with, then the knobs that decide its shape.
     private void addVoidPocketV3Rows(JPanel controls) {
 
+        controls.add(buildContinentVoidToggles());
+
         addContinentCoastRows(controls);
         addInletBridgeRows(controls);
         addVoidPieceRows(controls);
     }
 
+    // What there is to see of the continent construction, gathered the way the settled one's
+    // switches are. Loose beside the colour and the slider each belonged to, the four read as
+    // four unrelated knobs; together they read as the one question they answer - how much of
+    // this proposal is on screen - and the roll-up over them can then say "all of it".
+    //
+    // Every one rebuilds rather than repaints, because each is built only while it is wanted:
+    // switching one on is what makes it exist, not merely what shows it.
+    private JPanel buildContinentVoidToggles() {
+
+        return ToggleTree.buildToggleTree(
+            refreshes::refreshCoastlines,
+            ToggleTree.Row.ofRollUp(
+                0,
+                "Continent void",
+                CONTINENT_COASTS, CONTINENT_FILL, CONTINENT_BRIDGES, VOID_FACES),
+            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
+                CONTINENT_COASTS, "Coasts", false,
+                on -> settings.showContinentCoasts = on)),
+            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
+                CONTINENT_FILL, "Coastal fill", false,
+                on -> settings.showContinentCoastalFill = on)),
+            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
+                CONTINENT_BRIDGES, "Inlet bridges", false,
+                on -> settings.showContinentBridges = on)),
+            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
+                VOID_FACES, "Void pieces", false,
+                on -> settings.showVoidFaces = on)),
+            ToggleTree.Row.ofRollUp(
+                1, "Walls", CONTINENT_COASTS, CONTINENT_BRIDGES));
+    }
+
     // What the v3 coastlines are and how they are drawn, which is what everything below is
     // laid over.
     private void addContinentCoastRows(JPanel controls) {
-
-        // Outside the v2 toggle tree on purpose - that tree's switches show parts of the one
-        // settled construction, and a roll-up that could hide or show this too would misstate
-        // what "all of it" means.
-        controls.add(ControlRows.buildToggle(
-            "showContinentCoasts",
-            "Continent coasts preview",
-            false,
-            on -> settings.showContinentCoasts = on,
-            refreshes::refreshCoastlines));
 
         controls.add(ColourRows.buildColour(
             "continentCoastColour",
@@ -535,18 +609,6 @@ public final class ViewerSettingsPanel {
             ViewerSettings.CONTINENT_COAST_DEFAULT,
             colour -> settings.continentCoastColour = colour,
             refreshes::repaintMap));
-
-        // The void behind those coasts, filled - the settled coast's own fill construction
-        // asked of this trace. Its own switch beside the line's, for the reason the settled
-        // coast has two: a line is a proposal about where a boundary goes and a fill is what
-        // that proposal encloses, and judging either means being able to see it without the
-        // other.
-        controls.add(ControlRows.buildToggle(
-            "showContinentCoastalFill",
-            "Continent coastal fill",
-            false,
-            on -> settings.showContinentCoastalFill = on,
-            refreshes::refreshCoastlines));
 
         controls.add(ColourRows.buildColour(
             "continentCoastalVoidColour",
@@ -578,18 +640,6 @@ public final class ViewerSettingsPanel {
     // The spans laid across the inlets those coastlines leave, and the rules deciding which
     // of them survive.
     private void addInletBridgeRows(JPanel controls) {
-
-        // Named for the inlets they close rather than for the continents they sit on, which
-        // read as bridges BETWEEN continents and are nothing of the kind.
-        //
-        // Rebuilt rather than repainted: the coasts have to be traced for the surviving set
-        // to be answerable at all, so switching this on is what makes the set exist.
-        controls.add(ControlRows.buildToggle(
-            "showContinentBridges",
-            "Inlet bridges",
-            false,
-            on -> settings.showContinentBridges = on,
-            refreshes::refreshCoastlines));
 
         controls.add(ColourRows.buildColour(
             "continentBridgeColour",
@@ -643,15 +693,6 @@ public final class ViewerSettingsPanel {
     // The pieces the coastlines and the bridges cut between them, and what a piece has to be
     // to be left standing on its own.
     private void addVoidPieceRows(JPanel controls) {
-
-        // Rebuilt rather than repainted: the pieces are cut by the coasts and the bridges
-        // together, so switching this on is what makes them exist.
-        controls.add(ControlRows.buildToggle(
-            "showVoidFaces",
-            "Void pieces",
-            false,
-            on -> settings.showVoidFaces = on,
-            refreshes::refreshCoastlines));
 
         // The base each piece's own shade is spread from, rather than the colour any piece is
         // actually drawn in - which is why the swatch and the map never quite match.

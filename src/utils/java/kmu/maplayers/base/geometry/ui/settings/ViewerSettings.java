@@ -111,6 +111,20 @@ public final class ViewerSettings {
     public int voidFillOpacity = OWNER_FILL_ALPHA;
     public double bridgeReachMultiple = BRIDGE_REACH_DEFAULT;
 
+    // One switch over each rival construction, suppressing the whole of it whatever its own
+    // switches are set to.
+    //
+    // Their own settings rather than roll-ups of the switches below, because what they are for
+    // is putting a construction aside and coming back to it. A roll-up would take every switch
+    // under it down on the way out and could only turn every one of them on to come back, so
+    // whatever arrangement was being looked at is gone the moment it is set down.
+    //
+    // Both on by default, so what the viewer opens with is decided by the switches below as it
+    // always was. Off by default, the two would instead be a pair of hidden reasons for a knob
+    // to do nothing when moved.
+    public boolean showSectorVoid = true;
+    public boolean showContinentVoid = true;
+
     // The void, in the two kinds it comes in and the three things there are to see of each.
     //
     // Split this finely because each of the six answers a different question. A wall is a

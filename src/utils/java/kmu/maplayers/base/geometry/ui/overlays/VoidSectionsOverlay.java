@@ -104,6 +104,14 @@ public final class VoidSectionsOverlay {
      */
     public void paintNames(Graphics2D g2, AffineTransform worldToScreen) {
 
+        // The DRAWING goes under the settled construction's switch; the sections themselves do
+        // not, and are still found above. The pointer names whatever piece of void it is over
+        // whether or not that construction is being shown, and a readout that went quiet
+        // because a section was set aside would be a readout with a hidden precondition.
+        if (!settings.showSectorVoid) {
+            return;
+        }
+
         if (settings.showInlandNames) {
             NamedRegions.paintNames(g2, worldToScreen, inland, settings.regionNameColour);
         }

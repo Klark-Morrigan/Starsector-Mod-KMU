@@ -45,7 +45,11 @@ public final class VoidBridgesOverlay {
 
         // Built while either half of it is on screen. The walls and the fills are one
         // construction seen twice, so a frame showing one of them has already paid for both.
-        var wanted = settings.showInlandBridges || settings.showInlandFill;
+        //
+        // Under the switch over the whole settled construction, which suppresses this without
+        // touching either of its own - so what was showing comes back when it is lifted.
+        var wanted = settings.showSectorVoid
+            && (settings.showInlandBridges || settings.showInlandFill);
 
         bridges = wanted
             ? VoidBridges.findVoidBridges(
@@ -73,7 +77,7 @@ public final class VoidBridgesOverlay {
      */
     public void paintFills(Graphics2D g2) {
 
-        if (!settings.showInlandFill) {
+        if (!settings.showSectorVoid || !settings.showInlandFill) {
             return;
         }
 
@@ -100,7 +104,7 @@ public final class VoidBridgesOverlay {
      */
     public void paintSpans(Graphics2D g2) {
 
-        if (!settings.showInlandBridges) {
+        if (!settings.showSectorVoid || !settings.showInlandBridges) {
             return;
         }
 
