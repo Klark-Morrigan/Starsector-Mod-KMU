@@ -3,7 +3,6 @@ package kmu.maplayers.base.geometry.ui.settings;
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.ContinentBridges;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
-import kmu.maplayers.base.geometry.SmallPieceFolding;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
@@ -65,16 +64,7 @@ public final class ViewerSettings {
 
     public static final Color BRIDGE_FRONTAGE_DEFAULT = MapLook.BRIDGE_FRONTAGE;
 
-    public static final Color VOID_FACE_DEFAULT = MapLook.VOID_FACE;
-
     public static final Color CONTINENT_COASTAL_VOID_DEFAULT = MapLook.CONTINENT_COASTAL_VOID;
-
-    // The fold opens switched off on both tests, so the pieces are first seen as the walls
-    // alone make them - which is the thing every setting of either is judged against.
-    public static final double LEAST_PIECE_SHARE_DEFAULT = 0;
-    public static final double PIECE_SHARE_PERCENT_SCALE = 100.0;
-    public static final double LEAST_PIECE_WIDTH_DEFAULT = 0;
-    public static final double LEAST_WHOLE_WALL_WIDTH_DEFAULT = 0;
 
     public static final Color COAST_CROSSING_DEFAULT = MapLook.COAST_CROSSING;
     public static final Color PIERCED_CELL_DEFAULT = MapLook.PIERCED_CELL;
@@ -156,15 +146,6 @@ public final class ViewerSettings {
     // rather than the way the void behind it was worked out.
     public boolean showContinentCoastalFill;
 
-    // Whether a v3 bridge may cross one already laid. On, they draw a grid and the void comes
-    // apart into pieces bounded on every side; off, they leave a tree, which is what the
-    // settled bridges do and which holds the void together as one shape with fingers.
-    //
-    // On by default because the grid is what the pieces were built to be read from - but the
-    // two are on one switch precisely because which of them makes the better MAP is the thing
-    // still being decided.
-    public boolean allowBridgeCrossings = true;
-
     // The bridges v3 would lay once its coastlines are down - the same search the settled map
     // uses, offered the same cells, so the only difference between the two sets is which spans
     // the coastlines then refuse.
@@ -182,12 +163,6 @@ public final class ViewerSettings {
     // been offered nowhere nearer to anchor - which is invisible until the eligible stretches
     // are on screen beside the spans that used them.
     public boolean showBridgeFrontages;
-
-    // The pieces the coastlines and the inlet bridges cut the void into, each filled in its
-    // own shade. Off by default and apart from the lines' own switches, because it answers a
-    // different question from either: the lines say where a wall was laid, and this says what
-    // the walls between them ENCLOSE - which is the thing a merge rule would be acting on.
-    public boolean showVoidFaces;
 
     // Every stretch of frontage the smoothing chose not to pass through, on whichever coasts
     // are being drawn. One switch rather than one per coast: it shows a DECISION rather than a
@@ -218,38 +193,8 @@ public final class ViewerSettings {
     // apart and still call them one, and that is a matter of taste about the map.
     public double continentBridgeCoastSlack = CONTINENT_BRIDGE_COAST_SLACK_DEFAULT;
 
-    // The smallest piece of water worth keeping, as a share of one cell's area. A piece under
-    // it is folded into a neighbour by taking out the wall between them, over and over until
-    // it clears - so what the knob shapes is which WALLS stand, and the pieces follow from
-    // that wherever they are next found.
-    //
-    // A share of a cell rather than a count of units, for the reason the frontage rule is a
-    // share of a border: it stays a claim about the map when the cell radius moves.
-    public double leastPieceShare = LEAST_PIECE_SHARE_DEFAULT;
-
-    // The narrowest piece of water worth keeping on its own, in map units. Its own test beside
-    // the area one, and read as an OR: area cannot see shape, so a wedge four thousand long
-    // and two hundred wide covers as much map as a compact blob nine hundred across, and no
-    // cap that keeps the blob will ever fold the wedge.
-    //
-    // In map units rather than as a share, because what it asks about is a WIDTH - a thing to
-    // hold against the cell radius, which is thousands of units, rather than against an area.
-    public double leastPieceWidth = LEAST_PIECE_WIDTH_DEFAULT;
-
-    // The width under which a piece is opened by taking out a WHOLE bridge rather than the
-    // stretch of it between two crossings, in map units.
-    //
-    // Its own knob because it buys something the other two cannot. A bay crossed by several
-    // bridges is cut into a fan, and every wedge of that fan is bounded by stretches of the
-    // same few bridges - so opening one stretch joins two wedges and leaves the rest of that
-    // bridge standing straight across what it just made. Only taking a bridge out entire
-    // un-fans the bay, and only a bridge with water either side along its whole length may go:
-    // one across a bay mouth has the open sea beyond it.
-    public double leastWholeWallWidth = LEAST_WHOLE_WALL_WIDTH_DEFAULT;
-
     public Color continentBridgeColour = CONTINENT_BRIDGE_DEFAULT;
     public Color bridgeFrontageColour = BRIDGE_FRONTAGE_DEFAULT;
-    public Color voidFaceColour = VOID_FACE_DEFAULT;
     public Color continentCoastalVoidColour = CONTINENT_COASTAL_VOID_DEFAULT;
     public Color continentCoastalVoidEdge = CONTINENT_COASTAL_VOID_DEFAULT;
 
@@ -320,8 +265,7 @@ public final class ViewerSettings {
     public ContinentBridges.BridgeRules resolveContinentBridgeRules() {
         return new ContinentBridges.BridgeRules(
             continentBridgeReachMultiple,
-            continentBridgeCoastSlack,
-            allowBridgeCrossings);
+            continentBridgeCoastSlack);
     }
 
     // How the v3 coast is traced. Its own method rather than the settled coast's, because a
@@ -336,12 +280,6 @@ public final class ViewerSettings {
     // area here, where the cell radius is, rather than at the overlay - a knob that reads as a
     // share of a cell has to be turned into units against the SAME cell the pieces were cut
     // against, or it means something slightly different from what it says.
-    public SmallPieceFolding.FoldRules resolveFoldRules() {
-        return new SmallPieceFolding.FoldRules(
-            leastPieceShare * Math.PI * parameters.cellRadius() * parameters.cellRadius(),
-            leastPieceWidth,
-            leastWholeWallWidth);
-    }
 
     public Coastlines.CoastRules resolveContinentCoastRules() {
         return new Coastlines.CoastRules(bridgeReachMultiple, continentMinFrontageShare);

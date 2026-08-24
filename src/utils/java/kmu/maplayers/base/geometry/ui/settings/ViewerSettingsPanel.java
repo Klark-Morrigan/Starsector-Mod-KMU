@@ -69,7 +69,6 @@ public final class ViewerSettingsPanel {
     private static final String CONTINENT_COASTS = "showContinentCoasts";
     private static final String CONTINENT_FILL = "showContinentCoastalFill";
     private static final String CONTINENT_BRIDGES = "showContinentBridges";
-    private static final String VOID_FACES = "showVoidFaces";
     private static final String BRIDGE_FRONTAGES = "showBridgeFrontages";
 
     // What each section remembers its switch and its folded state under. Named for the
@@ -99,24 +98,6 @@ public final class ViewerSettingsPanel {
     private static final double MIN_FRONTAGE_MINIMUM = 0;
 
     private static final double MIN_FRONTAGE_MAXIMUM = 25;
-
-    // The smallest piece of water the walls may leave, as a percentage of one cell's area.
-    // Zero is the rule off - every wall standing, slivers and all - which is what any cap has
-    // to be judged against. The ceiling is a whole cell: past that the fold is taking out
-    // walls to make pieces the size of the things they were drawn between.
-    private static final double LEAST_PIECE_MINIMUM = 0;
-
-    private static final double LEAST_PIECE_MAXIMUM = 100;
-
-    // The narrowest piece of water the walls may leave, in map units. Zero is the rule off.
-    //
-    // The ceiling is a quarter of a cell across. Pieces run a few hundred units wide against a
-    // cell radius in the thousands, so this reaches well past the whole population - and a
-    // piece a quarter of a cell wide is not a sliver by any reading, so past there the knob
-    // would be folding on width what the area cap is for.
-    private static final double LEAST_WIDTH_MINIMUM = 0;
-
-    private static final double LEAST_WIDTH_MAXIMUM = 1000;
 
     // How far off a wall already down a span may run and still count as running along it, in
     // map units. Zero asks for lines that coincide exactly, which catches only the spans that
@@ -565,7 +546,6 @@ public final class ViewerSettingsPanel {
 
         addContinentCoastRows(controls);
         addInletBridgeRows(controls);
-        addVoidPieceRows(controls);
     }
 
     // What there is to see of the continent construction, gathered the way the settled one's
@@ -582,8 +562,7 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofRollUp(
                 0,
                 "Continent void",
-                CONTINENT_COASTS, CONTINENT_FILL, CONTINENT_BRIDGES, VOID_FACES,
-                BRIDGE_FRONTAGES),
+                CONTINENT_COASTS, CONTINENT_FILL, CONTINENT_BRIDGES, BRIDGE_FRONTAGES),
             ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
                 CONTINENT_COASTS, "Coasts", false,
                 on -> settings.showContinentCoasts = on)),
@@ -593,9 +572,6 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
                 CONTINENT_BRIDGES, "Inlet bridges", false,
                 on -> settings.showContinentBridges = on)),
-            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
-                VOID_FACES, "Void pieces", false,
-                on -> settings.showVoidFaces = on)),
             ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
                 BRIDGE_FRONTAGES, "Bridgeable frontage", false,
                 on -> settings.showBridgeFrontages = on)),
@@ -677,17 +653,6 @@ public final class ViewerSettingsPanel {
                 refreshes::refreshCoastlines,
                 () -> { })));
 
-        // The one switch that decides whether there are pieces to fold at all: a tree of
-        // bridges holds the void together as one shape, and only a grid cuts it up. Sits with
-        // the bridges rather than with the pieces because it is a rule about which SPANS
-        // survive, and the pieces follow from that.
-        controls.add(ControlRows.buildToggle(
-            "allowBridgeCrossings",
-            "Permit bridge crossings",
-            true,
-            on -> settings.allowBridgeCrossings = on,
-            refreshes::refreshCoastlines));
-
         // In map units, so the slider needs no scaling; what the slack means is documented at
         // the field it writes.
         controls.add(SliderRows.buildSlider(
@@ -699,64 +664,6 @@ public final class ViewerSettingsPanel {
                 ViewerSettings.CONTINENT_BRIDGE_COAST_SLACK_DEFAULT),
             new SliderRows.SliderWork(
                 slack -> settings.continentBridgeCoastSlack = slack,
-                refreshes::refreshCoastlines,
-                () -> { })));
-    }
-
-    // The pieces the coastlines and the bridges cut between them, and what a piece has to be
-    // to be left standing on its own.
-    private void addVoidPieceRows(JPanel controls) {
-
-        // The base each piece's own shade is spread from, rather than the colour any piece is
-        // actually drawn in - which is why the swatch and the map never quite match.
-        controls.add(ColourRows.buildColour(
-            "voidFaceColour",
-            "Void pieces",
-            ViewerSettings.VOID_FACE_DEFAULT,
-            colour -> settings.voidFaceColour = colour,
-            refreshes::repaintMap));
-
-        // Asked as a percentage of a cell, which is how anyone reading a map judges whether a
-        // piece is worth having; what the cap means is documented at the field it writes.
-        controls.add(SliderRows.buildSlider(
-            "leastPieceShare",
-            "Smallest piece kept, in % of a cell",
-            new SliderRows.SliderRange(
-                LEAST_PIECE_MINIMUM,
-                LEAST_PIECE_MAXIMUM,
-                ViewerSettings.LEAST_PIECE_SHARE_DEFAULT
-                    * ViewerSettings.PIECE_SHARE_PERCENT_SCALE),
-            new SliderRows.SliderWork(
-                percent -> settings.leastPieceShare =
-                    percent / ViewerSettings.PIECE_SHARE_PERCENT_SCALE,
-                refreshes::refreshCoastlines,
-                () -> { })));
-
-        // In map units, so the slider needs no scaling and reads against the cell radius; what
-        // the width means and why it is a second test are documented at the field it writes.
-        controls.add(SliderRows.buildSlider(
-            "leastPieceWidth",
-            "Narrowest piece kept, in map units",
-            new SliderRows.SliderRange(
-                LEAST_WIDTH_MINIMUM,
-                LEAST_WIDTH_MAXIMUM,
-                ViewerSettings.LEAST_PIECE_WIDTH_DEFAULT),
-            new SliderRows.SliderWork(
-                width -> settings.leastPieceWidth = width,
-                refreshes::refreshCoastlines,
-                () -> { })));
-
-        // The coarse move, on the same scale as the fine one: what a piece has to be thinner
-        // than before a whole bridge comes out rather than one stretch of it.
-        controls.add(SliderRows.buildSlider(
-            "leastWholeWallWidth",
-            "Under this, a whole bridge comes out",
-            new SliderRows.SliderRange(
-                LEAST_WIDTH_MINIMUM,
-                LEAST_WIDTH_MAXIMUM,
-                ViewerSettings.LEAST_WHOLE_WALL_WIDTH_DEFAULT),
-            new SliderRows.SliderWork(
-                width -> settings.leastWholeWallWidth = width,
                 refreshes::refreshCoastlines,
                 () -> { })));
     }

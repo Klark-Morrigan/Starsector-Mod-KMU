@@ -55,21 +55,14 @@ import java.util.Map;
  * frontage per face, so two cells can be joined several ways; the one taken is the shortest,
  * which is where the two actually face each other across the gap.
  *
- * <p><b>Crossings are kept or refused, and it is a real choice.</b> Refused - which is what the
- * settled search does - the spans leave a tree, at most one route between any two places, and
- * the water they enclose is one shape with fingers. Kept, they draw a grid, and a grid divides
- * that water into pieces bounded on every side. Neither is right in general: a tree keeps the
- * lines few and the shapes large, a grid gives every piece a boundary to be judged by.
- *
- * <p><b>Drawing that grid is all this does.</b> Finding the pieces it cuts is a separate job
- * and not one {@link DiscUnionBoundary} can do: its walls run circle to circle and its walk
- * has no vocabulary for the stretch of a span between two crossings, which is precisely what
- * bounds a piece here. A trace of these spans therefore reports far fewer, larger shapes than
- * are drawn, and reading pocket sizes off one is reading a different map.
+ * <p><b>No span crosses one already laid.</b> Taken shortest first, each is kept only if it
+ * clears what is already down, so the tighter claim on a stretch of void stands and the
+ * looser gives way. What that leaves is a tree - at most one route between any two places,
+ * and the water they enclose one shape with fingers - which is what the settled bridges do.
  *
  * <p>Which is why the frontage floor matters to this. Every stretch the coast passes through
- * is another pair of corners and another set of spans, so a coast kept at every sliver makes a
- * grid too fine to read. Raising the floor coarsens the coast and the grid with it.
+ * is another frontage and another set of spans, so a coast kept at every sliver offers spans
+ * too fine to read. Raising the floor coarsens the coast and the spans with it.
  */
 public final class ContinentBridges {
 
@@ -81,20 +74,15 @@ public final class ContinentBridges {
     }
 
     /**
-     * The knobs a grid of spans is laid under.
+     * The knobs a set of spans is laid under.
      *
-     * @param reachMultiple     how far apart two cells may sit and still be bridged, in cell
-     *                          radii
-     * @param coastSlack        how far off an existing wall a span may run and still count as
-     *                          running along it, in map units
-     * @param isCrossingAllowed whether a span may cross one already laid. Allowed, the spans
-     *                          divide the void into a grid; refused, they leave a tree, which
-     *                          is what the settled bridges do
+     * @param reachMultiple how far apart two cells may sit and still be bridged, in cell radii
+     * @param coastSlack    how far off an existing wall a span may run and still count as
+     *                      running along it, in map units
      */
     public record BridgeRules(
         double reachMultiple,
-        double coastSlack,
-        boolean isCrossingAllowed) {
+        double coastSlack) {
     }
 
     /**
@@ -428,16 +416,15 @@ public final class ContinentBridges {
      * it of every pairing costs the pass most of a second, and these knobs redraw while they
      * are dragged, so a pairing occasionally left unreconsidered is the cheaper loss.
      *
-     * <p><b>And, where crossings are refused, the spans that cross one already laid.</b> Two
-     * spans over the same stretch of void are two claims on it; taken shortest first, keeping
-     * each that clears what is already kept leaves the tighter claim standing and costs one
-     * loss per crossing. What that leaves is a tree - at most one route between any two places
-     * - where allowing them leaves a grid. Which of the two is wanted is a question about the
-     * shape of the pockets, not about any one span, so it is asked of the rules.
+     * <p><b>And the spans that cross one already laid.</b> Two spans over the same stretch of
+     * void are two claims on it; taken shortest first, keeping each that clears what is
+     * already kept leaves the tighter claim standing and costs one loss per crossing. What
+     * that leaves is a tree - at most one route between any two places - which is what the
+     * settled bridges do.
      *
      * @param spans      the spans, already sorted shortest first
      * @param coastWalls the coastline, which is walled before any span is laid
-     * @param rules      the slack to judge doubling at, and whether crossings are allowed
+     * @param rules      the slack to judge doubling at
      * @return the spans worth laying
      */
     private static List<CellGap> keepSpansWorthLaying(
@@ -455,7 +442,7 @@ public final class ContinentBridges {
         for (var span : spans) {
 
             if (WallCoverage.isAlreadyWalled(span.start(), span.end(), walls, rules.coastSlack())
-                    || !rules.isCrossingAllowed() && doesCrossAnyKept(span, kept)) {
+                    || doesCrossAnyKept(span, kept)) {
 
                 continue;
             }
