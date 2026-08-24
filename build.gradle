@@ -178,11 +178,17 @@ dependencies {
     testCompileOnly nexJars
     testCompileOnly xstreamJars
     testCompileOnly kmlibDependency
+    // The fixtures KMLib publishes as a variant of their own - the fakes of its
+    // ports and the market and colony shapes its reads are posed against. A
+    // variant rather than part of the jar above, because a fixture is a test
+    // artefact and the jar the game loads must not carry one.
+    testCompileOnly testFixtures(kmlibDependency)
     testCompileOnly files(lazyLibJarFile)
     testRuntimeOnly consoleCommandsJars
     testRuntimeOnly nexJars
     testRuntimeOnly xstreamJars
     testRuntimeOnly kmlibDependency
+    testRuntimeOnly testFixtures(kmlibDependency)
     testRuntimeOnly files(lazyLibJarFile)
 
     // The utils tooling needs the same jars at RUNTIME as well as to compile, for the same
