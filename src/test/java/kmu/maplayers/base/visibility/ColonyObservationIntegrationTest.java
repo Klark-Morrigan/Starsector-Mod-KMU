@@ -6,7 +6,6 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.markets.DecivilisedMarkets;
-
 import kmlib.testfixtures.starsector.colonies.ColonyPlacementFixture;
 
 import org.junit.jupiter.api.Nested;

@@ -634,7 +634,26 @@ final class SystemClaimTooltipTest {
             assertThat(tooltip.resolveAccountEntries(
                     new SystemClaimBreakdown(null, HEGEMONY, List.of()),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
-                    ColonyKindLookup.NONE))
+                    ColonyKindLookup.NONE,
+                    ColonyObservationNotes.NONE))
+                .isEmpty();
+        }
+
+        @Test
+        void resolveAccountEntriesStatesNoRemarkWhateverTheBoxHasToRemarkOn() {
+            // The remark is something an account says about a colony, and this box names factions
+            // rather than colonies - so it goes on hanging nothing beneath one however much the
+            // notes handed to it would have had to say.
+            var notesMock = mock(ColonyObservationNotes.class);
+
+            when(notesMock.resolveLastSeenNote(any()))
+                .thenReturn(Optional.of("last seen 34 days ago (c206.05.12)"));
+
+            assertThat(tooltip.resolveAccountEntries(
+                    new SystemClaimBreakdown(null, HEGEMONY, List.of()),
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
+                    ColonyKindLookup.NONE,
+                    notesMock))
                 .isEmpty();
         }
     }

@@ -102,6 +102,15 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // resolved where a row is drawn would walk the set again for every faction listed.
         var colonyKinds = ColonyKindLookup.readKindsIn(colonies, colonyKnowledge);
 
+        // How old the box's news of each colony is, settled once for the whole box off that same
+        // walk. Resolved per faction instead, it would read the system once for every faction the
+        // contest holds - which is the cost the shared walk above exists to avoid.
+        var notes = ColonyObservationNotes.readNotesFor(
+            sector,
+            system,
+            colonies,
+            colonyKnowledge.sightings());
+
         CellTooltipSections.appendBannerSection(sections, statusRow);
 
         // The status is what the claim block is judged against, so the two are read from the one
@@ -111,12 +120,17 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
-            buildClaimEntries(sector, contest, colonyKinds, statusRow.isPresent()));
+            buildClaimEntries(sector, contest, colonyKinds, notes, statusRow.isPresent()));
 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
-            buildRivalEntries(sector, contest, colonyKinds, FactionClaimStanding::isTerritorial));
+            buildRivalEntries(
+                sector,
+                contest,
+                colonyKinds,
+                notes,
+                FactionClaimStanding::isTerritorial));
 
         CellTooltipSections.appendSection(
             sections,
@@ -125,6 +139,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                 sector,
                 contest,
                 colonyKinds,
+                notes,
                 standing -> !standing.isTerritorial()));
 
         return sections;
@@ -190,13 +205,18 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      *                    the one fact a claim row carries no answer to, an account listing an
      *                    unowned collapse beside an unowned hulk having nothing else to tell them
      *                    apart with
+     * @param notes       how old the box's news of each colony is, read once for the box off the
+     *                    same walk the kinds came from - which matters most for the colonies this
+     *                    listing carries that no score accounts for, a concealed base or an
+     *                    off-economy colony being listed on the strength of somebody having seen it
      * @return the entries listed beneath its line, in the order they are read; empty leaves the faction
      *         listed as its line alone
      */
     protected List<CellTooltipEntry> resolveAccountEntries(
             SystemClaimBreakdown breakdown,
             FactionClaimStanding standing,
-            ColonyKindLookup colonyKinds) {
+            ColonyKindLookup colonyKinds,
+            ColonyObservationNotes notes) {
 
         return List.of();
     }
@@ -228,6 +248,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             SectorAPI sector,
             ListedClaimContest contest,
             ColonyKindLookup colonyKinds,
+            ColonyObservationNotes notes,
             boolean isSystemHoldingNobody) {
 
         if (isSystemHoldingNobody
@@ -235,7 +256,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
             return List.of();
         }
-        return List.of(buildClaimantEntry(sector, contest, colonyKinds));
+        return List.of(buildClaimantEntry(sector, contest, colonyKinds, notes));
     }
 
     // The one entry the claim section lists where it has one: whoever holds the system, or the plain
@@ -243,7 +264,8 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     private CellTooltipEntry buildClaimantEntry(
             SectorAPI sector,
             ListedClaimContest contest,
-            ColonyKindLookup colonyKinds) {
+            ColonyKindLookup colonyKinds,
+            ColonyObservationNotes notes) {
 
         var breakdown = contest.breakdown();
         var claimantFactionId = breakdown.claimantFactionId();
@@ -278,7 +300,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         return CellTooltipEntry
             .createEntry(claimantLine)
             .nesting(standing
-                .map(found -> resolveAccountEntries(breakdown, found, colonyKinds))
+                .map(found -> resolveAccountEntries(breakdown, found, colonyKinds, notes))
                 .orElseGet(List::of));
     }
 
@@ -320,6 +342,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             SectorAPI sector,
             ListedClaimContest contest,
             ColonyKindLookup colonyKinds,
+            ColonyObservationNotes notes,
             Predicate<FactionClaimStanding> isWantedKind) {
 
         var rivalStandings = contest.selectRivalStandings(isWantedKind);
@@ -328,7 +351,11 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         for (var standing : rivalStandings) {
             entries.add(CellTooltipEntry
                 .createEntry(buildStandingLine(sector, standing))
-                .nesting(resolveAccountEntries(contest.breakdown(), standing, colonyKinds)));
+                .nesting(resolveAccountEntries(
+                    contest.breakdown(),
+                    standing,
+                    colonyKinds,
+                    notes)));
         }
         return entries;
     }

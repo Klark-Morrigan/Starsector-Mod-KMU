@@ -10,7 +10,6 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.SystemColonies;
-
 import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
 import kmlib.testfixtures.starsector.colonies.ColonyPlacementFixture;
 

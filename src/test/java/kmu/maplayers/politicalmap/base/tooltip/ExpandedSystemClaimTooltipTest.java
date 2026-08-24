@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
+import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
@@ -45,6 +46,8 @@ import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFac
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -164,7 +167,8 @@ final class ExpandedSystemClaimTooltipTest {
                     tooltip.resolveAccountEntries(
                         CONTESTED_SYSTEM,
                         standing,
-                        ColonyKindLookup.NONE)))
+                        ColonyKindLookup.NONE,
+                        ColonyObservationNotes.NONE)))
                 .containsExactly("Chicomoztoc", "Culann");
         }
 
@@ -175,7 +179,8 @@ final class ExpandedSystemClaimTooltipTest {
             var entries = tooltip.resolveAccountEntries(
                 CONTESTED_SYSTEM,
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
-                ColonyKindLookup.NONE);
+                ColonyKindLookup.NONE,
+                ColonyObservationNotes.NONE);
 
             assertThat(readLabelTexts(entries.get(0).children()))
                 .containsExactly("Size");
@@ -188,7 +193,8 @@ final class ExpandedSystemClaimTooltipTest {
             var entries = tooltip.resolveAccountEntries(
                 CONTESTED_SYSTEM,
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
-                ColonyKindLookup.NONE);
+                ColonyKindLookup.NONE,
+                ColonyObservationNotes.NONE);
 
             assertThat(entries.get(0).line().qualifierText())
                 .isEqualTo("claim holder");
@@ -201,7 +207,8 @@ final class ExpandedSystemClaimTooltipTest {
             var entries = tooltip.resolveAccountEntries(
                 CONTESTED_SYSTEM,
                 buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL),
-                ColonyKindLookup.NONE);
+                ColonyKindLookup.NONE,
+                ColonyObservationNotes.NONE);
 
             assertThat(entries.get(0).line().qualifierText())
                 .isNull();
@@ -223,7 +230,8 @@ final class ExpandedSystemClaimTooltipTest {
                     tooltip.resolveAccountEntries(
                         CONTESTED_SYSTEM,
                         standing,
-                        ColonyKindLookup.NONE)))
+                        ColonyKindLookup.NONE,
+                        ColonyObservationNotes.NONE)))
                 .containsExactly("Kanta's Den", "Chalcedon");
         }
 
@@ -234,7 +242,8 @@ final class ExpandedSystemClaimTooltipTest {
             var entries = tooltip.resolveAccountEntries(
                 new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()),
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
-                ColonyKindLookup.NONE);
+                ColonyKindLookup.NONE,
+                ColonyObservationNotes.NONE);
 
             assertThat(entries.get(0).line().qualifierText())
                 .isNull();
@@ -320,6 +329,34 @@ final class ExpandedSystemClaimTooltipTest {
 
             assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly("Claim:", "The Hegemony");
+        }
+
+        @Test
+        void buildBodySectionsReadsTheSystemOnceHoweverManyFactionsTheContestHolds() {
+            // The kinds and the last-seen remarks a listing carries are read from one walk of the
+            // system, made for the box rather than for a line. Resolved where an account is built,
+            // they would walk the system once for every faction listed - and the walk is the most
+            // expensive thing a hover does.
+            // The walk reaches the system's own entities only once it has an economy to tell a
+            // listed market from an unlisted one, so the case stands one up holding nothing: what
+            // it is about is how many times the system is read, not what the read finds.
+            var economyMock = mock(EconomyAPI.class);
+
+            when(economyMock.getMarkets(systemMock))
+                .thenReturn(List.of());
+            when(sectorMock.getEconomy())
+                .thenReturn(economyMock);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
+
+            tooltip.buildBodySections(sectorMock, systemMock);
+
+            verify(systemMock, times(1)).getAllEntities();
         }
 
         @Test

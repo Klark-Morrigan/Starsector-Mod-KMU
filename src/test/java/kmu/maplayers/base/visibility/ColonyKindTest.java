@@ -4,7 +4,6 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
 
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

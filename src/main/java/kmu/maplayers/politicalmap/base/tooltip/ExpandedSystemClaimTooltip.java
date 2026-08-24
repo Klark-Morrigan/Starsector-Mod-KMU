@@ -30,6 +30,12 @@ import java.util.List;
  * the map painted its fill by. A breakdown computed beside the score rather than under it could drift
  * from it, and a box explaining a number it disagrees with is worse than no box.
  *
+ * <p>Every colony line says how old the box's news of it is, where nobody is looking at the colony
+ * as the box is drawn ({@link ColonyObservationNotes}). It reaches further here than on the
+ * domination side: this listing carries two shapes no score accounts for - a concealed base the
+ * mechanic skipped before scoring, and a colony the economy does not list - and both are listed at
+ * nought, where when it was last seen is the only thing the account has left to add.
+ *
  * <p>Stateless past the reader it is built around, like the box it stands in for.
  */
 public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip {
@@ -42,7 +48,8 @@ public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip 
     protected List<CellTooltipEntry> resolveAccountEntries(
             SystemClaimBreakdown breakdown,
             FactionClaimStanding standing,
-            ColonyKindLookup colonyKinds) {
+            ColonyKindLookup colonyKinds,
+            ColonyObservationNotes notes) {
 
         // The mechanic settles a claim over colonies nobody has found, and the box declines to
         // repeat what it learned there. Asked through the shared read, so the account withholds
@@ -55,6 +62,7 @@ public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip 
             breakdown,
             standing,
             colonyKinds,
+            notes,
             readColonyVisibility().shouldIncludeUndiscoveredMarkets());
     }
 }

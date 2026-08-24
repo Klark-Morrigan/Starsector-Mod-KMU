@@ -30,6 +30,8 @@ import java.util.OptionalInt;
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins which lines a faction's claim standing breaks down into and what hangs beneath what: its markets
@@ -49,6 +51,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * thing on the map: a market's own line leads with the glyph the map marks it by, scored or not, and
  * nothing beneath it carries one. That the glyph reads in the market name's own colour rather than the
  * map's is pinned beside it - the box declining an authored shade is a decision, not an omission.
+ *
+ * <p>Where a remark about how old the box's news of a market is may appear is pinned the same way -
+ * on a market's own line whatever the contest made of it, and on nothing beneath one. When such a
+ * remark is due at all is the notes' own question and is pinned by {@link ColonyObservationNotesTest}.
  *
  * <p>The mechanic behind the numbers is KMLib's and has its own suite there, so what is left is what
  * this resolver alone decides - which market leads, when it is called out, and which terms are stated
@@ -102,6 +108,14 @@ final class ClaimScoreRowResolverTest {
     // as - so a case about the arithmetic poses no kinds at all and one about a qualifier poses the
     // one market it is calling out.
     private static final ColonyKindLookup EVERY_MARKET_A_COLONY = ColonyKindLookup.NONE;
+
+    // Somebody is looking at every colony posed here, so no line carries a date. What makes a
+    // remark due is the notes' own question and is pinned by ColonyObservationNotesTest; a case
+    // about the arithmetic states the quiet reading once rather than varying it.
+    private static final ColonyObservationNotes NOTHING_TO_REMARK_ON = ColonyObservationNotes.NONE;
+
+    // What a remarked line runs on into, spelled out so a case reads as the words a player sees.
+    private static final String LAST_SEEN = "last seen 34 days ago (c206.05.12)";
 
     // The world people left, as the box's own walk of the system classified it.
     private static final ColonyKindLookup TIBICENA_IS_A_DEAD_WORLD = new ColonyKindLookup(
@@ -270,12 +284,14 @@ final class ClaimScoreRowResolverTest {
                 breakdown,
                 claimant,
                 EVERY_MARKET_A_COLONY,
+                NOTHING_TO_REMARK_ON,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             var rivalRows = ClaimScoreRowResolver.resolveMarketRows(
                 breakdown,
                 rival,
                 EVERY_MARKET_A_COLONY,
+                NOTHING_TO_REMARK_ON,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(claimantRows.get(0).line().indexPlace().outcome())
@@ -294,6 +310,7 @@ final class ClaimScoreRowResolverTest {
                 new SystemClaimBreakdown(null, HEGEMONY, List.of(claimant, rival)),
                 claimant,
                 EVERY_MARKET_A_COLONY,
+                NOTHING_TO_REMARK_ON,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().indexPlace().outcome())
@@ -318,11 +335,13 @@ final class ClaimScoreRowResolverTest {
                 breakdown,
                 claimant,
                 EVERY_MARKET_A_COLONY,
+                NOTHING_TO_REMARK_ON,
                 WITHHOLDING_UNFOUND_MARKETS);
             var outsiderRows = ClaimScoreRowResolver.resolveMarketRows(
                 breakdown,
                 outsider,
                 EVERY_MARKET_A_COLONY,
+                NOTHING_TO_REMARK_ON,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(claimantRows.get(0).line().indexPlace().outcome())
@@ -341,6 +360,7 @@ final class ClaimScoreRowResolverTest {
                 new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of(claimant, rival)),
                 claimant,
                 EVERY_MARKET_A_COLONY,
+                NOTHING_TO_REMARK_ON,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().indexPlace().outcome())
@@ -559,6 +579,7 @@ final class ClaimScoreRowResolverTest {
                 buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
                 EVERY_MARKET_A_COLONY,
+                NOTHING_TO_REMARK_ON,
                 LISTING_UNFOUND_MARKETS);
 
             assertThat(readLabelTexts(rows))
@@ -619,6 +640,7 @@ final class ClaimScoreRowResolverTest {
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
                 EVERY_MARKET_A_COLONY,
+                NOTHING_TO_REMARK_ON,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().qualifierText())
@@ -635,6 +657,7 @@ final class ClaimScoreRowResolverTest {
                 new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of(standing)),
                 standing,
                 EVERY_MARKET_A_COLONY,
+                NOTHING_TO_REMARK_ON,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().qualifierText())
@@ -651,6 +674,7 @@ final class ClaimScoreRowResolverTest {
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
                 EVERY_MARKET_A_COLONY,
+                NOTHING_TO_REMARK_ON,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(readLabelTexts(rows))
@@ -843,6 +867,7 @@ final class ClaimScoreRowResolverTest {
                     buildBreakdownClaimedBy(HEGEMONY, standing),
                     standing,
                     EVERY_MARKET_A_COLONY,
+                    NOTHING_TO_REMARK_ON,
                     WITHHOLDING_UNFOUND_MARKETS)))
                 .containsExactly("Kanta's Den");
 
@@ -850,6 +875,7 @@ final class ClaimScoreRowResolverTest {
                     buildBreakdownClaimedBy(HEGEMONY, standing),
                     standing,
                     EVERY_MARKET_A_COLONY,
+                    NOTHING_TO_REMARK_ON,
                     LISTING_UNFOUND_MARKETS)))
                 .containsExactly("Kanta's Den", "Chalcedon");
         }
@@ -865,6 +891,100 @@ final class ClaimScoreRowResolverTest {
             assertThat(rows.get(0).children())
                 .allSatisfy(term -> assertThat(term.children()).isEmpty());
         }
+
+        @Test
+        void resolveMarketRowsRemarksHowOldTheNewsOfAConcealedColonyIs() {
+            // The kind the remark matters most for: a base held in concealment is on the list on
+            // the strength of somebody having seen it, and the nought beside it says nothing else.
+            var standing = buildPresenceOnlyStanding(
+                buildFoundHiddenMarket("Kanta's Den", 6, NO_SIBLING_MARKETS, SECOND_LISTED));
+
+            var rows = ClaimScoreRowResolver.resolveMarketRows(
+                buildBreakdownClaimedBy(TRITACHYON, standing),
+                standing,
+                EVERY_MARKET_A_COLONY,
+                buildNotesRemarkingOn("kanta's_den"),
+                WITHHOLDING_UNFOUND_MARKETS);
+
+            assertThat(rows.get(0).line().noteText())
+                .isEqualTo(LAST_SEEN);
+        }
+
+        @Test
+        void resolveMarketRowsRemarksHowOldTheNewsOfAnOffEconomyColonyIs() {
+            // The other shape the contest never weighed, answering on the same terms: the mechanic's
+            // walk never reached it, so when it was last seen is all the account has left to add.
+            var standing = buildPresenceOnlyStanding(
+                buildOffEconomyMarket("Galatia Academy", 4, THIRD_LISTED));
+
+            var rows = ClaimScoreRowResolver.resolveMarketRows(
+                buildBreakdownClaimedBy(TRITACHYON, standing),
+                standing,
+                EVERY_MARKET_A_COLONY,
+                buildNotesRemarkingOn("galatia_academy"),
+                WITHHOLDING_UNFOUND_MARKETS);
+
+            assertThat(rows.get(0).line().noteText())
+                .isEqualTo(LAST_SEEN);
+        }
+
+        @Test
+        void resolveMarketRowsRemarksHowOldTheNewsOfAWeighedColonyIs() {
+            // How current the box's news of a colony is has nothing to do with whether the mechanic
+            // weighed it, so a scored market carries the remark on the very same terms.
+            var standing = buildStanding(buildStrongestMarket(NO_SIBLING_MARKETS), List.of());
+
+            var rows = ClaimScoreRowResolver.resolveMarketRows(
+                buildBreakdownClaimedBy(HEGEMONY, standing),
+                standing,
+                EVERY_MARKET_A_COLONY,
+                buildNotesRemarkingOn(nameMarketId(STRONGEST_MARKET)),
+                WITHHOLDING_UNFOUND_MARKETS);
+
+            assertThat(rows.get(0).line().noteText())
+                .isEqualTo(LAST_SEEN);
+        }
+
+        @Test
+        void resolveMarketRowsRemarksNothingBeneathARemarkedColony() {
+            // A size or a garrison is arithmetic over the market's own line, so a date there would
+            // answer for the line above it twice.
+            var standing = buildStanding(buildFullyScoredMarket(), List.of());
+
+            var rows = ClaimScoreRowResolver.resolveMarketRows(
+                buildBreakdownClaimedBy(HEGEMONY, standing),
+                standing,
+                EVERY_MARKET_A_COLONY,
+                buildNotesRemarkingOn(nameMarketId(STRONGEST_MARKET)),
+                WITHHOLDING_UNFOUND_MARKETS);
+
+            assertThat(rows.get(0).children())
+                .allSatisfy(term -> assertThat(term.line().noteText()).isNull());
+        }
+
+        @Test
+        void resolveMarketRowsRemarksNothingOnAColonyBeingLookedAtNow() {
+            // The ordinary case: in sight, the name stands alone.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(NO_SIBLING_MARKETS),
+                List.of()));
+
+            assertThat(rows.get(0).line().noteText())
+                .isNull();
+        }
+    }
+
+    // Notes remarking on exactly one colony, mocked because what makes a remark due is the notes'
+    // own question and is pinned by {@link ColonyObservationNotesTest}: what this suite is about is
+    // which line carries the answer.
+    private static ColonyObservationNotes buildNotesRemarkingOn(String marketId) {
+
+        var notesMock = mock(ColonyObservationNotes.class);
+
+        when(notesMock.resolveLastSeenNote(marketId))
+            .thenReturn(Optional.of(LAST_SEEN));
+
+        return notesMock;
     }
 
     // The account over a system this faction won outright and whose markets the player has all
@@ -884,6 +1004,7 @@ final class ClaimScoreRowResolverTest {
             buildBreakdownClaimedBy(HEGEMONY, standing),
             standing,
             colonyKinds,
+            NOTHING_TO_REMARK_ON,
             WITHHOLDING_UNFOUND_MARKETS);
     }
 
@@ -917,6 +1038,7 @@ final class ClaimScoreRowResolverTest {
             buildBreakdownClaimedBy(TRITACHYON, standing),
             standing,
             EVERY_MARKET_A_COLONY,
+            NOTHING_TO_REMARK_ON,
             WITHHOLDING_UNFOUND_MARKETS);
     }
 

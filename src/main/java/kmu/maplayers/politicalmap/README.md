@@ -370,6 +370,13 @@ market rather than anything the market scored, and in the list's own colour it w
 score competed with and lost on. Nothing calls out which of the two it was - the nought is the whole
 of what the contest has to say about it, and either word would raise a question about the mechanic
 the box would then owe an answer to.
+Every market line carries the same last-seen remark the domination box's colony lines take, on the
+same terms and matched to its line by the same kind of identity (`MarketClaimBreakdown.marketId`).
+The two nought-scored kinds above are what it matters most for: neither reached the list on anything
+the contest worked out, so when it was last seen is the only thing the account has left to add about
+them. The notes are read once for the whole box, off the very walk of the system the status line and
+the kind qualifiers come from - resolved where an account is built, they would read the system once
+for every faction the contest lists.
 The unlisted colony is vanilla's own doing: Galatia Academy is built as a real market on a real
 station and deliberately never registered, so the mechanic's economy walk never sees it and a box
 reading the economy alone reports that station as nobody's. The contest is read over
