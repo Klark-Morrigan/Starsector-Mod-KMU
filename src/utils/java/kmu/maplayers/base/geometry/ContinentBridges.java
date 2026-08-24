@@ -29,22 +29,31 @@ import java.util.Map;
  * read straight off the silhouettes it produced, and the two passes cannot come to disagree
  * about what a continent is.
  *
- * <p><b>A span ends where the coastline stops hugging a cell.</b> A coast alternates between
+ * <p><b>A span ends on the coastline, anywhere along it.</b> A coast alternates between
  * fillets, which run along a cell's own edge, and reaches, which cross void from one cell to
- * the next. So the coastline meets a cell's edge along a whole fillet, and the ends of that
- * fillet are the two places the meeting stops - the corners the eye reads as the corners of
- * the void. Those are what a span aims at. An intersection, where a coast touches a cell at a
- * single point rather than running along it, is the same thing with the fillet degenerated,
- * and needs no rule of its own.
+ * the next. What a span needs of its ends is that they sit ON the drawn line, since a span
+ * ending short of it closes nothing; a whole fillet satisfies that, not merely the two corners
+ * where one begins and ends.
  *
- * <p>Nothing here is measured against the drawn line to find those points. Where a fillet
- * begins and ends is a fact the walk already settled - it is where a reach departed and where
- * the next one landed - so the corners are exact, and no tolerance stands between the walk's
- * answer and this one.
+ * <p>Aiming only at those corners is what a first pass did, and it shows: a cell offers two
+ * places to leave from, so several spans leave the same one and cross the void as a fan. The
+ * lines are then a picture of where anchors were allowed rather than of where the void is
+ * narrow, which is the one thing they are drawn to show.
+ *
+ * <p><b>So a span is anchored at the point of each frontage nearest the other.</b> The
+ * settled bridges reach rim to rim along the line between two cells' centres, which is the
+ * same statement made where there is no coastline to sit on yet.
+ *
+ * <p>Anchored on points the drawn ring already carries, rather than on places computed along
+ * a cell's arc. The ring is sampled, so an analytically exact point on the arc would sit off
+ * the drawn chord - near the line, not on it - and a span landing between two ring points
+ * forces that stretch of coast to be split there, leaving a sliver wherever it lands close to
+ * one. The anchor is therefore quantised to the sampling, a fraction of a cell radius, and in
+ * exchange no tolerance stands between the drawn line and this.
  *
  * <p><b>The shortest such span, per pair.</b> A cell facing the void more than once offers a
- * corner per frontage, so two cells can be joined several ways; the one taken is the shortest,
- * which is the pair of corners actually facing each other across the gap.
+ * frontage per face, so two cells can be joined several ways; the one taken is the shortest,
+ * which is where the two actually face each other across the gap.
  *
  * <p><b>Crossings are kept or refused, and it is a real choice.</b> Refused - which is what the
  * settled search does - the spans leave a tree, at most one route between any two places, and
@@ -63,6 +72,10 @@ import java.util.Map;
  * grid too fine to read. Raising the floor coarsens the coast and the grid with it.
  */
 public final class ContinentBridges {
+
+    // No cell yet, while a walk is between one frontage and the next. Named rather than left
+    // as a bare -1 because it is compared against real cell numbers.
+    private static final int NO_CELL = -1;
 
     private ContinentBridges() {
     }
@@ -98,9 +111,9 @@ public final class ContinentBridges {
             SectorGeometryParameters parameters,
             BridgeRules rules) {
 
-        var corners = collectCoastCorners(traced);
+        var frontages = gatherFrontagePoints(collectBridgeFrontages(traced));
 
-        if (corners.size() < 2) {
+        if (frontages.size() < 2) {
             return List.of();
         }
 
@@ -117,8 +130,8 @@ public final class ContinentBridges {
         // Every pair of cells on ONE continent, once. Nothing is refused here for crossing
         // anything: what the offer is depends only on the cells, and which of the offers
         // survive is settled afterwards, in one place, against one rule.
-        for (var from : corners.keySet()) {
-            for (var to : corners.keySet()) {
+        for (var from : frontages.keySet()) {
+            for (var to : frontages.keySet()) {
 
                 if (from >= to
                         || !isOneContinent(continentOf, from, to)
@@ -130,8 +143,8 @@ public final class ContinentBridges {
                 var span = findShortestSpan(
                     from,
                     to,
-                    corners.get(from),
-                    corners.get(to),
+                    frontages.get(from),
+                    frontages.get(to),
                     union);
 
                 if (span != null) {
@@ -192,62 +205,214 @@ public final class ContinentBridges {
     }
 
     /**
-     * Every corner a coastline leaves on a cell, gathered by the cell it sits on.
+     * Every point the drawn coastline passes through on a cell, gathered by the cell.
      *
-     * <p>Read off the reaches rather than hunted for along the drawn line: a reach departs at
-     * the end of one fillet and lands at the beginning of the next, so its two ends ARE the
-     * two places a coastline stopped running along a cell. A cell facing the void on more than
-     * one frontage collects a corner from each without needing a rule for it.
+     * <p><b>The whole frontage, not merely its two ends.</b> A span is anchored wherever the
+     * coast comes closest to the cell across the gap, and that is generally somewhere along a
+     * frontage rather than at a corner of one. Offered only the corners, every span leaving a
+     * cell has to start at one of two places, so several of them start at the SAME place and
+     * leave in a fan - which is a picture of what the anchors allowed rather than of where the
+     * void is narrow.
+     *
+     * <p><b>Points of the drawn ring, rather than places computed on the cell's arc.</b> Two
+     * reasons, and the second is the one that matters. The ring is sampled, so a point worked
+     * out on the true arc sits off the drawn chord by the sagitta - close, but not ON the line
+     * the pieces are cut against. And a span landing between two ring points forces that
+     * stretch of coast to be split there, which where it lands near an existing point leaves a
+     * sliver of coast shorter than anything else on the map. Anchoring on a point the ring
+     * already has costs a little precision - the anchor is quantised to the sampling, a
+     * fraction of a cell radius - and buys exactness against the only line anything downstream
+     * reads.
      *
      * @param traced the coast
-     * @return each cell's corners, in the order the walk found them
+     * @return each cell's own stretch of the drawn coast, in walk order. A cell the coast never
+     *         runs along is absent rather than present under an empty list, since it offers
+     *         nowhere to anchor at all
      */
-    private static Map<Integer, List<double[]>> collectCoastCorners(
+    public static Map<Integer, List<List<double[]>>> collectBridgeFrontages(
             Coastlines.TracedCoasts traced) {
 
-        var corners = new LinkedHashMap<Integer, List<double[]>>();
+        var frontages = new LinkedHashMap<Integer, List<List<double[]>>>();
 
-        for (var reach : Coastlines.collectStraightReaches(traced)) {
+        for (var coast : traced.coasts()) {
 
-            corners
-                .computeIfAbsent(reach.from().circle(), cell -> new ArrayList<>())
-                .add(reach.from().point());
-            corners
-                .computeIfAbsent(reach.to().circle(), cell -> new ArrayList<>())
-                .add(reach.to().point());
+            if (coast.isEmpty()) {
+                continue;
+            }
+
+            // Walked from a place the cell changes rather than from the list's first entry,
+            // so a frontage straddling the ring's own start comes back as the one run it is
+            // rather than as two ending nowhere.
+            var begin = findFrontageStart(coast);
+            var run = new ArrayList<double[]>();
+            var runCell = NO_CELL;
+
+            for (var step = 0; step < coast.size(); step++) {
+
+                var vertex = coast.get((begin + step) % coast.size());
+
+                if (vertex.circle() != runCell) {
+
+                    addFrontage(frontages, runCell, run);
+                    run = new ArrayList<>();
+                    runCell = vertex.circle();
+                }
+                run.add(vertex.point());
+            }
+            addFrontage(frontages, runCell, run);
         }
-        return corners;
+        return frontages;
     }
 
-    // The shortest span between two cells' corners that stays out of every cell, or null when
-    // no pairing of them does.
+    // Where to start walking a ring so that no frontage is split across the ends of the list.
+    // A ring the coast runs round without ever changing cell has no such place, and starting
+    // anywhere is as good as anywhere else.
+    private static int findFrontageStart(List<Coastlines.CoastVertex> coast) {
+
+        for (var index = 0; index < coast.size(); index++) {
+
+            var previous = coast.get((index + coast.size() - 1) % coast.size());
+
+            if (coast.get(index).circle() != previous.circle()) {
+                return index;
+            }
+        }
+        return 0;
+    }
+
+    private static void addFrontage(
+            Map<Integer, List<List<double[]>>> frontages,
+            int cell,
+            List<double[]> run) {
+
+        if (cell == NO_CELL || run.isEmpty()) {
+            return;
+        }
+
+        frontages
+            .computeIfAbsent(cell, whichever -> new ArrayList<>())
+            .add(List.copyOf(run));
+    }
+
+    // Every point of a cell's frontages together, which is what choosing an anchor asks for.
+    // Which run a point came from matters to a reader looking at the map and not at all to the
+    // search, since any point of any of them is somewhere a span may be anchored.
+    private static Map<Integer, List<double[]>> gatherFrontagePoints(
+            Map<Integer, List<List<double[]>>> frontages) {
+
+        var points = new LinkedHashMap<Integer, List<double[]>>();
+
+        for (var entry : frontages.entrySet()) {
+            for (var run : entry.getValue()) {
+
+                points
+                    .computeIfAbsent(entry.getKey(), whichever -> new ArrayList<>())
+                    .addAll(run);
+            }
+        }
+        return points;
+    }
+
+    // The shortest span between two cells' drawn frontages that stays out of every cell, or
+    // null when no pairing of them does.
     //
-    // Shortest rather than first found, because a cell with two frontages offers corners on
-    // opposite sides of itself, and the span wanted is between the two that face each other.
+    // The closest approach between the two stretches of coast, near enough: every point of one
+    // against every point of the other, so the pair taken is where the void between the cells
+    // is actually narrowest. A cell facing the void on two frontages offers both, and the far
+    // one loses on width without needing a rule to exclude it.
+    //
+    // The width test comes before the clearance test deliberately. Clearance walks every site,
+    // so it is the expensive half, and a pairing that cannot beat the best already found needs
+    // no answer to it - which is what keeps this affordable now that a frontage is a run of
+    // points rather than two of them.
+    //
+    // Where the two frontages come closest to EACH OTHER, and if something lies across that,
+    // the closest pairing of them that nothing lies across.
+    //
+    // Frontage against frontage rather than each end against the other cell's centre. A coast
+    // runs along a median quarter of a cell's turn, so a frontage is an arc off to one side
+    // rather than a whole rim: aiming at the far cell's centre then points at a part of it the
+    // coast never reaches, and both ends settle away from where the two actually face each
+    // other. It is the same answer for most pairs and a materially shorter span for about one
+    // in eight.
+    //
+    // Cheap because a frontage is a few dozen points at most, so every pairing of two of them
+    // is a few hundred distances. What is NOT cheap is asking what lies across a pairing -
+    // that walks every site in the sector - which is why it is asked once, of the answer,
+    // rather than of each pairing on the way to it.
     private static CellGap findShortestSpan(
             int fromCell,
             int toCell,
-            List<double[]> fromCorners,
-            List<double[]> toCorners,
+            List<double[]> fromFrontage,
+            List<double[]> toFrontage,
             DiscUnion union) {
 
-        var shortest = (CellGap) null;
+        var closest = findClosestPairing(fromCell, toCell, fromFrontage, toFrontage);
 
-        for (var start : fromCorners) {
-            for (var end : toCorners) {
+        if (closest == null || !doesRunThroughACell(closest.start(), closest.end(), union)) {
+            return closest;
+        }
+        return findClosestClearPairing(fromCell, toCell, fromFrontage, toFrontage, union);
+    }
 
-                var width = Points.computeDistance(start, end);
+    // The closest pairing of two frontages, taking no view on what lies across it.
+    private static CellGap findClosestPairing(
+            int fromCell,
+            int toCell,
+            List<double[]> fromFrontage,
+            List<double[]> toFrontage) {
 
-                if (shortest != null && width >= shortest.width()) {
+        var closestStart = (double[]) null;
+        var closestEnd = (double[]) null;
+        var closestSquared = Double.MAX_VALUE;
+
+        for (var start : fromFrontage) {
+            for (var end : toFrontage) {
+
+                var squared = Points.computeDistanceSquared(start, end);
+
+                if (squared < closestSquared) {
+
+                    closestStart = start;
+                    closestEnd = end;
+                    closestSquared = squared;
+                }
+            }
+        }
+
+        return closestStart == null
+            ? null
+            : new CellGap(
+                fromCell, toCell, closestStart, closestEnd, Math.sqrt(closestSquared));
+    }
+
+    // The same search with a cell in the way disqualifying a pairing, for the minority of
+    // pairs whose closest pairing has one. Separate from the search above rather than a mode
+    // of it, because the whole reason that one exists is to answer without paying for this.
+    private static CellGap findClosestClearPairing(
+            int fromCell,
+            int toCell,
+            List<double[]> fromFrontage,
+            List<double[]> toFrontage,
+            DiscUnion union) {
+
+        var closest = (CellGap) null;
+
+        for (var start : fromFrontage) {
+            for (var end : toFrontage) {
+
+                var squared = Points.computeDistanceSquared(start, end);
+
+                if (closest != null && squared >= closest.width() * closest.width()) {
                     continue;
                 }
                 if (doesRunThroughACell(start, end, union)) {
                     continue;
                 }
-                shortest = new CellGap(fromCell, toCell, start, end, width);
+                closest = new CellGap(fromCell, toCell, start, end, Math.sqrt(squared));
             }
         }
-        return shortest;
+        return closest;
     }
 
     /**
@@ -303,15 +468,15 @@ public final class ContinentBridges {
     /**
      * Whether a span crosses one already kept.
      *
-     * <p><b>Two spans that merely share an anchor do not count.</b> A span here is anchored on
-     * a coastline corner, and several of them leave the same corner - that is what a fan across
-     * a bay IS. The shared-endpoint case is a touch rather than a crossing, and counting it
-     * would have every fan knock all but one of itself out, which is not what refusing
-     * crossings is for.
+     * <p><b>Two spans that merely share an anchor do not count.</b> The shared-endpoint case
+     * is a touch rather than a crossing, and counting it would knock out every span but one of
+     * any set leaving one place - which is not what refusing crossings is for.
      *
-     * <p>The settled bridges need no such exemption because they run rim to rim: two leaving
-     * one cell start at two different points on its edge and only register when they genuinely
-     * cross. Anchoring on corners is what makes this a case at all.
+     * <p>Rare now that a span anchors at whichever point of a frontage faces the other cell,
+     * since two cells in different directions are faced from different points. What still
+     * produces it is a frontage the drawn coast crosses in a single point: everything leaving
+     * that cell has only the one place to leave from. Kept for that case rather than for the
+     * fan it was written against.
      *
      * @param span the span being offered
      * @param kept the spans already laid

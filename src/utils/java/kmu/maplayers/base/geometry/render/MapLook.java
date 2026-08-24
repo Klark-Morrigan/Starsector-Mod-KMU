@@ -99,6 +99,20 @@ public final class MapLook {
     // actually bought. A shade of the coast's own colour would read as part of the coast.
     public static final Color DROPPED_STRETCH = new Color(0xff, 0x60, 0xc0);
 
+    // The stretch of a cell's border a bridge may anchor on: the part the coast actually runs
+    // along, and so the only part exposed to the water a bridge would cross.
+    //
+    // Diagnostic, and drawn ON the coastline it is a subset of - so it has to be told from the
+    // coast underneath it at a glance, which a shade of the coast's own purple would not be.
+    // Warm against that purple, and distinct from the dropped stretches it will often sit
+    // beside, since a stretch dropped from the coast is precisely one that is NOT eligible.
+    public static final Color BRIDGE_FRONTAGE = new Color(0xff, 0xc0, 0x30);
+
+    // Exactly the coast's own weight, and taken from it rather than restated. What this draws
+    // is a stretch of that line in another colour, so any other weight would show as a band
+    // beside the coast - a second line, where there is only one line with two kinds of stretch.
+    public static final float FRONTAGE_STROKE = RING_STROKE;
+
     // The void a continent coast shuts in, filled. Its own colour rather than the settled
     // coast's, for the reason its line has one: the two constructions are on screen together
     // to be compared, and one colour for both would hide the difference being looked at.

@@ -62,6 +62,12 @@ public final class ContinentCoastOverlay {
     // be pieces of a different map.
     private VoidFaces.CutMap cut;
 
+    // The stretches of border the bridges were allowed to anchor on, held beside the trace
+    // that decided them. One run per stretch rather than one list per cell, because a cell
+    // facing the void twice is eligible in two separate places and drawing them as one line
+    // would run a mark straight through the cell between them.
+    private List<List<double[]>> frontages = List.of();
+
     public ContinentCoastOverlay(ViewerSettings settings) {
 
         this.settings = settings;
@@ -82,6 +88,7 @@ public final class ContinentCoastOverlay {
         coast.acceptTrace(null);
         bridges = List.of();
         cut = null;
+        frontages = List.of();
 
         // The coasts are traced while any of the three is wanted, because each is built on the
         // one before: the bridges are filtered against the coasts, and the pieces are cut by
@@ -94,7 +101,8 @@ public final class ContinentCoastOverlay {
                 || (!settings.showContinentCoasts
                     && !settings.showContinentCoastalFill
                     && !settings.showContinentBridges
-                    && !settings.showVoidFaces)) {
+                    && !settings.showVoidFaces
+                    && !settings.showBridgeFrontages)) {
 
             return;
         }
@@ -111,6 +119,17 @@ public final class ContinentCoastOverlay {
         // traced.
         if (settings.showContinentCoastalFill) {
             coast.findPockets(fixture);
+        }
+
+        // Read off the same trace the bridges are anchored on rather than worked out again,
+        // so what is drawn as eligible is what the search was actually offered.
+        if (settings.showBridgeFrontages) {
+
+            frontages = ContinentBridges.collectBridgeFrontages(coast.getTrace())
+                .values()
+                .stream()
+                .flatMap(List::stream)
+                .toList();
         }
 
         // Found whenever the pieces are wanted, whether or not the bridges are DRAWN. A piece
@@ -167,12 +186,16 @@ public final class ContinentCoastOverlay {
         paintFaces(g2);
         paintBridges(g2);
 
-        if (!settings.showContinentCoasts) {
-            return;
+        if (settings.showContinentCoasts) {
+
+            coast.paintCoastRings(g2, settings.continentCoastColour);
+            coast.paintDroppedStretches(g2);
         }
 
-        coast.paintCoastRings(g2, settings.continentCoastColour);
-        coast.paintDroppedStretches(g2);
+        // Last of all, and so over every wall rather than under them. What it marks is which
+        // stretches of those walls a span could have started from, and a mark drawn beneath
+        // the lines it is about is hidden by exactly the ones worth reading it against.
+        paintFrontages(g2);
     }
 
     /**
@@ -213,6 +236,39 @@ public final class ContinentCoastOverlay {
                 MapLook.VOID_FACE_ALPHA));
 
             g2.fill(MapPainting.buildPath(face.boundary()));
+        }
+    }
+
+    /**
+     * The stretches of border a bridge was allowed to anchor on.
+     *
+     * <p>Answers the question the spans themselves cannot: whether a span that appears to have
+     * ignored a nearer cell was ever offered anywhere nearer to start from. A cell is eligible
+     * only where the coast runs along it - the rest of its border faces land, or water another
+     * coast has already closed - and that is a fraction of each cell rather than all of it.
+     *
+     * <p>Drawn over every wall, at the coast's own weight: an eligible stretch is that same
+     * line in another colour, so the coast reads as one line of two kinds rather than as two
+     * lines. Spans are heavier, so one crossing a marked stretch still shows through.
+     *
+     * <p>Open runs, never closed. A stretch of frontage has two real ends, and closing it would
+     * draw a chord across the cell it is drawn on - a mark that looks like an eligible span and
+     * is nothing of the kind.
+     *
+     * @param g2 what to draw with
+     */
+    private void paintFrontages(Graphics2D g2) {
+
+        if (!settings.showBridgeFrontages) {
+            return;
+        }
+
+        g2.setStroke(new BasicStroke(MapLook.FRONTAGE_STROKE));
+        g2.setColor(MapPainting.applyAlpha(
+            settings.bridgeFrontageColour, MapLook.OPAQUE_ALPHA));
+
+        for (var frontage : frontages) {
+            g2.draw(MapPainting.buildOpenPath(frontage));
         }
     }
 

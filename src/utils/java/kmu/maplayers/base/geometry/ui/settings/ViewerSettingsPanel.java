@@ -70,6 +70,7 @@ public final class ViewerSettingsPanel {
     private static final String CONTINENT_FILL = "showContinentCoastalFill";
     private static final String CONTINENT_BRIDGES = "showContinentBridges";
     private static final String VOID_FACES = "showVoidFaces";
+    private static final String BRIDGE_FRONTAGES = "showBridgeFrontages";
 
     // What each section remembers its switch and its folded state under. Named for the
     // construction rather than taken from the heading, which is copy and gets reworded.
@@ -581,7 +582,8 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofRollUp(
                 0,
                 "Continent void",
-                CONTINENT_COASTS, CONTINENT_FILL, CONTINENT_BRIDGES, VOID_FACES),
+                CONTINENT_COASTS, CONTINENT_FILL, CONTINENT_BRIDGES, VOID_FACES,
+                BRIDGE_FRONTAGES),
             ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
                 CONTINENT_COASTS, "Coasts", false,
                 on -> settings.showContinentCoasts = on)),
@@ -594,6 +596,9 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
                 VOID_FACES, "Void pieces", false,
                 on -> settings.showVoidFaces = on)),
+            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
+                BRIDGE_FRONTAGES, "Bridgeable frontage", false,
+                on -> settings.showBridgeFrontages = on)),
             ToggleTree.Row.ofRollUp(
                 1, "Walls", CONTINENT_COASTS, CONTINENT_BRIDGES));
     }
@@ -645,6 +650,15 @@ public final class ViewerSettingsPanel {
             "Inlet bridges",
             ViewerSettings.CONTINENT_BRIDGE_DEFAULT,
             colour -> settings.continentBridgeColour = colour,
+            refreshes::repaintMap));
+
+        // Beside the bridges rather than with the coast it is drawn on, because what it
+        // explains is where a bridge was allowed to start - it is read against the spans.
+        controls.add(ColourRows.buildColour(
+            "bridgeFrontageColour",
+            "Bridgeable frontage",
+            ViewerSettings.BRIDGE_FRONTAGE_DEFAULT,
+            colour -> settings.bridgeFrontageColour = colour,
             refreshes::repaintMap));
 
         // Scaled up for a slider that deals in whole steps; what the reach means is

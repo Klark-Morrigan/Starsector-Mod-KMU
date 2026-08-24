@@ -63,6 +63,8 @@ public final class ViewerSettings {
 
     public static final Color DROPPED_STRETCH_DEFAULT = MapLook.DROPPED_STRETCH;
 
+    public static final Color BRIDGE_FRONTAGE_DEFAULT = MapLook.BRIDGE_FRONTAGE;
+
     public static final Color VOID_FACE_DEFAULT = MapLook.VOID_FACE;
 
     public static final Color CONTINENT_COASTAL_VOID_DEFAULT = MapLook.CONTINENT_COASTAL_VOID;
@@ -172,6 +174,15 @@ public final class ViewerSettings {
     // since the coastlines are what decides which bridges survive.
     public boolean showContinentBridges;
 
+    // The stretches of cell border a bridge may anchor on, drawn on the coast they are part of.
+    //
+    // Off by default and diagnostic: it answers "why did that span go THERE" rather than
+    // showing anything the map proposes. A span can only reach a part of a cell the coast
+    // actually runs along, so a span that looks as though it ignored a nearer cell has usually
+    // been offered nowhere nearer to anchor - which is invisible until the eligible stretches
+    // are on screen beside the spans that used them.
+    public boolean showBridgeFrontages;
+
     // The pieces the coastlines and the inlet bridges cut the void into, each filled in its
     // own shade. Off by default and apart from the lines' own switches, because it answers a
     // different question from either: the lines say where a wall was laid, and this says what
@@ -237,6 +248,7 @@ public final class ViewerSettings {
     public double leastWholeWallWidth = LEAST_WHOLE_WALL_WIDTH_DEFAULT;
 
     public Color continentBridgeColour = CONTINENT_BRIDGE_DEFAULT;
+    public Color bridgeFrontageColour = BRIDGE_FRONTAGE_DEFAULT;
     public Color voidFaceColour = VOID_FACE_DEFAULT;
     public Color continentCoastalVoidColour = CONTINENT_COASTAL_VOID_DEFAULT;
     public Color continentCoastalVoidEdge = CONTINENT_COASTAL_VOID_DEFAULT;
