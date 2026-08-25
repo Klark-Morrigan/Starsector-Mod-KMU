@@ -145,9 +145,19 @@ public final class ViewerSettingsPanel {
             PANEL_PADDING,
             PANEL_PADDING));
 
-        addCellGeometryRows(controls);
-        addCellPaintRows(controls);
-        addMapChromeRows(controls);
+        // Foldable but not switchable, unlike the two constructions below. What a cell is
+        // shaped like and what it is drawn in are always answered - there is no state in
+        // which the map has no cells - so a switch over either would be a control with
+        // nothing to mean.
+        controls.add(CollapsibleSection.buildFoldingSection(
+            "cellGeometry",
+            "Cell geometry",
+            buildSectionBody(this::addCellGeometryRows)));
+
+        controls.add(CollapsibleSection.buildFoldingSection(
+            "cellAppearance",
+            "Cell appearance",
+            buildSectionBody(this::addCellAppearanceRows)));
 
         controls.add(ControlRows.buildDivider());
 
@@ -214,6 +224,16 @@ public final class ViewerSettingsPanel {
             "voidFillOpacity",
             "Void fill opacity",
             opacity -> settings.voidFillOpacity = (int) opacity));
+    }
+
+    // Everything a cell is drawn WITH, as against what it is shaped like: the fills and their
+    // opacities, then the marks laid over them. Two runs under one heading because a reader
+    // adjusting how the map looks is working across both, and the split between a cell's own
+    // colour and a mark drawn on top of it is not one they are ever making.
+    private void addCellAppearanceRows(JPanel controls) {
+
+        addCellPaintRows(controls);
+        addMapChromeRows(controls);
     }
 
     // A column for one section to hold, filled by whichever run of rows it is the section for.

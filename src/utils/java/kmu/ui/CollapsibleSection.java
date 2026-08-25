@@ -4,12 +4,15 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 /**
@@ -39,6 +42,11 @@ import javax.swing.JPanel;
 public final class CollapsibleSection {
 
     private static final int HEADER_PADDING = 4;
+
+    // How much larger a section heading is than the rows under it, in points. Two is enough
+    // to read as a heading at a glance and small enough that a folded panel of them still
+    // looks like one list rather than a stack of titles.
+    private static final float HEADING_SIZE_INCREASE = 2f;
 
     // How far the body sits in from the heading, in pixels. Enough that the run reads as
     // belonging to the heading rather than merely following it.
@@ -117,6 +125,51 @@ public final class CollapsibleSection {
     }
 
     /**
+     * Builds one section that only folds, with no switch over it.
+     *
+     * <p>For a run of controls with nothing to suppress. A switch over a run of colours and
+     * ranges would have to mean something - drawn in what, at which size, while it is off? -
+     * and there is no answer, so it would be a control that looks like it does something and
+     * does not. Folding on its own asks no such question: it is about the panel, not the map.
+     *
+     * @param sectionName what its folded state is remembered under, which is not its heading
+     * @param heading     what the section is called
+     * @param body        the controls it holds, laid out by the caller
+     * @return the section, heading and body together
+     */
+    public static JPanel buildFoldingSection(String sectionName, String heading, JPanel body) {
+
+        var foldKey = SectionKeys.forSection(sectionName).foldKey();
+        var isUnfolded = SavedValues.findSavedValues().getBoolean(foldKey, true);
+        var fold = buildFoldButton(isUnfolded);
+
+        body.setBorder(BorderFactory.createEmptyBorder(0, BODY_INDENT, 0, 0));
+        body.setVisible(isUnfolded);
+
+        var label = new JLabel(heading);
+
+        // Larger as well as bold. Every row label in this panel is already bold - that is the
+        // platform's own default for a label, not something set here - so weight alone leaves
+        // a heading looking like one more row of the run it is supposed to be heading. Size
+        // is what is left to distinguish it.
+        //
+        // Derived from whatever font the label was given rather than named here, since a font
+        // named in code is a font wrong on somebody's machine.
+        label.setFont(label.getFont().deriveFont(
+            Font.BOLD, label.getFont().getSize() + HEADING_SIZE_INCREASE));
+
+        fold.addActionListener(event -> {
+
+            body.setVisible(!body.isVisible());
+            fold.setText(body.isVisible() ? UNFOLDED_LABEL : FOLDED_LABEL);
+
+            SavedValues.findSavedValues().putBoolean(foldKey, body.isVisible());
+        });
+
+        return layOutSection(fold, label, body);
+    }
+
+    /**
      * Where a section remembers its two pieces of state.
      *
      * @param switchKey what the master switch is remembered under
@@ -135,12 +188,12 @@ public final class CollapsibleSection {
         }
     }
 
-    private static JPanel layOutSection(JButton fold, JCheckBox master, JPanel body) {
+    private static JPanel layOutSection(JButton fold, JComponent title, JPanel body) {
 
         var heading = new JPanel(new BorderLayout());
 
         heading.add(fold, BorderLayout.WEST);
-        heading.add(master, BorderLayout.CENTER);
+        heading.add(title, BorderLayout.CENTER);
         heading.setBorder(BorderFactory.createEmptyBorder(HEADER_PADDING, 0, HEADER_PADDING, 0));
 
         // Capped, for the reason a divider is: the column's layout offers a row everything
