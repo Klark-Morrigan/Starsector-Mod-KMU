@@ -28,6 +28,14 @@ public record CellTooltipMark(
     String spritePath,
     boolean isInLineColour) {
 
+    /**
+     * A line opening on words alone. The absence every surface here composes lines through states
+     * it by this name rather than by a bare null, which reads as a mark that failed to resolve
+     * rather than as a line that never had one - and is named here, where the absence is defined,
+     * so no surface has to define it again to be able to say it.
+     */
+    public static final CellTooltipMark NO_MARK = null;
+
     // The two colourings, named so each factory below reads as the statement it is rather than as a
     // bare true or false a caller has to match against the component order.
     private static final boolean IS_AS_AUTHORED = false;

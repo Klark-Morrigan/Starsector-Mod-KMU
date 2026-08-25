@@ -34,15 +34,12 @@ import java.util.List;
  * resolver states only what breaks down into what.
  *
  * <p>Every colony line leads with the glyph the sector map marks that colony's entity with, weighed or
- * not, so a reader can tie a name in the list back to something they are looking at rather than to
- * something they have to remember. It is drawn in the colony name's own colour rather than the map's,
- * so it identifies the line without competing with the numbers the box exists to state.
- *
- * <p>The station line takes one on the same terms, being the one line beneath a colony named for a
+ * not. The station line takes one on the same terms, being the one line beneath a colony named for a
  * thing on the map rather than for a term of arithmetic - and the mark settles more there than it does
  * a level up, a system's stations being told apart on the map by their glyph as much as by their name.
  * Every other line beneath a colony carries no mark at all: a stability or a size has nothing on the
- * map to point at, so a glyph there would stand in for a number.
+ * map to point at, so a glyph there would stand in for a number. What a mark off the map is for and
+ * how it is coloured are {@link kmu.maplayers.base.tooltip.CellTooltipMark#resolveMarkForMapIcon}'s.
  *
  * <p>Where that station shares its colony's name - which only a colony on a station can - the line
  * says which of the two it is about. The economy holds a station colony as two entities vanilla
@@ -84,11 +81,6 @@ public final class MarketWeightRowResolver {
     // whole list rather than two.
     private static final Comparator<UnweighedColony> UNWEIGHED_ORDER =
         Comparator.comparing(colony -> colony.nameplate().displayName());
-
-    // A term of arithmetic is named rather than marked: a stability, a size or a patrol tier has
-    // nothing on the map to point at, so a glyph there would stand in for a number. The two lines that
-    // do lead with one - a colony's and its station's - name things the player can go and find.
-    private static final CellTooltipMark NO_MARK = null;
 
     // What a colony the pass never weighed folded in at. Nought rather than a blank column, because
     // the colony is on the list and the reader is being told what it counted for.
@@ -187,10 +179,6 @@ public final class MarketWeightRowResolver {
 
     // A line naming something the sector map draws - a colony or the station defending it - led by
     // the glyph the map marks it with, and carrying whatever the account counted it for.
-    //
-    // The icon is what ties a name in this list back to something the player is looking at. A name
-    // alone does that only for a reader who already remembers it, while the glyph is the one thing
-    // the box and the map can share at a glance. How it is coloured is the mark's own rule.
     //
     // Shared by the two levels that take a mark rather than spelled out at each, so the box arrives
     // at one rule for a line about a thing on the map instead of one rule per level.
@@ -307,7 +295,7 @@ public final class MarketWeightRowResolver {
     private static CellTooltipEntry resolvePatrolEntry(PatrolFactor patrols) {
         return CellTooltipEntry
             .createEntry(CellTooltipEntryLine.createLine(
-                NO_MARK,
+                CellTooltipMark.NO_MARK,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS),
                 MarketFactorText.formatPatrols(patrols)))
             .nesting(resolveTierEntries(patrols));
@@ -361,6 +349,6 @@ public final class MarketWeightRowResolver {
     // by the lines that go on to state something more - a hidden colony's size, a tier's rate - so
     // that stating more is one refinement rather than a second spelling of the line itself.
     private static CellTooltipEntryLine createFactorLine(String labelText, String valueText) {
-        return CellTooltipEntryLine.createLine(NO_MARK, labelText, valueText);
+        return CellTooltipEntryLine.createLine(CellTooltipMark.NO_MARK, labelText, valueText);
     }
 }

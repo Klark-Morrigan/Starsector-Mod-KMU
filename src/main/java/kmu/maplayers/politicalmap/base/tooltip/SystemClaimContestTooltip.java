@@ -15,6 +15,7 @@ import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
 import kmu.maplayers.base.visibility.ColonyKnowledge;
@@ -265,7 +266,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
         if (!KmlibStrings.hasText(claimantFactionId)) {
             return CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
-                null,
+                CellTooltipMark.NO_MARK,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_NONE),
                 CellTooltipRows.NO_SCORE));
         }

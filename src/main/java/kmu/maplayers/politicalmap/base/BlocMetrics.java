@@ -7,9 +7,7 @@ package kmu.maplayers.politicalmap.base;
  * metrics for that bloc rather than an arbitrary value carried through the picker.
  *
  * <p>A metrics type whose layer paints by its numbers opts into {@link PaintingBlocMetrics} on top of
- * this. That question is segregated rather than defaulted here because not every picker lists
- * painters: a picker choosing what the map is measured <em>against</em> has no bloc that paints
- * nothing, so a default would hand it an inherited answer to a question it cannot be asked.
+ * this, which is where that question and the reason it is opt-in are stated.
  */
 public interface BlocMetrics {
 }

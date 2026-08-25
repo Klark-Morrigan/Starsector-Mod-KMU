@@ -230,12 +230,8 @@ final class FactionsViewTest {
         void resolveNameReadsTheShortNameForTheShortFormat() {
 
             var sectorMock = mock(SectorAPI.class);
-            var factionMock = mock(FactionAPI.class);
 
-            when(sectorMock.getFaction("hegemony"))
-                .thenReturn(factionMock);
-            when(factionMock.getDisplayName())
-                .thenReturn("Hegemony");
+            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
 
             assertThat(FactionsView.INSTANCE.resolveName(
                     "hegemony",
@@ -284,15 +280,9 @@ final class FactionsViewTest {
             // shared read computed for it, so the option reads exactly as the picker row will draw and
             // sort it. The presence gate is the shared stats read's job, stubbed here to one faction.
             var sectorMock = mock(SectorAPI.class);
-            var hegemonyMock = mock(FactionAPI.class);
 
-            when(sectorMock.getFaction("hegemony"))
-                .thenReturn(hegemonyMock);
-
-            when(hegemonyMock.getCrest())
+            when(stubNamedFaction(sectorMock, "hegemony", "Hegemony").getCrest())
                 .thenReturn("graphics/hegemony_crest.png");
-            when(hegemonyMock.getDisplayName())
-                .thenReturn("Hegemony");
 
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
@@ -315,15 +305,9 @@ final class FactionsViewTest {
             // A faction with no authored crest is still selectable - its option just carries a null
             // crest path and the row draws its name alone, rather than being dropped.
             var sectorMock = mock(SectorAPI.class);
-            var factionMock = mock(FactionAPI.class);
 
-            when(sectorMock.getFaction("luddic_path"))
-                .thenReturn(factionMock);
-
-            when(factionMock.getCrest())
+            when(stubNamedFaction(sectorMock, "luddic_path", "Path").getCrest())
                 .thenReturn(null);
-            when(factionMock.getDisplayName())
-                .thenReturn("Path");
 
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 

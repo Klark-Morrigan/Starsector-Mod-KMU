@@ -19,10 +19,11 @@ import kmlib.starsector.ui.widgets.lists.SelectableListItem;
  * generic type: a layer whose rows carry no separable identity implements the seam directly, so there
  * is nothing yet for a common form to serve.
  *
- * <p>The payload is bounded by {@link BlocMetrics} so the one seam value neither half of the pairing
- * can answer alone reaches the picker from the half that owns it: whether the row reads back is a
- * fact about the bloc's numbers, so the metrics state it and this translates, rather than the pairing
- * growing a stated flag every layer's option would then carry.
+ * <p>The payload is bounded by {@link BlocMetrics} rather than left open, so a row's second half is
+ * some layer's metrics for the bloc and not any value at all. The bound asks nothing further of it:
+ * the one seam value the identity cannot answer - whether the row reads back - is a fact about the
+ * numbers, so it comes from the payload wherever that opted into stating it, rather than from a flag
+ * every layer's option would then have to carry.
  *
  * @param <S>      the ranking metrics this view's picker sorts and labels by - one stats record per
  *                 sort vocabulary, never shared between vocabularies
@@ -68,9 +69,8 @@ public record RankedBloc<S extends BlocMetrics>(
      * name and a crest and still differ on this, because what puts a row in that state is what its
      * numbers say.
      *
-     * <p>Asked only of a payload that opted into stating it. A layer whose picker is not a list of
-     * painters - one choosing what the map is measured against, say - has no bloc that paints
-     * nothing, so its rows draw at full strength without it having to say so.
+     * <p>Asked only of a payload that opted into {@link PaintingBlocMetrics}; any other payload's
+     * rows draw at full strength, for the reason stated there.
      *
      * @return true when this bloc's row draws receded, as its own metrics judge it
      */

@@ -9,9 +9,10 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
  * a stand-in that draws nothing says everything a selection test needs - and a real box could not be
  * stood up here in any case, since drawing one needs a live GL context.
  *
- * <p>It leaves {@link MapHoverTooltip#resolveExpandedVariant} unoverridden on purpose: inheriting
- * the interface's own answer is what makes this the tooltip that defines no richer counterpart, so a
- * test using it pins the default every implementation gets rather than a stand-in's imitation of it.
+ * <p>It leaves {@link MapHoverTooltip#resolveExpandedVariant} and
+ * {@link MapHoverTooltip#isOfferingExpansionFor} unoverridden on purpose: inheriting the interface's
+ * own answers is what makes this the tooltip that takes no part in the detail toggle, so a test using
+ * it pins the defaults every implementation gets rather than a stand-in's imitation of them.
  */
 class MapHoverTooltipFake implements MapHoverTooltip {
 

@@ -189,6 +189,19 @@ final class HoveredBoxTest {
             assertThat(new HoveredBox(tooltipMock, sectorMock, systemMock).isOfferingExpansion())
                 .isFalse();
         }
+
+        @Test
+        void isOfferingExpansionIsFalseForABoxTakingNoPartInTheToggle() {
+            // The pair of interface defaults read together: a tooltip that defines no richer
+            // counterpart offers no expansion either. Pinned on the stand-in that overrides neither,
+            // so what is asserted is the answer an implementation inherits rather than a stub's
+            // imitation of it - a default that drifted the other way would leave the key claimed
+            // over a box with nothing to switch to.
+            var tooltipFake = new MapHoverTooltipFake();
+
+            assertThat(new HoveredBox(tooltipFake, sectorMock, systemMock).isOfferingExpansion())
+                .isFalse();
+        }
     }
 
     @Nested

@@ -28,6 +28,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.Optional;
 
 import static kmu.maplayers.SectorScenarioFixtures.placeDerelictIn;
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
@@ -135,6 +136,34 @@ final class DerelictReadoutIntegrationTest {
     }
 
     @Nested
+    class ResolveExpandedDetailName {
+
+        @Test
+        void offersTheAccountOverASystemTheBoxCallsUnpopulated() {
+            // The other half of the same disagreement, and the half a stubbed suite cannot pin: the
+            // status line and the standings answer different questions of one walk, so the key hint
+            // has to follow the listing rather than the banner. The hulk is the system's only
+            // market, so the box says "Unpopulated" and still ranks its owner - and that owner's
+            // colony is the whole of what the counterpart has to open up.
+            var sector = buildSectorHoldingADerelict();
+
+            assertThat(resolveDominationDetailName(sector))
+                .contains("score contributions");
+        }
+
+        @Test
+        void offersNothingOverASystemNobodyStandsIn() {
+            // Nothing in the system at all, so nothing ranks and there is no account for the
+            // counterpart to state. The banner is the same one the case above draws, which is what
+            // makes the pair worth stating: the boxes part on the listing, not on the line.
+            var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID);
+
+            assertThat(resolveDominationDetailName(sector))
+                .isEmpty();
+        }
+    }
+
+    @Nested
     class ReadBreakdown {
 
         @Test
@@ -175,6 +204,14 @@ final class DerelictReadoutIntegrationTest {
 
         return readLabelTexts(new SystemDominationTooltip(new ClaimBreakdownReaderFake())
             .buildBodySections(sector, buildOnlySystem(sector)));
+    }
+
+    // What the key at the foot of the dominance box offers over the sector's one system, or nothing
+    // where it offers no key at all - read through the same box the labels above come from.
+    private static Optional<String> resolveDominationDetailName(SectorAPI sector) {
+
+        return new SystemDominationTooltip(new ClaimBreakdownReaderFake())
+            .resolveExpandedDetailName(sector, buildOnlySystem(sector));
     }
 
     // The claim contest behind the system, read through the real mechanic over the pass's own walk

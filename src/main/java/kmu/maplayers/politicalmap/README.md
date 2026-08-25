@@ -147,10 +147,8 @@ directly and pairs its own list with its own vocabulary rather than widening the
 A listed bloc that paints nothing on the layer greys, and stays pickable: it is listed because it is
 present, greyed because there is nothing here to light. What "nothing" counts as is the layer's own
 metric - no claim on Claims, no dominance weight on the two the contest paints - so it is one rule
-read against whichever number that layer paints by. The bloc's metrics carry the answer
-(`PaintingBlocMetrics`), since a row's payload is exactly the numbers it would be judged on, and they
-opt into carrying it rather than inheriting it: a picker choosing what the map is measured *against*
-lists no painters, so it states nothing and its rows draw plain.
+read against whichever number that layer paints by. The bloc's metrics carry the answer, through
+`PaintingBlocMetrics`, which a picker of painters opts into and any other picker leaves alone.
 
 ## Where each part lives
 
@@ -237,7 +235,15 @@ is the shared default, so the ordinary box overrides nothing at all. What that p
 there too, once for both: "score contributions", which the framework puts at the foot of whichever
 of the two is drawn, beside the key that switches between them. Named here rather than by the
 framework because only this layer knows what its counterpart holds, and once rather than per box
-because the account is the same thing whichever way the player is switching. The parts come
+because the account is the same thing whichever way the player is switching.
+It is offered only where the system ranks somebody, since the counterpart accounts for the colonies
+behind the standings and a system ranking none gives it nothing to account for. That is asked of the
+ranking and not of the status line above it, both boxes reading the system through one
+`readRankedStandings`: the line and the listing answer different questions of the same pass - whether
+anybody *runs* the place, against everybody the player may be *told* about - so a system whose
+colonies have all collapsed is headed `Decivilised` and still ranks whoever holds them, and those
+colonies are exactly what the counterpart opens up. Judged off the line, that system - the one whose
+whole account is the collapse - is the one the detail is withheld on. The parts come
 from the very arithmetic the scores were summed over (`KnownMarketFootprints.readBreakdownByFaction`,
 which folds what `MarketWeights` works out per colony - the base size, station and patrol factors and
 the stability cut each takes, plus the grid a worth in size points is rounded onto),
@@ -246,18 +252,16 @@ so the lines always add up to the number the ordinary box and the fills show;
 line's numbers read - a rating as the player set it, a weight on the grid the rest of the box counts
 in, no cut that took nothing, and a patrol tier's rate stated apart from the total it explains so the
 box draws the arithmetic quieter than the finding).
-Every colony line leads with the glyph the sector map marks that colony's entity with, which is the
-one thing the box and the map can share at a glance - a name alone places a colony only for a reader
-who already remembers it. Name and glyph travel as one `EntityNameplate` (KMLib's
-`kmlib.starsector.entities`), read on the walk that counted the colony
+Every colony line leads with the glyph the sector map marks that colony's entity with. What that mark
+is for and why it takes the line's own colour rather than the shade the map paints it are
+`CellTooltipMark.resolveMarkForMapIcon`'s, stated there once for every surface that lists entities.
+What is this layer's is where the glyph comes from: name and glyph travel as one `EntityNameplate`
+(KMLib's `kmlib.starsector.entities`), read on the walk that counted the colony
 (`MarketWeightBreakdown.marketNameplate`, through `Markets.readNameplate`) rather than looked up again
 where the line is drawn, the same rule every other part of the account is read under: the box reads
 what the pass recorded, so there is no second market lookup free to answer for a different one - and
 no way for one colony's name to be drawn beside another's glyph, the pair never being apart.
-It draws in the colony name's own colour and not the shade the map paints it: those shades are
-authored to tell one world from another against black, and carried into a text box unchanged they
-arrive brighter than the numbers the account is about, so a column of them reads as the finding when
-what it is is a bullet point. The station line beneath a colony takes one on the same terms
+The station line beneath a colony takes one on the same terms
 (`StationFactor.stationNameplate`, read through `EntityNameplates.readNameplate` where the
 connected-entity scan answered the token rather than beside the name, so the glyph can only be the
 station whose bonus is stated by it): it is the one
@@ -396,7 +400,7 @@ system to a different faction.
 A faction holding nothing but unweighed colonies takes a `PresenceOnlyClaimStanding` at nought
 rather than dropping out of the contest, and the box lists it like any other. Both rival blocks, the
 claimant's own line, the account beneath each of them and the `F1` hint read every standing rather
-than the weighed half (`selectListedStandings`), because a block says how a faction stands to the
+than the weighed half (`ListedClaimContest.selectFrom`), because a block says how a faction stands to the
 claim and not what kind of record the contest gave it: routing on `isTerritorial` alone draws the one
 axis a reader wants - eligible to take the system, or not - where routing by record kind would file a
 pirate base's owner beside a Remnant station's, which are ineligible and eligible respectively. A
@@ -414,9 +418,12 @@ three agree on what the player knows, and the dev reveal states everything in fu
 carries is the composed answer rather than the entity's own: the player has found the market
 **and**, for the shapes a bare fog would leak, somebody has seen it where it stands. The same
 projection reaches the listing above the markets: a standing whose every colony is withheld is left
-off the box entirely (`selectListedStandings` again), since naming a faction over an account with
+off the box entirely (`ListedClaimContest.selectFrom` again), since naming a faction over an account with
 nothing in it would tell the player exactly what the fog is keeping back - and `F1` is offered only
-where a standing survives that filter, so the key is never advertised over a box the fog has emptied.
+where a standing survives that filter (`hasListedStanding`), so the key is never advertised over a box
+the fog has emptied. Both boxes ask that through one read of the contest
+(`SystemClaimContestTooltip.readListedContest`): the hint offers an account of exactly the factions
+the body lists, so answering the two apart would let a box advertise a key that does nothing.
 A weighed standing is not spared that filter: the mechanic weighs what vanilla weighs, and vanilla
 weighs colonies the player has never reached.
 Closing the list is the presence term, which is the faction's rather than any one market's, since
