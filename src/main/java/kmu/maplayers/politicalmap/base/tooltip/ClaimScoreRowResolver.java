@@ -11,7 +11,6 @@ import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
-import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -56,9 +55,8 @@ import java.util.Optional;
  * a place people still live from a wreck nobody ever did.
  *
  * <p>A market line also says how old the box's news of it is, where nobody is looking at the colony
- * as the box is drawn ({@link ColonyObservationNotes}). The two nought-scored kinds above are what
- * it matters most for: neither reached the list on anything the contest worked out, so when it was
- * last seen is the only thing the account has left to add about them.
+ * as the box is drawn. Why that reaches further on this list than on the dominance side is
+ * {@link ExpandedSystemClaimTooltip}'s to say.
  *
  * <p>Every market line leads with the glyph the sector map marks that market's entity with, scored or
  * not, so a reader can tie a name in the list back to something they are looking at rather than to
@@ -152,14 +150,12 @@ public final class ClaimScoreRowResolver {
      *                                decided something, neither of which one faction's standing
      *                                can answer
      * @param standing                the faction's ranked place in that contest, of either kind
-     * @param colonyKinds             what kind of place each colony in the system is, folded once
-     *                                for the whole box. A claim row carries the id of the market
-     *                                it was scored from and nothing of the place behind it, so
-     *                                this is the only thing parting an unowned collapse from an
-     *                                unowned hulk on the list
-     * @param notes                   how old the box's news of each colony is, folded once for the
-     *                                whole box - matched to a line by the colony's own id, which is
-     *                                what a claim row carries the id for
+     * @param colonyReading           what the box may say about the system's colonies beyond their
+     *                                scores, folded once for the whole box. A claim row carries the
+     *                                id of the market it was scored from and nothing of the place
+     *                                behind it, so this is the only thing parting an unowned
+     *                                collapse from an unowned hulk on the list, and the only thing
+     *                                that can date either
      * @param isListingUnfoundMarkets whether a market the player has not found may be listed. False
      *                                is the ordinary state and leaves those markets off; true is
      *                                the dev reveal, under which the account is stated in full
@@ -168,8 +164,7 @@ public final class ClaimScoreRowResolver {
     public static List<CellTooltipEntry> resolveMarketRows(
             SystemClaimBreakdown breakdown,
             FactionClaimStanding standing,
-            ColonyKindLookup colonyKinds,
-            ColonyObservationNotes notes,
+            SystemColonyReading colonyReading,
             boolean isListingUnfoundMarkets) {
 
         var heldMarkets = standing.readHeldMarkets();
@@ -183,12 +178,11 @@ public final class ClaimScoreRowResolver {
             return resolveWeighedRows(
                 breakdown,
                 weighedStanding,
-                colonyKinds,
-                notes,
+                colonyReading,
                 listedMarkets,
                 heldMarkets);
         }
-        return resolvePresenceOnlyRows(colonyKinds, notes, listedMarkets);
+        return resolvePresenceOnlyRows(colonyReading, listedMarkets);
     }
 
     // The markets an account lists, in the order the contest would settle them.
@@ -215,8 +209,7 @@ public final class ClaimScoreRowResolver {
     private static List<CellTooltipEntry> resolveWeighedRows(
             SystemClaimBreakdown breakdown,
             WeighedClaimStanding standing,
-            ColonyKindLookup colonyKinds,
-            ColonyObservationNotes notes,
+            SystemColonyReading colonyReading,
             List<MarketClaimBreakdown> listedMarkets,
             List<MarketClaimBreakdown> heldMarkets) {
 
@@ -235,8 +228,7 @@ public final class ClaimScoreRowResolver {
                     standing,
                     market)),
                 market,
-                colonyKinds,
-                notes,
+                colonyReading,
                 isHoldingTheClaim && market == standing.standingMarket()));
         }
 
@@ -259,8 +251,7 @@ public final class ClaimScoreRowResolver {
     // judgement would give it one: the mechanic passed over every colony behind such a standing, so
     // none of them won or lost a tie against anything.
     private static List<CellTooltipEntry> resolvePresenceOnlyRows(
-            ColonyKindLookup colonyKinds,
-            ColonyObservationNotes notes,
+            SystemColonyReading colonyReading,
             List<MarketClaimBreakdown> listedMarkets) {
 
         var entries = new ArrayList<CellTooltipEntry>(listedMarkets.size());
@@ -269,8 +260,7 @@ public final class ClaimScoreRowResolver {
             entries.add(resolveMarketEntry(
                 createMarketLine(market, CellTooltipIndexOutcome.UNCONTESTED),
                 market,
-                colonyKinds,
-                notes,
+                colonyReading,
                 NOTHING_TOOK_THE_SYSTEM));
         }
         return List.copyOf(entries);
@@ -326,8 +316,7 @@ public final class ClaimScoreRowResolver {
     private static CellTooltipEntry resolveMarketEntry(
             CellTooltipEntryLine line,
             MarketClaimBreakdown market,
-            ColonyKindLookup colonyKinds,
-            ColonyObservationNotes notes,
+            SystemColonyReading colonyReading,
             boolean isHoldingTheClaim) {
 
         // The two statuses cannot contend for the line's end. A market that took the system is a
@@ -335,31 +324,15 @@ public final class ClaimScoreRowResolver {
         // world people left, which is unowned and off-economy and so was never weighed at all.
         var marketLine = isHoldingTheClaim
             ? line.qualifiedWith(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER))
-            : ColonyKindQualifier.qualifyByKind(line, colonyKinds.readKindOf(market.marketId()));
+            : ColonyKindQualifier.qualifyByKind(
+                line,
+                colonyReading.readKindOf(market.marketId()));
 
+        // Remarked on whatever the contest made of the market, because how current the box's news
+        // of a colony is has nothing to do with whether the mechanic weighed it.
         return CellTooltipEntry
-            .createEntry(remarkOnMarket(marketLine, market.marketId(), notes))
+            .createEntry(colonyReading.remarkOnColony(marketLine, market.marketId()))
             .nesting(resolveTermEntries(market));
-    }
-
-    // Runs a market's line on into when it was last seen, where nobody is looking at it now.
-    //
-    // Applied to every market line whatever the contest made of it, because how current the box's
-    // news of a colony is has nothing to do with whether the mechanic weighed it - and the two the
-    // remark matters most for are exactly the ones it never weighed, a concealed base and an
-    // off-economy colony being listed on the strength of somebody having seen them.
-    //
-    // Nothing beneath a market takes one: a size or a garrison term is arithmetic over the line
-    // above it, so a date there would be answering for that line twice.
-    private static CellTooltipEntryLine remarkOnMarket(
-            CellTooltipEntryLine line,
-            String marketId,
-            ColonyObservationNotes notes) {
-
-        return notes
-            .resolveLastSeenNote(marketId)
-            .map(line::notedWith)
-            .orElse(line);
     }
 
     // The shape every market's own line takes: led by the glyph the map marks its entity with, named,

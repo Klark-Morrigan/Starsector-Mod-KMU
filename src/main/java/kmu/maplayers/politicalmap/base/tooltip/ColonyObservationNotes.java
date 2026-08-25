@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
 
+import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.base.visibility.ColonySightings;
 import kmu.util.KmuStrings;
@@ -53,6 +54,7 @@ public final class ColonyObservationNotes {
     // no clock, so nothing can be said about when anything was last seen.
     private static final boolean NOBODY_IS_LOOKING = false;
     private static final CampaignClockAPI NO_CLOCK = null;
+    private static final Colonies NO_COLONIES = null;
 
     /**
      * A box with no world to read: nobody is looking at anything and nothing can be dated, so no
@@ -62,23 +64,32 @@ public final class ColonyObservationNotes {
     public static final ColonyObservationNotes NONE = new ColonyObservationNotes(
         NO_CLOCK,
         NOBODY_IS_LOOKING,
-        Set.of(),
+        NO_COLONIES,
         ColonySightings.NONE);
 
     private final CampaignClockAPI clock;
     private final boolean isPlayerPresent;
-    private final Set<String> colonyIdsObservedByInhabitants;
+    private final Colonies colonies;
     private final ColonySightings sightings;
+
+    // Which colonies the system's own people can see, folded on the first line that asks and kept
+    // for the rest of the box.
+    //
+    // Deferred rather than folded on the read, because the box that takes these notes is not
+    // always the box that lists a colony: the ordinary claims box hangs nothing beneath a faction,
+    // so an eager fold would run on every hover of every system to answer nothing. A memo on a
+    // per-box value, like the one the pass's own classification keeps.
+    private Set<String> colonyIdsObservedByInhabitants;
 
     private ColonyObservationNotes(
             CampaignClockAPI clock,
             boolean isPlayerPresent,
-            Set<String> colonyIdsObservedByInhabitants,
+            Colonies colonies,
             ColonySightings sightings) {
 
         this.clock = clock;
         this.isPlayerPresent = isPlayerPresent;
-        this.colonyIdsObservedByInhabitants = colonyIdsObservedByInhabitants;
+        this.colonies = colonies;
         this.sightings = sightings;
     }
 
@@ -113,8 +124,28 @@ public final class ColonyObservationNotes {
         return new ColonyObservationNotes(
             sector.getClock(),
             Objects.equals(sector.getCurrentLocation(), system),
-            readColonyIdsObservedByInhabitants(colonies),
+            colonies,
             sightings == null ? ColonySightings.NONE : sightings);
+    }
+
+    /**
+     * Runs a colony's line on into when it was last seen, where nobody is looking at it now.
+     *
+     * <p>Stated here rather than at each account that draws one, because how a remark reaches a
+     * line is the same wherever the line came from - and the accounts that draw them have nothing
+     * else in common to have arrived at one rule by.
+     *
+     * <p>Only the line naming the colony takes one. Anything hanging beneath it is arithmetic over
+     * that colony's own number, so a date there would answer for the line above it twice.
+     *
+     * @param line     the colony's own line, as its account built it
+     * @param colonyId the colony's market id, as the account listing it carries
+     * @return the line, remarked on where a remark is due and untouched where none is
+     */
+    public CellTooltipEntryLine remarkOnColony(CellTooltipEntryLine line, String colonyId) {
+        return resolveLastSeenNote(colonyId)
+            .map(line::notedWith)
+            .orElse(line);
     }
 
     /**
@@ -126,7 +157,7 @@ public final class ColonyObservationNotes {
      */
     public Optional<String> resolveLastSeenNote(String colonyId) {
 
-        if (isPlayerPresent || colonyIdsObservedByInhabitants.contains(colonyId)) {
+        if (isPlayerPresent || readColonyIdsObservedByInhabitants().contains(colonyId)) {
             return NO_NOTE;
         }
         var observation = sightings.readObservation(colonyId);
@@ -139,15 +170,31 @@ public final class ColonyObservationNotes {
             .map(this::formatLastSeenNote);
     }
 
+    // The gated colonies the system's own people can see, folded once and kept.
+    private Set<String> readColonyIdsObservedByInhabitants() {
+
+        if (colonyIdsObservedByInhabitants == null) {
+            colonyIdsObservedByInhabitants = foldColonyIdsObservedByInhabitants(colonies);
+        }
+        return colonyIdsObservedByInhabitants;
+    }
+
     // The gated colonies the system's own people can see, by id. Asked of the visibility rule's own
     // reading rather than re-derived here, so the box's account of who can see what is the same one
     // the map is drawn under.
     //
     // Under the fog alone, as every observation reading is: who can see a colony is a fact about the
-    // place, and a reveal that reached it would date a colony the player was never told about.
-    private static Set<String> readColonyIdsObservedByInhabitants(Colonies colonies) {
+    // place, and a reveal that reached it would date a colony the player was never told about. That
+    // is why the knowledge is opened here rather than taken from the box's own pass, whose rule
+    // carries whatever the player has revealed - and why the kinds it resolves cannot be shared
+    // with the ones the box folded beside these notes.
+    private static Set<String> foldColonyIdsObservedByInhabitants(Colonies colonies) {
 
         var colonyIds = new HashSet<String>();
+
+        if (colonies == null) {
+            return colonyIds;
+        }
 
         for (var colony : ColonyKnowledge
                 .observingUnderTheFog()

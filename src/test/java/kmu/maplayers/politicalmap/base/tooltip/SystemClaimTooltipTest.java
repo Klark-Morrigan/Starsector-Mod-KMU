@@ -78,6 +78,10 @@ final class SystemClaimTooltipTest {
 
     private static final String HEGEMONY_CREST = "graphics/hegemony_crest.png";
 
+    // What a remarked line would run on into, spelled out so the case reads as the words a player
+    // would see if this box ever drew one.
+    private static final String LAST_SEEN = "last seen 34 days ago (c206.05.12)";
+
     // The two lines a box over a populated system opens with, whatever the contest below them holds, by
     // their place in the flat run the box draws.
     private static final int CLAIM_HEADING_ROW = 0;
@@ -634,8 +638,7 @@ final class SystemClaimTooltipTest {
             assertThat(tooltip.resolveAccountEntries(
                     new SystemClaimBreakdown(null, HEGEMONY, List.of()),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
-                    ColonyKindLookup.NONE,
-                    ColonyObservationNotes.NONE))
+                    SystemColonyReading.NONE))
                 .isEmpty();
         }
 
@@ -643,17 +646,16 @@ final class SystemClaimTooltipTest {
         void resolveAccountEntriesStatesNoRemarkWhateverTheBoxHasToRemarkOn() {
             // The remark is something an account says about a colony, and this box names factions
             // rather than colonies - so it goes on hanging nothing beneath one however much the
-            // notes handed to it would have had to say.
+            // reading handed to it would have had to say.
             var notesMock = mock(ColonyObservationNotes.class);
 
             when(notesMock.resolveLastSeenNote(any()))
-                .thenReturn(Optional.of("last seen 34 days ago (c206.05.12)"));
+                .thenReturn(Optional.of(LAST_SEEN));
 
             assertThat(tooltip.resolveAccountEntries(
                     new SystemClaimBreakdown(null, HEGEMONY, List.of()),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
-                    ColonyKindLookup.NONE,
-                    notesMock))
+                    new SystemColonyReading(ColonyKindLookup.NONE, notesMock)))
                 .isEmpty();
         }
     }

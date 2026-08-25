@@ -17,7 +17,6 @@ import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
-import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
@@ -97,19 +96,15 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         var colonyKnowledge = ColonyKnowledge.over(sector, colonyVisibility);
         var statusRow = SystemStatusRow.resolveStatusRow(colonies, colonyKnowledge);
 
-        // What kind of place each colony in the system is, folded once for the whole box off the
-        // walk above. An account lists a system's colonies once per faction standing, so a kind
-        // resolved where a row is drawn would walk the set again for every faction listed.
-        var colonyKinds = ColonyKindLookup.readKindsIn(colonies, colonyKnowledge);
-
-        // How old the box's news of each colony is, settled once for the whole box off that same
-        // walk. Resolved per faction instead, it would read the system once for every faction the
-        // contest holds - which is the cost the shared walk above exists to avoid.
-        var notes = ColonyObservationNotes.readNotesFor(
+        // What an account may say about each colony beyond its score - what kind of place it is,
+        // and how old the box's news of it is - folded once for the whole box off the walk above.
+        // An account lists a system's colonies once per faction standing, so either read taken
+        // where a row is drawn would walk the set again for every faction listed.
+        var colonyReading = SystemColonyReading.readColoniesIn(
             sector,
             system,
             colonies,
-            colonyKnowledge.sightings());
+            colonyKnowledge);
 
         CellTooltipSections.appendBannerSection(sections, statusRow);
 
@@ -120,7 +115,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
-            buildClaimEntries(sector, contest, colonyKinds, notes, statusRow.isPresent()));
+            buildClaimEntries(sector, contest, colonyReading, statusRow.isPresent()));
 
         CellTooltipSections.appendSection(
             sections,
@@ -128,8 +123,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             buildRivalEntries(
                 sector,
                 contest,
-                colonyKinds,
-                notes,
+                colonyReading,
                 FactionClaimStanding::isTerritorial));
 
         CellTooltipSections.appendSection(
@@ -138,8 +132,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             buildRivalEntries(
                 sector,
                 contest,
-                colonyKinds,
-                notes,
+                colonyReading,
                 standing -> !standing.isTerritorial()));
 
         return sections;
@@ -198,25 +191,21 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      * <p>Listing a faction as the line naming it is the ordinary answer and the default, so a box with
      * nothing further to say overrides nothing.
      *
-     * @param breakdown   the whole contest the box is being built from, in case the account turns
-     *                    on it
-     * @param standing    the faction's ranked place in that contest, of either kind
-     * @param colonyKinds what kind of place each colony in the system is, folded once for the box -
-     *                    the one fact a claim row carries no answer to, an account listing an
-     *                    unowned collapse beside an unowned hulk having nothing else to tell them
-     *                    apart with
-     * @param notes       how old the box's news of each colony is, read once for the box off the
-     *                    same walk the kinds came from - which matters most for the colonies this
-     *                    listing carries that no score accounts for, a concealed base or an
-     *                    off-economy colony being listed on the strength of somebody having seen it
+     * @param breakdown     the whole contest the box is being built from, in case the account turns
+     *                      on it
+     * @param standing      the faction's ranked place in that contest, of either kind
+     * @param colonyReading what the box may say about the system's colonies beyond their scores,
+     *                      folded once for the box - a claim row carries the id of the market it
+     *                      was weighed from and nothing of the place behind it, so this is where
+     *                      an account tells an unowned collapse from an unowned hulk, and where it
+     *                      learns how old its news of either is
      * @return the entries listed beneath its line, in the order they are read; empty leaves the faction
      *         listed as its line alone
      */
     protected List<CellTooltipEntry> resolveAccountEntries(
             SystemClaimBreakdown breakdown,
             FactionClaimStanding standing,
-            ColonyKindLookup colonyKinds,
-            ColonyObservationNotes notes) {
+            SystemColonyReading colonyReading) {
 
         return List.of();
     }
@@ -247,8 +236,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     private List<CellTooltipEntry> buildClaimEntries(
             SectorAPI sector,
             ListedClaimContest contest,
-            ColonyKindLookup colonyKinds,
-            ColonyObservationNotes notes,
+            SystemColonyReading colonyReading,
             boolean isSystemHoldingNobody) {
 
         if (isSystemHoldingNobody
@@ -256,7 +244,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
             return List.of();
         }
-        return List.of(buildClaimantEntry(sector, contest, colonyKinds, notes));
+        return List.of(buildClaimantEntry(sector, contest, colonyReading));
     }
 
     // The one entry the claim section lists where it has one: whoever holds the system, or the plain
@@ -264,8 +252,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     private CellTooltipEntry buildClaimantEntry(
             SectorAPI sector,
             ListedClaimContest contest,
-            ColonyKindLookup colonyKinds,
-            ColonyObservationNotes notes) {
+            SystemColonyReading colonyReading) {
 
         var breakdown = contest.breakdown();
         var claimantFactionId = breakdown.claimantFactionId();
@@ -300,7 +287,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         return CellTooltipEntry
             .createEntry(claimantLine)
             .nesting(standing
-                .map(found -> resolveAccountEntries(breakdown, found, colonyKinds, notes))
+                .map(found -> resolveAccountEntries(breakdown, found, colonyReading))
                 .orElseGet(List::of));
     }
 
@@ -341,8 +328,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     private List<CellTooltipEntry> buildRivalEntries(
             SectorAPI sector,
             ListedClaimContest contest,
-            ColonyKindLookup colonyKinds,
-            ColonyObservationNotes notes,
+            SystemColonyReading colonyReading,
             Predicate<FactionClaimStanding> isWantedKind) {
 
         var rivalStandings = contest.selectRivalStandings(isWantedKind);
@@ -354,8 +340,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                 .nesting(resolveAccountEntries(
                     contest.breakdown(),
                     standing,
-                    colonyKinds,
-                    notes)));
+                    colonyReading)));
         }
         return entries;
     }

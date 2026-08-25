@@ -33,6 +33,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -734,6 +735,12 @@ final class MarketWeightRowResolverTest {
 
         when(notesMock.resolveLastSeenNote(marketId))
             .thenReturn(Optional.of(LAST_SEEN));
+
+        // The one thing the notes do to a line is left to run for real, since which line the
+        // remark lands on is exactly what this suite is about. Every other colony answers the
+        // unstubbed empty, so nothing else is touched.
+        when(notesMock.remarkOnColony(any(), any()))
+            .thenCallRealMethod();
 
         return notesMock;
     }

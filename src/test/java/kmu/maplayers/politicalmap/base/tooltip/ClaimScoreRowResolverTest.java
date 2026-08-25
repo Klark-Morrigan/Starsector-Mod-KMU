@@ -30,6 +30,7 @@ import java.util.OptionalInt;
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -102,24 +103,19 @@ final class ClaimScoreRowResolverTest {
     // a case posing one poses both.
     private static final boolean IS_KNOWN_TO_PLAYER = true;
 
-    // Somewhere people live, on every market posed here. What kind of place a colony is reaches no
-    // term of the contest, so a case about the arithmetic states it once rather than varying it.
-    // Nothing in the system is anything but an ordinary colony, which is what an unstated id reads
-    // as - so a case about the arithmetic poses no kinds at all and one about a qualifier poses the
-    // one market it is calling out.
-    private static final ColonyKindLookup EVERY_MARKET_A_COLONY = ColonyKindLookup.NONE;
-
-    // Somebody is looking at every colony posed here, so no line carries a date. What makes a
-    // remark due is the notes' own question and is pinned by ColonyObservationNotesTest; a case
-    // about the arithmetic states the quiet reading once rather than varying it.
-    private static final ColonyObservationNotes NOTHING_TO_REMARK_ON = ColonyObservationNotes.NONE;
+    // Every market an ordinary colony somebody is looking at, so no line is qualified and none
+    // carries a date. Both halves of what the box's walk of the system adds to a row, stated once
+    // for every case about the arithmetic rather than varied: which kinds resolve is
+    // ColonyKindLookupTest's question and what makes a remark due is ColonyObservationNotesTest's.
+    private static final SystemColonyReading NOTHING_BEYOND_THE_SCORE = SystemColonyReading.NONE;
 
     // What a remarked line runs on into, spelled out so a case reads as the words a player sees.
     private static final String LAST_SEEN = "last seen 34 days ago (c206.05.12)";
 
     // The world people left, as the box's own walk of the system classified it.
-    private static final ColonyKindLookup TIBICENA_IS_A_DEAD_WORLD = new ColonyKindLookup(
-        Map.of("tibicena", ColonyKind.UNGOVERNED_COLONY));
+    private static final SystemColonyReading TIBICENA_IS_A_DEAD_WORLD = new SystemColonyReading(
+        new ColonyKindLookup(Map.of("tibicena", ColonyKind.UNGOVERNED_COLONY)),
+        ColonyObservationNotes.NONE);
     private static final boolean IS_UNFOUND_BY_PLAYER = false;
 
     // A market the sector map marks with a glyph, and one it marks with none - the two readings a
@@ -283,15 +279,13 @@ final class ClaimScoreRowResolverTest {
             var claimantRows = ClaimScoreRowResolver.resolveMarketRows(
                 breakdown,
                 claimant,
-                EVERY_MARKET_A_COLONY,
-                NOTHING_TO_REMARK_ON,
+                NOTHING_BEYOND_THE_SCORE,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             var rivalRows = ClaimScoreRowResolver.resolveMarketRows(
                 breakdown,
                 rival,
-                EVERY_MARKET_A_COLONY,
-                NOTHING_TO_REMARK_ON,
+                NOTHING_BEYOND_THE_SCORE,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(claimantRows.get(0).line().indexPlace().outcome())
@@ -309,8 +303,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 new SystemClaimBreakdown(null, HEGEMONY, List.of(claimant, rival)),
                 claimant,
-                EVERY_MARKET_A_COLONY,
-                NOTHING_TO_REMARK_ON,
+                NOTHING_BEYOND_THE_SCORE,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().indexPlace().outcome())
@@ -334,14 +327,12 @@ final class ClaimScoreRowResolverTest {
             var claimantRows = ClaimScoreRowResolver.resolveMarketRows(
                 breakdown,
                 claimant,
-                EVERY_MARKET_A_COLONY,
-                NOTHING_TO_REMARK_ON,
+                NOTHING_BEYOND_THE_SCORE,
                 WITHHOLDING_UNFOUND_MARKETS);
             var outsiderRows = ClaimScoreRowResolver.resolveMarketRows(
                 breakdown,
                 outsider,
-                EVERY_MARKET_A_COLONY,
-                NOTHING_TO_REMARK_ON,
+                NOTHING_BEYOND_THE_SCORE,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(claimantRows.get(0).line().indexPlace().outcome())
@@ -359,8 +350,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of(claimant, rival)),
                 claimant,
-                EVERY_MARKET_A_COLONY,
-                NOTHING_TO_REMARK_ON,
+                NOTHING_BEYOND_THE_SCORE,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().indexPlace().outcome())
@@ -578,8 +568,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
-                EVERY_MARKET_A_COLONY,
-                NOTHING_TO_REMARK_ON,
+                NOTHING_BEYOND_THE_SCORE,
                 LISTING_UNFOUND_MARKETS);
 
             assertThat(readLabelTexts(rows))
@@ -639,8 +628,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
-                EVERY_MARKET_A_COLONY,
-                NOTHING_TO_REMARK_ON,
+                NOTHING_BEYOND_THE_SCORE,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().qualifierText())
@@ -656,8 +644,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of(standing)),
                 standing,
-                EVERY_MARKET_A_COLONY,
-                NOTHING_TO_REMARK_ON,
+                NOTHING_BEYOND_THE_SCORE,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().qualifierText())
@@ -673,8 +660,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
-                EVERY_MARKET_A_COLONY,
-                NOTHING_TO_REMARK_ON,
+                NOTHING_BEYOND_THE_SCORE,
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(readLabelTexts(rows))
@@ -866,16 +852,14 @@ final class ClaimScoreRowResolverTest {
             assertThat(readLabelTexts(ClaimScoreRowResolver.resolveMarketRows(
                     buildBreakdownClaimedBy(HEGEMONY, standing),
                     standing,
-                    EVERY_MARKET_A_COLONY,
-                    NOTHING_TO_REMARK_ON,
+                    NOTHING_BEYOND_THE_SCORE,
                     WITHHOLDING_UNFOUND_MARKETS)))
                 .containsExactly("Kanta's Den");
 
             assertThat(readLabelTexts(ClaimScoreRowResolver.resolveMarketRows(
                     buildBreakdownClaimedBy(HEGEMONY, standing),
                     standing,
-                    EVERY_MARKET_A_COLONY,
-                    NOTHING_TO_REMARK_ON,
+                    NOTHING_BEYOND_THE_SCORE,
                     LISTING_UNFOUND_MARKETS)))
                 .containsExactly("Kanta's Den", "Chalcedon");
         }
@@ -902,8 +886,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
-                EVERY_MARKET_A_COLONY,
-                buildNotesRemarkingOn("kanta's_den"),
+                buildReadingRemarkingOn("kanta's_den"),
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().noteText())
@@ -920,8 +903,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
-                EVERY_MARKET_A_COLONY,
-                buildNotesRemarkingOn("galatia_academy"),
+                buildReadingRemarkingOn("galatia_academy"),
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().noteText())
@@ -937,8 +919,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
-                EVERY_MARKET_A_COLONY,
-                buildNotesRemarkingOn(nameMarketId(STRONGEST_MARKET)),
+                buildReadingRemarkingOn(nameMarketId(STRONGEST_MARKET)),
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().noteText())
@@ -954,8 +935,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
-                EVERY_MARKET_A_COLONY,
-                buildNotesRemarkingOn(nameMarketId(STRONGEST_MARKET)),
+                buildReadingRemarkingOn(nameMarketId(STRONGEST_MARKET)),
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).children())
@@ -977,34 +957,39 @@ final class ClaimScoreRowResolverTest {
     // Notes remarking on exactly one colony, mocked because what makes a remark due is the notes'
     // own question and is pinned by {@link ColonyObservationNotesTest}: what this suite is about is
     // which line carries the answer.
-    private static ColonyObservationNotes buildNotesRemarkingOn(String marketId) {
+    private static SystemColonyReading buildReadingRemarkingOn(String marketId) {
 
         var notesMock = mock(ColonyObservationNotes.class);
 
         when(notesMock.resolveLastSeenNote(marketId))
             .thenReturn(Optional.of(LAST_SEEN));
 
-        return notesMock;
+        // The one thing the notes do to a line is left to run for real, since which line the
+        // remark lands on is exactly what this suite is about. Every other colony answers the
+        // unstubbed empty, so nothing else is touched.
+        when(notesMock.remarkOnColony(any(), any()))
+            .thenCallRealMethod();
+
+        return new SystemColonyReading(ColonyKindLookup.NONE, notesMock);
     }
 
     // The account over a system this faction won outright and whose markets the player has all
     // found - the ordinary state, and what every case but the rivalled, decreed and withheld ones
     // is posed over.
     private static List<CellTooltipEntry> resolveContestedRows(WeighedClaimStanding standing) {
-        return resolveContestedRows(standing, EVERY_MARKET_A_COLONY);
+        return resolveContestedRows(standing, NOTHING_BEYOND_THE_SCORE);
     }
 
     // The same, for a case that is about what a colony's kind states on the line naming it - the
     // kinds come off the box's own walk of the system, which is a separate read from the contest.
     private static List<CellTooltipEntry> resolveContestedRows(
             WeighedClaimStanding standing,
-            ColonyKindLookup colonyKinds) {
+            SystemColonyReading colonyReading) {
 
         return ClaimScoreRowResolver.resolveMarketRows(
             buildBreakdownClaimedBy(HEGEMONY, standing),
             standing,
-            colonyKinds,
-            NOTHING_TO_REMARK_ON,
+            colonyReading,
             WITHHOLDING_UNFOUND_MARKETS);
     }
 
@@ -1037,8 +1022,7 @@ final class ClaimScoreRowResolverTest {
         return ClaimScoreRowResolver.resolveMarketRows(
             buildBreakdownClaimedBy(TRITACHYON, standing),
             standing,
-            EVERY_MARKET_A_COLONY,
-            NOTHING_TO_REMARK_ON,
+            NOTHING_BEYOND_THE_SCORE,
             WITHHOLDING_UNFOUND_MARKETS);
     }
 

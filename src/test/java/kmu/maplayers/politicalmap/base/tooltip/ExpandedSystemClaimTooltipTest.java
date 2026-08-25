@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 
+import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
@@ -18,7 +19,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
-import kmu.maplayers.base.visibility.ColonyKindLookup;
+import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -91,10 +93,9 @@ final class ExpandedSystemClaimTooltipTest {
     // resolver's and pinned there; the cases below are about which faction gets an account at all.
     private static final boolean IS_KNOWN_TO_PLAYER = true;
 
-    // Somewhere people live, on every market posed here. What kind of place a colony is reaches no
-    // term of the contest, so a case about the arithmetic states it once rather than varying it.
-    // No case here is about what a colony's kind states on a line, so every account is resolved
-    // over a lookup that names nothing - an unstated id reads as the ordinary colony.
+    // What a colony's kind states on a line, and when it was last seen, are the resolver's and
+    // pinned there - so every account here is resolved over a reading that says neither, which is
+    // what an ordinary colony in plain sight reads as.
 
     private static final boolean IS_TERRITORIAL = true;
 
@@ -167,8 +168,7 @@ final class ExpandedSystemClaimTooltipTest {
                     tooltip.resolveAccountEntries(
                         CONTESTED_SYSTEM,
                         standing,
-                        ColonyKindLookup.NONE,
-                        ColonyObservationNotes.NONE)))
+                        SystemColonyReading.NONE)))
                 .containsExactly("Chicomoztoc", "Culann");
         }
 
@@ -179,8 +179,7 @@ final class ExpandedSystemClaimTooltipTest {
             var entries = tooltip.resolveAccountEntries(
                 CONTESTED_SYSTEM,
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
-                ColonyKindLookup.NONE,
-                ColonyObservationNotes.NONE);
+                SystemColonyReading.NONE);
 
             assertThat(readLabelTexts(entries.get(0).children()))
                 .containsExactly("Size");
@@ -193,8 +192,7 @@ final class ExpandedSystemClaimTooltipTest {
             var entries = tooltip.resolveAccountEntries(
                 CONTESTED_SYSTEM,
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
-                ColonyKindLookup.NONE,
-                ColonyObservationNotes.NONE);
+                SystemColonyReading.NONE);
 
             assertThat(entries.get(0).line().qualifierText())
                 .isEqualTo("claim holder");
@@ -207,8 +205,7 @@ final class ExpandedSystemClaimTooltipTest {
             var entries = tooltip.resolveAccountEntries(
                 CONTESTED_SYSTEM,
                 buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL),
-                ColonyKindLookup.NONE,
-                ColonyObservationNotes.NONE);
+                SystemColonyReading.NONE);
 
             assertThat(entries.get(0).line().qualifierText())
                 .isNull();
@@ -230,8 +227,7 @@ final class ExpandedSystemClaimTooltipTest {
                     tooltip.resolveAccountEntries(
                         CONTESTED_SYSTEM,
                         standing,
-                        ColonyKindLookup.NONE,
-                        ColonyObservationNotes.NONE)))
+                        SystemColonyReading.NONE)))
                 .containsExactly("Kanta's Den", "Chalcedon");
         }
 
@@ -242,8 +238,7 @@ final class ExpandedSystemClaimTooltipTest {
             var entries = tooltip.resolveAccountEntries(
                 new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()),
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
-                ColonyKindLookup.NONE,
-                ColonyObservationNotes.NONE);
+                SystemColonyReading.NONE);
 
             assertThat(entries.get(0).line().qualifierText())
                 .isNull();
@@ -357,6 +352,44 @@ final class ExpandedSystemClaimTooltipTest {
             tooltip.buildBodySections(sectorMock, systemMock);
 
             verify(systemMock, times(1)).getAllEntities();
+        }
+
+        @Test
+        void buildBodySectionsReadsTheColoniesOffTheWalkTheStatusRowWasJudgedFrom() {
+            // The one walk the box makes has to answer everything below it. Opened again for the
+            // account, the kinds and the dates would come off a second reading of the system - so
+            // the banner could call a system empty while the lines beneath it named a colony that
+            // arrived between the two.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL))));
+
+            var statusRowColonies = ArgumentCaptor.forClass(Colonies.class);
+            var statusRowKnowledge = ArgumentCaptor.forClass(ColonyKnowledge.class);
+            var readingColonies = ArgumentCaptor.forClass(Colonies.class);
+            var readingKnowledge = ArgumentCaptor.forClass(ColonyKnowledge.class);
+
+            try (var readingMock = Mockito.mockStatic(
+                    SystemColonyReading.class,
+                    Mockito.CALLS_REAL_METHODS)) {
+
+                tooltip.buildBodySections(sectorMock, systemMock);
+
+                statusRowMock.verify(() -> SystemStatusRow.resolveStatusRow(
+                    statusRowColonies.capture(),
+                    statusRowKnowledge.capture()));
+
+                readingMock.verify(() -> SystemColonyReading.readColoniesIn(
+                    any(),
+                    any(),
+                    readingColonies.capture(),
+                    readingKnowledge.capture()));
+            }
+            assertThat(readingColonies.getValue())
+                .isSameAs(statusRowColonies.getValue());
+            assertThat(readingKnowledge.getValue())
+                .isSameAs(statusRowKnowledge.getValue());
         }
 
         @Test

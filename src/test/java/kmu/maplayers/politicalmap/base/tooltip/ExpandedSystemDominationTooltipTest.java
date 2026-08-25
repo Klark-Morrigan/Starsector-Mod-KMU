@@ -7,8 +7,10 @@ import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
+import kmu.maplayers.SectorScenarioFixtures;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.visibility.ColonyKind;
+import kmu.maplayers.base.visibility.ColonySightings;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
@@ -20,12 +22,14 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
+import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.settings.HiddenMarketScalingChoice;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -96,6 +100,16 @@ final class ExpandedSystemDominationTooltipTest {
     // reveal from one that hardcodes the ordinary answer - which every other case would agree with.
     private static final DominancePass REVEALED_PASS =
         DominancePass.over(null, ANY_RULES, UNDER_THE_REVEAL, VIEW_GROUPING);
+
+    // A pass over a sector that has actually observed something, so its register is a real read of
+    // that sector's memory rather than the empty one. The distinction is the whole of what the case
+    // using it can see: a sector with nothing recorded answers the same empty register a read that
+    // opened one for itself would find, so only a written register tells the pass's own from any
+    // other.
+    //
+    // Built here rather than in the case, because the seam fixture stands a static in front of
+    // DominancePass for the duration of each one.
+    private static final DominancePass OBSERVED_PASS = buildPassOverAnObservedSector();
 
     // Two factions of one bloc, so a case can tell "the faction's own colonies" from "the bloc's".
     private static final WeighedFactionStanding LEAD_MEMBER =
@@ -312,6 +326,37 @@ final class ExpandedSystemDominationTooltipTest {
                     ANY_PASS.colonyKnowledge()),
                 Mockito.times(1));
         }
+
+        @Test
+        void createFactionAccountResolverDatesTheColoniesAgainstThePassesOwnRegister() {
+            // The whole reason the register is handed down rather than opened here: the dates
+            // stated have to come off the very observations the pass resolved its projection
+            // against. Read from the sector afresh, a box could date a colony against a register
+            // the fills beside it were never drawn under - and nothing on screen would say which.
+            stubBreakdowns(Map.of());
+            stubUnweighedColonies(Map.of());
+
+            // The case is worth nothing unless the pass carries a register that is not the empty
+            // one, that being what a read opening its own would also find - so the premise is
+            // asserted rather than assumed.
+            assertThat(OBSERVED_PASS.colonyKnowledge().sightings())
+                .isNotSameAs(ColonySightings.NONE);
+
+            var sightings = ArgumentCaptor.forClass(ColonySightings.class);
+
+            try (var notesMock = Mockito.mockStatic(ColonyObservationNotes.class)) {
+
+                tooltip.createFactionAccountResolver(systemMock, OBSERVED_PASS);
+
+                notesMock.verify(() -> ColonyObservationNotes.readNotesFor(
+                    any(),
+                    any(),
+                    any(),
+                    sightings.capture()));
+            }
+            assertThat(sightings.getValue())
+                .isSameAs(OBSERVED_PASS.colonyKnowledge().sightings());
+        }
     }
 
     @Nested
@@ -355,6 +400,21 @@ final class ExpandedSystemDominationTooltipTest {
                 any(),
                 any()))
             .thenReturn(coloniesByFactionId);
+    }
+
+    // The sector behind OBSERVED_PASS: one derelict, met by the player, so a register entry really
+    // lands and the read comes back as something other than the empty answer.
+    private static DominancePass buildPassOverAnObservedSector() {
+
+        // The staged pair is a derelict and a concealed base, which is exactly what the register
+        // records - only a gated colony ever reaches it, and those are the two gated shapes.
+        var sector = SectorScenarioFixtures.buildUnvisitedSectorHoldingGatedPair(SYSTEM_ID);
+
+        SectorPoliticsFixtures.markSystemAsVisitedByPlayer(
+            sector,
+            SectorPoliticsFixtures.buildOnlySystem(sector));
+
+        return DominancePass.over(sector, ANY_RULES, BASE_FOG, VIEW_GROUPING);
     }
 
     // One colony worth the given size points on its base size alone, so a case states a colony by the

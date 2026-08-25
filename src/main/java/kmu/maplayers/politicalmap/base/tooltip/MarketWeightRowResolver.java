@@ -149,13 +149,12 @@ public final class MarketWeightRowResolver {
             ColonyObservationNotes notes) {
 
         return CellTooltipEntry
-            .createEntry(remarkOnColony(
+            .createEntry(notes.remarkOnColony(
                 createMapEntityLine(
                     breakdown.marketNameplate(),
                     breakdown.marketNameplate().displayName(),
                     KmlibNumbers.formatGroupedInteger(breakdown.computeTotalWeight())),
-                breakdown.marketId(),
-                notes))
+                breakdown.marketId()))
             .nesting(resolveFactorEntries(breakdown, rules));
     }
 
@@ -176,34 +175,14 @@ public final class MarketWeightRowResolver {
         // the pass can never have weighed one, and the kinds that are weighed are already told
         // apart by the numbers beneath them.
         return CellTooltipEntry.createEntry(ColonyKindQualifier.qualifyByKind(
-            remarkOnColony(
+            notes.remarkOnColony(
                 createMapEntityLine(
                         colony.nameplate(),
                         colony.nameplate().displayName(),
                         KmlibNumbers.formatGroupedInteger(NO_WEIGHT))
                     .statesUncountedValue(),
-                colony.marketId(),
-                notes),
+                colony.marketId()),
             colony.kind()));
-    }
-
-    // Runs a colony's line on into when it was last seen, where nobody is looking at it now.
-    //
-    // Applied to both kinds of colony line through one helper, because how current the box's news
-    // of a colony is has nothing to do with whether the economy lists it - and the derelict that
-    // most needs the remark is exactly the kind no weight was worked out for.
-    //
-    // Nothing beneath a colony takes one: a stability or a patrol tier is arithmetic over the
-    // colony's own line, so a date there would be answering for the line above it twice.
-    private static CellTooltipEntryLine remarkOnColony(
-            CellTooltipEntryLine line,
-            String marketId,
-            ColonyObservationNotes notes) {
-
-        return notes
-            .resolveLastSeenNote(marketId)
-            .map(line::notedWith)
-            .orElse(line);
     }
 
     // A line naming something the sector map draws - a colony or the station defending it - led by
