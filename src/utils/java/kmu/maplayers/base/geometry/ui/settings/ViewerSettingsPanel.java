@@ -172,7 +172,48 @@ public final class ViewerSettingsPanel {
             refreshes::refreshCoastlines,
             buildSectionBody(this::addVoidPocketV3Rows)));
 
+        controls.add(ControlRows.buildDivider());
+
+        addBothConstructionRows(controls);
+
         return controls;
+    }
+
+    // The knobs that reach BOTH constructions, outside either section.
+    //
+    // Inside one of them, a knob governing the other is unreachable exactly when that section
+    // is folded away or switched off - and worse, drawn as disabled while still deciding what
+    // the other construction shows. A knob that looks dead and is not is the one kind of
+    // control a reader cannot recover from by looking harder.
+    private void addBothConstructionRows(JPanel controls) {
+
+        // What the smoothing left out, on whichever coasts are drawn. A diagnostic rather
+        // than a layer: it answers "what did the rules take" - the one thing a finished coast
+        // cannot be asked, since a stretch a rule threw away and one the walk never offered
+        // are both simply missing from the line.
+        //
+        // One row for both constructions because the question is the same of each, and the
+        // answer is told apart by the coast each mark sits beside.
+        controls.add(ControlRows.buildToggle(
+            "showDroppedStretches",
+            "Dropped stretches",
+            false,
+            on -> settings.showDroppedStretches = on,
+            refreshes::repaintMap));
+
+        controls.add(ColourRows.buildColour(
+            "droppedStretchColour",
+            "Dropped stretches",
+            ViewerSettings.DROPPED_STRETCH_DEFAULT,
+            colour -> settings.droppedStretchColour = colour,
+            refreshes::repaintMap));
+
+        // Read by every fill on the map - both constructions' pockets and the bridges' own -
+        // so it belongs to neither.
+        controls.add(buildOpacitySlider(
+            "voidFillOpacity",
+            "Void fill opacity",
+            opacity -> settings.voidFillOpacity = (int) opacity));
     }
 
     // A column for one section to hold, filled by whichever run of rows it is the section for.
@@ -416,7 +457,6 @@ public final class ViewerSettingsPanel {
 
         addInlandVoidRows(controls);
         addCoastalVoidRows(controls);
-        addSharedVoidRows(controls);
     }
 
     // The void held between two cells facing each other, and how far apart they may be.
@@ -483,36 +523,10 @@ public final class ViewerSettingsPanel {
             "coastLeastFrontage",
             ViewerSettings.COAST_MIN_FRONTAGE_DEFAULT,
             share -> settings.coastMinFrontageShare = share));
-    }
-
-    // The knobs that reach both kinds of void, and both constructions, so they belong to
-    // neither group above them.
-    private void addSharedVoidRows(JPanel controls) {
-
-        // What the smoothing left out, on whichever coasts are drawn. A diagnostic rather
-        // than a layer: it answers "what did the rules take" - the one thing a finished coast
-        // cannot be asked, since a stretch a rule threw away and one the walk never offered
-        // are both simply missing from the line.
-        //
-        // One row for both constructions because the question is the same of each, and the
-        // answer is told apart by the coast each mark sits beside.
-        controls.add(ControlRows.buildToggle(
-            "showDroppedStretches",
-            "Dropped stretches",
-            false,
-            on -> settings.showDroppedStretches = on,
-            refreshes::repaintMap));
-
-        controls.add(ColourRows.buildColour(
-            "droppedStretchColour",
-            "Dropped stretches",
-            ViewerSettings.DROPPED_STRETCH_DEFAULT,
-            colour -> settings.droppedStretchColour = colour,
-            refreshes::repaintMap));
 
         // A pair rather than one, because the two say different halves of the same thing:
-        // which run went where it should not, and which cell it went into. Nothing is drawn
-        // in either once the construction stops crossing anything.
+        // which run went where it should not, and which cell it went into. This construction's
+        // own, since only it checks its coast for crossings.
         controls.add(ColourRows.buildColourPair(
             "coastCrossings",
             "Coast crossing / crossed cell",
@@ -522,13 +536,7 @@ public final class ViewerSettingsPanel {
             new ColourRows.Choice(
                 ViewerSettings.PIERCED_CELL_DEFAULT,
                 colour -> settings.piercedCellColour = colour),
-            refreshes::repaintMap));
-
-        controls.add(buildOpacitySlider(
-            "voidFillOpacity",
-            "Void fill opacity",
-            opacity -> settings.voidFillOpacity = (int) opacity));
-    }
+            refreshes::repaintMap));    }
 
     // Void pockets v3: the per-continent construction, behind its own divider.
     //
