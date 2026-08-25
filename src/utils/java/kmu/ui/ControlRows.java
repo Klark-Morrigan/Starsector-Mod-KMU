@@ -85,6 +85,51 @@ public final class ControlRows {
     }
 
     /**
+     * A checkbox that remembers itself, without a row round it.
+     *
+     * <p>The whole of what makes a switch remembered: it opens on what was last chosen, its
+     * owner is told that before anything is drawn, and each click records the new state before
+     * anything acts on it. Shared because more than one thing wants that behaviour without
+     * wanting this class's row - a section heading is a switch with a fold button beside it
+     * rather than a label and a reset.
+     *
+     * <p><b>The owner is told the remembered state before the control is returned.</b> Without
+     * it a switch left off last time comes back drawn as off but with whatever it governs
+     * still on, and the first click appears to turn the thing OFF while turning it on. That
+     * ordering is the reason this is one method rather than a pattern each caller repeats.
+     *
+     * @param key      what to remember it under
+     * @param title    what the switch is called
+     * @param fallback the state to start in when nothing is remembered
+     * @param apply    records the new state
+     * @param onChange what to run once it changes
+     * @return the checkbox
+     */
+    public static JCheckBox buildRememberedCheckBox(
+            String key,
+            String title,
+            boolean fallback,
+            Consumer<Boolean> apply,
+            Runnable onChange) {
+
+        var saved = SavedValues.findSavedValues().getBoolean(key, fallback);
+        var toggle = new JCheckBox(title, saved);
+
+        toggle.addActionListener(event -> {
+
+            apply.accept(toggle.isSelected());
+
+            SavedValues.findSavedValues().putBoolean(key, toggle.isSelected());
+
+            onChange.run();
+        });
+
+        apply.accept(saved);
+
+        return toggle;
+    }
+
+    /**
      * A checkbox that remembers itself, with a reset button.
      *
      * @param key      what to remember it under
@@ -101,21 +146,7 @@ public final class ControlRows {
             Consumer<Boolean> apply,
             Runnable onChange) {
 
-        var saved = SavedValues.findSavedValues().getBoolean(key, fallback);
-
-        var toggle = new JCheckBox(title, saved);
-
-        toggle.addActionListener(event -> {
-
-            apply.accept(toggle.isSelected());
-
-            SavedValues.findSavedValues().putBoolean(key, toggle.isSelected());
-
-            onChange.run();
-        });
-
-        apply.accept(saved);
-
+        var toggle = buildRememberedCheckBox(key, title, fallback, apply, onChange);
         var row = new JPanel(new BorderLayout());
 
         row.add(toggle, BorderLayout.CENTER);
@@ -277,6 +308,17 @@ public final class ControlRows {
     //
     // Shared with the toggle block next door for exactly that reason: its switches are knobs
 
+    /**
+     * The small square button that puts one control back to its default.
+     *
+     * <p>Every remembered control carries one, in the same place and at the same size, so a
+     * reader who has moved something and wants it back does not have to remember what it was.
+     * That is the whole reason the defaults are worth naming: a knob nobody can undo is a knob
+     * nobody experiments with.
+     *
+     * @param reset what to do when it is pressed, which is the control's own business
+     * @return the button
+     */
     public static JButton buildResetButton(Runnable reset) {
 
         var button = new JButton(RESET_LABEL);
@@ -289,6 +331,20 @@ public final class ControlRows {
         return button;
     }
 
+    /**
+     * One control's row: its name on the left, its value and reset on the right, and whatever
+     * wide widget it has below.
+     *
+     * <p>Shared so that every row in a panel lines up. A row laid out where it is declared is
+     * a row whose padding and column widths are its own, and a column of those reads as a list
+     * of unrelated controls rather than as one panel.
+     *
+     * @param title    what the control is called
+     * @param value    the widget showing its value, beside the reset
+     * @param reset    what to do when the reset is pressed
+     * @param wideParts anything spanning the full width beneath, such as a slider track
+     * @return the row
+     */
     public static JPanel layOutLabelledRow(
             String title,
             JTextField valueBox,

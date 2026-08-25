@@ -10,7 +10,6 @@ import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -69,59 +68,50 @@ public final class CollapsibleSection {
     /**
      * Builds one section.
      *
-     * @param keys     what its switch and its folded state are remembered under
-     * @param heading  what the section is called, which is also the switch's label
-     * @param fallback what the switch is before anyone has set it, and while nothing is
-     *                 remembered; sections start unfolded whatever this is, since a panel
-     *                 that opened with everything shut would hide what it is for
-     * @param apply    records the switch's new state
-     * @param onChange what to run once the switch changes
-     * @param body     the controls the section holds, laid out by the caller
+     * <p>Sections start unfolded until someone folds one, whatever the switch is set to: a
+     * panel that opened with everything shut would hide what it is for.
+     *
+     * @param keys    what its switch and its folded state are remembered under
+     * @param heading what the section is called, which is also the switch's label
+     * @param master  the switch over the whole run
+     * @param body    the controls the section holds, laid out by the caller
      * @return the section, heading and body together
      */
     public static JPanel buildSection(
             SectionKeys keys,
             String heading,
-            boolean fallback,
-            Consumer<Boolean> apply,
-            Runnable onChange,
+            MasterSwitch master,
             JPanel body) {
 
-        var saved = SavedValues.findSavedValues();
-        var isOn = saved.getBoolean(keys.switchKey(), fallback);
-        var isUnfolded = saved.getBoolean(keys.foldKey(), true);
+        var fold = prepareFoldableBody(keys.foldKey(), body);
 
-        var master = new JCheckBox(heading, isOn);
-        var fold = buildFoldButton(isUnfolded);
+        // Greyed the moment it is built, and again on every change, so a run of controls that
+        // decides nothing right now never looks live.
+        var control = ControlRows.buildRememberedCheckBox(
+            keys.switchKey(),
+            heading,
+            master.fallback(),
+            isOn -> {
+                applyEnabled(body, isOn);
+                master.apply().accept(isOn);
+            },
+            master.onChange());
 
-        body.setBorder(BorderFactory.createEmptyBorder(0, BODY_INDENT, 0, 0));
-        body.setVisible(isUnfolded);
-        applyEnabled(body, isOn);
+        return layOutSection(fold, control, body);
+    }
 
-        // Told the remembered state before anything is drawn, so the map opens matching the
-        // panel. Without it a section switched off last time would come back drawn but
-        // unticked, and the first click would appear to turn it OFF while turning it on.
-        apply.accept(isOn);
-
-        master.addActionListener(event -> {
-
-            applyEnabled(body, master.isSelected());
-            apply.accept(master.isSelected());
-
-            SavedValues.findSavedValues().putBoolean(keys.switchKey(), master.isSelected());
-
-            onChange.run();
-        });
-
-        fold.addActionListener(event -> {
-
-            body.setVisible(!body.isVisible());
-            fold.setText(body.isVisible() ? UNFOLDED_LABEL : FOLDED_LABEL);
-
-            SavedValues.findSavedValues().putBoolean(keys.foldKey(), body.isVisible());
-        });
-
-        return layOutSection(fold, master, body);
+    /**
+     * The switch over one section: what it starts as, what it sets, and what that costs.
+     *
+     * <p>Together because a switch is not a switch without all three, and passed loose they
+     * are three arguments of which two are lambdas - an order a caller can transpose and the
+     * compiler cannot.
+     *
+     * @param fallback what it is before anyone has set it
+     * @param apply    records the new state
+     * @param onChange what to rebuild once it changes
+     */
+    public record MasterSwitch(boolean fallback, Consumer<Boolean> apply, Runnable onChange) {
     }
 
     /**
@@ -139,13 +129,7 @@ public final class CollapsibleSection {
      */
     public static JPanel buildFoldingSection(String sectionName, String heading, JPanel body) {
 
-        var foldKey = SectionKeys.forSection(sectionName).foldKey();
-        var isUnfolded = SavedValues.findSavedValues().getBoolean(foldKey, true);
-        var fold = buildFoldButton(isUnfolded);
-
-        body.setBorder(BorderFactory.createEmptyBorder(0, BODY_INDENT, 0, 0));
-        body.setVisible(isUnfolded);
-
+        var fold = prepareFoldableBody(SectionKeys.forSection(sectionName).foldKey(), body);
         var label = new JLabel(heading);
 
         // Larger as well as bold. Every row label in this panel is already bold - that is the
@@ -158,6 +142,23 @@ public final class CollapsibleSection {
         label.setFont(label.getFont().deriveFont(
             Font.BOLD, label.getFont().getSize() + HEADING_SIZE_INCREASE));
 
+        return layOutSection(fold, label, body);
+    }
+
+    // Sets a body up to fold, and hands back the button that folds it.
+    //
+    // Shared because both kinds of section fold identically - the difference between them is
+    // what sits in the heading beside the button, not what the button does. Held apart, the
+    // two copies were free to disagree about which way round the marks read or which key the
+    // state went under.
+    private static JButton prepareFoldableBody(String foldKey, JPanel body) {
+
+        var isUnfolded = SavedValues.findSavedValues().getBoolean(foldKey, true);
+        var fold = buildFoldButton(isUnfolded);
+
+        body.setBorder(BorderFactory.createEmptyBorder(0, BODY_INDENT, 0, 0));
+        body.setVisible(isUnfolded);
+
         fold.addActionListener(event -> {
 
             body.setVisible(!body.isVisible());
@@ -166,7 +167,7 @@ public final class CollapsibleSection {
             SavedValues.findSavedValues().putBoolean(foldKey, body.isVisible());
         });
 
-        return layOutSection(fold, label, body);
+        return fold;
     }
 
     /**

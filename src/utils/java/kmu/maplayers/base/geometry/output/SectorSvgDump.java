@@ -31,6 +31,11 @@ public final class SectorSvgDump {
     private SectorSvgDump() {
     }
 
+    /**
+     * Writes every fixture's map, at both shapings of the void.
+     *
+     * @param args ignored; every fixture on the classpath is written
+     */
     public static void main(String[] args) {
 
         for (var sectorName : SectorFixture.listSectorNames()) {

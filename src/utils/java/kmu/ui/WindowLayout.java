@@ -53,6 +53,12 @@ public final class WindowLayout {
             - saved.getInt(CONTROL_WIDTH_KEY, CONTROL_WIDTH));
     }
 
+    /**
+     * Writes down the window's size and the width of its control column.
+     *
+     * @param frame the window
+     * @param split the divider between the map and the controls
+     */
     public static void saveLayout(JFrame frame, JSplitPane split) {
 
         var saved = SavedValues.findSavedValues();

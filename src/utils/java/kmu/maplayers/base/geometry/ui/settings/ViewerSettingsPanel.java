@@ -134,6 +134,15 @@ public final class ViewerSettingsPanel {
         this.refreshes = refreshes;
     }
 
+    /**
+     * Every control the viewer offers, in one column.
+     *
+     * <p>Built once, when the window is. Nothing here is rebuilt as settings change - a
+     * control writes its setting and asks for whatever redraw that costs, and the panel itself
+     * never has to know what changed.
+     *
+     * @return the column
+     */
     public JPanel buildRows() {
 
         var controls = new JPanel();
@@ -167,9 +176,8 @@ public final class ViewerSettingsPanel {
         controls.add(CollapsibleSection.buildSection(
             SECTOR_VOID_KEYS,
             "Sector coast void (v2)",
-            true,
-            on -> settings.showSectorVoid = on,
-            this::refreshBothConstructions,
+            new CollapsibleSection.MasterSwitch(
+                true, on -> settings.showSectorVoid = on, this::refreshBothConstructions),
             buildSectionBody(this::addVoidPocketRows)));
 
         controls.add(ControlRows.buildDivider());
@@ -177,9 +185,8 @@ public final class ViewerSettingsPanel {
         controls.add(CollapsibleSection.buildSection(
             CONTINENT_VOID_KEYS,
             "Continent coast void (v3)",
-            true,
-            on -> settings.showContinentVoid = on,
-            refreshes::refreshCoastlines,
+            new CollapsibleSection.MasterSwitch(
+                true, on -> settings.showContinentVoid = on, refreshes::refreshCoastlines),
             buildSectionBody(this::addVoidPocketV3Rows)));
 
         controls.add(ControlRows.buildDivider());
@@ -331,6 +338,16 @@ public final class ViewerSettingsPanel {
     // What the cells are painted with, and how solidly.
     private void addCellPaintRows(JPanel controls) {
 
+        addOwnedCellRows(controls);
+        addUnboundedCellRows(controls);
+        addJitterRows(controls);
+    }
+
+    // What an owned cell and an unowned one are drawn in, each as a fill under an edge with
+    // an opacity of its own. The two together because the whole point of the pair is that a
+    // reader can tell at a glance which of them a cell is.
+    private void addOwnedCellRows(JPanel controls) {
+
         controls.add(ColourRows.buildColourPair(
             "ownedCell",
             "Owned cells",
@@ -362,7 +379,14 @@ public final class ViewerSettingsPanel {
             "unownedCellOpacity",
             "Unowned opacity",
             opacity -> settings.unownedCellOpacity = (int) opacity));
+    }
 
+    // The cells the partition could not bound, traced separately and drawn over the rest.
+    //
+    // The switch rebuilds rather than repaints: an unbounded cell is found by tracing, so
+    // asking for them is what makes them exist. The bridges go with it, since a cell that was
+    // not bounded is a cell no gap was measured against.
+    private void addUnboundedCellRows(JPanel controls) {
         controls.add(buildToggle(
             "showUnboundedCells",
             "Trace unbounded cells",
@@ -388,7 +412,14 @@ public final class ViewerSettingsPanel {
             "unboundedCellOpacity",
             "Unbounded opacity",
             opacity -> settings.unboundedCellOpacity = (int) opacity));
+    }
 
+    // How far each cell's fill wanders from the colour it was chosen as, and which kinds do.
+    //
+    // Its own run because it is about telling neighbours apart rather than about what either
+    // is: the colours above say what a cell IS, and this says how hard the map works to stop
+    // two of them reading as one shape.
+    private void addJitterRows(JPanel controls) {
         controls.add(ControlRows.buildToggleRow(
             refreshes::repaintMap,
             new ControlRows.Toggle(

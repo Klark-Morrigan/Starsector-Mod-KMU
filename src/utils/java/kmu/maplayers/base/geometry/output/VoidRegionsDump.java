@@ -346,6 +346,32 @@ public final class VoidRegionsDump {
             return;
         }
 
+        reportPocketWidths(pockets, cellWidth);
+        reportPocketShapes(pockets);
+
+        reportRingingOwners(pockets, fixture);
+        reportBridges(fixture, pockets, laid);
+
+        var shares = new ArrayList<Double>(pockets.size());
+        var sections = new ArrayList<Double>(pockets.size());
+
+        for (var pocket : pockets) {
+
+            shares.add(pocket.span() / cellWidth);
+            sections.add((double) pocket.section().cells().size());
+        }
+
+        reportPercentiles("pocket span, in cell widths", "%.2f", shares);
+        reportPercentiles("cells ringing a pocket", "%.0f", sections);
+    }
+
+    // How many pockets are wider than a cell. The one number the design turns on: a pocket no
+    // wider than a cell has nothing that could connect across it, so the count either side of
+    // that line says how much of the void is worth anything.
+    private static void reportPocketWidths(
+            List<VoidPockets.VoidPocket> pockets,
+            double cellWidth) {
+
         var wide = 0;
 
         for (var pocket : pockets) {
@@ -361,6 +387,12 @@ public final class VoidRegionsDump {
             wide,
             cellWidth,
             pockets.size() - wide);
+    }
+
+    // The three shapes a pocket comes out in, counted. Together in one line because they are
+    // one question - what became of the void - and reading them apart invites the three to be
+    // compared against different totals.
+    private static void reportPocketShapes(List<VoidPockets.VoidPocket> pockets) {
 
         var absorbed = 0;
         var closedOver = 0;
@@ -385,35 +417,34 @@ public final class VoidRegionsDump {
             absorbed,
             closedOver,
             pinched);
+    }
 
-        reportRingingOwners(pockets, fixture);
-        reportBridges(fixture, pockets, laid);
+    /**
+     * One measure's spread, as the three figures every measure here is reported by.
+     *
+     * <p>The same three of everything, so two measures can be read against each other without
+     * working out which quantile each was quoted at. A median says what is typical, a ninetieth
+     * what the tail looks like, and a maximum whether that tail has one member or many.
+     *
+     * @param label        what is being measured
+     * @param valueFormat  how to print one of its values, which differs by what the measure is
+     *                     counted in - a share wants decimals where a count of cells does not
+     * @param values       the measurements; sorted here, so no caller has to remember to
+     */
+    private static void reportPercentiles(
+            String label,
+            String valueFormat,
+            List<Double> values) {
 
-        var shares = new ArrayList<Double>(pockets.size());
-        var sections = new ArrayList<Double>(pockets.size());
-
-        for (var pocket : pockets) {
-
-            shares.add(pocket.span() / cellWidth);
-            sections.add((double) pocket.section().cells().size());
-
-        }
-
-        shares.sort(Double::compare);
-        sections.sort(Double::compare);
+        values.sort(Double::compare);
 
         System.out.printf(
             Locale.ROOT,
-            "pocket span, in cell widths: p50 %.2f / p90 %.2f / max %.2f%n",
-            ReportFigures.findPercentile(shares, REPORTED_PERCENTILES[0]),
-            ReportFigures.findPercentile(shares, REPORTED_PERCENTILES[1]),
-            ReportFigures.findPercentile(shares, REPORTED_PERCENTILES[2]));
-        System.out.printf(
-            Locale.ROOT,
-            "cells ringing a pocket: p50 %.0f / p90 %.0f / max %.0f%n",
-            ReportFigures.findPercentile(sections, REPORTED_PERCENTILES[0]),
-            ReportFigures.findPercentile(sections, REPORTED_PERCENTILES[1]),
-            ReportFigures.findPercentile(sections, REPORTED_PERCENTILES[2]));
+            label + ": p50 " + valueFormat + " / p90 " + valueFormat
+                + " / max " + valueFormat + "%n",
+            ReportFigures.findPercentile(values, REPORTED_PERCENTILES[0]),
+            ReportFigures.findPercentile(values, REPORTED_PERCENTILES[1]),
+            ReportFigures.findPercentile(values, REPORTED_PERCENTILES[2]));
     }
 
     // What the other construction over the same void finds, and the one number that says

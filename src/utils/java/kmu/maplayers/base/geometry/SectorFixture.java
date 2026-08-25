@@ -135,10 +135,20 @@ public final class SectorFixture {
         return fixture;
     }
 
+    /**
+     * The id of the system each site was loaded from, in the sites' own order.
+     *
+     * @return the ids
+     */
     public List<String> getSystemIds() {
         return systemIds;
     }
 
+    /**
+     * Where each system sits, which is what every construction here is built from.
+     *
+     * @return the sites
+     */
     public List<double[]> getSites() {
         return sites;
     }
