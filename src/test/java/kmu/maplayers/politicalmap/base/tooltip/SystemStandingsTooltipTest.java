@@ -122,17 +122,31 @@ final class SystemStandingsTooltipTest {
             // What the key at the foot of the box offers the player, in their words. Answered for the
             // pair at once because it is the one thing they agree on - the counterpart accounts for the
             // very scores the ordinary box ranks by, so switching either way offers the same account.
+            StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
+
             assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
                 .contains("score contributions");
         }
 
         @Test
-        void resolveExpandedDetailNameOffersNothingForASystemHoldingNobody() {
-            // There are no colonies to account for, so the counterpart would state the same banner the
-            // ordinary box already does - a key press the player could not see the result of. The hint
-            // goes with it rather than advertising one.
-            StandingsTooltipSeamsFake.stubStatusRow("Unpopulated");
+        void resolveExpandedDetailNameOffersTheAccountBehindAStandingOverACollapsedSystem() {
+            // The status line and the standings answer different questions of the one pass: a system
+            // whose colonies have all collapsed is headed Decivilised and still ranks whoever holds
+            // them, and those colonies are exactly what the counterpart opens up. Judged off the
+            // line instead, such a system - the only kind whose whole account is the collapse - is
+            // the one where the detail is withheld.
+            StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
+            StandingsTooltipSeamsFake.stubStatusRow("Decivilised");
 
+            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
+                .contains("score contributions");
+        }
+
+        @Test
+        void resolveExpandedDetailNameOffersNothingForASystemRankingNobody() {
+            // Nobody ranks, so there is no score for the counterpart to account for and it would state
+            // the same banner the ordinary box already does - a key press the player could not see the
+            // result of. The hint goes with it rather than advertising one.
             assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
                 .isEmpty();
         }

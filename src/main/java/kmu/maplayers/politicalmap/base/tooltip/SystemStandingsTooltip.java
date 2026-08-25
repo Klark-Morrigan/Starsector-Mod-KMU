@@ -106,17 +106,19 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         if (activeView == null) {
             return Optional.empty();
         }
-        // The counterpart accounts for the colonies behind a score, so a system holding none has
-        // nothing for it to account for: both boxes would state the same banner and the key would do
-        // nothing the player could see. Asked of the very line the box says that emptiness with,
-        // under the same pass, so it can never offer to expand a system it has just called
-        // unpopulated - which reading the economy a second way here would eventually allow.
+        // The counterpart accounts for the colonies behind the standings, so a system ranking none
+        // has nothing for it to account for: both boxes would state the same banner and the key
+        // would do nothing the player could see. Asked of the very ranking the body lists, under the
+        // same pass, so it can never offer to expand a contest it is about to draw as empty.
+        //
+        // Judged on the ranking rather than on the status line above it, which answers a different
+        // question of the same pass: the line says whether anybody runs the place, while the
+        // standings name everyone the player may be told about. A system whose colonies are all
+        // collapsed or derelict is headed Decivilised or Unpopulated and still ranks whoever holds
+        // them - and those colonies are exactly what the counterpart opens up, so gating on the line
+        // withheld the detail on the systems that have only it to give.
         var pass = DominancePass.readFromLunaSettings(sector, activeView.resolveGrouping());
-        if (SystemStatusRow
-                .resolveStatusRow(
-                    pass.readColoniesIn(system),
-                    pass.colonyKnowledge())
-                .isPresent()) {
+        if (SystemStandings.rankByDominationScore(system, pass).isEmpty()) {
             return Optional.empty();
         }
         // Answered for the pair at once rather than by each box, because it is the one thing they
