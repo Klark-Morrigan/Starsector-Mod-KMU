@@ -384,7 +384,7 @@ public final class FilteredPolitics {
             HolderGrouping grouping,
             Map<String, MarketFootprint> footprintByBlocId,
             Comparator<String> tieBreak) {
-                
+
         var dominantBlocId = SystemDominance.resolveDominantFactionId(footprintByBlocId, tieBreak);
         if (dominantBlocId == null) {
             return null;

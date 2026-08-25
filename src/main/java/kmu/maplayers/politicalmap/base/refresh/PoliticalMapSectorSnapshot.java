@@ -127,13 +127,13 @@ public record PoliticalMapSectorSnapshot(
             visibility += MapVisibility.computeVisibilityContribution(
                 systemId,
                 hasRevealedDecivilised);
-                    
+
             // A decivilised-only system is drawn yet unowned, so it counts toward
             // visibility but is left out of the holder map - a system gaining or
             // losing an holder then reads as a diff against that absence.
             var dominantFactionId =
                 SystemDominance.resolveDominantFactionId(footprintByFactionId);
-                
+
             if (dominantFactionId != null) {
                 ownerBySystemId.put(systemId, dominantFactionId);
             }

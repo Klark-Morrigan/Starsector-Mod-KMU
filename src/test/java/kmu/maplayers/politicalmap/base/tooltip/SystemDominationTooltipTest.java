@@ -107,7 +107,7 @@ final class SystemDominationTooltipTest {
 
     @BeforeEach
     void installColoursAndTheRankingSeams() {
-        
+
         CellTooltipPaletteFake.installPalette();
         StandingsTooltipSeamsFake.installSeams(ANY_PASS);
 

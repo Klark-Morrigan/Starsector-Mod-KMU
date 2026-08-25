@@ -100,7 +100,7 @@ public final class PoliticalMapViewRegistry {
             return;
         }
         var wasOverlayOn = memory.getBoolean(LEGACY_FACTION_OVERLAY_KEY);
-        
+
         memory.set(ACTIVE_VIEW_KEY, wasOverlayOn ? defaultView.getId() : OFF_SELECTION);
         memory.unset(LEGACY_FACTION_OVERLAY_KEY);
     }

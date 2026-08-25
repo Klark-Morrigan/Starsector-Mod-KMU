@@ -298,7 +298,7 @@ final class RecedePreferencesTest {
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
-                
+
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
@@ -757,7 +757,7 @@ final class RecedePreferencesTest {
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
-                
+
                 when(memoryMock.contains(SHARED_MUTE_KEY))
                     .thenReturn(true);
                 when(memoryMock.getBoolean(SHARED_MUTE_KEY))

@@ -136,7 +136,7 @@ final class HoveredBoxTest {
             hoverTheSystem();
 
             try (var globalMock = mockStatic(Global.class)) {
-                
+
                 globalMock
                     .when(Global::getSector)
                     .thenReturn(null);

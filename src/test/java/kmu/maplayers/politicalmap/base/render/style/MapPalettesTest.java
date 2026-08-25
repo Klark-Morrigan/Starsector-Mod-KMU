@@ -259,7 +259,7 @@ final class MapPalettesTest {
         void resolveDesaturationPaletteLeavesTheIndependentShadesUntouchedAtZeroStrength() {
 
             var independentMock = mock(FactionAPI.class);
-            
+
             when(independentMock.getBrightUIColor())
                 .thenReturn(Color.GREEN);
             when(independentMock.getDarkUIColor())
@@ -311,7 +311,7 @@ final class MapPalettesTest {
 
         @Test
         void resolvePresencePaletteReachesWhiteAtFullStrength() {
-            
+
             var palette = MapPalettes.resolvePresencePalette(NEUTRAL_GREY, 1.0);
 
             assertThat(palette)

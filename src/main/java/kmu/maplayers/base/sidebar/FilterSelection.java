@@ -33,7 +33,7 @@ import java.util.function.Predicate;
  * before the sector exists (or a clear with nothing selected) neither writes nor repaints.
  */
 public final class FilterSelection {
-    
+
     // Per-scope key prefix; the scope's own id is appended to give one save-serialised slot per
     // scope. The prefix is layer-neutral because every map layer's picker stores through this one
     // class - a prefix naming one layer would have every other layer persisting its selection under

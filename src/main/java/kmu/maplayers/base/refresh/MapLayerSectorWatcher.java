@@ -31,7 +31,7 @@ public class MapLayerSectorWatcher implements EveryFrameScript {
 
     private final IntervalUtil pollInterval = new IntervalUtil(POLL_MIN_SECONDS, POLL_MAX_SECONDS);
     private final MapLayerStalenessSource stalenessSource;
-    
+
     // One-shot guard: this polls on the campaign thread every few seconds, so a
     // recurring fault would flood the log. The first failure is recorded, the
     // rest silenced.

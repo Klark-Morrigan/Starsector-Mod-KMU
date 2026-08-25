@@ -166,7 +166,7 @@ public final class StandingsTooltipSeamsFake {
      * @return the line itself, so a case can assert the body carries that very row
      */
     public static TooltipRow stubStatusRow(String statusText) {
-        
+
         var statusRow = CellTooltipRows.buildBannerRow(null, statusText);
 
         statusRowMock

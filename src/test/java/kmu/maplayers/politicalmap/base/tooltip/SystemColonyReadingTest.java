@@ -74,7 +74,7 @@ final class SystemColonyReadingTest {
 
         @Test
         void remarkOnColonyLeavesALineAloneWhereNothingIsDue() {
-            
+
             var reading = new SystemColonyReading(ColonyKindLookup.NONE, null);
 
             assertThat(reading.remarkOnColony(PLAIN_LINE, DERELICT_ID))

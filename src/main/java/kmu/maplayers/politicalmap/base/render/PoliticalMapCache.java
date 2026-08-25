@@ -304,7 +304,7 @@ final class PoliticalMapCache {
             rebuildBorderTracingOverlay(sector, view);
 
         } else {
-            
+
             rebuildTerritoriesAndBands(
                 new HolderPass(
                     view.resolveGrouping(),
@@ -340,7 +340,7 @@ final class PoliticalMapCache {
         borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
             cellGeometry.cells(),
             sector);
-            
+
         territories = null;
 
         ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(

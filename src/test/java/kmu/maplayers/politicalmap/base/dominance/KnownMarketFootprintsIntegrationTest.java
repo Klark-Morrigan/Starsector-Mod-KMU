@@ -1416,7 +1416,7 @@ class KnownMarketFootprintsIntegrationTest {
                 withName(buildVisibleMarket(buildFaction("independent"), 3), "Galatia Academy"),
                 "graphics/icons/station0.png",
                 new Color(200, 200, 255));
-                
+
             var sector = buildSectorWith("galatia");
 
             placeMarketsOnSystemEntities(buildOnlySystem(sector), academy);

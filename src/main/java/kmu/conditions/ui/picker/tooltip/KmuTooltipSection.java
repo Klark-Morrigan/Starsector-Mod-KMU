@@ -40,7 +40,7 @@ public final class KmuTooltipSection {
             style.backgroundColour(),
             Alignment.MID,
             HEADING_PAD);
-            
+
         for (var line : lines) {
             if (hasText(line)) {
                 tooltip.addPara(line, style.bodyColour(), LINE_PAD);

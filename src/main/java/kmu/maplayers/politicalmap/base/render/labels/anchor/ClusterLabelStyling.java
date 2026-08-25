@@ -212,7 +212,7 @@ final class ClusterLabelStyling {
             LazyFont font,
             FactionNameFormatChoice nameFormat,
             String blocId) {
-                
+
         if (font == null) {
             return new AspectLabelLengthEstimator(FALLBACK_NAME_ASPECT);
         }

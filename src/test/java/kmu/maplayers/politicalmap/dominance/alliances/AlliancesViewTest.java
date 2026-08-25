@@ -439,7 +439,7 @@ final class AlliancesViewTest {
 
         globalMock.when(Global::getSettings)
             .thenReturn(settingsMock);
-            
+
         when(settingsMock.getModManager())
             .thenReturn(modManagerMock);
 

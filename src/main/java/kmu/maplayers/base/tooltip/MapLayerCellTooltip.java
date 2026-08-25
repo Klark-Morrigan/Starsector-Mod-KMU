@@ -116,7 +116,7 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
     // Descends exactly one level: a counterpart is never asked for a counterpart of its own, so the
     // model cannot recurse however deeply a layer nests its variants.
     static MapHoverTooltip selectVariantFor(MapHoverTooltip base, HoverTooltipDetailMode mode) {
-        
+
         if (mode != HoverTooltipDetailMode.EXPANDED) {
             return base;
         }

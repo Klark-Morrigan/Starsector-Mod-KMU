@@ -53,7 +53,7 @@ final class ClaimStatsAggregatorIntegrationTest {
                 listSystemMarkets("system-b"));
 
             var claimReaderFake = new ClaimReaderFake();
-            
+
             claimReaderFake.setClaim("system-a", "hegemony");
             claimReaderFake.setClaim("system-b", "hegemony");
 

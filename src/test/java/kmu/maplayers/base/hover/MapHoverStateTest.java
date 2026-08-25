@@ -152,7 +152,7 @@ final class MapHoverStateTest {
 
         @Test
         void getInstanceIsOneSharedHolder() {
-            
+
             assertThat(MapHoverState.getInstance())
                 .isSameAs(MapHoverState.getInstance());
         }

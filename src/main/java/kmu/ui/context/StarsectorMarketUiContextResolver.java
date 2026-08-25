@@ -138,7 +138,7 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
     private Optional<KmuMarketUiContext> contextFromEntity(
             SectorEntityToken entity,
             KmuMarketUiContextSource source) {
-                
+
         if (entity == null) {
             return Optional.empty();
         }

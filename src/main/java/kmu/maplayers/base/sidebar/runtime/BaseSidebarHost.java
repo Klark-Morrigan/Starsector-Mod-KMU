@@ -44,7 +44,7 @@ import java.util.List;
  * carry into the next save loaded in the same run.
  */
 public abstract class BaseSidebarHost implements SidebarHost {
-    
+
     // Where this host's panel fold is read from and recorded to. Supplied by the concrete host, so the
     // frozen memory key and the fold the screen opens at stay with the screen that owns them.
     private final SidebarFoldSelection foldSelection;

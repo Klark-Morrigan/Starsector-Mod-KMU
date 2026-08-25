@@ -63,7 +63,7 @@ public final class MapLayers {
      * @return the ordered views to register, one segment each on the view-selector radio
      */
     static List<PoliticalMapView> selectPoliticalMapViews() {
-        
+
         var views = new ArrayList<PoliticalMapView>();
         views.add(FactionsView.INSTANCE);
 

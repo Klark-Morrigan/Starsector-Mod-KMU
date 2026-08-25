@@ -68,7 +68,7 @@ final class SystemStandingsTooltipTest {
     private static final String BLOC_CREST = "graphics/rebel_pact_crest.png";
     private static final CellTooltipMark BLOC_MARK =
         CellTooltipMark.resolveMarkAsAuthored(BLOC_CREST);
-        
+
     private static final String RIVAL_CREST = "graphics/persean_league_crest.png";
     private static final CellTooltipMark RIVAL_MARK =
         CellTooltipMark.resolveMarkAsAuthored(RIVAL_CREST);

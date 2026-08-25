@@ -146,7 +146,7 @@ final class ExpandedSystemClaimTooltipTest {
 
         visibilityRulesMock.close();
         statusRowMock.close();
-        
+
         CellTooltipPaletteFake.clearPalette();
         StarsectorSettingsFake.clearSettings();
     }

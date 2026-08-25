@@ -661,7 +661,7 @@ final class ClusterAnchorPlacementTest {
             };
             var anchors = computeAnchors(
                 FUSED_PAIR_PARTITION,
-                buildSpec(0.0, 0.0, 3, 1, 0.0, 2.0), 
+                buildSpec(0.0, 0.0, 3, 1, 0.0, 2.0),
                 new ClusterLabelResolvers(recordingColours, buildSlenderNameEstimators()));
 
             assertThat(askedGroupKeys)
@@ -878,7 +878,7 @@ final class ClusterAnchorPlacementTest {
                 1700.0,
                 2,
                 1.15);
-                
+
             var standing = computeAnchors(
                 SQUARE_GRID_CENTRED_PARTITION,
                 tuning,
@@ -1050,7 +1050,7 @@ final class ClusterAnchorPlacementTest {
                 1.0);
 
             var coarseSpec = buildSpecWithFontTolerance(fineSpec, 1000.0);
-            
+
             var fineAnchors = computeAnchors(
                 FUSED_PAIR_PARTITION,
                 fineSpec,
@@ -1212,7 +1212,7 @@ final class ClusterAnchorPlacementTest {
         // Enough words behind the named fake to fill every line count these fixtures allow, so
         // a case that is not about the unfillable answer never trips over it.
         private static final int MAX_FILLABLE_LINES = 3;
-        
+
         // A font-height tolerance far below the world units these fixtures assert their
         // geometry in, so how finely the sizing searched is never what a failure is about.
         private static final double FINE_FONT_TOLERANCE = 0.01;

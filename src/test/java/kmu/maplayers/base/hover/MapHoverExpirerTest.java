@@ -64,7 +64,7 @@ final class MapHoverExpirerTest {
 
         @Test
         void isDoneIsFalseSoTheTickRunsForTheSession() {
-            
+
             assertThat(new MapHoverExpirer(new MapHoverState()).isDone())
                 .isFalse();
         }

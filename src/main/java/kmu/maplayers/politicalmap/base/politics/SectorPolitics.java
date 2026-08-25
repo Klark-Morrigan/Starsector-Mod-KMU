@@ -135,7 +135,7 @@ public final class SectorPolitics {
             SectorAPI sector,
             HolderGrouping grouping,
             String blocId) {
-                
+
         var faction = sector.getFaction(grouping.resolveColourFactionId(blocId));
         if (faction == null) {
             return null;

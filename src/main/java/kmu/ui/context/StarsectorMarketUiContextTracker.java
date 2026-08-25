@@ -11,7 +11,7 @@ import java.util.Optional;
 public final class StarsectorMarketUiContextTracker
     extends BaseCampaignEventListener
     implements CoreUITabListener {
-        
+
     private transient MarketAPI trackedMarket;
 
     public StarsectorMarketUiContextTracker() {

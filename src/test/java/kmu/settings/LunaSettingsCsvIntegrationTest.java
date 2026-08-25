@@ -91,7 +91,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class LunaSettingsCsvIntegrationTest {
 
     private static final Path SETTINGS_CSV = Path.of("data", "config", "LunaSettings.csv");
-    
+
     // The CSV's own column order, as its header row declares it.
     private static final int FIELD_ID_COLUMN = 0;
     private static final int FIELD_NAME_COLUMN = 4;
@@ -153,10 +153,10 @@ final class LunaSettingsCsvIntegrationTest {
         "Map - Dev",
         "Dev",
         "Market Condition Manager (MCM)");
-    
+
     // LunaLib splits a Radio's options on commas; the authored rows space them out for readability.
     private static final String OPTION_SEPARATOR = ",";
-    
+
     // The Radio fields whose options are not a LabeledChoice enum's labels, and so cannot be held
     // against one. The log level's options are log4j's own level names, which KmLogging hands
     // straight to the logger; naming them here is what keeps the coverage walk exhaustive without
@@ -275,7 +275,7 @@ final class LunaSettingsCsvIntegrationTest {
     // Section captions carry an id so LunaLib can place them, but store nothing, so no source reads
     // one. Every other row holds a value.
     private static final String HEADER_FIELD_TYPE = "Header";
-    
+
     // KMU's field ids all carry the mod's prefix, which is also what tells a field row from the
     // file's own column-header line.
     private static final String FIELD_ID_PREFIX = "kmu_";
@@ -460,7 +460,7 @@ final class LunaSettingsCsvIntegrationTest {
         void everyValueFieldIdIsNamedBySomeSource() {
 
             var namedFieldIds = readFieldIdLiteralsInMainSources();
-            
+
             assertThat(readValueFieldIds())
                 .as(
                     "field ids declared in %s that no source under %s names, so either the row or"
@@ -579,7 +579,7 @@ final class LunaSettingsCsvIntegrationTest {
 
         @Test
         void everyHeaderRowDrawsTheCaptionItNames() {
-            
+
             assertThat(findHeaderRowsWhoseCaptionColumnsDisagree())
                 .as(
                     "section captions in %s whose name and drawn columns differ: LunaLib draws a"
@@ -654,7 +654,7 @@ final class LunaSettingsCsvIntegrationTest {
         // Empty until the first caption, so a value row ahead of every caption reads as stranded -
         // it has no section to belong to.
         var sectionTab = "";
-        
+
         for (var row : readFieldRows()) {
             if (HEADER_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN))) {
                 sectionTab = row.get(TAB_COLUMN);
@@ -906,7 +906,7 @@ final class LunaSettingsCsvIntegrationTest {
     }
 
     private static List<String> findRow(String fieldId) {
-        
+
         var rows = readSettingsRows().stream()
             .filter(row -> row.size() > OPTIONS_COLUMN)
             .filter(row -> fieldId.equals(row.get(FIELD_ID_COLUMN)))

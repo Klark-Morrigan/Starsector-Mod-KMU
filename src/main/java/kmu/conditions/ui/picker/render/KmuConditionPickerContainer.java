@@ -94,7 +94,7 @@ public final class KmuConditionPickerContainer {
      */
     public static float computeHeaderHeight(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
-        
+
         var locationLines = KmuConditionPickerLocationParagraphFactory.get(model).size();
         var summaryLines = KmuConditionPickerSummaryParagraphFactory.get(model).size();
 

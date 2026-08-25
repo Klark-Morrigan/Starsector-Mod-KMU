@@ -739,7 +739,7 @@ final class SystemClaimTooltipTest {
     // Puts the hovered system among the ones holding nobody, the state the status seam answers with a
     // banner. Returned so a case about where that banner sits can assert on the very row it stubbed.
     private TooltipRow.CentredRow stubSystemHoldingNobody() {
-        
+
         var statusRow = CellTooltipRows.buildBannerRow(null, "Unpopulated");
 
         statusRowMock

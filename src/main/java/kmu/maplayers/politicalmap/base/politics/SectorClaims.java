@@ -66,7 +66,7 @@ public final class SectorClaims {
                 sector,
                 grouping,
                 grouping.resolveBlocId(claimantId));
-                
+
             if (holder != null) {
                 ownerBySystemId.put(system.getId(), holder);
             }

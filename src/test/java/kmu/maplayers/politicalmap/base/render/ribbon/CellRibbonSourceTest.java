@@ -198,7 +198,7 @@ final class CellRibbonSourceTest {
 
         @Test
         void drawsNoBandForASettledCellWhileTheBandsAreSwitchedOff() {
-            
+
             switchBandsOff();
 
             assertThat(buildFor(INHABITED_SYSTEM))

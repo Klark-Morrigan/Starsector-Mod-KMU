@@ -36,7 +36,7 @@ import java.util.Set;
  * sit open.
  */
 public final class MapSidebarHost extends BaseSidebarHost {
-    
+
     /**
      * The one on-map host; the render and input listeners registered for the sector map reference it. This
      * is where the live console read is chosen, the host itself naming only the role.

@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * satisfy it.
  */
 final class ClusterRendererTest {
-    
+
     private static final float FULL_ALPHA = 1f;
     private static final float FADED_OUT_ALPHA = 0f;
     private static final float ANY_MAP_FACTOR = 1f;

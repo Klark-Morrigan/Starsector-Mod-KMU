@@ -598,7 +598,7 @@ public final class SectorPoliticsFixtures {
         var systemMocks = new ArrayList<StarSystemAPI>();
 
         for (var system : systems) {
-            
+
             var systemMock = mock(StarSystemAPI.class);
 
             when(systemMock.getId())

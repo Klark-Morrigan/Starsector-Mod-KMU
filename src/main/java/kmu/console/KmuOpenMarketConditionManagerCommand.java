@@ -97,7 +97,7 @@ public final class KmuOpenMarketConditionManagerCommand extends KmlibBaseConsole
             new StarsectorConditionRepository(),
             KmuErrorReporter.noop(),
             new StarsectorConditionOfferPolicy(KmuMarketConditionSettings::shouldOfferAllConditions));
-            
+
         return new KmuConditionEditorEntryPoint(
             new StarsectorMarketUiContextResolver(),
             new KmuConditionPickerEditor(

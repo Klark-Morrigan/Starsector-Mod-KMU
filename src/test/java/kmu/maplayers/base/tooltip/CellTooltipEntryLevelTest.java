@@ -96,7 +96,7 @@ final class CellTooltipEntryLevelTest {
             var underAlliedFaction = CellTooltipEntryLevel.LISTED_LEVEL
                 .groupedUnder()
                 .subordinatedUnder();
-                
+
             var underLoneFaction = CellTooltipEntryLevel.LISTED_LEVEL.subordinatedUnder();
 
             assertThat(underAlliedFaction.subordinationLevel())

@@ -470,7 +470,7 @@ final class FactionTerritoryBuilderTest {
             edgesByCellId.put(systemId, EDGES.get(systemId));
             systemIdByCellId.put(systemId, systemId);
         }
-        
+
         when(geometryCacheMock.getCellEdgesByCellId())
             .thenReturn(edgesByCellId);
         when(geometryCacheMock.getSystemIdByCellId())

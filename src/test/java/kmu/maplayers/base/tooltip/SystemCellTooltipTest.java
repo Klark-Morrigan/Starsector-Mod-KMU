@@ -220,7 +220,7 @@ final class SystemCellTooltipTest {
                     buildSectorWithEconomy(),
                     buildNamedSystem()))
                 .isFalse();
-                
+
             assertThat(captureDrawnBox(tooltipFake).sections())
                 .hasSize(BOX_WITH_ONE_BODY_BLOCK_SECTION_COUNT);
         }

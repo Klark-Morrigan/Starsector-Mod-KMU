@@ -193,7 +193,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         var border = new BoxBorder(
             placement.border().width(),
             host.resolveBorderEdges(placement));
-            
+
         TabPanelRenderer.render(
             placement,
             // The host's own look, asked for here rather than composed: this pass paints whichever

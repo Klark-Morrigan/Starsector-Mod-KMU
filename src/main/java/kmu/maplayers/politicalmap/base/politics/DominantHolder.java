@@ -42,7 +42,7 @@ public record DominantHolder(
      */
     public static Map<String, String> mapFactionIdBySystemId(
             Map<String, DominantHolder> ownerBySystemId) {
-                
+
         var keyBySystemId = new LinkedHashMap<String, String>();
         for (var entry : ownerBySystemId.entrySet()) {
             keyBySystemId.put(entry.getKey(), entry.getValue().factionId());

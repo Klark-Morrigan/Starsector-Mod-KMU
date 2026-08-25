@@ -149,7 +149,7 @@ final class BlocStylingTest {
         categories.put(PoliticalMapCategory.INDEPENDENT, independentStyle);
         categories.put(PoliticalMapCategory.DECIVILISED, factionStyle);
         categories.put(PoliticalMapCategory.UNINHABITED, factionStyle);
-        
+
         // The global tier is carried untouched by this cascade - it maps categories, not
         // sector-wide knobs - so the shared inert tier serves.
         return new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categories);

@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class KmuConditionEditorEntryPoint {
-    
+
     // Failure messages, each reported to the error sink and returned on the
     // result, so the two copies cannot drift.
     private static final String FAILED_TO_RESOLVE_MARKET_CONTEXT =

@@ -220,7 +220,7 @@ final class PoliticalMapLayerRendererTest {
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
 
                 stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, true);
-                
+
                 viewRegistryMock
                     .when(PoliticalMapViewRegistry::getActiveView)
                     .thenReturn(null);

@@ -52,7 +52,7 @@ import java.util.Set;
  * missing link simply hides the sidebar.
  */
 public final class IntelSidebarHost extends BaseSidebarHost {
-    
+
     /**
      * The one intel-screen host; the render and input listeners registered for the intel screen reference it.
      * This is where the live intel-screen and console bindings are chosen, the host itself naming only the
@@ -177,7 +177,7 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         var edges = EnumSet.copyOf(layoutBorderEdges());
         var isBottomFlush = mapVisorRect != null
             && boxBottomY <= mapVisorRect.y() + BOTTOM_FLUSH_TOLERANCE;
-            
+
         if (isBottomFlush) {
             edges.remove(BoxEdge.BOTTOM);
         }

@@ -151,7 +151,7 @@ final class SidebarHostsTest {
 
     // Puts a host on screen with the given placement resolved, the live case every hit-test needs.
     private static void showSidebar(SidebarHost sidebarHostMock, TabPanelPlacement placement) {
-        
+
         when(sidebarHostMock.isOverlayShowing())
             .thenReturn(true);
         when(sidebarHostMock.resolvePlacement())

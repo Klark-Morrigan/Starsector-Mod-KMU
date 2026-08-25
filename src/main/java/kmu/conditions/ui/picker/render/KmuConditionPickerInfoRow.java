@@ -116,7 +116,7 @@ final class KmuConditionPickerInfoRow {
             float x,
             float y,
             float width) {
-                
+
         var textEl = row.createUIElement(width, LINE_HEIGHT, false);
         var label = paragraph.addTo(textEl);
         row.addUIElement(textEl).inTL(x, y);

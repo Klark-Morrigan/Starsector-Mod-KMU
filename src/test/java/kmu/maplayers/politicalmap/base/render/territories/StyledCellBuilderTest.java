@@ -54,7 +54,7 @@ final class StyledCellBuilderTest {
             ElementStyleAdjustment adjustment) {
 
         var viewMock = mock(PoliticalMapView.class);
-        
+
         when(viewMock.shouldUseIndependentStyle(any(), any(), any()))
             .thenReturn(usesIndependentStyle);
         when(viewMock.resolveBlocStyleAdjustment(any(), any()))

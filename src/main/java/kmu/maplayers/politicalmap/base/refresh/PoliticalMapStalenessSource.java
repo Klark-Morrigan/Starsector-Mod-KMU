@@ -204,7 +204,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
 
         var allianceFingerprint = NexerelinAlliances.computeAllianceFingerprint();
         if (!isFirstPoll && allianceFingerprint != lastAllianceFingerprint) {
-            
+
             LOG.debug("Political map alliance fingerprint changed; old="
                 + lastAllianceFingerprint
                 + " new="

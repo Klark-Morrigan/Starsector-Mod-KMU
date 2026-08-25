@@ -322,7 +322,7 @@ final class SectorMapLayerTerrainPluginTest {
 
                 assertThatCode(() -> plugin.renderOnMap(1f, 1f))
                     .doesNotThrowAnyException();
-                    
+
                 verifyNoInteractions(layerRendererMock);
             }
         }

@@ -38,7 +38,7 @@ public enum FactionNameFormatChoice {
     public static FactionNameFormatChoice fromKeyOrDefault(
             String key,
             FactionNameFormatChoice fallback) {
-                
+
         for (var choice : values()) {
             if (choice.persistenceKey.equals(key)) {
                 return choice;

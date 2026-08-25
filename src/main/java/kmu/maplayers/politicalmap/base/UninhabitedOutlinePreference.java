@@ -22,7 +22,7 @@ import kmu.maplayers.base.refresh.MapLayerRefresh;
  * rebuild, so a flip has to invalidate them to show.
  */
 public final class UninhabitedOutlinePreference {
-    
+
     // Save-serialised key of the toggle; frozen once shipped, since renaming it silently resets every
     // existing save's choice back to off.
     private static final SectorMemoryFlag isOutlineDrawn =

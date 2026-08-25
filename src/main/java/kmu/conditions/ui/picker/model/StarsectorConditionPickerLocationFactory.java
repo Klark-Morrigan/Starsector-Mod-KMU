@@ -243,7 +243,7 @@ final class StarsectorConditionPickerLocationFactory {
         var constellationName = constellation == null
             ? null
             : normalizeText(constellation.getNameWithType());
-            
+
         if (constellationName == null && constellation != null) {
             constellationName = normalizeText(constellation.getName());
         }

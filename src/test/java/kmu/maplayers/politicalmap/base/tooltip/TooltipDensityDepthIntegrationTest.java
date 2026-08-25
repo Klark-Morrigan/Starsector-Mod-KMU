@@ -176,7 +176,7 @@ final class TooltipDensityDepthIntegrationTest {
                 ColonyObservationNotes.NONE));
 
         var sections = new ArrayList<TooltipSection>();
-        
+
         CellTooltipSections.appendSection(sections, "Dominated by:", entries);
 
         return TooltipSection.readRowsInOrder(sections);

@@ -18,7 +18,7 @@ import kmlib.starsector.memory.SectorMemoryString;
  * re-lays the rows on its own. Nothing on the map changes, so there is no overlay repaint to request.
  */
 public final class ColumnSelection {
-    
+
     // One shared slot rather than one per scope: the count is a layout preference over a list, not a
     // statement about what the list holds, so it means the same thing under every picker. The key is
     // layer-neutral because every map layer's picker stores through this one class - a key naming one

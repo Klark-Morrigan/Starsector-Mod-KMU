@@ -95,7 +95,7 @@ public final class DominanceStatsAggregator {
     // footprints alone - reads them without the raw market size the stats pass also carries.
     private static Map<String, MarketFootprint> extractFootprints(
             Map<String, FactionMarketContribution> contributionByBlocId) {
-                
+
         var footprintByBlocId = new LinkedHashMap<String, MarketFootprint>();
         for (var entry : contributionByBlocId.entrySet()) {
             footprintByBlocId.put(entry.getKey(), entry.getValue().footprint());

@@ -316,7 +316,7 @@ public final class MarketWeightRowResolver {
     // The patrol tiers heaviest last, as the settings list them, so a reader comparing two
     // colonies' patrols reads them in one order.
     private static List<CellTooltipEntry> resolveTierEntries(PatrolFactor patrols) {
-        
+
         var entries = new ArrayList<CellTooltipEntry>();
 
         appendTierEntry(entries, KmuStrings.POLITICAL_MAP_TOOLTIP_PATROL_SMALL, patrols.small());

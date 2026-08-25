@@ -99,7 +99,7 @@ public final class SystemDominance {
             MarketFootprint leader,
             String leaderId,
             Comparator<String> tieBreak) {
-                
+
         if (candidate.totalWeight() != leader.totalWeight()) {
             return candidate.totalWeight() > leader.totalWeight();
         }

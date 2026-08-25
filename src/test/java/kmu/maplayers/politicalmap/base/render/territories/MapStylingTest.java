@@ -65,7 +65,7 @@ final class MapStylingTest {
 
         @Test
         void createEmptyFillsEveryPaletteSlotSoNoneIsNull() {
-            
+
             var styling = MapStyling.createEmpty();
 
             assertThat(styling.neutralPalette())

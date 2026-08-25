@@ -112,7 +112,7 @@ final class ClaimAugmentedHolderProviderTest {
             when(baseProviderMock.resolveHolder(pass, null))
                 .thenReturn(
                     new HolderResolution(Map.of("shared", heldHolder), Set.of(), Set.of()));
-                    
+
             var provider = new ClaimAugmentedHolderProvider(
                 baseProviderMock,
                 (visibility, colonies) -> claimReaderMock);

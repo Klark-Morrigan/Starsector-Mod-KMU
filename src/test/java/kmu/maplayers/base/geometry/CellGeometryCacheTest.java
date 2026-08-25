@@ -436,7 +436,7 @@ final class CellGeometryCacheTest {
             CellGeometryCache cache,
             Set<String> movingSystemIds,
             StarSystemAPI... systems) {
-                
+
         cache.updateFromSector(
             MapVisibilityPass.over(buildSectorOf(systems), NO_REVEAL),
             movingSystemIds,

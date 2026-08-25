@@ -98,7 +98,7 @@ final class CoreTerritoryHeadingTest {
 
         @Test
         void resolveHeadingRowsNamesTheCoreFaction() {
-            
+
             var rows = resolveHegemonyHeading();
 
             assertThat(readLabelRun(rows.get(HEADING_ROW), FACTION_NAME_RUN))

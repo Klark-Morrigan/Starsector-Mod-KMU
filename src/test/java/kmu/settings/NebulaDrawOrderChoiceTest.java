@@ -16,7 +16,7 @@ final class NebulaDrawOrderChoiceTest {
 
         @Test
         void getLabelReturnsTheLunaLibOptionLabel() {
-            
+
             assertThat(NebulaDrawOrderChoice.BELOW.getLabel())
                 .isEqualTo("Below");
             assertThat(NebulaDrawOrderChoice.ABOVE.getLabel())

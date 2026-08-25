@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
  * it does about a vanilla tooltip its own panel would otherwise bury.
  */
 final class SidebarRendererTest {
-    
+
     private static final float FULLY_DOCKED = 1f;
     private static final float FULLY_EXPANDED = 0f;
 

@@ -373,7 +373,7 @@ class MapLayerTerrainInstallerTest {
             // thing separating them. An instanceof would have the lower variant answer for the
             // upper one, so the upper would never install and the names would stay under the fog.
             var aboveNebulaeTerrainMock = buildTerrainMock(
-                WHITELISTED_MAP_TYPE, 
+                WHITELISTED_MAP_TYPE,
                 new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin());
 
             assertThat(MapLayerTerrainInstaller.findMapLayerTerrain(

@@ -111,7 +111,7 @@ public final class CellShaper {
             String cellOwner,
             Map<String, String> ownerBySystemId,
             double borderInset) {
-                
+
         var edgeClass = EdgeClassifier.classifyAcross(edge, cellOwner, ownerBySystemId);
         return edgeClass == EdgeClass.INTERIOR_SEAM ? 0.0 : borderInset;
     }

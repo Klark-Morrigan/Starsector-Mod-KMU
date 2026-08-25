@@ -33,7 +33,7 @@ final class SettingsLayeringIntegrationTest {
 
     private static final Path MAP_LAYER_FRAMEWORK_ROOT =
         Path.of("src", "main", "java", "kmu", "maplayers", "base");
-        
+
     private static final String JAVA_SOURCE_SUFFIX = ".java";
 
     @Nested

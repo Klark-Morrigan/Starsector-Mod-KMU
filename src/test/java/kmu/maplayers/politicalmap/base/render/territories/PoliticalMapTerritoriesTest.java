@@ -243,7 +243,7 @@ final class PoliticalMapTerritoriesTest {
                 "hegemony",
                 PoliticalMapTerritoryFixtures.createTerritoryWithLoops(
                     List.of(List.of(new float[] {0, 0})))));
-                    
+
             territories.listCandidateBorderLoopsOf("hegemony");
 
             // The other half of retaining an answer: an incremental refresh replaces a bloc's
@@ -657,7 +657,7 @@ final class PoliticalMapTerritoriesTest {
 
         @Test
         void reindexClustersExcludesADifferentlyOwnedNeighbour() {
-            
+
             var territories = buildOwnedBy(Map.of("A", "F", "B", "RIVAL"));
 
             reindex(territories, Map.of(
@@ -806,7 +806,7 @@ final class PoliticalMapTerritoriesTest {
         // this fixture's only varying state is what isEmpty reads.
         drawables.getStyledCellByCellId().putAll(styledCells);
         drawables.getStyledClusterGroupByOwnerId().putAll(territories);
-        
+
         return drawables;
     }
 
@@ -821,7 +821,7 @@ final class PoliticalMapTerritoriesTest {
     // A CategoryStyle whose opacities and widths carry one marker value, so four otherwise
     // interchangeable style bundles are distinct instances.
     private static CategoryStyle buildStyleMarked(double marker) {
-        
+
         var element = new ElementStyle(FactionPaletteSlot.PRIMARY, marker);
         return new CategoryStyle(element, element, marker, element, marker);
     }

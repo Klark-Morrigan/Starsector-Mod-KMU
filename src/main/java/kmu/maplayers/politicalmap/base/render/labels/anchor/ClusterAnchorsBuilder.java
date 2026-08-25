@@ -268,7 +268,7 @@ public final class ClusterAnchorsBuilder {
         var desaturationPalette = MapPalettes.resolveDesaturationPalette(
             sector,
             RenderStyleReader.readGlobalStyle().desaturationDarkening());
-                
+
         // The debug border-tracing path never filters - it resolves real dominant holders from the
         // sector - so it recedes nothing and names no synthetic spotlight key. What the shared
         // rebuild reports about the names it moved is dropped here rather than passed on: this

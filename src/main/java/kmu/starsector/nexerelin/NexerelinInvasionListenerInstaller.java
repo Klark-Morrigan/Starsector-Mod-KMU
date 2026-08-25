@@ -67,7 +67,7 @@ public final class NexerelinInvasionListenerInstaller {
     private static final class Installer {
 
         private static void install(SectorAPI sector) {
-            
+
             var listenerManager = sector.getListenerManager();
             if (listenerManager == null) {
                 return;

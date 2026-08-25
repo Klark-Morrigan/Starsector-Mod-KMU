@@ -40,7 +40,7 @@ public final class KmuConditionPickerEditor implements KmuConditionEditor {
             conditionService,
             modelFactory,
             market);
-            
+
         dialogOpener.open(new KmuConditionPickerDialogDelegate(actionHandler));
     }
 }

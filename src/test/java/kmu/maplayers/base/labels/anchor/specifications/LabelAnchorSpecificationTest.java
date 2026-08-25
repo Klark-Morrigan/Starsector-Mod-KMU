@@ -149,7 +149,7 @@ class LabelAnchorSpecificationTest {
         void readFromLunaSettingsHoldsAStoredFontToleranceThatIsNotANumberToTheFloor() {
             try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
-                
+
                 settingsMock
                     .when(KmuMapLayerSettings::getMapAnchorFontHeightTolerance)
                     .thenReturn(Double.NaN);

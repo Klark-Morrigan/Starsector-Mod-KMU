@@ -93,7 +93,7 @@ final class FilterSelectionHealTest {
                 // The predicate handed to the heal reports a bloc selectable exactly when the active
                 // view still lists it, so a still-listed bloc survives and a vanished one is stale.
                 var predicate = capturePredicate(selectionMock);
-                
+
                 assertThat(predicate.test("hegemony")).isTrue();
                 assertThat(predicate.test("vanished")).isFalse();
             }

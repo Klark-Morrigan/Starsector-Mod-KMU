@@ -240,7 +240,7 @@ final class FilterSelectionBinderTest {
             // halves are asserted, since returning no controls while still reading the vocabulary
             // would fail only once a caller actually handed over an empty picker in play.
             try (var stringsMock = mockStatic(KmuStrings.class)) {
-                
+
                 stubLabels(stringsMock);
 
                 assertThat(FilterSelectionBinder.buildPicker(

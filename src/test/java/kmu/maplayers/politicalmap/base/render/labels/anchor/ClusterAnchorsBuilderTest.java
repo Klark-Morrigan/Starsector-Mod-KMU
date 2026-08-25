@@ -201,7 +201,7 @@ final class ClusterAnchorsBuilderTest {
     // after a discard both start from. Nothing is offered for reuse from that reading, so a case
     // that does not seed it reads as the whole search it was written as.
     private final StandingClusterAnchors standingAnchors = new StandingClusterAnchors();
-    
+
     private MockedStatic<KmuPoliticalMapSettings> settingsMock;
     private MockedStatic<NameFormatPreference> nameFormatMock;
     private MockedStatic<LabelAnchorSpecification> specificationMock;
@@ -766,13 +766,13 @@ final class ClusterAnchorsBuilderTest {
             buildEdgeFacing(4000, 0, 4000, 2000, null),
             buildEdgeFacing(4000, 2000, 2000, 2000, null),
             buildEdgeFacing(2000, 2000, 2000, 0, HELD_SYSTEM)));
-            
+
         edgesByCellId.put(RIVAL_SYSTEM, List.of(
             buildEdgeFacing(20000, 0, 22000, 0, null),
             buildEdgeFacing(22000, 0, 22000, 2000, null),
             buildEdgeFacing(22000, 2000, 20000, 2000, null),
             buildEdgeFacing(20000, 2000, 20000, 0, null)));
-            
+
         return edgesByCellId;
     }
 

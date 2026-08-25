@@ -12,7 +12,7 @@ package kmu.maplayers.base.sidebar;
  * recording - a consumer records a fold once it has settled at an end.
  */
 public interface SidebarFoldSelection {
-    
+
     /**
      * @return whether the panel rests folded to its docked rail; false means it rests open. Answers for a
      *         fold that was never chosen too, each implementation resolving that to its own default

@@ -465,7 +465,7 @@ final class RibbonPlanTest {
             source.add(new RibbonSegment(HEGEMONY_BRIGHT, 3));
 
             var plan = new RibbonPlan(source);
-            
+
             source.add(new RibbonSegment(TRITACHYON_BRIGHT, 3));
 
             assertThat(plan.segments())

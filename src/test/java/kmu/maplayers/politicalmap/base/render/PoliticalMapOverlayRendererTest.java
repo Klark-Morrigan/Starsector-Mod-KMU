@@ -579,7 +579,7 @@ final class PoliticalMapOverlayRendererTest {
     private static PoliticalMapCache buildCacheMock() {
 
         var territoriesMock = mock(PoliticalMapTerritories.class);
-        
+
         when(territoriesMock.getStyledCellByCellId())
             .thenReturn(Map.of());
 

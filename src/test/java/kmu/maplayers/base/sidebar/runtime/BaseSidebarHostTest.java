@@ -225,7 +225,7 @@ final class BaseSidebarHostTest {
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var otherScreenSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
-            
+
             createHost(otherScreenSelectionMock);
 
             var eventMock = mockKeyPress(FIRST_KEYCODE);

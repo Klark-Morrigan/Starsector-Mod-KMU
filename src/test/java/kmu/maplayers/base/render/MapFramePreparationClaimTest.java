@@ -105,7 +105,7 @@ final class MapFramePreparationClaimTest {
             // claim has to forget that boundaries were ever seen - otherwise the frame it was left
             // mid-way through denies every preparation for the rest of the session.
             var claim = new MapFramePreparationClaim();
-            
+
             claim.renderInUICoordsBelowUI(null);
             claim.claimPreparation();
             claim.discardFrameTrackingFromPreviousSave();

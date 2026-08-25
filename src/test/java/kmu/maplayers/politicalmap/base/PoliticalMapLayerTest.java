@@ -344,7 +344,7 @@ final class PoliticalMapLayerTest {
     // A settings proxy that answers every colour lookup with one tone. Which tone a row draws in is
     // not what these tests read, so one stands in for the whole palette.
     private static SettingsAPI buildSettingsAnsweringColours() {
-        
+
         var settingsMock = mock(SettingsAPI.class);
         when(settingsMock.getColor(any()))
             .thenReturn(Color.LIGHT_GRAY);
@@ -398,7 +398,7 @@ final class PoliticalMapLayerTest {
 
         when(hostTabMock.getId())
             .thenReturn("host");
-            
+
         PoliticalMapViewRegistry.registerViews(List.of(view), view, hostTabMock);
         MapLayerRegistry.registerLayers(List.of(hostTabMock), hostTabMock);
     }

@@ -42,7 +42,7 @@ final class SidebarMapCoverTest {
         void isCoveringCursorAsksTheRosterAboutTheCursorsOwnPosition() {
 
             var cursorFake = new CursorPositionFake();
-            
+
             cursorFake.restCursorAt(CURSOR_UI_X, CURSOR_UI_Y);
 
             var askedPoint = new float[2];

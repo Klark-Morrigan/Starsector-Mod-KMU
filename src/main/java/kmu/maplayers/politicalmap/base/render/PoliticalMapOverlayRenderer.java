@@ -173,7 +173,7 @@ final class PoliticalMapOverlayRenderer {
             return;
         }
         hasLoggedFirstRender = true;
-        
+
         // Report whichever view is live: the normal draw lists, or the debug overlay when it has
         // replaced them (territories is null in debug mode).
         var builtCounts = cache.isDebug()

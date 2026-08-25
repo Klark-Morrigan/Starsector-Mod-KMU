@@ -88,7 +88,7 @@ class HolderGroupingTest {
 
         @Test
         void resolveAllianceNameReadsABlocWithNoIdAsNoAlliance() {
-            
+
             assertThat(buildAllianceGrouping().resolveAllianceName(null))
                 .isNull();
             assertThat(buildAllianceGrouping().isAlliance(null))
