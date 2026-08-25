@@ -69,21 +69,19 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     protected final List<TooltipSection> buildBodySections(SectorAPI sector, StarSystemAPI system) {
         var sections = new ArrayList<TooltipSection>();
 
-        // Read once for the whole box and applied to both questions it settles - whether people
-        // live in the system, and which standings the player may be shown - since a banner and a
-        // list resolved under two rules could withhold different colonies of the same system.
+        // One read for the whole box: the claimant, the override behind it, the colony rule and
+        // every standing the projection leaves it free to name are all taken from a single pass, so
+        // no two lines can describe different states of the system.
+        var contest = readListedContest(system);
+
+        // That one rule settles both questions the box asks of it - whether people live in the
+        // system, and which standings the player may be shown - since a banner and a list resolved
+        // under two rules could withhold different colonies of the same system.
         //
         // The two questions differ under that one rule, and are meant to: the banner asks about
         // habitation, so a system holding only a derelict is headed "Unpopulated" while the list
         // beneath names the derelict, which is the true reading of such a system.
-        var colonyVisibility = readColonyVisibility();
-
-        // One read for the whole box: the claimant, the override behind it, and every standing the
-        // projection leaves it free to name are all taken from a single pass, so no two lines can
-        // describe different states of the system.
-        var contest = ListedClaimContest.selectFrom(
-            claimBreakdownReader.readBreakdown(system),
-            colonyVisibility.shouldIncludeUndiscoveredMarkets());
+        var colonyVisibility = contest.colonyVisibility();
 
         // Why the system holds nobody comes before who claims it, so a dead system names its state
         // first and the claim below reads as a hold over an empty system rather than over a colony.
@@ -153,16 +151,11 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
         // The counterpart accounts for the colonies behind the factions this box lists, so a box
         // listing none has nothing for it to account for: both boxes would state the same claim line
-        // and the key would do nothing the player could see. Asked of the very read and the very
-        // projection the box is built from, so it can never offer to expand a contest it is about to
+        // and the key would do nothing the player could see. Asked through the very read and the very
+        // projection the body is built from, so it can never offer to expand a contest it is about to
         // draw as empty - which the fog alone can produce, a faction present only through colonies
         // the player has not found leaving a standing the box may not state.
-        if (!ListedClaimContest
-                .selectFrom(
-                    claimBreakdownReader.readBreakdown(system),
-                    readColonyVisibility().shouldIncludeUndiscoveredMarkets())
-                .hasListedStanding()) {
-
+        if (!readListedContest(system).hasListedStanding()) {
             return Optional.empty();
         }
         // Answered for the pair at once rather than by each box, because it is the one thing they agree
@@ -227,6 +220,19 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      */
     protected static ColonyVisibility readColonyVisibility() {
         return MapVisibilityRules.readFromLunaSettings().colonyVisibility();
+    }
+
+    // The hovered system's contest as this box may state it: the whole scored read, the colony rule
+    // it was projected under, and the standings that projection leaves the box free to name.
+    //
+    // One read behind both the body and the key hint at its foot, because the hint offers an account
+    // of exactly the factions the body lists. Resolved apart, the two are free to be answered from
+    // different readings of one system - and the shape that takes is a box advertising a key that
+    // does nothing, or declining to over a system it has just named a faction in.
+    private ListedClaimContest readListedContest(StarSystemAPI system) {
+        return ListedClaimContest.selectFrom(
+            claimBreakdownReader.readBreakdown(system),
+            readColonyVisibility());
     }
 
     // What the claim block lists: the one line naming whoever holds the system, and nothing at all
@@ -347,19 +353,23 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
     /**
      * The contest as this box may state it: the whole read, and the standings the known projection
-     * leaves it free to name.
+     * leaves it free to name, and the colony rule that projection was taken under.
      *
-     * <p>The two travel as one value because the second is a projection of the first and most lines
-     * the box draws are read against both - the claimant off the breakdown, the number beside its
-     * name off the standing the projection kept. Passed apart, one call's standings could arrive
-     * beside another read's breakdown, and the box would state a claimant it had no standing for.
+     * <p>The three travel as one value because the standings are a projection of the breakdown under
+     * the rule, and most lines the box draws are read against more than one of them - the claimant
+     * off the breakdown, the number beside its name off the standing the projection kept, the banner
+     * over them both off the rule. Passed apart, one call's standings could arrive beside another
+     * read's breakdown, and the box would state a claimant it had no standing for - or judge a
+     * system's habitation under a rule its listing was never projected through.
      */
     private record ListedClaimContest(
         SystemClaimBreakdown breakdown,
+        ColonyVisibility colonyVisibility,
         List<FactionClaimStanding> listedStandings) {
 
         /**
-         * Selects from a contest the standings the player may be shown.
+         * Selects from a contest the standings the player may be shown, keeping the rule that
+         * selected them.
          *
          * <p>The known projection over the contest - the same fog the market lines beneath a faction
          * are drawn through - applied to the listing rather than line by line, since a faction whose
@@ -372,10 +382,13 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
          */
         static ListedClaimContest selectFrom(
                 SystemClaimBreakdown breakdown,
-                boolean isListingUnfoundMarkets) {
+                ColonyVisibility colonyVisibility) {
+
+            var isListingUnfoundMarkets = colonyVisibility.shouldIncludeUndiscoveredMarkets();
 
             return new ListedClaimContest(
                 breakdown,
+                colonyVisibility,
                 breakdown
                     .scores()
                     .stream()
