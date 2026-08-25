@@ -33,11 +33,14 @@ import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlan
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.SelectableBlocFixtures.stubNamedFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -332,6 +335,35 @@ final class FactionsViewTest {
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc("luddic_path", "Path", null),
                         ANY_STATS));
+            }
+        }
+
+        @Test
+        void resolveBlocPickerRecedesTheRowOfAFactionOfNoWeight() {
+            // The layers the contest paints grey a bloc by the same rule the claims layer does, on
+            // their own metric: a faction present only through colonies the contest never weighed
+            // paints no cell anywhere, so its row reads back - and stays listed and pickable, since
+            // spotlighting it is the honest answer to "show me what this faction holds".
+            var sectorMock = mock(SectorAPI.class);
+            var statsByBlocId = new LinkedHashMap<String, DominanceStats>();
+
+            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
+            stubNamedFaction(sectorMock, "crusader_plan", "Crusader Plan");
+
+            statsByBlocId.put("hegemony", ANY_STATS);
+            statsByBlocId.put("crusader_plan", new DominanceStats(0, 1, 0, 4));
+
+            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
+                    .thenReturn(statsByBlocId);
+
+                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .items())
+                    .extracting(RankedBloc::itemId, RankedBloc::isDimmed)
+                    .containsExactly(
+                        tuple("hegemony", false),
+                        tuple("crusader_plan", true));
             }
         }
 

@@ -60,31 +60,31 @@ final class ClaimStatsTest {
     }
 
     @Nested
-    class IsDimmed {
+    class IsPaintingNothing {
 
         @Test
-        void isDimmedIsTrueForABlocThatClaimsNothing() {
+        void isPaintingNothingIsTrueForABlocThatClaimsNothing() {
             // A colony holder that claims nowhere is listed but paints nothing on this layer, so its
             // row reads back rather than sitting at full strength beside the claimants.
-            assertThat(new ClaimStats(0, 40).isDimmed())
+            assertThat(new ClaimStats(0, 40).isPaintingNothing())
                 .isTrue();
         }
 
         @Test
-        void isDimmedIsFalseForABlocThatClaimsAnything() {
+        void isPaintingNothingIsFalseForABlocThatClaimsAnything() {
             // One claim is enough: the layer paints it, so the row has something to show.
-            assertThat(new ClaimStats(1, 40).isDimmed())
+            assertThat(new ClaimStats(1, 40).isPaintingNothing())
                 .isFalse();
         }
 
         @Test
-        void isDimmedReadsTheClaimCountAloneAndNotTheMarketSize() {
-            // The rule is the metric the layer is about, not how big the bloc is: a claimant that
+        void isPaintingNothingReadsTheClaimCountAloneAndNotTheMarketSize() {
+            // The rule is the metric the layer paints by, not how big the bloc is: a claimant that
             // holds no colony anywhere still reads at full strength, and a large holder that claims
             // nowhere still reads back.
-            assertThat(new ClaimStats(1, 0).isDimmed())
+            assertThat(new ClaimStats(1, 0).isPaintingNothing())
                 .isFalse();
-            assertThat(new ClaimStats(0, 0).isDimmed())
+            assertThat(new ClaimStats(0, 0).isPaintingNothing())
                 .isTrue();
         }
     }

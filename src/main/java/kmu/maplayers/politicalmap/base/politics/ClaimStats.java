@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-import kmu.maplayers.politicalmap.base.BlocMetrics;
+import kmu.maplayers.politicalmap.base.PaintingBlocMetrics;
 
 /**
  * The two whole-sector numbers the claims picker sorts and displays a claiming bloc by, computed
@@ -19,7 +19,7 @@ import kmu.maplayers.politicalmap.base.BlocMetrics;
  * rather than a defect - a faction that claims territory but holds no colony anywhere still paints
  * here, so it is still worth spotlighting. The mirror case is normal too: a colony holder that
  * claims nothing is listed, since leaving it out reads as the map having forgotten a faction the
- * player can see. It reads back instead, which is what {@link #isDimmed} answers.
+ * player can see. It reads back instead, which is what {@link #isPaintingNothing} answers.
  *
  * <p>Plain data with no Starsector types, so the aggregation is exercised on hand-built inputs.
  *
@@ -29,15 +29,15 @@ import kmu.maplayers.politicalmap.base.BlocMetrics;
  */
 public record ClaimStats(
     int claims,
-    int marketSize) implements BlocMetrics {
+    int marketSize) implements PaintingBlocMetrics {
 
     /** A bloc claiming nothing and holding nothing; the identity a per-system fold begins from. */
     public static final ClaimStats EMPTY = new ClaimStats(0, 0);
 
     /**
-     * A bloc with no claims reads back, since a claim count of zero is precisely "paints nothing on
-     * this layer" - the row is worth offering, because a faction the player can see going unlisted
-     * reads as an oversight, but it has nothing to show under the metric the layer is about.
+     * The claims layer paints the territory a bloc claims, so a claim count of zero is precisely
+     * "paints nothing here" - the row is worth offering, because a faction the player can see going
+     * unlisted reads as an oversight, but it has nothing to show under the metric the layer is about.
      *
      * <p>The test is the count alone, not a faction flag: it is the fact the row already shows in
      * its own trailing value, and it covers a territorial faction that happens to claim nowhere just
@@ -46,7 +46,7 @@ public record ClaimStats(
      * @return true when the bloc claims no system
      */
     @Override
-    public boolean isDimmed() {
+    public boolean isPaintingNothing() {
         return claims == 0;
     }
 

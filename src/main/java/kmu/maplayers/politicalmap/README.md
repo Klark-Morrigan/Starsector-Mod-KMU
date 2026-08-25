@@ -144,6 +144,14 @@ on without naming either. Factions and Alliances are painted by the same contest
 which is the Spotlight targets column above. A view painted by another mechanic implements the seam
 directly and pairs its own list with its own vocabulary rather than widening theirs.
 
+A listed bloc that paints nothing on the layer greys, and stays pickable: it is listed because it is
+present, greyed because there is nothing here to light. What "nothing" counts as is the layer's own
+metric - no claim on Claims, no dominance weight on the two the contest paints - so it is one rule
+read against whichever number that layer paints by. The bloc's metrics carry the answer
+(`PaintingBlocMetrics`), since a row's payload is exactly the numbers it would be judged on, and they
+opt into carrying it rather than inheriting it: a picker choosing what the map is measured *against*
+lists no painters, so it states nothing and its rows draw plain.
+
 ## Where each part lives
 
 The top level is divided by *mechanic*, not by view: `dominance` holds the two views painted by the

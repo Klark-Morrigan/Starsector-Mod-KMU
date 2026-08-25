@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.SelectableBlocFixtures.stubNamedFaction;
 
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -521,23 +522,5 @@ final class ClaimsViewTest {
             }
         }
 
-        // Stubs a faction the sector resolves by id under a short display name - the two reads the
-        // shared option assembly makes of every listed bloc, so a test that only cares which blocs
-        // survive the gate can name one in a line. Returned so a test that also cares about the crest
-        // stubs it on the same mock.
-        private static FactionAPI stubNamedFaction(
-                SectorAPI sectorMock,
-                String factionId,
-                String displayName) {
-
-            var factionMock = mock(FactionAPI.class);
-
-            when(sectorMock.getFaction(factionId))
-                .thenReturn(factionMock);
-            when(factionMock.getDisplayName())
-                .thenReturn(displayName);
-
-            return factionMock;
-        }
     }
 }

@@ -1,30 +1,15 @@
 package kmu.maplayers.politicalmap.base;
 
 /**
- * What every political-map stats record can be asked about the bloc it describes, beyond the numbers
- * only its own layer's sort vocabulary reads. One question so far: whether the bloc's picker row
- * reads back from the rest of the list.
+ * The payload half of a picker row: whatever numbers one political-map layer ranks and labels a bloc
+ * by. It asks nothing of them, and that is the whole of it - what a layer's numbers mean is the
+ * layer's own business, so all this states is that a {@link RankedBloc}'s payload is some layer's
+ * metrics for that bloc rather than an arbitrary value carried through the picker.
  *
- * <p>It sits on the metrics rather than on {@link RankedBloc} because that is where the answer comes
- * from. A row reads back when the bloc has nothing to show under the metric its layer is about,
- * which is a fact about the numbers - and the numbers are exactly the half a ranked bloc holds
- * opaquely, so it cannot answer for them. Widening the pairing with a stated flag instead would put
- * a component on every layer's option for one layer's benefit, which is the pollution the split
- * between identity and metrics exists to prevent.
- *
- * <p>The default is "reads at full strength", so a layer whose blocs are all equally worth
- * spotlighting implements this and states nothing further.
+ * <p>A metrics type whose layer paints by its numbers opts into {@link PaintingBlocMetrics} on top of
+ * this. That question is segregated rather than defaulted here because not every picker lists
+ * painters: a picker choosing what the map is measured <em>against</em> has no bloc that paints
+ * nothing, so a default would hand it an inherited answer to a question it cannot be asked.
  */
 public interface BlocMetrics {
-
-    /**
-     * Whether this bloc's picker row draws receded - the state of a bloc worth listing that has
-     * nothing to show under the metric its layer paints by. What receding looks like is the picker's
-     * decision, not this one's: a stats record says only that the bloc is in that state.
-     *
-     * @return true when the bloc's row draws receded; false for the ordinary full-strength row
-     */
-    default boolean isDimmed() {
-        return false;
-    }
 }

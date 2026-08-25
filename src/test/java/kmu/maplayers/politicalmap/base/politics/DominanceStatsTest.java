@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins the per-bloc stats fold: a present system adds to presence, score, and market size always, and
  * to domination only when the bloc wins that system, so a bloc's whole-sector metrics build up one
  * system at a time from the empty identity. Also pins what these metrics answer about a bloc's picker
- * row, which for the held layers is "nothing to say".
+ * row, which on these layers is settled by the weight alone.
  */
 final class DominanceStatsTest {
 
@@ -41,18 +41,33 @@ final class DominanceStatsTest {
     }
 
     @Nested
-    class IsDimmed {
+    class IsPaintingNothing {
 
         @Test
-        void isDimmedIsFalseWhateverTheMetricsRead() {
-            // Every bloc in these stats holds a market somewhere, so every row on the held layers has
-            // something to show under the metrics they are painted by and none of them recedes. Read
-            // at both ends - a strong bloc and the empty identity - since the guarantee is that these
-            // layers have no receding state at all rather than that some threshold is not met.
-            assertThat(new DominanceStats(4, 6, 9000, 30).isDimmed())
+        void isPaintingNothingIsTrueForABlocOfNoWeight() {
+            // A bloc present through colonies the contest never weighed folds in at a score of
+            // nought, so no cell is coloured for it anywhere and its row reads back.
+            assertThat(new DominanceStats(0, 3, 0, 12).isPaintingNothing())
+                .isTrue();
+        }
+
+        @Test
+        void isPaintingNothingIsFalseForABlocCarryingAnyWeight() {
+            // Any weight at all put the bloc into the contest the fills are the outcome of, so the
+            // row has something to show.
+            assertThat(new DominanceStats(0, 1, 1, 3).isPaintingNothing())
                 .isFalse();
-            assertThat(DominanceStats.EMPTY.isDimmed())
+        }
+
+        @Test
+        void isPaintingNothingReadsTheWeightAloneAndNotTheDominationCount() {
+            // The rule is the metric the layer paints by. A bloc that competes everywhere and wins
+            // nowhere still reads at full strength, while a bloc holding sizeable but unweighed
+            // colonies reads back however many systems it is present in.
+            assertThat(new DominanceStats(0, 6, 9000, 30).isPaintingNothing())
                 .isFalse();
+            assertThat(new DominanceStats(0, 6, 0, 30).isPaintingNothing())
+                .isTrue();
         }
     }
 }

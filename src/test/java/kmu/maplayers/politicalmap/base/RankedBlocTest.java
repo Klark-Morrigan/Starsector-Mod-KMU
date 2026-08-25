@@ -17,7 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class RankedBlocTest {
 
-    // Any metrics stand in: the seam never opens the stats half, so its values are immaterial here.
+    // Any metrics stand in: the three identity values never open the stats half, so its numbers are
+    // immaterial to the cases that read them.
     private static final DominanceStats ANY_STATS = new DominanceStats(5, 8, 40, 12);
 
     // One fully-populated bloc every case reads a different seam value off, so a delegation that
@@ -66,8 +67,8 @@ final class RankedBlocTest {
         @Test
         void isDimmedIsAnsweredByTheMetricsRatherThanTheIdentity() {
             // The one seam value the identity cannot answer: two blocs sharing a name and a crest
-            // differ on it purely by what their numbers say. Run over the metrics that actually
-            // declare a rule (no claims, so the row reads back), since a payload taking the default
+            // differ on it purely by what their numbers say. Run over metrics stating a painting
+            // rule they fail (no claims, so the row reads back), since a payload that states none
             // would pass whether the delegation ran or not.
             var claimless = new RankedBloc<>(
                 new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
@@ -90,10 +91,16 @@ final class RankedBlocTest {
         }
 
         @Test
-        void isDimmedIsFalseForMetricsThatDeclareNoRule() {
-            // A layer whose blocs are all equally worth spotlighting states nothing, so its rows
-            // read at full strength - which is what keeps the held layers unchanged by any of this.
-            assertThat(HEGEMONY.isDimmed())
+        void isDimmedIsFalseForMetricsThatStateNoPaintingRule() {
+            // A picker whose rows are not painters is never asked, so its rows draw plain rather
+            // than inheriting an answer to a question its payload cannot be asked. Run over a
+            // payload outside the two painting vocabularies, since one of those would pass here
+            // whether it was consulted or not.
+            var measured = new RankedBloc<>(
+                new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
+                new HazardRating(4));
+
+            assertThat(measured.isDimmed())
                 .isFalse();
         }
     }

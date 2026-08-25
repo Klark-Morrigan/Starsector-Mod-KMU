@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics;
 
-import kmu.maplayers.politicalmap.base.BlocMetrics;
+import kmu.maplayers.politicalmap.base.PaintingBlocMetrics;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 
 /**
@@ -18,9 +18,10 @@ import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
  * and a merely-large one are told apart. Market size is kept here rather than in {@link
  * MarketFootprint}, which stays scoped to the dominance-weight quantities the rule compares.
  *
- * <p>Every bloc in these stats holds a market somewhere, so every row on these layers has something
- * to show under the metrics they are painted by and none of them reads back - which is why the
- * {@link BlocMetrics} default stands here unoverridden.
+ * <p>Presence in these stats is not the same as painting something. Dominance weight is what these
+ * layers paint by, and it is economy-fed - a colony the economy does not list has no industries, no
+ * conditions and no computed stability - so a bloc present through such colonies alone folds in at a
+ * score of nought and paints nowhere. That is what {@link #isPaintingNothing} answers.
  *
  * <p>Plain data with no Starsector types, so the aggregation is exercised on hand-built inputs.
  *
@@ -35,10 +36,26 @@ public record DominanceStats(
     int domination,
     int presence,
     int score,
-    int marketSize) implements BlocMetrics {
+    int marketSize) implements PaintingBlocMetrics {
 
     /** A bloc present in no system; the identity a per-system accumulation folds into. */
     public static final DominanceStats EMPTY = new DominanceStats(0, 0, 0, 0);
+
+    /**
+     * These layers paint by dominance weight, so a summed score of nought is precisely "paints
+     * nothing here" - the bloc holds something the player can see, which is why it is listed at all,
+     * but nothing the contest weighed, so no cell is coloured for it anywhere.
+     *
+     * <p>The test is the weight alone, not the domination count: a bloc that competes everywhere and
+     * wins nowhere still took part in the contest the fills are the outcome of, and its weight is
+     * what decided some of them. A nought-weight bloc was never in it.
+     *
+     * @return true when the bloc's summed dominance weight is nought
+     */
+    @Override
+    public boolean isPaintingNothing() {
+        return score == 0;
+    }
 
     /**
      * Folds one system the bloc holds a market in into these stats: a present-system entry always,
