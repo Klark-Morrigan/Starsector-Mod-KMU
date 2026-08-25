@@ -6,12 +6,9 @@ import com.fs.starfarer.api.EveryFrameScript;
  * Closes each frame's hover window, so a hover outlives only the frames the map keeps resolving it
  * on.
  *
- * <p>Every other park is written inside a map pass - the cursor left the window, the pass may not be
- * read against, nothing was painted to hover over - which is exactly why one is needed outside them.
- * A frame with no map pass at all parks nothing, and the tooltip that reports the hover draws from a
- * campaign-wide render listener rather than from the map: with the map screen closed and no minimap
- * on the campaign view, the last cell any map resolved goes on being named, anywhere the pointer
- * goes, for the rest of the session.
+ * <p>What that is for is {@link MapHoverState#expireHoverIfNoPassPublished()}'s to state; this is
+ * the tick behind it, and exists because that rule cannot be driven from where the parks it corrects
+ * are written.
  *
  * <p>A script rather than a render pass, because the frames this exists for are the ones where the
  * pass it would live in does not run. It runs while paused for the same reason: an open screen, a

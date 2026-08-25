@@ -14,14 +14,8 @@ package kmu.maplayers.base.hover;
  * <p>Ordering falls out of the frame: the map's terrain pass runs before the UI passes, so a hover
  * published during the render is already current by the time anything downstream reads it.
  *
- * <p>A published hover lasts exactly as long as the passes keep publishing it, which is what
- * {@link #expireHoverIfNoPassPublished()} is for. Every guard that parks a hover lives inside the
- * map pass, so a frame with no map pass at all - the player back in the campaign world with no map
- * on screen - has nothing to park it: the last hover a map ever resolved would stand for the rest
- * of the session, and the tooltip, which draws from a per-frame listener rather than from the map,
- * would go on naming that system anywhere on screen. Expiry is what a reader outside the passes
- * relies on, and it costs a frame's grace: a hover published on one frame survives to the next,
- * which is a frame nobody sees.
+ * <p>A published hover lasts exactly as long as the passes keep publishing it, and no longer - see
+ * {@link #expireHoverIfNoPassPublished()}, which is what a reader outside those passes relies on.
  */
 public final class MapHoverState {
     // The one shared holder the render pass writes and the highlight and tooltip read.
@@ -78,11 +72,14 @@ public final class MapHoverState {
      * Parks a hover no map pass has published since the last frame closed, and opens the next
      * frame's window. Called once per frame, from outside the map passes.
      *
-     * <p>What it answers for is the frames those passes never run on: every other park is written
-     * inside a pass, so a hover outlives the map that resolved it the moment there is no map to
-     * draw. This is stated over publication rather than over what is on screen, so it needs to know
-     * nothing about screens, hosts or permissions - a pass that resolved the cursor is the whole of
-     * what keeps a hover alive, and a frame without one lets it go.
+     * <p>What it answers for is the frames those passes never run on. Every other park is written
+     * inside a pass, so with no map being drawn nothing parks anything: the last cell any map
+     * resolved would stand for the rest of the session, and the tooltip - which draws from a
+     * campaign-wide listener rather than from the map - would go on naming that system anywhere the
+     * pointer went. Stated over publication rather than over what is on screen, so it needs to know
+     * nothing about screens, hosts or permissions: a pass that resolved the cursor is the whole of
+     * what keeps a hover alive, and a frame without one lets it go. It costs a frame's grace, a
+     * hover published on one frame surviving to the next, which is a frame nobody sees.
      *
      * <p>A park is not a publication. The passes park through {@link #clearHover()} on their own
      * guards, and a frame carrying only those is a frame that resolved nothing - so this expires on

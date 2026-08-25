@@ -193,7 +193,12 @@ about what the overlay means.
   frame's drawn cell shapes and the clusters they fuse into. What it owns is the sequencing and the
   parking: a cursor that cannot be trusted must clear the hover rather than leave the last frame's
   standing, and getting that wrong lights a cell the cursor is not on. The pixel-to-world inversion
-  underneath is KMLib's. It also answers the *moment* the cursor reaches a cell, over KMLib's own
+  underneath is KMLib's. One park is not the pass's to write, and `MapHoverExpirer` is it: every
+  guard above lives *inside* a pass, so the frames with no map pass at all park nothing, and the last
+  cell any map resolved would be named for the rest of the session by a tooltip that draws from a
+  campaign-wide listener rather than from the map. That script closes each frame's window, so a hover
+  lasts exactly as long as some pass keeps publishing it - stated over publication alone, since a
+  second reading of which screens may resolve a hover could only come to disagree with the passes. It also answers the *moment* the cursor reaches a cell, over KMLib's own
   `KeyedHoverArrival`: one latch for the tick the player hears and the line the trace prints, since
   both ask the same question and two would be two chances to disagree about when the cursor got
   somewhere. The latch is stepped only by a hit-test that actually ran: a frame with no draw lists

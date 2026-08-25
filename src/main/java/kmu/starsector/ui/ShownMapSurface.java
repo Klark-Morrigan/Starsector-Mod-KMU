@@ -58,10 +58,11 @@ public final class ShownMapSurface {
         if (shownMapTab != null) {
             return shownMapTab;
         }
-        // The panel rather than the map widget: which widget of a mod's panel hosts a given thing is
-        // a fact about how that mod assembled it, and the outermost covers every assembly.
+        // What the mod docked rather than the map widget inside it: which widget of a mod's assembly
+        // hosts a given thing is a fact about how that mod built it, and the outermost covers every
+        // assembly.
         return singleEmbeddedMap == null
             ? null
-            : singleEmbeddedMap.resolveOwningPanel();
+            : singleEmbeddedMap.resolveDockedWidget();
     }
 }
