@@ -500,20 +500,15 @@ public final class DiscUnionBoundary {
 
         for (var chord : walls.chords()) {
 
-            var fromMouth = WallMouths.measureMouth(
-                union, chord, chord.fromCircle(), walls.channel());
-            var toMouth = WallMouths.measureMouth(union, chord, chord.toCircle(), walls.channel());
+            var mouthed = MouthedChord.measureMouths(union, chord, walls.channel());
 
-            if (fromMouth == null
-                    || toMouth == null
-                    || !isWallOnBoundary(union, chord, chord.fromCircle(), fromMouth)
-                    || !isWallOnBoundary(union, chord, chord.toCircle(), toMouth)
-                    || isCrowdedOut(takenByCircle, chord, fromMouth, toMouth)) {
+            if (mouthed == null
+                    || !isWallOnBoundaryAtBothEnds(union, mouthed)
+                    || isCrowdedOut(takenByCircle, mouthed)) {
 
                 continue;
             }
-            recordMouth(takenByCircle, chord.fromCircle(), fromMouth);
-            recordMouth(takenByCircle, chord.toCircle(), toMouth);
+            recordBothMouths(takenByCircle, mouthed);
 
             attachable.add(chord);
         }
@@ -545,17 +540,16 @@ public final class DiscUnionBoundary {
 
         for (var chord : walls.chords()) {
 
-            var fromMouth = WallMouths.measureMouth(
-                union, chord, chord.fromCircle(), walls.channel());
-            var toMouth = WallMouths.measureMouth(union, chord, chord.toCircle(), walls.channel());
-            var refusal = judgeChord(union, chord, fromMouth, toMouth, takenByCircle, takers);
+            var mouthed = MouthedChord.measureMouths(union, chord, walls.channel());
+            var refusal = mouthed == null
+                ? new ChordRefusal(RefusalReason.NO_MOUTH, null)
+                : judgeChord(union, mouthed, takenByCircle, takers);
 
             if (refusal.reason() == RefusalReason.LAID) {
 
-                recordMouth(takenByCircle, chord.fromCircle(), fromMouth);
-                recordMouth(takenByCircle, chord.toCircle(), toMouth);
-                recordTaker(takers, chord.fromCircle(), fromMouth, chord);
-                recordTaker(takers, chord.toCircle(), toMouth, chord);
+                recordBothMouths(takenByCircle, mouthed);
+                recordTaker(takers, chord.fromCircle(), mouthed.fromMouth(), chord);
+                recordTaker(takers, chord.toCircle(), mouthed.toMouth(), chord);
             }
 
             if (chord == wall) {
@@ -565,38 +559,89 @@ public final class DiscUnionBoundary {
         return answer;
     }
 
+    /**
+     * A wall together with where it meets each of its two cells.
+     *
+     * <p>The three never travel apart. A mouth means nothing without the wall it belongs to,
+     * and every question asked of a wall from here on - is it on the boundary, has a rival
+     * taken its place, which rival - is asked of both mouths in turn. Carried loose, that is
+     * three arguments threaded through five methods, in an order two of them could swap
+     * without the compiler noticing.
+     *
+     * @param chord     the wall
+     * @param fromMouth where it meets the cell it leaves
+     * @param toMouth   where it meets the cell it lands on
+     */
+    private record MouthedChord(Chord chord, double[] fromMouth, double[] toMouth) {
+
+        /**
+         * Measures both of a wall's mouths.
+         *
+         * @param union   the discs it is laid across
+         * @param chord   the wall
+         * @param channel how far back from the cells the walls are laid
+         * @return the wall and its mouths, or null where either end has no mouth at all -
+         *         which is a wall with nowhere to leave from or nowhere to land, and so not a
+         *         wall this can say anything further about
+         */
+        static MouthedChord measureMouths(DiscUnion union, Chord chord, double channel) {
+
+            var fromMouth = WallMouths.measureMouth(union, chord, chord.fromCircle(), channel);
+            var toMouth = WallMouths.measureMouth(union, chord, chord.toCircle(), channel);
+
+            return fromMouth == null || toMouth == null
+                ? null
+                : new MouthedChord(chord, fromMouth, toMouth);
+        }
+    }
+
     // One wall's verdict, in the same order findAttachableChords asks its questions - the two
     // read the same rules, and a verdict that disagreed with what was laid would be worse than
     // no verdict at all.
     private static ChordRefusal judgeChord(
             DiscUnion union,
-            Chord chord,
-            double[] fromMouth,
-            double[] toMouth,
+            MouthedChord mouthed,
             Map<Integer, List<double[]>> takenByCircle,
             Map<Integer, List<TakenMouth>> takers) {
 
-        if (fromMouth == null || toMouth == null) {
-            return new ChordRefusal(RefusalReason.NO_MOUTH, null);
-        }
+        var chord = mouthed.chord();
 
-        if (!isWallOnBoundary(union, chord, chord.fromCircle(), fromMouth)) {
+        if (!isWallOnBoundary(union, chord, chord.fromCircle(), mouthed.fromMouth())) {
             return new ChordRefusal(
                 RefusalReason.OFF_BOUNDARY,
-                describeCover(union, chord, chord.fromCircle(), fromMouth));
+                describeCover(union, chord, chord.fromCircle(), mouthed.fromMouth()));
         }
 
-        if (!isWallOnBoundary(union, chord, chord.toCircle(), toMouth)) {
+        if (!isWallOnBoundary(union, chord, chord.toCircle(), mouthed.toMouth())) {
             return new ChordRefusal(
                 RefusalReason.OFF_BOUNDARY,
-                describeCover(union, chord, chord.toCircle(), toMouth));
+                describeCover(union, chord, chord.toCircle(), mouthed.toMouth()));
         }
 
-        if (isCrowdedOut(takenByCircle, chord, fromMouth, toMouth)) {
+        if (isCrowdedOut(takenByCircle, mouthed)) {
             return new ChordRefusal(
-                RefusalReason.CROWDED_OUT, nameTaker(takers, chord, fromMouth, toMouth));
+                RefusalReason.CROWDED_OUT, nameTaker(takers, mouthed));
         }
         return new ChordRefusal(RefusalReason.LAID, null);
+    }
+
+    // Whether both of a wall's ends sit on the boundary. Asked of the pair rather than of each
+    // end, because a wall is laid only if both do and no caller has ever wanted one answer.
+    private static boolean isWallOnBoundaryAtBothEnds(DiscUnion union, MouthedChord mouthed) {
+
+        var chord = mouthed.chord();
+
+        return isWallOnBoundary(union, chord, chord.fromCircle(), mouthed.fromMouth())
+            && isWallOnBoundary(union, chord, chord.toCircle(), mouthed.toMouth());
+    }
+
+    // Both of a wall's mouths, written down as taken now that it is laid.
+    private static void recordBothMouths(
+            Map<Integer, List<double[]>> takenByCircle,
+            MouthedChord mouthed) {
+
+        recordMouth(takenByCircle, mouthed.chord().fromCircle(), mouthed.fromMouth());
+        recordMouth(takenByCircle, mouthed.chord().toCircle(), mouthed.toMouth());
     }
 
     /**
@@ -666,13 +711,14 @@ public final class DiscUnionBoundary {
     // refusal points at its rival rather than leaving it to be hunted for.
     private static String nameTaker(
             Map<Integer, List<TakenMouth>> takers,
-            Chord chord,
-            double[] fromMouth,
-            double[] toMouth) {
+            MouthedChord mouthed) {
 
-        var named = nameTakerOn(takers, chord.fromCircle(), fromMouth);
+        var chord = mouthed.chord();
+        var named = nameTakerOn(takers, chord.fromCircle(), mouthed.fromMouth());
 
-        return named != null ? named : nameTakerOn(takers, chord.toCircle(), toMouth);
+        return named != null
+            ? named
+            : nameTakerOn(takers, chord.toCircle(), mouthed.toMouth());
     }
 
     private static String nameTakerOn(
@@ -1300,13 +1346,13 @@ public final class DiscUnionBoundary {
     // across a gap that is no longer there cuts through cells that have already met.
     private static boolean isCrowdedOut(
             Map<Integer, List<double[]>> takenByCircle,
-            Chord chord,
-            double[] fromMouth,
-            double[] toMouth) {
+            MouthedChord mouthed) {
+
+        var chord = mouthed.chord();
 
         return chord.kind() != WallKind.COAST_REACH
-            && (isMouthTaken(takenByCircle, chord.fromCircle(), fromMouth)
-                || isMouthTaken(takenByCircle, chord.toCircle(), toMouth));
+            && (isMouthTaken(takenByCircle, chord.fromCircle(), mouthed.fromMouth())
+                || isMouthTaken(takenByCircle, chord.toCircle(), mouthed.toMouth()));
     }
 
     // A mouth is taken when an earlier wall's mouth swallows it whole, or is swallowed by it.

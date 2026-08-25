@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiPredicate;
 
 /**
  * Bridges laid to a sector that already carries continent coastlines, anchored where those
@@ -66,9 +67,10 @@ import java.util.Map;
  */
 public final class ContinentBridges {
 
-    // No cell yet, while a walk is between one frontage and the next. Named rather than left
-    // as a bare -1 because it is compared against real cell numbers.
-    private static final int NO_CELL = -1;
+    // The cheap pass's answer to "is this pairing acceptable": every one of them is, since
+    // what that pass is for is finding the closest without weighing anything against it.
+    private static final BiPredicate<double[], double[]> ACCEPTS_ANY_PAIRING =
+        (start, end) -> true;
 
     private ContinentBridges() {
     }
@@ -99,7 +101,8 @@ public final class ContinentBridges {
             SectorGeometryParameters parameters,
             BridgeRules rules) {
 
-        var frontages = gatherFrontagePoints(collectBridgeFrontages(traced));
+        var frontages = CoastFrontages.gatherFrontagePoints(
+            CoastFrontages.collectBridgeFrontages(traced));
 
         if (frontages.size() < 2) {
             return List.of();
@@ -192,130 +195,7 @@ public final class ContinentBridges {
         return one != null && one.equals(other);
     }
 
-    /**
-     * Every point the drawn coastline passes through on a cell, gathered by the cell.
-     *
-     * <p><b>The whole frontage, not merely its two ends.</b> A span is anchored wherever the
-     * coast comes closest to the cell across the gap, and that is generally somewhere along a
-     * frontage rather than at a corner of one. Offered only the corners, every span leaving a
-     * cell has to start at one of two places, so several of them start at the SAME place and
-     * leave in a fan - which is a picture of what the anchors allowed rather than of where the
-     * void is narrow.
-     *
-     * <p><b>Points of the drawn ring, rather than places computed on the cell's arc.</b> Two
-     * reasons, and the second is the one that matters. The ring is sampled, so a point worked
-     * out on the true arc sits off the drawn chord by the sagitta - close, but not ON the line
-     * the pieces are cut against. And a span landing between two ring points forces that
-     * stretch of coast to be split there, which where it lands near an existing point leaves a
-     * sliver of coast shorter than anything else on the map. Anchoring on a point the ring
-     * already has costs a little precision - the anchor is quantised to the sampling, a
-     * fraction of a cell radius - and buys exactness against the only line anything downstream
-     * reads.
-     *
-     * @param traced the coast
-     * @return each cell's own stretch of the drawn coast, in walk order. A cell the coast never
-     *         runs along is absent rather than present under an empty list, since it offers
-     *         nowhere to anchor at all
-     */
-    public static Map<Integer, List<List<double[]>>> collectBridgeFrontages(
-            Coastlines.TracedCoasts traced) {
-
-        var frontages = new LinkedHashMap<Integer, List<List<double[]>>>();
-
-        for (var coast : traced.coasts()) {
-
-            if (coast.isEmpty()) {
-                continue;
-            }
-
-            // Walked from a place the cell changes rather than from the list's first entry,
-            // so a frontage straddling the ring's own start comes back as the one run it is
-            // rather than as two ending nowhere.
-            var begin = findFrontageStart(coast);
-            var run = new ArrayList<double[]>();
-            var runCell = NO_CELL;
-
-            for (var step = 0; step < coast.size(); step++) {
-
-                var vertex = coast.get((begin + step) % coast.size());
-
-                if (vertex.circle() != runCell) {
-
-                    addFrontage(frontages, runCell, run);
-                    run = new ArrayList<>();
-                    runCell = vertex.circle();
-                }
-                run.add(vertex.point());
-            }
-            addFrontage(frontages, runCell, run);
-        }
-        return frontages;
-    }
-
-    // Where to start walking a ring so that no frontage is split across the ends of the list.
-    // A ring the coast runs round without ever changing cell has no such place, and starting
-    // anywhere is as good as anywhere else.
-    private static int findFrontageStart(List<Coastlines.CoastVertex> coast) {
-
-        for (var index = 0; index < coast.size(); index++) {
-
-            var previous = coast.get((index + coast.size() - 1) % coast.size());
-
-            if (coast.get(index).circle() != previous.circle()) {
-                return index;
-            }
-        }
-        return 0;
-    }
-
-    private static void addFrontage(
-            Map<Integer, List<List<double[]>>> frontages,
-            int cell,
-            List<double[]> run) {
-
-        if (cell == NO_CELL || run.isEmpty()) {
-            return;
-        }
-
-        frontages
-            .computeIfAbsent(cell, whichever -> new ArrayList<>())
-            .add(List.copyOf(run));
-    }
-
-    // Every point of a cell's frontages together, which is what choosing an anchor asks for.
-    // Which run a point came from matters to a reader looking at the map and not at all to the
-    // search, since any point of any of them is somewhere a span may be anchored.
-    private static Map<Integer, List<double[]>> gatherFrontagePoints(
-            Map<Integer, List<List<double[]>>> frontages) {
-
-        var points = new LinkedHashMap<Integer, List<double[]>>();
-
-        for (var entry : frontages.entrySet()) {
-            for (var run : entry.getValue()) {
-
-                points
-                    .computeIfAbsent(entry.getKey(), whichever -> new ArrayList<>())
-                    .addAll(run);
-            }
-        }
-        return points;
-    }
-
-    // The shortest span between two cells' drawn frontages that stays out of every cell, or
-    // null when no pairing of them does.
-    //
-    // The closest approach between the two stretches of coast, near enough: every point of one
-    // against every point of the other, so the pair taken is where the void between the cells
-    // is actually narrowest. A cell facing the void on two frontages offers both, and the far
-    // one loses on width without needing a rule to exclude it.
-    //
-    // The width test comes before the clearance test deliberately. Clearance walks every site,
-    // so it is the expensive half, and a pairing that cannot beat the best already found needs
-    // no answer to it - which is what keeps this affordable now that a frontage is a run of
-    // points rather than two of them.
-    //
-    // Where the two frontages come closest to EACH OTHER, and if something lies across that,
-    // the closest pairing of them that nothing lies across.
+    // Where the two frontages come closest to each other with nothing lying across the line.
     //
     // Frontage against frontage rather than each end against the other cell's centre. A coast
     // runs along a median quarter of a cell's turn, so a frontage is an arc off to one side
@@ -324,10 +204,15 @@ public final class ContinentBridges {
     // other. It is the same answer for most pairs and a materially shorter span for about one
     // in eight.
     //
-    // Cheap because a frontage is a few dozen points at most, so every pairing of two of them
-    // is a few hundred distances. What is NOT cheap is asking what lies across a pairing -
-    // that walks every site in the sector - which is why it is asked once, of the answer,
-    // rather than of each pairing on the way to it.
+    // Found in two passes, and the second is usually not run. The first asks only which
+    // pairing is closest, which costs a subtraction each; if nothing lies across that one, it
+    // is the answer. Only where something does is the search run again with clearance
+    // disqualifying a pairing - and clearance is the expensive question, since it weighs the
+    // line against every site in the sector.
+    //
+    // Merging the two into a single loop that tests clearance on each improvement costs about
+    // a third of the pass: a scan improves on its best many times over a few hundred pairings,
+    // and all but the last of those improvements is thrown away.
     private static CellGap findShortestSpan(
             int fromCell,
             int toCell,
@@ -335,54 +220,36 @@ public final class ContinentBridges {
             List<double[]> toFrontage,
             DiscUnion union) {
 
-        var closest = findClosestPairing(fromCell, toCell, fromFrontage, toFrontage);
+        var closest = findClosestPairing(
+            fromCell, toCell, fromFrontage, toFrontage, ACCEPTS_ANY_PAIRING);
 
-        if (closest == null || !doesRunThroughACell(closest.start(), closest.end(), union)) {
+        if (closest == null
+                || CellGaps.isLineClearOfCells(
+                    closest.start(), closest.end(), union.sites(), union.reach())) {
+
             return closest;
         }
-        return findClosestClearPairing(fromCell, toCell, fromFrontage, toFrontage, union);
+
+        return findClosestPairing(
+            fromCell,
+            toCell,
+            fromFrontage,
+            toFrontage,
+            (start, end) ->
+                CellGaps.isLineClearOfCells(start, end, union.sites(), union.reach()));
     }
 
-    // The closest pairing of two frontages, taking no view on what lies across it.
+    // The closest pairing of two frontages that the caller will accept.
+    //
+    // Compared squared and rooted once, since all any pairing is asked is which of two is
+    // nearer. What makes a pairing acceptable is the caller's, so that the cheap pass and the
+    // careful one are one search asked two questions rather than two copies of one loop.
     private static CellGap findClosestPairing(
             int fromCell,
             int toCell,
             List<double[]> fromFrontage,
-            List<double[]> toFrontage) {
-
-        var closestStart = (double[]) null;
-        var closestEnd = (double[]) null;
-        var closestSquared = Double.MAX_VALUE;
-
-        for (var start : fromFrontage) {
-            for (var end : toFrontage) {
-
-                var squared = Points.computeDistanceSquared(start, end);
-
-                if (squared < closestSquared) {
-
-                    closestStart = start;
-                    closestEnd = end;
-                    closestSquared = squared;
-                }
-            }
-        }
-
-        return closestStart == null
-            ? null
-            : new CellGap(
-                fromCell, toCell, closestStart, closestEnd, Math.sqrt(closestSquared));
-    }
-
-    // The same search with a cell in the way disqualifying a pairing, for the minority of
-    // pairs whose closest pairing has one. Separate from the search above rather than a mode
-    // of it, because the whole reason that one exists is to answer without paying for this.
-    private static CellGap findClosestClearPairing(
-            int fromCell,
-            int toCell,
-            List<double[]> fromFrontage,
             List<double[]> toFrontage,
-            DiscUnion union) {
+            BiPredicate<double[], double[]> isAcceptable) {
 
         var closest = (CellGap) null;
 
@@ -394,7 +261,7 @@ public final class ContinentBridges {
                 if (closest != null && squared >= closest.width() * closest.width()) {
                     continue;
                 }
-                if (doesRunThroughACell(start, end, union)) {
+                if (!isAcceptable.test(start, end)) {
                     continue;
                 }
                 closest = new CellGap(fromCell, toCell, start, end, Math.sqrt(squared));
@@ -500,17 +367,4 @@ public final class ContinentBridges {
     // The two ends are not asked. A corner sits exactly ON the reach that decides what is
     // void, which is the one place "inside a cell" has no answer floating point can be
     // trusted to give twice. What a span crosses is settled by its middle.
-    private static boolean doesRunThroughACell(
-            double[] start,
-            double[] end,
-            DiscUnion union) {
-
-        for (var step = 1; step < WallCoverage.LINE_SAMPLES; step++) {
-
-            if (union.isPointInside(WallCoverage.findPointAlong(start, end, step))) {
-                return true;
-            }
-        }
-        return false;
-    }
 }

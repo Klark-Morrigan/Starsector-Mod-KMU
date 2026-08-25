@@ -276,11 +276,6 @@ public final class ViewerSettings {
     // so it is the one field of the record with nothing on the other end of it. Passed
     // through as the settled coast's rather than as some number of its own, so that if it
     // ever comes to be read the two coasts are still looking at one sector.
-    // The cap the fold works to, in map units of area. Turned from a share of a cell into an
-    // area here, where the cell radius is, rather than at the overlay - a knob that reads as a
-    // share of a cell has to be turned into units against the SAME cell the pieces were cut
-    // against, or it means something slightly different from what it says.
-
     public Coastlines.CoastRules resolveContinentCoastRules() {
         return new Coastlines.CoastRules(bridgeReachMultiple, continentMinFrontageShare);
     }

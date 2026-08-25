@@ -402,13 +402,25 @@ public final class ViewerSettingsPanel {
             refreshes::repaintMap));
     }
 
-    // Everything about the void as v2 builds it, under one rule and in the order the toggles
-    // above it read: what to show, then the inland knobs, then the coastal ones, then the one
-    // knob both kinds share. Below a divider because the rest of the panel is about CELLS, and
-    // a reader hunting for a void knob was otherwise reading forty identical rows to find it.
+    // Everything about the void as v2 builds it, in the order the toggles above it read: what
+    // to show, then the inland knobs, then the coastal ones, then the knobs both kinds share.
+    // Below a divider because the rest of the panel is about CELLS, and a reader hunting for a
+    // void knob was otherwise reading forty identical rows to find it.
+    //
+    // Split the way the v3 section is, so the two constructions can be read side by side: a
+    // reader comparing them is comparing two runs of rows, not one short method against one
+    // long one.
     private void addVoidPocketRows(JPanel controls) {
 
         controls.add(buildVoidPocketToggles());
+
+        addInlandVoidRows(controls);
+        addCoastalVoidRows(controls);
+        addSharedVoidRows(controls);
+    }
+
+    // The void held between two cells facing each other, and how far apart they may be.
+    private void addInlandVoidRows(JPanel controls) {
 
         // Keyed as bridges rather than as cuts, which is what this swatch has actually
         // coloured all along. A saved value under the old key belongs to the line it was
@@ -420,24 +432,14 @@ public final class ViewerSettingsPanel {
             colour -> settings.voidBridgeColour = colour,
             refreshes::repaintMap));
 
-        // Stepped in hundredths, so the reach can be moved by a fraction of a cell radius
-        // rather than jumping a whole one at a time.
-        //
-        // Recomputed rather than merely repainted, unlike every other knob down here, because
-        // this one decides where the walls go, and a wall is what shuts one piece of void off
-        // from the next.
-        controls.add(SliderRows.buildSlider(
+        // Recomputed rather than merely repainted, unlike the colours down here, because this
+        // one decides where the walls go, and a wall is what shuts one piece of void off from
+        // the next.
+        controls.add(buildBridgeReachSlider(
             "bridgeReachMultiple",
-            "Bridge reach, in cell radii (x100)",
-            new SliderRows.SliderRange(
-                BRIDGE_REACH_MINIMUM * ViewerSettings.BRIDGE_REACH_STEP_SCALE,
-                BRIDGE_REACH_MAXIMUM * ViewerSettings.BRIDGE_REACH_STEP_SCALE,
-                ViewerSettings.BRIDGE_REACH_DEFAULT * ViewerSettings.BRIDGE_REACH_STEP_SCALE),
-            new SliderRows.SliderWork(
-                multiple -> settings.bridgeReachMultiple =
-                    multiple / ViewerSettings.BRIDGE_REACH_STEP_SCALE,
-                refreshes::refreshVoidBridges,
-                () -> { })));
+            ViewerSettings.BRIDGE_REACH_DEFAULT,
+            multiple -> settings.bridgeReachMultiple = multiple,
+            refreshes::refreshVoidBridges));
 
         controls.add(ColourRows.buildColourPair(
             "inlandVoidFill",
@@ -449,6 +451,10 @@ public final class ViewerSettingsPanel {
                 ViewerSettings.INLAND_VOID_DEFAULT,
                 colour -> settings.inlandVoidEdge = colour),
             refreshes::repaintMap));
+    }
+
+    // The line round the sector's outer shape, the void it shuts in, and how it is smoothed.
+    private void addCoastalVoidRows(JPanel controls) {
 
         controls.add(ColourRows.buildColour(
             "coastlineColour",
@@ -473,28 +479,23 @@ public final class ViewerSettingsPanel {
 
         // The whole of how the settled coast is smoothed: a stretch is dropped for what it
         // offers on its own, so what goes does not depend on which cells came before it.
-        controls.add(SliderRows.buildSlider(
+        controls.add(buildLeastFrontageSlider(
             "coastLeastFrontage",
-            "Least frontage faced, in % of a cell",
-            new SliderRows.SliderRange(
-                MIN_FRONTAGE_MINIMUM,
-                MIN_FRONTAGE_MAXIMUM,
-                ViewerSettings.COAST_MIN_FRONTAGE_DEFAULT
-                    * ViewerSettings.FRONTAGE_PERCENT_SCALE),
-            new SliderRows.SliderWork(
-                percent -> settings.coastMinFrontageShare =
-                    percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
-                refreshes::refreshCoastlines,
-                () -> { })));
+            ViewerSettings.COAST_MIN_FRONTAGE_DEFAULT,
+            share -> settings.coastMinFrontageShare = share));
+    }
+
+    // The knobs that reach both kinds of void, and both constructions, so they belong to
+    // neither group above them.
+    private void addSharedVoidRows(JPanel controls) {
 
         // What the smoothing left out, on whichever coasts are drawn. A diagnostic rather
         // than a layer: it answers "what did the rules take" - the one thing a finished coast
         // cannot be asked, since a stretch a rule threw away and one the walk never offered
         // are both simply missing from the line.
         //
-        // One row for both constructions, and here rather than in either section, because
-        // the question is the same of each and the answer is told apart by the coast each
-        // mark sits beside.
+        // One row for both constructions because the question is the same of each, and the
+        // answer is told apart by the coast each mark sits beside.
         controls.add(ControlRows.buildToggle(
             "showDroppedStretches",
             "Dropped stretches",
@@ -523,8 +524,6 @@ public final class ViewerSettingsPanel {
                 colour -> settings.piercedCellColour = colour),
             refreshes::repaintMap));
 
-        // Last because it is the one knob that reaches both kinds, so it belongs to neither
-        // group above it.
         controls.add(buildOpacitySlider(
             "voidFillOpacity",
             "Void fill opacity",
@@ -600,21 +599,10 @@ public final class ViewerSettingsPanel {
             },
             refreshes::repaintMap));
 
-        // Asked as a percentage because that is how anyone reading a map thinks about how far
-        // a cell sticks out; what the floor means is documented at the field it writes.
-        controls.add(SliderRows.buildSlider(
+        controls.add(buildLeastFrontageSlider(
             "continentLeastFrontage",
-            "Least frontage faced, in % of a cell",
-            new SliderRows.SliderRange(
-                MIN_FRONTAGE_MINIMUM,
-                MIN_FRONTAGE_MAXIMUM,
-                ViewerSettings.CONTINENT_MIN_FRONTAGE_DEFAULT
-                    * ViewerSettings.FRONTAGE_PERCENT_SCALE),
-            new SliderRows.SliderWork(
-                percent -> settings.continentMinFrontageShare =
-                    percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
-                refreshes::refreshCoastlines,
-                () -> { })));
+            ViewerSettings.CONTINENT_MIN_FRONTAGE_DEFAULT,
+            share -> settings.continentMinFrontageShare = share));
     }
 
     // The spans laid across the inlets those coastlines leave, and the rules deciding which
@@ -637,21 +625,11 @@ public final class ViewerSettingsPanel {
             colour -> settings.bridgeFrontageColour = colour,
             refreshes::repaintMap));
 
-        // Scaled up for a slider that deals in whole steps; what the reach means is
-        // documented at the field it writes.
-        controls.add(SliderRows.buildSlider(
+        controls.add(buildBridgeReachSlider(
             "continentBridgeReach",
-            "Bridge reach, in cell radii (x100)",
-            new SliderRows.SliderRange(
-                BRIDGE_REACH_MINIMUM * ViewerSettings.BRIDGE_REACH_STEP_SCALE,
-                BRIDGE_REACH_MAXIMUM * ViewerSettings.BRIDGE_REACH_STEP_SCALE,
-                ViewerSettings.CONTINENT_BRIDGE_REACH_DEFAULT
-                    * ViewerSettings.BRIDGE_REACH_STEP_SCALE),
-            new SliderRows.SliderWork(
-                multiple -> settings.continentBridgeReachMultiple =
-                    multiple / ViewerSettings.BRIDGE_REACH_STEP_SCALE,
-                refreshes::refreshCoastlines,
-                () -> { })));
+            ViewerSettings.CONTINENT_BRIDGE_REACH_DEFAULT,
+            multiple -> settings.continentBridgeReachMultiple = multiple,
+            refreshes::refreshCoastlines));
 
         // In map units, so the slider needs no scaling; what the slack means is documented at
         // the field it writes.
@@ -729,6 +707,75 @@ public final class ViewerSettingsPanel {
             title,
             new SliderRows.SliderRange(minimum, maximum, initial),
             new SliderRows.SliderWork(apply, refreshes::rebuildGeometry, () -> { }));
+    }
+
+    /**
+     * How far apart two cells may sit and still be bridged, in cell radii.
+     *
+     * <p>One row shape for both constructions, because the two are on screen to be compared:
+     * asked over different ranges or stepped differently, a difference between their bridges
+     * would be partly a difference between the sliders that set them. Only the default and
+     * where the value lands differ, which is what the two searches genuinely disagree about.
+     *
+     * <p>Stepped in hundredths, so the reach moves by a fraction of a cell radius rather than
+     * jumping a whole one.
+     *
+     * @param key            what to remember it under
+     * @param defaultMultiple the reach this construction opens at
+     * @param apply          records the new reach, already back in cell radii
+     * @param onChange       what to rebuild once it moves, which differs by construction
+     * @return the row
+     */
+    private JPanel buildBridgeReachSlider(
+            String key,
+            double defaultMultiple,
+            DoubleConsumer apply,
+            Runnable onChange) {
+
+        return SliderRows.buildSlider(
+            key,
+            "Bridge reach, in cell radii (x100)",
+            new SliderRows.SliderRange(
+                BRIDGE_REACH_MINIMUM * ViewerSettings.BRIDGE_REACH_STEP_SCALE,
+                BRIDGE_REACH_MAXIMUM * ViewerSettings.BRIDGE_REACH_STEP_SCALE,
+                defaultMultiple * ViewerSettings.BRIDGE_REACH_STEP_SCALE),
+            new SliderRows.SliderWork(
+                stepped -> apply.accept(stepped / ViewerSettings.BRIDGE_REACH_STEP_SCALE),
+                onChange,
+                () -> { }));
+    }
+
+    /**
+     * How little of its own border a cell may face the void with and still be walked through.
+     *
+     * <p>One row shape for both coasts, for the reason the reach is: the floor is the knob the
+     * two constructions are most often compared across, so it has to ask them the same
+     * question over the same range.
+     *
+     * <p>Asked as a percentage because that is how anyone reading a map thinks about how far a
+     * cell sticks out; what the floor means is documented at the field it writes.
+     *
+     * @param key          what to remember it under
+     * @param defaultShare the floor this coast opens at, as a share of a turn
+     * @param apply        records the new floor, already back to a share
+     * @return the row
+     */
+    private JPanel buildLeastFrontageSlider(
+            String key,
+            double defaultShare,
+            DoubleConsumer apply) {
+
+        return SliderRows.buildSlider(
+            key,
+            "Least frontage faced, in % of a cell",
+            new SliderRows.SliderRange(
+                MIN_FRONTAGE_MINIMUM,
+                MIN_FRONTAGE_MAXIMUM,
+                defaultShare * ViewerSettings.FRONTAGE_PERCENT_SCALE),
+            new SliderRows.SliderWork(
+                percent -> apply.accept(percent / ViewerSettings.FRONTAGE_PERCENT_SCALE),
+                refreshes::refreshCoastlines,
+                () -> { }));
     }
 
     private JPanel buildOpacitySlider(String key, String title, DoubleConsumer apply) {

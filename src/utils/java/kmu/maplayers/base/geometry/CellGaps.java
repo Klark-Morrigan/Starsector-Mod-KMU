@@ -24,10 +24,16 @@ import java.util.List;
  * an intruding site's disc belongs to never has to be settled, only that some cell covers
  * that stretch.
  *
- * <p>The corridor's own two cells need no exempting from that, which is worth stating
- * because it looks like an omission. The corridor begins and ends exactly one reach from
- * each of them, along the line joining them, so the nearest point on it to either site is
- * that site's own end of it at exactly the reach. Neither can come in under.
+ * <p>A line's own two cells need no exempting from that, which is worth stating because it
+ * looks like an omission. Each end sits one reach from its own site, so the nearest point of
+ * the line to that site is that end, at exactly the reach, and the test is a strict one.
+ *
+ * <p>Which also settles the case where a line does NOT leave along the joining line - an end
+ * anchored somewhere else on a cell's rim. The end is still one reach out, so it still cannot
+ * come in under on its own account; but a line leaving at an angle steep enough to cut back
+ * through its own cell dips below the reach part way along and is refused, which is right.
+ * That is a real fault rather than an artefact of the test, and it is one a line sampled at a
+ * few points can slip past entirely.
  */
 public final class CellGaps {
 
@@ -75,24 +81,33 @@ public final class CellGaps {
     }
 
     /**
-     * Whether a corridor runs clear of every cell, or whether one lies across it.
+     * Whether a line runs clear of every cell, or whether one lies across it.
      *
      * <p>Two cells being close says nothing on its own: the space between them can belong to
      * a third cell sitting between them rather than to the void, and anything drawn there
      * would run straight through that cell.
      *
-     * @param gap   the corridor to test
+     * <p>Asked of the whole line at once rather than of places along it. A cell covers the
+     * line exactly when its site comes within a reach of the nearest point of it, and that
+     * point is one subtraction away - so the answer is exact, where sampling a handful of
+     * places lets a line clipping a corner between two of them through.
+     *
+     * @param start one end
+     * @param end   the other
      * @param sites every site, because a cell nowhere near either end can still lie across
      *              the middle
      * @param reach how far a cell reaches from its site
      * @return whether nothing is in the way
      */
-    static boolean isGapClear(CellGap gap, List<double[]> sites, double reach) {
+    static boolean isLineClearOfCells(
+            double[] start,
+            double[] end,
+            List<double[]> sites,
+            double reach) {
 
         for (var site : sites) {
 
-            if (Segments.computeDistanceToPoint(gap.start(), gap.end(), site)
-                    < reach - COVER_TOLERANCE) {
+            if (Segments.computeDistanceToPoint(start, end, site) < reach - COVER_TOLERANCE) {
                 return false;
             }
         }

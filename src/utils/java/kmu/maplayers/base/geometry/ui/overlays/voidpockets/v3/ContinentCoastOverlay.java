@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry.ui.overlays.voidpockets.v3;
 
 import kmu.maplayers.base.geometry.CellGap;
+import kmu.maplayers.base.geometry.CoastFrontages;
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.ContinentBridges;
 import kmu.maplayers.base.geometry.SectorFixture;
@@ -110,7 +111,7 @@ public final class ContinentCoastOverlay {
         // so what is drawn as eligible is what the search was actually offered.
         if (settings.showBridgeFrontages) {
 
-            frontages = ContinentBridges.collectBridgeFrontages(coast.getTrace())
+            frontages = CoastFrontages.collectBridgeFrontages(coast.getTrace())
                 .values()
                 .stream()
                 .flatMap(List::stream)

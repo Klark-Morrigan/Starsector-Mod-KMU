@@ -99,7 +99,7 @@ public final class VoidBridges {
                     continue;
                 }
 
-                if (CellGaps.isGapClear(gap, sites, reach)) {
+                if (CellGaps.isLineClearOfCells(gap.start(), gap.end(), sites, reach)) {
                     held.add(gap);
                 }
             }

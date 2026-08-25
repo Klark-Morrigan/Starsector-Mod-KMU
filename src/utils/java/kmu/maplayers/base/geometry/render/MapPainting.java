@@ -40,6 +40,23 @@ public final class MapPainting {
     private MapPainting() {
     }
 
+    /**
+     * One colour shifted lighter or darker by a fixed amount for a given seed.
+     *
+     * <p>What tells two touching shapes apart when both are filled in the same colour. An
+     * outline cannot do it where the shapes abut - one line reads as the edge of either - so
+     * the shade carries the distinction instead.
+     *
+     * <p>Seeded rather than cycled, so a shape keeps its shade across every frame and every
+     * run. Cycled by position in a list, a shape would change colour whenever something
+     * elsewhere was added or dropped, which reads as the shape itself having changed.
+     *
+     * @param base     the colour to shift from
+     * @param seed     what decides the shift, which should be something about the shape that
+     *                 does not move - its place rather than its index
+     * @param strength how far the shift may go, as a share of the whole brightness range
+     * @return the shifted colour
+     */
     public static Color jitterBrightness(Color base, int seed, float strength) {
 
         var hsb = Color.RGBtoHSB(base.getRed(), base.getGreen(), base.getBlue(), null);
@@ -135,6 +152,18 @@ public final class MapPainting {
         g2.setColor(applyAlpha(colour, MapLook.OPAQUE_ALPHA));
     }
 
+    /**
+     * The same colour at a given opacity.
+     *
+     * <p>Every colour on this map is chosen opaque and drawn at whatever weight the thing it
+     * paints is drawn at, so the two are kept apart: a palette holds what a thing is coloured
+     * and the drawing decides how solid. Baking opacity into the palette would mean a second
+     * entry per colour for every weight it is ever wanted at.
+     *
+     * @param colour the colour
+     * @param alpha  how solid, from 0 to 255
+     * @return the colour at that opacity
+     */
     public static Color applyAlpha(Color colour, int alpha) {
         return new Color(
             colour.getRed(),
@@ -160,6 +189,18 @@ public final class MapPainting {
             centre[0] - radius, centre[1] - radius, radius * DIAMETERS, radius * DIAMETERS);
     }
 
+    /**
+     * A closed path round a ring of points.
+     *
+     * <p>The open path plus the edge back to the start. Closing it here rather than leaving
+     * the caller to repeat the first point means a ring is stored once - a ring whose last
+     * point repeats its first is one Java2D draws with a zero-length segment at the join, and
+     * one whose does not is a shape with a gap, depending on which convention the caller
+     * happened to follow.
+     *
+     * @param ring the points, in order
+     * @return the closed path
+     */
     public static Path2D buildPath(List<double[]> ring) {
 
         var path = buildOpenPath(ring);
