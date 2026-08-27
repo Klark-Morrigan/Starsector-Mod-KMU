@@ -1409,6 +1409,43 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
+        void readUnweighedColoniesByFactionRecordsThatAColonyConcealsItself() {
+            // Concealed and unregistered at once is Galatia's shape and Daybreak's, and the account
+            // has to say which of the two facts it is calling out. Read here rather than at the box,
+            // because the box meets such a colony as a row and never as a market.
+            var independent = buildFaction("independent");
+            var academy = withName(buildHiddenMarket(independent, 3), "Galatia Academy");
+            var sector = buildSectorWith("galatia");
+
+            placeMarketsOnSystemEntities(buildOnlySystem(sector), academy);
+
+            assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
+                    readColoniesIn(sector),
+                    buildKnowledgeUnderTheFog())
+                .get("independent"))
+                .extracting(UnweighedColony::isHiddenMarket)
+                .containsExactly(true);
+        }
+
+        @Test
+        void readUnweighedColoniesByFactionRecordsAnOpenColonyAsConcealingNothing() {
+            // The other half of the pair, so the flag is read from the market rather than standing
+            // at whatever a record's default happens to be.
+            var independent = buildFaction("independent");
+            var academy = withName(buildVisibleMarket(independent, 3), "Galatia Academy");
+            var sector = buildSectorWith("galatia");
+
+            placeMarketsOnSystemEntities(buildOnlySystem(sector), academy);
+
+            assertThat(KnownMarketFootprints.readUnweighedColoniesByFaction(
+                    readColoniesIn(sector),
+                    buildKnowledgeUnderTheFog())
+                .get("independent"))
+                .extracting(UnweighedColony::isHiddenMarket)
+                .containsExactly(false);
+        }
+
+        @Test
         void readUnweighedColoniesByFactionCarriesTheGlyphTheMapMarksTheColonyWith() {
             // No score above accounts for such a colony, so the map's glyph is the only trace of it
             // the player has beside the name - which makes it the line least able to spare the mark.

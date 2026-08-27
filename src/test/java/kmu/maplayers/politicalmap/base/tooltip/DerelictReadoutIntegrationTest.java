@@ -7,6 +7,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
+import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
@@ -74,6 +75,10 @@ final class DerelictReadoutIntegrationTest {
     // business and not stated here.
     private static final int COLONY = 6;
 
+    // What the hulk is called on the one case that reads a box drawing its line. Named for a place
+    // rather than for what it is, so the word the boxes call out cannot have come from the name.
+    private static final String DERELICT_NAME = "Sentinel Gantries";
+
     private MockedStatic<MapVisibilityRules> visibilityRulesMock;
     private MockedStatic<PoliticalMapViewRegistry> viewRegistryMock;
     private MockedStatic<DominanceRules> rulesMock;
@@ -120,6 +125,23 @@ final class DerelictReadoutIntegrationTest {
 
             assertThat(readDominationLabels(sector))
                 .contains("Unpopulated", "Neutral");
+        }
+
+        @Test
+        void callsADerelictAbandonedInBothHoverFamiliesAtOnce() {
+            // The whole reason the word is resolved once for the two boxes. They name the same
+            // colonies of one system off carriers neither shares with the other - a claim admission
+            // against a dominance weight - so a word resolved at each could have one box call a
+            // place a hulk and the other say nothing about it, over one hovered cell.
+            //
+            // Asserted through the boxes that open a faction up, since the ordinary pair hangs
+            // nothing beneath one and so never draws a colony's line at all.
+            var sector = buildSectorHoldingANamedDerelict();
+
+            assertThat(readSpokenWords(readExpandedDominationSections(sector)))
+                .contains(DERELICT_NAME, "abandoned");
+            assertThat(readSpokenWords(readExpandedClaimSections(sector)))
+                .contains(DERELICT_NAME, "abandoned");
         }
 
         @Test
@@ -253,6 +275,65 @@ final class DerelictReadoutIntegrationTest {
     // An ordinary colony the economy lists, held by a faction the sector knows by name.
     private static MarketAPI buildColony() {
         return buildVisibleMarket(buildFaction("hegemony"), COLONY);
+    }
+
+    // The same system the cases above pose, with the hulk named. Only the boxes that open a faction
+    // up draw a colony's own line, and a line is drawn by its name - so the one case reading those
+    // boxes needs a derelict the account can call something.
+    private static SectorAPI buildSectorHoldingANamedDerelict() {
+
+        var colony = buildColony();
+
+        // Both lines are drawn by name, and a market mock answers none until it is told to: the
+        // colony is named so its own line can be built at all, and the hulk so the case has
+        // something to read the word beside.
+        when(colony.getName())
+            .thenReturn("Ancyra");
+
+        var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID, colony);
+        var derelict = placeDerelictIn(buildOnlySystem(sector));
+
+        when(derelict.getName())
+            .thenReturn(DERELICT_NAME);
+
+        stubFaction(sector, "hegemony", "The Hegemony", NO_CREST);
+        stubFaction(sector, Factions.NEUTRAL, "Neutral", NO_CREST);
+
+        return sector;
+    }
+
+    // The expanded dominance box over the sector's one system: the same contest the ordinary box
+    // reads, opened down to the colonies each faction holds it with.
+    private static List<TooltipSection> readExpandedDominationSections(SectorAPI sector) {
+
+        return new ExpandedSystemDominationTooltip(new ClaimBreakdownReaderFake())
+            .buildBodySections(sector, buildOnlySystem(sector));
+    }
+
+    // The expanded claims box over the same system, read through the real mechanic: a stubbed
+    // contest would hold whatever markets the stub was handed, and what the case turns on is the
+    // derelict reaching the list the way the game puts it there.
+    private static List<TooltipSection> readExpandedClaimSections(SectorAPI sector) {
+
+        var pass = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
+
+        return new ExpandedSystemClaimTooltip(
+                new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.colonies()))
+            .buildBodySections(sector, buildOnlySystem(sector));
+    }
+
+    // Every word the box says anywhere in it, in draw order. Read as a flat bag rather than by run
+    // position because what the case asserts is that the box says a thing at all - which run of
+    // which line carries it is each box's own business and is pinned by its own suite.
+    private static List<String> readSpokenWords(List<TooltipSection> sections) {
+
+        return TooltipSection
+            .readRowsInOrder(sections)
+            .stream()
+            .flatMap(row -> row.labelRuns().stream())
+            .filter(TextSpan.class::isInstance)
+            .map(labelRun -> ((TextSpan) labelRun).text())
+            .toList();
     }
 
     // The box read top to bottom as the words a player sees, headings, banners and entries alike -
