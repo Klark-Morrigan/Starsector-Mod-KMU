@@ -32,9 +32,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * and saves an SVG on request.
  */
 class SectorGeometryIntegrationTest {
+
     private static final String SECTORS =
-            "kmu.maplayers.base.geometry.SectorGeometryIntegrationTest"
-                    + "#provideSectorNames";
+        "kmu.maplayers.base.geometry.SectorGeometryIntegrationTest"
+            + "#provideSectorNames";
+
     // A vertex may sit a hair on the far side of its own bisector after clipping; the
     // nearest-site check tolerates that rather than chasing floating-point dust.
     private static final double NEAREST_SITE_TOLERANCE = 1e-6;
@@ -46,8 +48,13 @@ class SectorGeometryIntegrationTest {
     private static final Map<String, SectorGeometry> GEOMETRIES = new ConcurrentHashMap<>();
 
     static List<String> provideSectorNames() {
+
         var names = SectorFixture.listSectorNames();
-        assertThat(names).as("no sector fixtures on the classpath").isNotEmpty();
+
+        assertThat(names)
+            .as("no sector fixtures on the classpath")
+            .isNotEmpty();
+
         return names;
     }
 
@@ -66,30 +73,43 @@ class SectorGeometryIntegrationTest {
             var sites = fixture.getSites();
             var systemIds = fixture.getSystemIds();
             var offenders = new ArrayList<String>();
+
             for (var index = 0; index < systemIds.size(); index++) {
+
                 var own = sites.get(index);
+
                 for (var edge : cellEdges.get(systemIds.get(index))) {
+
                     var vertex = new double[] {edge.x1(), edge.y1()};
                     var ownDistance = computeDistanceBetween(vertex, own);
+
                     for (var other = 0; other < sites.size(); other++) {
+
                         if (other != index
                                 && computeDistanceBetween(vertex, sites.get(other))
                                     < ownDistance - NEAREST_SITE_TOLERANCE) {
+
                             offenders.add(systemIds.get(index) + " vs " + systemIds.get(other));
                         }
                     }
                 }
             }
-            assertThat(offenders).isEmpty();
+            assertThat(offenders)
+                .isEmpty();
         }
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
         void every_system_gets_a_cell_that_encloses_area(String sector) {
+
             var cellEdges = readGeometryOf(sector).cellEdgesByCellId();
-            assertThat(cellEdges).hasSize(buildFixtureFor(sector).getSystemIds().size());
+
+            assertThat(cellEdges)
+                .hasSize(buildFixtureFor(sector).getSystemIds().size());
+
             for (var edges : cellEdges.values()) {
-                assertThat(computeRingArea(convertToRing(edges))).isGreaterThan(0.0);
+                assertThat(computeRingArea(convertToRing(edges)))
+                    .isGreaterThan(0.0);
             }
         }
 
@@ -100,16 +120,21 @@ class SectorGeometryIntegrationTest {
             // consumer read one cell's edge and trust the far side agrees. A one-sided tag
             // would leave a cluster ring unable to close.
             var cellEdges = readGeometryOf(sector).cellEdgesByCellId();
+
             for (var cell : cellEdges.entrySet()) {
                 for (var edge : cell.getValue()) {
+
                     if (!(edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem)) {
                         continue;
                     }
-                    assertThat(hasNeighbourNamed(cellEdges.get(acrossSystem.systemId()),
+                    assertThat(hasNeighbourNamed(
+                            cellEdges.get(acrossSystem.systemId()),
                             cell.getKey()))
-                            .as("%s names %s, so the reverse must hold",
-                                    cell.getKey(), acrossSystem.systemId())
-                            .isTrue();
+                        .as(
+                            "%s names %s, so the reverse must hold",
+                            cell.getKey(),
+                            acrossSystem.systemId())
+                        .isTrue();
                 }
             }
         }
@@ -125,16 +150,19 @@ class SectorGeometryIntegrationTest {
             // grew would mean an offset escaped outward - the mechanism behind the poke the
             // frontier's first attempt shipped.
             var geometry = readGeometryOf(sector);
+
             for (var entry : geometry.shapedCellByCellId().entrySet()) {
+
                 var shaped = entry.getValue();
                 if (shaped.fillPolygon().isEmpty()) {
                     continue;
                 }
                 var rawArea = computeRingArea(convertToRing(
-                        geometry.cellEdgesByCellId().get(entry.getKey())));
+                    geometry.cellEdgesByCellId().get(entry.getKey())));
+
                 assertThat(computeRingArea(shaped.fillPolygon()))
-                        .as("shaped cell %s must not outgrow its raw cell", entry.getKey())
-                        .isLessThanOrEqualTo(rawArea);
+                    .as("shaped cell %s must not outgrow its raw cell", entry.getKey())
+                    .isLessThanOrEqualTo(rawArea);
             }
         }
 
@@ -147,17 +175,23 @@ class SectorGeometryIntegrationTest {
             // it is worth pinning before it moves.
             var geometry = readGeometryOf(sector);
             var pinned = 0;
+
             for (var entry : geometry.shapedCellByCellId().entrySet()) {
+
                 if (geometry.ownerByCellId().containsKey(entry.getKey())
                         || entry.getValue().fillPolygon().isEmpty()) {
+
                     continue;
                 }
                 for (var isBoundary : entry.getValue().edgeIsBoundary()) {
-                    assertThat(isBoundary).isTrue();
+
+                    assertThat(isBoundary)
+                        .isTrue();
                 }
                 pinned++;
             }
-            assertThat(pinned).isPositive();
+            assertThat(pinned)
+                .isPositive();
         }
     }
 
@@ -167,15 +201,20 @@ class SectorGeometryIntegrationTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
         void every_owner_holding_a_cell_traces_at_least_one_ring(String sector) {
+
             var geometry = readGeometryOf(sector);
             var ownersWithoutRings = new ArrayList<String>();
-            for (var owner : SectorGeometry.groupCellIdsByOwner(geometry.ownerByCellId())
+
+            for (var owner : SectorGeometry
+                    .groupCellIdsByOwner(geometry.ownerByCellId())
                     .entrySet()) {
+
                 if (geometry.ringsByOwner().get(owner.getKey()).isEmpty()) {
                     ownersWithoutRings.add(owner.getKey());
                 }
             }
-            assertThat(ownersWithoutRings).isEmpty();
+            assertThat(ownersWithoutRings)
+                .isEmpty();
         }
 
         @ParameterizedTest(name = "{0}")
@@ -186,8 +225,11 @@ class SectorGeometryIntegrationTest {
             // orphaned loop takes.
             for (var rings : readGeometryOf(sector).ringsByOwner().values()) {
                 for (var ring : rings) {
-                    assertThat(ring.size()).isGreaterThanOrEqualTo(3);
-                    assertThat(Math.abs(PolygonRegions.computeSignedArea(ring))).isGreaterThan(0.0);
+
+                    assertThat(ring.size())
+                        .isGreaterThanOrEqualTo(3);
+                    assertThat(Math.abs(PolygonRegions.computeSignedArea(ring)))
+                        .isGreaterThan(0.0);
                 }
             }
         }
@@ -200,13 +242,17 @@ class SectorGeometryIntegrationTest {
 
     private static SectorGeometry readGeometryOf(String sector) {
         return GEOMETRIES.computeIfAbsent(sector, name -> SectorGeometry.buildSectorGeometry(
-                buildFixtureFor(name), SectorGeometryParameters.createDefaults()));
+            buildFixtureFor(name),
+            SectorGeometryParameters.createDefaults()));
     }
 
     private static boolean hasNeighbourNamed(List<CellEdge> edges, String systemId) {
+
         for (var edge : edges) {
+
             if (edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem
                     && systemId.equals(acrossSystem.systemId())) {
+
                 return true;
             }
         }
@@ -214,7 +260,9 @@ class SectorGeometryIntegrationTest {
     }
 
     private static List<double[]> convertToRing(List<CellEdge> edges) {
+
         var ring = new ArrayList<double[]>(edges.size());
+
         for (var edge : edges) {
             ring.add(new double[] {edge.x1(), edge.y1()});
         }
@@ -222,7 +270,9 @@ class SectorGeometryIntegrationTest {
     }
 
     private static double computeRingArea(List<double[]> ring) {
-        return ring.size() < 3 ? 0.0 : Math.abs(PolygonRegions.computeSignedArea(ring));
+        return ring.size() < 3
+            ? 0.0
+            : Math.abs(PolygonRegions.computeSignedArea(ring));
     }
 
     private static double computeDistanceBetween(double[] a, double[] b) {
