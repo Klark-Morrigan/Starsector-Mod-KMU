@@ -167,7 +167,6 @@ public final class MarketWeightRowResolver {
             .createEntry(ColonyQualifier.qualifyColony(
                 colonyReading.remarkOnColony(line, breakdown.marketId()),
                 new ColonyQualifierFacts(
-                    breakdown.marketNameplate().displayName(),
                     colonyReading.readKindOf(breakdown.marketId()),
                     NO_CLAIM_IS_STATED_HERE,
                     colonyReading.isDiscoveredColony(breakdown.marketId()),
@@ -200,7 +199,6 @@ public final class MarketWeightRowResolver {
         return CellTooltipEntry.createEntry(ColonyQualifier.qualifyColony(
             colonyReading.remarkOnColony(line, colony.marketId()),
             new ColonyQualifierFacts(
-                colony.nameplate().displayName(),
                 colony.kind(),
                 NO_CLAIM_IS_STATED_HERE,
                 colonyReading.isDiscoveredColony(colony.marketId()),

@@ -56,9 +56,9 @@ public final class ColonyQualifier {
      * Runs a colony's line on into everything the box has found out about it, where it has found
      * out anything.
      *
-     * <p>Layered after any remark the line already carries, and the two cannot displace each other:
-     * they are drawn in different shades at opposite ends of the line - the remark quiet, run on
-     * after the name; the qualifier a finding, at the end.
+     * <p>Layered independently of any remark the line already carries, and the two cannot displace
+     * each other: they are drawn in different shades and in slots the line keeps apart - the
+     * qualifier a finding, run on after the name; the remark quiet, closing the line.
      *
      * @param line  the colony's line as the box has built it so far
      * @param facts what the box knows about the colony beyond its own number; null states nothing
@@ -71,7 +71,7 @@ public final class ColonyQualifier {
         if (facts == null) {
             return line;
         }
-        var statedWords = dropWordsAlreadyInName(resolveWords(facts), facts.colonyName());
+        var statedWords = dropWordsAlreadyInName(resolveWords(facts), line.labelText());
 
         if (statedWords.isEmpty()) {
             return line;
@@ -128,6 +128,10 @@ public final class ColonyQualifier {
     // Drops any word the colony is already called, case-insensitively. A station named "Abandoned
     // Station" would otherwise read as abandoned twice over, and the rule is written over the whole
     // vocabulary rather than attached to the one word it fires for today.
+    //
+    // Read off the line's own label rather than off a name handed in beside it: what the reader can
+    // see is exactly what the line says, and a second copy of the name would be free to disagree
+    // with it.
     private static List<String> dropWordsAlreadyInName(List<String> words, String colonyName) {
 
         if (colonyName == null) {

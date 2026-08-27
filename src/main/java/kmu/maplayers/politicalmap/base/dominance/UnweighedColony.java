@@ -5,14 +5,14 @@ import kmlib.starsector.entities.EntityNameplate;
 import kmu.maplayers.base.visibility.ColonyKind;
 
 /**
- * A colony an account names but never weighed: which colony it is, what kind of place it is, and
- * how it is shown.
+ * A colony an account names but never weighed: which colony it is, what kind of place it is,
+ * whether it conceals itself, and how it is shown.
  *
- * <p>Everything a weighed colony's {@link MarketWeightBreakdown} carries beyond these two is
+ * <p>Everything a weighed colony's {@link MarketWeightBreakdown} carries beyond those is
  * arithmetic, and there is none here - the economy does not list the colony, so no term of a
- * dominance weight has anything to read. That absence is the point: an identity and a nameplate
- * cannot be summed into a footprint, so a colony reaching a box this way can never reach the pass
- * that paints the system.
+ * dominance weight has anything to read. That absence is the point: nothing on this record can be
+ * summed into a footprint, so a colony reaching a box this way can never reach the pass that paints
+ * the system.
  *
  * <p>The identity travels beside the nameplate for the same reason it does on a weighed colony: a
  * box saying more about a colony than the account did - how current the player's knowledge of it

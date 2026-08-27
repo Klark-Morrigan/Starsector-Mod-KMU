@@ -283,7 +283,6 @@ public final class ClaimScoreRowResolver {
         // for both boxes at once. Stated here, the precedence would be a second copy of a rule the
         // sharing exists to have one of.
         var facts = new ColonyQualifierFacts(
-            market.marketNameplate().displayName(),
             colonyReading.readKindOf(market.marketId()),
             isHoldingTheClaim,
             colonyReading.isDiscoveredColony(market.marketId()),

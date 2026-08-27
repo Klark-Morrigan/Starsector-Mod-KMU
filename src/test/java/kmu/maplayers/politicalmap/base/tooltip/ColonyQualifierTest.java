@@ -61,8 +61,7 @@ final class ColonyQualifierTest {
         void qualifyColonyCallsNothingOutBesideAnOrdinaryColonyInPlainSight() {
             // The common case, and the one the whole vocabulary has to leave alone: a listed,
             // open, found colony nobody has any finding about reads on its name.
-            assertThat(qualify(buildFacts(
-                    "Jangala",
+            assertThat(qualify("Jangala", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
@@ -73,13 +72,13 @@ final class ColonyQualifierTest {
 
         @Test
         void qualifyColonyCallsADerelictAbandoned() {
-            assertThat(qualify(buildUnlistedFacts("Sentinel Gantries", ColonyKind.SPACE_DERELICT)))
+            assertThat(qualify("Sentinel Gantries", buildUnlistedFacts(ColonyKind.SPACE_DERELICT)))
                 .isEqualTo("abandoned");
         }
 
         @Test
         void qualifyColonyCallsACollapsedColonyDecivilised() {
-            assertThat(qualify(buildUnlistedFacts("Tibicena", ColonyKind.UNGOVERNED_COLONY)))
+            assertThat(qualify("Tibicena", buildUnlistedFacts(ColonyKind.UNGOVERNED_COLONY)))
                 .isEqualTo("decivilised");
         }
 
@@ -87,8 +86,7 @@ final class ColonyQualifierTest {
         void qualifyColonyCallsAKeptStationNothingAtAll() {
             // An outpost is a place somebody runs, whatever shape of market it wears, so the
             // vocabulary has nothing to say about it.
-            assertThat(qualify(buildFacts(
-                    "Tigra City",
+            assertThat(qualify("Tigra City", new ColonyQualifierFacts(
                     ColonyKind.OUTPOST,
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
@@ -99,8 +97,7 @@ final class ColonyQualifierTest {
 
         @Test
         void qualifyColonyCallsAnUnfoundColonyUndiscovered() {
-            assertThat(qualify(buildFacts(
-                    "Kanta's Den",
+            assertThat(qualify("Kanta's Den", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
                     IS_UNFOUND,
@@ -111,8 +108,7 @@ final class ColonyQualifierTest {
 
         @Test
         void qualifyColonyCallsAConcealedColonyHidden() {
-            assertThat(qualify(buildFacts(
-                    "Kanta's Den",
+            assertThat(qualify("Kanta's Den", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
@@ -123,8 +119,7 @@ final class ColonyQualifierTest {
 
         @Test
         void qualifyColonyCallsAColonyTheEconomyDoesNotHoldUnlisted() {
-            assertThat(qualify(buildFacts(
-                    "Galatia Academy",
+            assertThat(qualify("Galatia Academy", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
@@ -137,8 +132,7 @@ final class ColonyQualifierTest {
         void qualifyColonyCallsTheClaimHolderOutAheadOfEverythingElse() {
             // Under the reveal, which is the one state a claim holder can be joined in: it is
             // listed, open and territorially owned by construction, so nothing else can join it.
-            assertThat(qualify(buildFacts(
-                    "Chicomoztoc",
+            assertThat(qualify("Chicomoztoc", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_THE_CLAIM,
                     IS_UNFOUND,
@@ -153,8 +147,7 @@ final class ColonyQualifierTest {
             // resolver: the mechanic draws its candidates from the economy's own listing, skips
             // concealed markets, and takes a territorial owner - so a claim holder is listed, open
             // and a place somebody runs, and the word stands by itself.
-            assertThat(qualify(buildFacts(
-                    "Chicomoztoc",
+            assertThat(qualify("Chicomoztoc", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_THE_CLAIM,
                     IS_FOUND,
@@ -167,8 +160,7 @@ final class ColonyQualifierTest {
         void qualifyColonyRunsAKindOnIntoHowTheColonyIsOutOfSight() {
             // What a place is outranks how it is concealed, so the kind leads. Reachable under the
             // reveal, a derelict being exactly what a bare fog would leak.
-            assertThat(qualify(buildFacts(
-                    "Sentinel Gantries",
+            assertThat(qualify("Sentinel Gantries", new ColonyQualifierFacts(
                     ColonyKind.SPACE_DERELICT,
                     HOLDS_NO_CLAIM,
                     IS_UNFOUND,
@@ -180,8 +172,7 @@ final class ColonyQualifierTest {
         @Test
         void qualifyColonyRunsAKindOnIntoAConcealmentAModHungOnIt() {
             // Vanilla conceals neither kind; a mod may, and the resolver has to be right for it.
-            assertThat(qualify(buildFacts(
-                    "Tibicena",
+            assertThat(qualify("Tibicena", new ColonyQualifierFacts(
                     ColonyKind.UNGOVERNED_COLONY,
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
@@ -194,8 +185,7 @@ final class ColonyQualifierTest {
         void qualifyColonyDisplacesHiddenWithUndiscoveredWhereBothHold() {
             // Not a pair: a colony the player has not found is concealed from them by that alone,
             // and the market's own flag adds nothing a reader could act on.
-            assertThat(qualify(buildFacts(
-                    "Kanta's Den",
+            assertThat(qualify("Kanta's Den", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
                     IS_UNFOUND,
@@ -208,14 +198,13 @@ final class ColonyQualifierTest {
         void qualifyColonySuppressesUnlistedBehindAKind() {
             // Both kinds that speak are off-economy by construction, so the fallback would repeat
             // itself on every derelict and every dead world.
-            assertThat(qualify(buildUnlistedFacts("Sentinel Gantries", ColonyKind.SPACE_DERELICT)))
+            assertThat(qualify("Sentinel Gantries", buildUnlistedFacts(ColonyKind.SPACE_DERELICT)))
                 .isEqualTo("abandoned");
         }
 
         @Test
         void qualifyColonySuppressesUnlistedBehindUndiscovered() {
-            assertThat(qualify(buildFacts(
-                    "Daybreak",
+            assertThat(qualify("Daybreak", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
                     IS_UNFOUND,
@@ -226,9 +215,9 @@ final class ColonyQualifierTest {
 
         @Test
         void qualifyColonySuppressesUnlistedBehindHidden() {
-            // Daybreak's own shape, and the reading step 18 goes on to exempt one market from.
-            assertThat(qualify(buildFacts(
-                    "Daybreak",
+            // Daybreak's own shape: concealed, off-economy and in plain sight of anyone who has
+            // found it, so the fallback has a stronger word standing above it.
+            assertThat(qualify("Daybreak", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
@@ -241,7 +230,7 @@ final class ColonyQualifierTest {
         void qualifyColonyDropsAWordTheColonyIsAlreadyCalled() {
             // A station called Abandoned Station is the shape the rule exists for: the word is
             // already on the line, and repeating it reads as a fault in the box.
-            assertThat(qualify(buildUnlistedFacts("Abandoned Station", ColonyKind.SPACE_DERELICT)))
+            assertThat(qualify("Abandoned Station", buildUnlistedFacts(ColonyKind.SPACE_DERELICT)))
                 .isNull();
         }
 
@@ -250,8 +239,7 @@ final class ColonyQualifierTest {
             // A dropped word has still qualified. The fallback is suppressed by the condition
             // holding above it, not by anything being printed - so a derelict named for what it is
             // reads bare rather than falling through to the weaker statement.
-            assertThat(qualify(buildFacts(
-                    "Abandoned Station",
+            assertThat(qualify("Abandoned Station", new ColonyQualifierFacts(
                     ColonyKind.SPACE_DERELICT,
                     HOLDS_NO_CLAIM,
                     IS_UNFOUND,
@@ -266,8 +254,7 @@ final class ColonyQualifierTest {
             // beneath would have to lay out a separator for.
             var line = buildLine("Jangala");
 
-            assertThat(ColonyQualifier.qualifyColony(line, buildFacts(
-                    "Jangala",
+            assertThat(ColonyQualifier.qualifyColony(line, new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
@@ -288,8 +275,7 @@ final class ColonyQualifierTest {
 
         @Test
         void qualifyColonyReadsAnUnstatedKindAsNoGroundsForAFinding() {
-            assertThat(qualify(buildFacts(
-                    "Jangala",
+            assertThat(qualify("Jangala", new ColonyQualifierFacts(
                     null,
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
@@ -299,11 +285,15 @@ final class ColonyQualifierTest {
         }
     }
 
-    // What the resolver called out at the end of the line, which is the whole of what every case
+    // What the resolver called out on the colony's line, which is the whole of what every case
     // above reads.
-    private static String qualify(ColonyQualifierFacts facts) {
+    //
+    // The name is handed in beside the facts rather than held among them, because that is where the
+    // resolver reads it from: one rule drops a word the colony is already called, and it reads the
+    // label the line carries.
+    private static String qualify(String colonyName, ColonyQualifierFacts facts) {
         return ColonyQualifier
-            .qualifyColony(buildLine(facts.colonyName()), facts)
+            .qualifyColony(buildLine(colonyName), facts)
             .qualifierText();
     }
 
@@ -314,24 +304,7 @@ final class ColonyQualifierTest {
 
     // The off-economy colony in plain sight both speaking kinds arrive as, which is what the cases
     // about a kind's own word are posed over.
-    private static ColonyQualifierFacts buildUnlistedFacts(String colonyName, ColonyKind kind) {
-        return buildFacts(colonyName, kind, HOLDS_NO_CLAIM, IS_FOUND, IS_OPEN, IS_UNLISTED);
-    }
-
-    private static ColonyQualifierFacts buildFacts(
-            String colonyName,
-            ColonyKind kind,
-            boolean isHoldingTheClaim,
-            boolean isDiscoveredByPlayer,
-            boolean isHiddenMarket,
-            boolean isListedByEconomy) {
-
-        return new ColonyQualifierFacts(
-            colonyName,
-            kind,
-            isHoldingTheClaim,
-            isDiscoveredByPlayer,
-            isHiddenMarket,
-            isListedByEconomy);
+    private static ColonyQualifierFacts buildUnlistedFacts(ColonyKind kind) {
+        return new ColonyQualifierFacts(kind, HOLDS_NO_CLAIM, IS_FOUND, IS_OPEN, IS_UNLISTED);
     }
 }

@@ -5,9 +5,7 @@ import kmlib.starsector.entities.EntityNameplate;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
-import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKind;
-import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
@@ -30,15 +28,14 @@ import java.awt.Color;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.Set;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
+import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
+import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
+import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithUnfound;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins which lines a colony breaks down into and what hangs beneath what: the colonies ranked under
@@ -65,15 +62,15 @@ import static org.mockito.Mockito.when;
  * name, and a case for each condition failing alone is what keeps it from spreading to a planet
  * colony's namesake station or to a station named differently from the colony it defends.
  *
+ * <p>What a colony's line calls out about the place is pinned here only as far as this resolver
+ * decides it: which facts each of the two lists hands over, and that they reach the line naming the
+ * colony rather than a term beneath it. Which words those facts come to, in which order, is the
+ * shared read's own question and is pinned by {@link ColonyQualifierTest}.
+ *
  * <p>How a line's numbers read is stood apart from and pinned by {@link MarketFactorTextTest}; the
  * values asserted below are read only where the case is about which line carries which.
  */
 final class MarketWeightRowResolverTest {
-
-    // What a colony nobody is looking at says about how old the box's news of it is. Stated
-    // verbatim rather than composed, this suite being about which line carries the remark rather
-    // than about how one reads.
-    private static final String LAST_SEEN = "last seen 34 days ago (c206.05.12)";
 
     // A plain colony's parts: size four at full worth, no station, no patrols. The baseline the
     // cases below add one factor at a time to.
@@ -576,6 +573,20 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
+        void resolveMarketRowsCallsAConcealedUnweighedColonyHidden() {
+            // The one shape that is concealed and off-economy at once - Galatia's, Daybreak's - and
+            // the reason concealment travels on an unweighed colony at all: without it this line
+            // would fall through to `unlisted` while the claims box called the same colony hidden.
+            var rows = resolveUnremarkedRows(
+                List.of(),
+                List.of(buildConcealedUnweighedColony("Daybreak")),
+                buildRules());
+
+            assertThat(rows.get(0).line().qualifierText())
+                .isEqualTo("hidden");
+        }
+
+        @Test
         void resolveMarketRowsTellsADeadWorldAndAHulkApartBesideTheirNoughts() {
             // The pair is what makes the words necessary: a ruin and a hulk arrive identically -
             // unowned, off-economy, at nought - so without them the reader cannot tell a world
@@ -749,37 +760,6 @@ final class MarketWeightRowResolverTest {
         return rows.get(0).children().get(2).line();
     }
 
-    // A reading remarking on exactly one colony, its notes mocked because what makes a remark due
-    // is the notes' own question and is pinned by {@link ColonyObservationNotesTest}: what this
-    // suite is about is which line carries the answer.
-    private static SystemColonyReading buildReadingRemarkingOn(String marketId) {
-
-        var notesMock = mock(ColonyObservationNotes.class);
-
-        when(notesMock.resolveLastSeenNote(marketId))
-            .thenReturn(Optional.of(LAST_SEEN));
-
-        // The one thing the notes do to a line is left to run for real, since which line the
-        // remark lands on is exactly what this suite is about. Every other colony answers the
-        // unstubbed empty, so nothing else is touched.
-        when(notesMock.remarkOnColony(any(), any()))
-            .thenCallRealMethod();
-
-        return new SystemColonyReading(
-            ColonyKindLookup.NONE,
-            ColonyDiscoveryLookup.NONE,
-            notesMock);
-    }
-
-    // The box's walk of a system holding one colony the player has yet to find, which is the half
-    // of a line's account no weight can supply.
-    private static SystemColonyReading buildReadingWithUnfound(String marketId) {
-        return new SystemColonyReading(
-            ColonyKindLookup.NONE,
-            new ColonyDiscoveryLookup(Set.of(marketId)),
-            ColonyObservationNotes.NONE);
-    }
-
     // The rows of an account where nobody is remarked on: every colony is being looked at as the
     // box is drawn, so no line says when it was last seen. The ordinary case, and the one every
     // case below bar the ones about the remark itself poses.
@@ -816,6 +796,16 @@ final class MarketWeightRowResolverTest {
             nameColonyId(marketName),
             kind,
             VISIBLE_COLONY,
+            EntityNameplate.createUnmarkedNameplate(marketName));
+    }
+
+    // A colony the economy does not list and that conceals itself besides - the one shape both of
+    // those hold for at once, and what the case about a concealed unweighed line is posed over.
+    private static UnweighedColony buildConcealedUnweighedColony(String marketName) {
+        return new UnweighedColony(
+            nameColonyId(marketName),
+            ColonyKind.COLONY,
+            CONCEALED_COLONY,
             EntityNameplate.createUnmarkedNameplate(marketName));
     }
 

@@ -278,8 +278,8 @@ the same walk that counted it, and the same reading the dominance tie-break pref
 the two names must match. A planet colony that happens to share its station's name is two places the
 player can see apart on the map, so a clarifier there would answer a question they never had. It
 reads in the line's own colour rather than the qualifier's gold: the parentheses already say the run
-is an aside, and the gold is reserved for findings - the `hidden` flag, the claims box's `(core)` -
-which a disambiguation is not.
+is an aside, and the gold is reserved for findings - the words a colony's own line calls out, the
+claims box's `(core)` - which a disambiguation is not.
 That box lists one kind of colony no score above it accounts for: one the economy does not list,
 which the weight read has nothing to weigh. It is the other half of the one colony set the weighed
 read selects from - the colonies the economy does not list

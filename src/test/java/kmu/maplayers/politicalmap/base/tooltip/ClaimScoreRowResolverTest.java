@@ -27,14 +27,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.Set;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
+import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
+import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
+import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithUnfound;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins which lines a faction's claim standing breaks down into and what hangs beneath what: its markets
@@ -58,6 +57,11 @@ import static org.mockito.Mockito.when;
  * <p>Where a remark about how old the box's news of a market is may appear is pinned the same way -
  * on a market's own line whatever the contest made of it, and on nothing beneath one. When such a
  * remark is due at all is the notes' own question and is pinned by {@link ColonyObservationNotesTest}.
+ *
+ * <p>What a market's line calls out about the place is pinned here only as far as this resolver
+ * decides it: which facts it hands over - the claim it took, the admission the contest met it
+ * through, and what the box's walk of the system says about it. Which words those come to, in which
+ * order, is the shared read's own question and is pinned by {@link ColonyQualifierTest}.
  *
  * <p>The mechanic behind the numbers is KMLib's and has its own suite there, so what is left is what
  * this resolver alone decides - which market leads, when it is called out, and which terms are stated
@@ -110,9 +114,6 @@ final class ClaimScoreRowResolverTest {
     // for every case about the arithmetic rather than varied: which kinds resolve is
     // ColonyKindLookupTest's question and what makes a remark due is ColonyObservationNotesTest's.
     private static final SystemColonyReading NOTHING_BEYOND_THE_SCORE = SystemColonyReading.NONE;
-
-    // What a remarked line runs on into, spelled out so a case reads as the words a player sees.
-    private static final String LAST_SEEN = "last seen 34 days ago (c206.05.12)";
 
     // The world people left, as the box's own walk of the system classified it.
     private static final SystemColonyReading TIBICENA_IS_A_DEAD_WORLD = new SystemColonyReading(
@@ -979,37 +980,6 @@ final class ClaimScoreRowResolverTest {
             assertThat(rows.get(0).line().noteText())
                 .isNull();
         }
-    }
-
-    // Notes remarking on exactly one colony, mocked because what makes a remark due is the notes'
-    // own question and is pinned by {@link ColonyObservationNotesTest}: what this suite is about is
-    // which line carries the answer.
-    private static SystemColonyReading buildReadingRemarkingOn(String marketId) {
-
-        var notesMock = mock(ColonyObservationNotes.class);
-
-        when(notesMock.resolveLastSeenNote(marketId))
-            .thenReturn(Optional.of(LAST_SEEN));
-
-        // The one thing the notes do to a line is left to run for real, since which line the
-        // remark lands on is exactly what this suite is about. Every other colony answers the
-        // unstubbed empty, so nothing else is touched.
-        when(notesMock.remarkOnColony(any(), any()))
-            .thenCallRealMethod();
-
-        return new SystemColonyReading(
-            ColonyKindLookup.NONE,
-            ColonyDiscoveryLookup.NONE,
-            notesMock);
-    }
-
-    // The box's walk of a system holding one market the player has yet to find, which is the half
-    // of a row's account no contest can supply.
-    private static SystemColonyReading buildReadingWithUnfound(String marketId) {
-        return new SystemColonyReading(
-            ColonyKindLookup.NONE,
-            new ColonyDiscoveryLookup(Set.of(marketId)),
-            ColonyObservationNotes.NONE);
     }
 
     // The account over a system this faction won outright and whose markets the player has all
