@@ -450,18 +450,18 @@ final class ClaimScoreRowResolverTest {
 
         @Test
         void resolveMarketRowsListsAMarketTheEconomyDoesNotListAtNought() {
-            // Vanilla builds Galatia Academy as a real market on a real station and never registers
-            // it, so the mechanic's walk never reaches it. Listed at nought states both true things
-            // at once - the station is there, in a faction's colours, and it took no part.
+            // Vanilla leaves a real market on a real station unregistered, so the mechanic's walk
+            // never reaches it. Listed at nought states both true things at once - the station is
+            // there, in a faction's colours, and it took no part.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(NO_SIBLING_MARKETS),
                 List.of(buildOffEconomyMarket(
-                    "Galatia Academy",
+                    "Kirov Reserve",
                     STRONGEST_MARKET_SIZE,
                     SECOND_LISTED))));
 
             assertThat(readLabelTexts(rows))
-                .containsExactly(STRONGEST_MARKET, "Galatia Academy");
+                .containsExactly(STRONGEST_MARKET, "Kirov Reserve");
             assertThat(rows.get(1).line().valueText())
                 .isEqualTo("0");
 
@@ -478,7 +478,7 @@ final class ClaimScoreRowResolverTest {
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(NO_SIBLING_MARKETS),
                 List.of(buildOffEconomyMarket(
-                    "Galatia Academy",
+                    "Kirov Reserve",
                     STRONGEST_MARKET_SIZE,
                     SECOND_LISTED))));
 
@@ -495,10 +495,10 @@ final class ClaimScoreRowResolverTest {
                 buildStrongestMarket(ONE_SIBLING_MARKET),
                 List.of(
                     buildMarket("Ancyra", 3, ONE_SIBLING_MARKET, SECOND_LISTED),
-                    buildOffEconomyMarket("Galatia Academy", 3, THIRD_LISTED))));
+                    buildOffEconomyMarket("Kirov Reserve", 3, THIRD_LISTED))));
 
             assertThat(readLabelTexts(rows))
-                .containsExactly(STRONGEST_MARKET, "Ancyra", "Galatia Academy");
+                .containsExactly(STRONGEST_MARKET, "Ancyra", "Kirov Reserve");
         }
 
         @Test
@@ -620,7 +620,7 @@ final class ClaimScoreRowResolverTest {
             var rows = resolveContestedRows(
                 buildStanding(
                     buildStrongestMarket(NO_SIBLING_MARKETS),
-                    List.of(buildOffEconomyUngovernedColony(
+                    List.of(buildOffEconomyMarket(
                         "Tibicena",
                         STRONGEST_MARKET_SIZE,
                         SECOND_LISTED))),
@@ -637,7 +637,7 @@ final class ClaimScoreRowResolverTest {
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(NO_SIBLING_MARKETS),
                 List.of(buildOffEconomyMarket(
-                    "Galatia Academy",
+                    "Kirov Reserve",
                     STRONGEST_MARKET_SIZE,
                     SECOND_LISTED))));
 
@@ -824,10 +824,10 @@ final class ClaimScoreRowResolverTest {
             // ever imposed - and every line carries the nought the contest weighed it at.
             var rows = resolvePresenceOnlyRows(
                 buildFoundHiddenMarket("Kanta's Den", 6, NO_SIBLING_MARKETS, SECOND_LISTED),
-                buildOffEconomyMarket("Galatia Academy", 4, THIRD_LISTED));
+                buildOffEconomyMarket("Kirov Reserve", 4, THIRD_LISTED));
 
             assertThat(readLabelTexts(rows))
-                .containsExactly("Kanta's Den", "Galatia Academy");
+                .containsExactly("Kanta's Den", "Kirov Reserve");
             assertThat(rows)
                 .allSatisfy(row -> assertThat(row.line().valueText()).isEqualTo("0"));
         }
@@ -955,12 +955,12 @@ final class ClaimScoreRowResolverTest {
             // The other shape the contest never weighed, answering on the same terms: the mechanic's
             // walk never reached it, so when it was last seen is all the account has left to add.
             var standing = buildPresenceOnlyStanding(
-                buildOffEconomyMarket("Galatia Academy", 4, THIRD_LISTED));
+                buildOffEconomyMarket("Kirov Reserve", 4, THIRD_LISTED));
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
-                buildReadingRemarkingOn("galatia_academy"),
+                buildReadingRemarkingOn(nameMarketId("Kirov Reserve")),
                 WITHHOLDING_UNFOUND_MARKETS);
 
             assertThat(rows.get(0).line().noteText())
@@ -1232,24 +1232,9 @@ final class ClaimScoreRowResolverTest {
 
     // A colony the economy does not list - a real market on a real entity the mechanic never reached.
     // Held in the open and found by the player, so the only reason it took no part is the one the case
-    // is about.
+    // is about. What kind of place it is comes off the box's walk rather than off this, so one shape
+    // serves the cases about a bare unregistered colony and the cases about a collapsed one alike.
     private static MarketClaimBreakdown buildOffEconomyMarket(
-            String marketName,
-            int marketSize,
-            int listingPosition) {
-
-        return buildFoundUnscoredMarket(
-            marketName,
-            marketSize,
-            NO_SIBLING_MARKETS,
-            listingPosition,
-            ContestAdmission.OFF_ECONOMY);
-    }
-
-    // The same shape as the world people left, for the cases about what a kind states on the line
-    // naming it. Posed against the hulk above, which reaches the list identically and states
-    // nothing.
-    private static MarketClaimBreakdown buildOffEconomyUngovernedColony(
             String marketName,
             int marketSize,
             int listingPosition) {

@@ -93,6 +93,8 @@ public final class ColonyQualifier {
 
         var words = new ArrayList<String>();
 
+        var concealment = facts.concealment();
+
         if (facts.isHoldingTheClaim()) {
             words.add(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER));
         }
@@ -105,9 +107,9 @@ public final class ColonyQualifier {
         // base keeping itself out of sight from an ordinary colony, and a landmark that merely
         // keeps no comm directory wears the identical flag - so calling it out beside a pirate base
         // would say the two are the same sort of place.
-        if (!facts.isDiscoveredByPlayer()) {
+        if (!concealment.isDiscoveredByPlayer()) {
             words.add(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_UNDISCOVERED));
-        } else if (facts.isHiddenMarket() && !facts.isOpenlyKnownMarket()) {
+        } else if (concealment.isHiddenMarket() && !concealment.isOpenlyKnownMarket()) {
             words.add(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_HIDDEN));
         }
         // The fallback, and the emptiness read here is the conditions above rather than what will

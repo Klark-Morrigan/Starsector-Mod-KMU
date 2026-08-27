@@ -285,9 +285,10 @@ public final class ClaimScoreRowResolver {
         var facts = new ColonyQualifierFacts(
             colonyReading.readKindOf(market.marketId()),
             isHoldingTheClaim,
-            colonyReading.isDiscoveredColony(market.marketId()),
-            market.isHiddenMarket(),
-            colonyReading.isOpenlyKnownColony(market.marketId()),
+            new ColonyConcealment(
+                colonyReading.isDiscoveredColony(market.marketId()),
+                market.isHiddenMarket(),
+                colonyReading.isOpenlyKnownColony(market.marketId())),
             !market.isOffEconomyMarket());
 
         // Described whatever the contest made of the market, because neither what sort of place a

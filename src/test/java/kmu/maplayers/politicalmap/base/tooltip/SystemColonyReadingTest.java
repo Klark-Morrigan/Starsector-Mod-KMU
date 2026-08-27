@@ -229,9 +229,7 @@ final class SystemColonyReadingTest {
             var line = reading.describeColony(PLAIN_LINE, DERELICT_ID, new ColonyQualifierFacts(
                 ColonyKind.SPACE_DERELICT,
                 HOLDS_NO_CLAIM,
-                IS_FOUND,
-                IS_OPEN,
-                IS_A_SECRET,
+                new ColonyConcealment(IS_FOUND, IS_OPEN, IS_A_SECRET),
                 IS_UNLISTED));
 
             assertThat(line.qualifierText())

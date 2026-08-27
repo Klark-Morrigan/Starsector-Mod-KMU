@@ -69,9 +69,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Jangala", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
-                    IS_FOUND,
-                    IS_OPEN,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_FOUND, IS_OPEN, IS_A_SECRET),
                     IS_LISTED)))
                 .isNull();
         }
@@ -95,9 +93,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Tigra City", new ColonyQualifierFacts(
                     ColonyKind.OUTPOST,
                     HOLDS_NO_CLAIM,
-                    IS_FOUND,
-                    IS_OPEN,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_FOUND, IS_OPEN, IS_A_SECRET),
                     IS_LISTED)))
                 .isNull();
         }
@@ -107,9 +103,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Kanta's Den", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
-                    IS_UNFOUND,
-                    IS_OPEN,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_UNFOUND, IS_OPEN, IS_A_SECRET),
                     IS_LISTED)))
                 .isEqualTo("undiscovered");
         }
@@ -119,9 +113,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Kanta's Den", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
-                    IS_FOUND,
-                    IS_CONCEALED,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_FOUND, IS_CONCEALED, IS_A_SECRET),
                     IS_LISTED)))
                 .isEqualTo("hidden");
         }
@@ -135,9 +127,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Galatia Academy", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
-                    IS_FOUND,
-                    IS_CONCEALED,
-                    IS_A_LANDMARK,
+                    new ColonyConcealment(IS_FOUND, IS_CONCEALED, IS_A_LANDMARK),
                     IS_UNLISTED)))
                 .isEqualTo("unlisted");
         }
@@ -149,9 +139,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Daybreak", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
-                    IS_FOUND,
-                    IS_CONCEALED,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_FOUND, IS_CONCEALED, IS_A_SECRET),
                     IS_UNLISTED)))
                 .isEqualTo("hidden");
         }
@@ -164,9 +152,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Galatia Academy", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
-                    IS_FOUND,
-                    IS_CONCEALED,
-                    IS_A_LANDMARK,
+                    new ColonyConcealment(IS_FOUND, IS_CONCEALED, IS_A_LANDMARK),
                     IS_LISTED)))
                 .isNull();
         }
@@ -178,9 +164,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Galatia Academy", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
-                    IS_UNFOUND,
-                    IS_CONCEALED,
-                    IS_A_LANDMARK,
+                    new ColonyConcealment(IS_UNFOUND, IS_CONCEALED, IS_A_LANDMARK),
                     IS_UNLISTED)))
                 .isEqualTo("undiscovered");
         }
@@ -192,9 +176,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Kirov Reserve", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
-                    IS_FOUND,
-                    IS_OPEN,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_FOUND, IS_OPEN, IS_A_SECRET),
                     IS_UNLISTED)))
                 .isEqualTo("unlisted");
         }
@@ -206,9 +188,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Chicomoztoc", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_THE_CLAIM,
-                    IS_UNFOUND,
-                    IS_OPEN,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_UNFOUND, IS_OPEN, IS_A_SECRET),
                     IS_LISTED)))
                 .isEqualTo("claim holder, undiscovered");
         }
@@ -222,9 +202,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Chicomoztoc", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_THE_CLAIM,
-                    IS_FOUND,
-                    IS_OPEN,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_FOUND, IS_OPEN, IS_A_SECRET),
                     IS_LISTED)))
                 .isEqualTo("claim holder");
         }
@@ -236,9 +214,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Sentinel Gantries", new ColonyQualifierFacts(
                     ColonyKind.SPACE_DERELICT,
                     HOLDS_NO_CLAIM,
-                    IS_UNFOUND,
-                    IS_OPEN,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_UNFOUND, IS_OPEN, IS_A_SECRET),
                     IS_UNLISTED)))
                 .isEqualTo("abandoned, undiscovered");
         }
@@ -249,9 +225,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Tibicena", new ColonyQualifierFacts(
                     ColonyKind.UNGOVERNED_COLONY,
                     HOLDS_NO_CLAIM,
-                    IS_FOUND,
-                    IS_CONCEALED,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_FOUND, IS_CONCEALED, IS_A_SECRET),
                     IS_UNLISTED)))
                 .isEqualTo("decivilised, hidden");
         }
@@ -263,9 +237,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Kanta's Den", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
-                    IS_UNFOUND,
-                    IS_CONCEALED,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_UNFOUND, IS_CONCEALED, IS_A_SECRET),
                     IS_LISTED)))
                 .isEqualTo("undiscovered");
         }
@@ -283,9 +255,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Daybreak", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
-                    IS_UNFOUND,
-                    IS_OPEN,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_UNFOUND, IS_OPEN, IS_A_SECRET),
                     IS_UNLISTED)))
                 .isEqualTo("undiscovered");
         }
@@ -297,9 +267,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Daybreak", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
-                    IS_FOUND,
-                    IS_CONCEALED,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_FOUND, IS_CONCEALED, IS_A_SECRET),
                     IS_UNLISTED)))
                 .isEqualTo("hidden");
         }
@@ -320,9 +288,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Abandoned Station", new ColonyQualifierFacts(
                     ColonyKind.SPACE_DERELICT,
                     HOLDS_NO_CLAIM,
-                    IS_UNFOUND,
-                    IS_OPEN,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_UNFOUND, IS_OPEN, IS_A_SECRET),
                     IS_UNLISTED)))
                 .isEqualTo("undiscovered");
         }
@@ -336,9 +302,7 @@ final class ColonyQualifierTest {
             assertThat(ColonyQualifier.qualifyColony(line, new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
-                    IS_FOUND,
-                    IS_OPEN,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_FOUND, IS_OPEN, IS_A_SECRET),
                     IS_LISTED)))
                 .isSameAs(line);
         }
@@ -358,9 +322,7 @@ final class ColonyQualifierTest {
             assertThat(qualify("Jangala", new ColonyQualifierFacts(
                     null,
                     HOLDS_NO_CLAIM,
-                    IS_FOUND,
-                    IS_OPEN,
-                    IS_A_SECRET,
+                    new ColonyConcealment(IS_FOUND, IS_OPEN, IS_A_SECRET),
                     IS_LISTED)))
                 .isNull();
         }
@@ -389,9 +351,7 @@ final class ColonyQualifierTest {
         return new ColonyQualifierFacts(
             kind,
             HOLDS_NO_CLAIM,
-            IS_FOUND,
-            IS_OPEN,
-            IS_A_SECRET,
+            new ColonyConcealment(IS_FOUND, IS_OPEN, IS_A_SECRET),
             IS_UNLISTED);
     }
 }
