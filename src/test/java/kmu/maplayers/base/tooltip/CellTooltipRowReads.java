@@ -92,22 +92,38 @@ public final class CellTooltipRowReads {
     }
 
     /**
-     * Reads what a line opens with in words: its first run that carries any. Runs holding an image
-     * rather than text are stepped over, so a line led by a crest reads as the name it goes on to say
-     * rather than as a sprite path - which is what lets one list of expected lines cover a box mixing
-     * plain entries with a crested banner.
+     * Reads what a line opens with in words: its first run that carries any, run on into whatever
+     * butts against it. Runs holding an image rather than text are stepped over, so a line led by a
+     * crest reads as the name it goes on to say rather than as a sprite path - which is what lets one
+     * list of expected lines cover a box mixing plain entries with a crested banner.
+     *
+     * <p>The joined runs are gathered because a name saying one of the box's findings is split at
+     * that stretch and drawn as several runs. Read as the first alone, such a line answers a fragment
+     * of its own name - so a fixture named for what it is would fail against the name it is plainly
+     * shown by, over a split nothing about the case under test asked for. Nothing past the name is
+     * swept in with it: a status or a remark is a word of its own and never joins what it follows.
      *
      * @param row the line to read
      * @return the line's opening words, or empty when it says none
      */
     public static String readOpeningWords(TooltipRow row) {
-        return row
-            .labelRuns()
-            .stream()
-            .filter(TextSpan.class::isInstance)
-            .map(labelRun -> ((TextSpan) labelRun).text())
-            .findFirst()
-            .orElse("");
+        var openingWords = new StringBuilder();
+        var hasOpened = false;
+
+        for (var labelRun : row.labelRuns()) {
+
+            if (!(labelRun instanceof TextSpan textSpan)) {
+                continue;
+            }
+            // Tracked rather than read off what has been gathered, so a line whose name is blank
+            // answers that blank rather than running on into the status behind it.
+            if (hasOpened && !textSpan.isJoinedToPreviousRun()) {
+                break;
+            }
+            openingWords.append(textSpan.text());
+            hasOpened = true;
+        }
+        return openingWords.toString();
     }
 
     /**

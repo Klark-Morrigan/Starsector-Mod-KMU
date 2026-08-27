@@ -382,11 +382,10 @@ about what the overlay means.
   `CellTooltipLabelFinding` - the stretch of the label that says it, held as character positions
   since the name is the only copy of the name. It is drawn in the qualifier's gold where it stands,
   so a thing named after what it is states that finding once instead of ending on a word its name
-  already carries. The stretches either side of it butt against it as
-  [joined runs](../../../../../Starsector-Mod-KMLib/src/main/java/kmlib/starsector/ui/text/LabelRun.java),
-  since a label spaces its runs and a name split anywhere its own spacing does not already part would
-  otherwise be drawn with a space its subject is not called by. At most one stretch per line: a
-  second would cost the line model a list of parts where one part does.
+  already carries. The stretches either side of it are joined runs
+  (`LabelRun.isJoinedToPreviousRun`), which is what keeps the split name spelled as its author
+  spelled it. At most one stretch per line: a second would cost the line model a list of parts where
+  one part does.
   A line may also state where it falls in an ordering (`indexedAt`), as a `CellTooltipIndexPlace` -
   the number the reader sees and, as one value with it, what that place decided
   (`CellTooltipIndexOutcome`). It runs on after the name in the quiet shade, ahead of any qualifier,

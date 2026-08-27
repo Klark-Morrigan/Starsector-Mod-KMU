@@ -357,9 +357,9 @@ shape that most needs telling apart from an ordinary colony is not the one the b
 whatever about. The resolution is untouched: the same words in the same order, and a gilded word has
 qualified in every sense, drawn somewhere else. At most one stretch is gilded, the first the name
 carries, and the rest close the line as usual - so an *Abandoned Station* the player has not found
-gilds `Abandoned` and still reads `undiscovered`. The match is a whole word, parted by anything that
-is not a letter or a digit so *Abandoned-Station* counts and *Abandonedium* does not, and what is
-drawn is the name's own spelling of it. `hidden` is withheld from a colony the sector openly points at -
+gilds `Abandoned` and still reads `undiscovered`. What counts as the name saying a word is
+`KmlibStrings.findWholeWordIndex`, and what is drawn is the name's own spelling of
+it. `hidden` is withheld from a colony the sector openly points at -
 Galatia Academy, whose station is permanently visible while the market hung on it is a stand-in
 vanilla never registers with the economy and marks hidden to keep off the books, so it wears the
 identical flag a pirate base does for an entirely different reason. Nothing on either market parts

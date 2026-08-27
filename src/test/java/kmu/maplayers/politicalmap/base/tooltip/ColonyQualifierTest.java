@@ -379,6 +379,40 @@ final class ColonyQualifierTest {
         }
 
         @Test
+        void qualifyColonyStatesASecondWordTheNameSaysAtTheEndOfTheLineAnyway() {
+            // The other half of one word moving: the rest stay put. A name saying two of the
+            // vocabulary gilds one stretch and reads the other where it always was, rather than
+            // growing a second gilded stretch or quietly dropping the word for being in the name.
+            var line = qualifyLine("Abandoned Undiscovered Yards", new ColonyQualifierFacts(
+                ColonyKind.SPACE_DERELICT,
+                HOLDS_NO_CLAIM,
+                new ColonyConcealment(IS_UNFOUND, IS_OPEN, IS_A_SECRET),
+                IS_UNLISTED));
+
+            assertThat(line.labelFinding())
+                .isEqualTo(new CellTooltipLabelFinding(0, 9));
+            assertThat(line.qualifierText())
+                .isEqualTo("undiscovered");
+        }
+
+        @Test
+        void qualifyColonyGildsTheWordTheNameSaysFirstRatherThanTheOneResolvedFirst() {
+            // The tie-break, and the one case that parts the two orders: the kind is resolved ahead
+            // of the concealment, but the reader meets the name left to right - so the word standing
+            // first in the name is the one picked out, and the earlier-resolved one closes the line.
+            var line = qualifyLine("Undiscovered Abandoned Yards", new ColonyQualifierFacts(
+                ColonyKind.SPACE_DERELICT,
+                HOLDS_NO_CLAIM,
+                new ColonyConcealment(IS_UNFOUND, IS_OPEN, IS_A_SECRET),
+                IS_UNLISTED));
+
+            assertThat(line.labelFinding())
+                .isEqualTo(new CellTooltipLabelFinding(0, 12));
+            assertThat(line.qualifierText())
+                .isEqualTo("abandoned");
+        }
+
+        @Test
         void qualifyColonyGildsAWholeNameThatIsNothingButTheWord() {
             assertThat(qualifyLine("Abandoned", buildUnlistedFacts(ColonyKind.SPACE_DERELICT))
                     .labelFinding())

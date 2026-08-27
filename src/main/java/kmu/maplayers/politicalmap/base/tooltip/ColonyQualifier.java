@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.text.KmlibStrings;
+
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.util.KmuStrings;
@@ -63,11 +65,6 @@ import java.util.Optional;
  * and the altitudes disagree about case.
  */
 public final class ColonyQualifier {
-
-    // What the name search answers where the colony is not called the word at all. Named rather than
-    // read as a bare negative index, since the search is over positions and one of them being an
-    // absence is the only thing a caller has to know about it.
-    private static final int NOT_IN_NAME = -1;
 
     private ColonyQualifier() {
     }
@@ -185,15 +182,15 @@ public final class ColonyQualifier {
     //
     // Read off the line's own label rather than off a name handed in beside it: what the reader can
     // see is exactly what the line says, and a second copy of the name would be free to disagree
-    // with it.
+    // with it. What counts as the name saying a word at all is KmlibStrings.findWholeWordIndex's.
     private static WordInName findFirstWordInName(List<String> words, String colonyName) {
 
         WordInName firstWordInName = null;
 
         for (var wordIndex = 0; wordIndex < words.size(); wordIndex++) {
-            var nameStartIndex = findWholeWordIndex(colonyName, words.get(wordIndex));
+            var nameStartIndex = KmlibStrings.findWholeWordIndex(colonyName, words.get(wordIndex));
 
-            if (nameStartIndex == NOT_IN_NAME) {
+            if (nameStartIndex == KmlibStrings.NO_WORD_MATCH) {
                 continue;
             }
             if (firstWordInName == null || nameStartIndex < firstWordInName.nameStartIndex()) {
@@ -201,43 +198,6 @@ public final class ColonyQualifier {
             }
         }
         return firstWordInName;
-    }
-
-    // Where the name says the word as a word of its own, case-insensitively, or that it does not.
-    //
-    // A whole word rather than a bare containment, because the consequence is now gold letters in
-    // the middle of a name rather than a word quietly not being said: "Abandonedium" would be gilded
-    // across its first nine characters.
-    //
-    // Matched against the name as it is spelled rather than against a lowered copy of it, so the
-    // position returned indexes the name the line actually carries - a copy folded to one case is
-    // free to come out a different length and would slide the gilding along the name.
-    private static int findWholeWordIndex(String colonyName, String word) {
-
-        for (var index = 0; index + word.length() <= colonyName.length(); index++) {
-
-            if (colonyName.regionMatches(true, index, word, 0, word.length())
-                    && isWholeWordAt(colonyName, index, word.length())) {
-                return index;
-            }
-        }
-        return NOT_IN_NAME;
-    }
-
-    // Whether the stretch found at that position stands alone in the name rather than opening or
-    // closing a longer word.
-    private static boolean isWholeWordAt(String colonyName, int matchIndex, int wordLength) {
-        return isWordBoundaryAt(colonyName, matchIndex - 1)
-            && isWordBoundaryAt(colonyName, matchIndex + wordLength);
-    }
-
-    // Whether that position parts one word from another - anything that is not a letter or a digit,
-    // and the ends of the name itself. A hyphen among them, since "Abandoned-Station" says the word
-    // as plainly as the spaced form does and a reader would not forgive the box for missing it.
-    private static boolean isWordBoundaryAt(String colonyName, int index) {
-        return index < 0
-            || index >= colonyName.length()
-            || !Character.isLetterOrDigit(colonyName.charAt(index));
     }
 
     /**

@@ -283,10 +283,9 @@ public final class CellTooltipRows {
     // The runs a line's name is drawn as: one run of its own colour, or the stretch that reads as a
     // finding picked out in gold with what surrounds it either side of it.
     //
-    // The stretches are exact substrings and every run past the first joins the one before it, so the
-    // name draws as its author spelled it. Split into runs a label spaces, a name would gain a space
-    // wherever the finding did not happen to sit against one - and a box that misspells the name it is
-    // gilding says less about the place than the plain line it replaced.
+    // The stretches are exact substrings and every run past the first is a joined one
+    // (LabelRun.isJoinedToPreviousRun, which argues the case), so the name draws as its author
+    // spelled it whatever the finding landed beside.
     //
     // In the same gold the status after the name reads in, through the same run, because it is the
     // same finding: the word has qualified in every sense the resolution cares about, and only where

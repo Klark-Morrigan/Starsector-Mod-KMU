@@ -32,6 +32,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TWO_LEVELS_SUBORDINATED;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readOpeningWords;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -392,6 +393,22 @@ final class CellTooltipRowsTest {
                 .isEqualTo(new TextSpan("Abandoned", HIGHLIGHT));
             assertThat(readLabelTextRun(row, MARKED_QUALIFIER_RUN))
                 .isEqualTo(new TextSpan(" Station", PLAYER_BRIGHT).joinsPreviousRun());
+        }
+
+        @Test
+        void buildListedRowLeavesAGildedLineReadingAsItsWholeName() {
+            // How every box's own suite identifies a line, held against the one shape that splits a
+            // name into runs: a fixture named for what it is answers the name it is plainly shown by,
+            // and the status behind it is not swept in with it.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(CREST_MARK, "Abandoned Station", "0")
+                    .callsOutInLabel(0, 9)
+                    .qualifiedWith("undiscovered"),
+                LISTED_LEVEL);
+
+            assertThat(readOpeningWords(row))
+                .isEqualTo("Abandoned Station");
         }
 
         @Test

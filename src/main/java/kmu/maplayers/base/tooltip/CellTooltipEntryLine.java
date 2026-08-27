@@ -54,35 +54,20 @@ public record CellTooltipEntryLine(
     boolean isAside,
     boolean isValueUncounted) {
 
-    // What a line whose name says none of the box's findings carries where the gilded stretch would
-    // be, which is every line until a resolver finds one of its words already on the line. Named for
-    // the reason the absences below are.
+    // What the plainest line carries in each of the parts it does not use. Named one per part rather
+    // than passed as bare nulls, so the factory below says what the line has none of instead of
+    // handing the constructor a row of unexplained absences a reader has to count off against the
+    // components - which is a count that goes wrong the moment a part is added.
     private static final CellTooltipLabelFinding NO_LABEL_FINDING = null;
-
-    // What a line with no place to state carries in the index slot, for the same reason the two
-    // absences below are named: the factory says what the plainest line has rather than passing
-    // three unexplained nulls a reader has to count off against the components.
     private static final CellTooltipIndexPlace NO_PLACE = null;
+    private static final String NO_NOTE = null;
+    private static final String NO_QUALIFIER = null;
+    private static final String NO_WORKING = null;
 
     // What an ordinary line is: one of the things the block lists rather than a note about them, and
     // carrying a number it earned. Both are the plain case and what every factory below builds.
     private static final boolean IS_LISTED_IN_ITS_OWN_RIGHT = false;
     private static final boolean IS_VALUE_EARNED = false;
-
-    // What a line remarking nothing about the thing on it carries in the note slot. Named for the
-    // reason the two absences around it are: the factory says the line remarks nothing rather than
-    // passing an unexplained null.
-    private static final String NO_NOTE = null;
-
-    // What a line states nothing beside its name and its number carries in the qualifier slot. Named
-    // rather than passed as a bare null, so the factory below reads as "this line calls nothing out"
-    // instead of as an unexplained absence.
-    private static final String NO_QUALIFIER = null;
-
-    // What a line showing its number alone carries where the working would go. Named for the same
-    // reason the absence above is: the factory says the line shows no working rather than passing an
-    // unexplained null.
-    private static final String NO_WORKING = null;
 
     /**
      * Rejects a nameless or valueless line at construction, where the caller that composed it is still
