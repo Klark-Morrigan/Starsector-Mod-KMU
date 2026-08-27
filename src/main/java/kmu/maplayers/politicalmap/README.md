@@ -350,8 +350,10 @@ above it held, or it would repeat itself on every derelict and every dead world,
 off-economy by construction. The suppression is by the condition holding rather than by anything
 being printed, which is what lets a station already called *Abandoned Station* drop the word it
 duplicates and still read bare. `hidden` is withheld from a colony the sector openly points at -
-Galatia Academy, a landmark the tutorial sends the player to that keeps no comm directory and so
-wears the identical flag a pirate base does. Nothing on either market parts them, so the exemption
+Galatia Academy, whose station is permanently visible while the market hung on it is a stand-in
+vanilla never registers with the economy and marks hidden to keep off the books, so it wears the
+identical flag a pirate base does for an entirely different reason. Nothing on either market parts
+them, so the exemption
 is an identity: `OpenlyKnownColonyRegistry` holds the entity ids `MapLayers` seeds it with beside a
 tag another mod hangs on content of its own, and `OpenlyKnownColonyLookup` folds the answer by
 colony id off the box's own walk. The Academy then falls through to `unlisted`, which is the

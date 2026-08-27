@@ -10,7 +10,10 @@ import java.util.Set;
  * points people at that happens to keep no comm directory, as against a base hiding from it.
  *
  * <p>Concealment is one flag on the market and it covers both, so nothing a colony read can see
- * parts them. Neither does anything about where they stand: a base revealed by a rival's open
+ * parts them. It is not even always a statement about the place: vanilla sets it on a market it
+ * builds for a station it means the player to visit and then declines to register with the economy,
+ * so the flag is keeping a stand-in market off the books rather than keeping the station out of
+ * sight. Neither does anything about where they stand part them: a base revealed by a rival's open
  * colony in the same system is still a base concealing itself, so a rule about who can see the
  * place would take the word away exactly where it is doing its work. What is left is identity, and
  * identity is what the game itself uses to recognise such a place.

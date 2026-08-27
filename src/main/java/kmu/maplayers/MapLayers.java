@@ -27,10 +27,12 @@ import java.util.List;
 public final class MapLayers {
 
     // The concealed colonies the sector openly points at, which a hover box must not call out as
-    // hiding. Galatia Academy is the shape and vanilla's only one: a study the tutorial sends the
-    // player to that keeps no comm directory, wearing the same flag a pirate base does. The id is
-    // written once at world-gen and persists in the save, so a sector built without the Academy -
-    // a random one, or a mod that removes it - simply never matches.
+    // hiding. Galatia Academy is the shape and vanilla's only one: its station is permanently
+    // visible - world-gen leaves the entity undiscoverable on purpose - while the market hung on it
+    // is a stand-in vanilla never registers with the economy and marks hidden to keep off the
+    // books. So the flag it wears is the same one a pirate base wears and says something else
+    // entirely. The id is written once at world-gen and persists in the save, so a sector built
+    // without the Academy - a random one, or a mod that removes it - simply never matches.
     //
     // Named here rather than beside the reading because a literal only ever covers what shipped
     // with the game; another mod's quest hub opts in through the tag the registry publishes.
