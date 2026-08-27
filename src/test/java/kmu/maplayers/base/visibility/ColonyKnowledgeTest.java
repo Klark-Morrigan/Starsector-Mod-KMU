@@ -19,6 +19,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.ACADEMY_ENTITY_ID;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.clearRegistrations;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.registerTheAcademy;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.standOnEntity;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -37,10 +42,6 @@ import static org.mockito.Mockito.when;
  * that.
  */
 final class ColonyKnowledgeTest {
-
-    // The entity behind the one concealed colony vanilla openly points at, which a pair of cases
-    // registers to show that the vouching reaches no gate.
-    private static final String ACADEMY_ENTITY_ID = "station_galatia_academy";
 
     // Every gate this rule can hold, which is how a case poses the shipped state - both leaking
     // shapes held back until somebody has seen them.
@@ -105,9 +106,7 @@ final class ColonyKnowledgeTest {
 
     @AfterEach
     void clearOpenlyKnownColonies() {
-        // Registered once at start-up and read for the rest of a launch, so the pair of cases that
-        // seeds it takes the set back rather than leaving it to answer for whatever runs next.
-        OpenlyKnownColonyRegistry.registerEntityIds(List.of());
+        clearRegistrations();
     }
 
     @Nested
@@ -1258,16 +1257,13 @@ final class ColonyKnowledgeTest {
     }
 
     // The market stood on the entity a composition root vouches for, which is the only thing that
-    // parts a landmark from an identical concealed market. Registered here rather than in the case
+    // parts a landmark from an identical concealed market. Vouched for here rather than in the case
     // so a case reads as posing a colony, and cleared after every test by the class's own teardown.
     private static MarketAPI registerAsOpenlyKnown(MarketAPI market) {
 
-        when(market.getPrimaryEntity().getId())
-            .thenReturn(ACADEMY_ENTITY_ID);
+        registerTheAcademy();
 
-        OpenlyKnownColonyRegistry.registerEntityIds(List.of(ACADEMY_ENTITY_ID));
-
-        return market;
+        return standOnEntity(market, ACADEMY_ENTITY_ID);
     }
 
     // Somewhere people live, listed by the economy - the kind neither gate is about.

@@ -1,16 +1,17 @@
 package kmu.maplayers.base.visibility;
 
-import com.fs.starfarer.api.campaign.SectorEntityToken;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.List;
+
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.ACADEMY_ENTITY_ID;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.buildEntity;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.clearRegistrations;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.registerTheAcademy;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -24,14 +25,11 @@ import static org.mockito.Mockito.when;
  */
 final class OpenlyKnownColonyRegistryTest {
 
-    private static final String ACADEMY_ENTITY_ID = "station_galatia_academy";
     private static final String BASE_ENTITY_ID = "station_daybreak";
 
     @AfterEach
     void clearRegisteredEntityIds() {
-        // Registered once at start-up and read for the rest of the launch, so a case leaving its
-        // own ids behind would answer for every suite that ran after it.
-        OpenlyKnownColonyRegistry.registerEntityIds(List.of());
+        clearRegistrations();
     }
 
     @Nested
@@ -40,7 +38,7 @@ final class OpenlyKnownColonyRegistryTest {
         @Test
         void reads_a_registered_entity_as_openly_known() {
 
-            OpenlyKnownColonyRegistry.registerEntityIds(List.of(ACADEMY_ENTITY_ID));
+            registerTheAcademy();
 
             assertThat(OpenlyKnownColonyRegistry.isOpenlyKnownEntity(buildEntity(ACADEMY_ENTITY_ID)))
                 .isTrue();
@@ -49,7 +47,7 @@ final class OpenlyKnownColonyRegistryTest {
         @Test
         void reads_an_entity_nothing_vouches_for_as_a_secret() {
             // The base beside the landmark, differing in nothing a market read can see.
-            OpenlyKnownColonyRegistry.registerEntityIds(List.of(ACADEMY_ENTITY_ID));
+            registerTheAcademy();
 
             assertThat(OpenlyKnownColonyRegistry.isOpenlyKnownEntity(buildEntity(BASE_ENTITY_ID)))
                 .isFalse();
@@ -59,7 +57,7 @@ final class OpenlyKnownColonyRegistryTest {
         void reads_a_tagged_entity_the_registered_set_does_not_name_as_openly_known() {
             // How another mod's quest hub opts in without this mod carrying a list of other mods'
             // content, which is the whole reason the ids are not a constant.
-            OpenlyKnownColonyRegistry.registerEntityIds(List.of(ACADEMY_ENTITY_ID));
+            registerTheAcademy();
 
             var entityMock = buildEntity("station_some_other_mods_hub");
 
@@ -112,17 +110,5 @@ final class OpenlyKnownColonyRegistryTest {
             assertThat(OpenlyKnownColonyRegistry.isOpenlyKnownEntity(buildEntity(ACADEMY_ENTITY_ID)))
                 .isTrue();
         }
-    }
-
-    // The entity a concealed colony stands on, named as the game names one. The tag answers false
-    // unstubbed, which is what an entity nobody marked carries.
-    private static SectorEntityToken buildEntity(String entityId) {
-
-        var entityMock = mock(SectorEntityToken.class);
-
-        when(entityMock.getId())
-            .thenReturn(entityId);
-
-        return entityMock;
     }
 }

@@ -9,10 +9,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.ACADEMY_ENTITY_ID;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.clearRegistrations;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.registerTheAcademy;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.standOnEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins what each {@link RevelationGate} covers, and which colonies are gated by any of them at
@@ -36,13 +38,9 @@ import static org.mockito.Mockito.when;
  */
 final class RevelationGateTest {
 
-    private static final String ACADEMY_ENTITY_ID = "station_galatia_academy";
-
     @AfterEach
     void clearOpenlyKnownColonies() {
-        // Registered once at start-up and read for the rest of a launch, so the case that seeds it
-        // takes the set back rather than leaving it to answer for whatever runs next.
-        OpenlyKnownColonyRegistry.registerEntityIds(List.of());
+        clearRegistrations();
     }
 
     @Nested
@@ -143,12 +141,11 @@ final class RevelationGateTest {
             // single flag serving both is the obvious-looking simplification, and it would open the
             // Academy to a player who has never been to Galatia - the very market the settled route
             // was designed around.
-            var academy = ColonyMarketFixture.buildFoundConcealedColony("independent");
+            var academy = standOnEntity(
+                ColonyMarketFixture.buildFoundConcealedColony("independent"),
+                ACADEMY_ENTITY_ID);
 
-            when(academy.getPrimaryEntity().getId())
-                .thenReturn(ACADEMY_ENTITY_ID);
-
-            OpenlyKnownColonyRegistry.registerEntityIds(List.of(ACADEMY_ENTITY_ID));
+            registerTheAcademy();
 
             assertThat(RevelationGate.isGatedColony(buildColony(academy), ColonyKind.COLONY))
                 .isTrue();

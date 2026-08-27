@@ -15,6 +15,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.ACADEMY_ENTITY_ID;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.clearRegistrations;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.registerTheAcademy;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.standOnEntity;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -34,16 +39,15 @@ final class OpenlyKnownColonyLookupTest {
 
     private static final String ACADEMY_ID = "galatia_academy";
     private static final String BASE_ID = "daybreak";
-    private static final String ACADEMY_ENTITY_ID = "station_galatia_academy";
 
     @BeforeEach
-    void registerTheAcademy() {
-        OpenlyKnownColonyRegistry.registerEntityIds(List.of(ACADEMY_ENTITY_ID));
+    void vouchForTheAcademy() {
+        registerTheAcademy();
     }
 
     @AfterEach
     void clearRegisteredEntityIds() {
-        OpenlyKnownColonyRegistry.registerEntityIds(List.of());
+        clearRegistrations();
     }
 
     @Nested
@@ -187,16 +191,6 @@ final class OpenlyKnownColonyLookupTest {
 
         when(colony.getId())
             .thenReturn(colonyId);
-
-        return colony;
-    }
-
-    // The entity the colony stands on, named as the game names one - which is the only thing the
-    // registry can tell two identical concealed markets apart by.
-    private static MarketAPI standOnEntity(MarketAPI colony, String entityId) {
-
-        when(colony.getPrimaryEntity().getId())
-            .thenReturn(entityId);
 
         return colony;
     }

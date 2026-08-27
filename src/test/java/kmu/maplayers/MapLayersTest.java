@@ -3,7 +3,6 @@ package kmu.maplayers;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
-import com.fs.starfarer.api.campaign.SectorEntityToken;
 
 import kmu.maplayers.base.visibility.OpenlyKnownColonyRegistry;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -12,12 +11,16 @@ import kmu.maplayers.politicalmap.claims.ClaimsView;
 import kmu.maplayers.politicalmap.dominance.alliances.AlliancesView;
 import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-import java.util.List;
 import java.util.Optional;
+
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.ACADEMY_ENTITY_ID;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.buildEntity;
+import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.clearRegistrations;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -40,7 +43,13 @@ import static org.mockito.Mockito.when;
  * later joins this list, so it is held to the same terms without a case being written for it.
  */
 final class MapLayersTest {
+
     private static final String NEXERELIN_MOD_ID = "nexerelin";
+
+    @AfterEach
+    void clearOpenlyKnownColonies() {
+        clearRegistrations();
+    }
 
     @Nested
     class SelectPoliticalMapViews {
@@ -96,37 +105,27 @@ final class MapLayersTest {
     }
 
     @Nested
-    class RegisterOpenlyKnownColonies {
+    class RegisterAll {
 
         @Test
-        void registerOpenlyKnownColoniesNamesTheAcademyTheTutorialSendsThePlayerTo() {
+        void registerAllNamesTheAcademyTheTutorialSendsThePlayerTo() {
             // The one entity vanilla builds that a hover box must not call out as hiding, and the
-            // one place its id may be written. Asserted through the registry rather than off a list
-            // here, since a set named twice is a set that can be corrected in one of the two.
-            try {
-                MapLayers.registerOpenlyKnownColonies();
+            // one place its id may be written. Driven through the whole registration rather than
+            // through the seam it lives on, so dropping the call from the wiring fails here - a
+            // seam nothing invokes is registered nowhere.
+            //
+            // Asserted through the registry rather than off a list here, since a set named twice is
+            // a set that can be corrected in one of the two.
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                stubNexEnabled(globalMock, false);
+
+                MapLayers.registerAll();
 
                 assertThat(OpenlyKnownColonyRegistry.isOpenlyKnownEntity(
-                        buildEntity("station_galatia_academy")))
+                        buildEntity(ACADEMY_ENTITY_ID)))
                     .isTrue();
-
-            } finally {
-                // Registered once at start-up and read for the rest of the launch, so the set is
-                // taken back rather than left answering for whatever suite runs next.
-                OpenlyKnownColonyRegistry.registerEntityIds(List.of());
             }
         }
-    }
-
-    // The entity a concealed colony stands on, named as the game names one.
-    private static SectorEntityToken buildEntity(String entityId) {
-
-        var entityMock = mock(SectorEntityToken.class);
-
-        when(entityMock.getId())
-            .thenReturn(entityId);
-
-        return entityMock;
     }
 
     private static void stubNexEnabled(MockedStatic<Global> globalMock, boolean isEnabled) {
