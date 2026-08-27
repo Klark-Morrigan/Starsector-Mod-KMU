@@ -371,7 +371,9 @@ about what the overlay means.
   it, such as how current what the box says about it is. That run takes the same quiet shade for the
   same reason the working does: the box parts what it has found from what it is saying about its own
   account, and a remark drawn in the qualifier's gold would invite the reader to weigh it against
-  the numbers on the line rather than against the line's standing.
+  the numbers on the line rather than against the line's standing. It closes the line, past the
+  qualifier, being the only run that is not about the thing on the line: set ahead of the gold, it
+  would break a status away from the name it qualifies.
   A line may also state where it falls in an ordering (`indexedAt`), as a `CellTooltipIndexPlace` -
   the number the reader sees and, as one value with it, what that place decided
   (`CellTooltipIndexOutcome`). It runs on after the name in the quiet shade, ahead of any qualifier,

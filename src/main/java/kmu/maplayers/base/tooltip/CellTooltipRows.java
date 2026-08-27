@@ -208,7 +208,7 @@ public final class CellTooltipRows {
     }
 
     // Finishes a listed line once its label is open: its number, where the line sits and how loudly it
-    // speaks, then the place, the remark and the status it runs on into.
+    // speaks, then the place, the status and the remark it runs on into.
     //
     // Shared by both tiers rather than spelled at each, because everything here is the same at either -
     // which leaves the two shapes differing in exactly what they are meant to differ in, the colours
@@ -220,8 +220,8 @@ public final class CellTooltipRows {
             CellTooltipEntryLevel level,
             Color valueColour) {
 
-        return appendQualifier(
-            appendNote(
+        return appendNote(
+            appendQualifier(
                 appendIndex(
                     placeRow(appendValue(row, line, valueColour), level),
                     line),
@@ -367,11 +367,15 @@ public final class CellTooltipRows {
         };
     }
 
-    // Runs a line on into whatever it remarks about the thing on it. Laid after the place and before
-    // any qualifier, so a reader meets the line's identity, then what the box has to say about its own
-    // account of it, then what the box has found - each in the shade that says which it is.
+    // Runs a line on into whatever it remarks about the thing on it. Laid last, after the qualifier,
+    // so a reader meets the line's identity, then what the box has found about the thing, then what
+    // the box has to say about its own account of it - each in the shade that says which it is.
     //
-    // In the quiet shade, and that is the whole of what parts it from the gold run after it. A remark
+    // Last because the remark is the only run that is not about the subject of the line: a finding
+    // set behind it would read as qualifying the remark rather than the colony, so the two findings
+    // a line can carry - its place and its status - stay together on the near side of it.
+    //
+    // In the quiet shade, and that is the whole of what parts it from the gold run before it. A remark
     // about how current the account is would be read as a finding drawn in gold, which invites the
     // reader to weigh it against the numbers on the line rather than against the line's standing.
     //
@@ -391,7 +395,10 @@ public final class CellTooltipRows {
     // Runs a line on into whatever it calls out. Applied at every tier through one helper, so a status
     // stated on a member reads exactly as one stated on the entry it belongs to - and a line calling
     // nothing out is left as the single run it was, rather than ending on a run that draws nothing.
-    private static TooltipRow appendQualifier(TooltipRow.TableRow row, CellTooltipEntryLine line) {
+    private static TooltipRow.TableRow appendQualifier(
+            TooltipRow.TableRow row,
+            CellTooltipEntryLine line) {
+
         if (!KmlibStrings.hasText(line.qualifierText())) {
             return row;
         }

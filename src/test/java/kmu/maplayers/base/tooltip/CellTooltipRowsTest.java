@@ -84,11 +84,10 @@ final class CellTooltipRowsTest {
     private static final int INDEX_RUN = 1;
     private static final int INDEXED_QUALIFIER_RUN = 2;
 
-    // Where a line's remark sits, alone and after a place - and where a qualifier lands once both
-    // runs before it are spent. Stated as the counts they are, for the reason the levels above are.
+    // Where a line's remark sits: alone, and last on a line that also states a place and a status.
+    // Stated as the counts they are, for the reason the levels above are.
     private static final int NOTE_RUN = 1;
-    private static final int INDEXED_NOTE_RUN = 2;
-    private static final int INDEXED_NOTED_QUALIFIER_RUN = 3;
+    private static final int INDEXED_QUALIFIED_NOTE_RUN = 3;
 
     // The same two runs on a line led by a mark, each pushed along by the image it opens on.
     private static final int MARKED_INDEX_RUN = 2;
@@ -429,10 +428,10 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowRunsARemarkBetweenAPlaceAndWhatTheLineCallsOut() {
+        void buildListedRowRunsARemarkPastWhatTheLineCallsOut() {
             // Three runs answering three questions, in the order a reader meets them: which one this
-            // is, how current the account of it is, and what the box has found about it. The remark
-            // sits inside because it belongs to neither neighbour.
+            // is, what the box has found about it, and how current the account of it is. The remark
+            // closes the line because it is the only run not about the thing on it.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine
                     .createLine(null, "Sentinel Gantries", "0")
@@ -443,10 +442,10 @@ final class CellTooltipRowsTest {
 
             assertThat(readLabelTextRun(row, INDEX_RUN))
                 .isEqualTo(new TextSpan("[2]", GRAY));
-            assertThat(readLabelTextRun(row, INDEXED_NOTE_RUN))
-                .isEqualTo(new TextSpan("last seen 34 days ago (c206.05.12)", GRAY));
-            assertThat(readLabelTextRun(row, INDEXED_NOTED_QUALIFIER_RUN))
+            assertThat(readLabelTextRun(row, INDEXED_QUALIFIER_RUN))
                 .isEqualTo(new TextSpan("strongest", HIGHLIGHT));
+            assertThat(readLabelTextRun(row, INDEXED_QUALIFIED_NOTE_RUN))
+                .isEqualTo(new TextSpan("last seen 34 days ago (c206.05.12)", GRAY));
         }
 
         @Test

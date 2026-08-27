@@ -24,9 +24,9 @@ import java.util.Objects;
  *                         decided, run on after its name, or null where the line has no place worth
  *                         stating
  * @param noteText         a remark about the thing on the line that is not a finding about it -
- *                         how current what the box says about it is, say - run on after its name,
- *                         or null where the line makes none
- * @param qualifierText    the status called out at the end of the line, or null when it states none
+ *                         how current what the box says about it is, say - run on at the end of the
+ *                         line, or null where the line makes none
+ * @param qualifierText    the status called out after the line's name, or null when it states none
  * @param valueText        what the block counts this line in, or {@link CellTooltipRows#NO_SCORE} for a
  *                         line carrying no number
  * @param valueWorkingText the arithmetic the number came out of, stated before it, or null where the
@@ -131,11 +131,11 @@ public record CellTooltipEntryLine(
     }
 
     /**
-     * Returns a copy of this line calling {@code qualifierText} out at its end - a status stated on the
-     * line it is about rather than on a line of its own, such as why this line outranks a higher-scoring
-     * one beneath it.
+     * Returns a copy of this line calling {@code qualifierText} out after its name - a status stated on
+     * the line it is about rather than on a line of its own, such as why this line outranks a
+     * higher-scoring one beneath it.
      *
-     * @param qualifierText the status called out at the end of the line, unspaced - the line parts it
+     * @param qualifierText the status called out after the line's name, unspaced - the line parts it
      *                      from its label when it is laid out
      * @return an otherwise-identical line ending on that status
      */
@@ -146,16 +146,20 @@ public record CellTooltipEntryLine(
     }
 
     /**
-     * Returns a copy of this line remarking {@code noteText} after its name - something about the
-     * thing on the line that is not a finding about it, such as how current what the box says
-     * about it is.
+     * Returns a copy of this line remarking {@code noteText} at its end - something about the thing on
+     * the line that is not a finding about it, such as how current what the box says about it is.
      *
      * <p>Read in the quiet shade rather than the qualifier's gold, on the same reasoning a value's
      * working is: the box parts what it has found from what it is saying about its own account,
      * and a note is the second. A reader scanning for findings should pass over it, and a reader
      * asking how much to trust the line should find it exactly where the line is.
      *
-     * @param noteText the remark, unspaced - the line parts it from the name when it is laid out
+     * <p>Laid behind the qualifier for the same parting: the findings a line carries are about the
+     * thing on it, so they stay run on after its name, and the box's aside about its own account
+     * closes the line rather than splitting them from the name they qualify.
+     *
+     * @param noteText the remark, unspaced - the line parts it from what precedes it when it is laid
+     *                 out
      * @return an otherwise-identical line carrying that remark
      */
     public CellTooltipEntryLine notedWith(String noteText) {
