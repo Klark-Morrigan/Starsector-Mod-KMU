@@ -4,7 +4,10 @@ import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.maplayers.base.visibility.ColonyKindLookup;
+import kmu.starsector.StarsectorSettingsFake;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +23,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@link ColonyDiscoveryLookupTest}, {@link ColonyObservationNotesTest}); what this one is about is
  * the gathering - that a reading with a half missing answers as the ordinary colony in plain sight
  * rather than throwing, since a box asking it holds a row it is already committed to drawing.
+ *
+ * <p>And the one thing the gathering does rather than answers: laying what it knows onto a colony's
+ * line. Which words a finding comes to is {@link ColonyQualifierTest}'s; that both the finding and
+ * the date reach the same line is pinned here, that being the whole reason the two are laid
+ * together.
  */
 final class SystemColonyReadingTest {
 
@@ -29,6 +37,28 @@ final class SystemColonyReadingTest {
     // has to hand back unchanged.
     private static final CellTooltipEntryLine PLAIN_LINE =
         CellTooltipEntryLine.createLine(null, "Sentinel Gantries", "0");
+
+    // What an account with no findings of its own hands in, which is every case here but the one
+    // asserting that a finding and a remark reach the same line.
+    private static final ColonyQualifierFacts NOTHING_WAS_FOUND = null;
+
+    // The derelict in plain sight the pairing case is posed over: found, open, and off the
+    // economy's listing, which is how a hulk reaches a box. Named for the reason the suite's other
+    // absences are - the facts read as a row of unexplained booleans otherwise.
+    private static final boolean HOLDS_NO_CLAIM = false;
+    private static final boolean IS_FOUND = true;
+    private static final boolean IS_OPEN = false;
+    private static final boolean IS_UNLISTED = false;
+
+    @BeforeEach
+    void installStrings() {
+        StarsectorSettingsFake.installSettings();
+    }
+
+    @AfterEach
+    void clearStrings() {
+        StarsectorSettingsFake.clearSettings();
+    }
 
     @Nested
     class ReadColoniesIn {
@@ -43,7 +73,7 @@ final class SystemColonyReadingTest {
                 .isEqualTo(ColonyKind.COLONY);
             assertThat(reading.isDiscoveredColony(DERELICT_ID))
                 .isTrue();
-            assertThat(reading.remarkOnColony(PLAIN_LINE, DERELICT_ID).noteText())
+            assertThat(reading.describeColony(PLAIN_LINE, DERELICT_ID, NOTHING_WAS_FOUND).noteText())
                 .isNull();
         }
     }
@@ -102,18 +132,38 @@ final class SystemColonyReadingTest {
     }
 
     @Nested
-    class RemarkOnColony {
+    class DescribeColony {
 
         @Test
-        void remarkOnColonyLeavesALineAloneWhereNothingIsDue() {
+        void describeColonyLeavesALineAloneWhereNothingIsDue() {
 
             var reading = new SystemColonyReading(
                 ColonyKindLookup.NONE,
                 ColonyDiscoveryLookup.NONE,
                 null);
 
-            assertThat(reading.remarkOnColony(PLAIN_LINE, DERELICT_ID))
+            assertThat(reading.describeColony(PLAIN_LINE, DERELICT_ID, NOTHING_WAS_FOUND))
                 .isSameAs(PLAIN_LINE);
+        }
+
+        @Test
+        void describeColonyLaysBothTheFindingAndTheRemarkOnTheOneLine() {
+            // The whole of what the seam exists for. An account reaching the two apart is one that
+            // can lay a finding and forget the date, and a line missing its date reads exactly like
+            // a colony somebody is standing over - so the pair is asserted together.
+            var reading = SystemColonyReadingFixture.buildReadingRemarkingOn(DERELICT_ID);
+
+            var line = reading.describeColony(PLAIN_LINE, DERELICT_ID, new ColonyQualifierFacts(
+                ColonyKind.SPACE_DERELICT,
+                HOLDS_NO_CLAIM,
+                IS_FOUND,
+                IS_OPEN,
+                IS_UNLISTED));
+
+            assertThat(line.qualifierText())
+                .isEqualTo("abandoned");
+            assertThat(line.noteText())
+                .isEqualTo(SystemColonyReadingFixture.LAST_SEEN);
         }
     }
 }

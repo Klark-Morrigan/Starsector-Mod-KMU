@@ -412,6 +412,12 @@ folded once for the whole box off the very walk of the system the status line co
 are read per row and none can be answered from a claim score or a dominance weight, so resolved
 where an account is built they would read the system once for every faction the contest lists. The
 domination box takes the same value on the same terms.
+That value also lays what it knows onto the line (`SystemColonyReading.describeColony`, taking the
+findings the account holds and applying them beside its own date), and the date is reachable no
+other way. Both are due on the same lines for the same reason - a row naming a colony says what the
+arithmetic could not - so an account free to reach them apart is one that can lay a finding and
+forget the date, and which it forgot is invisible: a line missing its date reads exactly like a
+colony somebody is standing over.
 The unlisted colony is vanilla's own doing: Galatia Academy is built as a real market on a real
 station and deliberately never registered, so the mechanic's economy walk never sees it and a box
 reading the economy alone reports that station as nobody's. The contest is read over

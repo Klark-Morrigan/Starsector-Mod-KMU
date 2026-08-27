@@ -289,12 +289,11 @@ public final class ClaimScoreRowResolver {
             market.isHiddenMarket(),
             !market.isOffEconomyMarket());
 
-        // Remarked on whatever the contest made of the market, because how current the box's news
-        // of a colony is has nothing to do with whether the mechanic weighed it.
+        // Described whatever the contest made of the market, because neither what sort of place a
+        // colony is nor how current the box's news of it is has anything to do with whether the
+        // mechanic weighed it.
         return CellTooltipEntry
-            .createEntry(ColonyQualifier.qualifyColony(
-                colonyReading.remarkOnColony(line, market.marketId()),
-                facts))
+            .createEntry(colonyReading.describeColony(line, market.marketId(), facts))
             .nesting(resolveTermEntries(market));
     }
 

@@ -129,26 +129,6 @@ public final class ColonyObservationNotes {
     }
 
     /**
-     * Runs a colony's line on into when it was last seen, where nobody is looking at it now.
-     *
-     * <p>Stated here rather than at each account that draws one, because how a remark reaches a
-     * line is the same wherever the line came from - and the accounts that draw them have nothing
-     * else in common to have arrived at one rule by.
-     *
-     * <p>Only the line naming the colony takes one. Anything hanging beneath it is arithmetic over
-     * that colony's own number, so a date there would answer for the line above it twice.
-     *
-     * @param line     the colony's own line, as its account built it
-     * @param colonyId the colony's market id, as the account listing it carries
-     * @return the line, remarked on where a remark is due and untouched where none is
-     */
-    public CellTooltipEntryLine remarkOnColony(CellTooltipEntryLine line, String colonyId) {
-        return resolveLastSeenNote(colonyId)
-            .map(line::notedWith)
-            .orElse(line);
-    }
-
-    /**
      * The remark one colony's line carries about how current the box's news of it is.
      *
      * @param colonyId the colony's market id, as the account listing it carries
@@ -168,6 +148,30 @@ public final class ColonyObservationNotes {
         return observation
             .observedTimestamp()
             .map(this::formatLastSeenNote);
+    }
+
+    /**
+     * Runs a colony's line on into when it was last seen, where nobody is looking at it now.
+     *
+     * <p>Stated here rather than at each account that draws one, because how a remark reaches a
+     * line is the same wherever the line came from - and the accounts that draw them have nothing
+     * else in common to have arrived at one rule by.
+     *
+     * <p>Only the line naming the colony takes one. Anything hanging beneath it is arithmetic over
+     * that colony's own number, so a date there would answer for the line above it twice.
+     *
+     * <p>Reached only through the reading that gathers these notes
+     * ({@link SystemColonyReading#describeColony}), which is what keeps a date from being laid on a
+     * line without the findings that are due beside it.
+     *
+     * @param line     the colony's own line, as its account built it
+     * @param colonyId the colony's market id, as the account listing it carries
+     * @return the line, remarked on where a remark is due and untouched where none is
+     */
+    CellTooltipEntryLine remarkOnColony(CellTooltipEntryLine line, String colonyId) {
+        return resolveLastSeenNote(colonyId)
+            .map(line::notedWith)
+            .orElse(line);
     }
 
     // The gated colonies the system's own people can see, folded once and kept.

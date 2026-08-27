@@ -164,8 +164,9 @@ public final class MarketWeightRowResolver {
             KmlibNumbers.formatGroupedInteger(breakdown.computeTotalWeight()));
 
         return CellTooltipEntry
-            .createEntry(ColonyQualifier.qualifyColony(
-                colonyReading.remarkOnColony(line, breakdown.marketId()),
+            .createEntry(colonyReading.describeColony(
+                line,
+                breakdown.marketId(),
                 new ColonyQualifierFacts(
                     colonyReading.readKindOf(breakdown.marketId()),
                     NO_CLAIM_IS_STATED_HERE,
@@ -196,8 +197,9 @@ public final class MarketWeightRowResolver {
         // The kind and the concealment are read off the colony itself rather than off the walk
         // beside it, both having travelled here from the very selection that met the colony - so
         // the line's findings can only ever be about the colony it names.
-        return CellTooltipEntry.createEntry(ColonyQualifier.qualifyColony(
-            colonyReading.remarkOnColony(line, colony.marketId()),
+        return CellTooltipEntry.createEntry(colonyReading.describeColony(
+            line,
+            colony.marketId(),
             new ColonyQualifierFacts(
                 colony.kind(),
                 NO_CLAIM_IS_STATED_HERE,

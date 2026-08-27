@@ -35,6 +35,11 @@ import kmu.maplayers.base.visibility.ColonyKnowledge;
  * entity's own flag, which no rule reaches; an observation is read under the fog alone, a reveal
  * having no business dating a colony the player was never told about
  * ({@link ColonyObservationNotes}).
+ *
+ * <p>Laying what it knows onto a line is this value's own ({@link #describeColony}) rather than
+ * each account's, so a colony's line carries the same things wherever it was built. The date is
+ * reachable no other way, which is what keeps that true: an account cannot lay half of what a
+ * colony's line owes it and still compile.
  */
 public final class SystemColonyReading {
 
@@ -128,13 +133,32 @@ public final class SystemColonyReading {
     }
 
     /**
-     * Runs a colony's line on into when it was last seen, where nobody is looking at it now.
+     * Runs a colony's line on into everything a box has to say about the place beside its own
+     * number: what it has found out about it, and how current that account is.
+     *
+     * <p>The two are laid together rather than offered apart, because they are due on the same lines
+     * for the same reason - a row naming a colony says what the arithmetic could not - and an
+     * account reaching them separately is one that can lay one and forget the other. Which it
+     * forgets is invisible in the code that forgot it: a line missing its date reads exactly like a
+     * colony somebody is standing over.
+     *
+     * <p>The findings are handed in rather than read here, because only the account holds them. A
+     * claim is the contest's own outcome and a concealment travels on the breakdown, so a reading
+     * folded off the system could state neither - which is also why the kind and the discovery
+     * answer stay separately readable ({@link #readKindOf}, {@link #isDiscoveredColony}): an
+     * account that has the place itself in hand fills them in from that instead.
      *
      * @param line     the colony's own line, as its account built it
      * @param colonyId the colony's market id, as the account listing it carries
-     * @return the line, remarked on where a remark is due and untouched where none is
+     * @param facts    what the account has found out about the colony; null states nothing
+     * @return the line, called out and remarked on where either is due and untouched where neither
+     *         is
      */
-    public CellTooltipEntryLine remarkOnColony(CellTooltipEntryLine line, String colonyId) {
-        return notes.remarkOnColony(line, colonyId);
+    public CellTooltipEntryLine describeColony(
+            CellTooltipEntryLine line,
+            String colonyId,
+            ColonyQualifierFacts facts) {
+
+        return ColonyQualifier.qualifyColony(notes.remarkOnColony(line, colonyId), facts);
     }
 }
