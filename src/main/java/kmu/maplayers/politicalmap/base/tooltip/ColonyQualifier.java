@@ -10,8 +10,8 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * What a box calls out at the end of a colony's line: what sort of place it is, whether it took the
- * system, and how it is out of plain view.
+ * What a box calls out on a colony's line: what sort of place it is, whether it took the system,
+ * and how it is out of plain view.
  *
  * <p>One read for both hover families, because the two name the same colonies of the same system: a
  * word resolved separately at each could have the domination box call a world collapsed while the

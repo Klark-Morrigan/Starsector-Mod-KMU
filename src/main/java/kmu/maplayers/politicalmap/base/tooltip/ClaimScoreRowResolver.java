@@ -312,9 +312,9 @@ public final class ClaimScoreRowResolver {
     // they already understand rather than as an outcome the box declines to explain.
     //
     // A market the mechanic never scored says so with its number alone. Why it was passed over -
-    // concealment, or an absence from the economy's listing - is called out at the end of the line
-    // rather than beside the number, those being findings about the place instead of statements
-    // about what the contest made of it.
+    // concealment, or an absence from the economy's listing - is called out after the name rather
+    // than beside the number, those being findings about the place instead of statements about what
+    // the contest made of it.
     //
     // That nought reads quiet, because it is the contest's statement about the market rather than
     // anything the market scored. In the list's own colour it would read as a score competed with

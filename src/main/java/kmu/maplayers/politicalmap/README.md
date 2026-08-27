@@ -401,9 +401,9 @@ terms, nothing having been computed for it. The nought reads in the quiet
 shade (`statesUncountedValue` - only the number quietens, the market being named as loudly as its
 neighbours, unlike the `readsAsAside` the bonus line takes): it is the contest's statement about the
 market rather than anything the market scored, and in the list's own colour it would pass for a
-score competed with and lost on. Which of the two it was is said at the end of the line rather than
-beside the number - `hidden` or `unlisted`, in the shared vocabulary above - those being findings
-about the place instead of statements about what the contest made of it.
+score competed with and lost on. Which of the two it was is said after the name rather than beside
+the number - `hidden` or `unlisted`, in the shared vocabulary above - those being findings about the
+place instead of statements about what the contest made of it.
 Every market line carries the same last-seen remark the domination box's colony lines take, on the
 same terms and matched to its line by the same kind of identity (`MarketClaimBreakdown.marketId`).
 It reaches further on this list than on that one, for the reason `ExpandedSystemClaimTooltip` gives.

@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.within;
  * of the box sees: a heading names a block in gold at the box's content edge, a line the block lists in
  * its own right sits flush in the bright colour, a line found beneath one belongs to it by its indent and
  * plainer colour and steps in again per level below that, a banner leaves the table altogether to be set
- * across the box, a line calling something out ends on it in gold at whichever tier it sits, and a value
+ * across the box, a line calling something out carries it in gold at whichever tier it sits, and a value
  * stating the working behind it opens on that working in the quiet shade whatever colour the line itself
  * speaks in. Two layers writing content through these cannot drift on any of it.
  *

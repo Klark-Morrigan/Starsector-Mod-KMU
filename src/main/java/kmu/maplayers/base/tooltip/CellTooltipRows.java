@@ -66,7 +66,7 @@ public final class CellTooltipRows {
     }
 
     /**
-     * Builds the run a line ends on to call something out - a status or flag stated on the line it
+     * Builds the run a line calls something out in - a status or flag stated on the line it
      * qualifies rather than on a line of its own, in the highlight colour. Hand it to
      * {@code TooltipRow.continuesWith} on whichever line it qualifies. One place decides that such a
      * qualifier reads gold, so two layers calling out different facts still call them out alike.
