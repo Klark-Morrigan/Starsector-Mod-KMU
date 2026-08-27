@@ -31,10 +31,11 @@ import java.util.List;
  * computed beside the weight rather than under it could drift from it, and a box explaining a
  * number it disagrees with is worse than no box.
  *
- * <p>Every colony line says how old the box's news of it is, where nobody is looking at the colony
- * as the box is drawn ({@link ColonyObservationNotes}). That matters most for the colonies a
- * revelation gate admitted on the strength of an observation - a derelict, a concealed base - which
- * would otherwise be listed exactly as a colony the player is standing over.
+ * <p>Every colony line says what the box has found out about the place beyond its weight
+ * ({@link SystemColonyReading}): what sort of place it is, how it is out of plain view, and - where
+ * nobody is looking at it as the box is drawn - how old the news of it is. That matters most for
+ * the colonies a revelation gate admitted on the strength of an observation - a derelict, a
+ * concealed base - which would otherwise be listed exactly as a colony the player is standing over.
  *
  * <p>One kind of colony is listed that no score above it accounts for: one the economy does not list,
  * which the weight read has nothing to weigh and so passes over entirely. It is named at nought
@@ -71,14 +72,15 @@ public final class ExpandedSystemDominationTooltip extends SystemStandingsToolti
         // to weigh, and one admitted there would hand its owner weight nobody worked out.
         var unweighedColoniesByFactionId = pass.readUnweighedColoniesByFaction(system);
 
-        // How old the box's news of each colony is, settled once for the whole box off the same
-        // walk the two reads above came from. A colony admitted on the strength of somebody having
-        // seen it says when that was, unless somebody is looking at it as the box is drawn.
-        var notes = ColonyObservationNotes.readNotesFor(
+        // What the box may say about each colony beyond its weight, settled once for the whole box
+        // off the same walk the two reads above came from: what sort of place it is, whether the
+        // player has found it, and - unless somebody is looking at it as the box is drawn - when it
+        // was last seen.
+        var colonyReading = SystemColonyReading.readColoniesIn(
             pass.sector(),
             system,
             pass.readColoniesIn(system),
-            pass.colonyKnowledge().sightings());
+            pass.colonyKnowledge());
 
         // A faction the reads found nothing for is listed as its line alone rather than as a heading
         // over an empty account, which is what an empty answer means to the shape above.
@@ -86,6 +88,6 @@ public final class ExpandedSystemDominationTooltip extends SystemStandingsToolti
             breakdownsByFactionId.getOrDefault(standing.factionId(), List.of()),
             unweighedColoniesByFactionId.getOrDefault(standing.factionId(), List.of()),
             pass.rules(),
-            notes);
+            colonyReading);
     }
 }

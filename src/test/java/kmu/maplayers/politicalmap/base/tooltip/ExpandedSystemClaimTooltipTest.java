@@ -20,6 +20,7 @@ import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.visibility.ColonyKnowledge;
+import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -43,6 +44,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_LABEL_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_QUALIFIER_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
+import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -103,6 +105,16 @@ final class ExpandedSystemClaimTooltipTest {
     // ordinarily resolved under and the one in which the strongest market is called out.
     private static final SystemClaimBreakdown CONTESTED_SYSTEM =
         new SystemClaimBreakdown(null, HEGEMONY, List.of());
+
+    // That system as the box reads it: the scored contest paired with the colony rule its listing
+    // was projected under. An account is handed the pair rather than the scored read alone, so a
+    // case states the rule its account is resolved under here rather than through a settings seam -
+    // which is the point of the pairing, an account reading the rule for itself being free to
+    // withhold what the listing above it named.
+    private static final SystemClaimContestTooltip.ListedClaimContest CONTESTED_CONTEST =
+        SystemClaimContestTooltip.ListedClaimContest.selectFrom(
+            CONTESTED_SYSTEM,
+            ColonyVisibility.BASE_FOG);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final ExpandedSystemClaimTooltip tooltip =
@@ -166,7 +178,7 @@ final class ExpandedSystemClaimTooltipTest {
 
             assertThat(readLabelTexts(
                     tooltip.resolveAccountEntries(
-                        CONTESTED_SYSTEM,
+                        CONTESTED_CONTEST,
                         standing,
                         SystemColonyReading.NONE)))
                 .containsExactly("Chicomoztoc", "Culann");
@@ -177,7 +189,7 @@ final class ExpandedSystemClaimTooltipTest {
             // A market's own line is a sum too, so the account goes one level further: the terms that
             // built its score hang beneath it rather than the number being left to be taken on trust.
             var entries = tooltip.resolveAccountEntries(
-                CONTESTED_SYSTEM,
+                CONTESTED_CONTEST,
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                 SystemColonyReading.NONE);
 
@@ -190,7 +202,7 @@ final class ExpandedSystemClaimTooltipTest {
             // The box's half of the rule: it reads who took the system off the very contest it is
             // drawing, so the call-out lands on the one market in the whole box that won anything.
             var entries = tooltip.resolveAccountEntries(
-                CONTESTED_SYSTEM,
+                CONTESTED_CONTEST,
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                 SystemColonyReading.NONE);
 
@@ -203,7 +215,7 @@ final class ExpandedSystemClaimTooltipTest {
             // A rival is represented by its own strongest market too, but that market took nothing -
             // called out, it would read as a second holder of a system that can only have one.
             var entries = tooltip.resolveAccountEntries(
-                CONTESTED_SYSTEM,
+                CONTESTED_CONTEST,
                 buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL),
                 SystemColonyReading.NONE);
 
@@ -225,10 +237,32 @@ final class ExpandedSystemClaimTooltipTest {
 
             assertThat(readLabelTexts(
                     tooltip.resolveAccountEntries(
-                        CONTESTED_SYSTEM,
+                        CONTESTED_CONTEST,
                         standing,
                         SystemColonyReading.NONE)))
                 .containsExactly("Kanta's Den", "Chalcedon");
+        }
+
+        @Test
+        void resolveAccountEntriesWithholdsUnderTheRuleTheContestWasProjectedUnder() {
+            // The account draws under the rule that selected the listing above it, not under one it
+            // reads for itself. Posed as the two disagreeing: the contest carries the reveal, while
+            // the live settings seam answers with it off. The unfound market has to be listed - read
+            // afresh here, the account would withhold the very colony the listing named, and would
+            // be free to answer two factions of one box differently besides.
+            var contest = SystemClaimContestTooltip.ListedClaimContest.selectFrom(
+                CONTESTED_SYSTEM,
+                UNDER_THE_REVEAL);
+
+            var standing = new WeighedClaimStanding(
+                HEGEMONY,
+                IS_TERRITORIAL,
+                buildMarket("Chicomoztoc", TOP_SCORE),
+                List.of(buildUnfoundMarket("Culann", LESSER_SCORE)));
+
+            assertThat(readLabelTexts(
+                    tooltip.resolveAccountEntries(contest, standing, SystemColonyReading.NONE)))
+                .containsExactly("Chicomoztoc", "Culann");
         }
 
         @Test
@@ -236,7 +270,9 @@ final class ExpandedSystemClaimTooltipTest {
             // A decree took the system before any market was weighed, so no market's score decided
             // anything and none is called out for it - the claimant's least of all.
             var entries = tooltip.resolveAccountEntries(
-                new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()),
+                SystemClaimContestTooltip.ListedClaimContest.selectFrom(
+                    new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()),
+                    ColonyVisibility.BASE_FOG),
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                 SystemColonyReading.NONE);
 
@@ -473,6 +509,23 @@ final class ExpandedSystemClaimTooltipTest {
     // A market scoring its size alone, for a standing a case states by the markets under it rather
     // than by the arithmetic inside one. Every one of them heads the listing, since no case here is
     // about a tie or where the economy put anything.
+    // A market of the same shape the player has yet to find, for a case about which rule decides
+    // whether it is listed at all.
+    private static MarketClaimBreakdown buildUnfoundMarket(String marketName, int marketSize) {
+
+        var isKnownToPlayer = false;
+
+        return new MarketClaimBreakdown(
+            EntityNameplate.createUnmarkedNameplate(marketName),
+            nameMarketId(marketName),
+            SECOND_LISTED,
+            isKnownToPlayer,
+            ContestAdmission.WEIGHED,
+            marketSize,
+            NO_SIBLING_MARKETS,
+            OptionalInt.empty());
+    }
+
     private static MarketClaimBreakdown buildMarket(String marketName, int marketSize) {
         // Marked with no glyph: whether a market line leads with one is the resolver's and pinned
         // there, and a mark on every line would run through the reading-order assertions these cases

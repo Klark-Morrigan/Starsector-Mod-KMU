@@ -46,13 +46,14 @@ import java.util.Optional;
  * the walk never reaches at all. Either brought nothing to the contest however large it is - and
  * printing the score it would have carried would put a market that took no part above the one that
  * took the system. Both are listed all the same rather than dropped: a colony the player can see on
- * the map, in a faction's colours, has to appear in the account of who holds the system. Nothing calls
- * out which of the two it is, the nought being the whole of what the contest has to say about either.
+ * the map, in a faction's colours, has to appear in the account of who holds the system.
  *
- * <p>What such a line does say is what kind of place it names ({@link ColonyKindQualifier}), which
- * is a fact about the world rather than about the contest. A collapsed colony and a derelict hulk
- * both reach the list unowned, off-economy and at nought, so without it the account could not tell
- * a place people still live from a wreck nobody ever did.
+ * <p>What a market line says beyond its number is what the box has found out about the place
+ * ({@link ColonyQualifier}) - what sort of place it is, and how it is out of plain view. Those are
+ * facts about the world rather than about the contest, which is why they are stated on the same
+ * terms whatever the mechanic made of the market: a collapsed colony and a derelict hulk both reach
+ * the list unowned, off-economy and at nought, and without the words the account could not tell a
+ * place people still live from a wreck nobody ever did.
  *
  * <p>A market line also says how old the box's news of it is, where nobody is looking at the colony
  * as the box is drawn. Why that reaches further on this list than on the dominance side is
@@ -148,8 +149,9 @@ public final class ClaimScoreRowResolver {
      *                                scores, folded once for the whole box. A claim row carries the
      *                                id of the market it was scored from and nothing of the place
      *                                behind it, so this is the only thing parting an unowned
-     *                                collapse from an unowned hulk on the list, and the only thing
-     *                                that can date either
+     *                                collapse from an unowned hulk on the list, the only thing that
+     *                                can say the player has yet to find either, and the only thing
+     *                                that can date them
      * @param isListingUnfoundMarkets whether a market the player has not found may be listed. False
      *                                is the ordinary state and leaves those markets off; true is
      *                                the dev reveal, under which the account is stated in full
@@ -276,19 +278,24 @@ public final class ClaimScoreRowResolver {
             SystemColonyReading colonyReading,
             boolean isHoldingTheClaim) {
 
-        // The two statuses cannot contend for the line's end. A market that took the system is a
-        // colony somebody holds and the economy lists; the one kind that states anything here is a
-        // world people left, which is unowned and off-economy and so was never weighed at all.
-        var marketLine = isHoldingTheClaim
-            ? line.qualifiedWith(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER))
-            : ColonyKindQualifier.qualifyByKind(
-                line,
-                colonyReading.readKindOf(market.marketId()));
+        // Nothing chooses between the claim and what sort of place the colony is: the two are
+        // findings about different things, and which of them leads is the shared resolver's to say
+        // for both boxes at once. Stated here, the precedence would be a second copy of a rule the
+        // sharing exists to have one of.
+        var facts = new ColonyQualifierFacts(
+            market.marketNameplate().displayName(),
+            colonyReading.readKindOf(market.marketId()),
+            isHoldingTheClaim,
+            colonyReading.isDiscoveredColony(market.marketId()),
+            market.isHiddenMarket(),
+            !market.isOffEconomyMarket());
 
         // Remarked on whatever the contest made of the market, because how current the box's news
         // of a colony is has nothing to do with whether the mechanic weighed it.
         return CellTooltipEntry
-            .createEntry(colonyReading.remarkOnColony(marketLine, market.marketId()))
+            .createEntry(ColonyQualifier.qualifyColony(
+                colonyReading.remarkOnColony(line, market.marketId()),
+                facts))
             .nesting(resolveTermEntries(market));
     }
 
@@ -305,11 +312,10 @@ public final class ClaimScoreRowResolver {
     // on a tied one, so a reader meets the ordering before they need it and a tie reads as a rule
     // they already understand rather than as an outcome the box declines to explain.
     //
-    // A market the mechanic never scored says so with its number alone. Nothing calls out why it was
-    // passed over - concealment, or an absence from the economy's listing: either word would raise a
-    // question about the mechanic that the box would then owe an answer to, where the nought beside a
-    // listed market already says the one thing that matters about it here - it counted for nothing in
-    // this contest.
+    // A market the mechanic never scored says so with its number alone. Why it was passed over -
+    // concealment, or an absence from the economy's listing - is called out at the end of the line
+    // rather than beside the number, those being findings about the place instead of statements
+    // about what the contest made of it.
     //
     // That nought reads quiet, because it is the contest's statement about the market rather than
     // anything the market scored. In the list's own colour it would read as a score competed with

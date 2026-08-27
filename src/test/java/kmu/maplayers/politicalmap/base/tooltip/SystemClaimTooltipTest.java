@@ -15,7 +15,9 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKindLookup;
+import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import org.junit.jupiter.api.AfterEach;
@@ -636,7 +638,9 @@ final class SystemClaimTooltipTest {
             // alone, so every faction it lists reads as its line alone. The markets behind those
             // scores are the counterpart's, an F1 away.
             assertThat(tooltip.resolveAccountEntries(
-                    new SystemClaimBreakdown(null, HEGEMONY, List.of()),
+                    SystemClaimContestTooltip.ListedClaimContest.selectFrom(
+                        new SystemClaimBreakdown(null, HEGEMONY, List.of()),
+                        ColonyVisibility.BASE_FOG),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     SystemColonyReading.NONE))
                 .isEmpty();
@@ -653,9 +657,14 @@ final class SystemClaimTooltipTest {
                 .thenReturn(Optional.of(LAST_SEEN));
 
             assertThat(tooltip.resolveAccountEntries(
-                    new SystemClaimBreakdown(null, HEGEMONY, List.of()),
+                    SystemClaimContestTooltip.ListedClaimContest.selectFrom(
+                        new SystemClaimBreakdown(null, HEGEMONY, List.of()),
+                        ColonyVisibility.BASE_FOG),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
-                    new SystemColonyReading(ColonyKindLookup.NONE, notesMock)))
+                    new SystemColonyReading(
+                        ColonyKindLookup.NONE,
+                        ColonyDiscoveryLookup.NONE,
+                        notesMock)))
                 .isEmpty();
         }
     }

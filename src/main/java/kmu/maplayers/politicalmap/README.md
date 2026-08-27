@@ -284,7 +284,8 @@ That box lists one kind of colony no score above it accounts for: one the econom
 which the weight read has nothing to weigh. It is the other half of the one colony set the weighed
 read selects from - the colonies the economy does not list
 (`KnownMarketFootprints.readUnweighedColoniesByFaction`), carried as an `UnweighedColony` - a
-nameplate and the colony's own id - rather
+nameplate, the colony's own id, and the two facts its line calls out that no weight would carry:
+what kind of place it is and whether it conceals itself - rather
 than as a zeroed `MarketWeightBreakdown` - zero weight is not absence on this side, a weightless
 colony still marking presence and painting its system unopposed, so a value that could be summed into
 a footprint would leave the pass one forgotten branch away from painting a system for a faction the
@@ -332,15 +333,33 @@ The one shape habitation admits that nobody runs is the collapsed colony
 (`ColonyKind.UNGOVERNED_COLONY`), which is why the line reads the kinds out of that projection
 rather than asking its emptiness: a decivilised world is still populated - drawn as settled rather
 than dropped as empty space - and still headed `Decivilised`, since what it lacks is a polity and
-not people. Both boxes then say so on the line naming the world (`ColonyKindQualifier`, gold, the
-status row's own wording): a collapse and a hulk reach a listing identically - unowned,
-off-economy, at nought - and nothing else on either line would tell them apart.
+not people, and the status row keeps its capitalised `Decivilised` for the banner it is.
+Both boxes then say what they have found out about the place on the line naming it
+(`ColonyQualifier`, gold, one read for the two families so neither can call a world dead the other
+lists as living). Five words, in a fixed order: `claim holder`, then the kind - `abandoned` for a
+hulk, `decivilised` for a collapse - then `undiscovered`, `hidden` and `unlisted`. A collapse and a
+hulk reach a listing identically, unowned and off-economy and at nought, and nothing else on either
+line would tell them apart; the last three are the three separate ways a colony can be out of plain
+view, and they were each stated in one box and not the other before the read was shared.
+Two of the five never join what stands above them. `undiscovered` displaces `hidden` - a colony the
+player has not found is concealed from them by that alone - and `unlisted` speaks only where nothing
+above it held, or it would repeat itself on every derelict and every dead world, both being
+off-economy by construction. The suppression is by the condition holding rather than by anything
+being printed, which is what lets a station already called *Abandoned Station* drop the word it
+duplicates and still read bare. Each box fills in a small `ColonyQualifierFacts` from what it holds -
+the claims box off `MarketClaimBreakdown`'s admission, the domination box off
+`MarketWeightBreakdown.isHiddenMarket` or the `UnweighedColony` - and the kind and the discovery
+answer come off the box's own walk of the system (`SystemColonyReading`), no row of either box
+carrying either.
 The claims box has a counterpart of its own on the same terms - `ExpandedSystemClaimTooltip`, which
 opens every faction the contest names into the markets it holds the system with and each market
 into the terms its claim score is built from. Both claim boxes sit on `SystemClaimContestTooltip`,
 which settles the one read behind them, the claimant, the decree marker, and the three blocks, and
 leaves open only what hangs beneath a faction (`resolveAccountEntries`, hanging nothing by
-default). It is also where the layer's heading is declined for both of them: the claim line names
+default). That account is handed the whole `ListedClaimContest` rather than the scored read alone,
+so the colony rule it draws under is the one the listing above it was projected under: read afresh
+per faction, an account would be free to withhold a colony the line above it had just named, and to
+answer two factions of one box under two different rules. It is also where the layer's heading is declined for both of them: the claim line names
 the decreed holder and marks the hold, so these are the two boxes that state the decree themselves. `ClaimScoreRowResolver` decides those lines: the faction's markets in the order the
 mechanic itself would settle them - strongest first, a tie falling to the earlier place in the
 economy's listing - so the one representing the faction comes out on top by that order rather than
@@ -379,16 +398,17 @@ terms, nothing having been computed for it. The nought reads in the quiet
 shade (`statesUncountedValue` - only the number quietens, the market being named as loudly as its
 neighbours, unlike the `readsAsAside` the bonus line takes): it is the contest's statement about the
 market rather than anything the market scored, and in the list's own colour it would pass for a
-score competed with and lost on. Nothing calls out which of the two it was - the nought is the whole
-of what the contest has to say about it, and either word would raise a question about the mechanic
-the box would then owe an answer to.
+score competed with and lost on. Which of the two it was is said at the end of the line rather than
+beside the number - `hidden` or `unlisted`, in the shared vocabulary above - those being findings
+about the place instead of statements about what the contest made of it.
 Every market line carries the same last-seen remark the domination box's colony lines take, on the
 same terms and matched to its line by the same kind of identity (`MarketClaimBreakdown.marketId`).
 It reaches further on this list than on that one, for the reason `ExpandedSystemClaimTooltip` gives.
-The remark and the kind qualifier travel together as one value (`SystemColonyReading`), folded once
-for the whole box off the very walk of the system the status line comes from: both are read per row
-and neither can be answered from a claim score, so resolved where an account is built they would
-read the system once for every faction the contest lists.
+The remark, the kind and the discovery answer travel together as one value (`SystemColonyReading`),
+folded once for the whole box off the very walk of the system the status line comes from: all three
+are read per row and none can be answered from a claim score or a dominance weight, so resolved
+where an account is built they would read the system once for every faction the contest lists. The
+domination box takes the same value on the same terms.
 The unlisted colony is vanilla's own doing: Galatia Academy is built as a real market on a real
 station and deliberately never registered, so the mechanic's economy walk never sees it and a box
 reading the economy alone reports that station as nobody's. The contest is read over

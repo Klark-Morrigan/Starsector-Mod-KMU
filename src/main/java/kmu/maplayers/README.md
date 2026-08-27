@@ -171,7 +171,8 @@ about what the overlay means.
   publishes the two projections every surface reads - the known listing a box may name, and the
   habitation reading a cell is settled by. Each pass opens one and classifies each colony once
   through it. `ColonyKindLookup` folds those kinds by colony id for a reader that meets a colony as
-  a row rather than as a colony. The register behind the observations is `ColonySightings` over
+  a row rather than as a colony, and `ColonyDiscoveryLookup` folds the entity's own found-or-not
+  flag the same way for the same reader. The register behind the observations is `ColonySightings` over
   `SectorColonySightings`, written by `ColonySightingRecorder` as the player travels and by the
   political map's staleness poll for what a place's own inhabitants can see; `ColonySightingInstaller`
   stands both up on load.

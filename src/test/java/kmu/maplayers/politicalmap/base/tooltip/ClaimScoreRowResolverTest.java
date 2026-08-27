@@ -11,6 +11,7 @@ import kmlib.starsector.systems.claims.WeighedClaimStanding;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
+import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.starsector.StarsectorSettingsFake;
@@ -26,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 
@@ -115,6 +117,7 @@ final class ClaimScoreRowResolverTest {
     // The world people left, as the box's own walk of the system classified it.
     private static final SystemColonyReading TIBICENA_IS_A_DEAD_WORLD = new SystemColonyReading(
         new ColonyKindLookup(Map.of("tibicena", ColonyKind.UNGOVERNED_COLONY)),
+        ColonyDiscoveryLookup.NONE,
         ColonyObservationNotes.NONE);
     private static final boolean IS_UNFOUND_BY_PLAYER = false;
 
@@ -576,6 +579,26 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
+        void resolveMarketRowsCallsAnUnfoundMarketUndiscoveredUnderTheReveal() {
+            // The reveal is the one state such a market is listed in at all, and the word comes off
+            // the box's own walk of the system rather than off the contest: no claim row carries
+            // what the player has found, the entity's flag being nowhere in the arithmetic.
+            var standing = buildStanding(
+                buildStrongestMarket(ONE_SIBLING_MARKET),
+                List.of(buildMarket("Kanta's Den", 3, ONE_SIBLING_MARKET, SECOND_LISTED,
+                    IS_UNFOUND_BY_PLAYER)));
+
+            var rows = ClaimScoreRowResolver.resolveMarketRows(
+                buildBreakdownClaimedBy(HEGEMONY, standing),
+                standing,
+                buildReadingWithUnfound("kanta's_den"),
+                LISTING_UNFOUND_MARKETS);
+
+            assertThat(rows.get(1).line().qualifierText())
+                .isEqualTo("undiscovered");
+        }
+
+        @Test
         void resolveMarketRowsCallsOutNoMarketBesidesTheFactionsStrongest() {
             // A second marked line would say one system has two holders, which is exactly what a
             // contest cannot produce.
@@ -600,13 +623,13 @@ final class ClaimScoreRowResolverTest {
                 TIBICENA_IS_A_DEAD_WORLD);
 
             assertThat(rows.get(1).line().qualifierText())
-                .isEqualTo("Decivilised");
+                .isEqualTo("decivilised");
         }
 
         @Test
-        void resolveMarketRowsCallsNothingOutBesideAnOffEconomyColonysNought() {
-            // The same line for a colony that is merely unregistered: nothing about it is a
-            // finding, so the nought stands alone.
+        void resolveMarketRowsCallsAnOrdinaryOffEconomyColonyUnlisted() {
+            // The same line for a colony that is merely unregistered: nothing about the place is a
+            // finding, so what is left is why the contest never met it.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(NO_SIBLING_MARKETS),
                 List.of(buildOffEconomyMarket(
@@ -615,7 +638,7 @@ final class ClaimScoreRowResolverTest {
                     SECOND_LISTED))));
 
             assertThat(rows.get(1).line().qualifierText())
-                .isNull();
+                .isEqualTo("unlisted");
         }
 
         @Test
@@ -806,15 +829,19 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsOutNoColonyOfAPresenceOnlyFaction() {
+        void resolveMarketRowsNamesNoColonyOfAPresenceOnlyFactionAsTheHolder() {
             // Nothing behind such a standing took the system: it scores nought, and the lead changes
             // only on a score strictly greater than nought. A call-out here would name a holder the
             // contest never produced.
+            //
+            // The line still says how the colony is out of plain view, that being a finding about
+            // the place rather than about the contest - so the claim is asserted absent from what
+            // the line calls out rather than the whole slot asserted empty.
             var rows = resolvePresenceOnlyRows(
                 buildFoundHiddenMarket("Kanta's Den", 6, NO_SIBLING_MARKETS, SECOND_LISTED));
 
             assertThat(rows.get(0).line().qualifierText())
-                .isNull();
+                .isEqualTo("hidden");
         }
 
         @Test
@@ -970,7 +997,19 @@ final class ClaimScoreRowResolverTest {
         when(notesMock.remarkOnColony(any(), any()))
             .thenCallRealMethod();
 
-        return new SystemColonyReading(ColonyKindLookup.NONE, notesMock);
+        return new SystemColonyReading(
+            ColonyKindLookup.NONE,
+            ColonyDiscoveryLookup.NONE,
+            notesMock);
+    }
+
+    // The box's walk of a system holding one market the player has yet to find, which is the half
+    // of a row's account no contest can supply.
+    private static SystemColonyReading buildReadingWithUnfound(String marketId) {
+        return new SystemColonyReading(
+            ColonyKindLookup.NONE,
+            new ColonyDiscoveryLookup(Set.of(marketId)),
+            ColonyObservationNotes.NONE);
     }
 
     // The account over a system this faction won outright and whose markets the player has all

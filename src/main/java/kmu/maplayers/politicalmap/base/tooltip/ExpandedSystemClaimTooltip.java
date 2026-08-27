@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
-import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 
@@ -45,21 +44,22 @@ public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip 
 
     @Override
     protected List<CellTooltipEntry> resolveAccountEntries(
-            SystemClaimBreakdown breakdown,
+            ListedClaimContest contest,
             FactionClaimStanding standing,
             SystemColonyReading colonyReading) {
 
         // The mechanic settles a claim over colonies nobody has found, and the box declines to
-        // repeat what it learned there. Asked through the shared read, so the account withholds
-        // exactly what the listing above it withheld.
+        // repeat what it learned there. The rule saying so is taken off the contest rather than
+        // read afresh, so the account withholds exactly what the listing above it withheld - one
+        // read of the player's settings serves the whole box, however many factions it lists.
         //
-        // The whole contest travels with the standing: who the claim holder is and which listing
-        // ties actually decided something are facts of the contest, not of one faction's list, and
-        // the resolver reads both off the very breakdown this box is drawing.
+        // The scored read travels with it for the same reason: who the claim holder is and which
+        // listing ties actually decided something are facts of the contest, not of one faction's
+        // list, and the resolver reads both off the very breakdown this box is drawing.
         return ClaimScoreRowResolver.resolveMarketRows(
-            breakdown,
+            contest.breakdown(),
             standing,
             colonyReading,
-            readColonyVisibility().shouldIncludeUndiscoveredMarkets());
+            contest.colonyVisibility().shouldIncludeUndiscoveredMarkets());
     }
 }

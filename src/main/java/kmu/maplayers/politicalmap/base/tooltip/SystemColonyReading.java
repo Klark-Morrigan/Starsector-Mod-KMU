@@ -6,58 +6,72 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.colonies.Colonies;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.maplayers.base.visibility.ColonyKnowledge;
 
 /**
  * What a box knows about one system's colonies beyond what the contest made of them: what kind of
- * place each is, and how old its news of each is.
+ * place each is, whether the player has found it, and how old its news of each is.
  *
  * <p>For an account whose rows arrive as scores rather than as colonies. A claim row carries the id
- * of the market it was weighed from and nothing of the place behind it, so the two things a line
- * says that no arithmetic can supply - that a colony is a collapse rather than a hulk, and that
- * nobody has looked at it in four cycles - have to be read from the system itself and matched back
- * by id.
+ * of the market it was weighed from and nothing of the place behind it, so the things a line says
+ * that no arithmetic can supply - that a colony is a collapse rather than a hulk, that nobody has
+ * found it, that nobody has looked at it in four cycles - have to be read from the system itself
+ * and matched back by id.
  *
- * <p>The two travel as one value because they are one reading. Both are folded from the single walk
- * of the system the box already makes, and a line asks them together - so passed apart, a later
- * edit could fold one off a second walk, and the box would state a kind and a date read from two
- * different moments of the same system. Held together, that cannot be expressed.
+ * <p>The three travel as one value because they are one reading. All are folded from the single
+ * walk of the system the box already makes, and a line asks them together - so passed apart, a
+ * later edit could fold one off a second walk, and the box would state a kind and a date read from
+ * two different moments of the same system. Held together, that cannot be expressed.
  *
  * <p>Folded once for a whole box rather than per row, since an account lists a system's colonies
- * once per faction standing: resolved where a row is drawn, both would be re-read for every faction
+ * once per faction standing: resolved where a row is drawn, each would be re-read for every faction
  * the contest holds.
  *
- * <p>The kinds and the observations are nevertheless read under different rules, and deliberately.
- * A kind is classified under the box's own rule, so the account names places as the map drew them;
- * an observation is read under the fog alone, a reveal having no business dating a colony the
- * player was never told about ({@link ColonyObservationNotes}).
+ * <p>The three are nevertheless read under different rules, and deliberately. A kind is classified
+ * under the box's own rule, so the account names places as the map drew them; discovery is the
+ * entity's own flag, which no rule reaches; an observation is read under the fog alone, a reveal
+ * having no business dating a colony the player was never told about
+ * ({@link ColonyObservationNotes}).
  */
 public final class SystemColonyReading {
 
     /**
-     * A box with no system to read: every colony reads as the ordinary kind and none carries a
-     * remark. What a caller with nothing walked states, rather than inventing an empty pair.
+     * A box with no system to read: every colony reads as the ordinary kind, every one as found,
+     * and none carries a remark. What a caller with nothing walked states, rather than inventing an
+     * empty reading of its own.
      */
-    public static final SystemColonyReading NONE =
-        new SystemColonyReading(ColonyKindLookup.NONE, ColonyObservationNotes.NONE);
+    public static final SystemColonyReading NONE = new SystemColonyReading(
+        ColonyKindLookup.NONE,
+        ColonyDiscoveryLookup.NONE,
+        ColonyObservationNotes.NONE);
 
     private final ColonyKindLookup colonyKinds;
+    private final ColonyDiscoveryLookup colonyDiscoveries;
     private final ColonyObservationNotes notes;
 
     /**
-     * Pairs two folds of one system that were made together. {@link #readColoniesIn} is how a box
-     * arrives at the pair; this is the pair itself, for a caller already holding both halves.
+     * Gathers three folds of one system that were made together. {@link #readColoniesIn} is how a
+     * box arrives at them; this is the gathering itself, for a caller already holding the parts.
      *
-     * @param colonyKinds what kind of place each of the system's colonies is
-     * @param notes       how old the news of each of them is
+     * @param colonyKinds       what kind of place each of the system's colonies is
+     * @param colonyDiscoveries which of them the player has yet to find
+     * @param notes             how old the news of each of them is
      */
-    SystemColonyReading(ColonyKindLookup colonyKinds, ColonyObservationNotes notes) {
+    SystemColonyReading(
+            ColonyKindLookup colonyKinds,
+            ColonyDiscoveryLookup colonyDiscoveries,
+            ColonyObservationNotes notes) {
 
         this.colonyKinds = colonyKinds == null
             ? ColonyKindLookup.NONE
             : colonyKinds;
+
+        this.colonyDiscoveries = colonyDiscoveries == null
+            ? ColonyDiscoveryLookup.NONE
+            : colonyDiscoveries;
 
         this.notes = notes == null
             ? ColonyObservationNotes.NONE
@@ -85,6 +99,7 @@ public final class SystemColonyReading {
 
         return new SystemColonyReading(
             ColonyKindLookup.readKindsIn(colonies, knowledge),
+            ColonyDiscoveryLookup.readDiscoveriesIn(colonies),
             ColonyObservationNotes.readNotesFor(
                 sector,
                 system,
@@ -100,6 +115,16 @@ public final class SystemColonyReading {
      */
     public ColonyKind readKindOf(String colonyId) {
         return colonyKinds.readKindOf(colonyId);
+    }
+
+    /**
+     * Whether the player has found the entity the colony with this id sits on.
+     *
+     * @param colonyId the colony's market id, as the account listing it carries
+     * @return true when the colony's entity has been found
+     */
+    public boolean isDiscoveredColony(String colonyId) {
+        return colonyDiscoveries.isDiscoveredColony(colonyId);
     }
 
     /**

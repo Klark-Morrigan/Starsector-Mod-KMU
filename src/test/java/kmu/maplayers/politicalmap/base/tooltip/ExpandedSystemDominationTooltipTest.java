@@ -81,6 +81,7 @@ final class ExpandedSystemDominationTooltipTest {
     private static final UnweighedColony UNLISTED_COLONY = new UnweighedColony(
         "galatia_academy",
         ColonyKind.COLONY,
+        VISIBLE_COLONY,
         EntityNameplate.createUnmarkedNameplate("Galatia Academy"));
 
     // Stability is left unweighed throughout, so a colony breaks down into the one factor each case is

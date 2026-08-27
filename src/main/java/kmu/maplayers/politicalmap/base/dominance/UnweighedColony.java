@@ -22,14 +22,20 @@ import kmu.maplayers.base.visibility.ColonyKind;
  * in - each unowned, off-economy and listed at nought - and the account has no other way to say
  * that one is a place people still live and the other a wreck nobody ever lived on.
  *
- * @param marketId  which colony this is, as the economy and the sector's own records name it
- * @param kind      what kind of place the colony is, read on the walk that met it so it can only
- *                  ever describe the colony named beside it
- * @param nameplate how the colony is identified to a reader - its name and the glyph the sector
- *                  map marks it with
+ * <p>Concealment travels for the same reason it does on a weighed colony: it is a finding the line
+ * calls out, and the two boxes name the same colonies of one system - so a colony the claims box
+ * calls concealed and this one cannot is the disagreement a shared account exists to rule out.
+ *
+ * @param marketId       which colony this is, as the economy and the sector's own records name it
+ * @param kind           what kind of place the colony is, read on the walk that met it so it can
+ *                       only ever describe the colony named beside it
+ * @param isHiddenMarket whether the colony conceals itself rather than being held in the open
+ * @param nameplate      how the colony is identified to a reader - its name and the glyph the
+ *                       sector map marks it with
  */
 public record UnweighedColony(
     String marketId,
     ColonyKind kind,
+    boolean isHiddenMarket,
     EntityNameplate nameplate) {
 }

@@ -173,7 +173,7 @@ final class TooltipDensityDepthIntegrationTest {
                 List.of(buildPatrolledColony()),
                 List.of(),
                 WEIGHING_RULES,
-                ColonyObservationNotes.NONE));
+                SystemColonyReading.NONE));
 
         var sections = new ArrayList<TooltipSection>();
 

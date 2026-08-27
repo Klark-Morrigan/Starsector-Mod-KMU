@@ -5,7 +5,9 @@ import kmlib.starsector.entities.EntityNameplate;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKind;
+import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
@@ -28,6 +30,7 @@ import java.awt.Color;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
@@ -90,8 +93,9 @@ final class MarketWeightRowResolverTest {
     private static final EntityNameplate UNMARKED_STATION =
         EntityNameplate.createUnmarkedNameplate("Fort Ludd");
 
-    // Whether a colony is concealed, which only the size line reads.
+    // Whether a colony conceals itself, which is called out on the line naming it.
     private static final boolean VISIBLE_COLONY = false;
+    private static final boolean CONCEALED_COLONY = true;
 
     // Where a colony sits, which decides whether a station sharing its name is the same place under
     // two economy entries or two places that happen to be alike. Named so the pair of booleans a
@@ -245,24 +249,45 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsOutAHiddenColonyOnItsSizeLine() {
-            // Being hidden is not a further factor but the reason two of them rate the colony as they
-            // do, so it is said on the line it changes rather than on one of its own.
+        void resolveMarketRowsCallsOutAHiddenColonyOnTheLineNamingIt() {
+            // Concealment is a finding about the place rather than about the size term it moves, and
+            // the claims box states it on the colony's own line too - so the two boxes cannot part
+            // over where the same fact belongs.
             var rows = resolveUnremarkedRows(
-                List.of(new MarketWeightBreakdown(
-                    nameColonyId("Selkie Station"),
-                    EntityNameplate.createUnmarkedNameplate("Selkie Station"),
-                    true,
-                    PLANET_COLONY,
-                    FULL_STABILITY,
-                    PLAIN_SIZE,
-                    Optional.empty(),
-                    Optional.empty())),
+                List.of(buildConcealedBreakdown()),
+                NO_UNWEIGHED_COLONIES,
+                buildRules());
+
+            assertThat(rows.get(0).line().qualifierText())
+                .isEqualTo("hidden");
+        }
+
+        @Test
+        void resolveMarketRowsCallsAnUnfoundColonyUndiscovered() {
+            // The reveal is the one state such a colony is weighed and listed in at all, and the
+            // word comes off the box's own walk of the system: no breakdown carries what the player
+            // has found, the entity's flag being nowhere in the arithmetic.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules(),
+                buildReadingWithUnfound("jangala"));
+
+            assertThat(rows.get(0).line().qualifierText())
+                .isEqualTo("undiscovered");
+        }
+
+        @Test
+        void resolveMarketRowsCallsNothingOutOnAHiddenColonysSizeLine() {
+            // The term states what the concealment did to the number, in the raw size beside it,
+            // and says nothing about the colony: one fact in one place, on the line about the place.
+            var rows = resolveUnremarkedRows(
+                List.of(buildConcealedBreakdown()),
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
             assertThat(readSizeLine(rows).qualifierText())
-                .isEqualTo("hidden");
+                .isNull();
         }
 
         @Test
@@ -538,25 +563,23 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsNothingOutBesideAnUnweighedColonysNought() {
-            // The nought is the whole of what the account has to say about it, exactly as on the
-            // claims side: a word for why it was passed over would raise a question about the rule
-            // that the box would then owe an answer to.
+        void resolveMarketRowsCallsAnOrdinaryUnweighedColonyUnlisted() {
+            // The fallback finding, and the whole of why the colony is on this list rather than
+            // among the weighed ones: the economy does not hold it.
             var rows = resolveUnremarkedRows(
                 List.of(),
-                List.of(buildUnweighedColony("Galatia Academy")),
+                List.of(buildUnweighedColonyOfKind("Galatia Academy", ColonyKind.COLONY)),
                 buildRules());
 
             assertThat(rows.get(0).line().qualifierText())
-                .isNull();
+                .isEqualTo("unlisted");
         }
 
         @Test
-        void resolveMarketRowsCallsADeadWorldOutBesideItsNought() {
-            // The one thing the account does say about a colony it never weighed, and the pair is
-            // what makes it necessary: a ruin and a hulk arrive identically - unowned, off-economy,
-            // at nought - so without the word the reader cannot tell a world people left from a
-            // wreck nobody ever lived on.
+        void resolveMarketRowsTellsADeadWorldAndAHulkApartBesideTheirNoughts() {
+            // The pair is what makes the words necessary: a ruin and a hulk arrive identically -
+            // unowned, off-economy, at nought - so without them the reader cannot tell a world
+            // people left from a wreck nobody ever lived on.
             // Listed by name, so the hulk leads and the ruin follows it.
             var rows = resolveUnremarkedRows(
                 List.of(),
@@ -566,9 +589,9 @@ final class MarketWeightRowResolverTest {
                 buildRules());
 
             assertThat(rows.get(0).line().qualifierText())
-                .isNull();
+                .isEqualTo("abandoned");
             assertThat(rows.get(1).line().qualifierText())
-                .isEqualTo("Decivilised");
+                .isEqualTo("decivilised");
         }
 
         @Test
@@ -668,7 +691,7 @@ final class MarketWeightRowResolverTest {
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules(),
-                buildNotesRemarkingOn("jangala"));
+                buildReadingRemarkingOn("jangala"));
 
             assertThat(rows.get(0).line().noteText())
                 .isEqualTo(LAST_SEEN);
@@ -682,7 +705,7 @@ final class MarketWeightRowResolverTest {
                 List.of(),
                 List.of(buildUnweighedColony("Galatia Academy")),
                 buildRules(),
-                buildNotesRemarkingOn("galatia_academy"));
+                buildReadingRemarkingOn("galatia_academy"));
 
             assertThat(rows.get(0).line().noteText())
                 .isEqualTo(LAST_SEEN);
@@ -696,7 +719,7 @@ final class MarketWeightRowResolverTest {
                 List.of(buildMarkedBreakdown(buildMarkedColony("Jangala"))),
                 NO_UNWEIGHED_COLONIES,
                 buildRules(),
-                buildNotesRemarkingOn("jangala"));
+                buildReadingRemarkingOn("jangala"));
 
             assertThat(rows.get(0).children())
                 .allSatisfy(factor -> assertThat(factor.line().noteText()).isNull());
@@ -726,10 +749,10 @@ final class MarketWeightRowResolverTest {
         return rows.get(0).children().get(2).line();
     }
 
-    // Notes remarking on exactly one colony, mocked because what makes a remark due is the notes'
-    // own question and is pinned by {@link ColonyObservationNotesTest}: what this suite is about is
-    // which line carries the answer.
-    private static ColonyObservationNotes buildNotesRemarkingOn(String marketId) {
+    // A reading remarking on exactly one colony, its notes mocked because what makes a remark due
+    // is the notes' own question and is pinned by {@link ColonyObservationNotesTest}: what this
+    // suite is about is which line carries the answer.
+    private static SystemColonyReading buildReadingRemarkingOn(String marketId) {
 
         var notesMock = mock(ColonyObservationNotes.class);
 
@@ -742,7 +765,19 @@ final class MarketWeightRowResolverTest {
         when(notesMock.remarkOnColony(any(), any()))
             .thenCallRealMethod();
 
-        return notesMock;
+        return new SystemColonyReading(
+            ColonyKindLookup.NONE,
+            ColonyDiscoveryLookup.NONE,
+            notesMock);
+    }
+
+    // The box's walk of a system holding one colony the player has yet to find, which is the half
+    // of a line's account no weight can supply.
+    private static SystemColonyReading buildReadingWithUnfound(String marketId) {
+        return new SystemColonyReading(
+            ColonyKindLookup.NONE,
+            new ColonyDiscoveryLookup(Set.of(marketId)),
+            ColonyObservationNotes.NONE);
     }
 
     // The rows of an account where nobody is remarked on: every colony is being looked at as the
@@ -757,16 +792,17 @@ final class MarketWeightRowResolverTest {
             breakdowns,
             unweighedColonies,
             rules,
-            ColonyObservationNotes.NONE);
+            SystemColonyReading.NONE);
     }
 
-    // A colony the economy does not list, under the name a case needs and marked with nothing.
+    // A colony the economy does not list, under the name a case needs and marked with nothing. A
+    // hulk, that being the shape the economy leaves off in the ordinary sector.
     private static UnweighedColony buildUnweighedColony(String marketName) {
         return buildUnweighedColonyOfKind(marketName, ColonyKind.SPACE_DERELICT);
     }
 
     // The same as the world people left, for the cases about what a kind states on the line naming
-    // it. Posed against the hulk above, which reaches the list identically and states nothing.
+    // it. Posed against the hulk above, which reaches the list identically and says something else.
     private static UnweighedColony buildUnweighedUngovernedColony(String marketName) {
         return buildUnweighedColonyOfKind(marketName, ColonyKind.UNGOVERNED_COLONY);
     }
@@ -779,6 +815,7 @@ final class MarketWeightRowResolverTest {
         return new UnweighedColony(
             nameColonyId(marketName),
             kind,
+            VISIBLE_COLONY,
             EntityNameplate.createUnmarkedNameplate(marketName));
     }
 
@@ -788,6 +825,7 @@ final class MarketWeightRowResolverTest {
         return new UnweighedColony(
             nameColonyId(marketName),
             ColonyKind.SPACE_DERELICT,
+            VISIBLE_COLONY,
             buildMarkedColony(marketName));
     }
 
@@ -807,6 +845,20 @@ final class MarketWeightRowResolverTest {
             Optional.of(new EntityMapIcon(
                 "graphics/warroom/icon_planet.png",
                 new Color(120, 200, 90))));
+    }
+
+    // A concealed colony's parts, otherwise plain. Its own line and its size line are what the two
+    // cases about where concealment is stated read.
+    private static MarketWeightBreakdown buildConcealedBreakdown() {
+        return new MarketWeightBreakdown(
+            nameColonyId("Selkie Station"),
+            EntityNameplate.createUnmarkedNameplate("Selkie Station"),
+            CONCEALED_COLONY,
+            PLANET_COLONY,
+            FULL_STABILITY,
+            PLAIN_SIZE,
+            Optional.empty(),
+            Optional.empty());
     }
 
     // A plain colony's parts - no station, no patrols - at full stability.

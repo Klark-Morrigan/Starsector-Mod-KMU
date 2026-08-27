@@ -213,6 +213,7 @@ public final class KnownMarketFootprints {
                 .add(new UnweighedColony(
                     market.getId(),
                     colonyKnowledge.readKindOf(colony),
+                    colony.isHidden(),
                     Markets.readNameplate(market)));
         }
         return coloniesByFactionId;

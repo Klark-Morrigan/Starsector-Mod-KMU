@@ -92,6 +92,12 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(
             KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_WORKING,
             "(%s markets) - 1 =");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_SEPARATOR, ", ");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_ABANDONED, "abandoned");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_DECIVILISED, "decivilised");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_UNDISCOVERED, "undiscovered");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_HIDDEN, "hidden");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_UNLISTED, "unlisted");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_MILITARY, "Military");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_BONUS, "+%s");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM, "Claim:");
@@ -101,7 +107,6 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_STABILITY, "Stability");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE, "Size");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS, "Patrols");
-        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_HIDDEN, "hidden");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_FIXED, "%s (fixed)");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_STATION_MILITARY, "%s (Military)");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_RATED, "%s ::");

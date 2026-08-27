@@ -173,10 +173,15 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      * what is left to answer is only whether a listed faction breaks down further and into what.
      *
      * <p>Asked per faction rather than once per paint, since a standing already carries the markets
-     * behind it - there is no second read of the economy for a box to save by asking earlier. The
-     * whole contest is handed over beside it because an account may turn on how the system was
-     * settled rather than on the faction alone, and reading that a second way here is what would let
-     * the account and the claim line above it disagree.
+     * behind it - there is no second read of the economy for a box to save by asking earlier.
+     *
+     * <p>The whole contest is handed over beside the standing, rather than the scored read alone,
+     * because an account needs two things of it that no standing carries: how the system was settled,
+     * and the colony rule the listing above was projected under. Both travel with the contest that
+     * was read once for the box, so an account states exactly what the listing states. Reading either
+     * afresh here is what would let the account and the lines above it draw under different answers -
+     * and the rule especially, a live settings read per faction being one the player could in
+     * principle move between two factions of one box.
      *
      * <p>Taken on the standing's own interface rather than on the weighed kind, so a faction present
      * through colonies the mechanic never reached is accounted for like any other: it holds the very
@@ -185,8 +190,9 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      * <p>Listing a faction as the line naming it is the ordinary answer and the default, so a box with
      * nothing further to say overrides nothing.
      *
-     * @param breakdown     the whole contest the box is being built from, in case the account turns
-     *                      on it
+     * @param contest       the whole contest the box is being built from - the scored read, the
+     *                      colony rule it was projected under, and the standings that projection
+     *                      left the box free to name
      * @param standing      the faction's ranked place in that contest, of either kind
      * @param colonyReading what the box may say about the system's colonies beyond their scores,
      *                      folded once for the box - a claim row carries the id of the market it
@@ -197,7 +203,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      *         listed as its line alone
      */
     protected List<CellTooltipEntry> resolveAccountEntries(
-            SystemClaimBreakdown breakdown,
+            ListedClaimContest contest,
             FactionClaimStanding standing,
             SystemColonyReading colonyReading) {
 
@@ -209,10 +215,10 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      * pass samples, so crossing between the two layers cannot make one call a system empty that
      * the other calls held.
      *
-     * <p>Named here rather than spelled at each of the three places this family asks it - the
-     * listing, the key hint's gate, and the account beneath a faction - because those three have to
-     * agree. A box naming a faction whose every colony its own account then withholds is the shape
-     * one read exists to rule out.
+     * <p>Asked once per box, where the contest is read, and carried from there to everything drawn
+     * under it - the listing, the key hint's gate, and the account beneath each faction. A box
+     * naming a faction whose every colony its own account then withholds is the shape one read
+     * exists to rule out, and asking again per faction is how a box would arrive there.
      *
      * <p>The whole rule rather than the reveal alone, so a reader taking one term of it cannot be
      * drawing under a rule the rest of the box is not.
@@ -294,7 +300,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         return CellTooltipEntry
             .createEntry(claimantLine)
             .nesting(standing
-                .map(found -> resolveAccountEntries(breakdown, found, colonyReading))
+                .map(found -> resolveAccountEntries(contest, found, colonyReading))
                 .orElseGet(List::of));
     }
 
@@ -345,7 +351,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             entries.add(CellTooltipEntry
                 .createEntry(buildStandingLine(sector, standing))
                 .nesting(resolveAccountEntries(
-                    contest.breakdown(),
+                    contest,
                     standing,
                     colonyReading)));
         }
@@ -363,7 +369,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      * read's breakdown, and the box would state a claimant it had no standing for - or judge a
      * system's habitation under a rule its listing was never projected through.
      */
-    private record ListedClaimContest(
+    record ListedClaimContest(
         SystemClaimBreakdown breakdown,
         ColonyVisibility colonyVisibility,
         List<FactionClaimStanding> listedStandings) {

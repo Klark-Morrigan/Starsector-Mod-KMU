@@ -59,6 +59,13 @@
     "political_map_tooltip_claim_bonus": "+%s",
     "political_map_tooltip_detail_contributions": "score contributions",
 
+    "political_map_tooltip_qualifier_separator": ", ",
+    "political_map_tooltip_qualifier_abandoned": "abandoned",
+    "political_map_tooltip_qualifier_decivilised": "decivilised",
+    "political_map_tooltip_qualifier_undiscovered": "undiscovered",
+    "political_map_tooltip_qualifier_hidden": "hidden",
+    "political_map_tooltip_qualifier_unlisted": "unlisted",
+
     "political_map_tooltip_last_seen": "last seen %s (%s)",
     "political_map_tooltip_last_seen_today": "today",
     "political_map_tooltip_last_seen_a_day_ago": "a day ago",
@@ -72,7 +79,6 @@
     "political_map_tooltip_factor_stability": "Stability",
     "political_map_tooltip_factor_size": "Size",
     "political_map_tooltip_factor_patrols": "Patrols",
-    "political_map_tooltip_factor_hidden": "hidden",
     "political_map_tooltip_factor_fixed": "%s (fixed)",
     "political_map_tooltip_factor_station_military": "%s (Military)",
     "political_map_tooltip_factor_rated": "%s ::",

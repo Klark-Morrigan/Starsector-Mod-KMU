@@ -51,10 +51,12 @@ import java.util.List;
  * omitted it would be withholding something they are looking straight at - and the nought is the
  * whole of what the account has to say about it: it is there, and it moved nothing.
  *
- * <p>Where such a colony is one nobody runs rather than a place somebody keeps, the line says so
- * ({@link ColonyKindQualifier}). A collapsed colony and a derelict hulk reach this list identically
- * - both unowned, both off-economy, both at nought - and nothing else on either line would tell
- * them apart.
+ * <p>Every colony's line says whatever the box has found out about the place that its weight does
+ * not ({@link ColonyQualifier}) - what sort of place it is, and how it is out of plain view. A
+ * collapsed colony and a derelict hulk reach the foot of this list identically, both unowned and
+ * both at nought, and nothing else on either line would tell them apart; a concealed colony is
+ * called out on the line naming it rather than on the size term its concealment moved, that being
+ * a fact about the place and not about one factor of the sum.
  *
  * <p>A factor that did not run has no line. Which of them ran is already settled by the breakdown
  * read - the station and patrol parts are absent when the player has the factor off - and only the
@@ -90,6 +92,16 @@ public final class MarketWeightRowResolver {
     // and the reader is looking for what the weight is made of, not what it is not.
     private static final int NO_PATROLS = 0;
 
+    // Where the economy stands on a colony that reached one list or the other. The weight read
+    // walks the economy's own set, so everything it weighed is listed by construction and
+    // everything on the unweighed list is there precisely because it is not.
+    private static final boolean IS_LISTED_BY_ECONOMY = true;
+    private static final boolean IS_NOT_LISTED_BY_ECONOMY = false;
+
+    // Whether a colony took the system, which nothing on this side ever states: taking a system is
+    // the claim contest's finding, and this box is an account of a different one.
+    private static final boolean NO_CLAIM_IS_STATED_HERE = false;
+
     private MarketWeightRowResolver() {
     }
 
@@ -104,8 +116,9 @@ public final class MarketWeightRowResolver {
      *                          them
      * @param rules             the weighting rules the pass resolved under, which decide whether
      *                          stability is a cause worth stating
-     * @param notes             how old the box's news of each colony is, so a colony nobody is
-     *                          looking at says when it was last seen
+     * @param colonyReading     what the box may say about the system's colonies beyond their
+     *                          weights, folded once for the whole box - what kind of place each is,
+     *                          whether the player has found it, and how old the news of it is
      * @return one entry per colony, the weighed ones ranked ahead of the unweighed; empty when the
      *         faction holds no colony at all in the system
      */
@@ -113,14 +126,15 @@ public final class MarketWeightRowResolver {
             List<MarketWeightBreakdown> breakdowns,
             List<UnweighedColony> unweighedColonies,
             DominanceRules rules,
-            ColonyObservationNotes notes) {
+            SystemColonyReading colonyReading) {
 
         var entries = new ArrayList<CellTooltipEntry>();
 
         breakdowns
             .stream()
             .sorted(MARKET_ORDER)
-            .forEach(breakdown -> entries.add(resolveMarketEntry(breakdown, rules, notes)));
+            .forEach(breakdown -> entries.add(
+                resolveMarketEntry(breakdown, rules, colonyReading)));
 
         // Last whatever they would rank at, because they never ranked: sorted in among the weighed
         // colonies by a nought they were never given, they would sit above a colony that was
@@ -128,25 +142,37 @@ public final class MarketWeightRowResolver {
         unweighedColonies
             .stream()
             .sorted(UNWEIGHED_ORDER)
-            .forEach(colony -> entries.add(resolveUnweighedEntry(colony, notes)));
+            .forEach(colony -> entries.add(resolveUnweighedEntry(colony, colonyReading)));
 
         return List.copyOf(entries);
     }
 
     // One colony as the entry it is listed as: its name and the weight it folded in at, over the
     // factors that weight is the sum of.
+    //
+    // The kind comes off the box's walk of the system rather than off the breakdown, the weight
+    // read having no reason to carry one: everything it weighs is a place somebody keeps. It is
+    // asked all the same, so what a line may call out is decided in one place for both lists.
     private static CellTooltipEntry resolveMarketEntry(
             MarketWeightBreakdown breakdown,
             DominanceRules rules,
-            ColonyObservationNotes notes) {
+            SystemColonyReading colonyReading) {
+
+        var line = createMapEntityLine(
+            breakdown.marketNameplate(),
+            breakdown.marketNameplate().displayName(),
+            KmlibNumbers.formatGroupedInteger(breakdown.computeTotalWeight()));
 
         return CellTooltipEntry
-            .createEntry(notes.remarkOnColony(
-                createMapEntityLine(
-                    breakdown.marketNameplate(),
+            .createEntry(ColonyQualifier.qualifyColony(
+                colonyReading.remarkOnColony(line, breakdown.marketId()),
+                new ColonyQualifierFacts(
                     breakdown.marketNameplate().displayName(),
-                    KmlibNumbers.formatGroupedInteger(breakdown.computeTotalWeight())),
-                breakdown.marketId()))
+                    colonyReading.readKindOf(breakdown.marketId()),
+                    NO_CLAIM_IS_STATED_HERE,
+                    colonyReading.isDiscoveredColony(breakdown.marketId()),
+                    breakdown.isHiddenMarket(),
+                    IS_LISTED_BY_ECONOMY)))
             .nesting(resolveFactorEntries(breakdown, rules));
     }
 
@@ -160,21 +186,26 @@ public final class MarketWeightRowResolver {
     // the one thing it is not.
     private static CellTooltipEntry resolveUnweighedEntry(
             UnweighedColony colony,
-            ColonyObservationNotes notes) {
+            SystemColonyReading colonyReading) {
 
-        // The kind is called out here and on no weighed line above, and the absence is the
-        // subject matter rather than an omission: a collapse is off-economy by construction, so
-        // the pass can never have weighed one, and the kinds that are weighed are already told
-        // apart by the numbers beneath them.
-        return CellTooltipEntry.createEntry(ColonyKindQualifier.qualifyByKind(
-            notes.remarkOnColony(
-                createMapEntityLine(
-                        colony.nameplate(),
-                        colony.nameplate().displayName(),
-                        KmlibNumbers.formatGroupedInteger(NO_WEIGHT))
-                    .statesUncountedValue(),
-                colony.marketId()),
-            colony.kind()));
+        var line = createMapEntityLine(
+                colony.nameplate(),
+                colony.nameplate().displayName(),
+                KmlibNumbers.formatGroupedInteger(NO_WEIGHT))
+            .statesUncountedValue();
+
+        // The kind and the concealment are read off the colony itself rather than off the walk
+        // beside it, both having travelled here from the very selection that met the colony - so
+        // the line's findings can only ever be about the colony it names.
+        return CellTooltipEntry.createEntry(ColonyQualifier.qualifyColony(
+            colonyReading.remarkOnColony(line, colony.marketId()),
+            new ColonyQualifierFacts(
+                colony.nameplate().displayName(),
+                colony.kind(),
+                NO_CLAIM_IS_STATED_HERE,
+                colonyReading.isDiscoveredColony(colony.marketId()),
+                colony.isHiddenMarket(),
+                IS_NOT_LISTED_BY_ECONOMY)));
     }
 
     // A line naming something the sector map draws - a colony or the station defending it - led by
@@ -255,9 +286,9 @@ public final class MarketWeightRowResolver {
         return stationName;
     }
 
-    // The base-size factor's line. A hidden colony calls that out on the line itself rather than on
-    // one of its own, since being hidden is not a further factor but the reason two of them rate
-    // this colony the way they do.
+    // The base-size factor's line. Concealment is not stated here although it is the reason two of
+    // the factors rate the colony as they do: it is a finding about the colony rather than about
+    // this term, and the colony's own line above calls it out for both boxes at once.
     //
     // Where the fixed token replaced the colony's own size, the line opens on that real size in the
     // quiet shade. Without it the value states a size the colony does not have and nothing to read
@@ -274,10 +305,6 @@ public final class MarketWeightRowResolver {
         if (isFixedRating) {
             line = line.derivesValueFrom(
                 MarketFactorText.formatRawSizeWorking(breakdown.baseSize().rawMarketSize()));
-        }
-        if (breakdown.isHiddenMarket()) {
-            line = line.qualifiedWith(
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_HIDDEN));
         }
         return CellTooltipEntry.createEntry(line);
     }
