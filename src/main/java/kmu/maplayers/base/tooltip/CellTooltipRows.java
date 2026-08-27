@@ -220,13 +220,11 @@ public final class CellTooltipRows {
             CellTooltipEntryLevel level,
             Color valueColour) {
 
-        return appendNote(
-            appendQualifier(
-                appendIndex(
-                    placeRow(appendValue(row, line, valueColour), level),
-                    line),
-                line),
-            line);
+        var listedRow = placeRow(appendValue(row, line, valueColour), level);
+        listedRow = appendIndex(listedRow, line);
+        listedRow = appendQualifier(listedRow, line);
+
+        return appendNote(listedRow, line);
     }
 
     // Opens a listed line: on the mark it leads with where it carries one, its name following as the
