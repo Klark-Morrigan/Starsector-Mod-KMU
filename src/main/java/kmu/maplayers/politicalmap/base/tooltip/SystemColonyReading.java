@@ -10,10 +10,12 @@ import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.maplayers.base.visibility.ColonyKnowledge;
+import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
 
 /**
  * What a box knows about one system's colonies beyond what the contest made of them: what kind of
- * place each is, whether the player has found it, and how old its news of each is.
+ * place each is, whether the player has found it, whether a concealed one is concealed in name
+ * only, and how old its news of each is.
  *
  * <p>For an account whose rows arrive as scores rather than as colonies. A claim row carries the id
  * of the market it was weighed from and nothing of the place behind it, so the things a line says
@@ -21,7 +23,7 @@ import kmu.maplayers.base.visibility.ColonyKnowledge;
  * found it, that nobody has looked at it in four cycles - have to be read from the system itself
  * and matched back by id.
  *
- * <p>The three travel as one value because they are one reading. All are folded from the single
+ * <p>The four travel as one value because they are one reading. All are folded from the single
  * walk of the system the box already makes, and a line asks them together - so passed apart, a
  * later edit could fold one off a second walk, and the box would state a kind and a date read from
  * two different moments of the same system. Held together, that cannot be expressed.
@@ -30,10 +32,12 @@ import kmu.maplayers.base.visibility.ColonyKnowledge;
  * once per faction standing: resolved where a row is drawn, each would be re-read for every faction
  * the contest holds.
  *
- * <p>The three are nevertheless read under different rules, and deliberately. A kind is classified
+ * <p>The four are nevertheless read under different rules, and deliberately. A kind is classified
  * under the box's own rule, so the account names places as the map drew them; discovery is the
- * entity's own flag, which no rule reaches; an observation is read under the fog alone, a reveal
- * having no business dating a colony the player was never told about
+ * entity's own flag, which no rule reaches; whether a concealment is public knowledge is an
+ * identity the composition root supplies
+ * ({@link kmu.maplayers.base.visibility.OpenlyKnownColonyRegistry}); an observation is read under
+ * the fog alone, a reveal having no business dating a colony the player was never told about
  * ({@link ColonyObservationNotes}).
  *
  * <p>Laying what it knows onto a line is this value's own ({@link #describeColony}) rather than
@@ -45,29 +49,33 @@ public final class SystemColonyReading {
 
     /**
      * A box with no system to read: every colony reads as the ordinary kind, every one as found,
-     * and none carries a remark. What a caller with nothing walked states, rather than inventing an
-     * empty reading of its own.
+     * every concealment as a secret, and none carries a remark. What a caller with nothing walked
+     * states, rather than inventing an empty reading of its own.
      */
     public static final SystemColonyReading NONE = new SystemColonyReading(
         ColonyKindLookup.NONE,
         ColonyDiscoveryLookup.NONE,
+        OpenlyKnownColonyLookup.NONE,
         ColonyObservationNotes.NONE);
 
     private final ColonyKindLookup colonyKinds;
     private final ColonyDiscoveryLookup colonyDiscoveries;
+    private final OpenlyKnownColonyLookup openlyKnownColonies;
     private final ColonyObservationNotes notes;
 
     /**
-     * Gathers three folds of one system that were made together. {@link #readColoniesIn} is how a
+     * Gathers four folds of one system that were made together. {@link #readColoniesIn} is how a
      * box arrives at them; this is the gathering itself, for a caller already holding the parts.
      *
-     * @param colonyKinds       what kind of place each of the system's colonies is
-     * @param colonyDiscoveries which of them the player has yet to find
-     * @param notes             how old the news of each of them is
+     * @param colonyKinds         what kind of place each of the system's colonies is
+     * @param colonyDiscoveries   which of them the player has yet to find
+     * @param openlyKnownColonies which of the concealed ones the sector openly points at
+     * @param notes               how old the news of each of them is
      */
     SystemColonyReading(
             ColonyKindLookup colonyKinds,
             ColonyDiscoveryLookup colonyDiscoveries,
+            OpenlyKnownColonyLookup openlyKnownColonies,
             ColonyObservationNotes notes) {
 
         this.colonyKinds = colonyKinds == null
@@ -77,6 +85,10 @@ public final class SystemColonyReading {
         this.colonyDiscoveries = colonyDiscoveries == null
             ? ColonyDiscoveryLookup.NONE
             : colonyDiscoveries;
+
+        this.openlyKnownColonies = openlyKnownColonies == null
+            ? OpenlyKnownColonyLookup.NONE
+            : openlyKnownColonies;
 
         this.notes = notes == null
             ? ColonyObservationNotes.NONE
@@ -105,6 +117,7 @@ public final class SystemColonyReading {
         return new SystemColonyReading(
             ColonyKindLookup.readKindsIn(colonies, knowledge),
             ColonyDiscoveryLookup.readDiscoveriesIn(colonies),
+            OpenlyKnownColonyLookup.readOpenlyKnownIn(colonies),
             ColonyObservationNotes.readNotesFor(
                 sector,
                 system,
@@ -130,6 +143,17 @@ public final class SystemColonyReading {
      */
     public boolean isDiscoveredColony(String colonyId) {
         return colonyDiscoveries.isDiscoveredColony(colonyId);
+    }
+
+    /**
+     * Whether the colony with this id conceals itself only in the sector's bookkeeping - a landmark
+     * that keeps no comm directory rather than a base hiding from anyone.
+     *
+     * @param colonyId the colony's market id, as the account listing it carries
+     * @return true when the colony is one the sector openly points at
+     */
+    public boolean isOpenlyKnownColony(String colonyId) {
+        return openlyKnownColonies.isOpenlyKnownColony(colonyId);
     }
 
     /**

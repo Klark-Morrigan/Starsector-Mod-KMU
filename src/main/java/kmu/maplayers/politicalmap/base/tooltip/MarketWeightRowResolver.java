@@ -172,6 +172,7 @@ public final class MarketWeightRowResolver {
                     NO_CLAIM_IS_STATED_HERE,
                     colonyReading.isDiscoveredColony(breakdown.marketId()),
                     breakdown.isHiddenMarket(),
+                    colonyReading.isOpenlyKnownColony(breakdown.marketId()),
                     IS_LISTED_BY_ECONOMY)))
             .nesting(resolveFactorEntries(breakdown, rules));
     }
@@ -205,6 +206,7 @@ public final class MarketWeightRowResolver {
                 NO_CLAIM_IS_STATED_HERE,
                 colonyReading.isDiscoveredColony(colony.marketId()),
                 colony.isHiddenMarket(),
+                colonyReading.isOpenlyKnownColony(colony.marketId()),
                 IS_NOT_LISTED_BY_ECONOMY)));
     }
 

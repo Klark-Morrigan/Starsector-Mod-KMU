@@ -23,6 +23,10 @@ import kmu.maplayers.base.visibility.ColonyKind;
  *                             an unfound colony on a list at all, which is where the word it earns
  *                             has anywhere to appear
  * @param isHiddenMarket       whether the colony conceals itself rather than being held in the open
+ * @param isOpenlyKnownMarket  whether that concealment is public knowledge - a landmark keeping no
+ *                             comm directory rather than a base hiding from anyone. Its own fact
+ *                             beside the concealment rather than a correction to it, the colony
+ *                             being concealed in every sense a visibility rule cares about
  * @param isListedByEconomy    whether the economy's own set holds this colony, as the walk that
  *                             selected it decided
  */
@@ -31,5 +35,6 @@ public record ColonyQualifierFacts(
     boolean isHoldingTheClaim,
     boolean isDiscoveredByPlayer,
     boolean isHiddenMarket,
+    boolean isOpenlyKnownMarket,
     boolean isListedByEconomy) {
 }

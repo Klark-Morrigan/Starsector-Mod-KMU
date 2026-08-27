@@ -33,6 +33,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
+import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithUnfound;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -257,6 +258,21 @@ final class MarketWeightRowResolverTest {
 
             assertThat(rows.get(0).line().qualifierText())
                 .isEqualTo("hidden");
+        }
+
+        @Test
+        void resolveMarketRowsCallsNoConcealmentOutOnAColonyTheSectorOpenlyPointsAt() {
+            // The identical breakdown, with the box's own walk of the system reporting the place as
+            // one the sector points people at. Whether a concealment is real is nowhere in the
+            // arithmetic, so the fact arrives beside the weight exactly as discovery does.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildConcealedBreakdown()),
+                NO_UNWEIGHED_COLONIES,
+                buildRules(),
+                buildReadingWithOpenlyKnown(nameColonyId("Selkie Station")));
+
+            assertThat(rows.get(0).line().qualifierText())
+                .isNull();
         }
 
         @Test

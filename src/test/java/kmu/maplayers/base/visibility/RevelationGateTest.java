@@ -5,10 +5,14 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import kmlib.starsector.colonies.Colony;
 import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins what each {@link RevelationGate} covers, and which colonies are gated by any of them at
@@ -24,8 +28,22 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>The kind is stated beside the colony rather than resolved off the market, these cases being
  * about what a gate does with a kind rather than about how one is read - which is
  * {@link ColonyKindTest}'s.
+ *
+ * <p>One case here is about a fact the gates deliberately do not read: whether a concealment is
+ * public knowledge ({@link OpenlyKnownColonyRegistry}). That excuses a word on a hover box and must
+ * never widen what the player is shown, so it is pinned where folding the two into one flag would
+ * first show.
  */
 final class RevelationGateTest {
+
+    private static final String ACADEMY_ENTITY_ID = "station_galatia_academy";
+
+    @AfterEach
+    void clearOpenlyKnownColonies() {
+        // Registered once at start-up and read for the rest of a launch, so the case that seeds it
+        // takes the set back rather than leaving it to answer for whatever runs next.
+        OpenlyKnownColonyRegistry.registerEntityIds(List.of());
+    }
 
     @Nested
     class CoversColony {
@@ -116,6 +134,23 @@ final class RevelationGateTest {
             assertThat(RevelationGate.isGatedColony(
                     buildColony(ColonyMarketFixture.buildFoundConcealedColony("pirates")),
                     ColonyKind.COLONY))
+                .isTrue();
+        }
+
+        @Test
+        void reports_a_concealed_colony_the_sector_openly_points_at_as_gated() {
+            // The landmark exemption excuses one word on a hover box and touches nothing here. A
+            // single flag serving both is the obvious-looking simplification, and it would open the
+            // Academy to a player who has never been to Galatia - the very market the settled route
+            // was designed around.
+            var academy = ColonyMarketFixture.buildFoundConcealedColony("independent");
+
+            when(academy.getPrimaryEntity().getId())
+                .thenReturn(ACADEMY_ENTITY_ID);
+
+            OpenlyKnownColonyRegistry.registerEntityIds(List.of(ACADEMY_ENTITY_ID));
+
+            assertThat(RevelationGate.isGatedColony(buildColony(academy), ColonyKind.COLONY))
                 .isTrue();
         }
 

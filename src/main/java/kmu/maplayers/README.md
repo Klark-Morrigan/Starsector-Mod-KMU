@@ -172,7 +172,11 @@ about what the overlay means.
   habitation reading a cell is settled by. Each pass opens one and classifies each colony once
   through it. `ColonyKindLookup` folds those kinds by colony id for a reader that meets a colony as
   a row rather than as a colony, and `ColonyDiscoveryLookup` folds the entity's own found-or-not
-  flag the same way for the same reader. The register behind the observations is `ColonySightings` over
+  flag the same way for the same reader. `OpenlyKnownColonyLookup` folds a third such answer -
+  whether a concealed colony is one the sector openly points at, off the entity ids and tag
+  `OpenlyKnownColonyRegistry` is seeded with at start-up. That one excuses a word a hover box would
+  otherwise say and reaches no gate: a landmark is concealed to every rule here, exactly as the base
+  beside it is. The register behind the observations is `ColonySightings` over
   `SectorColonySightings`, written by `ColonySightingRecorder` as the player travels and by the
   political map's staleness poll for what a place's own inhabitants can see; `ColonySightingInstaller`
   stands both up on load.
@@ -417,5 +421,6 @@ about what the overlay means.
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.
 - **[Political map](politicalmap/README.md)** - the one layer that paints, its three views, and the
   draw pipeline behind them.
-- **`MapLayers`** - the composition root, the single place every concrete layer and political-map
-  view is named and registered, so the framework below stays ignorant of which ones exist.
+- **`MapLayers`** - the composition root, the single place every concrete layer, political-map view
+  and specially treated entity is named and registered, so the framework below stays ignorant of
+  which ones exist.

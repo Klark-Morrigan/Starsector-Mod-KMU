@@ -281,13 +281,15 @@ final class LunaSettingsCsvIntegrationTest {
     private static final String FIELD_ID_PREFIX = "kmu_";
 
     // Strings that carry the mod prefix without being settings fields, and so are held against no row.
-    // Every sector-map render surface registers its terrain id with the game rather than with
-    // LunaLib; they share the prefix because they are KMU's, not because they are settings. Listed one
-    // by one so a genuine field id cannot join them by accident.
+    // Every one is registered with the game rather than with LunaLib - a render surface's terrain id,
+    // or a tag another mod hangs on its own content - and they share the prefix because they are
+    // KMU's, not because they are settings. Listed one by one so a genuine field id cannot join them
+    // by accident.
     private static final Set<String> NON_SETTINGS_PREFIXED_IDS = Set.of(
             "kmu_sector_map_layer_terrain",
             "kmu_sector_map_layer_starscape_terrain",
-            "kmu_sector_map_layer_above_starscape_nebulae_terrain");
+            "kmu_sector_map_layer_above_starscape_nebulae_terrain",
+            "kmu_openly_known_colony");
 
     // The ids of rows KMU has shipped and since withdrawn. Each is still named by a source - the
     // load-time sweep that takes its orphaned value out of the player's settings file - so the walk

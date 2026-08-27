@@ -34,6 +34,11 @@ import java.util.Optional;
  * nothing above it held, or it would repeat itself on every derelict and every dead world, both
  * being off-economy by construction.
  *
+ * <p>{@code hidden} is withheld from a colony whose concealment is public knowledge, that being a
+ * fact the market itself does not carry. Such a colony falls through to whatever stands below,
+ * which is the separation the word was wanted for: a landmark reads as absent from the economy's
+ * listing and a base keeping out of sight reads as concealed.
+ *
  * <p>Suppression is by the condition holding rather than by anything being printed, which is what
  * keeps the fallback honest: a derelict named for what it is drops its own word below and still
  * reads bare, rather than falling through to the weaker statement the suppression was meant to
@@ -95,9 +100,14 @@ public final class ColonyQualifier {
 
         // Displacement rather than a pair: a colony the player has not found is concealed from them
         // by that alone, and the market's own flag adds nothing a reader could act on.
+        //
+        // A concealment the sector openly points at says nothing either. The word is what parts a
+        // base keeping itself out of sight from an ordinary colony, and a landmark that merely
+        // keeps no comm directory wears the identical flag - so calling it out beside a pirate base
+        // would say the two are the same sort of place.
         if (!facts.isDiscoveredByPlayer()) {
             words.add(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_UNDISCOVERED));
-        } else if (facts.isHiddenMarket()) {
+        } else if (facts.isHiddenMarket() && !facts.isOpenlyKnownMarket()) {
             words.add(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_HIDDEN));
         }
         // The fallback, and the emptiness read here is the conditions above rather than what will

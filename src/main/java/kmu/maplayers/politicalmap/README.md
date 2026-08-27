@@ -349,11 +349,19 @@ player has not found is concealed from them by that alone - and `unlisted` speak
 above it held, or it would repeat itself on every derelict and every dead world, both being
 off-economy by construction. The suppression is by the condition holding rather than by anything
 being printed, which is what lets a station already called *Abandoned Station* drop the word it
-duplicates and still read bare. Each box fills in a small `ColonyQualifierFacts` from what it holds -
-the claims box off `MarketClaimBreakdown`'s admission, the domination box off
-`MarketWeightBreakdown.isHiddenMarket` or the `UnweighedColony` - and the kind and the discovery
-answer come off the box's own walk of the system (`SystemColonyReading`), no row of either box
-carrying either.
+duplicates and still read bare. `hidden` is withheld from a colony the sector openly points at -
+Galatia Academy, a landmark the tutorial sends the player to that keeps no comm directory and so
+wears the identical flag a pirate base does. Nothing on either market parts them, so the exemption
+is an identity: `OpenlyKnownColonyRegistry` holds the entity ids `MapLayers` seeds it with beside a
+tag another mod hangs on content of its own, and `OpenlyKnownColonyLookup` folds the answer by
+colony id off the box's own walk. The Academy then falls through to `unlisted`, which is the
+separation the word was wanted for. The exemption excuses that one word and nothing else: the
+Academy is a hidden colony to `ColonyVisibility` still, gated still, and admitted still only by
+Ancyra settling the system.
+Each box fills in a small `ColonyQualifierFacts` from what it holds - the claims box off
+`MarketClaimBreakdown`'s admission, the domination box off `MarketWeightBreakdown.isHiddenMarket` or
+the `UnweighedColony` - and the kind, the discovery answer and the landmark answer come off the
+box's own walk of the system (`SystemColonyReading`), no row of either box carrying any of them.
 The claims box has a counterpart of its own on the same terms - `ExpandedSystemClaimTooltip`, which
 opens every faction the contest names into the markets it holds the system with and each market
 into the terms its claim score is built from. Both claim boxes sit on `SystemClaimContestTooltip`,

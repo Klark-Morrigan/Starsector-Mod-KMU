@@ -40,6 +40,11 @@ final class ColonyQualifierTest {
     private static final boolean IS_CONCEALED = true;
     private static final boolean IS_OPEN = false;
 
+    // Whether that concealment is public knowledge - a landmark keeping no comm directory rather
+    // than a base hiding from anyone.
+    private static final boolean IS_A_LANDMARK = true;
+    private static final boolean IS_A_SECRET = false;
+
     // Whether the economy's own set holds the colony, as the walk that selected it decided.
     private static final boolean IS_LISTED = true;
     private static final boolean IS_UNLISTED = false;
@@ -66,6 +71,7 @@ final class ColonyQualifierTest {
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
                     IS_OPEN,
+                    IS_A_SECRET,
                     IS_LISTED)))
                 .isNull();
         }
@@ -91,6 +97,7 @@ final class ColonyQualifierTest {
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
                     IS_OPEN,
+                    IS_A_SECRET,
                     IS_LISTED)))
                 .isNull();
         }
@@ -102,6 +109,7 @@ final class ColonyQualifierTest {
                     HOLDS_NO_CLAIM,
                     IS_UNFOUND,
                     IS_OPEN,
+                    IS_A_SECRET,
                     IS_LISTED)))
                 .isEqualTo("undiscovered");
         }
@@ -113,17 +121,80 @@ final class ColonyQualifierTest {
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
                     IS_CONCEALED,
+                    IS_A_SECRET,
                     IS_LISTED)))
                 .isEqualTo("hidden");
         }
 
         @Test
-        void qualifyColonyCallsAColonyTheEconomyDoesNotHoldUnlisted() {
+        void qualifyColonyCallsNoConcealmentOutOnAColonyTheSectorOpenlyPointsAt() {
+            // Galatia Academy's shape: concealed, off the economy's listing, and a landmark the
+            // tutorial sends the player to. It falls through to the fallback, which is the
+            // separation the word was wanted for - the case below is the identical market with
+            // nobody vouching for it, and it reads as concealed.
             assertThat(qualify("Galatia Academy", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
+                    IS_CONCEALED,
+                    IS_A_LANDMARK,
+                    IS_UNLISTED)))
+                .isEqualTo("unlisted");
+        }
+
+        @Test
+        void qualifyColonyCallsAConcealedNeighbourOfALandmarkHidden() {
+            // The market beside it, differing in nothing a colony read can see: nothing vouches for
+            // this one, so the word stands.
+            assertThat(qualify("Daybreak", new ColonyQualifierFacts(
+                    ColonyKind.COLONY,
+                    HOLDS_NO_CLAIM,
+                    IS_FOUND,
+                    IS_CONCEALED,
+                    IS_A_SECRET,
+                    IS_UNLISTED)))
+                .isEqualTo("hidden");
+        }
+
+        @Test
+        void qualifyColonyCallsNothingOutOnALandmarkTheEconomyDoesList() {
+            // The excusing is of one word and no more. A listed colony has no fallback beneath it,
+            // so a landmark the economy holds reads on its name alone rather than picking up
+            // whatever the suppression uncovered.
+            assertThat(qualify("Galatia Academy", new ColonyQualifierFacts(
+                    ColonyKind.COLONY,
+                    HOLDS_NO_CLAIM,
+                    IS_FOUND,
+                    IS_CONCEALED,
+                    IS_A_LANDMARK,
+                    IS_LISTED)))
+                .isNull();
+        }
+
+        @Test
+        void qualifyColonyCallsAnUnfoundLandmarkUndiscovered() {
+            // The word above is untouched by the excusing: it answers whether the player has found
+            // the place, which no amount of the sector pointing at it settles.
+            assertThat(qualify("Galatia Academy", new ColonyQualifierFacts(
+                    ColonyKind.COLONY,
+                    HOLDS_NO_CLAIM,
+                    IS_UNFOUND,
+                    IS_CONCEALED,
+                    IS_A_LANDMARK,
+                    IS_UNLISTED)))
+                .isEqualTo("undiscovered");
+        }
+
+        @Test
+        void qualifyColonyCallsAColonyTheEconomyDoesNotHoldUnlisted() {
+            // A colony hung on an entity without being registered, and concealing nothing - the
+            // shape a mod builds when it wants a place named on the map and weighed by no mechanic.
+            assertThat(qualify("Kirov Reserve", new ColonyQualifierFacts(
+                    ColonyKind.COLONY,
+                    HOLDS_NO_CLAIM,
+                    IS_FOUND,
                     IS_OPEN,
+                    IS_A_SECRET,
                     IS_UNLISTED)))
                 .isEqualTo("unlisted");
         }
@@ -137,6 +208,7 @@ final class ColonyQualifierTest {
                     HOLDS_THE_CLAIM,
                     IS_UNFOUND,
                     IS_OPEN,
+                    IS_A_SECRET,
                     IS_LISTED)))
                 .isEqualTo("claim holder, undiscovered");
         }
@@ -152,6 +224,7 @@ final class ColonyQualifierTest {
                     HOLDS_THE_CLAIM,
                     IS_FOUND,
                     IS_OPEN,
+                    IS_A_SECRET,
                     IS_LISTED)))
                 .isEqualTo("claim holder");
         }
@@ -165,6 +238,7 @@ final class ColonyQualifierTest {
                     HOLDS_NO_CLAIM,
                     IS_UNFOUND,
                     IS_OPEN,
+                    IS_A_SECRET,
                     IS_UNLISTED)))
                 .isEqualTo("abandoned, undiscovered");
         }
@@ -177,6 +251,7 @@ final class ColonyQualifierTest {
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
                     IS_CONCEALED,
+                    IS_A_SECRET,
                     IS_UNLISTED)))
                 .isEqualTo("decivilised, hidden");
         }
@@ -190,6 +265,7 @@ final class ColonyQualifierTest {
                     HOLDS_NO_CLAIM,
                     IS_UNFOUND,
                     IS_CONCEALED,
+                    IS_A_SECRET,
                     IS_LISTED)))
                 .isEqualTo("undiscovered");
         }
@@ -209,6 +285,7 @@ final class ColonyQualifierTest {
                     HOLDS_NO_CLAIM,
                     IS_UNFOUND,
                     IS_OPEN,
+                    IS_A_SECRET,
                     IS_UNLISTED)))
                 .isEqualTo("undiscovered");
         }
@@ -222,6 +299,7 @@ final class ColonyQualifierTest {
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
                     IS_CONCEALED,
+                    IS_A_SECRET,
                     IS_UNLISTED)))
                 .isEqualTo("hidden");
         }
@@ -244,6 +322,7 @@ final class ColonyQualifierTest {
                     HOLDS_NO_CLAIM,
                     IS_UNFOUND,
                     IS_OPEN,
+                    IS_A_SECRET,
                     IS_UNLISTED)))
                 .isEqualTo("undiscovered");
         }
@@ -259,6 +338,7 @@ final class ColonyQualifierTest {
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
                     IS_OPEN,
+                    IS_A_SECRET,
                     IS_LISTED)))
                 .isSameAs(line);
         }
@@ -280,6 +360,7 @@ final class ColonyQualifierTest {
                     HOLDS_NO_CLAIM,
                     IS_FOUND,
                     IS_OPEN,
+                    IS_A_SECRET,
                     IS_LISTED)))
                 .isNull();
         }
@@ -305,6 +386,12 @@ final class ColonyQualifierTest {
     // The off-economy colony in plain sight both speaking kinds arrive as, which is what the cases
     // about a kind's own word are posed over.
     private static ColonyQualifierFacts buildUnlistedFacts(ColonyKind kind) {
-        return new ColonyQualifierFacts(kind, HOLDS_NO_CLAIM, IS_FOUND, IS_OPEN, IS_UNLISTED);
+        return new ColonyQualifierFacts(
+            kind,
+            HOLDS_NO_CLAIM,
+            IS_FOUND,
+            IS_OPEN,
+            IS_A_SECRET,
+            IS_UNLISTED);
     }
 }

@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKindLookup;
+import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
 
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +41,22 @@ final class SystemColonyReadingFixture {
         return new SystemColonyReading(
             ColonyKindLookup.NONE,
             new ColonyDiscoveryLookup(Set.of(colonyId)),
+            OpenlyKnownColonyLookup.NONE,
+            ColonyObservationNotes.NONE);
+    }
+
+    /**
+     * A walk of a system holding one concealed colony the sector openly points at, which is the
+     * other half of a line's account no carrier of either box holds.
+     *
+     * @param colonyId the colony's market id, as the account listing it carries
+     * @return a reading answering that colony openly known and every other a secret
+     */
+    static SystemColonyReading buildReadingWithOpenlyKnown(String colonyId) {
+        return new SystemColonyReading(
+            ColonyKindLookup.NONE,
+            ColonyDiscoveryLookup.NONE,
+            new OpenlyKnownColonyLookup(Set.of(colonyId)),
             ColonyObservationNotes.NONE);
     }
 
@@ -67,6 +84,7 @@ final class SystemColonyReadingFixture {
         return new SystemColonyReading(
             ColonyKindLookup.NONE,
             ColonyDiscoveryLookup.NONE,
+            OpenlyKnownColonyLookup.NONE,
             notesMock);
     }
 }

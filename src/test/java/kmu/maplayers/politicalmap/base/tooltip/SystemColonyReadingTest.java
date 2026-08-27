@@ -4,6 +4,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.maplayers.base.visibility.ColonyKindLookup;
+import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
@@ -19,10 +20,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Pins what a box may say about a system's colonies when it has read nothing about them.
  *
- * <p>What each of the three halves answers is its own suite's ({@link ColonyKindLookupTest},
- * {@link ColonyDiscoveryLookupTest}, {@link ColonyObservationNotesTest}); what this one is about is
- * the gathering - that a reading with a half missing answers as the ordinary colony in plain sight
- * rather than throwing, since a box asking it holds a row it is already committed to drawing.
+ * <p>What each of the four halves answers is its own suite's ({@link ColonyKindLookupTest},
+ * {@link ColonyDiscoveryLookupTest}, {@link OpenlyKnownColonyLookupTest},
+ * {@link ColonyObservationNotesTest}); what this one is about is the gathering - that a reading with
+ * a half missing answers as the ordinary colony in plain sight rather than throwing, since a box
+ * asking it holds a row it is already committed to drawing.
  *
  * <p>And the one thing the gathering does rather than answers: laying what it knows onto a colony's
  * line. Which words a finding comes to is {@link ColonyQualifierTest}'s; that both the finding and
@@ -48,6 +50,7 @@ final class SystemColonyReadingTest {
     private static final boolean HOLDS_NO_CLAIM = false;
     private static final boolean IS_FOUND = true;
     private static final boolean IS_OPEN = false;
+    private static final boolean IS_A_SECRET = false;
     private static final boolean IS_UNLISTED = false;
 
     @BeforeEach
@@ -73,6 +76,8 @@ final class SystemColonyReadingTest {
                 .isEqualTo(ColonyKind.COLONY);
             assertThat(reading.isDiscoveredColony(DERELICT_ID))
                 .isTrue();
+            assertThat(reading.isOpenlyKnownColony(DERELICT_ID))
+                .isFalse();
             assertThat(reading.describeColony(PLAIN_LINE, DERELICT_ID, NOTHING_WAS_FOUND).noteText())
                 .isNull();
         }
@@ -87,6 +92,7 @@ final class SystemColonyReadingTest {
             var reading = new SystemColonyReading(
                 new ColonyKindLookup(Map.of(DERELICT_ID, ColonyKind.SPACE_DERELICT)),
                 ColonyDiscoveryLookup.NONE,
+                OpenlyKnownColonyLookup.NONE,
                 ColonyObservationNotes.NONE);
 
             assertThat(reading.readKindOf(DERELICT_ID))
@@ -98,7 +104,7 @@ final class SystemColonyReadingTest {
             // Part of a reading is still a reading. The kind errs towards the settled place
             // everywhere else it is resolved, so an absent lookup errs the same way rather than
             // differently.
-            var reading = new SystemColonyReading(null, null, null);
+            var reading = new SystemColonyReading(null, null, null, null);
 
             assertThat(reading.readKindOf(DERELICT_ID))
                 .isEqualTo(ColonyKind.COLONY);
@@ -114,6 +120,7 @@ final class SystemColonyReadingTest {
             var reading = new SystemColonyReading(
                 ColonyKindLookup.NONE,
                 new ColonyDiscoveryLookup(Set.of(DERELICT_ID)),
+                OpenlyKnownColonyLookup.NONE,
                 ColonyObservationNotes.NONE);
 
             assertThat(reading.isDiscoveredColony(DERELICT_ID))
@@ -124,10 +131,37 @@ final class SystemColonyReadingTest {
         void isDiscoveredColonyReadsAnUngatheredHalfAsFound() {
             // The direction that states no finding: a box cannot call a colony unfound on the
             // strength of a fold nobody made.
-            var reading = new SystemColonyReading(null, null, null);
+            var reading = new SystemColonyReading(null, null, null, null);
 
             assertThat(reading.isDiscoveredColony(DERELICT_ID))
                 .isTrue();
+        }
+    }
+
+    @Nested
+    class IsOpenlyKnownColony {
+
+        @Test
+        void isOpenlyKnownColonyAnswersFromTheLandmarksItWasGatheredWith() {
+
+            var reading = new SystemColonyReading(
+                ColonyKindLookup.NONE,
+                ColonyDiscoveryLookup.NONE,
+                new OpenlyKnownColonyLookup(Set.of(DERELICT_ID)),
+                ColonyObservationNotes.NONE);
+
+            assertThat(reading.isOpenlyKnownColony(DERELICT_ID))
+                .isTrue();
+        }
+
+        @Test
+        void isOpenlyKnownColonyReadsAnUngatheredHalfAsASecret() {
+            // The direction that states no finding: a box cannot excuse a concealment on the
+            // strength of a fold nobody made.
+            var reading = new SystemColonyReading(null, null, null, null);
+
+            assertThat(reading.isOpenlyKnownColony(DERELICT_ID))
+                .isFalse();
         }
     }
 
@@ -140,6 +174,7 @@ final class SystemColonyReadingTest {
             var reading = new SystemColonyReading(
                 ColonyKindLookup.NONE,
                 ColonyDiscoveryLookup.NONE,
+                OpenlyKnownColonyLookup.NONE,
                 null);
 
             assertThat(reading.describeColony(PLAIN_LINE, DERELICT_ID, NOTHING_WAS_FOUND))
@@ -158,6 +193,7 @@ final class SystemColonyReadingTest {
                 HOLDS_NO_CLAIM,
                 IS_FOUND,
                 IS_OPEN,
+                IS_A_SECRET,
                 IS_UNLISTED));
 
             assertThat(line.qualifierText())

@@ -9,6 +9,7 @@ import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -36,6 +37,10 @@ import static org.mockito.Mockito.when;
  * that.
  */
 final class ColonyKnowledgeTest {
+
+    // The entity behind the one concealed colony vanilla openly points at, which a pair of cases
+    // registers to show that the vouching reaches no gate.
+    private static final String ACADEMY_ENTITY_ID = "station_galatia_academy";
 
     // Every gate this rule can hold, which is how a case poses the shipped state - both leaking
     // shapes held back until somebody has seen them.
@@ -97,6 +102,13 @@ final class ColonyKnowledgeTest {
         UNDISCOVERED_REVEALED,
         SurveyLevel.NONE,
         Set.of());
+
+    @AfterEach
+    void clearOpenlyKnownColonies() {
+        // Registered once at start-up and read for the rest of a launch, so the pair of cases that
+        // seeds it takes the set back rather than leaving it to answer for whatever runs next.
+        OpenlyKnownColonyRegistry.registerEntityIds(List.of());
+    }
 
     @Nested
     class ReadKnownColonies {
@@ -493,6 +505,36 @@ final class ColonyKnowledgeTest {
                 // the Hegemony world in the same system does.
                 var fixture = new ColonyKnowledgeFixture("galatia");
                 var academy = fixture.buildFoundConcealedColony("independent");
+                var ancyra = fixture.buildVisibleColony("hegemony");
+
+                fixture.placeColoniesInSystem(academy, ancyra);
+
+                assertThat(knowing(fixture, BOTH_GATES_ON).readKnownColonies(buildColoniesOf(buildColony(academy), buildColony(ancyra))))
+                    .containsExactly(buildColony(academy), buildColony(ancyra));
+            }
+
+            @Test
+            void excludes_a_colony_the_sector_openly_points_at_where_nothing_settles_its_system() {
+                // The same Academy, with the sector's own vouching for it registered. That excuses
+                // one word on a hover box and says nothing whatever about what may be shown: alone
+                // in its system it is withheld exactly as the exoship above is. One flag serving
+                // both readings is the obvious-looking simplification, and this is where it shows.
+                var fixture = new ColonyKnowledgeFixture("galatia");
+                var academy = registerAsOpenlyKnown(fixture.buildFoundConcealedColony("independent"));
+
+                fixture.placeColoniesInSystem(academy);
+
+                assertThat(knowing(fixture, BOTH_GATES_ON).readKnownColonies(buildColoniesOf(buildColony(academy))))
+                    .isEmpty();
+            }
+
+            @Test
+            void keeps_a_colony_the_sector_openly_points_at_where_its_neighbours_can_see_it() {
+                // The other half of that pair: the route in is the settling neighbour, exactly as it
+                // is for the base beside it, and the registered vouching neither adds nor removes
+                // one.
+                var fixture = new ColonyKnowledgeFixture("galatia");
+                var academy = registerAsOpenlyKnown(fixture.buildFoundConcealedColony("independent"));
                 var ancyra = fixture.buildVisibleColony("hegemony");
 
                 fixture.placeColoniesInSystem(academy, ancyra);
@@ -1213,6 +1255,19 @@ final class ColonyKnowledgeTest {
     // somewhere is seeing what is in it, so neither read consults a rule or an observation.
     private static ColonyKnowledge observing() {
         return ColonyKnowledge.observingUnderTheFog();
+    }
+
+    // The market stood on the entity a composition root vouches for, which is the only thing that
+    // parts a landmark from an identical concealed market. Registered here rather than in the case
+    // so a case reads as posing a colony, and cleared after every test by the class's own teardown.
+    private static MarketAPI registerAsOpenlyKnown(MarketAPI market) {
+
+        when(market.getPrimaryEntity().getId())
+            .thenReturn(ACADEMY_ENTITY_ID);
+
+        OpenlyKnownColonyRegistry.registerEntityIds(List.of(ACADEMY_ENTITY_ID));
+
+        return market;
     }
 
     // Somewhere people live, listed by the economy - the kind neither gate is about.

@@ -19,6 +19,7 @@ import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
+import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -664,6 +665,7 @@ final class SystemClaimTooltipTest {
                     new SystemColonyReading(
                         ColonyKindLookup.NONE,
                         ColonyDiscoveryLookup.NONE,
+                        OpenlyKnownColonyLookup.NONE,
                         notesMock)))
                 .isEmpty();
         }

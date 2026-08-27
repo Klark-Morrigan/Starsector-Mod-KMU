@@ -14,6 +14,7 @@ import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
 import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.maplayers.base.visibility.ColonyKindLookup;
+import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
@@ -31,6 +32,7 @@ import java.util.OptionalInt;
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
+import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithUnfound;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -119,6 +121,7 @@ final class ClaimScoreRowResolverTest {
     private static final SystemColonyReading TIBICENA_IS_A_DEAD_WORLD = new SystemColonyReading(
         new ColonyKindLookup(Map.of("tibicena", ColonyKind.UNGOVERNED_COLONY)),
         ColonyDiscoveryLookup.NONE,
+        OpenlyKnownColonyLookup.NONE,
         ColonyObservationNotes.NONE);
     private static final boolean IS_UNFOUND_BY_PLAYER = false;
 
@@ -846,6 +849,32 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
+        void resolveMarketRowsCallsAColonyTheSectorOpenlyPointsAtUnlistedRatherThanHidden() {
+            // Galatia Academy: concealed, unregistered, and a place the tutorial sends the player
+            // to. What is left once the concealment is excused is the fallback, which is the
+            // separation the word was wanted for - the box says the economy does not carry the
+            // Academy rather than that the Academy is hiding.
+            var rows = resolvePresenceOnlyRows(
+                buildReadingWithOpenlyKnown(nameMarketId("Galatia Academy")),
+                buildFoundHiddenOffEconomyMarket("Galatia Academy"));
+
+            assertThat(rows.get(0).line().qualifierText())
+                .isEqualTo("unlisted");
+        }
+
+        @Test
+        void resolveMarketRowsCallsAColonyOfTheSameShapeNobodyVouchesForHidden() {
+            // The other half of that pair, differing in nothing the breakdown carries: a concealed
+            // colony the economy also drops goes on reading as concealed, which is the case the
+            // excusing must not reach.
+            var rows = resolvePresenceOnlyRows(
+                buildFoundHiddenOffEconomyMarket("Daybreak"));
+
+            assertThat(rows.get(0).line().qualifierText())
+                .isEqualTo("hidden");
+        }
+
+        @Test
         void resolveMarketRowsClosesAPresenceOnlyAccountWithNoPresenceTerm() {
             // The term is arithmetic of a score, and no score was computed for this faction at all -
             // so a line stating one would account for a sum that never happened. The colonies carry
@@ -1026,12 +1055,21 @@ final class ClaimScoreRowResolverTest {
     private static List<CellTooltipEntry> resolvePresenceOnlyRows(
             MarketClaimBreakdown... unweighedMarkets) {
 
+        return resolvePresenceOnlyRows(NOTHING_BEYOND_THE_SCORE, unweighedMarkets);
+    }
+
+    // The same rows under a stated walk of the system, for a case whose finding is one no breakdown
+    // carries.
+    private static List<CellTooltipEntry> resolvePresenceOnlyRows(
+            SystemColonyReading colonyReading,
+            MarketClaimBreakdown... unweighedMarkets) {
+
         var standing = buildPresenceOnlyStanding(unweighedMarkets);
 
         return ClaimScoreRowResolver.resolveMarketRows(
             buildBreakdownClaimedBy(TRITACHYON, standing),
             standing,
-            NOTHING_BEYOND_THE_SCORE,
+            colonyReading,
             WITHHOLDING_UNFOUND_MARKETS);
     }
 
@@ -1157,6 +1195,21 @@ final class ClaimScoreRowResolverTest {
             ContestAdmission.HIDDEN,
             marketSize,
             siblingMarketCount,
+            OptionalInt.empty());
+    }
+
+    // The Academy's own shape: concealed and unregistered at once, which is the one market whose two
+    // exclusions both hold. Nothing on it parts it from a concealed base the economy also drops, so
+    // it is the market the landmark reading exists to tell apart.
+    private static MarketClaimBreakdown buildFoundHiddenOffEconomyMarket(String marketName) {
+        return new MarketClaimBreakdown(
+            EntityNameplate.createUnmarkedNameplate(marketName),
+            nameMarketId(marketName),
+            FIRST_LISTED,
+            IS_KNOWN_TO_PLAYER,
+            new ContestAdmission(true, true),
+            STRONGEST_MARKET_SIZE,
+            NO_SIBLING_MARKETS,
             OptionalInt.empty());
     }
 

@@ -287,6 +287,7 @@ public final class ClaimScoreRowResolver {
             isHoldingTheClaim,
             colonyReading.isDiscoveredColony(market.marketId()),
             market.isHiddenMarket(),
+            colonyReading.isOpenlyKnownColony(market.marketId()),
             !market.isOffEconomyMarket());
 
         // Described whatever the contest made of the market, because neither what sort of place a
