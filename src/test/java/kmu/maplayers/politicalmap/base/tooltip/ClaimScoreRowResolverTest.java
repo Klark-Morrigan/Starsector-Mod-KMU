@@ -1180,36 +1180,53 @@ final class ClaimScoreRowResolverTest {
     }
 
     // A market held out of the open that the player has nonetheless found - the one combination the
-    // two flags part company on, and the only hidden market the box ever draws.
+    // two flags part company on, and the concealed shape the economy still lists.
     private static MarketClaimBreakdown buildFoundHiddenMarket(
             String marketName,
             int marketSize,
             int siblingMarketCount,
             int listingPosition) {
 
+        return buildFoundUnscoredMarket(
+            marketName,
+            marketSize,
+            siblingMarketCount,
+            listingPosition,
+            ContestAdmission.HIDDEN);
+    }
+
+    // The Academy's own shape: concealed and unregistered at once, which is the one market whose two
+    // exclusions both hold - and so the one matching none of the named admissions. Nothing on it
+    // parts it from a concealed base the economy also drops, which is what the landmark reading
+    // exists to tell apart.
+    private static MarketClaimBreakdown buildFoundHiddenOffEconomyMarket(String marketName) {
+        return buildFoundUnscoredMarket(
+            marketName,
+            STRONGEST_MARKET_SIZE,
+            NO_SIBLING_MARKETS,
+            FIRST_LISTED,
+            new ContestAdmission(true, true));
+    }
+
+    // The shape every market the mechanic passed over shares: found by the player, named, and
+    // carrying no military bonus, with only the admission saying why it was never scored. Written
+    // once so a second excluded shape is one delegation rather than a second copy of the record's
+    // eight arguments.
+    private static MarketClaimBreakdown buildFoundUnscoredMarket(
+            String marketName,
+            int marketSize,
+            int siblingMarketCount,
+            int listingPosition,
+            ContestAdmission admission) {
+
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate(marketName),
             nameMarketId(marketName),
             listingPosition,
             IS_KNOWN_TO_PLAYER,
-            ContestAdmission.HIDDEN,
+            admission,
             marketSize,
             siblingMarketCount,
-            OptionalInt.empty());
-    }
-
-    // The Academy's own shape: concealed and unregistered at once, which is the one market whose two
-    // exclusions both hold. Nothing on it parts it from a concealed base the economy also drops, so
-    // it is the market the landmark reading exists to tell apart.
-    private static MarketClaimBreakdown buildFoundHiddenOffEconomyMarket(String marketName) {
-        return new MarketClaimBreakdown(
-            EntityNameplate.createUnmarkedNameplate(marketName),
-            nameMarketId(marketName),
-            FIRST_LISTED,
-            IS_KNOWN_TO_PLAYER,
-            new ContestAdmission(true, true),
-            STRONGEST_MARKET_SIZE,
-            NO_SIBLING_MARKETS,
             OptionalInt.empty());
     }
 
@@ -1221,15 +1238,12 @@ final class ClaimScoreRowResolverTest {
             int marketSize,
             int listingPosition) {
 
-        return new MarketClaimBreakdown(
-            EntityNameplate.createUnmarkedNameplate(marketName),
-            nameMarketId(marketName),
-            listingPosition,
-            IS_KNOWN_TO_PLAYER,
-            ContestAdmission.OFF_ECONOMY,
+        return buildFoundUnscoredMarket(
+            marketName,
             marketSize,
             NO_SIBLING_MARKETS,
-            OptionalInt.empty());
+            listingPosition,
+            ContestAdmission.OFF_ECONOMY);
     }
 
     // The same shape as the world people left, for the cases about what a kind states on the line
@@ -1240,15 +1254,12 @@ final class ClaimScoreRowResolverTest {
             int marketSize,
             int listingPosition) {
 
-        return new MarketClaimBreakdown(
-            EntityNameplate.createUnmarkedNameplate(marketName),
-            nameMarketId(marketName),
-            listingPosition,
-            IS_KNOWN_TO_PLAYER,
-            ContestAdmission.OFF_ECONOMY,
+        return buildFoundUnscoredMarket(
+            marketName,
             marketSize,
             NO_SIBLING_MARKETS,
-            OptionalInt.empty());
+            listingPosition,
+            ContestAdmission.OFF_ECONOMY);
     }
 
     // A market every term of the score arose on, for the cases about the whole sum rather than about

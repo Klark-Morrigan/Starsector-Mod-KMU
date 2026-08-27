@@ -1,9 +1,14 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.colonies.Colony;
+import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
+
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.maplayers.base.visibility.ColonyKindLookup;
+import kmu.maplayers.base.visibility.OpenlyKnownColonyFixture;
 import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -12,10 +17,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins what a box may say about a system's colonies when it has read nothing about them.
@@ -34,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class SystemColonyReadingTest {
 
     private static final String DERELICT_ID = "sentinel_gantries";
+    private static final String ACADEMY_ID = "galatia_academy";
 
     // A colony's line before anything has been said about it, which is what an unremarked reading
     // has to hand back unchanged.
@@ -63,6 +71,11 @@ final class SystemColonyReadingTest {
         StarsectorSettingsFake.clearSettings();
     }
 
+    @AfterEach
+    void clearOpenlyKnownColonies() {
+        OpenlyKnownColonyFixture.clearRegistrations();
+    }
+
     @Nested
     class ReadColoniesIn {
 
@@ -80,6 +93,31 @@ final class SystemColonyReadingTest {
                 .isFalse();
             assertThat(reading.describeColony(PLAIN_LINE, DERELICT_ID, NOTHING_WAS_FOUND).noteText())
                 .isNull();
+        }
+
+        @Test
+        void readColoniesInFoldsTheLandmarksOfTheWalkItWasHandedRatherThanNone() {
+            // The factory's four folds are one reading, and only this case says the landmark fold is
+            // among them: every other suite hands a reading built from its parts, so the line that
+            // folds this one off the walk could be dropped for the empty answer and nothing else
+            // would notice.
+            var academy = OpenlyKnownColonyFixture.standOnEntity(
+                ColonyMarketFixture.buildFoundConcealedColony("independent"),
+                OpenlyKnownColonyFixture.ACADEMY_ENTITY_ID);
+
+            when(academy.getId())
+                .thenReturn(ACADEMY_ID);
+
+            OpenlyKnownColonyFixture.registerTheAcademy();
+
+            var reading = SystemColonyReading.readColoniesIn(
+                null,
+                null,
+                new Colonies(List.of(new Colony(academy, false))),
+                null);
+
+            assertThat(reading.isOpenlyKnownColony(ACADEMY_ID))
+                .isTrue();
         }
     }
 

@@ -13,13 +13,8 @@ import java.util.Set;
  * from a contest meets a colony as an id beside a number, and whether the place behind it is a
  * landmark lives on its entity - which no row carries.
  *
- * <p>Asked only of a colony that conceals itself, which is a handful per sector. A concealment that
- * was never claimed cannot be excused, so every other colony is a walk step and no more.
- *
- * <p>Answers what a box may say about a colony and nothing about what it may show. A colony here is
- * concealed as far as every visibility rule is concerned, and the gate that holds concealed
- * colonies back was designed around one of these - so the two facts stay apart, and admitting a
- * landmark to the map remains the business of somebody having seen it.
+ * <p>Answers what a box may say about a colony and nothing about what it may show, for the reason
+ * {@link OpenlyKnownColonyRegistry} states.
  *
  * @param openlyKnownColonyIds the market ids of the concealed colonies the sector openly points at
  */
@@ -58,8 +53,10 @@ public record OpenlyKnownColonyLookup(
 
             var colonyId = colony.market().getId();
 
-            // The concealment is asked first, so the registry is consulted for the few colonies a
-            // finding could ever be made about rather than for every place in the sector.
+            // The concealment is asked first, so the registry is consulted for the handful of
+            // colonies per sector a finding could ever be made about rather than for every place in
+            // it. A concealment that was never claimed cannot be excused, so every other colony is
+            // a walk step and no more.
             if (colonyId != null
                     && colony.isHidden()
                     && OpenlyKnownColonyRegistry.isOpenlyKnownEntity(
