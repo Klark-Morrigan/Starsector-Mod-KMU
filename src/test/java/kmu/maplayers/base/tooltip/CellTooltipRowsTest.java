@@ -89,6 +89,10 @@ final class CellTooltipRowsTest {
     private static final int NOTE_RUN = 1;
     private static final int INDEXED_QUALIFIED_NOTE_RUN = 3;
 
+    // What a line naming something and calling one thing out is made of, which is what an absent
+    // remark has to leave it as: the name and the status, and no run for the remark it never made.
+    private static final int QUALIFIED_LINE_RUNS = 2;
+
     // The same two runs on a line led by a mark, each pushed along by the image it opens on.
     private static final int MARKED_INDEX_RUN = 2;
     private static final int MARKED_INDEXED_QUALIFIER_RUN = 3;
@@ -543,6 +547,21 @@ final class CellTooltipRowsTest {
 
             assertThat(readLabelTextRun(row, QUALIFIER_RUN))
                 .isEqualTo(new TextSpan("worsening", HIGHLIGHT));
+        }
+
+        @Test
+        void buildListedRowAddsNoRunForALineRemarkingNothing() {
+            // The third absence, pinned for the reason the two above it are: the remark closes the
+            // line, so a line making none has to end on the run it already had rather than on an
+            // empty one the box would still measure and part from its neighbour.
+            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
+                CellTooltipEntryLine
+                    .createLine(null, "Ion Storm", CellTooltipRows.NO_SCORE)
+                    .qualifiedWith("worsening"),
+                MEMBER_LEVEL);
+
+            assertThat(row.labelRuns())
+                .hasSize(QUALIFIED_LINE_RUNS);
         }
 
         @Test
