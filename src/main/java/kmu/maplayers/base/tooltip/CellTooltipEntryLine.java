@@ -4,8 +4,9 @@ import java.util.Objects;
 
 /**
  * One thing a cell-tooltip block lists: what it is called, the mark it is shown by, whatever the block
- * counts it in, any working that number came out of, and any status called out beside it. What is
- * listed - and nothing whatever about how it is laid.
+ * counts it in, any working that number came out of, and any status it calls out - after its name, or
+ * inside the name where the name already says it. What is listed - and nothing whatever about how it
+ * is laid.
  *
  * <p>Held as a value rather than as a built line because the two decisions belong on opposite sides of
  * the box. A layer knows what its block lists; the block ({@link CellTooltipSections}) knows the tier,
@@ -20,6 +21,8 @@ import java.util.Objects;
  *                         carrying none. One value rather than a path beside a colouring, so a line
  *                         showing no mark has nowhere to state how one would have been drawn
  * @param labelText        what the line is called
+ * @param labelFinding     the stretch of the name that is itself one of the box's findings, or null
+ *                         where the name says none - a line calls at most one out inside its own name
  * @param indexPlace       where the line falls in the ordering it belongs to and what that place
  *                         decided, run on after its name, or null where the line has no place worth
  *                         stating
@@ -42,6 +45,7 @@ import java.util.Objects;
 public record CellTooltipEntryLine(
     CellTooltipMark mark,
     String labelText,
+    CellTooltipLabelFinding labelFinding,
     CellTooltipIndexPlace indexPlace,
     String noteText,
     String qualifierText,
@@ -49,6 +53,11 @@ public record CellTooltipEntryLine(
     String valueWorkingText,
     boolean isAside,
     boolean isValueUncounted) {
+
+    // What a line whose name says none of the box's findings carries where the gilded stretch would
+    // be, which is every line until a resolver finds one of its words already on the line. Named for
+    // the reason the absences below are.
+    private static final CellTooltipLabelFinding NO_LABEL_FINDING = null;
 
     // What a line with no place to state carries in the index slot, for the same reason the two
     // absences below are named: the factory says what the plainest line has rather than passing
@@ -110,6 +119,7 @@ public record CellTooltipEntryLine(
         return new CellTooltipEntryLine(
             mark,
             labelText,
+            NO_LABEL_FINDING,
             NO_PLACE,
             NO_NOTE,
             NO_QUALIFIER,
@@ -142,6 +152,36 @@ public record CellTooltipEntryLine(
     public CellTooltipEntryLine qualifiedWith(String qualifierText) {
         var parts = new LineParts(this);
         parts.qualifierText = qualifierText;
+        return parts.buildLine();
+    }
+
+    /**
+     * Returns a copy of this line reading the stretch of its own name between {@code startIndex} and
+     * {@code endIndex} as one of the box's findings - a station called <em>Abandoned Station</em>
+     * saying in its first word what the line would otherwise have called out after it.
+     *
+     * <p>Layered on like the {@linkplain #qualifiedWith status after the name} because it is the same
+     * finding drawn somewhere else: the word has qualified in every sense, and only where it is laid
+     * differs. So a line carrying both states two findings about two different things, and neither
+     * displaces the other.
+     *
+     * <p>A range into the label rather than the words themselves, for the reason
+     * {@link CellTooltipLabelFinding} holds one: the name is the only copy of the name, and a stretch
+     * free to carry its own text is a stretch free to disagree with it.
+     *
+     * @param startIndex where the finding begins in the label, counted in characters from its start
+     * @param endIndex   the character position just past the finding's last
+     * @return an otherwise-identical line reading that stretch of its name as a finding
+     */
+    public CellTooltipEntryLine callsOutInLabel(int startIndex, int endIndex) {
+
+        if (endIndex > labelText.length()) {
+            throw new IllegalArgumentException("endIndex must not run past the label");
+        }
+        var parts = new LineParts(this);
+
+        parts.labelFinding = new CellTooltipLabelFinding(startIndex, endIndex);
+
         return parts.buildLine();
     }
 
@@ -266,6 +306,7 @@ public record CellTooltipEntryLine(
 
         private CellTooltipMark mark;
         private String labelText;
+        private CellTooltipLabelFinding labelFinding;
         private CellTooltipIndexPlace indexPlace;
         private String noteText;
         private String qualifierText;
@@ -277,6 +318,7 @@ public record CellTooltipEntryLine(
         private LineParts(CellTooltipEntryLine line) {
             mark = line.mark();
             labelText = line.labelText();
+            labelFinding = line.labelFinding();
             indexPlace = line.indexPlace();
             noteText = line.noteText();
             qualifierText = line.qualifierText();
@@ -290,6 +332,7 @@ public record CellTooltipEntryLine(
             return new CellTooltipEntryLine(
                 mark,
                 labelText,
+                labelFinding,
                 indexPlace,
                 noteText,
                 qualifierText,

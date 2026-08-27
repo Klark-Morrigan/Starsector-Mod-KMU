@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.CellTooltipLabelFinding;
 import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -21,6 +22,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * suppresses, and the pairs the game itself cannot produce - a claim holder is listed, open and
  * territorially owned, so the facts behind one are posed as vanilla builds them and the single word
  * asserted.
+ *
+ * <p>The other half is where a word is stated. A word the colony's own name already carries is picked
+ * out of that name rather than repeated after it, so the cases read both parts of the line at once -
+ * and the ones that pin how a name is matched are worth as much as the vocabulary itself, the
+ * consequence of a loose match being gold letters in the middle of a name rather than a word quietly
+ * not being said.
  *
  * <p>Pure over a small value with no Starsector types, the boxes' own carriers being the thing the
  * shared read exists not to be built around.
@@ -273,24 +280,109 @@ final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyDropsAWordTheColonyIsAlreadyCalled() {
+        void qualifyColonyGildsAWordTheColonyIsAlreadyCalled() {
             // A station called Abandoned Station is the shape the rule exists for: the word is
-            // already on the line, and repeating it reads as a fault in the box.
+            // already on the line, so it is stated where it stands rather than repeated at the end -
+            // which would read as a fault in the box - and the end of the line says nothing.
+            var line = qualifyLine("Abandoned Station", buildUnlistedFacts(ColonyKind.SPACE_DERELICT));
+
+            assertThat(line.labelFinding())
+                .isEqualTo(new CellTooltipLabelFinding(0, 9));
+            assertThat(line.qualifierText())
+                .isNull();
+        }
+
+        @Test
+        void qualifyColonyCallsTheWordOutAtTheEndOfALineTheNameDoesNotSay() {
+            // The same derelict under a name that says nothing about what it is, which is the case
+            // the gilding leaves untouched: the word has nowhere in the name to be stated, so it
+            // closes the line as it always did.
+            var line = qualifyLine("Sentinel Gantries", buildUnlistedFacts(ColonyKind.SPACE_DERELICT));
+
+            assertThat(line.labelFinding())
+                .isNull();
+            assertThat(line.qualifierText())
+                .isEqualTo("abandoned");
+        }
+
+        @Test
+        void qualifyColonyKeepsUnlistedSuppressedBehindAWordItGilded() {
+            // A gilded word has still qualified. The fallback is suppressed by the condition holding
+            // above it, not by where the word ends up being stated - so a derelict named for what it
+            // is never falls through to the weaker statement.
             assertThat(qualify("Abandoned Station", buildUnlistedFacts(ColonyKind.SPACE_DERELICT)))
                 .isNull();
         }
 
         @Test
-        void qualifyColonyKeepsUnlistedSuppressedBehindAWordItDropped() {
-            // A dropped word has still qualified. The fallback is suppressed by the condition
-            // holding above it, not by anything being printed - so a derelict named for what it is
-            // reads bare rather than falling through to the weaker statement.
-            assertThat(qualify("Abandoned Station", new ColonyQualifierFacts(
-                    ColonyKind.SPACE_DERELICT,
-                    HOLDS_NO_CLAIM,
-                    new ColonyConcealment(IS_UNFOUND, IS_OPEN, IS_A_SECRET),
-                    IS_UNLISTED)))
+        void qualifyColonyStatesTheRestOfTheVocabularyBesideAGildedName() {
+            // Two findings about two different things: what the place is, said in its own name, and
+            // that the player has not found it, said after the name. Moving the kind's word into the
+            // name says nothing about how the colony is out of sight.
+            var line = qualifyLine("Abandoned Station", new ColonyQualifierFacts(
+                ColonyKind.SPACE_DERELICT,
+                HOLDS_NO_CLAIM,
+                new ColonyConcealment(IS_UNFOUND, IS_OPEN, IS_A_SECRET),
+                IS_UNLISTED));
+
+            assertThat(line.labelFinding())
+                .isEqualTo(new CellTooltipLabelFinding(0, 9));
+            assertThat(line.qualifierText())
                 .isEqualTo("undiscovered");
+        }
+
+        @Test
+        void qualifyColonyGildsAWordAHyphenPartsFromTheRestOfTheName() {
+            // A hyphen parts one word from another as plainly as a space does, and a reader would not
+            // forgive the box for missing it.
+            assertThat(qualifyLine("Abandoned-Station", buildUnlistedFacts(ColonyKind.SPACE_DERELICT))
+                    .labelFinding())
+                .isEqualTo(new CellTooltipLabelFinding(0, 9));
+        }
+
+        @Test
+        void qualifyColonyGildsNothingInANameThatMerelyOpensWithTheWord() {
+            // The whole-word rule, and the case that makes it worth having: the consequence of a bare
+            // containment is now gold letters across the first nine characters of a name that does not
+            // say the word at all, so the word closes the line instead.
+            var line = qualifyLine("Abandonedium", buildUnlistedFacts(ColonyKind.SPACE_DERELICT));
+
+            assertThat(line.labelFinding())
+                .isNull();
+            assertThat(line.qualifierText())
+                .isEqualTo("abandoned");
+        }
+
+        @Test
+        void qualifyColonyGildsTheNamesOwnSpellingOfTheWord() {
+            // The vocabulary is lower case and a name is not. What is picked out is the stretch of the
+            // name that matched, so nothing rewrites a name to match a lookup word and the box cannot
+            // quietly disagree with the map about what a place is called.
+            var line = qualifyLine("ABANDONED STATION", buildUnlistedFacts(ColonyKind.SPACE_DERELICT));
+
+            assertThat(line.labelFinding())
+                .isEqualTo(new CellTooltipLabelFinding(0, 9));
+            assertThat(line.labelText())
+                .isEqualTo("ABANDONED STATION");
+        }
+
+        @Test
+        void qualifyColonyGildsOneStretchOfANameThatSaysTheWordTwice() {
+            // At most one gilded stretch per line, and it is the first the reader meets. Two of them
+            // would cost the line model a list of parts where one part does, for a shape nothing has
+            // ever needed.
+            assertThat(qualifyLine(
+                    "Abandoned Abandoned Yards",
+                    buildUnlistedFacts(ColonyKind.SPACE_DERELICT))
+                    .labelFinding())
+                .isEqualTo(new CellTooltipLabelFinding(0, 9));
+        }
+
+        @Test
+        void qualifyColonyGildsAWholeNameThatIsNothingButTheWord() {
+            assertThat(qualifyLine("Abandoned", buildUnlistedFacts(ColonyKind.SPACE_DERELICT))
+                    .labelFinding())
+                .isEqualTo(new CellTooltipLabelFinding(0, 9));
         }
 
         @Test
@@ -332,12 +424,17 @@ final class ColonyQualifierTest {
     // above reads.
     //
     // The name is handed in beside the facts rather than held among them, because that is where the
-    // resolver reads it from: one rule drops a word the colony is already called, and it reads the
-    // label the line carries.
+    // resolver reads it from: one rule gilds a word the colony is already called into its own name,
+    // and it reads the label the line carries.
     private static String qualify(String colonyName, ColonyQualifierFacts facts) {
-        return ColonyQualifier
-            .qualifyColony(buildLine(colonyName), facts)
-            .qualifierText();
+        return qualifyLine(colonyName, facts).qualifierText();
+    }
+
+    // The whole line the resolver came back with, for the cases about a word the name already says -
+    // which are read off two parts at once, the stretch gilded in the name and what is left to close
+    // the line.
+    private static CellTooltipEntryLine qualifyLine(String colonyName, ColonyQualifierFacts facts) {
+        return ColonyQualifier.qualifyColony(buildLine(colonyName), facts);
     }
 
     // A colony's line before anything has been called out on it.

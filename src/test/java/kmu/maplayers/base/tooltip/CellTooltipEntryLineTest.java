@@ -8,10 +8,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Pins what a listed thing is composed of and what it leaves unstated: a plain line calls nothing out
- * and shows its number alone, a qualifier, a remark and a working are each layered onto one without
- * disturbing what it already carried, and a line with no name or no value is refused where the caller
- * that composed it is still on the stack rather than surfacing inside a draw with nothing to say which
- * line was meant.
+ * and shows its number alone, a qualifier, a stretch of the name that is itself a finding, a remark and
+ * a working are each layered onto one without disturbing what it already carried, and a line with no
+ * name, no value or a stretch running past its name is refused where the caller that composed it is
+ * still on the stack rather than surfacing inside a draw with nothing to say which line was meant.
  *
  * <p>What the line's mark is and how it is coloured is {@link CellTooltipMarkTest}'s: the line holds a
  * mark or holds none, and cannot state anything about one it does not have.
@@ -24,6 +24,10 @@ final class CellTooltipEntryLineTest {
 
     // What a line showing nothing at its head carries where a mark would be.
     private static final CellTooltipMark NO_MARK = null;
+
+    // What a line whose name says none of the box's findings carries there, which is every line until
+    // a resolver finds one of its words already on it.
+    private static final CellTooltipLabelFinding NO_LABEL_FINDING = null;
 
     // What a line with no place in any ordering carries there - the plain case, and what every line
     // built through the factory has until one is stated on it.
@@ -51,6 +55,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         CREST_MARK,
                         "The Hegemony",
+                        NO_LABEL_FINDING,
                         NO_PLACE,
                         NO_NOTE,
                         null,
@@ -121,6 +126,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         CREST_MARK,
                         "The Hegemony",
+                        NO_LABEL_FINDING,
                         NO_PLACE,
                         NO_NOTE,
                         "(core)",
@@ -143,6 +149,69 @@ final class CellTooltipEntryLineTest {
     }
 
     @Nested
+    class CallsOutInLabel {
+
+        @Test
+        void callsOutInLabelPicksTheStretchOutLeavingTheRestOfTheLineAsItWas() {
+
+            var line = CellTooltipEntryLine
+                .createLine(NO_MARK, "Abandoned Station", "0")
+                .callsOutInLabel(0, 9);
+
+            assertThat(line)
+                .isEqualTo(
+                    new CellTooltipEntryLine(
+                        NO_MARK,
+                        "Abandoned Station",
+                        new CellTooltipLabelFinding(0, 9),
+                        NO_PLACE,
+                        NO_NOTE,
+                        null,
+                        "0",
+                        null,
+                        IS_LISTED_IN_ITS_OWN_RIGHT,
+                        IS_VALUE_EARNED));
+        }
+
+        @Test
+        void callsOutInLabelKeepsAStatusTheLineAlreadyCallsOutAfterItsName() {
+            // The two are the same finding drawn in two places rather than one displacing the other, so
+            // a colony saying what it is in its name and unfound besides states both.
+            var line = CellTooltipEntryLine
+                .createLine(NO_MARK, "Abandoned Station", "0")
+                .qualifiedWith("undiscovered")
+                .callsOutInLabel(0, 9);
+
+            assertThat(line.qualifierText())
+                .isEqualTo("undiscovered");
+            assertThat(line.labelFinding())
+                .isEqualTo(new CellTooltipLabelFinding(0, 9));
+        }
+
+        @Test
+        void callsOutInLabelRefusesAStretchRunningPastTheName() {
+            // Checked where the resolver that found the stretch is still on the stack: a range past the
+            // end of the label otherwise surfaces inside the draw that splits it, well past the point
+            // that could say which line was meant.
+            assertThatThrownBy(() -> CellTooltipEntryLine
+                    .createLine(NO_MARK, "Culann", "6")
+                    .callsOutInLabel(0, 9))
+                .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        void callsOutInLabelLeavesTheLineItWasBuiltFromSayingNothingInItsName() {
+            // A refinement returns a new value, so a caller gilding one line of a resolved list cannot
+            // reach into the line another caller is still holding.
+            var plainLine = CellTooltipEntryLine.createLine(NO_MARK, "Abandoned Station", "0");
+            plainLine.callsOutInLabel(0, 9);
+
+            assertThat(plainLine.labelFinding())
+                .isNull();
+        }
+    }
+
+    @Nested
     class NotedWith {
 
         @Test
@@ -157,6 +226,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         CREST_MARK,
                         "Sentinel Gantries",
+                        NO_LABEL_FINDING,
                         NO_PLACE,
                         "last seen 34 days ago (c206.05.12)",
                         null,
@@ -207,6 +277,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         CREST_MARK,
                         "The Hegemony",
+                        NO_LABEL_FINDING,
                         new CellTooltipIndexPlace("[2]", CellTooltipIndexOutcome.WON),
                         NO_NOTE,
                         null,
@@ -332,6 +403,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         NO_MARK,
                         "Small: 2",
+                        NO_LABEL_FINDING,
                         NO_PLACE,
                         NO_NOTE,
                         null,

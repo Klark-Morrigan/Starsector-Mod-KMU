@@ -347,9 +347,19 @@ view, and they were each stated in one box and not the other before the read was
 Two of the five never join what stands above them. `undiscovered` displaces `hidden` - a colony the
 player has not found is concealed from them by that alone - and `unlisted` speaks only where nothing
 above it held, or it would repeat itself on every derelict and every dead world, both being
-off-economy by construction. The suppression is by the condition holding rather than by anything
-being printed, which is what lets a station already called *Abandoned Station* drop the word it
-duplicates and still read bare. `hidden` is withheld from a colony the sector openly points at -
+off-economy by construction. The suppression is by the condition holding rather than by where a word
+ends up being stated, which is what lets a station already called *Abandoned Station* say its word
+inside its own name and still suppress `unlisted` below.
+That name is the second place a word can be stated. Where the colony is already called one of the
+five, the occurrence *in the name* is drawn in the qualifier's gold
+(`CellTooltipEntryLine.callsOutInLabel`) and nothing is repeated at the end of the line - so the one
+shape that most needs telling apart from an ordinary colony is not the one the box says nothing
+whatever about. The resolution is untouched: the same words in the same order, and a gilded word has
+qualified in every sense, drawn somewhere else. At most one stretch is gilded, the first the name
+carries, and the rest close the line as usual - so an *Abandoned Station* the player has not found
+gilds `Abandoned` and still reads `undiscovered`. The match is a whole word, parted by anything that
+is not a letter or a digit so *Abandoned-Station* counts and *Abandonedium* does not, and what is
+drawn is the name's own spelling of it. `hidden` is withheld from a colony the sector openly points at -
 Galatia Academy, whose station is permanently visible while the market hung on it is a stand-in
 vanilla never registers with the economy and marks hidden to keep off the books, so it wears the
 identical flag a pirate base does for an entirely different reason. Nothing on either market parts

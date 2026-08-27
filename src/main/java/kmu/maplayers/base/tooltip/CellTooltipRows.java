@@ -7,6 +7,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.text.KmlibStrings;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -33,6 +34,11 @@ import java.util.List;
  * for the name beside it takes that name's own colour, so the pair reads as one thing and the eye is
  * not pulled to the run carrying the least of the meaning; a mark that is a picture in its own right -
  * a crest - keeps the colours its asset authored.
+ *
+ * <p>A name may itself hold one of the box's findings, and that stretch is drawn in the qualifier's
+ * gold where it stands rather than repeated at the end of the line. Gilding is cosmetic and reaches
+ * nothing else: the same words are picked out of the same name in the same shade a status after the
+ * name would have read in, so a finding cannot come out differently for a thing named after itself.
  *
  * <p>Held apart from {@link SystemCellTooltip} because the two answer different questions - that class
  * decides how the box is framed, these decide how one line inside it reads - and because a body is
@@ -62,6 +68,16 @@ public final class CellTooltipRows {
     // no reader could tell apart.
     private static final float MEMBER_INDENT = 14f;
 
+    // Where a line's name opens among its runs. Every line has one, whether the name is a single run
+    // or the first of the stretches a gilded name is split into, so the row is opened on it and the
+    // rest of the name follows.
+    private static final int FIRST_LABEL_SPAN = 0;
+
+    // The most stretches a gilded name comes to - what stands before the finding, the finding, and
+    // what stands after it. Fewer where the finding sits at either end of the name, and the sizing is
+    // the ceiling rather than a promise.
+    private static final int GILDED_LABEL_SPANS = 3;
+
     private CellTooltipRows() {
     }
 
@@ -79,6 +95,7 @@ public final class CellTooltipRows {
      * @return the run, ready to continue a line
      */
     public static TextSpan buildQualifierSpan(String text) {
+
         return new TextSpan(
             text,
             StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve());
@@ -104,6 +121,7 @@ public final class CellTooltipRows {
      * @return the row, ready to add to a body
      */
     public static TooltipRow.CentredRow buildBannerRow(String crestSpritePath, String text) {
+
         var textSpan = new TextSpan(text, StarsectorUiColour.VANILLA_TEXT.resolve());
 
         // A faction the game gives no crest resolves to no path at all, so the line is built from its
@@ -129,6 +147,7 @@ public final class CellTooltipRows {
      * @return the row, ready to open a block
      */
     static TooltipRow.TableRow buildSectionHeadingRow(String text) {
+
         return TooltipRow
             .createRow(new TextSpan(text, StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve()))
             .clearsCrestColumn();
@@ -153,6 +172,7 @@ public final class CellTooltipRows {
      * @return the row, ready to add to a block
      */
     static TooltipRow buildListedRow(CellTooltipEntryLine line, CellTooltipEntryLevel level) {
+
         if (level.isListedInItsOwnRight()) {
             return buildEntryRow(line, level);
         }
@@ -201,7 +221,8 @@ public final class CellTooltipRows {
         var textColour = StarsectorUiColour.VANILLA_TEXT.resolve();
 
         return finishListedRow(
-            openLabel(line, textColour).indentsBy(level.indentDepth() * MEMBER_INDENT),
+            openLabel(line, textColour)
+                .indentsBy(level.indentDepth() * MEMBER_INDENT),
             line,
             level,
             textColour);
@@ -243,16 +264,88 @@ public final class CellTooltipRows {
     // whose meaning is in the words - an icon coloured to carry across the sector map arrives here far
     // brighter than the plain text of the account it is sitting in. A crest says otherwise and keeps
     // its own pixels, being a picture of a thing rather than a shorthand for it.
+    //
+    // The name itself may be more than one run, a line whose name says one of the box's findings
+    // picking that stretch out in the finding's own gold.
     private static TooltipRow.TableRow openLabel(CellTooltipEntryLine line, Color labelColour) {
-        var lineColour = resolveLabelColour(line, labelColour);
-        var labelSpan = new TextSpan(line.labelText(), lineColour);
 
-        if (!line.hasMark()) {
-            return TooltipRow.createRow(labelSpan);
+        var lineColour = resolveLabelColour(line, labelColour);
+        var labelSpans = resolveLabelSpans(line, lineColour);
+        var openingSpan = labelSpans.get(FIRST_LABEL_SPAN);
+
+        var openedRow = line.hasMark()
+            ? TooltipRow.createRow(resolveMarkSpan(line.mark(), lineColour)).continuesWith(openingSpan)
+            : TooltipRow.createRow(openingSpan);
+
+        return continueWithLabelSpans(openedRow, labelSpans);
+    }
+
+    // The runs a line's name is drawn as: one run of its own colour, or the stretch that reads as a
+    // finding picked out in gold with what surrounds it either side of it.
+    //
+    // The stretches are exact substrings and every run past the first joins the one before it, so the
+    // name draws as its author spelled it. Split into runs a label spaces, a name would gain a space
+    // wherever the finding did not happen to sit against one - and a box that misspells the name it is
+    // gilding says less about the place than the plain line it replaced.
+    //
+    // In the same gold the status after the name reads in, through the same run, because it is the
+    // same finding: the word has qualified in every sense the resolution cares about, and only where
+    // it is laid differs.
+    private static List<TextSpan> resolveLabelSpans(CellTooltipEntryLine line, Color lineColour) {
+
+        var labelText = line.labelText();
+        var labelFinding = line.labelFinding();
+
+        if (labelFinding == null) {
+            return List.of(new TextSpan(labelText, lineColour));
         }
-        return TooltipRow
-            .createRow(resolveMarkSpan(line.mark(), lineColour))
-            .continuesWith(labelSpan);
+        var findingStart = labelFinding.startIndex();
+        var findingEnd = labelFinding.endIndex();
+        var labelSpans = new ArrayList<TextSpan>(GILDED_LABEL_SPANS);
+
+        appendLabelSpan(
+            labelSpans,
+            new TextSpan(
+                labelText.substring(0, findingStart),
+                lineColour));
+
+        appendLabelSpan(
+            labelSpans,
+            buildQualifierSpan(labelText.substring(findingStart, findingEnd)));
+
+        appendLabelSpan(
+            labelSpans,
+            new TextSpan(
+                labelText.substring(findingEnd),
+                lineColour));
+
+        return labelSpans;
+    }
+
+    // Adds one stretch of a split name, joined to whatever is already there and passed over where the
+    // finding sat at either end of the name and left nothing on that side. An empty run would draw
+    // nothing and be charged nothing, but it would also leave the line stating a run its author never
+    // wrote, which is what the count of runs above it is read against.
+    private static void appendLabelSpan(List<TextSpan> labelSpans, TextSpan labelSpan) {
+
+        if (!labelSpan.hasContent()) {
+            return;
+        }
+        labelSpans.add(labelSpans.isEmpty() ? labelSpan : labelSpan.joinsPreviousRun());
+    }
+
+    // Runs a row on into the rest of a split name. Nothing at all for the ordinary line, whose name is
+    // the single run its row was opened on.
+    private static TooltipRow.TableRow continueWithLabelSpans(
+            TooltipRow.TableRow row,
+            List<TextSpan> labelSpans) {
+
+        var continuedRow = row;
+
+        for (var labelSpan : labelSpans.subList(FIRST_LABEL_SPAN + 1, labelSpans.size())) {
+            continuedRow = continuedRow.continuesWith(labelSpan);
+        }
+        return continuedRow;
     }
 
     // The run a mark is drawn as: tinted to the line's own colour where the mark stands in for the
@@ -262,6 +355,7 @@ public final class CellTooltipRows {
     // it is: the same crest artwork could be either, and only whatever composed the line knows whether
     // the mark is the subject or a label for it.
     private static ImageSpan resolveMarkSpan(CellTooltipMark mark, Color lineColour) {
+
         if (!mark.isInLineColour()) {
             return new ImageSpan(mark.spritePath());
         }
@@ -289,13 +383,17 @@ public final class CellTooltipRows {
         // to compare it with them - which is the one thing it cannot be compared with.
         var valueSpan = new TextSpan(
             line.valueText(),
-            line.isValueUncounted() ? StarsectorUiColour.VANILLA_GRAY.resolve() : valueColour);
+            line.isValueUncounted()
+                ? StarsectorUiColour.VANILLA_GRAY.resolve()
+                : valueColour);
 
         if (!KmlibStrings.hasText(line.valueWorkingText())) {
             return row.carriesValue(valueSpan);
         }
         return row.carriesValueRuns(List.of(
-            new TextSpan(line.valueWorkingText(), StarsectorUiColour.VANILLA_GRAY.resolve()),
+            new TextSpan(
+                line.valueWorkingText(),
+                StarsectorUiColour.VANILLA_GRAY.resolve()),
             valueSpan));
     }
 
@@ -326,6 +424,7 @@ public final class CellTooltipRows {
     // a listed thing and one beneath a member read alike - and in the same shade a value's working
     // takes, since both are arithmetic rather than a finding.
     private static Color resolveLabelColour(CellTooltipEntryLine line, Color tierColour) {
+
         return line.isAside()
             ? StarsectorUiColour.VANILLA_GRAY.resolve()
             : tierColour;
@@ -358,6 +457,7 @@ public final class CellTooltipRows {
     // The shade a place reads in, by what it decided. Settled here rather than at whatever resolved
     // the outcome, so two layers marking a decided ordering cannot mark it in two different greens.
     private static Color resolveIndexColour(CellTooltipIndexOutcome outcome) {
+
         return switch (outcome) {
             case WON -> StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN.resolve();
             case LOST -> StarsectorUiColour.VANILLA_HIGHLIGHT_RED.resolve();

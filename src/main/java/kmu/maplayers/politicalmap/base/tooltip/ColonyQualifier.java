@@ -6,7 +6,6 @@ import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -39,10 +38,21 @@ import java.util.Optional;
  * which is the separation the word was wanted for: a landmark reads as absent from the economy's
  * listing and a base keeping out of sight reads as concealed.
  *
- * <p>Suppression is by the condition holding rather than by anything being printed, which is what
- * keeps the fallback honest: a derelict named for what it is drops its own word below and still
- * reads bare, rather than falling through to the weaker statement the suppression was meant to
- * improve on.
+ * <p>Suppression is by the condition holding rather than by anything being stated at the end of the
+ * line, which is what keeps the fallback honest: a derelict named for what it is says its word inside
+ * its name and still suppresses {@code unlisted} below, rather than falling through to the weaker
+ * statement the suppression was meant to improve on.
+ *
+ * <p>A word the colony's own name already carries moves into the name rather than being repeated
+ * after it: the stretch that says it is drawn in the qualifier's gold where it stands. The finding is
+ * made exactly once, and it is made where the reader is already looking - where dropping the word
+ * outright left the one shape that most needs telling apart from an ordinary colony with nothing on
+ * its line at all. At most one word moves; the rest are read at the end of the line as usual.
+ *
+ * <p>Which word moves is settled by the name and not by the resolution. The list, the order and the
+ * suppressions are identical either way: a gilded word has qualified in every sense, resolved by the
+ * same predicate and drawn somewhere else, so a reading of what a colony is cannot come out
+ * differently for a colony that happens to be named after itself.
  *
  * <p>A qualifier rather than a note, so it reads in the finding's shade: what the box has found out
  * about the place, where the remark beside it - how current the news is - is the box talking about
@@ -53,6 +63,11 @@ import java.util.Optional;
  * and the altitudes disagree about case.
  */
 public final class ColonyQualifier {
+
+    // What the name search answers where the colony is not called the word at all. Named rather than
+    // read as a bare negative index, since the search is over positions and one of them being an
+    // absence is the only thing a caller has to know about it.
+    private static final int NOT_IN_NAME = -1;
 
     private ColonyQualifier() {
     }
@@ -65,6 +80,12 @@ public final class ColonyQualifier {
      * each other: they are drawn in different shades and in slots the line keeps apart - the
      * qualifier a finding, run on after the name; the remark quiet, closing the line.
      *
+     * <p>Where the colony's name says one of the words itself, that word is gilded in place instead of
+     * being stated after the name. Two findings in one shade on one line is the right reading and not
+     * a clash - a gilded <em>Abandoned Station</em> beside an {@code undiscovered} states two things
+     * about two different subjects, and a rule about how much gold a line may carry would be a
+     * typographic budget standing in for a statement about the world.
+     *
      * @param line  the colony's line as the box has built it so far
      * @param facts what the box knows about the colony beyond its own number; null states nothing
      * @return the line, called out where anything is due and untouched otherwise
@@ -76,12 +97,27 @@ public final class ColonyQualifier {
         if (facts == null) {
             return line;
         }
-        var statedWords = dropWordsAlreadyInName(resolveWords(facts), line.labelText());
+        var words = resolveWords(facts);
 
-        if (statedWords.isEmpty()) {
+        if (words.isEmpty()) {
             return line;
         }
-        return line.qualifiedWith(String.join(
+        var wordInName = findFirstWordInName(words, line.labelText());
+        var statedWords = new ArrayList<>(words);
+        var qualifiedLine = line;
+
+        // The word the name already carries is gilded where it stands and leaves the list, so the
+        // finding is made exactly once. Every other word is read at the end of the line as usual.
+        if (wordInName != null) {
+            var word = statedWords.remove(wordInName.wordIndex());
+            qualifiedLine = line.callsOutInLabel(
+                wordInName.nameStartIndex(),
+                wordInName.nameStartIndex() + word.length());
+        }
+        if (statedWords.isEmpty()) {
+            return qualifiedLine;
+        }
+        return qualifiedLine.qualifiedWith(String.join(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_SEPARATOR),
             statedWords));
     }
@@ -112,9 +148,9 @@ public final class ColonyQualifier {
         } else if (concealment.isHiddenMarket() && !concealment.isOpenlyKnownMarket()) {
             words.add(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_HIDDEN));
         }
-        // The fallback, and the emptiness read here is the conditions above rather than what will
-        // survive the name check below - which is what lets a word dropped for being in the name
-        // still have qualified.
+        // The fallback, and the emptiness read here is the conditions above rather than what is left
+        // once the name has taken its word - which is what lets a word gilded into the name still
+        // have qualified.
         if (words.isEmpty() && !facts.isListedByEconomy()) {
             words.add(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_UNLISTED));
         }
@@ -137,27 +173,85 @@ public final class ColonyQualifier {
         };
     }
 
-    // Drops any word the colony is already called, case-insensitively. A station named "Abandoned
-    // Station" would otherwise read as abandoned twice over, and the rule is written over the whole
-    // vocabulary rather than attached to the one word it fires for today.
+    // The first word of the vocabulary the colony's own name carries, and where it starts in that
+    // name - or nothing where the name says none of them. A station named "Abandoned Station" would
+    // otherwise read as abandoned twice over, and the rule is written over the whole vocabulary
+    // rather than attached to the one word it fires for today.
+    //
+    // First in the name's reading order rather than in the resolved order, because the reader meets
+    // the name before the line's end and one gilded stretch is all a line carries. Two of the
+    // vocabulary in one name is a shape nothing has ever needed, and a second gilded stretch would
+    // cost the line model a list of parts where one part does.
     //
     // Read off the line's own label rather than off a name handed in beside it: what the reader can
     // see is exactly what the line says, and a second copy of the name would be free to disagree
     // with it.
-    private static List<String> dropWordsAlreadyInName(List<String> words, String colonyName) {
+    private static WordInName findFirstWordInName(List<String> words, String colonyName) {
 
-        if (colonyName == null) {
-            return words;
-        }
-        var loweredName = colonyName.toLowerCase(Locale.ROOT);
-        var statedWords = new ArrayList<String>(words.size());
+        WordInName firstWordInName = null;
 
-        for (var word : words) {
+        for (var wordIndex = 0; wordIndex < words.size(); wordIndex++) {
+            var nameStartIndex = findWholeWordIndex(colonyName, words.get(wordIndex));
 
-            if (!loweredName.contains(word.toLowerCase(Locale.ROOT))) {
-                statedWords.add(word);
+            if (nameStartIndex == NOT_IN_NAME) {
+                continue;
+            }
+            if (firstWordInName == null || nameStartIndex < firstWordInName.nameStartIndex()) {
+                firstWordInName = new WordInName(wordIndex, nameStartIndex);
             }
         }
-        return statedWords;
+        return firstWordInName;
+    }
+
+    // Where the name says the word as a word of its own, case-insensitively, or that it does not.
+    //
+    // A whole word rather than a bare containment, because the consequence is now gold letters in
+    // the middle of a name rather than a word quietly not being said: "Abandonedium" would be gilded
+    // across its first nine characters.
+    //
+    // Matched against the name as it is spelled rather than against a lowered copy of it, so the
+    // position returned indexes the name the line actually carries - a copy folded to one case is
+    // free to come out a different length and would slide the gilding along the name.
+    private static int findWholeWordIndex(String colonyName, String word) {
+
+        for (var index = 0; index + word.length() <= colonyName.length(); index++) {
+
+            if (colonyName.regionMatches(true, index, word, 0, word.length())
+                    && isWholeWordAt(colonyName, index, word.length())) {
+                return index;
+            }
+        }
+        return NOT_IN_NAME;
+    }
+
+    // Whether the stretch found at that position stands alone in the name rather than opening or
+    // closing a longer word.
+    private static boolean isWholeWordAt(String colonyName, int matchIndex, int wordLength) {
+        return isWordBoundaryAt(colonyName, matchIndex - 1)
+            && isWordBoundaryAt(colonyName, matchIndex + wordLength);
+    }
+
+    // Whether that position parts one word from another - anything that is not a letter or a digit,
+    // and the ends of the name itself. A hyphen among them, since "Abandoned-Station" says the word
+    // as plainly as the spaced form does and a reader would not forgive the box for missing it.
+    private static boolean isWordBoundaryAt(String colonyName, int index) {
+        return index < 0
+            || index >= colonyName.length()
+            || !Character.isLetterOrDigit(colonyName.charAt(index));
+    }
+
+    /**
+     * One of the vocabulary's words found in a colony's own name, and where the name says it.
+     *
+     * <p>The word is carried as its place in the resolved list rather than as the word itself, so the
+     * caller drops the one entry it found rather than the first entry equal to it - which is the same
+     * thing today and stops being so the moment the vocabulary can resolve one word twice.
+     *
+     * @param wordIndex      where the word sits in the resolved list
+     * @param nameStartIndex where the word starts in the name, counted in characters from its start
+     */
+    private record WordInName(
+        int wordIndex,
+        int nameStartIndex) {
     }
 }
