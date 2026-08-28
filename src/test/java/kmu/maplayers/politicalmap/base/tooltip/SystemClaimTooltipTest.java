@@ -30,7 +30,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildPresenceOnlyStanding;
@@ -51,6 +50,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -111,8 +111,9 @@ final class SystemClaimTooltipTest {
     private static final int RIVAL_SCORE = 8;
     private static final int OUTSIDER_SCORE = 3;
 
-    // Whether a faction may claim a system at all, which is what routes it into one rival block or the
-    // other - and, deliberately, the only thing that does.
+    // Whether a faction may claim a system at all, which is what tells the two rival blocks apart. The
+    // inner of the box's two axes: it divides whatever the relation to the claim holder has not
+    // already placed, and inside the allied block it is said on the line instead of by a heading.
     private static final boolean IS_TERRITORIAL = true;
     private static final boolean IS_NON_TERRITORIAL = false;
 
@@ -322,6 +323,39 @@ final class SystemClaimTooltipTest {
                     "Pirates");
             assertThat(readTableRow(sections, alliedEntryRow).labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan("8", HIGHLIGHT)));
+        }
+
+        @Test
+        void buildBodySectionsRoutesEachHoverAgainstTheAllianceSetAsItStandsThen() {
+            // Why the box holds the means of sampling a grouping rather than a grouping: it lives for
+            // the whole session while alliances form and dissolve inside it, so one taken at
+            // construction would go on filing a faction under the alliance it left an hour ago. Posed
+            // as the alliance dissolving between two hovers of the one system, which is the moment a
+            // held grouping would answer for a sector that had moved on.
+            holderGrouping = buildAllianceOf(HEGEMONY, TRITACHYON);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Allied with the claim holder:",
+                    "Tri-Tachyon");
+
+            holderGrouping = HolderGrouping.identity();
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Contested by:",
+                    "Tri-Tachyon");
         }
 
         @Test
@@ -907,19 +941,6 @@ final class SystemClaimTooltipTest {
             .thenReturn(Optional.of(statusRow));
 
         return statusRow;
-    }
-
-    // Two factions standing in one alliance, which is the state the allied block draws over. Built as
-    // plain data rather than through the mod that supplies alliances: the box asks the grouping which
-    // bloc a faction is in and nothing else, so a hand-built one poses the case exactly.
-    private static HolderGrouping buildAllianceOf(String firstFactionId, String secondFactionId) {
-
-        var allianceBlocId = "alliance-1";
-
-        return new HolderGrouping(
-            Map.of(firstFactionId, allianceBlocId, secondFactionId, allianceBlocId),
-            Map.of(allianceBlocId, firstFactionId),
-            Map.of(allianceBlocId, "Allied Powers"));
     }
 
     // The box read top to bottom as the words a player sees, headings and entries alike - the shape

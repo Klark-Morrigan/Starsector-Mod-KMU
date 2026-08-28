@@ -82,7 +82,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     // it and the line is the only place left to tell them apart; the other two blocks are headed by the
     // eligibility itself, where a qualifier would state one fact twice in the space of two rows.
     private static final boolean IS_STATING_ELIGIBILITY_ON_LINE = true;
-    private static final boolean IS_ELIGIBILITY_STATED_BY_THE_HEADING = false;
+    private static final boolean IS_ELIGIBILITY_LEFT_TO_THE_HEADING = false;
 
     // Where the alliance set behind the routing is taken from. A source rather than a grouping,
     // because a box lives for the whole session while alliances form and dissolve inside it - one
@@ -408,7 +408,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             contest,
             colonyReading,
             contest.selectRivalStandings(isWantedKind),
-            IS_ELIGIBILITY_STATED_BY_THE_HEADING);
+            IS_ELIGIBILITY_LEFT_TO_THE_HEADING);
     }
 
     // One block's entries over the standings routed into it, in the order the breakdown handed them
@@ -531,8 +531,11 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
          * a line is stays sayable on the line itself, so nothing is lost by not splitting them.
          */
         List<FactionClaimStanding> selectAlliedStandings() {
+
+            var claimantBlocId = resolveClaimantBlocId();
+
             return streamListedRivals()
-                .filter(this::isStandingWithClaimHolder)
+                .filter(standing -> isStandingInBloc(standing, claimantBlocId))
                 .toList();
         }
 
@@ -552,8 +555,10 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         List<FactionClaimStanding> selectRivalStandings(
                 Predicate<FactionClaimStanding> isWantedKind) {
 
+            var claimantBlocId = resolveClaimantBlocId();
+
             return streamListedRivals()
-                .filter(standing -> !isStandingWithClaimHolder(standing))
+                .filter(standing -> !isStandingInBloc(standing, claimantBlocId))
                 .filter(isWantedKind)
                 .toList();
         }
@@ -567,26 +572,31 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                 .filter(standing -> !standing.factionId().equals(breakdown.claimantFactionId()));
         }
 
-        // Whether a faction stands in the claim holder's own bloc. Bloc equality between two distinct
-        // factions is what an alliance amounts to here - the claimant is already out of the pool, so
-        // a faction can never match itself, and an ungrouped faction is its own bloc and matches
-        // nobody. That is why no test of whether the bloc is an alliance is needed beside it, and why
-        // an install with nothing grouping factions routes every rival exactly as it did before.
-        //
-        // A system nobody has claimed guards here rather than resolving a bloc for a claimant that
-        // does not exist: there is nobody to be allied with, so the allied block comes out empty and
-        // its heading - which names a holder - never draws over a system without one.
-        private boolean isStandingWithClaimHolder(FactionClaimStanding standing) {
+        // The bloc the claim holder stands in, or none at all over a system nobody has claimed -
+        // there being no holder to resolve one for, and so nobody for a listed faction to be allied
+        // with. A fact of the contest rather than of any one faction in it, so it is settled once per
+        // block rather than re-derived against every standing the block walks.
+        private String resolveClaimantBlocId() {
 
             var claimantFactionId = breakdown.claimantFactionId();
 
-            if (!KmlibStrings.hasText(claimantFactionId)) {
-                return false;
-            }
-            var claimantBlocId = holderGrouping.resolveBlocId(claimantFactionId);
+            return KmlibStrings.hasText(claimantFactionId)
+                ? holderGrouping.resolveBlocId(claimantFactionId)
+                : null;
+        }
 
-            return claimantBlocId != null
-                && claimantBlocId.equals(holderGrouping.resolveBlocId(standing.factionId()));
+        // Whether a faction stands in a given bloc. Bloc equality between two distinct factions is
+        // what an alliance amounts to here - the claimant is already out of the pool, so a faction
+        // can never match itself, and an ungrouped faction is its own bloc and matches nobody. That
+        // is why no test of whether the bloc is an alliance is needed beside it, and why an install
+        // with nothing grouping factions routes every rival exactly as it did before.
+        //
+        // A bloc nobody named matches nothing, which is what an unclaimed system yields: the allied
+        // block comes out empty, and its heading - which names a holder - never draws over a system
+        // without one.
+        private boolean isStandingInBloc(FactionClaimStanding standing, String blocId) {
+            return blocId != null
+                && blocId.equals(holderGrouping.resolveBlocId(standing.factionId()));
         }
 
         // Whether the player has found any of the colonies a faction's standing rests on - one

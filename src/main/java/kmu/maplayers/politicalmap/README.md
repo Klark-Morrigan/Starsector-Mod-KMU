@@ -391,24 +391,12 @@ answer two factions of one box under two different rules. The alliance set trave
 value and for the same reason (`HolderGroupingSource`, bound by `SystemClaimTooltip` and sampled
 per hover - a grouping held for the session would file a faction under the alliance it left an hour
 ago).
-Two axes place a faction below the claim, and the relation is the outer one without exception:
-everyone sharing the claim holder's bloc goes to `Allied with the claim holder:` whether or not they
-could have taken the system, and eligibility divides only what is left. The claim mechanic is
-faction-scoped and knows nothing of an alliance, so two allied factions in one system compete and one
-of them loses - filed on eligibility alone, that loser reads under `Contested by:` as fighting its own
-ally for a system the two of them jointly hold, which is the mod contradicting the alliances view one
-tab over. Bloc equality between two *distinct* factions is the whole test, the claimant being dropped
-before the comparison, so no check of whether the bloc is an alliance is needed beside it and an
-install without Nexerelin - where every faction is its own bloc - reads as the two eligibility blocks
-alone, with no branch taken anywhere. A system nobody claims has nobody to be allied with, and the
-block whose heading names a holder never draws over one. The allied heading names no eligibility, so
-the fact moves onto the row: a faction listed there that could never have claimed the system is
-qualified `non-territorial` on its own line, the device the decreed claim already uses. That
-qualifier is drawn only where the heading has not said it, so it is absent under `Non-territorial:` -
-the same one-fact-once rule `isStatingCoreClaimInBody` follows for the decree. Relations short of an
-alliance route nothing: a cooperative neighbour's colony really did compete and really did lose, a
-disposition threshold would be arbitrary and invisible, and dispositions drift, which would move a
-faction between headings between two hovers of one system. It is also where the layer's heading is declined for both of them: the claim line names
+Two axes place a faction into those blocks, and the relation to the claim holder is the outer one:
+`Allied with the claim holder:` takes everyone in the holder's bloc whatever their eligibility, and
+the two eligibility blocks divide what is left. Where an alliance leaves the heading unable to say
+which kind a line is, the line says it (`non-territorial`). Why the relation outranks eligibility,
+why an alliance and not a disposition routes, and why an install without Nexerelin needs no branch
+are all `SystemClaimContestTooltip`'s to state. It is also where the layer's heading is declined for both of them: the claim line names
 the decreed holder and marks the hold, so these are the two boxes that state the decree themselves. `ClaimScoreRowResolver` decides those lines: the faction's markets in the order the
 mechanic itself would settle them - strongest first, a tie falling to the earlier place in the
 economy's listing - so the one representing the faction comes out on top by that order rather than

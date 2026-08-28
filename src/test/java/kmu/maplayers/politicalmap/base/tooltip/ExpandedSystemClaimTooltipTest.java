@@ -34,7 +34,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -47,6 +46,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_QUALIFIER_RU
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -323,7 +323,7 @@ final class ExpandedSystemClaimTooltipTest {
             // The routing is the shared shape's and pinned there; what this case is about is that the
             // detail follows a faction into the block the relation put it in. An ally accounted for
             // only under `Contested by:` would be an account of a line the box no longer draws.
-            holderGrouping = buildAllianceOfBothFactions();
+            holderGrouping = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -499,19 +499,6 @@ final class ExpandedSystemClaimTooltipTest {
             .thenReturn(Optional.of(statusRow));
 
         return statusRow;
-    }
-
-    // The two factions posed here standing in one alliance, which is the state the allied block draws
-    // over. Built as plain data rather than through the mod that supplies it: the box asks the grouping
-    // for a bloc and nothing else, so a hand-built one poses the case exactly.
-    private static HolderGrouping buildAllianceOfBothFactions() {
-
-        var allianceBlocId = "alliance-1";
-
-        return new HolderGrouping(
-            Map.of(HEGEMONY, allianceBlocId, TRITACHYON, allianceBlocId),
-            Map.of(allianceBlocId, HEGEMONY),
-            Map.of(allianceBlocId, "Allied Powers"));
     }
 
     // The box read top to bottom as the words a player sees, headings, factions, colonies and terms

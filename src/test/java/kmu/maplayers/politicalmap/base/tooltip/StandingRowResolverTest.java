@@ -12,9 +12,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
+import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.tooltip.FactionAccountResolver.NO_ACCOUNT;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.buildEmptySector;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
@@ -488,12 +488,10 @@ final class StandingRowResolverTest {
         }
     }
 
-    // Two allied factions folded into one bloc coloured (and so crested) by its lead member hegemony,
-    // matching the grouping the ranking step produces for an alliance.
+    // The two factions this suite poses in one bloc, coloured (and so crested) by its lead member
+    // hegemony, matching the grouping the ranking step produces for an alliance. Named here rather
+    // than at each case, since every case about the alliance poses the same two.
     private static HolderGrouping buildAllianceGrouping() {
-        return new HolderGrouping(
-            Map.of("hegemony", "alliance-1", "astral_armada", "alliance-1"),
-            Map.of("alliance-1", "hegemony"),
-            Map.of("alliance-1", "Allied Powers"));
+        return buildAllianceOf("hegemony", "astral_armada");
     }
 }

@@ -90,8 +90,13 @@ public final class ClaimsView implements PoliticalMapView {
 
     @Override
     public HolderGrouping resolveGrouping() {
-        // Claims are grouped strictly by claiming faction - no alliance rollup on this layer - so the
-        // pipeline resolves plain faction holding.
+        // Claims are grouped strictly by claiming faction - no alliance rollup in what this layer
+        // paints - so the pipeline resolves plain faction holding.
+        //
+        // About the fills alone. The hover box over them does consult the live alliance set, to say
+        // which of the factions in a system stand with its claim holder, and it samples that for
+        // itself rather than through this: pinned here, the block naming them would be permanently
+        // empty on the one layer that draws it.
         return HolderGrouping.identity();
     }
 
