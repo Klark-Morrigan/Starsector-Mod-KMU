@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.Global;
 
 import kmu.maplayers.base.sidebar.FilterSelection;
+import kmu.settings.KmuLunaSettings;
 
 import java.util.HashSet;
 
@@ -28,9 +29,9 @@ public final class FilterSelectionHeal {
 
     /**
      * Clears the active view's stored spotlight selection when that view no longer offers it, a no-op
-     * when no view is selected or the stored bloc is still selectable. Runs on game load and on a view
-     * switch, before the overlay repaints, so it clears without requesting a refresh - the load or the
-     * switch already repaints, so there is nothing extra to invalidate. Reads the live sector and the
+     * when no view is selected or the stored bloc is still selectable. Runs on game load, on a view
+     * switch, and on a settings change, before the overlay repaints, so it clears without requesting a
+     * refresh - each of those already repaints, so there is nothing extra to invalidate. Reads the
      * player's current dominance and visibility settings, the same gate the picker lists blocs under,
      * so a bloc is healed away exactly when it would no longer appear in the picker.
      */
@@ -47,5 +48,20 @@ public final class FilterSelectionHeal {
             selectableBlocIds.add(bloc.itemId());
         }
         FilterSelection.healStaleSelection(view.getId(), selectableBlocIds::contains);
+    }
+
+    /**
+     * Registers the heal against this mod's settings, so a knob that takes a bloc off the picker
+     * takes its spotlight with it. The visibility overrides are the case that needs this: switching
+     * one off can leave a faction with no visible inhabited market, dropping it from the picker while
+     * the stored spotlight goes on receding the sector behind a bloc the player can no longer unpick.
+     *
+     * <p>Call once at application load. Every call adds another listener, and LunaLib announces the
+     * settings rather than the setting, so one registration covers every knob a bloc list reads - the
+     * dominance weighting as much as the visibility overrides.
+     */
+    public static void installHealOnSettingsChange() {
+        KmuLunaSettings.runOnSettingsChange(
+            FilterSelectionHeal::healStaleSelectionAgainstActiveView);
     }
 }

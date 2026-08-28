@@ -7,6 +7,7 @@ import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
+import kmu.settings.KmuLunaSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ import static org.mockito.Mockito.when;
  * selected the heal runs with a predicate that reports a bloc selectable exactly when the active view
  * still lists it. The view, the sector, and the filter selection are stubbed so this pins the wiring
  * alone, not how the selection actually clears.
+ *
+ * <p>The settings registration is pinned here too, that being the moment a live game can lose a bloc
+ * from the picker without a load or a view switch to heal against.
  */
 final class FilterSelectionHealTest {
 
@@ -96,6 +100,36 @@ final class FilterSelectionHealTest {
 
                 assertThat(predicate.test("hegemony")).isTrue();
                 assertThat(predicate.test("vanished")).isFalse();
+            }
+        }
+    }
+
+    @Nested
+    class InstallHealOnSettingsChange {
+
+        @Test
+        void installHealOnSettingsChangeRegistersTheHealAsTheSettingsChangeReaction() {
+            // A settings change is what takes a bloc off the picker mid-game (a visibility override
+            // switched off can leave a faction with no visible market), so what is pinned is that the
+            // runnable handed to the settings seam is the heal itself and not some other reaction.
+            try (var settingsMock = mockStatic(KmuLunaSettings.class);
+                    var registryMock = mockStatic(PoliticalMapViewRegistry.class)) {
+
+                registryMock
+                    .when(PoliticalMapViewRegistry::getSelectedView)
+                    .thenReturn(null);
+
+                FilterSelectionHeal.installHealOnSettingsChange();
+
+                var captor = ArgumentCaptor.forClass(Runnable.class);
+                settingsMock.verify(
+                    () -> KmuLunaSettings.runOnSettingsChange(captor.capture()));
+
+                // Run what was registered: only the heal reads the selected view, so reaching that
+                // read is what identifies the registered reaction.
+                captor.getValue().run();
+
+                registryMock.verify(PoliticalMapViewRegistry::getSelectedView);
             }
         }
     }

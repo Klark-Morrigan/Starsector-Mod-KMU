@@ -12,6 +12,7 @@ import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.base.visibility.ColonySightingInstaller;
+import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
 import kmu.maplayers.politicalmap.base.PoliticalMapInstaller;
 import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuLunaSettings;
@@ -99,6 +100,15 @@ public class KMU_ModPlugin extends BaseModPlugin {
         KmuWiringSteps.runGuardedStep(
             () -> KmuLunaSettings.runOnSettingsChange(KMU_ModPlugin::applySwitchedFeatures),
             "Failed to install KMU feature switch listener");
+
+        // The spotlight is the other thing our settings can invalidate: a knob that hides the last
+        // colonies a bloc was listed for drops it from the picker, and the stored spotlight would
+        // otherwise go on receding the sector behind a bloc no longer on offer. Its own registration
+        // rather than a passenger on the switch listener, since it answers a different question -
+        // what the settings made unpickable, not which feature they switched.
+        KmuWiringSteps.runGuardedStep(
+            FilterSelectionHeal::installHealOnSettingsChange,
+            "Failed to install KMU map filter heal listener");
 
         // The same reaction to Random Assortment of Things' own saves: LunaLib announces every
         // mod's settings to every listener, so that mod flipping its own minimap switch is as
