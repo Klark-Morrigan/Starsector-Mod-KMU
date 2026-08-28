@@ -295,9 +295,17 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         controls.add(buildSaveSvgButton());
         controls.add(canvas.statusLabel);
 
+        // Anchored to the top of a wrapper, because a BoxLayout column shorter than its
+        // viewport - every section folded - hands the spare height to whichever rows will
+        // take it, and a stretched dropdown reads as a broken control. Anchored NORTH, the
+        // slack falls below the rows instead of into them.
+        var anchored = new JPanel(new BorderLayout());
+
+        anchored.add(controls, BorderLayout.NORTH);
+
         // Scrolled, because the knob count now exceeds a window height and a control that has
         // fallen off the bottom of a fixed panel is a control nobody knows exists.
-        var scroller = new JScrollPane(controls);
+        var scroller = new JScrollPane(anchored);
 
         // A minimum rather than a fixed size now that the split decides the width: without
         // one the divider can be dragged past the knobs and they vanish with no way back.
