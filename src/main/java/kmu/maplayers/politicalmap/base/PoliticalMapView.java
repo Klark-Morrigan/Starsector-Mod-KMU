@@ -11,7 +11,6 @@ import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
@@ -194,19 +193,23 @@ public interface PoliticalMapView {
      * <p>There is no new per-bloc seam behind the list: a view decides which of its blocs are
      * targets (every faction, or only the alliance blocs) by handing that one test to
      * {@link #buildSelectableBlocs}, which assembles the options the same way for every view. The
-     * convenience overload reads the player's live dominance and visibility settings so a caller
-     * with no pass of its own need not thread them.
+     * convenience overload reads the player's live visibility settings so a caller with no pass of
+     * its own need not thread them.
+     *
+     * <p>What it does <em>not</em> take is the rule any one mechanic weighs by. Who a picker lists
+     * is settled by the sector's colonies, and how a listed bloc's numbers are arrived at is the
+     * painting layer's own business - so a seam naming a weighting rule would hand every view a
+     * knob only some of them spend, and read the settings behind it for the ones that do not. A
+     * layer that weighs takes its rule beside this, the way
+     * {@link kmu.maplayers.politicalmap.base.politics.holders.HolderProvider} leaves the same rule
+     * off the holder seam.
      *
      * <p>The spotlight is optional: the default offers an empty picker, so a view with no list to
-     * spotlight inherits one rather than overriding with three arguments it would ignore. A view
+     * spotlight inherits one rather than overriding with two arguments it would ignore. A view
      * opts into the spotlight by overriding this, the same way it opts into its own body controls.
      *
      * @param sector           the sector whose colonies decide who is listed; null yields an empty
      *                         picker
-     * @param rules            the dominance-weighting rules for this read, so a listed bloc's
-     *                         numbers are the ones the map paints by; what a layer weighs decides
-     *                         how a row reads rather than whether it is offered, so a layer that
-     *                         weighs nothing spends this on nothing
      * @param colonyVisibility what the player may be shown of a colony, so a bloc is offered on
      *                         the strength of the very colonies the map paints it for
      * @return this view's picker - its blocs in the order the source walk surfaces them, and the
@@ -215,23 +218,21 @@ public interface PoliticalMapView {
      */
     default ListPicker<?> resolveBlocPicker(
             SectorAPI sector,
-            DominanceRules rules,
             ColonyVisibility colonyVisibility) {
         return ListPicker.empty();
     }
 
     /**
-     * This view's picker under the player's current dominance and visibility settings - the live
-     * entry the sidebar and the stale-selection heal call, so neither has to read the toggles a
-     * running pass would already hold.
+     * This view's picker under the player's current visibility settings - the live entry the
+     * sidebar and the stale-selection heal call, so neither has to read the toggles a running pass
+     * would already hold.
      *
-     * @param sector the sector whose economy the visibility gate reads; null yields an empty picker
+     * @param sector the sector whose colonies decide who is listed; null yields an empty picker
      * @return this view's picker under the player's live settings; empty when no bloc qualifies
      */
     default ListPicker<?> resolveBlocPicker(SectorAPI sector) {
         return resolveBlocPicker(
             sector,
-            DominanceRules.readFromLunaSettings(),
             MapVisibilityRules.readFromLunaSettings().colonyVisibility());
     }
 

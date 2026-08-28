@@ -151,12 +151,12 @@ final class PoliticalMapViewTest {
         @Test
         void resolveBlocPickerDefaultsToTheEmptyPickerSoASpotlightIsOptedInto() {
             // The base case is "no spotlight", so a view with nothing to list inherits a whole
-            // answer rather than overriding with three arguments it would ignore. Pinned on the
+            // answer rather than overriding with two arguments it would ignore. Pinned on the
             // fake rather than on the one view that currently relies on it, since what is under
             // test is the seam's default and not that view's choice to keep it.
             var viewFake = new PoliticalMapViewFake(Map.of());
 
-            assertThat(viewFake.resolveBlocPicker(mock(SectorAPI.class), null, BASE_FOG).items())
+            assertThat(viewFake.resolveBlocPicker(mock(SectorAPI.class), BASE_FOG).items())
                 .isEmpty();
         }
     }

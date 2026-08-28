@@ -15,7 +15,6 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
-import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 import kmu.maplayers.politicalmap.base.politics.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
@@ -170,9 +169,6 @@ public final class ClaimsView implements PoliticalMapView {
      *
      * @param sector           the sector whose systems and colonies the claim stats are read from;
      *                         null yields an empty picker
-     * @param rules            the dominance-weighting rule the view seam carries; this layer is
-     *                         painted by the claim mechanic and weighs nothing, so it reaches
-     *                         nothing here
      * @param colonyVisibility what the player may be shown of a colony, so a bloc's market size
      *                         counts the very colonies the map paints it for
      * @return this view's picker, its blocs in the order the sector walk surfaces them
@@ -180,16 +176,14 @@ public final class ClaimsView implements PoliticalMapView {
     @Override
     public ListPicker<RankedBloc<ClaimStats>> resolveBlocPicker(
             SectorAPI sector,
-            DominanceRules rules,
             ColonyVisibility colonyVisibility) {
 
         // The grouping is resolved once and handed to both halves, so the numbers, the crest, and the
         // name all read against one snapshot rather than three live samples.
         var grouping = resolveGrouping();
 
-        // The layer-generic pass, the weighting rule the seam carries reaching nothing here: this
-        // layer is painted by claims, and a claim count and a colony size are read without weighing
-        // anything.
+        // The layer-generic pass: this layer is painted by claims, and a claim count and a colony
+        // size are read without weighing anything.
         var pass = HolderPass.over(sector, colonyVisibility, grouping);
 
         // The claim half reads through the pass's own colony walk, so the two metrics cost one

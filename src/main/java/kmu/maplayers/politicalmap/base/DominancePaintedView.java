@@ -53,13 +53,37 @@ public interface DominancePaintedView extends PoliticalMapView {
     }
 
     /**
-     * The picker for a view the domination contest paints: the blocs present under this view's own
-     * grouping that its gate accepts, each carrying that bloc's whole-sector {@link DominanceStats},
-     * paired with {@link DominanceSortMode}'s vocabulary.
+     * The picker for a view the domination contest paints, under the player's live weighting rule -
+     * what the shared seam resolves to for every such view, the rule being the one input the seam
+     * itself does not carry.
+     *
+     * @param sector           the sector whose colonies decide who is listed; null yields an empty
+     *                         picker
+     * @param colonyVisibility what the player may be shown of a colony, so a bloc is offered on
+     *                         the strength of the very colonies the map paints it for
+     * @return this view's picker under the live weighting rule
+     */
+    @Override
+    default ListPicker<RankedBloc<DominanceStats>> resolveBlocPicker(
+            SectorAPI sector,
+            ColonyVisibility colonyVisibility) {
+
+        return resolveBlocPicker(sector, DominanceRules.readFromLunaSettings(), colonyVisibility);
+    }
+
+    /**
+     * That same picker under a stated weighting rule: the blocs present under this view's own
+     * grouping that its gate accepts, each carrying that bloc's whole-sector
+     * {@link DominanceStats}, paired with {@link DominanceSortMode}'s vocabulary.
      *
      * <p>The pairing is fixed rather than a per-view choice on purpose - these are the metrics such
      * a view's blocs carry, so offering any other vocabulary would rank rows by numbers they do not
      * hold.
+     *
+     * <p>Beside the live entry above on the terms every pass in this feature is built on: a caller
+     * that has already sampled the rule states it, and one that has not reads the player's. Which
+     * is why the rule is named here and not on the shared seam - it is this mechanic's, so only
+     * the views it paints have an entry taking it.
      *
      * @param sector           the sector whose colonies decide who is listed; null yields an empty
      *                         picker
@@ -70,7 +94,6 @@ public interface DominancePaintedView extends PoliticalMapView {
      *                         the strength of the very colonies the map paints it for
      * @return this view's picker, its blocs in the order the sector walk surfaces them
      */
-    @Override
     default ListPicker<RankedBloc<DominanceStats>> resolveBlocPicker(
             SectorAPI sector,
             DominanceRules rules,

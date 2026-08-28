@@ -13,16 +13,13 @@ import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.base.visibility.ColonyVisibility;
+import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.base.visibility.RevelationGate;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
-import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
-import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
-import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 import kmu.maplayers.politicalmap.base.politics.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
@@ -290,14 +287,6 @@ final class ClaimsViewTest {
     @Nested
     class ResolveBlocPicker {
 
-        // The rules are forwarded to the (mocked) stats read, so their value never reaches assertion
-        // here - any rules stand in where the seam demands them.
-        private static final DominanceRules ANY_RULES =
-            new DominanceRules(false,
-                new BaseSizeWeighting(1.0, null, 1.0, 1.0),
-                new StationWeighting(false, 1.0, 0.5, 0.5),
-                new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
-
         // A claimant's stats: the view forwards them onto its option verbatim, so these arbitrary
         // numbers are only asserted to survive the pass unchanged. Non-zero claims, so the row they
         // ride on is an ordinary full-strength one.
@@ -324,7 +313,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(Map.of("hegemony", ANY_CLAIMANT_STATS));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc(
@@ -349,7 +338,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(Map.of("luddic_path", new ClaimStats(1, 0)));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .items())
                     .extracting(RankedBloc::itemId)
                     .containsExactly("luddic_path");
@@ -374,7 +363,7 @@ final class ClaimsViewTest {
                         "hegemony", new ClaimStats(1, 0),
                         "tritachyon", new ClaimStats(0, 40)));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .items())
                     .extracting(RankedBloc::itemId)
                     .containsExactlyInAnyOrder("hegemony", "tritachyon");
@@ -401,7 +390,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(statsByBlocId);
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .items())
                     .extracting(RankedBloc::itemId, RankedBloc::isDimmed)
                     .containsExactly(
@@ -433,7 +422,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(statsByBlocId);
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .items())
                     .extracting(RankedBloc::itemId)
                     .containsExactly("hegemony", "tritachyon", "persean");
@@ -452,7 +441,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(Map.of());
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .items())
                     .isEmpty();
             }
@@ -485,7 +474,7 @@ final class ClaimsViewTest {
                         return Map.of();
                     });
 
-                view.resolveBlocPicker(sectorMock, ANY_RULES, GATED_VISIBILITY);
+                view.resolveBlocPicker(sectorMock, GATED_VISIBILITY);
 
                 // The port is the pass's own knowledge, so what it was opened under is read back
                 // off the rule that knowledge carries - stated against the literal the view was
@@ -515,11 +504,36 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(Map.of());
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .sortModes())
                     .isEqualTo(ClaimSortMode.MODES);
             }
         }
 
+        @Test
+        void resolveBlocPickerReachesNoWeightingRuleOnItsLiveEntry() {
+            // The live entry the sidebar and the stale-selection heal call, driven whole rather than
+            // under stated knobs - which is the only way this can be asked at all. A weighting rule
+            // is read from LunaLib, a class the test JVM cannot load, so a seam handing this layer
+            // one would take the case down here rather than merely doing work nobody spends. That
+            // is the assertion: the claims picker is painted by the claim mechanic, and reads the
+            // settings of no other.
+            var sectorMock = mock(SectorAPI.class);
+
+            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class);
+                    var visibilityRulesMock = mockStatic(MapVisibilityRules.class)) {
+
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
+                    .thenReturn(Map.of());
+
+                // The one live read this entry is meant to make, stood in as the plain fog.
+                visibilityRulesMock
+                    .when(MapVisibilityRules::readFromLunaSettings)
+                    .thenReturn(MapVisibilityRules.BASE);
+
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock).items())
+                    .isEmpty();
+            }
+        }
     }
 }
