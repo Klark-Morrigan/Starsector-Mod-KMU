@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segments;
 
@@ -29,45 +30,40 @@ final class ShutInVoidSweep {
     // needs only enough space to be walked to the edge.
     private static final double MARGIN_IN_CELL_RADII = 3;
 
+    // The four squares a flood steps to from any one. Held rather than written into the loop,
+    // where it is rebuilt for every square the flood stands on.
+    private static final int[][] STEPS = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+
     private ShutInVoidSweep() {
     }
 
     /**
      * Every piece of void that cannot reach the edge of the sector.
      *
-     * @param sites  the cell centres
+     * <p>The cells come off the union rather than beside it. Handed in separately, a caller
+     * could pair one set of centres with a union built from another, and the flood would then
+     * be walking discs that are not the ones it measures itself against.
+     *
      * @param union  the discs the cells cover, at the reach being asked about
      * @param walls  the walls laid across the void, which stop the flood as a cell does
      * @param stride how coarsely to walk, in map units
      * @return one entry per piece of shut-in void, in no particular order
      */
     static List<ShutInVoid> findShutInVoid(
-            List<double[]> sites,
             DiscUnion union,
             List<DiscUnionBoundary.Chord> walls,
             double stride) {
 
-        var leastX = Double.MAX_VALUE;
-        var leastY = Double.MAX_VALUE;
-        var mostX = -Double.MAX_VALUE;
-        var mostY = -Double.MAX_VALUE;
-
-        for (var site : sites) {
-            leastX = Math.min(leastX, site[0]);
-            leastY = Math.min(leastY, site[1]);
-            mostX = Math.max(mostX, site[0]);
-            mostY = Math.max(mostY, site[1]);
-        }
-
+        var overSites = Bounds.computeEnclosingBounds(union.sites());
         var margin = union.reach() + MARGIN_IN_CELL_RADII * union.reach();
 
-        return floodTheVoid(
-            stampLand(sites, union, leastX - margin, leastY - margin,
-                mostX + margin, mostY + margin, stride),
-            walls,
-            leastX - margin,
-            leastY - margin,
-            stride);
+        var walked = new Bounds(
+            overSites.minX() - margin,
+            overSites.minY() - margin,
+            overSites.maxX() + margin,
+            overSites.maxY() + margin);
+
+        return floodTheVoid(stampLand(union, walked, stride), walls);
     }
 
     /**
@@ -77,120 +73,113 @@ final class ShutInVoidSweep {
      * reachable from that cell's own square, which turns a sweep over every site for every
      * square into one pass over the sites.
      */
-    private static boolean[][] stampLand(
-            List<double[]> sites,
-            DiscUnion union,
-            double leastX,
-            double leastY,
-            double mostX,
-            double mostY,
-            double stride) {
+    private static FloodGrid stampLand(DiscUnion union, Bounds walked, double stride) {
 
-        var across = (int) Math.ceil((mostX - leastX) / stride) + 1;
-        var up = (int) Math.ceil((mostY - leastY) / stride) + 1;
-        var isLand = new boolean[across][up];
+        var grid = FloodGrid.over(walked, stride);
 
-        for (var site : sites) {
+        for (var site : union.sites()) {
 
-            var fromX = Math.max(0, (int) ((site[0] - union.reach() - leastX) / stride));
-            var toX = Math.min(across - 1, (int) Math.ceil(
-                (site[0] + union.reach() - leastX) / stride));
-            var fromY = Math.max(0, (int) ((site[1] - union.reach() - leastY) / stride));
-            var toY = Math.min(up - 1, (int) Math.ceil(
-                (site[1] + union.reach() - leastY) / stride));
+            var fromX = Math.max(
+                0, (int) ((site[0] - union.reach() - walked.minX()) / stride));
+            var toX = Math.min(grid.countAcross() - 1, (int) Math.ceil(
+                (site[0] + union.reach() - walked.minX()) / stride));
+            var fromY = Math.max(
+                0, (int) ((site[1] - union.reach() - walked.minY()) / stride));
+            var toY = Math.min(grid.countUp() - 1, (int) Math.ceil(
+                (site[1] + union.reach() - walked.minY()) / stride));
 
             for (var x = fromX; x <= toX; x++) {
                 for (var y = fromY; y <= toY; y++) {
 
-                    var here = new double[] {leastX + x * stride, leastY + y * stride};
-
-                    if (Points.computeDistance(here, site) < union.reach()) {
-                        isLand[x][y] = true;
+                    if (Points.computeDistance(grid.findSquareAt(x, y), site)
+                            < union.reach()) {
+                        grid.markLand(x, y);
                     }
                 }
             }
         }
-        return isLand;
+        return grid;
     }
 
     // Floods every piece of water in turn, keeping the ones that never reach the border.
     private static List<ShutInVoid> floodTheVoid(
-            boolean[][] isLand,
-            List<DiscUnionBoundary.Chord> walls,
-            double leastX,
-            double leastY,
-            double stride) {
+            FloodGrid grid,
+            List<DiscUnionBoundary.Chord> walls) {
 
-        var across = isLand.length;
-        var up = isLand[0].length;
-        var seen = new boolean[across][up];
         var found = new ArrayList<ShutInVoid>();
 
-        for (var startX = 0; startX < across; startX++) {
-            for (var startY = 0; startY < up; startY++) {
+        for (var startX = 0; startX < grid.countAcross(); startX++) {
+            for (var startY = 0; startY < grid.countUp(); startY++) {
 
-                if (isLand[startX][startY] || seen[startX][startY]) {
+                if (!grid.isUnreachedWater(startX, startY)) {
                     continue;
                 }
 
-                var points = new ArrayList<double[]>();
-                var pending = new ArrayDeque<int[]>();
-                var blocking = new LinkedHashSet<DiscUnionBoundary.Chord>();
-                var escaped = false;
+                var piece = floodFrom(startX, startY, grid, walls);
 
-                seen[startX][startY] = true;
-                pending.add(new int[] {startX, startY});
-
-                while (!pending.isEmpty()) {
-
-                    var square = pending.poll();
-                    var here = new double[] {
-                        leastX + square[0] * stride, leastY + square[1] * stride};
-
-                    points.add(here);
-
-                    if (square[0] == 0 || square[1] == 0
-                            || square[0] == across - 1 || square[1] == up - 1) {
-                        escaped = true;
-                    }
-
-                    for (var towards : new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
-
-                        var nextX = square[0] + towards[0];
-                        var nextY = square[1] + towards[1];
-
-                        if (nextX < 0 || nextY < 0 || nextX >= across || nextY >= up) {
-                            continue;
-                        }
-                        if (seen[nextX][nextY] || isLand[nextX][nextY]) {
-                            continue;
-                        }
-
-                        var there = new double[] {
-                            leastX + nextX * stride, leastY + nextY * stride};
-
-                        // A step across a wall does not carry the flood: that is what a wall
-                        // is. Tested against the wall's SEGMENT, since a wall spans one gap
-                        // and taken as a line would divide the whole sector. The wall is
-                        // remembered as well as obeyed, because which walls shut a piece in
-                        // is what says whose fill the water is owed.
-                        var blockedBy = findBlockingChord(here, there, walls);
-
-                        if (blockedBy != null) {
-                            blocking.add(blockedBy);
-                            continue;
-                        }
-                        seen[nextX][nextY] = true;
-                        pending.add(new int[] {nextX, nextY});
-                    }
-                }
-
-                if (!escaped) {
-                    found.add(new ShutInVoid(points, stride, List.copyOf(blocking)));
+                if (piece != null) {
+                    found.add(piece);
                 }
             }
         }
         return found;
+    }
+
+    /**
+     * One piece of water, walked out from a square to everything it can reach.
+     *
+     * <p>Null where the flood got to the border of the grid, which is water open to the sea
+     * rather than shut in. Walked to the end even so, since what it reached is water no later
+     * start should begin from again.
+     */
+    private static ShutInVoid floodFrom(
+            int startX,
+            int startY,
+            FloodGrid grid,
+            List<DiscUnionBoundary.Chord> walls) {
+
+        var points = new ArrayList<double[]>();
+        var pending = new ArrayDeque<int[]>();
+        var blocking = new LinkedHashSet<DiscUnionBoundary.Chord>();
+        var escaped = false;
+
+        grid.markReached(startX, startY);
+        pending.add(new int[] {startX, startY});
+
+        while (!pending.isEmpty()) {
+
+            var square = pending.poll();
+            var here = grid.findSquareAt(square[0], square[1]);
+
+            points.add(here);
+            escaped |= grid.isOnBorder(square[0], square[1]);
+
+            for (var towards : STEPS) {
+
+                var nextX = square[0] + towards[0];
+                var nextY = square[1] + towards[1];
+
+                if (!grid.isUnreachedWater(nextX, nextY)) {
+                    continue;
+                }
+
+                // A step across a wall does not carry the flood: that is what a wall is.
+                // Tested against the wall's SEGMENT, since a wall spans one gap and taken
+                // as a line would divide the whole sector. The wall is remembered as well
+                // as obeyed, because which walls shut a piece in is what says whose fill
+                // the water is owed.
+                var blockedBy = findBlockingChord(
+                    here, grid.findSquareAt(nextX, nextY), walls);
+
+                if (blockedBy != null) {
+                    blocking.add(blockedBy);
+                    continue;
+                }
+                grid.markReached(nextX, nextY);
+                pending.add(new int[] {nextX, nextY});
+            }
+        }
+        return escaped ? null : new ShutInVoid(points, grid.stride(), List.copyOf(blocking));
     }
 
     private static DiscUnionBoundary.Chord findBlockingChord(
@@ -202,6 +191,75 @@ final class ShutInVoidSweep {
             }
         }
         return null;
+    }
+
+    /**
+     * The grid a flood walks: which squares are land, which have been reached already, and
+     * where each of them sits in the world.
+     *
+     * <p>One value rather than a boolean array, a second boolean array, a box and a stride
+     * carried alongside each other. The four are only meaningful together - a square index
+     * means nothing without the box and the stride that place it - and separately they made
+     * a seven-argument stamp and a five-argument flood that could be handed a grid measured
+     * against one box and points against another.
+     *
+     * @param isLand  whether each square lies inside a cell
+     * @param reached whether the flood has already stood on each square
+     * @param walked  the box the grid covers
+     * @param stride  how far apart the squares sit, in map units
+     */
+    private record FloodGrid(
+        boolean[][] isLand,
+        boolean[][] reached,
+        Bounds walked,
+        double stride) {
+
+        static FloodGrid over(Bounds walked, double stride) {
+
+            var across = (int) Math.ceil((walked.maxX() - walked.minX()) / stride) + 1;
+            var up = (int) Math.ceil((walked.maxY() - walked.minY()) / stride) + 1;
+
+            return new FloodGrid(
+                new boolean[across][up], new boolean[across][up], walked, stride);
+        }
+
+        int countAcross() {
+            return isLand.length;
+        }
+
+        int countUp() {
+            return isLand[0].length;
+        }
+
+        void markLand(int x, int y) {
+            isLand[x][y] = true;
+        }
+
+        void markReached(int x, int y) {
+            reached[x][y] = true;
+        }
+
+        // Water the flood may still step onto: on the grid at all, not inside a cell, and not
+        // already stood on. One question rather than three tests spelled out at each caller,
+        // since a step that skipped any of them would walk off the array or loop forever.
+        boolean isUnreachedWater(int x, int y) {
+
+            return x >= 0 && y >= 0 && x < countAcross() && y < countUp()
+                && !isLand[x][y]
+                && !reached[x][y];
+        }
+
+        // The border is where water is open to the sea, since the box is drawn well clear of
+        // every cell.
+        boolean isOnBorder(int x, int y) {
+            return x == 0 || y == 0 || x == countAcross() - 1 || y == countUp() - 1;
+        }
+
+        // Where one square sits in the world. Named because the stamping, the flood and the
+        // points a piece of void is made of all have to agree about it exactly.
+        double[] findSquareAt(int x, int y) {
+            return new double[] {walked.minX() + x * stride, walked.minY() + y * stride};
+        }
     }
 
     /**
@@ -223,15 +281,14 @@ final class ShutInVoidSweep {
         }
 
         /** The cells this water lies against, which is what names it in a failure. */
-        List<String> nameRingingCells(
-                List<double[]> sites, DiscUnion union, List<String> systemIdBySite) {
+        List<String> nameRingingCells(DiscUnion union, List<String> systemIdBySite) {
 
             var ringing = new LinkedHashSet<String>();
 
             for (var point : points) {
-                for (var site = 0; site < sites.size(); site++) {
+                for (var site = 0; site < union.sites().size(); site++) {
 
-                    if (Points.computeDistance(point, sites.get(site))
+                    if (Points.computeDistance(point, union.sites().get(site))
                             < union.reach() + stride) {
                         ringing.add(systemIdBySite.get(site));
                     }

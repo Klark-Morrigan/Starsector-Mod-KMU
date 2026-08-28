@@ -290,7 +290,7 @@ public final class ViewerSettings {
     //
     // Never chamfered, whatever the sliders say: a chamfer cuts a needle flat, and what is
     // wanted of one is a rounded tip.
-    public CornerRounding resolveCoastSanding() {
+    private CornerRounding resolveCoastSanding() {
         return new CornerRounding(
             sandingRadius,
             sandingSegments,

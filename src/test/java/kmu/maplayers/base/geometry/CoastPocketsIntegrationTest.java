@@ -78,6 +78,13 @@ class CoastPocketsIntegrationTest {
     // this suite asks for four of them per fixture.
     private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
 
+    // One set of geometry knobs for the whole suite. Built once rather than at each of the
+    // coasts, the pockets and the sweep: three instances of the same defaults are three
+    // things to keep in step, and a check comparing a coast traced under one against water
+    // flooded under another would be comparing two different maps.
+    private static final SectorGeometryParameters PARAMETERS =
+        SectorGeometryParameters.createDefaults();
+
     static List<String> provideSectorNames() {
 
         var names = SectorFixture.listSectorNames();
@@ -137,9 +144,9 @@ class CoastPocketsIntegrationTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
         void every_pocket_names_the_cells_that_ring_it(String sector) {
-            // What makes a pocket identifiable at all, and what the check above matches on.
-            // A pocket ringed by no cell could not be told from any other, so the comparison
-            // between two floors would silently pair unrelated water.
+            // What makes a pocket identifiable at all, and the first thing the cross-floor
+            // check matches on. A pocket ringed by no cell could not be told from any other,
+            // so that match would pair unrelated water and call a lost pocket a kept one.
             for (var shaping : VoidPockets.PocketShaping.values()) {
                 for (var walled : findPocketsAt(sector, SHIPPED_FRONTAGE_FLOOR, shaping)) {
 
@@ -162,34 +169,24 @@ class CoastPocketsIntegrationTest {
             VoidPockets.PocketShaping shaping) {
 
         var fixture = buildFixtureFor(sector);
-        var parameters = SectorGeometryParameters.createDefaults();
         var traced = traceCoastAt(sector, SHIPPED_FRONTAGE_FLOOR);
-        var union = VoidPockets.buildUnionFor(fixture.getSites(), parameters, shaping);
+        var union = VoidPockets.buildUnionFor(fixture.getSites(), PARAMETERS, shaping);
 
         var walls = DiscUnionBoundary.findAttachableChords(
             union,
             CoastPockets.layCoastWalls(
-                traced, CoastPockets.buildCoastWalls(traced), parameters.borderInset()));
+                traced, CoastPockets.buildCoastWalls(traced), PARAMETERS.borderInset()));
 
-        var coastFill = new ArrayList<BoundedOutline>();
-
-        for (var walled : findPocketsAt(sector, SHIPPED_FRONTAGE_FLOOR, shaping)) {
-            for (var outline : walled.pocket().outlines()) {
-                coastFill.add(BoundedOutline.measure(outline));
-            }
-        }
-
-        var bridgeFill = collectBridgeFill(fixture, parameters, shaping);
+        var coastFill = collectFill(findPocketsAt(sector, SHIPPED_FRONTAGE_FLOOR, shaping));
+        var bridgeFill = collectBridgeFill(fixture, shaping);
         var coast = Coastlines.collectCoastRings(traced);
-        var leastNoticeable = NOTICEABLE_SHARE_OF_A_CELL
-            * Math.PI * parameters.cellRadius() * parameters.cellRadius();
 
         var unfilled = new ArrayList<String>();
 
-        for (var water : ShutInVoidSweep.findShutInVoid(
-                fixture.getSites(), union, walls, FLOOD_STRIDE)) {
+        for (var water : ShutInVoidSweep.findShutInVoid(union, walls, FLOOD_STRIDE)) {
 
-            if (water.measureArea() < leastNoticeable || !isMostlyInsideCoast(water, coast)) {
+            if (water.measureArea() < measureLeastNoticeableArea()
+                    || !isMostlyInsideCoast(water, coast)) {
                 continue;
             }
 
@@ -202,12 +199,11 @@ class CoastPocketsIntegrationTest {
             // cell ring from a corridor whose walled mouth is narrower than its own stride,
             // and a reach running along a cell ring's edge makes such void legitimately the
             // coast's - so only the strict direction guards against masking.
-            var isCovered = isWalledIn
-                ? isAnyPointCovered(water, coastFill)
-                : isAnyPointCovered(water, bridgeFill)
-                    || isAnyPointCovered(water, coastFill);
+            var owingFill = isWalledIn
+                ? coastFill
+                : concatenate(bridgeFill, coastFill);
 
-            if (isCovered) {
+            if (isAnyPointCovered(water.points(), owingFill)) {
                 continue;
             }
 
@@ -215,34 +211,65 @@ class CoastPocketsIntegrationTest {
                 "%.0f units of %s ringed by %s",
                 water.measureArea(),
                 isWalledIn ? "coast-walled water" : "inland water",
-                water.nameRingingCells(
-                    fixture.getSites(), union, fixture.getSystemIds())));
+                water.nameRingingCells(union, fixture.getSystemIds())));
         }
         return unfilled;
     }
 
-    // The bridge construction's fill, as outlines with their bounds measured once - what the
-    // viewer paints as the inland fill, built the way the overlay builds it.
+    // Below this a piece of void is a seam between cells that all but touch, which no reader
+    // notices is unfilled. As a share of a cell rather than in units, so it still means the
+    // same thing if the cell radius moves.
+    private static double measureLeastNoticeableArea() {
+
+        return NOTICEABLE_SHARE_OF_A_CELL
+            * Math.PI * PARAMETERS.cellRadius() * PARAMETERS.cellRadius();
+    }
+
+    // A construction's pockets as outlines with their bounds measured once.
+    private static List<BoundedOutline> collectFill(List<WalledPocket> pockets) {
+
+        var fill = new ArrayList<BoundedOutline>(pockets.size());
+
+        for (var walled : pockets) {
+            for (var outline : walled.pocket().outlines()) {
+                fill.add(BoundedOutline.measure(outline));
+            }
+        }
+        return fill;
+    }
+
+    // The bridge construction's fill - what the viewer paints as the inland fill, built the
+    // way the overlay builds it.
     private static List<BoundedOutline> collectBridgeFill(
             SectorFixture fixture,
-            SectorGeometryParameters parameters,
             VoidPockets.PocketShaping shaping) {
 
         var captured = VoidBridgePockets.findCapturedPockets(
             fixture.getSites(),
             VoidBridges.findVoidBridges(
                 fixture.getSites(),
-                parameters.cellRadius(),
-                parameters.cellRadius() * Coastlines.DEFAULT_RULES.bridgeReachMultiple()),
-            parameters,
+                PARAMETERS.cellRadius(),
+                PARAMETERS.cellRadius() * Coastlines.DEFAULT_RULES.bridgeReachMultiple()),
+            PARAMETERS,
             shaping);
 
-        var outlines = new ArrayList<BoundedOutline>(captured.size());
+        var fill = new ArrayList<BoundedOutline>(captured.size());
 
         for (var outline : captured) {
-            outlines.add(BoundedOutline.measure(outline));
+            fill.add(BoundedOutline.measure(outline));
         }
-        return outlines;
+        return fill;
+    }
+
+    private static List<BoundedOutline> concatenate(
+            List<BoundedOutline> first, List<BoundedOutline> second) {
+
+        var both = new ArrayList<BoundedOutline>(first.size() + second.size());
+
+        both.addAll(first);
+        both.addAll(second);
+
+        return both;
     }
 
     // Void shut in by walls can still be open sea: a wall closes the gap between two cells
@@ -262,15 +289,16 @@ class CoastPocketsIntegrationTest {
         return inside > water.points().size() / 2;
     }
 
-    // Whether any pocket covers any part of this water. One point is enough: the question is
-    // whether the trace accounted for this piece of void at all, not how closely its outline
-    // hugs it - a pocket is inset from the wall that closed it and never covers the water whole.
+    // Whether a fill covers any of these points. One point is enough: the question asked of
+    // it is whether a construction accounted for a piece of void at all, not how closely its
+    // outline hugs it - a pocket is inset from the wall that closed it and never covers the
+    // water whole.
     private static boolean isAnyPointCovered(
-            ShutInVoidSweep.ShutInVoid water,
-            List<BoundedOutline> pockets) {
+            List<double[]> points,
+            List<BoundedOutline> fill) {
 
-        for (var point : water.points()) {
-            for (var outline : pockets) {
+        for (var point : points) {
+            for (var outline : fill) {
                 if (outline.holds(point)) {
                     return true;
                 }
@@ -323,13 +351,7 @@ class CoastPocketsIntegrationTest {
 
         var atShipped = findPocketsAt(sector, SHIPPED_FRONTAGE_FLOOR, shaping);
         var atCoarser = findPocketsAt(sector, COARSER_FRONTAGE_FLOOR, shaping);
-        var coarserFill = new ArrayList<BoundedOutline>();
-
-        for (var walled : atCoarser) {
-            for (var outline : walled.pocket().outlines()) {
-                coarserFill.add(BoundedOutline.measure(outline));
-            }
-        }
+        var coarserFill = collectFill(atCoarser);
 
         var coarserCoast = Coastlines.collectCoastRings(
             traceCoastAt(sector, COARSER_FRONTAGE_FLOOR));
@@ -344,7 +366,8 @@ class CoastPocketsIntegrationTest {
             // pocket's ring and moves its walls while the water stays where it was, so an
             // exact ring match alone reports a reshaped pocket as a lost one - and no
             // distance tells a moved pocket from a different one.
-            if (hasSameRing(walled, atCoarser) || isAnyCornerCovered(walled, coarserFill)) {
+            if (hasSameRing(walled, atCoarser)
+                    || isAnyPointCovered(collectNudgedCorners(walled), coarserFill)) {
                 continue;
             }
 
@@ -373,34 +396,26 @@ class CoastPocketsIntegrationTest {
         return false;
     }
 
-    // Whether any corner of a pocket's outline lies inside the given fill - the outline is
-    // where the pocket's water certainly is, so a fill covering a corner of it covers some
-    // of the same water.
+    // A pocket's outline corners, each nudged a step towards its own outline's mean point.
     //
-    // Each corner is nudged a step towards its outline's mean point before being asked
-    // about: a corner sits ON the water's edge, where a fill bounded by the same wall or rim
-    // answers false for lying exactly on its own boundary.
-    private static boolean isAnyCornerCovered(
-            WalledPocket walled, List<BoundedOutline> fill) {
+    // Nudged because a corner sits ON the water's edge, where a fill bounded by that same
+    // wall or rim answers false for a point lying exactly on its boundary. A step inward
+    // puts the question where the answer is not a coin toss.
+    private static List<double[]> collectNudgedCorners(WalledPocket walled) {
+
+        var nudged = new ArrayList<double[]>();
 
         for (var outline : walled.pocket().outlines()) {
 
             var mean = Points.computeMean(outline);
 
             for (var corner : outline) {
-
-                var nudged = new double[] {
+                nudged.add(new double[] {
                     corner[0] + CORNER_NUDGE_SHARE * (mean[0] - corner[0]),
-                    corner[1] + CORNER_NUDGE_SHARE * (mean[1] - corner[1])};
-
-                for (var candidate : fill) {
-                    if (candidate.holds(nudged)) {
-                        return true;
-                    }
-                }
+                    corner[1] + CORNER_NUDGE_SHARE * (mean[1] - corner[1])});
             }
         }
-        return false;
+        return nudged;
     }
 
     private static List<WalledPocket> findPocketsAt(
@@ -411,16 +426,14 @@ class CoastPocketsIntegrationTest {
         return CoastPockets.findCoastPockets(
             traceCoastAt(sector, frontageFloor),
             buildFixtureFor(sector).getOwnerBySite(),
-            new VoidPockets.PocketRules(
-                SectorGeometryParameters.createDefaults(),
-                shaping));
+            new VoidPockets.PocketRules(PARAMETERS, shaping));
     }
 
     private static Coastlines.TracedCoasts traceCoastAt(String sector, double frontageFloor) {
 
         return Coastlines.traceContinentCoasts(
             buildFixtureFor(sector).getSites(),
-            SectorGeometryParameters.createDefaults(),
+            PARAMETERS,
             new Coastlines.CoastRules(
                 Coastlines.DEFAULT_RULES.bridgeReachMultiple(),
                 frontageFloor,
