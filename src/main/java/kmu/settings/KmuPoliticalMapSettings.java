@@ -321,7 +321,7 @@ public final class KmuPoliticalMapSettings {
     private static final String BORDER_CHAMFER_ANGLE_FIELD =
         "kmu_politicalMapBorderChamferAngle";
     private static final String BORDER_ROUND_BELOW_ANGLE_FIELD =
-        "kmu_politicalMapBorderRoundBelowAngle";
+        "kmu_map_dev_cornerRounding_angleThreshold";
 
     // Hatch fill (Map - Dev tab): the diagonal line pattern that fills the filter's contested
     // cluster - the spotlighted bloc's present-but-dominated systems - so it reads as
