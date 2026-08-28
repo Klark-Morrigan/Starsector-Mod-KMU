@@ -20,13 +20,8 @@ public final class NoLayer implements MapLayer {
     /** The one shared instance; the registration and any state gate reference this pick. */
     public static final NoLayer INSTANCE = new NoLayer();
 
-    // Jumps here on N by default. Mirrors the Keycode default in LunaSettings.csv.
-    //
-    // The id reads as the political map's because this tab shipped alongside it, before the
-    // framework was carved out. LunaLib stores a rebound key under the field id, so renaming it
-    // would silently reset every player's binding for this tab back to N; the id therefore stays
-    // frozen and only its tab placement and label are framework-scoped.
-    private static final String SHORTCUT_FIELD = "kmu_map_keybinds_layers_noLayer";
+    // LunaLib stores a rebound key under the field id.
+    private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_noLayer";
 
     private NoLayer() {
     }
@@ -54,7 +49,7 @@ public final class NoLayer implements MapLayer {
 
     @Override
     public String getShortcutSettingKey() {
-        return SHORTCUT_FIELD;
+        return SHORTCUT_SETTING_FIELD;
     }
 
     @Override
