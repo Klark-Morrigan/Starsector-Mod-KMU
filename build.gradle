@@ -80,7 +80,7 @@ enforcePackageVocabulary {
             inFile: 'src/main/java/kmu/maplayers/base/sidebar/README.md'
     allowWord word: 'bloc',
             inFile: 'src/test/java/kmu/maplayers/base/sidebar/FilterSelectionTest.java'
-            
+
     // The fourth is the legitimate shape the faction row above describes: the
     // theme's README explains why `MapPalettes` stays political, and it cannot
     // make that argument without naming what the political map resolves.
@@ -224,9 +224,9 @@ tasks.withType(JavaCompile).configureEach {
     doFirst {
         if (consoleCommandsJars.files.isEmpty()) {
             throw new GradleException(
-                    "Could not find Console Commands jar under " +
-                    "${starsectorRoot}/mods/**/jars/lw_Console.jar. " +
-                    "Install Console Commands for compiling KMU console command integration.")
+                "Could not find Console Commands jar under " +
+                "${starsectorRoot}/mods/**/jars/lw_Console.jar. " +
+                "Install Console Commands for compiling KMU console command integration.")
         }
         // No KMLib check sits here. The other jars are found or not found on the
         // machine, so each needs its own "install this" message; KMLib is built
@@ -239,18 +239,18 @@ tasks.withType(JavaCompile).configureEach {
         // present to build.
         if (!lazyLibJarFile.exists()) {
             throw new GradleException(
-                    "Could not find LazyLib jar at ${lazyLibJarFile}. " +
-                    "Install LazyLib under mods/lw_lazylib/jars/LazyLib.jar " +
-                    "for compiling KMU's political-map faction labels.")
+                "Could not find LazyLib jar at ${lazyLibJarFile}. " +
+                "Install LazyLib under mods/lw_lazylib/jars/LazyLib.jar " +
+                "for compiling KMU's political-map faction labels.")
         }
         // Nex is optional at runtime but its InvasionListener is needed to
         // compile PoliticalMapMarketTransferListener, so the jar must be present
         // to build even though a player can run KMU without Nex installed.
         if (nexJars.files.isEmpty()) {
             throw new GradleException(
-                    "Could not find Nexerelin jar under " +
-                    "${starsectorRoot}/mods/**/jars/ExerelinCore.jar. " +
-                    "Install Nexerelin for compiling KMU's market-transfer map integration.")
+                "Could not find Nexerelin jar under " +
+                "${starsectorRoot}/mods/**/jars/ExerelinCore.jar. " +
+                "Install Nexerelin for compiling KMU's market-transfer map integration.")
         }
     }
 }
