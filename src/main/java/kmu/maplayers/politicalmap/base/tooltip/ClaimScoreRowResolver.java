@@ -187,7 +187,8 @@ public final class ClaimScoreRowResolver {
                 breakdown,
                 weighedStanding,
                 colonyReading,
-                listedMarkets);
+                listedMarkets,
+                isListingUnfoundMarkets);
         }
         return resolvePresenceOnlyRows(colonyReading, listedMarkets);
     }
@@ -199,7 +200,8 @@ public final class ClaimScoreRowResolver {
             SystemClaimBreakdown breakdown,
             WeighedClaimStanding standing,
             SystemColonyReading colonyReading,
-            List<MarketClaimBreakdown> listedMarkets) {
+            List<MarketClaimBreakdown> listedMarkets,
+            boolean isListingUnfoundMarkets) {
 
         // Whether this faction is the one the contest handed the system to, and so whose strongest
         // market is the one that took it. A decree settles the system before a single market is
@@ -214,7 +216,8 @@ public final class ClaimScoreRowResolver {
                 createMarketLine(market, ClaimTieOutcomes.resolveOutcome(
                     breakdown,
                     standing,
-                    market)),
+                    market,
+                    isListingUnfoundMarkets)),
                 market,
                 colonyReading,
                 isHoldingTheClaim && market == standing.standingMarket()));
@@ -435,7 +438,7 @@ public final class ClaimScoreRowResolver {
         return standing
             .readHeldMarkets()
             .stream()
-            .filter(market -> isListingUnfoundMarkets || market.isKnownToPlayer())
+            .filter(market -> ListedClaimMarkets.isListedMarket(market, isListingUnfoundMarkets))
             .sorted(MARKET_ORDER)
             .toList();
     }

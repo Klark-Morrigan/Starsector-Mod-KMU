@@ -26,9 +26,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  * this suite is therefore about what goes <em>un</em>marked, since a mark that appears where the
  * mechanic decided nothing is the failure that reads as a fact.
  *
- * <p>Three kinds of market carry a score yet never compete - a hidden one, which the walk skips before
- * scoring; one the economy does not list, which the walk never reaches; and a non-territorial
- * faction's, which can never take the lead - and each has its own case.
+ * <p>Two kinds of market carry a score yet never compete - a hidden one, which the walk skips before
+ * scoring, and one the economy does not list, which the walk never reaches - and each has its own
+ * case. A non-territorial faction's markets are a third case rather than a third kind: they can never
+ * take the lead, so a tie against the claimant is not judged, while the tie deciding which of them
+ * stands for the faction still is.
+ *
+ * <p>A fourth reason a place goes unmarked is the box's rather than the mechanic's: a tie the walk
+ * did settle is left unstated where the market on the other side of it is one the player has not
+ * found, since the reader is then shown one half of an ordering and told an outcome about the half
+ * they cannot see. Both comparisons are asserted that way round, and both are asserted marked again
+ * under the dev reveal, which draws the other side back in.
  *
  * <p>How a marked place then draws is the line vocabulary's ({@code CellTooltipRowsTest}); which
  * markets are drawn at all is {@link ClaimScoreRowResolverTest}'s.
@@ -59,7 +67,17 @@ final class ClaimTieOutcomesTest {
     // A market's other terms, none of which any case here turns on: the score is stated as the size
     // outright, so a tie is posed by one number rather than assembled from three.
     private static final int NO_SIBLING_MARKETS = 0;
+
+    // Whether the player has found the colony. Independent of everything the admission beside it
+    // says: the mechanic weighs a market held in the open whether or not anybody has reached it, so
+    // an open market and an unfound one are the same market as often as not.
     private static final boolean IS_KNOWN_TO_PLAYER = true;
+    private static final boolean IS_UNFOUND_BY_PLAYER = false;
+
+    // Whether a market the player has not found may be drawn: withheld in play, stated in full under
+    // the dev reveal. What parts a tie the box can show both sides of from one it cannot.
+    private static final boolean WITHHOLDING_UNFOUND_MARKETS = false;
+    private static final boolean LISTING_UNFOUND_MARKETS = true;
 
     @Nested
     class ResolveOutcome {
@@ -143,9 +161,9 @@ final class ClaimTieOutcomesTest {
             var standing = buildStandingOver(TRITACHYON, IS_TERRITORIAL, standingMarket, sibling);
             var breakdown = buildContest(HEGEMONY, standing);
 
-            assertThat(ClaimTieOutcomes.resolveOutcome(breakdown, standing, standingMarket))
+            assertThat(resolveOutcome(breakdown, standing, standingMarket))
                 .isEqualTo(CellTooltipIndexOutcome.WON);
-            assertThat(ClaimTieOutcomes.resolveOutcome(breakdown, standing, sibling))
+            assertThat(resolveOutcome(breakdown, standing, sibling))
                 .isEqualTo(CellTooltipIndexOutcome.LOST);
         }
 
@@ -165,9 +183,9 @@ final class ClaimTieOutcomesTest {
                 otherSibling);
             var breakdown = buildContest(HEGEMONY, standing);
 
-            assertThat(ClaimTieOutcomes.resolveOutcome(breakdown, standing, sibling))
+            assertThat(resolveOutcome(breakdown, standing, sibling))
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
-            assertThat(ClaimTieOutcomes.resolveOutcome(breakdown, standing, otherSibling))
+            assertThat(resolveOutcome(breakdown, standing, otherSibling))
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
         }
 
@@ -180,9 +198,9 @@ final class ClaimTieOutcomesTest {
             var standing = buildStandingOver(TRITACHYON, IS_TERRITORIAL, standingMarket, base);
             var breakdown = buildContest(HEGEMONY, standing);
 
-            assertThat(ClaimTieOutcomes.resolveOutcome(breakdown, standing, base))
+            assertThat(resolveOutcome(breakdown, standing, base))
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
-            assertThat(ClaimTieOutcomes.resolveOutcome(breakdown, standing, standingMarket))
+            assertThat(resolveOutcome(breakdown, standing, standingMarket))
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
         }
 
@@ -196,9 +214,107 @@ final class ClaimTieOutcomesTest {
             var standing = buildStandingOver(TRITACHYON, IS_TERRITORIAL, standingMarket, academy);
             var breakdown = buildContest(HEGEMONY, standing);
 
-            assertThat(ClaimTieOutcomes.resolveOutcome(breakdown, standing, academy))
+            assertThat(resolveOutcome(breakdown, standing, academy))
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
-            assertThat(ClaimTieOutcomes.resolveOutcome(breakdown, standing, standingMarket))
+            assertThat(resolveOutcome(breakdown, standing, standingMarket))
+                .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
+        }
+
+        @Test
+        void resolveOutcomeLeavesAStandingTiedOnlyWithAWithheldSiblingUnmarked() {
+            // The tie was drawn and the mechanic settled it, but only one side of it reaches the
+            // list - so a mark would credit the standing market with beating a colony that appears
+            // nowhere, which is a finding the reader can neither check nor see the other half of.
+            var standingMarket = buildMarket(FIRST_LISTED, TIED_SCORE, IS_NOT_HIDDEN);
+            var unfoundSibling = buildUnfoundMarket(SECOND_LISTED, TIED_SCORE);
+            var standing = buildStandingOver(
+                TRITACHYON,
+                IS_TERRITORIAL,
+                standingMarket,
+                unfoundSibling);
+
+            assertThat(resolveOutcome(buildContest(HEGEMONY, standing), standing, standingMarket))
+                .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
+        }
+
+        @Test
+        void resolveOutcomeLeavesASiblingUnmarkedWhereTheMarketThatBeatItIsWithheld() {
+            // The other way round, and the worse reading of the two: a sibling stated as having lost
+            // would be losing to a market the box declined to name, leaving a defeat on the list
+            // with no victor anywhere above it.
+            var unfoundStandingMarket = buildUnfoundMarket(FIRST_LISTED, TIED_SCORE);
+            var sibling = buildMarket(SECOND_LISTED, TIED_SCORE, IS_NOT_HIDDEN);
+            var standing = buildStandingOver(
+                TRITACHYON,
+                IS_TERRITORIAL,
+                unfoundStandingMarket,
+                sibling);
+
+            assertThat(resolveOutcome(buildContest(HEGEMONY, standing), standing, sibling))
+                .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
+        }
+
+        @Test
+        void resolveOutcomeMarksATieWithAnUnfoundSiblingUnderTheDevReveal() {
+            // The reveal draws both sides, so the ordering is in front of the reader again and the
+            // mark has something to answer - the withholding being about what the player has found
+            // rather than about what the mechanic settled.
+            var standingMarket = buildMarket(FIRST_LISTED, TIED_SCORE, IS_NOT_HIDDEN);
+            var unfoundSibling = buildUnfoundMarket(SECOND_LISTED, TIED_SCORE);
+            var standing = buildStandingOver(
+                TRITACHYON,
+                IS_TERRITORIAL,
+                standingMarket,
+                unfoundSibling);
+            var breakdown = buildContest(HEGEMONY, standing);
+
+            assertThat(ClaimTieOutcomes.resolveOutcome(
+                    breakdown,
+                    standing,
+                    standingMarket,
+                    LISTING_UNFOUND_MARKETS))
+                .isEqualTo(CellTooltipIndexOutcome.WON);
+            assertThat(ClaimTieOutcomes.resolveOutcome(
+                    breakdown,
+                    standing,
+                    unfoundSibling,
+                    LISTING_UNFOUND_MARKETS))
+                .isEqualTo(CellTooltipIndexOutcome.LOST);
+        }
+
+        @Test
+        void resolveOutcomeLeavesAClaimantTiedOnlyWithAWithheldRivalUnmarked() {
+            // The cross-faction half of the same rule. The rival is a faction the player has found
+            // no colony of, so the box names neither it nor the market it stood on - and a claimant
+            // marked as having won would be beating something the reader is never shown.
+            var claimant = buildStanding(HEGEMONY, IS_TERRITORIAL, FIRST_LISTED, TIED_SCORE);
+            var unfoundRival = buildUnfoundStanding(
+                TRITACHYON,
+                IS_TERRITORIAL,
+                SECOND_LISTED,
+                TIED_SCORE);
+
+            assertThat(resolveStandingOutcome(
+                    buildContest(HEGEMONY, claimant, unfoundRival),
+                    claimant))
+                .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
+        }
+
+        @Test
+        void resolveOutcomeLeavesARivalUnmarkedWhereTheClaimantsOwnMarketIsWithheld() {
+            // The claim line still names the holder, but the market that took the system is withheld
+            // - so a rival stated as having lost the system on the listing order would be pointing
+            // at a colony that is on no list in the box.
+            var unfoundClaimant = buildUnfoundStanding(
+                HEGEMONY,
+                IS_TERRITORIAL,
+                FIRST_LISTED,
+                TIED_SCORE);
+            var rival = buildStanding(TRITACHYON, IS_TERRITORIAL, SECOND_LISTED, TIED_SCORE);
+
+            assertThat(resolveStandingOutcome(
+                    buildContest(HEGEMONY, unfoundClaimant, rival),
+                    rival))
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
         }
 
@@ -213,7 +329,7 @@ final class ClaimTieOutcomesTest {
             var claimant = buildStanding(HEGEMONY, IS_TERRITORIAL, FIRST_LISTED, TIED_SCORE);
             var breakdown = buildContest(HEGEMONY, claimant, rival);
 
-            assertThat(ClaimTieOutcomes.resolveOutcome(breakdown, rival, standingMarket))
+            assertThat(resolveOutcome(breakdown, rival, standingMarket))
                 .isEqualTo(CellTooltipIndexOutcome.LOST);
         }
     }
@@ -224,7 +340,22 @@ final class ClaimTieOutcomesTest {
             SystemClaimBreakdown breakdown,
             WeighedClaimStanding standing) {
 
-        return ClaimTieOutcomes.resolveOutcome(breakdown, standing, standing.standingMarket());
+        return resolveOutcome(breakdown, standing, standing.standingMarket());
+    }
+
+    // The reading in play, where a colony the player has not found is kept off the list. Every case
+    // but the withheld ones is posed here, their markets all being colonies the player has found, so
+    // a case states the reveal only where it is what the case is about.
+    private static CellTooltipIndexOutcome resolveOutcome(
+            SystemClaimBreakdown breakdown,
+            WeighedClaimStanding standing,
+            MarketClaimBreakdown market) {
+
+        return ClaimTieOutcomes.resolveOutcome(
+            breakdown,
+            standing,
+            market,
+            WITHHOLDING_UNFOUND_MARKETS);
     }
 
     // A contest the given faction won on the scores, holding the standings posed against it.
@@ -286,14 +417,54 @@ final class ClaimTieOutcomesTest {
             boolean isHiddenMarket,
             boolean isOffEconomyMarket) {
 
+        return buildMarket(
+            listingPosition,
+            marketScore,
+            new ContestAdmission(isHiddenMarket, isOffEconomyMarket),
+            IS_KNOWN_TO_PLAYER);
+    }
+
+    // A market weighed like any other, on a colony the player has not found - the shape a withheld
+    // line takes. Held in the open, since that is what the mechanic weighs it for, and the whole
+    // point of the case: what keeps it off the list is the fog rather than anything the contest did.
+    private static MarketClaimBreakdown buildUnfoundMarket(int listingPosition, int marketScore) {
+        return buildMarket(
+            listingPosition,
+            marketScore,
+            ContestAdmission.WEIGHED,
+            IS_UNFOUND_BY_PLAYER);
+    }
+
+    // A faction standing on one market of the given score that the player has not found, holding
+    // nothing else - the rival shape a cross-faction tie the box cannot show both sides of is posed
+    // with.
+    private static WeighedClaimStanding buildUnfoundStanding(
+            String factionId,
+            boolean isTerritorial,
+            int listingPosition,
+            int marketScore) {
+
+        return new WeighedClaimStanding(
+            factionId,
+            isTerritorial,
+            buildUnfoundMarket(listingPosition, marketScore),
+            List.of());
+    }
+
+    private static MarketClaimBreakdown buildMarket(
+            int listingPosition,
+            int marketScore,
+            ContestAdmission admission,
+            boolean isKnownToPlayer) {
+
         // Marked with no glyph: what identifies a market beyond its name is nothing a tie is judged
         // on, and this suite reads no line at all - only the outcome a place carries.
         return new MarketClaimBreakdown(
             EntityNameplate.createUnmarkedNameplate("Market " + listingPosition),
             "market_" + listingPosition,
             listingPosition,
-            IS_KNOWN_TO_PLAYER,
-            new ContestAdmission(isHiddenMarket, isOffEconomyMarket),
+            isKnownToPlayer,
+            admission,
             marketScore,
             NO_SIBLING_MARKETS,
             OptionalInt.empty());

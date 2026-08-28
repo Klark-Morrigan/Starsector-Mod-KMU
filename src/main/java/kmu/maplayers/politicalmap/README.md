@@ -421,10 +421,19 @@ the market reached first having won it, the rest having lost. Which ties those a
 `ClaimTieOutcomes`, judged over the whole contest exactly as vanilla's single `max` walk compares:
 the two points that walk consults the order at are which market stands for its faction and which
 faction claims the system, so a tie at either is marked and equal scores anywhere else are not.
-Three kinds of market carry a score yet never compete and are never marked - a hidden one, which the
-walk skips outright; one the economy does not list, which the walk never reaches; and a
-non-territorial faction's, which can never take the lead - and under a decree the claimant tie goes
-unjudged, the system having been settled before a market was weighed.
+Two kinds of market carry a score yet never compete and are never marked - a hidden one, which the
+walk skips outright, and one the economy does not list, which the walk never reaches. A
+non-territorial faction's markets are marked only inside their own faction: they can never take the
+lead, so a tie against the claimant is not judged, while the tie deciding which of them stands for
+the faction still is. Under a decree the claimant tie goes unjudged too, the system having been
+settled before a market was weighed.
+One further silence is the box's rather than the mechanic's: a tie the walk did settle goes unmarked
+where the market on the other side of it is one the player has not found
+(`ListedClaimMarkets`, the one rule deciding which markets may be named, asked both by the listing
+and by the marks stated over it). A mark answers why two markets on one score are ordered as they
+are, so with one of them withheld there is no ordering in front of the reader for it to answer, and
+what it would state instead is an outcome against a colony they cannot see. Both comparisons hold to
+that, and the dev reveal restores both marks by drawing the other side back in.
 A market the mechanic never weighed is listed at nought, whichever of the first two it is
 (`MarketClaimBreakdown.isScoredOnItsOwnAccount`, the one question the box asks of the pair): it
 brought nothing to the contest however large it is, and printing the score it would have carried
