@@ -259,22 +259,12 @@ about what the overlay means.
   `MapCoverReader` holds the set and stops at the first that answers.
 
   Four are always in the set and live here: `HeldPointerMapCover` (a held left button, on which the
-  pointer is pressing rather than pointing), `PauseMenuMapCover` (the campaign's pause menu, raised
-  over the screen without taking it down, so the map keeps drawing behind it), `SidebarMapCover`
-  (any host's panel, through `SidebarHosts`), and `VanillaChromeMapCover` (the map's own tab strip
-  and control bar, stated as "outside the map surface" since the chrome widgets are a fact about one
-  game build).
-
-  The held-button one is the odd member and worth reading twice, because what it covers is not
-  drawn by anyone here. A left press over a system marker opens vanilla's own short menu - "Show
-  system info", "Lay in course" - which lives exactly as long as the hold and consumes every input
-  event while it does, so vanilla widgets under it fall quiet on their own. A hover cannot: it polls
-  the pointer rather than joining that chain, and the menu is a transient child of the widget tree's
-  top, inside the surface the chrome cover measures and above all of it. So the button is read
-  instead of the menu - the wider condition of the two, opening before the menu is built and closing
-  after it is gone, and free of any obfuscated class whose identity is a fact about one game build.
-  It also covers a left-drag pan, which is wanted: the pointer is still while the sector slides
-  under it, so each cell crossing beneath would otherwise arrive as a fresh hover and tick.
+  pointer is pressing rather than pointing - it stands in for vanilla's own marker menu, which no
+  geometry here can see; the class states why), `PauseMenuMapCover` (the campaign's pause menu,
+  raised over the screen without taking it down, so the map keeps drawing behind it),
+  `SidebarMapCover` (any host's panel, through `SidebarHosts`), and `VanillaChromeMapCover` (the
+  map's own tab strip and control bar, stated as "outside the map surface" since the chrome widgets
+  are a fact about one game build).
 
   Two more belong to optional mods, live with those mods' own integrations, and join the set only
   where the mod is installed - presence being the one condition that cannot move within a run, so
