@@ -3,6 +3,7 @@ package kmu.maplayers.base.tooltip;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.LabelRun;
+import kmlib.starsector.ui.text.RedactedSpan;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.text.KmlibStrings;
 
@@ -12,9 +13,9 @@ import java.util.List;
 
 /**
  * The whole sentence at the head of a listed line: the mark it leads with, the name that follows -
- * as one run, or as the stretches a name saying one of the box's findings is picked apart into - and
- * everything the line runs on into after its name, being where it falls in an ordering, what it calls
- * out, and what it remarks about itself.
+ * as one run, as the stretches a name saying one of the box's findings is picked apart into, or as the
+ * blocks standing for a name the line withholds - and everything the line runs on into after its name,
+ * being where it falls in an ordering, what it calls out, and what it remarks about itself.
  *
  * <p>Held apart from {@link CellTooltipRows} because the two answer different questions. This decides
  * what a line <em>says</em> and in what shades; that decides where it <em>sits</em> - across the box,
@@ -126,8 +127,14 @@ final class CellTooltipLabels {
         return new ImageSpan(mark.spritePath(), lineColour);
     }
 
-    // Adds the name: one run, or the stretch that reads as a finding picked out in gold with what
-    // surrounds it either side of it.
+    // Adds the name: the blocks a withheld one is shown by, one run, or the stretch that reads as a
+    // finding picked out in gold with what surrounds it either side of it.
+    //
+    // A withheld name takes the whole of the name's place - the runs after it are laid exactly as they
+    // are on a line that says what it is called, so a redacted line reads as a line of the list with
+    // one part blocked out rather than as a shape of its own. In the line's own colour like the name it
+    // stands for, so a redaction on a quiet line quietens with it and none of them is the loudest thing
+    // in the box.
     //
     // The stretches are exact substrings and every one past the first is a joined run
     // (LabelRun.isJoinedToPreviousRun, which argues the case), so the name draws as its author spelled
@@ -141,6 +148,10 @@ final class CellTooltipLabels {
             CellTooltipEntryLine line,
             Color lineColour) {
 
+        if (line.hasRedactedName()) {
+            labelRuns.add(new RedactedSpan(line.redactedWordLengths(), lineColour));
+            return;
+        }
         var labelText = line.labelText();
         var labelFinding = line.labelFinding();
 

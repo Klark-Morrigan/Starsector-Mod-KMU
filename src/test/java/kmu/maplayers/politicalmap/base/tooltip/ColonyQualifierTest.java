@@ -10,6 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -441,6 +443,25 @@ final class ColonyQualifierTest {
 
             assertThat(ColonyQualifier.qualifyColony(line, null))
                 .isSameAs(line);
+        }
+
+        @Test
+        void qualifyColonyStatesEveryWordAfterANameTheLineWithholds() {
+            // A withheld name says none of the vocabulary: the blocks drawn in its place stand for
+            // words without spelling them, so there is nothing to match and nothing to gild. The words
+            // close the line instead, exactly as they do for a name that carries none of them.
+            var line = ColonyQualifier.qualifyColony(
+                CellTooltipEntryLine.createRedactedLine(null, List.of(9, 7), "0"),
+                new ColonyQualifierFacts(
+                    ColonyKind.SPACE_DERELICT,
+                    HOLDS_NO_CLAIM,
+                    new ColonyConcealment(IS_UNFOUND, IS_OPEN, IS_A_SECRET),
+                    IS_UNLISTED));
+
+            assertThat(line.labelFinding())
+                .isNull();
+            assertThat(line.qualifierText())
+                .isEqualTo("abandoned, undiscovered");
         }
 
         @Test

@@ -1,12 +1,15 @@
 package kmu.maplayers.base.tooltip;
 
 import kmlib.starsector.ui.text.ImageSpan;
+import kmlib.starsector.ui.text.RedactedSpan;
 import kmlib.starsector.ui.text.TextSpan;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
@@ -19,8 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the sentence at the head of a listed line: the mark it leads with and in what colour, and the
- * name that follows - as one run, or as the stretches a name saying one of the box's findings is
- * picked apart into.
+ * name that follows - as one run, as the stretches a name saying one of the box's findings is picked
+ * apart into, or as the blocks standing for a name the line withholds.
  *
  * <p>Asserted as the whole run list rather than run by run, because what a label is made of is
  * exactly what could go wrong here: a stretch dropped, a stretch too many, or a name reassembled into
@@ -45,6 +48,10 @@ final class CellTooltipLabelsTest {
 
     // What a line showing nothing at its head carries where a mark would be.
     private static final CellTooltipMark NO_MARK = null;
+
+    // The shape of a withheld name: two words of seven and four characters, standing in for a colony
+    // the player has not found.
+    private static final List<Integer> WITHHELD_NAME = List.of(7, 4);
 
     @BeforeEach
     void installColours() {
@@ -101,6 +108,45 @@ final class CellTooltipLabelsTest {
                     CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200"),
                     PLAYER_BRIGHT))
                 .startsWith(new ImageSpan(CREST));
+        }
+
+        @Test
+        void resolveLabelRunsBlocksOutAWithheldNameInTheColourItWasHanded() {
+            // The redaction stands exactly where the name would, in the shade the name would have read
+            // in - a line of the list with one part blocked out rather than a shape of its own.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine.createRedactedLine(NO_MARK, WITHHELD_NAME, "820"),
+                    PLAYER_BRIGHT))
+                .containsExactly(new RedactedSpan(List.of(7, 4), PLAYER_BRIGHT));
+        }
+
+        @Test
+        void resolveLabelRunsOpensAWithheldLineOnItsMark() {
+            // A redacted line opens on an image run like every other line, so it is not set apart by
+            // being shorter as well as blocked out - and the glyph reads in the line's own colour,
+            // standing in for the name beside it as any other shorthand would.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine.createRedactedLine(COLONY_MARK, WITHHELD_NAME, "820"),
+                    PLAYER_BRIGHT))
+                .containsExactly(
+                    new ImageSpan(COLONY_ICON, PLAYER_BRIGHT),
+                    new RedactedSpan(List.of(7, 4), PLAYER_BRIGHT));
+        }
+
+        @Test
+        void resolveLabelRunsRunsAWithheldNamesPlaceAndStatusOnAfterIt() {
+            // Everything the line runs on into is laid exactly as it is on a line that says its name:
+            // the redaction takes the whole of the name's place and none of the runs after it move.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine
+                        .createRedactedLine(NO_MARK, WITHHELD_NAME, "820")
+                        .indexedAt("[3]", CellTooltipIndexOutcome.UNCONTESTED)
+                        .qualifiedWith("undiscovered"),
+                    TEXT))
+                .containsExactly(
+                    new RedactedSpan(List.of(7, 4), TEXT),
+                    new TextSpan("[3]", GRAY),
+                    new TextSpan("undiscovered", HIGHLIGHT));
         }
 
         @Test

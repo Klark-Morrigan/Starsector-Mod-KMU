@@ -99,7 +99,7 @@ public final class ColonyQualifier {
         if (words.isEmpty()) {
             return line;
         }
-        var wordInName = findFirstWordInName(words, line.labelText());
+        var wordInName = findFirstWordInName(words, line);
         var statedWords = new ArrayList<>(words);
         var qualifiedLine = line;
 
@@ -183,7 +183,17 @@ public final class ColonyQualifier {
     // Read off the line's own label rather than off a name handed in beside it: what the reader can
     // see is exactly what the line says, and a second copy of the name would be free to disagree
     // with it. What counts as the name saying a word at all is KmlibStrings.findWholeWordIndex's.
-    private static WordInName findFirstWordInName(List<String> words, String colonyName) {
+    //
+    // A line withholding its name says none of the vocabulary: the blocks drawn in its place stand for
+    // words without spelling them, so there is nothing to match and nothing to gild. Every word due is
+    // read at the end of the line instead, which is where a line whose name happens to carry none of
+    // them states them anyway.
+    private static WordInName findFirstWordInName(List<String> words, CellTooltipEntryLine line) {
+
+        if (line.hasRedactedName()) {
+            return null;
+        }
+        var colonyName = line.labelText();
 
         WordInName firstWordInName = null;
 

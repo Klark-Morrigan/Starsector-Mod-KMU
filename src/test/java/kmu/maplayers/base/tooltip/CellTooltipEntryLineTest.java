@@ -3,15 +3,20 @@ package kmu.maplayers.base.tooltip;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Pins what a listed thing is composed of and what it leaves unstated: a plain line calls nothing out
- * and shows its number alone, a qualifier, a stretch of the name that is itself a finding, a remark and
- * a working are each layered onto one without disturbing what it already carried, and a line with no
- * name, no value or a stretch running past its name is refused where the caller that composed it is
- * still on the stack rather than surfacing inside a draw with nothing to say which line was meant.
+ * and shows its number alone, a line whose name is withheld carries the shape of it and never the name,
+ * a qualifier, a stretch of the name that is itself a finding, a remark and a working are each layered
+ * onto one without disturbing what it already carried, and a line with no value, no account of what it
+ * is called, two accounts of it, or a stretch running past its name is refused where the caller that
+ * composed it is still on the stack rather than surfacing inside a draw with nothing to say which line
+ * was meant.
  *
  * <p>What the line's mark is and how it is coloured is {@link CellTooltipMarkTest}'s: the line holds a
  * mark or holds none, and cannot state anything about one it does not have.
@@ -22,8 +27,18 @@ final class CellTooltipEntryLineTest {
     private static final CellTooltipMark CREST_MARK =
         CellTooltipMark.resolveMarkAsAuthored(CREST);
 
+    // The shape of a withheld name: two words of seven and four characters, which is what reaches the
+    // line in place of a name the box must not state.
+    private static final List<Integer> WITHHELD_NAME = List.of(7, 4);
+
     // What a line showing nothing at its head carries where a mark would be.
     private static final CellTooltipMark NO_MARK = null;
+
+    // What a line saying its name outright carries where the shape of a withheld one would be, and what
+    // a line withholding its name carries where the name would be. Exactly one of the two stands on
+    // every line.
+    private static final List<Integer> NO_REDACTION = null;
+    private static final String NO_NAME = null;
 
     // What a line whose name says none of the box's findings carries there, which is every line until
     // a resolver finds one of its words already on it.
@@ -55,6 +70,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         CREST_MARK,
                         "The Hegemony",
+                        NO_REDACTION,
                         NO_LABEL_FINDING,
                         NO_PLACE,
                         NO_NOTE,
@@ -77,8 +93,10 @@ final class CellTooltipEntryLineTest {
 
         @Test
         void createLineRefusesALineWithNoName() {
-            assertThatThrownBy(() -> CellTooltipEntryLine.createLine(CREST_MARK, null, "1,200"))
-                .isInstanceOf(NullPointerException.class);
+            // Neither said nor withheld is not an absence the label can draw: a line is called
+            // something, or its name is kept back and its shape stands where the name would.
+            assertThatThrownBy(() -> CellTooltipEntryLine.createLine(CREST_MARK, NO_NAME, "1,200"))
+                .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
@@ -86,6 +104,82 @@ final class CellTooltipEntryLineTest {
             // A line carrying no number states the value that means so, which the column collapses for -
             // an absence would reach the layout as a null instead.
             assertThatThrownBy(() -> CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", null))
+                .isInstanceOf(NullPointerException.class);
+        }
+    }
+
+    @Nested
+    class CreateRedactedLine {
+
+        @Test
+        void createRedactedLineCarriesTheShapeOfItsNameInPlaceOfIt() {
+
+            var line = CellTooltipEntryLine.createRedactedLine(CREST_MARK, WITHHELD_NAME, "820");
+
+            assertThat(line)
+                .isEqualTo(
+                    new CellTooltipEntryLine(
+                        CREST_MARK,
+                        NO_NAME,
+                        List.of(7, 4),
+                        NO_LABEL_FINDING,
+                        NO_PLACE,
+                        NO_NOTE,
+                        null,
+                        "820",
+                        null,
+                        IS_LISTED_IN_ITS_OWN_RIGHT,
+                        IS_VALUE_EARNED));
+        }
+
+        @Test
+        void createRedactedLineLeavesTheNameOffTheLineEntirely() {
+            // The point of the shape rather than a consequence of it: the factory is never handed the
+            // name, so no part of the line holds text a later change could be tempted to draw.
+            assertThat(CellTooltipEntryLine
+                    .createRedactedLine(NO_MARK, WITHHELD_NAME, "820")
+                    .labelText())
+                .isNull();
+        }
+
+        @Test
+        void createRedactedLineHoldsTheShapeApartFromTheListItWasDerivedFrom() {
+            // A caller deriving the lengths from a list it goes on using cannot reshape a name the box
+            // has already stated.
+            var derivedLengths = new ArrayList<>(List.of(7, 4));
+            var line = CellTooltipEntryLine.createRedactedLine(NO_MARK, derivedLengths, "820");
+
+            derivedLengths.add(11);
+
+            assertThat(line.redactedWordLengths())
+                .containsExactly(7, 4);
+        }
+
+        @Test
+        void createRedactedLineRefusesALineNamedAndWithheldAtOnce() {
+            // Two accounts of what the line is called, and the label draws one: held together, the same
+            // line would come out named on one surface and blocked out on another.
+            assertThatThrownBy(() -> new CellTooltipEntryLine(
+                    NO_MARK,
+                    "Tigra City",
+                    WITHHELD_NAME,
+                    NO_LABEL_FINDING,
+                    NO_PLACE,
+                    NO_NOTE,
+                    null,
+                    "820",
+                    null,
+                    IS_LISTED_IN_ITS_OWN_RIGHT,
+                    IS_VALUE_EARNED))
+                .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        void createRedactedLineRefusesALineWithNoValue() {
+            // Withholding the name changes nothing about the value column: a line carrying no number
+            // states the value that means so rather than reaching the layout as a null.
+            assertThatThrownBy(() ->
+                    CellTooltipEntryLine.createRedactedLine(CREST_MARK, WITHHELD_NAME, null))
                 .isInstanceOf(NullPointerException.class);
         }
     }
@@ -112,6 +206,29 @@ final class CellTooltipEntryLineTest {
     }
 
     @Nested
+    class HasRedactedName {
+
+        @Test
+        void hasRedactedNameReturnsTrueForALineKeepingItsNameBack() {
+
+            assertThat(CellTooltipEntryLine
+                    .createRedactedLine(CREST_MARK, WITHHELD_NAME, "820")
+                    .hasRedactedName())
+                .isTrue();
+        }
+
+        @Test
+        void hasRedactedNameReturnsFalseForALineSayingWhatItIsCalled() {
+            // The one judgement every surface goes through, so a line that says its name cannot be
+            // drawn as though something had been kept back from it.
+            assertThat(CellTooltipEntryLine
+                    .createLine(CREST_MARK, "Tigra City", "820")
+                    .hasRedactedName())
+                .isFalse();
+        }
+    }
+
+    @Nested
     class QualifiedWith {
 
         @Test
@@ -126,6 +243,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         CREST_MARK,
                         "The Hegemony",
+                        NO_REDACTION,
                         NO_LABEL_FINDING,
                         NO_PLACE,
                         NO_NOTE,
@@ -134,6 +252,20 @@ final class CellTooltipEntryLineTest {
                         null,
                         IS_LISTED_IN_ITS_OWN_RIGHT,
                         IS_VALUE_EARNED));
+        }
+
+        @Test
+        void qualifiedWithKeepsANameTheLineWithholds() {
+            // A refinement restates the one part it is about and carries the rest across, so a status
+            // layered onto a redacted line cannot quietly restore the name it was keeping back.
+            var line = CellTooltipEntryLine
+                .createRedactedLine(CREST_MARK, WITHHELD_NAME, "820")
+                .qualifiedWith("undiscovered");
+
+            assertThat(line.hasRedactedName())
+                .isTrue();
+            assertThat(line.redactedWordLengths())
+                .containsExactly(7, 4);
         }
 
         @Test
@@ -163,6 +295,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         NO_MARK,
                         "Abandoned Station",
+                        NO_REDACTION,
                         new CellTooltipLabelFinding(0, 9),
                         NO_PLACE,
                         NO_NOTE,
@@ -200,6 +333,17 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
+        void callsOutInLabelRefusesALineWhoseNameIsWithheld() {
+            // There is no name to pick a stretch out of, and the blocks drawn in its place stand for
+            // words rather than spelling them - so a range into one could only gild whatever happened
+            // to be that far along.
+            assertThatThrownBy(() -> CellTooltipEntryLine
+                    .createRedactedLine(NO_MARK, WITHHELD_NAME, "820")
+                    .callsOutInLabel(0, 7))
+                .isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
         void callsOutInLabelLeavesTheLineItWasBuiltFromSayingNothingInItsName() {
             // A refinement returns a new value, so a caller gilding one line of a resolved list cannot
             // reach into the line another caller is still holding.
@@ -226,6 +370,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         CREST_MARK,
                         "Sentinel Gantries",
+                        NO_REDACTION,
                         NO_LABEL_FINDING,
                         NO_PLACE,
                         "last seen 34 days ago (c206.05.12)",
@@ -277,6 +422,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         CREST_MARK,
                         "The Hegemony",
+                        NO_REDACTION,
                         NO_LABEL_FINDING,
                         new CellTooltipIndexPlace("[2]", CellTooltipIndexOutcome.WON),
                         NO_NOTE,
@@ -403,6 +549,7 @@ final class CellTooltipEntryLineTest {
                     new CellTooltipEntryLine(
                         NO_MARK,
                         "Small: 2",
+                        NO_REDACTION,
                         NO_LABEL_FINDING,
                         NO_PLACE,
                         NO_NOTE,
