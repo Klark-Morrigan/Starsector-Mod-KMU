@@ -119,7 +119,7 @@ final class HolderPassTest {
         }
 
         @Test
-        void reportsAnUnfoundColonyWhereTheRevealLiftsTheFog() {
+        void reportsAnUndiscoveredColonyWhereTheRevealLiftsTheFog() {
             // The same pass with the dev reveal on, which is the one knob the projection reads.
             var sector = SectorPoliticsFixtures.buildSectorWith(
                 SYSTEM_ID,
@@ -198,7 +198,7 @@ final class HolderPassTest {
         }
 
         @Test
-        void reportsAnUnfoundColonyWhereTheRevealLiftsTheFog() {
+        void reportsAnUndiscoveredColonyWhereTheRevealLiftsTheFog() {
             // The same knob the listing reads, so a map showing every faction cannot draw a cell
             // as settled on one read and empty on the other.
             var sector = SectorPoliticsFixtures.buildSectorWith(
@@ -272,7 +272,7 @@ final class HolderPassTest {
         }
 
         @Test
-        void withholdsAnOwnerThePlayerHasOnlyUnfoundColoniesOf() {
+        void withholdsAnOwnerHoldingOnlyUndiscoveredColonies() {
             // The fog reaches presence as it reaches the colonies themselves: naming a faction over
             // a base the player has not found is the one thing the projection exists to prevent,
             // and the dev reveal states it like anything else.

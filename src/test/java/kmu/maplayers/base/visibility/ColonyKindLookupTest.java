@@ -61,12 +61,12 @@ final class ColonyKindLookupTest {
             // What the lookup answers is what a place is, not what may be said of it. A reader
             // asking has already decided which rows it lists, so narrowing here would leave a
             // listed row unanswered for reasons that reader had nothing to do with.
-            var unfoundDerelict = nameColony(
-                ColonyMarketFixture.buildUnfoundDerelictStation(),
+            var undiscoveredDerelict = nameColony(
+                ColonyMarketFixture.buildUndiscoveredDerelictStation(),
                 DERELICT_ID);
 
             var lookup = ColonyKindLookup.readKindsIn(
-                new Colonies(List.of(new Colony(unfoundDerelict, false))),
+                new Colonies(List.of(new Colony(undiscoveredDerelict, false))),
                 ColonyKnowledge.observingUnderTheFog());
 
             assertThat(lookup.readKindOf(DERELICT_ID))

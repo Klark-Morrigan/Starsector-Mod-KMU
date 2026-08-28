@@ -79,7 +79,7 @@ final class SpotlitPresenceAgreementIntegrationTest {
         }
 
         @Test
-        void anUnfoundColonySparesNobodyAndLeavesTheSystemUninhabited() {
+        void anUndiscoveredColonySparesNobodyAndLeavesTheSystemUninhabited() {
             // The fog reaches both reads through the one rule the pass was opened with, so a colony
             // the player has not found neither settles its cell nor spares it.
             var pirates = SectorPoliticsFixtures.buildFaction("pirates");

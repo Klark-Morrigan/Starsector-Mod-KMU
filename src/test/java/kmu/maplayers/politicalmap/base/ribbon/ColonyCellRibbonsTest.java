@@ -202,7 +202,7 @@ final class ColonyCellRibbonsTest {
         }
 
         @Test
-        void countsAnUnfoundColonyWhereTheRevealLiftsTheFog() {
+        void countsAnUndiscoveredColonyWhereTheRevealLiftsTheFog() {
             // The same system under the dev reveal, which the fills are drawn under too: the band
             // counts what the map is showing rather than what the fog would have kept.
             var sector = buildSectorWith(

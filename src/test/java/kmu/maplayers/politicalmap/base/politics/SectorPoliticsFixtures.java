@@ -252,7 +252,7 @@ public final class SectorPoliticsFixtures {
      * @return the market mock
      */
     public static MarketAPI buildUndiscoveredHiddenMarket(FactionAPI faction, int size) {
-        return atStability(ColonyMarketFixture.buildUnfoundConcealedColony(faction, size));
+        return atStability(ColonyMarketFixture.buildUndiscoveredConcealedColony(faction, size));
     }
 
     /**
@@ -266,7 +266,7 @@ public final class SectorPoliticsFixtures {
      * @return the market mock
      */
     public static MarketAPI buildUndiscoveredOpenMarket(FactionAPI faction, int size) {
-        return atStability(ColonyMarketFixture.buildUnfoundOpenColony(faction, size));
+        return atStability(ColonyMarketFixture.buildUndiscoveredOpenColony(faction, size));
     }
 
     /**

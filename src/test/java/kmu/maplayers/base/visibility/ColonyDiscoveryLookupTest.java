@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>The unmet id is the case worth pinning rather than the plain one, for the reason its sibling
  * fold's is ({@link ColonyKindLookupTest}): a row the fold never met has to go on reading, and here
- * it must read as found - calling a colony unfound is a finding the box has nothing behind.
+ * it must read as found - calling a colony undiscovered is a finding the box has nothing behind.
  */
 final class ColonyDiscoveryLookupTest {
 
@@ -38,8 +38,8 @@ final class ColonyDiscoveryLookupTest {
         @Test
         void holds_the_colonies_of_the_place_the_player_has_yet_to_find() {
 
-            var unfoundDerelict = nameColony(
-                ColonyMarketFixture.buildUnfoundDerelictStation(),
+            var undiscoveredDerelict = nameColony(
+                ColonyMarketFixture.buildUndiscoveredDerelictStation(),
                 DERELICT_ID);
 
             var neighbour = nameColony(
@@ -47,7 +47,7 @@ final class ColonyDiscoveryLookupTest {
                 NEIGHBOUR_ID);
 
             var lookup = ColonyDiscoveryLookup.readDiscoveriesIn(new Colonies(List.of(
-                new Colony(unfoundDerelict, false),
+                new Colony(undiscoveredDerelict, false),
                 new Colony(neighbour, true))));
 
             assertThat(lookup.isDiscoveredColony(DERELICT_ID))
@@ -59,7 +59,7 @@ final class ColonyDiscoveryLookupTest {
         @Test
         void reads_the_entitys_own_flag_rather_than_whether_the_colony_is_concealed() {
             // The two axes are separate everywhere else in the fog, and a box calling a raided
-            // pirate base unfound would be reporting the wrong one of them.
+            // pirate base undiscovered would be reporting the wrong one of them.
             var concealedColony = nameColony(
                 ColonyMarketFixture.buildFoundConcealedColony("pirates"),
                 NEIGHBOUR_ID);
@@ -74,7 +74,7 @@ final class ColonyDiscoveryLookupTest {
         @Test
         void passes_over_a_colony_with_no_id_to_key_it_on() {
             // Nothing to pair a row with, so nothing is stored - which is not the same as storing an
-            // entry under nothing and calling every other unnamed colony unfound.
+            // entry under nothing and calling every other unnamed colony undiscovered.
             var lookup = ColonyDiscoveryLookup.readDiscoveriesIn(
                 new Colonies(List.of(new Colony(mock(MarketAPI.class), true))));
 
@@ -95,7 +95,7 @@ final class ColonyDiscoveryLookupTest {
 
         @Test
         void reads_an_id_the_fold_never_met_as_found() {
-            // The direction that states no finding, a box being unable to call a colony unfound on
+            // The direction that states no finding, a box being unable to call a colony undiscovered on
             // the strength of a fold nobody made.
             assertThat(ColonyDiscoveryLookup.NONE.isDiscoveredColony(DERELICT_ID))
                 .isTrue();

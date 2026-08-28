@@ -34,7 +34,7 @@ import java.util.Optional;
 
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildPresenceOnlyStanding;
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildStandingOnOneMarket;
-import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildUnfoundPresenceOnlyStanding;
+import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildUnknownPresenceOnlyStanding;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
@@ -117,10 +117,11 @@ final class SystemClaimTooltipTest {
     private static final boolean IS_TERRITORIAL = true;
     private static final boolean IS_NON_TERRITORIAL = false;
 
-    // Whether the player has found the colony a standing rests on - the flag the box's projection
+    // Whether the player knows of the colony a standing rests on - the flag the box's projection
     // reads. Independent of what the mechanic made of that colony: a market held in the open is
-    // weighed whether or not anybody has reached it, so a scored standing can be unfound.
-    private static final boolean IS_UNFOUND_BY_PLAYER = false;
+    // weighed whether or not anybody has reached it, so a scored standing can rest on an
+    // undiscovered colony, which is the shape posed here.
+    private static final boolean IS_UNDISCOVERED_BY_PLAYER = false;
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
 
@@ -471,7 +472,7 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
-                    buildUnfoundPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
+                    buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
             assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly("Claim:", "The Hegemony");
@@ -492,7 +493,7 @@ final class SystemClaimTooltipTest {
                         TRITACHYON,
                         RIVAL_SCORE,
                         IS_TERRITORIAL,
-                        IS_UNFOUND_BY_PLAYER))));
+                        IS_UNDISCOVERED_BY_PLAYER))));
 
             assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly("Claim:", "The Hegemony");
@@ -511,7 +512,7 @@ final class SystemClaimTooltipTest {
                     HEGEMONY,
                     TOP_SCORE,
                     IS_TERRITORIAL,
-                    IS_UNFOUND_BY_PLAYER))));
+                    IS_UNDISCOVERED_BY_PLAYER))));
 
             var sections = tooltip.buildBodySections(sectorMock, systemMock);
 
@@ -535,7 +536,7 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
-                    buildUnfoundPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
+                    buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
             assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly("Claim:", "The Hegemony", "Contested by:", "Tri-Tachyon");
@@ -942,7 +943,7 @@ final class SystemClaimTooltipTest {
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 null,
-                List.of(buildUnfoundPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
+                List.of(buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
             assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
                 .isEmpty();

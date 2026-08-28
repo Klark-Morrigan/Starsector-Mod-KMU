@@ -290,7 +290,7 @@ final class ExpandedSystemDominationTooltipTest {
         @Test
         void createFactionAccountResolverReadsTheUnlistedColoniesUnderTheRankingsOwnReveal() {
             // The reveal decides what the box may name, and a colony the pass could not weigh is no
-            // exception. Read at a reveal of its own it would withhold an unfound station while
+            // exception. Read at a reveal of its own it would withhold an undiscovered station while
             // naming the weighed colonies beside it - or name one the player has not found.
             stubBreakdowns(Map.of());
             stubUnweighedColonies(Map.of());

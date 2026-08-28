@@ -309,7 +309,7 @@ final class CellTooltipEntryLineTest {
         @Test
         void callsOutInLabelKeepsAStatusTheLineAlreadyCallsOutAfterItsName() {
             // The two are the same finding drawn in two places rather than one displacing the other, so
-            // a colony saying what it is in its name and unfound besides states both.
+            // a colony saying what it is in its name and undiscovered besides states both.
             var line = CellTooltipEntryLine
                 .createLine(NO_MARK, "Abandoned Station", "0")
                 .qualifiedWith("undiscovered")

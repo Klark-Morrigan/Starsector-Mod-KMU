@@ -167,7 +167,7 @@ final class SystemColonyReadingTest {
 
         @Test
         void isDiscoveredColonyReadsAnUngatheredHalfAsFound() {
-            // The direction that states no finding: a box cannot call a colony unfound on the
+            // The direction that states no finding: a box cannot call a colony undiscovered on the
             // strength of a fold nobody made.
             var reading = new SystemColonyReading(null, null, null, null);
 

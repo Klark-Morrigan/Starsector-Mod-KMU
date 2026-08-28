@@ -203,7 +203,7 @@ class SectorPoliticsIntegrationTest {
         }
 
         @Test
-        void resolveDominantHolderExcludesAnUnfoundColonyHoweverPubliclyItIsListed() {
+        void resolveDominantHolderExcludesAnUndiscoveredColonyHoweverPubliclyItIsListed() {
             // A colony surfaced ahead of its entity being physically found - the
             // market un-hidden but the entity still discoverable, as FSF's DWR43
             // colonies sit between first entry and the fleet closing in. Being
@@ -211,13 +211,13 @@ class SectorPoliticsIntegrationTest {
             // known, so it paints nothing until the entity is found.
             //
             // Beside the case above rather than folded into it: that one is
-            // concealed as well as unfound, so it would go on passing under a fog
+            // concealed as well as undiscovered, so it would go on passing under a fog
             // that had quietly regained an "or it is listed" arm.
             var fsf = buildFaction("aEP_FSF", HEGEMONY_BRIGHT);
             var sector = buildSectorWith(
                 "revealed-system",
                 List.of(fsf),
-                buildUnfoundColonyAwaitingApproach(fsf, 5));
+                buildUndiscoveredColonyAwaitingApproach(fsf, 5));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
                 .doesNotContainKey("revealed-system");
@@ -453,7 +453,7 @@ class SectorPoliticsIntegrationTest {
     // A colony whose entity is still to be found, with nothing concealed about the market itself
     // (FSF's DWR43 colonies between entry and approach). Named locally because that install's
     // shape is what this suite poses; what the market is made of is the shared fixture's.
-    private static MarketAPI buildUnfoundColonyAwaitingApproach(FactionAPI faction, int size) {
+    private static MarketAPI buildUndiscoveredColonyAwaitingApproach(FactionAPI faction, int size) {
         return SectorPoliticsFixtures.buildUndiscoveredOpenMarket(faction, size);
     }
 }

@@ -138,11 +138,11 @@ final class SystemInhabitationAgreementIntegrationTest {
         }
 
         @Test
-        void anUnfoundConcealedBaseLeavesTheCellEmptyAndTheStatusSpoken() {
+        void anUnknownConcealedBaseLeavesTheCellEmptyAndTheStatusSpoken() {
             // The shape the fog keeps back. Both surfaces must withhold it together: a cell drawn
             // as settled, or a status line withheld, is the same tell either way.
             var system = buildSystem();
-            var sector = buildSectorListing(system, buildUnfoundConcealedBase());
+            var sector = buildSectorListing(system, buildUnknownConcealedBase());
 
             assertThat(isInhabited(sector, system, BASE_FOG))
                 .isFalse();
@@ -151,11 +151,11 @@ final class SystemInhabitationAgreementIntegrationTest {
         }
 
         @Test
-        void anUnfoundConcealedBaseSettlesTheCellAndSilencesTheStatusUnderTheReveal() {
+        void anUnknownConcealedBaseSettlesTheCellAndSilencesTheStatusUnderTheReveal() {
             // One toggle reaching both reads, so a map showing every faction never carries a box
             // calling one of the systems it has just filled in empty.
             var system = buildSystem();
-            var sector = buildSectorListing(system, buildUnfoundConcealedBase());
+            var sector = buildSectorListing(system, buildUnknownConcealedBase());
 
             assertThat(isInhabited(sector, system, UNDER_THE_REVEAL))
                 .isTrue();
@@ -298,7 +298,7 @@ final class SystemInhabitationAgreementIntegrationTest {
 
     // A base still to be found: concealed and on a discoverable entity, so it fails both arms of
     // the known projection - the one shape the fog has to keep back.
-    private static MarketAPI buildUnfoundConcealedBase() {
+    private static MarketAPI buildUnknownConcealedBase() {
         return buildColonyOnEntity(true, true);
     }
 

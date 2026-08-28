@@ -272,7 +272,7 @@ class FilteredPoliticsIntegrationTest {
         @Test
         void withholdsABlocWhoseOnlyUnregisteredColonyHereThePlayerHasNotFound() {
             // The fog reaches the widened presence like any other read of the projection: an
-            // unfound station names nobody, so the cell keeps hegemony's holder and recedes - and
+            // unknown station names nobody, so the cell keeps hegemony's holder and recedes - and
             // the dev reveal restores the bloc to the spotlight, as it does everywhere else.
             var sector = buildSectorWhereTritachyonIsUnregistered(
                 tritachyon -> buildUndiscoveredHiddenMarket(tritachyon, 3));

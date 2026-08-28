@@ -1515,7 +1515,7 @@ class KnownMarketFootprintsIntegrationTest {
         @Test
         void readUnweighedColoniesByFactionWithholdsAnUndiscoveredColonyUntilTheRevealIsOn() {
             // Discovery decides what the box may name, exactly as it does for a weighed colony:
-            // unfound it is withheld, and the dev reveal states it like anything else.
+            // undiscovered it is withheld, and the dev reveal states it like anything else.
             var sector = buildSectorWith("hidden-system");
 
             placeMarketsOnSystemEntities(

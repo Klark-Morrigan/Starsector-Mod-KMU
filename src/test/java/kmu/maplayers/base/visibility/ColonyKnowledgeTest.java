@@ -129,7 +129,7 @@ final class ColonyKnowledgeTest {
                 // counts - naming its owner in a box would tell the player exactly what is hiding out
                 // there.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
-                var base = fixture.buildUnfoundConcealedColony("pirates");
+                var base = fixture.buildUndiscoveredConcealedColony("pirates");
 
                 assertThat(knowing(fixture, ColonyVisibility.BASE_FOG).readKnownColonies(buildColoniesOf(buildColony(base))))
                     .isEmpty();
@@ -142,7 +142,7 @@ final class ColonyKnowledgeTest {
                 // concealment would paint its system as settled from the first frame of a campaign,
                 // for a place no fleet has been near.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
-                var derelict = fixture.buildUnfoundOpenColony(Factions.NEUTRAL);
+                var derelict = fixture.buildUndiscoveredOpenColony(Factions.NEUTRAL);
 
                 assertThat(knowing(fixture, ColonyVisibility.BASE_FOG).readKnownColonies(buildColoniesOf(buildColony(derelict))))
                     .isEmpty();
@@ -152,19 +152,19 @@ final class ColonyKnowledgeTest {
             void restores_a_colony_the_player_has_not_found_under_the_reveal() {
 
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
-                var base = fixture.buildUnfoundConcealedColony("pirates");
+                var base = fixture.buildUndiscoveredConcealedColony("pirates");
 
                 assertThat(knowing(fixture, REVEAL_UNDISCOVERED).readKnownColonies(buildColoniesOf(buildColony(base))))
                     .containsExactly(buildColony(base));
             }
 
             @Test
-            void withholds_an_unfound_concealed_colony_under_the_discovery_reveal_alone() {
+            void withholds_an_undiscovered_concealed_colony_under_the_discovery_reveal_alone() {
                 // The rule each toggle is written to: a reveal drops the arm it names and clears no
-                // gate beside it. This colony is held back twice over - unfound, and concealed in a
+                // gate beside it. This colony is held back twice over - undiscovered, and concealed in a
                 // place nobody has seen it - so lifting the fog leaves the second reason standing.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
-                var base = fixture.buildUnfoundConcealedColony("pirates");
+                var base = fixture.buildUndiscoveredConcealedColony("pirates");
 
                 fixture.placeColoniesInSystem(base);
 
@@ -214,13 +214,13 @@ final class ColonyKnowledgeTest {
                 // and holding a colony that settles it - still shows nothing the player has not
                 // found, whichever way the gates are set.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
-                var unfoundBase = fixture.buildUnfoundConcealedColony("pirates");
+                var undiscoveredBase = fixture.buildUndiscoveredConcealedColony("pirates");
                 var colony = fixture.buildVisibleColony("hegemony");
 
-                fixture.placeColoniesInSystem(unfoundBase, colony);
-                fixture.markColoniesAsSighted(unfoundBase, colony);
+                fixture.placeColoniesInSystem(undiscoveredBase, colony);
+                fixture.markColoniesAsSighted(undiscoveredBase, colony);
 
-                assertThat(knowing(fixture, rule).readKnownColonies(buildColoniesOf(buildColony(unfoundBase), buildColony(colony))))
+                assertThat(knowing(fixture, rule).readKnownColonies(buildColoniesOf(buildColony(undiscoveredBase), buildColony(colony))))
                     .containsExactly(buildColony(colony));
             }
 
@@ -292,11 +292,11 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void withholds_an_unfound_unsurveyed_decivilised_world_under_either_knob_alone() {
+            void withholds_an_undiscovered_unsurveyed_decivilised_world_under_either_knob_alone() {
                 // The kind's own case of the rule every knob on the tab is written to: two arms
                 // hold this world back, each knob reaches one, and neither reaches the other's.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
-                var decivilisedWorld = fixture.buildUnfoundUnsurveyedDecivilisedWorld();
+                var decivilisedWorld = fixture.buildUndiscoveredUnsurveyedDecivilisedWorld();
 
                 fixture.placeColoniesInSystem(decivilisedWorld);
 
@@ -462,11 +462,11 @@ final class ColonyKnowledgeTest {
                 // it stays unmentioned rather than being vouched for by a place nobody has seen.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var derelict = fixture.buildDerelictStation();
-                var unfoundColony = fixture.buildUnfoundOpenColony("hegemony");
+                var undiscoveredColony = fixture.buildUndiscoveredOpenColony("hegemony");
 
-                fixture.placeColoniesInSystem(derelict, unfoundColony);
+                fixture.placeColoniesInSystem(derelict, undiscoveredColony);
 
-                assertThat(knowing(fixture, BOTH_GATES_ON).readKnownColonies(buildColoniesOf(buildDerelict(derelict), buildColony(unfoundColony))))
+                assertThat(knowing(fixture, BOTH_GATES_ON).readKnownColonies(buildColoniesOf(buildDerelict(derelict), buildColony(undiscoveredColony))))
                     .isEmpty();
             }
 
@@ -702,7 +702,7 @@ final class ColonyKnowledgeTest {
         void answers_false_for_a_colony_the_player_has_not_found() {
             // Reporting its system as occupied is itself the tell that something is hiding there.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
-            var base = fixture.buildUnfoundConcealedColony("pirates");
+            var base = fixture.buildUndiscoveredConcealedColony("pirates");
 
             assertThat(knowing(fixture, ColonyVisibility.BASE_FOG).hasKnownColony(buildColoniesOf(buildColony(base))))
                 .isFalse();
@@ -714,7 +714,7 @@ final class ColonyKnowledgeTest {
             // nothing but an undiscovered derelict reads as empty, which is what the player has
             // any means of knowing about it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
-            var derelict = fixture.buildUnfoundOpenColony(Factions.NEUTRAL);
+            var derelict = fixture.buildUndiscoveredOpenColony(Factions.NEUTRAL);
 
             assertThat(knowing(fixture, ColonyVisibility.BASE_FOG).hasKnownColony(buildColoniesOf(buildColony(derelict))))
                 .isFalse();
@@ -724,7 +724,7 @@ final class ColonyKnowledgeTest {
         void answers_true_for_a_colony_the_player_has_not_found_under_the_reveal() {
 
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
-            var base = fixture.buildUnfoundConcealedColony("pirates");
+            var base = fixture.buildUndiscoveredConcealedColony("pirates");
 
             assertThat(knowing(fixture, REVEAL_UNDISCOVERED).hasKnownColony(buildColoniesOf(buildColony(base))))
                 .isTrue();
@@ -736,7 +736,7 @@ final class ColonyKnowledgeTest {
             // answer, and a set mixing a fogged colony with a visible one is where a filter that
             // had drifted between the two reads would show it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
-            var fogged = fixture.buildUnfoundConcealedColony("pirates");
+            var fogged = fixture.buildUndiscoveredConcealedColony("pirates");
             var visible = fixture.buildVisibleColony("independent");
 
             var foggedOnly = buildColoniesOf(buildColony(fogged));
@@ -926,7 +926,7 @@ final class ColonyKnowledgeTest {
             // has not found, so it is the reveal alone putting the hulk in the listing - and
             // habitation still declines it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
-            var derelict = fixture.buildUnfoundDerelictStation();
+            var derelict = fixture.buildUndiscoveredDerelictStation();
 
             fixture.placeColoniesInSystem(derelict);
 
@@ -961,11 +961,11 @@ final class ColonyKnowledgeTest {
 
             var fixture = new ColonyKnowledgeFixture("corvus");
             var colony = fixture.buildVisibleColony("hegemony");
-            var unfoundColony = fixture.buildUnfoundOpenColony("tritachyon");
+            var undiscoveredColony = fixture.buildUndiscoveredOpenColony("tritachyon");
 
-            fixture.placeColoniesInSystem(colony, unfoundColony);
+            fixture.placeColoniesInSystem(colony, undiscoveredColony);
 
-            assertThat(knowing(fixture, null).readInhabitingColonies(buildColoniesOf(buildColony(colony), buildColony(unfoundColony))))
+            assertThat(knowing(fixture, null).readInhabitingColonies(buildColoniesOf(buildColony(colony), buildColony(undiscoveredColony))))
                 .containsExactly(buildColony(colony));
         }
     }
@@ -1025,7 +1025,7 @@ final class ColonyKnowledgeTest {
             // The emptiness question asked of the same case: the reveal admits the hulk to the
             // listing without making its place anybody's home.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
-            var derelict = fixture.buildUnfoundDerelictStation();
+            var derelict = fixture.buildUndiscoveredDerelictStation();
 
             fixture.placeColoniesInSystem(derelict);
 
@@ -1042,11 +1042,11 @@ final class ColonyKnowledgeTest {
             // No reveal appears out of a missing argument: a colony the player has not found does
             // not inhabit its place for the rule having gone unstated.
             var fixture = new ColonyKnowledgeFixture("corvus");
-            var unfoundColony = fixture.buildUnfoundOpenColony("tritachyon");
+            var undiscoveredColony = fixture.buildUndiscoveredOpenColony("tritachyon");
 
-            fixture.placeColoniesInSystem(unfoundColony);
+            fixture.placeColoniesInSystem(undiscoveredColony);
 
-            assertThat(knowing(fixture, null).hasInhabitingColony(buildColoniesOf(buildColony(unfoundColony))))
+            assertThat(knowing(fixture, null).hasInhabitingColony(buildColoniesOf(buildColony(undiscoveredColony))))
                 .isFalse();
         }
 
@@ -1074,15 +1074,15 @@ final class ColonyKnowledgeTest {
             // that had drifted from the projection would show it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var derelict = fixture.buildDerelictStation();
-            var unfoundColony = fixture.buildUnfoundOpenColony("hegemony");
+            var undiscoveredColony = fixture.buildUndiscoveredOpenColony("hegemony");
 
-            fixture.placeColoniesInSystem(derelict, unfoundColony);
-            fixture.markColoniesAsSighted(derelict, unfoundColony);
+            fixture.placeColoniesInSystem(derelict, undiscoveredColony);
+            fixture.markColoniesAsSighted(derelict, undiscoveredColony);
 
             var derelictOnly = buildColoniesOf(buildDerelict(derelict));
             var mixed = buildColoniesOf(
                 buildDerelict(derelict),
-                buildColony(unfoundColony));
+                buildColony(undiscoveredColony));
 
             assertThat(knowing(fixture, BOTH_GATES_ON).readInhabitingColonies(derelictOnly))
                 .isEmpty();
@@ -1132,7 +1132,7 @@ final class ColonyKnowledgeTest {
             // still needs finding before it is shown, the gate being a condition on top of the fog
             // rather than an alternative to it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
-            var derelict = fixture.buildUnfoundDerelictStation();
+            var derelict = fixture.buildUndiscoveredDerelictStation();
 
             fixture.placeColoniesInSystem(derelict);
 
@@ -1205,11 +1205,11 @@ final class ColonyKnowledgeTest {
             // reveal could not be taken back by turning the reveal off again.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var derelict = fixture.buildDerelictStation();
-            var unfoundNeighbour = fixture.buildUnfoundOpenColony("hegemony");
+            var undiscoveredNeighbour = fixture.buildUndiscoveredOpenColony("hegemony");
 
-            fixture.placeColoniesInSystem(derelict, unfoundNeighbour);
+            fixture.placeColoniesInSystem(derelict, undiscoveredNeighbour);
 
-            assertThat(observing().readColoniesObservedByInhabitants(buildColoniesOf(buildDerelict(derelict), buildColony(unfoundNeighbour))))
+            assertThat(observing().readColoniesObservedByInhabitants(buildColoniesOf(buildDerelict(derelict), buildColony(undiscoveredNeighbour))))
                 .isEmpty();
         }
     }

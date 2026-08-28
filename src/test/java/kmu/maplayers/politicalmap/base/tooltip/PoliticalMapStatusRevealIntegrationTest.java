@@ -138,11 +138,11 @@ final class PoliticalMapStatusRevealIntegrationTest {
     class BuildBodySections {
 
         @Test
-        void bothLayersCallASystemUnpopulatedWhileItsOnlyBaseIsUnfound() {
+        void bothLayersCallASystemUnpopulatedWhileItsOnlyBaseIsUnknown() {
 
             var sector = buildSectorHolding(buildConcealedBase(true));
 
-            // The leak that started this: the claims layer counted the unfound base and drew no
+            // The leak that started this: the claims layer counted the unknown base and drew no
             // status, so its absence told the player a base was hiding there.
             assertThat(readStatus(claimTooltip.buildBodySections(sector, systemMock)))
                 .isEqualTo("Unpopulated");
@@ -171,7 +171,7 @@ final class PoliticalMapStatusRevealIntegrationTest {
             var sector = buildSectorHolding(buildConcealedBase(true));
 
             // One toggle, two boxes: the faction layer reaches it through its pass and the claims
-            // layer reads it directly, and the same unfound base has to satisfy both.
+            // layer reads it directly, and the same unknown base has to satisfy both.
             assertThat(readStatus(claimTooltip.buildBodySections(sector, systemMock)))
                 .isNull();
             assertThat(readStatus(dominationTooltip.buildBodySections(sector, systemMock)))

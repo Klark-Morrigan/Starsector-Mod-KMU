@@ -256,7 +256,7 @@ final class ExpandedSystemClaimTooltipTest {
         void resolveAccountEntriesWithholdsUnderTheRuleTheContestWasProjectedUnder() {
             // The account draws under the rule that selected the listing above it, not under one it
             // reads for itself. Posed as the two disagreeing: the contest carries the reveal, while
-            // the live settings seam answers with it off. The unfound market has to be listed - read
+            // the live settings seam answers with it off. The undiscovered market has to be listed - read
             // afresh here, the account would withhold the very colony the listing named, and would
             // be free to answer two factions of one box differently besides.
             var contest = SystemClaimContestTooltip.ListedClaimContest.selectFrom(
@@ -268,7 +268,7 @@ final class ExpandedSystemClaimTooltipTest {
                 HEGEMONY,
                 IS_TERRITORIAL,
                 buildMarket("Chicomoztoc", TOP_SCORE),
-                List.of(buildUnfoundMarket("Culann", LESSER_SCORE)));
+                List.of(buildUndiscoveredMarket("Culann", LESSER_SCORE)));
 
             assertThat(readLabelTexts(
                     tooltip.resolveAccountEntries(contest, standing, SystemColonyReading.NONE)))
@@ -548,7 +548,7 @@ final class ExpandedSystemClaimTooltipTest {
     // about a tie or where the economy put anything.
     // A market of the same shape the player has yet to find, for a case about which rule decides
     // whether it is listed at all.
-    private static MarketClaimBreakdown buildUnfoundMarket(String marketName, int marketSize) {
+    private static MarketClaimBreakdown buildUndiscoveredMarket(String marketName, int marketSize) {
 
         var isKnownToPlayer = false;
 

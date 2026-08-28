@@ -164,13 +164,13 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowCallsASystemEmptyWhereItsOnlyColonyIsUnfoundHoweverPubliclyListed() {
+        void resolveStatusRowCallsASystemEmptyWhereItsOnlyColonyIsUndiscoveredHoweverPubliclyListed() {
             // The pair above and this one are the two halves hiddenness and discovery come apart
             // on, and the fog reads only the second: a raided base stays concealed and counts,
             // while a colony the game lists publicly does not until its entity is found. The cell
             // beneath the box withholds it on the same rule, so the two still agree.
             var system = buildSystemWithPlanets();
-            var sector = buildSectorHoldingMarkets(system, buildUnfoundListedColony());
+            var sector = buildSectorHoldingMarkets(system, buildUndiscoveredListedColony());
 
             var row = resolveStatusRowIn(sector, system, BASE_FOG)
                 .orElseThrow();
@@ -350,7 +350,7 @@ final class SystemStatusRowTest {
 
     // A colony surfaced into the open ahead of being reached: publicly listed, its entity still
     // awaiting discovery - the other half of the pair hiddenness and discovery come apart on.
-    private static MarketAPI buildUnfoundListedColony() {
+    private static MarketAPI buildUndiscoveredListedColony() {
         return buildColonyOnEntity(true, false);
     }
 
