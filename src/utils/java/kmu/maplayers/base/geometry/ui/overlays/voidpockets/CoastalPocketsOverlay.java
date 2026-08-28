@@ -136,6 +136,52 @@ public final class CoastalPocketsOverlay {
     }
 
     /**
+     * Draws every lake's margin, beneath the cells: the water between the drawn shore and
+     * the cells' own arcs, with the open water inside the shore left to the backdrop.
+     *
+     * <p>The margin rather than the whole lake, because that is what the coastal fill shows
+     * of the outer shore - what the drawn line gave up against the cells' true edge - and a
+     * lake filled solid answers a different question in the same colour. Beneath the cells
+     * for the reason the pocket fills are: a fill that strayed should read as the mistake it
+     * is rather than paint over the shape it got wrong.
+     *
+     * @param g2   what to draw with
+     * @param fill what to fill the margins with
+     * @param edge what to outline them in
+     */
+    public void paintLakeFills(Graphics2D g2, Color fill, Color edge) {
+
+        for (var lake : traced.lakes()) {
+
+            MapPainting.paintBetweenRings(
+                g2,
+                lake.waterEdge(),
+                lake.drawnRing(),
+                fill,
+                settings.voidFillOpacity,
+                edge);
+        }
+    }
+
+    /**
+     * Draws each lake's shore, over the top of everything.
+     *
+     * <p>At the coasts' own weight and in their colour, because a lake shore IS a coast of
+     * this construction: drawn any other way, the same line would read as two kinds of thing
+     * depending on which side of the land it fell.
+     *
+     * @param g2     what to draw with
+     * @param colour what to draw the line in
+     */
+    public void paintLakeRings(Graphics2D g2, Color colour) {
+
+        MapPainting.paintLineRings(
+            g2,
+            traced.lakes().stream().map(Coastlines.Lake::drawnRing).toList(),
+            colour);
+    }
+
+    /**
      * Draws the frontages the smoothing left out, on the borders they sit on.
      *
      * <p>Over the coast rather than under it, because the two are read together: what a drop

@@ -121,6 +121,41 @@ public final class MapPainting {
         }
     }
 
+    /**
+     * The fill between two closed rings, one inside the other - a margin, with the space
+     * inside the inner ring left unpainted.
+     *
+     * <p>Even-odd rather than a subtraction worked out in geometry: the two rings share
+     * stretches wherever the inner one runs along the outer - a drawn shore's fillets run on
+     * the water's own edge - and a boolean subtraction of two nearly-coincident outlines is
+     * exactly where geometry libraries produce slivers and self-intersections. The winding
+     * rule gets the same answer by counting crossings, which two coincident edges cannot
+     * upset.
+     *
+     * @param g2    what to draw with
+     * @param outer the ring the fill runs out to
+     * @param inner the ring the fill stops at, its inside left bare
+     * @param fill  what to fill the margin with
+     * @param alpha how solid the body is
+     * @param edge  what to outline it in
+     */
+    public static void paintBetweenRings(
+            Graphics2D g2,
+            List<double[]> outer,
+            List<double[]> inner,
+            Color fill,
+            int alpha,
+            Color edge) {
+
+        var margin = new Path2D.Double(Path2D.WIND_EVEN_ODD);
+
+        margin.append(buildPath(outer), false);
+        margin.append(buildPath(inner), false);
+
+        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
+        paintFilledShape(g2, margin, fill, alpha, edge);
+    }
+
     // The one way a proposed line is drawn here: closed rings stroked at span weight in one
     // opaque colour, filled with nothing. Shared by the settled coast and the continent
     // preview because the two exist to be compared, and two stanzas of stroke-and-colour

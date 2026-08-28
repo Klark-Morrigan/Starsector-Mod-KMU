@@ -68,6 +68,9 @@ public final class ViewerSettingsPanel {
 
     private static final String CONTINENT_COASTS = "showContinentCoasts";
     private static final String CONTINENT_FILL = "showContinentCoastalFill";
+    private static final String LAKE_COASTS = "showContinentLakeCoasts";
+    private static final String LAKE_FILL = "showContinentLakeFill";
+    private static final String LAKE_FRONTAGES = "showContinentLakeFrontages";
     private static final String CONTINENT_BRIDGES = "showContinentBridges";
     private static final String BRIDGE_FRONTAGES = "showBridgeFrontages";
 
@@ -98,6 +101,14 @@ public final class ViewerSettingsPanel {
     private static final double MIN_FRONTAGE_MINIMUM = 0;
 
     private static final double MIN_FRONTAGE_MAXIMUM = 25;
+
+    // How much water a hole must hold to be drawn as a lake, in percent of one cell's area.
+    // Zero is the floor switched off - every puddle kept - and the ceiling is a hundred
+    // times the shipped floor: half a cell of water, which discards most of what a real
+    // sector holds, so culling whole lakes is an experiment the slider can actually run.
+    private static final double MIN_LAKE_MINIMUM = 0;
+
+    private static final double MIN_LAKE_MAXIMUM = 50;
 
     // How every rounded line on the map is rounded where it turns sharply - the coasts and
     // the cluster borders alike.
@@ -724,9 +735,15 @@ public final class ViewerSettingsPanel {
     }
 
     // What there is to see of the continent construction, gathered the way the settled one's
-    // switches are. Loose beside the colour and the slider each belonged to, the four read as
-    // four unrelated knobs; together they read as the one question they answer - how much of
-    // this proposal is on screen - and the roll-up over them can then say "all of it".
+    // switches are: two symmetric shores - interior and exterior - with the same three
+    // switches each, because the two are the same kind of line seen from opposite sides and
+    // a reader judging one wants the same handles they have on the other.
+    //
+    // The flat roll-ups after them cut across the branches on purpose, the way v2's do: they
+    // answer questions about a KIND OF THING rather than about a shore - "every coastline",
+    // "every fill", "every wall" - and a roll-up is what keeps the nested switch and the
+    // global answer synced, since it reads as on, mixed or off over its keys and writes all
+    // of them.
     //
     // Every one rebuilds rather than repaints, because each is built only while it is wanted:
     // switching one on is what makes it exist, not merely what shows it.
@@ -737,21 +754,39 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofRollUp(
                 0,
                 "Continent void",
-                CONTINENT_COASTS, CONTINENT_FILL, CONTINENT_BRIDGES, BRIDGE_FRONTAGES),
-            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
-                CONTINENT_COASTS, "Coasts", false,
+                LAKE_COASTS, LAKE_FILL, LAKE_FRONTAGES,
+                CONTINENT_COASTS, CONTINENT_FILL, BRIDGE_FRONTAGES,
+                CONTINENT_BRIDGES),
+            ToggleTree.Row.ofRollUp(
+                1, "Interior coastlines", LAKE_COASTS, LAKE_FILL, LAKE_FRONTAGES),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                LAKE_COASTS, "Coastline", false,
+                on -> settings.showContinentLakeCoasts = on)),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                LAKE_FILL, "Fill", false,
+                on -> settings.showContinentLakeFill = on)),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                LAKE_FRONTAGES, "Bridgeable frontage", false,
+                on -> settings.showContinentLakeFrontages = on)),
+            ToggleTree.Row.ofRollUp(
+                1, "Exterior coastlines", CONTINENT_COASTS, CONTINENT_FILL, BRIDGE_FRONTAGES),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                CONTINENT_COASTS, "Coastline", false,
                 on -> settings.showContinentCoasts = on)),
-            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
-                CONTINENT_FILL, "Coastal fill", false,
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                CONTINENT_FILL, "Fill", false,
                 on -> settings.showContinentCoastalFill = on)),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                BRIDGE_FRONTAGES, "Bridgeable frontage", false,
+                on -> settings.showBridgeFrontages = on)),
             ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
                 CONTINENT_BRIDGES, "Inlet bridges", false,
                 on -> settings.showContinentBridges = on)),
-            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
-                BRIDGE_FRONTAGES, "Bridgeable frontage", false,
-                on -> settings.showBridgeFrontages = on)),
+            ToggleTree.Row.ofRollUp(1, "Coastline", LAKE_COASTS, CONTINENT_COASTS),
+            ToggleTree.Row.ofRollUp(1, "Fill", LAKE_FILL, CONTINENT_FILL),
+            ToggleTree.Row.ofRollUp(1, "Bridgeable frontage", LAKE_FRONTAGES, BRIDGE_FRONTAGES),
             ToggleTree.Row.ofRollUp(
-                1, "Walls", CONTINENT_COASTS, CONTINENT_BRIDGES));
+                1, "Walls", LAKE_COASTS, CONTINENT_COASTS, CONTINENT_BRIDGES));
     }
 
     // What the v3 coastlines are and how they are drawn, which is what everything below is
@@ -779,6 +814,22 @@ public final class ViewerSettingsPanel {
             "continentLeastFrontage",
             ViewerSettings.CONTINENT_MIN_FRONTAGE_DEFAULT,
             share -> settings.continentMinFrontageShare = share));
+
+        // The puddle floor, beside the frontage floor it works with: that one judges a
+        // cell's stretch of shore, this one a whole lake. Asked for in percent the way the
+        // frontage share is, and at the same scale.
+        controls.add(SliderRows.buildSlider(
+            "minLakeShare",
+            "Least lake, in % of a cell",
+            new SliderRows.SliderRange(
+                MIN_LAKE_MINIMUM,
+                MIN_LAKE_MAXIMUM,
+                ViewerSettings.MIN_LAKE_SHARE_DEFAULT * ViewerSettings.FRONTAGE_PERCENT_SCALE),
+            new SliderRows.SliderWork(
+                percent -> settings.minLakeShare =
+                    percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
+                refreshes::refreshCoastlines,
+                () -> { })));
     }
 
     // The spans laid across the inlets those coastlines leave, and the rules deciding which

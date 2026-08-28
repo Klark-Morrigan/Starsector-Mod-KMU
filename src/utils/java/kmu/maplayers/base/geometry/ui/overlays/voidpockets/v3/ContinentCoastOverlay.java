@@ -12,7 +12,9 @@ import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <b>The continent coast (v3), orchestrated.</b> Each touching-connected run of cells traced as
@@ -50,10 +52,11 @@ public final class ContinentCoastOverlay {
     // THAT trace and a frame that asked it again could answer about a different one.
     private List<CellGap> bridges = List.of();
 
-    // The stretches of border the bridges were allowed to anchor on, held beside the trace
-    // that decided them. One run per stretch rather than one list per cell, because a cell
-    // facing the void twice is eligible in two separate places and drawing them as one line
-    // would run a mark straight through the cell between them.
+    // The stretches of border a bridge may anchor on - exterior coasts, lake shores, or both,
+    // as the switches asked - held beside the trace that decided them. One run per stretch
+    // rather than one list per cell, because a cell facing the void twice is eligible in two
+    // separate places and drawing them as one line would run a mark straight through the cell
+    // between them.
     private List<List<double[]>> frontages = List.of();
 
     public ContinentCoastOverlay(ViewerSettings settings) {
@@ -87,6 +90,9 @@ public final class ContinentCoastOverlay {
         if (!settings.showContinentVoid
                 || (!settings.showContinentCoasts
                     && !settings.showContinentCoastalFill
+                    && !settings.showContinentLakeCoasts
+                    && !settings.showContinentLakeFill
+                    && !settings.showContinentLakeFrontages
                     && !settings.showContinentBridges
                     && !settings.showBridgeFrontages)) {
 
@@ -108,15 +114,20 @@ public final class ContinentCoastOverlay {
         }
 
         // Read off the same trace the bridges are anchored on rather than worked out again,
-        // so what is drawn as eligible is what the search was actually offered.
-        if (settings.showBridgeFrontages) {
+        // so what is drawn as eligible is what the search was actually offered. The two
+        // shores' frontages gather into one list under their own switches: they are drawn
+        // identically, and which shore a stretch belongs to is told by the line it sits on.
+        var eligible = new ArrayList<List<double[]>>();
 
-            frontages = CoastFrontages.collectBridgeFrontages(coast.getTrace())
-                .values()
-                .stream()
-                .flatMap(List::stream)
-                .toList();
+        if (settings.showBridgeFrontages) {
+            eligible.addAll(flattenFrontages(
+                CoastFrontages.collectBridgeFrontages(coast.getTrace())));
         }
+        if (settings.showContinentLakeFrontages) {
+            eligible.addAll(flattenFrontages(
+                CoastFrontages.collectLakeFrontages(coast.getTrace())));
+        }
+        frontages = List.copyOf(eligible);
 
         // Filtered against the coasts they were offered to, so which spans survive is a
         // question about THIS trace rather than about the cells alone.
@@ -141,12 +152,24 @@ public final class ContinentCoastOverlay {
      */
     public void paintPocketFills(Graphics2D g2) {
 
-        if (!settings.showContinentVoid || !settings.showContinentCoastalFill) {
+        if (!settings.showContinentVoid || !coast.hasTrace()) {
             return;
         }
 
-        coast.paintPocketFills(
-            g2, settings.continentCoastalVoidColour, settings.continentCoastalVoidEdge);
+        if (settings.showContinentCoastalFill) {
+
+            coast.paintPocketFills(
+                g2, settings.continentCoastalVoidColour, settings.continentCoastalVoidEdge);
+        }
+
+        // In the coastal fill's water colour, because it is the same water: void this
+        // construction's coasts shut in, differing only in being ringed by land all round
+        // rather than lying behind the outer shore.
+        if (settings.showContinentLakeFill) {
+
+            coast.paintLakeFills(
+                g2, settings.continentCoastalVoidColour, settings.continentCoastalVoidEdge);
+        }
     }
 
     /**
@@ -166,6 +189,13 @@ public final class ContinentCoastOverlay {
 
             coast.paintCoastRings(g2, settings.continentCoastColour);
             coast.paintDroppedStretches(g2);
+        }
+
+        // A lake shore is this construction's coast seen from the water's side, so it is
+        // drawn in the coasts' own colour - under its own switch, since which of the two a
+        // reader is judging decides which they want out of the way.
+        if (settings.showContinentLakeCoasts) {
+            coast.paintLakeRings(g2, settings.continentCoastColour);
         }
 
         // Last of all, and so over every wall rather than under them. What it marks is which
@@ -194,7 +224,10 @@ public final class ContinentCoastOverlay {
      */
     private void paintFrontages(Graphics2D g2) {
 
-        if (!settings.showBridgeFrontages) {
+        // On the list rather than on either switch: the refresh gathered exactly what the
+        // switches asked for, and a guard naming one switch here would hide the other's
+        // stretches whenever it alone was on.
+        if (frontages.isEmpty()) {
             return;
         }
 
@@ -205,6 +238,17 @@ public final class ContinentCoastOverlay {
         for (var frontage : frontages) {
             g2.draw(MapPainting.buildOpenPath(frontage));
         }
+    }
+
+    // Both shores' eligible stretches as the flat list the drawing walks - by-cell grouping
+    // matters to the search, not to a painter.
+    private static List<List<double[]>> flattenFrontages(
+            Map<Integer, List<List<double[]>>> byCell) {
+
+        return byCell.values()
+            .stream()
+            .flatMap(List::stream)
+            .toList();
     }
 
     /**

@@ -291,37 +291,42 @@ public final class DiscUnionBoundary {
     }
 
     /**
-     * The outer silhouettes, as the run of coast marks each is made of.
+     * The two kinds of coast the walk finds, as the run of coast marks each is made of.
      *
-     * <p>The other half of what the walk finds, and the half {@link #traceHolesAcrossWalls}
-     * throws away. A silhouette is where a run of connected cells meets the open void, so it
-     * is the outline anything smoothing the outer edge has to start from.
+     * <p>A silhouette is where a run of connected cells meets the open void - the outline
+     * anything smoothing the outer edge has to start from. A lake is the other way round:
+     * void the cells closed around unaided, so its coast is where those cells meet the water
+     * they shut in. Both come out of the one walk, told apart by which way the cycle winds,
+     * and handing back only one of them threw the lakes away at the single place they were
+     * already in the shape a smoother eats.
      *
-     * <p>Handed back as marks in walk order rather than as a sampled outline, because what a
+     * <p>Holes a WALL closed stay out of the lakes. A wall shuts void in by construction
+     * rather than by the cells' own geometry, and what becomes of that void is the pockets'
+     * whole subject - a coast drawn round it as well would be the same water answered twice.
+     *
+     * <p>Handed back as marks in walk order rather than as sampled outlines, because what a
      * smoother wants is one point per stretch of coast and the order they are passed in - and
      * the walk already knows both. Recovering that from a finished polyline would mean
      * working out which sample belongs to which cell, which is the kind of finding that
-     * strays.
+     * strays. A lake's marks stay in walk order too: each is still the frontage its cell
+     * offers the water, and the smoothing reads nothing but the marks and the order.
      *
      * @param union         the discs to trace
      * @param walls         the walls to lay across the void
      * @param boundSegments sides of the cells' own radius bound, whose vertex angles every
      *                      arc is flattened onto, to tell a silhouette from a hole by the
      *                      area it comes out with
-     * @return one run of marks per silhouette, in walk order
+     * @return the silhouettes and the lakes, one run of marks each, in walk order
      */
-    static List<List<CoastMark>> traceSilhouetteCoasts(
+    static CoastRuns traceCoastRuns(
             DiscUnion union,
             Walls walls,
             int boundSegments) {
 
-        var coasts = new ArrayList<List<CoastMark>>();
+        var silhouettes = new ArrayList<List<CoastMark>>();
+        var lakes = new ArrayList<List<CoastMark>>();
 
         for (var cycle : traceCycles(union, walls, boundSegments)) {
-
-            if (isHole(cycle)) {
-                continue;
-            }
 
             var marks = new ArrayList<CoastMark>(cycle.arcs().size());
 
@@ -329,9 +334,30 @@ public final class DiscUnionBoundary {
 
                 marks.add(new CoastMark(arc.circle(), arc.fromAngle(), arc.toAngle()));
             }
-            coasts.add(marks);
+
+            if (!isHole(cycle)) {
+                silhouettes.add(marks);
+            } else if (cycle.shape().walledBy().isEmpty()) {
+                lakes.add(marks);
+            }
         }
-        return coasts;
+        return new CoastRuns(silhouettes, lakes);
+    }
+
+    /**
+     * What {@link #traceCoastRuns} finds: every stretch of the union's boundary, sorted into
+     * the two kinds of coast a map draws.
+     *
+     * <p>One value rather than two methods because both come out of one walk, and the walk is
+     * not cheap - asked for separately, each caller pays for it twice and the two answers can
+     * be about different walks.
+     *
+     * @param silhouettes one run of marks per outer silhouette, in walk order
+     * @param lakes       one run of marks per hole the cells closed unaided, in walk order
+     */
+    record CoastRuns(
+        List<List<CoastMark>> silhouettes,
+        List<List<CoastMark>> lakes) {
     }
 
     /**

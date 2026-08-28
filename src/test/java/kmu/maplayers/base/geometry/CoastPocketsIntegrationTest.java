@@ -437,6 +437,7 @@ class CoastPocketsIntegrationTest {
             new Coastlines.CoastRules(
                 Coastlines.DEFAULT_RULES.bridgeReachMultiple(),
                 frontageFloor,
+                Coastlines.DEFAULT_RULES.minLakeShare(),
                 Coastlines.DEFAULT_ROUNDING));
     }
 

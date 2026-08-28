@@ -59,9 +59,37 @@ public final class CoastFrontages {
     public static Map<Integer, List<List<double[]>>> collectBridgeFrontages(
             Coastlines.TracedCoasts traced) {
 
+        return collectFrontagesAlong(traced.coasts());
+    }
+
+    /**
+     * The same question asked of the lake shores: every point an interior coastline passes
+     * through on a cell, gathered by the cell.
+     *
+     * <p>Eligibility only, for now. The bridge search still anchors on exterior coasts alone,
+     * so what these frontages say is where a span COULD start once lakes learn bridges - and
+     * drawing that is how whether they should is decided.
+     *
+     * @param traced the coast
+     * @return each cell's own stretch of drawn lake shore, in walk order; a cell no shore
+     *         runs along is absent
+     */
+    public static Map<Integer, List<List<double[]>>> collectLakeFrontages(
+            Coastlines.TracedCoasts traced) {
+
+        return collectFrontagesAlong(
+            traced.lakes().stream().map(Coastlines.Lake::shore).toList());
+    }
+
+    // The walk itself, over whichever rings were offered - both entries above are one
+    // question about two sets of lines, and a second copy of the walk is how the two come to
+    // cut frontages differently.
+    private static Map<Integer, List<List<double[]>>> collectFrontagesAlong(
+            List<List<Coastlines.CoastVertex>> rings) {
+
         var frontages = new LinkedHashMap<Integer, List<List<double[]>>>();
 
-        for (var coast : traced.coasts()) {
+        for (var coast : rings) {
 
             if (coast.isEmpty()) {
                 continue;

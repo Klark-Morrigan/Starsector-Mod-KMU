@@ -102,6 +102,14 @@ public final class Coastlines {
     // all.
     private static final double DEFAULT_MIN_FRONTAGE_SHARE = 0.05;
 
+    // Below this a lake is a puddle: half a percent of one cell is a few pixels of water at
+    // the zoom a sector is read at, bought at the price of a shore, a margin and a fill.
+    //
+    // Judged on the TRUE hole rather than on anything the smoothing made of it, because
+    // whether a lake is worth drawing is a fact about the map - and a threshold read off the
+    // drawn shore would move whenever a smoothing knob did.
+    private static final double DEFAULT_MIN_LAKE_SHARE = 0.005;
+
     // The rounding's own numbers, named so the slider ranges beside them read against
     // something rather than against three literals.
     //
@@ -149,15 +157,21 @@ public final class Coastlines {
      * @param minFrontageShare    how much of its own border a cell has to face the void with
      *                            to be worth passing through, as a share of the whole turn.
      *                            Zero asks nothing and drops nobody
+     * @param minLakeShare        how much water a hole has to hold to be drawn as a lake, as
+     *                            a share of one cell's area. The second floor, beside the
+     *                            frontage's: that one judges a cell's stretch of shore, this
+     *                            one a whole lake - and it is judged on the true hole, so no
+     *                            smoothing knob can move it. Zero keeps every puddle
      * @param rounding            how the drawn line is rounded where it turns sharply. The
-     *                            third smoothing knob, beside the floor above: the floor
-     *                            decides which stretches the line passes through, the arc
-     *                            sampling how finely each is drawn, and this what becomes of
-     *                            the joins between them
+     *                            third smoothing knob, beside the floors above: the floors
+     *                            decide which stretches and lakes the line passes through,
+     *                            the arc sampling how finely each is drawn, and this what
+     *                            becomes of the joins between them
      */
     public record CoastRules(
         double bridgeReachMultiple,
         double minFrontageShare,
+        double minLakeShare,
         CornerRounding rounding) {
     }
 
@@ -169,7 +183,10 @@ public final class Coastlines {
      * them saying so.
      */
     public static final CoastRules DEFAULT_RULES = new CoastRules(
-        DEFAULT_BRIDGE_REACH_MULTIPLE, DEFAULT_MIN_FRONTAGE_SHARE, DEFAULT_ROUNDING);
+        DEFAULT_BRIDGE_REACH_MULTIPLE,
+        DEFAULT_MIN_FRONTAGE_SHARE,
+        DEFAULT_MIN_LAKE_SHARE,
+        DEFAULT_ROUNDING);
 
     /**
      * A traced coast and the two things it was traced against.
@@ -203,6 +220,10 @@ public final class Coastlines {
      *                    has to be looking at the one line, and because a pass repeated per
      *                    frame is paid for per frame. Read through
      *                    {@link #collectCoastRings}
+     * @param lakes       the void the cells closed around unaided - inland water, ringed by
+     *                    land the whole way round. Out of the same walk and the same
+     *                    smoothing as the coasts above, because a lake shore and an outer
+     *                    shore are the same kind of line looked at from opposite sides
      */
     public record TracedCoasts(
         List<List<CoastVertex>> coasts,
@@ -210,7 +231,29 @@ public final class Coastlines {
         List<DiscUnionBoundary.CoastMark> dropped,
         DiscUnion union,
         DiscUnionBoundary.Walls walls,
-        List<List<double[]>> drawnRings) {
+        List<List<double[]>> drawnRings,
+        List<Lake> lakes) {
+    }
+
+    /**
+     * One inland lake: a hole the cells closed around unaided, drawn the way a coast is.
+     *
+     * <p>One value rather than parallel lists on the trace, because the drawing needs the two
+     * lines of the SAME lake against each other - and the smoothing drops a degenerate lake
+     * on the way through, so lists built apart stop lining up exactly when a sector has the
+     * lake that would expose it.
+     *
+     * @param shore     the smoothed shore, as vertices that each name their cell
+     * @param drawnRing the shore as the line the map draws, rounded the way every coast is
+     * @param waterEdge the water's true edge: the cells' own arcs around the hole, sampled.
+     *                  What the fill runs against - the lake's margin is the water between
+     *                  the drawn shore and this edge, and the open water inside the shore is
+     *                  left to the backdrop the way the open void outside the sector is
+     */
+    public record Lake(
+        List<CoastVertex> shore,
+        List<double[]> drawnRing,
+        List<double[]> waterEdge) {
     }
 
     /**
@@ -230,24 +273,34 @@ public final class Coastlines {
         var runs = new ArrayList<List<double[]>>(traced.dropped().size());
 
         for (var mark : traced.dropped()) {
-
-            var sweep = mark.toAngle() - mark.fromAngle();
-            var steps = Math.max(
-                1,
-                (int) Math.ceil(arcSegments * sweep / Angles.HALF_TURN));
-
-            var run = new ArrayList<double[]>(steps + 1);
-
-            for (var step = 0; step <= steps; step++) {
-
-                run.add(DiscUnionBoundary.findPointOnMark(
-                    traced.union(),
-                    mark,
-                    mark.fromAngle() + sweep * step / steps));
-            }
-            runs.add(List.copyOf(run));
+            runs.add(sampleMarkArc(traced.union(), mark, arcSegments));
         }
         return List.copyOf(runs);
+    }
+
+    // One mark's stretch of border as points along its arc, at the density asked for. The one
+    // flattening for every reader of a raw arc, so a diagnostic and a water's edge sampled on
+    // the same stretch land on the same points.
+    private static List<double[]> sampleMarkArc(
+            DiscUnion union,
+            DiscUnionBoundary.CoastMark mark,
+            int arcSegments) {
+
+        var sweep = mark.toAngle() - mark.fromAngle();
+        var steps = Math.max(
+            1,
+            (int) Math.ceil(arcSegments * sweep / Angles.HALF_TURN));
+
+        var run = new ArrayList<double[]>(steps + 1);
+
+        for (var step = 0; step <= steps; step++) {
+
+            run.add(DiscUnionBoundary.findPointOnMark(
+                union,
+                mark,
+                mark.fromAngle() + sweep * step / steps));
+        }
+        return List.copyOf(run);
     }
 
     /**
@@ -341,26 +394,94 @@ public final class Coastlines {
         // reading of a border under which those are two numbers.
         var union = new DiscUnion(sites, parameters.cellRadius());
 
-        var silhouettes = dropLoneIslands(DiscUnionBoundary.traceSilhouetteCoasts(
-            union,
-            walls,
-            parameters.boundSegments()));
+        var runs = DiscUnionBoundary.traceCoastRuns(union, walls, parameters.boundSegments());
+        var silhouettes = dropLoneIslands(runs.silhouettes());
+        var bridged = findBridgedCircles(union, walls);
+        var smoothingRules = new SmoothingRules(
+            rules.minFrontageShare(),
+            parameters.measureArcSegments());
 
-        var smoothed = smoothSilhouettes(
-            silhouettes,
-            union,
-            findBridgedCircles(union, walls),
-            new SmoothingRules(
-                rules.minFrontageShare(),
-                parameters.measureArcSegments()));
+        var smoothed = smoothSilhouettes(silhouettes, union, bridged, smoothingRules);
+
+        var dropped = new ArrayList<>(smoothed.dropped());
+        var lakes = buildLakes(runs.lakes(), union, bridged, smoothingRules, rules, dropped);
 
         return new TracedCoasts(
             smoothed.coasts(),
             silhouettes,
-            smoothed.dropped(),
+            List.copyOf(dropped),
             union,
             walls,
-            roundCoastRings(smoothed.coasts(), rules.rounding()));
+            roundCoastRings(smoothed.coasts(), rules.rounding()),
+            lakes);
+    }
+
+    // The lakes, each smoothed through the SAME pipeline as the outer coasts: a lake shore is
+    // the outer shore looked at from the water's side, and the pipeline reads nothing but the
+    // marks and their order. No lone-island filter first - a hole cannot be ringed by one
+    // cell's border alone, so the degenerate run that filter exists for cannot arrive.
+    //
+    // One lake at a time rather than as one batch, because a lake pairs its drawn shore with
+    // its own water's edge - and the batch drops a degenerate outline on the way through, so
+    // its output stops lining up with its input exactly when a sector has such a lake. What a
+    // drop leaves behind is still recorded: the stretches go on the shared dropped list, where
+    // the diagnostic draws them beside whichever line replaced them.
+    private static List<Lake> buildLakes(
+            List<List<DiscUnionBoundary.CoastMark>> lakeRuns,
+            DiscUnion union,
+            Set<Integer> bridged,
+            SmoothingRules smoothingRules,
+            CoastRules rules,
+            List<DiscUnionBoundary.CoastMark> dropped) {
+
+        var lakes = new ArrayList<Lake>(lakeRuns.size());
+        var leastWater = rules.minLakeShare() * Math.PI * union.reach() * union.reach();
+
+        for (var run : lakeRuns) {
+
+            var waterEdge = sampleWaterEdge(union, run, smoothingRules.arcSegments());
+
+            // The puddle floor, taken on the water's edge BEFORE any smoothing is paid for:
+            // whether a lake is worth drawing is decided by how much water it holds, and a
+            // lake below the floor skips the smoothing, which is the expensive half. Its
+            // stretches still go to the diagnostic, so where a lake went stays answerable.
+            if (Math.abs(PolygonRegions.computeSignedArea(waterEdge)) < leastWater) {
+
+                dropped.addAll(run);
+                continue;
+            }
+
+            var one = smoothSilhouettes(List.of(run), union, bridged, smoothingRules);
+
+            dropped.addAll(one.dropped());
+
+            if (one.coasts().isEmpty()) {
+                continue;
+            }
+
+            var shore = one.coasts().get(0);
+
+            lakes.add(new Lake(
+                shore,
+                PolygonSmoothing.roundCorners(collectPoints(shore), rules.rounding()),
+                waterEdge));
+        }
+        return List.copyOf(lakes);
+    }
+
+    // The water's true edge: every mark of the lake's ring sampled along its own arc, joined
+    // in walk order into one closed outline.
+    private static List<double[]> sampleWaterEdge(
+            DiscUnion union,
+            List<DiscUnionBoundary.CoastMark> run,
+            int arcSegments) {
+
+        var edge = new ArrayList<double[]>();
+
+        for (var mark : run) {
+            edge.addAll(sampleMarkArc(union, mark, arcSegments));
+        }
+        return List.copyOf(edge);
     }
 
     // The drawn line: each smoothed coast as plain points, rounded where it turns sharply.

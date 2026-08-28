@@ -61,6 +61,10 @@ public final class ViewerSettings {
     // than a difference that was there from the first frame.
     public static final double CONTINENT_MIN_FRONTAGE_DEFAULT = COAST_MIN_FRONTAGE_DEFAULT;
 
+    // The puddle floor, read off the coast's own default for the reason the frontage floor
+    // is. A share of one cell's area; the slider asks for it as a percentage.
+    public static final double MIN_LAKE_SHARE_DEFAULT = Coastlines.DEFAULT_RULES.minLakeShare();
+
     // The rounding every drawn line takes, opened at the coast's own default for the reason
     // the frontage floor is: one number, in one place, so the sliders and everything that
     // reports on a line describe the same map. Split into its three parts because that is
@@ -180,6 +184,21 @@ public final class ViewerSettings {
     // rather than the way the void behind it was worked out.
     public boolean showContinentCoastalFill;
 
+    // The lakes: void the continents' cells closed around unaided, drawn as interior
+    // coastlines. The trial of drawing captured void as a shore rather than as v2's
+    // bridge-and-fill, so it lives with the construction proposing it.
+    //
+    // Split the way the exterior coast's switches are - line, fill, frontage - because the
+    // two shores are the same kind of line seen from opposite sides, and a reader judging
+    // one wants the same handles on it they have on the other.
+    public boolean showContinentLakeCoasts;
+    public boolean showContinentLakeFill;
+
+    // The stretches of lake shore a bridge could anchor on. Display-only eligibility for
+    // now: the bridge search still anchors on exterior coasts alone, so what this shows is
+    // where a span could start once lakes learn bridges.
+    public boolean showContinentLakeFrontages;
+
     // The bridges v3 would lay once its coastlines are down - the same search the settled map
     // uses, offered the same cells, so the only difference between the two sets is which spans
     // the coastlines then refuse.
@@ -224,6 +243,11 @@ public final class ViewerSettings {
     // is what the pass itself reads a non-positive threshold as.
     public double spikeHeight = SPIKE_HEIGHT_DEFAULT;
     public double spikeBelowDegrees = SPIKE_BELOW_DEGREES_DEFAULT;
+
+    // The puddle floor: how much water a hole must hold to be drawn as a lake, as a share of
+    // one cell's area. One knob for both constructions, like the rounding: it is a claim
+    // about what counts as water worth drawing, not about how either coast is traced.
+    public double minLakeShare = MIN_LAKE_SHARE_DEFAULT;
 
     // The v3 coast's own frontage floor, apart from the settled coast's above.
     //
@@ -308,7 +332,7 @@ public final class ViewerSettings {
     // drawings then describe maps that were never the same.
     public Coastlines.CoastRules resolveCoastRules() {
         return new Coastlines.CoastRules(
-            bridgeReachMultiple, coastMinFrontageShare, resolveLineRounding());
+            bridgeReachMultiple, coastMinFrontageShare, minLakeShare, resolveLineRounding());
     }
 
     /**
@@ -379,6 +403,9 @@ public final class ViewerSettings {
     // ever comes to be read the two coasts are still looking at one sector.
     public Coastlines.CoastRules resolveContinentCoastRules() {
         return new Coastlines.CoastRules(
-            bridgeReachMultiple, continentMinFrontageShare, resolveLineRounding());
+            bridgeReachMultiple,
+            continentMinFrontageShare,
+            minLakeShare,
+            resolveLineRounding());
     }
 }
