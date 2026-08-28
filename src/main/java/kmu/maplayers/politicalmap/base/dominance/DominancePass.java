@@ -4,9 +4,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.systems.SystemColoniesIndex;
-import kmlib.starsector.systems.claims.ClaimReader;
-import kmlib.starsector.systems.claims.ClaimReaderSource;
 
 import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.base.visibility.ColonyVisibility;
@@ -32,6 +29,14 @@ import java.util.Set;
  * or a different reading of the sector mid-pass. The per-system reads below take a system rather
  * than a sector for the same reason the pass holds an index rather than one: a read that could
  * reach the sector is a read that could walk it again.
+ *
+ * <p>The generic reads a weighing caller needs are re-published here rather than reached through
+ * {@link #holding()}, because a caller holding a dominance pass is holding <em>a</em> pass and has
+ * no business knowing it is made of two halves. Only a caller passing the generic half onward -
+ * the holder seam takes exactly that - names {@code holding()}. What is deliberately not
+ * re-published is what no weighing caller has ever asked for: the walk itself, the colony rule,
+ * and a claim reader opened over it. A reader wanting one of those wants nothing weighed, and it
+ * takes a {@link HolderPass} instead.
  *
  * @param rules   the weighting rule scoring each market's dominance worth
  * @param holding the rebuild's reading of the sector every layer shares - which sector, the
@@ -137,16 +142,6 @@ public record DominancePass(
     }
 
     /**
-     * The rule this pass shows colonies under, so a read taken beside a pass read - a box
-     * accounting for what the map painted - applies the very rule the painting did.
-     *
-     * @return the colony rule the pass was opened with
-     */
-    public ColonyVisibility colonyVisibility() {
-        return holding.colonyVisibility();
-    }
-
-    /**
      * What the player may be told about the colonies this pass walks - the rule above read against
      * the sector's own record of what has been seen, which is what every projection through this
      * pass is taken under.
@@ -156,26 +151,6 @@ public record DominancePass(
      */
     public ColonyKnowledge colonyKnowledge() {
         return holding.colonyKnowledge();
-    }
-
-    /**
-     * This pass's one walk of each system, for a reader that has to be handed the walk itself
-     * rather than a read made through it.
-     *
-     * @return the colony index, discarded with this pass
-     */
-    public SystemColoniesIndex colonies() {
-        return holding.colonies();
-    }
-
-    /**
-     * Opens a claim reader over this pass - its walk of each system, under its colony rule.
-     *
-     * @param claimReaderSource the source to open through
-     * @return a reader answering off this pass, to be discarded with it
-     */
-    public ClaimReader openClaimReaderThrough(ClaimReaderSource claimReaderSource) {
-        return holding.openClaimReaderThrough(claimReaderSource);
     }
 
     /**

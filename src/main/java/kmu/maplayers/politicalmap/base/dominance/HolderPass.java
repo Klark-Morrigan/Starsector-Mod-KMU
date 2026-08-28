@@ -153,15 +153,6 @@ public final class HolderPass {
     }
 
     /**
-     * The rule this pass shows colonies under.
-     *
-     * @return the dev reveal and the revelation gates every colony read through this pass takes
-     */
-    public ColonyVisibility colonyVisibility() {
-        return colonyKnowledge.rule();
-    }
-
-    /**
      * What the player may be told about the colonies this pass walks: its rule, read against the
      * sector's own record of what has been seen and where.
      *
