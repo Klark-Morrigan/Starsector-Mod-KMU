@@ -94,7 +94,7 @@ public final class ClaimTieOutcomes {
             WeighedClaimStanding standing,
             boolean isListingUnfoundMarkets) {
 
-        if (KmlibStrings.hasText(breakdown.overrideFactionId())
+        if (breakdown.isSettledByDecree()
                 || !KmlibStrings.hasText(breakdown.claimantFactionId())
                 || !standing.isTerritorial()) {
             return CellTooltipIndexOutcome.UNCONTESTED;

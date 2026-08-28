@@ -278,11 +278,13 @@ public record CellTooltipEntryLine(
     /**
      * One line's parts, held apart so a refinement above can restate the single part it is about.
      *
-     * <p>The components are enumerated here and in the record header, and nowhere else. Spelled out
-     * once per refinement instead, a part added to a line has to be threaded through every one of
-     * them, and the refinement that gets missed does not fail to compile - it silently drops the new
-     * part from any line it is applied to, which surfaces as a mark or a qualifier that vanishes when
-     * some unrelated status is layered on afterwards.
+     * <p>The components are enumerated four times in this file and nowhere beyond it - the record
+     * header, these fields, the constructor reading a line into them, and the one building a line
+     * back out. That cost is fixed: it does not grow with the refinements above, each of which
+     * states only the part it is about. Spelled out per refinement instead, a part added to a line
+     * would have to be threaded through all seven, and the refinement that got missed would not fail
+     * to compile - it would silently drop the new part from any line it was applied to, surfacing as
+     * a mark or a qualifier that vanishes when some unrelated status is layered on afterwards.
      *
      * <p>Mutable and private, which a value this package hands out could not be: it lives for the
      * three statements of one refinement and is never reachable from a built line.

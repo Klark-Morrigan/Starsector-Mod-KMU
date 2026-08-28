@@ -5,7 +5,6 @@ import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.text.KmlibNumbers;
-import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
@@ -206,7 +205,7 @@ public final class ClaimScoreRowResolver {
         // Whether this faction is the one the contest handed the system to, and so whose strongest
         // market is the one that took it. A decree settles the system before a single market is
         // weighed, so under one no market is the holder however the scores fell.
-        var isHoldingTheClaim = !KmlibStrings.hasText(breakdown.overrideFactionId())
+        var isHoldingTheClaim = !breakdown.isSettledByDecree()
             && standing.factionId().equals(breakdown.claimantFactionId());
 
         var entries = new ArrayList<CellTooltipEntry>();

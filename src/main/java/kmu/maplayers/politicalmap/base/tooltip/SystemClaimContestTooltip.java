@@ -361,12 +361,12 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             : standingLine.statesUncountedValue();
     }
 
-    // Whether the claim was imposed rather than won. Read off the claimant matching the override
-    // rather than off the override merely being set, so the marker states what the line above it
-    // actually shows - the faction named there holding the system by decree.
+    // Whether the claim was imposed rather than won. The narrower of the breakdown's two decree
+    // questions - the claimant matching the decree rather than a decree merely existing - so the
+    // marker states what the line it is drawn on actually shows: the faction named there holding
+    // the system by decree.
     private static boolean isCoreClaim(SystemClaimBreakdown breakdown) {
-        return breakdown.claimantFactionId() != null
-            && breakdown.claimantFactionId().equals(breakdown.overrideFactionId());
+        return breakdown.isClaimedByDecree();
     }
 
     // The allied block's lines: everyone present who stands in the claim holder's bloc, of either
