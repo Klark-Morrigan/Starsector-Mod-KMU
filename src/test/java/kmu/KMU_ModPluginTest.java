@@ -22,6 +22,11 @@ import static org.mockito.Mockito.never;
  * the composition it names - which installers the map layers are made of, and that switching them
  * off reaches every one of them.
  *
+ * <p>The application-load list is not among them, and cannot be: its last step reaches LunaLib
+ * through {@code LunaSettingsReader}, and LunaLib is on no test classpath, so the class fails to
+ * initialise and the step throws an {@code Error} the wiring guard deliberately does not catch.
+ * Pinning that list needs each step to name a class this mod owns first.
+ *
  * <p>What each installer registers is pinned beside that installer, and when a switch is worth
  * acting on is pinned on {@link KmuToggledFeature}. Neither is re-asserted here: this suite is
  * about the list, not about what the entries do or when they are asked.

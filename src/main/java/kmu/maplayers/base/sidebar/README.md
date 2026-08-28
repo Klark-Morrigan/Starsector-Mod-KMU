@@ -282,9 +282,11 @@ across is a layout preference, not a statement about what the list holds, so it 
 under every scope.
 
 Beyond the read, pick, and clear, `FilterSelection` heals a stored id a caller-supplied predicate no
-longer accepts, for a save whose selection stopped being on offer between sessions. Binding that
-predicate to a live source of what is selectable *now* is the reading layer's, since the source is
-exactly the knowledge these classes refuse.
+longer accepts - a selection that stopped being on offer, whether between sessions or while the game
+runs. Binding that predicate to a live source of what is selectable *now* is the reading layer's,
+since the source is exactly the knowledge these classes refuse; so is deciding at which moments the
+offer can have moved. The predicate is asked only when a stored id is there to judge, so binding it
+to an expensive source costs nothing on a scope holding no pick.
 
 `FilterSelectionBinder` is the one binder that also builds, because the picker's three ties resolve
 at one point: it reads the scope's spotlighted id and the scope's stored sort on the way in,

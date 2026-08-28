@@ -101,10 +101,8 @@ public class KMU_ModPlugin extends BaseModPlugin {
             () -> KmuLunaSettings.runOnSettingsChange(KMU_ModPlugin::applySwitchedFeatures),
             "Failed to install KMU feature switch listener");
 
-        // The spotlight is the other thing our settings can invalidate: a knob that hides the last
-        // colonies a bloc was listed for drops it from the picker, and the stored spotlight would
-        // otherwise go on receding the sector behind a bloc no longer on offer. Its own registration
-        // rather than a passenger on the switch listener, since it answers a different question -
+        // The spotlight is the other thing a settings change can invalidate. Its own registration
+        // rather than a passenger on the switch listener above, since it answers a different question:
         // what the settings made unpickable, not which feature they switched.
         KmuWiringSteps.runGuardedStep(
             FilterSelectionHeal::installHealOnSettingsChange,
