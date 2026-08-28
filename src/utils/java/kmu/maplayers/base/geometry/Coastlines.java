@@ -102,6 +102,20 @@ public final class Coastlines {
     // all.
     private static final double DEFAULT_MIN_FRONTAGE_SHARE = 0.05;
 
+    // The sanding's own numbers, named so the slider ranges beside them read against
+    // something rather than against three literals.
+    //
+    // The radius steps back along each arm of a corner and is small against a 4000-unit
+    // cell, so only the very tip of a needle moves. The threshold is what makes the pass
+    // selective: the rings are densely sampled, every ordinary joint on them is nearly
+    // straight, and rounding all of them would resample the whole line to sand a handful of
+    // spikes. Nothing is ever chamfered, because what is wanted of a needle is a rounded tip
+    // rather than a flat one.
+    private static final double DEFAULT_SANDING_RADIUS = 300;
+    private static final int DEFAULT_SANDING_SEGMENTS = 6;
+    private static final double DEFAULT_SAND_BELOW_DEGREES = 120;
+    private static final double NEVER_CHAMFER = 0;
+
     // How the drawn coastline is sanded where it turns sharply. A kept cell whose two
     // cleared landings cross contributes a single point instead of a fillet, and the two
     // straight runs then meet in a needle; the sanding steps 300 back along each arm -
@@ -109,8 +123,11 @@ public final class Coastlines {
     // segments. Corners flatter than 120 degrees keep their vertex verbatim, since the
     // rings are densely sampled and everything but a needle is already smooth; nothing is
     // ever chamfered, because what is wanted of a needle is a rounded tip, not a flat one.
-    private static final CornerRounding COAST_SANDING = new CornerRounding(
-        300, 6, 0, Math.toRadians(120));
+    public static final CornerRounding DEFAULT_SANDING = new CornerRounding(
+        DEFAULT_SANDING_RADIUS,
+        DEFAULT_SANDING_SEGMENTS,
+        NEVER_CHAMFER,
+        Math.toRadians(DEFAULT_SAND_BELOW_DEGREES));
 
     private Coastlines() {
     }
@@ -128,10 +145,16 @@ public final class Coastlines {
      * @param minFrontageShare    how much of its own border a cell has to face the void with
      *                            to be worth passing through, as a share of the whole turn.
      *                            Zero asks nothing and drops nobody
+     * @param sanding             how the drawn line is rounded where it turns sharply. The
+     *                            third smoothing knob, beside the floor above: the floor
+     *                            decides which stretches the line passes through, the arc
+     *                            sampling how finely each is drawn, and this what becomes of
+     *                            the joins between them
      */
     public record CoastRules(
         double bridgeReachMultiple,
-        double minFrontageShare) {
+        double minFrontageShare,
+        CornerRounding sanding) {
     }
 
     /**
@@ -141,8 +164,8 @@ public final class Coastlines {
      * how a report comes to describe a different map from the one on screen without either of
      * them saying so.
      */
-    public static final CoastRules DEFAULT_RULES =
-        new CoastRules(DEFAULT_BRIDGE_REACH_MULTIPLE, DEFAULT_MIN_FRONTAGE_SHARE);
+    public static final CoastRules DEFAULT_RULES = new CoastRules(
+        DEFAULT_BRIDGE_REACH_MULTIPLE, DEFAULT_MIN_FRONTAGE_SHARE, DEFAULT_SANDING);
 
     /**
      * A traced coast and the two things it was traced against.
@@ -169,13 +192,21 @@ public final class Coastlines {
      *                    Carried for whatever lays more walls alongside them: found again
      *                    from the knobs, they are a second answer that can differ from the
      *                    one the coast was actually walked against
+     * @param drawnRings  the same coasts as the LINE the map draws: sanded where they turn
+     *                    sharply, and so no longer attributable to the cells the vertices
+     *                    above name. Sanded once here rather than at each reader, because
+     *                    every one of them - the paint, the SVG, the inside-the-coast test -
+     *                    has to be looking at the one line, and because a pass repeated per
+     *                    frame is paid for per frame. Read through
+     *                    {@link #collectCoastRings}
      */
     public record TracedCoasts(
         List<List<CoastVertex>> coasts,
         List<List<DiscUnionBoundary.CoastMark>> silhouettes,
         List<DiscUnionBoundary.CoastMark> dropped,
         DiscUnion union,
-        DiscUnionBoundary.Walls walls) {
+        DiscUnionBoundary.Walls walls,
+        List<List<double[]>> drawnRings) {
     }
 
     /**
@@ -324,7 +355,28 @@ public final class Coastlines {
             silhouettes,
             smoothed.dropped(),
             union,
-            walls);
+            walls,
+            sandCoastRings(smoothed.coasts(), rules.sanding()));
+    }
+
+    // The drawn line: each smoothed coast as plain points, sanded where it turns sharply.
+    //
+    // Apart from the smoothing above rather than folded into it, because the two work on
+    // different things. The smoothing decides which stretches the coast runs along and hands
+    // back vertices that each name the cell they sit on; this rounds the joins BETWEEN those
+    // stretches, and the points it adds sit on no cell at all - so a sanded ring can no
+    // longer answer what the vertices answer, and is kept beside them rather than replacing
+    // them.
+    private static List<List<double[]>> sandCoastRings(
+            List<List<CoastVertex>> coasts,
+            CornerRounding sanding) {
+
+        var rings = new ArrayList<List<double[]>>(coasts.size());
+
+        for (var coast : coasts) {
+            rings.add(PolygonSmoothing.roundCorners(collectPoints(coast), sanding));
+        }
+        return List.copyOf(rings);
     }
 
     /**
@@ -484,26 +536,16 @@ public final class Coastlines {
      * The whole drawn coast as plain rings.
      *
      * <p>What a shape is judged against, and what the map puts on screen, are the same line:
-     * void outside it is void nothing shut in, whatever any single reach's line says. Built
-     * here rather than by each reader, since three readers building it three ways is three
-     * answers to one question.
+     * void outside it is void nothing shut in, whatever any single reach's line says. Sanded
+     * at the trace rather than by each reader, since three readers sanding it three ways is
+     * three answers to one question - and named here rather than read off the record, so
+     * that "the line the map draws" is asked for by name.
      *
      * @param traced the coast
      * @return one ring per stretch of coast, in the order they were traced
      */
     public static List<List<double[]>> collectCoastRings(TracedCoasts traced) {
-
-        var rings = new ArrayList<List<double[]>>(traced.coasts().size());
-
-        for (var coast : traced.coasts()) {
-
-            // Sanded here rather than where the coast is traced, so every reader of the
-            // DRAWN line - the paint, the SVG, the inside-the-coast test - sees the same
-            // sanded ring, while everything built from the coast's vertices and marks
-            // (reaches, walls, dropped stretches) stays on the geometry it was walked on.
-            rings.add(PolygonSmoothing.roundCorners(collectPoints(coast), COAST_SANDING));
-        }
-        return rings;
+        return traced.drawnRings();
     }
 
     /**

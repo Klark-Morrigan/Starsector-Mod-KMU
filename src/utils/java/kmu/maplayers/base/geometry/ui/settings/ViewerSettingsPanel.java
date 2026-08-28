@@ -99,6 +99,37 @@ public final class ViewerSettingsPanel {
 
     private static final double MIN_FRONTAGE_MAXIMUM = 25;
 
+    // How the drawn coastline is sanded where it turns sharply.
+    //
+    // The radius is how far back along each arm of a corner the arc starts, in map units.
+    // Zero is the pass switched off, which is what every setting of it is judged against;
+    // the ceiling is a quarter of a cell radius, past which the sanding stops touching only
+    // the tip of a corner and begins reshaping the runs either side of it.
+    //
+    // The segment count decides how smooth each rounded corner comes out. One is the
+    // coarsest thing that is still a cut rather than a point; the ceiling is past where more
+    // segments stop being visible at the zoom a sector is read at.
+    //
+    // The threshold is how sharply the line has to turn to be sanded at all, in degrees.
+    // Zero rounds nothing whatever the radius says.
+    //
+    // The ceiling stops short of a straight pass-through because past about this the pass has
+    // nothing left to find. A coast's ordinary corners are its sampled cell arcs, which are
+    // already smooth: winding the threshold to 180 rounds every one of those samples, moves
+    // the drawn line by not one unit more than 150 does, and costs six times the vertices for
+    // it. What is worth sanding is the joins between runs, and they are all well under this.
+    private static final double SANDING_RADIUS_MINIMUM = 0;
+
+    private static final double SANDING_RADIUS_MAXIMUM = 1000;
+
+    private static final double SANDING_SEGMENTS_MINIMUM = 1;
+
+    private static final double SANDING_SEGMENTS_MAXIMUM = 16;
+
+    private static final double SAND_BELOW_MINIMUM = 0;
+
+    private static final double SAND_BELOW_MAXIMUM = 150;
+
     // How far off a wall already down a span may run and still count as running along it, in
     // map units. Zero asks for lines that coincide exactly, which catches only the spans that
     // repeat a wall end for end. The ceiling is several stroke widths - past that the rule is
@@ -231,6 +262,49 @@ public final class ViewerSettingsPanel {
             "voidFillOpacity",
             "Void fill opacity",
             opacity -> settings.voidFillOpacity = (int) opacity));
+
+        addCoastSandingRows(controls);
+    }
+
+    // How sharply the drawn coastline is allowed to turn, and what a turn sharper than that
+    // is rounded to.
+    //
+    // Among the knobs reaching both constructions because sanding is about how a LINE is
+    // drawn rather than about how either coast is traced, and the two are on screen to be
+    // compared: drawn to different roundings, a difference between them would be partly a
+    // difference between the sliders.
+    //
+    // Every one rebuilds rather than repaints. The sanded ring is worked out once when the
+    // coast is traced and carried on it, so moving any of these is a change to the geometry
+    // the frame is drawn from rather than to the way that geometry is painted.
+    private void addCoastSandingRows(JPanel controls) {
+
+        // First of the three, because it is the one that decides whether the others do
+        // anything: at the bottom of its range nothing is sanded whatever they say, and at
+        // the top every join between two runs of coast is.
+        controls.add(buildSlider(
+            "sandBelowDegrees",
+            "Sand corners sharper than, in degrees",
+            SAND_BELOW_MINIMUM,
+            SAND_BELOW_MAXIMUM,
+            ViewerSettings.SAND_BELOW_DEGREES_DEFAULT,
+            degrees -> settings.sandBelowDegrees = degrees));
+
+        controls.add(buildSlider(
+            "sandingRadius",
+            "Corner sanding radius, in map units",
+            SANDING_RADIUS_MINIMUM,
+            SANDING_RADIUS_MAXIMUM,
+            ViewerSettings.SANDING_RADIUS_DEFAULT,
+            radius -> settings.sandingRadius = radius));
+
+        controls.add(buildSlider(
+            "sandingSegments",
+            "Segments per sanded corner",
+            SANDING_SEGMENTS_MINIMUM,
+            SANDING_SEGMENTS_MAXIMUM,
+            ViewerSettings.SANDING_SEGMENTS_DEFAULT,
+            segments -> settings.sandingSegments = (int) segments));
     }
 
     // Everything a cell is drawn WITH, as against what it is shaped like: the fills and their

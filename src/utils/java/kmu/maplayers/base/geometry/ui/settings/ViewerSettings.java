@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry.ui.settings;
 
+import kmlib.math.geometry.CornerRounding;
+
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.ContinentBridges;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
@@ -55,6 +57,20 @@ public final class ViewerSettings {
     // identical and any difference on screen is a knob someone deliberately moved rather
     // than a difference that was there from the first frame.
     public static final double CONTINENT_MIN_FRONTAGE_DEFAULT = COAST_MIN_FRONTAGE_DEFAULT;
+
+    // The sanding, read off the coast's own default for the reason the frontage floor is.
+    // Split into its three numbers because that is what a slider writes; put back together
+    // by resolveCoastSanding.
+    //
+    // The threshold is asked for in degrees, which is how anyone looking at a corner thinks
+    // about it, and is the knob worth reaching for first: at the default only the sharp
+    // joins are touched, and winding it up to a straight pass-through rounds every corner
+    // on the line - the ordinary cell-to-cell joins included.
+    public static final double SANDING_RADIUS_DEFAULT = Coastlines.DEFAULT_SANDING.radius();
+    public static final int SANDING_SEGMENTS_DEFAULT =
+        Coastlines.DEFAULT_SANDING.segmentsPerCorner();
+    public static final double SAND_BELOW_DEGREES_DEFAULT =
+        Math.toDegrees(Coastlines.DEFAULT_SANDING.roundBelowAngleRadians());
 
     public static final Color CONTINENT_COAST_DEFAULT = MapLook.CONTINENT_COAST;
 
@@ -174,6 +190,14 @@ public final class ViewerSettings {
     // smoothed: one intrinsic measure, with nothing carried from one stretch to the next.
     public double coastMinFrontageShare = COAST_MIN_FRONTAGE_DEFAULT;
 
+    // How the drawn line is rounded where it turns sharply. Shared by both coasts rather
+    // than split the way the frontage floors are: it is a knob about how a line is DRAWN,
+    // and the two coasts are on screen to be compared, so drawing them to different
+    // roundings would put a difference between them that is not a difference in the coasts.
+    public double sandingRadius = SANDING_RADIUS_DEFAULT;
+    public int sandingSegments = SANDING_SEGMENTS_DEFAULT;
+    public double sandBelowDegrees = SAND_BELOW_DEGREES_DEFAULT;
+
     // The v3 coast's own frontage floor, apart from the settled coast's above.
     //
     // Apart because with no bridges laid far more of a continent's cells face the void
@@ -256,7 +280,22 @@ public final class ViewerSettings {
     // answers - one of them can have a different wall crowded out of a mouth, and the two
     // drawings then describe maps that were never the same.
     public Coastlines.CoastRules resolveCoastRules() {
-        return new Coastlines.CoastRules(bridgeReachMultiple, coastMinFrontageShare);
+        return new Coastlines.CoastRules(
+            bridgeReachMultiple, coastMinFrontageShare, resolveCoastSanding());
+    }
+
+    // How sharply the drawn line has to turn to be sanded, and what it is sanded to. Put
+    // back together here rather than at each coast, so the two lines cannot be drawn to
+    // roundings that drifted apart.
+    //
+    // Never chamfered, whatever the sliders say: a chamfer cuts a needle flat, and what is
+    // wanted of one is a rounded tip.
+    public CornerRounding resolveCoastSanding() {
+        return new CornerRounding(
+            sandingRadius,
+            sandingSegments,
+            Coastlines.DEFAULT_SANDING.bevelBelowAngleRadians(),
+            Math.toRadians(sandBelowDegrees));
     }
 
     // How v3's bridges are offered and judged, asked of the settings for the same reason the
@@ -277,6 +316,7 @@ public final class ViewerSettings {
     // through as the settled coast's rather than as some number of its own, so that if it
     // ever comes to be read the two coasts are still looking at one sector.
     public Coastlines.CoastRules resolveContinentCoastRules() {
-        return new Coastlines.CoastRules(bridgeReachMultiple, continentMinFrontageShare);
+        return new Coastlines.CoastRules(
+            bridgeReachMultiple, continentMinFrontageShare, resolveCoastSanding());
     }
 }

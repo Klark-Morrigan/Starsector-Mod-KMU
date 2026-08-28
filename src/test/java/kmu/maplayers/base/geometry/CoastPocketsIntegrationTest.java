@@ -423,7 +423,8 @@ class CoastPocketsIntegrationTest {
             SectorGeometryParameters.createDefaults(),
             new Coastlines.CoastRules(
                 Coastlines.DEFAULT_RULES.bridgeReachMultiple(),
-                frontageFloor));
+                frontageFloor,
+                Coastlines.DEFAULT_SANDING));
     }
 
     private static SectorFixture buildFixtureFor(String sector) {
