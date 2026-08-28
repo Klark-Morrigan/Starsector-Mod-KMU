@@ -106,23 +106,27 @@ public final class Coastlines {
     // something rather than against three literals.
     //
     // The radius steps back along each arm of a corner and is small against a 4000-unit
-    // cell, so only the very tip of a needle moves. The threshold is what makes the pass
-    // selective: the rings are densely sampled, every ordinary joint on them is nearly
-    // straight, and rounding all of them would resample the whole line to sand a handful of
-    // spikes. Nothing is ever chamfered, because what is wanted of a needle is a rounded tip
-    // rather than a flat one.
-    private static final double DEFAULT_SANDING_RADIUS = 300;
-    private static final int DEFAULT_SANDING_SEGMENTS = 6;
-    private static final double DEFAULT_SAND_BELOW_DEGREES = 120;
+    // cell, so only the very tip of a corner moves - at these settings the drawn line goes
+    // no more than about 28 units from where it was traced.
+    //
+    // The threshold is what makes the pass selective, and is set just under where a coast's
+    // own sampled arcs begin: their joints sit at about 173 degrees, so a threshold this
+    // side of that sands every join BETWEEN runs of coast while leaving the samples along
+    // one run alone. Past them the pass has nothing left to find and triples the vertex
+    // count saying so.
+    //
+    // Nothing is ever chamfered, because what is wanted of a needle is a rounded tip rather
+    // than a flat one.
+    private static final double DEFAULT_SANDING_RADIUS = 200;
+    private static final int DEFAULT_SANDING_SEGMENTS = 3;
+    private static final double DEFAULT_SAND_BELOW_DEGREES = 170;
     private static final double NEVER_CHAMFER = 0;
 
-    // How the drawn coastline is sanded where it turns sharply. A kept cell whose two
-    // cleared landings cross contributes a single point instead of a fillet, and the two
-    // straight runs then meet in a needle; the sanding steps 300 back along each arm -
-    // small against a 4000-unit cell, so only the very tip moves - and arcs across in six
-    // segments. Corners flatter than 120 degrees keep their vertex verbatim, since the
-    // rings are densely sampled and everything but a needle is already smooth; nothing is
-    // ever chamfered, because what is wanted of a needle is a rounded tip, not a flat one.
+    // How the drawn coastline is sanded where it turns sharply, out of the numbers above.
+    //
+    // What it is FOR: a kept cell whose two cleared landings cross contributes a single
+    // point instead of a fillet, and the two straight runs either side then meet in a
+    // needle. Rounding the join takes the needle's tip off without moving either run.
     public static final CornerRounding DEFAULT_SANDING = new CornerRounding(
         DEFAULT_SANDING_RADIUS,
         DEFAULT_SANDING_SEGMENTS,

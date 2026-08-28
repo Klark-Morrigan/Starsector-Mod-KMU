@@ -113,11 +113,14 @@ public final class ViewerSettingsPanel {
     // The threshold is how sharply the line has to turn to be sanded at all, in degrees.
     // Zero rounds nothing whatever the radius says.
     //
-    // The ceiling stops short of a straight pass-through because past about this the pass has
-    // nothing left to find. A coast's ordinary corners are its sampled cell arcs, which are
-    // already smooth: winding the threshold to 180 rounds every one of those samples, moves
-    // the drawn line by not one unit more than 150 does, and costs six times the vertices for
-    // it. What is worth sanding is the joins between runs, and they are all well under this.
+    // The ceiling stops just short of where a coast's own sampled arcs begin. Those samples
+    // join at about 173 degrees, and a threshold past them rounds every one: the drawn line
+    // goes nowhere it was not already going - the same 28 units off the traced one at 174 as
+    // at 170 - while the vertex count triples, 2637 to 7737 on the larger fixture. Below
+    // that the pass finds joins between runs of coast, which is what it is for.
+    //
+    // Tied to how finely arcs are sampled rather than to a round number, so it wants
+    // re-measuring if that changes.
     private static final double SANDING_RADIUS_MINIMUM = 0;
 
     private static final double SANDING_RADIUS_MAXIMUM = 1000;
@@ -128,7 +131,7 @@ public final class ViewerSettingsPanel {
 
     private static final double SAND_BELOW_MINIMUM = 0;
 
-    private static final double SAND_BELOW_MAXIMUM = 150;
+    private static final double SAND_BELOW_MAXIMUM = 172;
 
     // How far off a wall already down a span may run and still count as running along it, in
     // map units. Zero asks for lines that coincide exactly, which catches only the spans that
