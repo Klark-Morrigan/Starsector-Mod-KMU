@@ -88,7 +88,7 @@ public final class Coastlines {
     // the point past which the void between two cells stops being theirs.
     private static final double DEFAULT_BRIDGE_REACH_MULTIPLE = 4;
 
-    // Three percent of a cell's border - about eleven degrees of arc.
+    // Five percent of a cell's border - about eighteen degrees of arc.
     //
     // What a cell has to show of itself to be worth drawing the coast in and back out for.
     // Below this it contributes a notch a few pixels wide at the zoom a sector is read at,
@@ -98,7 +98,7 @@ public final class Coastlines {
     // silhouette reproduced exactly rather than smoothed. Since this is now the only thing
     // deciding what a coast passes through, an opening value of zero would be no smoothing at
     // all.
-    private static final double DEFAULT_MIN_FRONTAGE_SHARE = 0.03;
+    private static final double DEFAULT_MIN_FRONTAGE_SHARE = 0.05;
 
     private Coastlines() {
     }
