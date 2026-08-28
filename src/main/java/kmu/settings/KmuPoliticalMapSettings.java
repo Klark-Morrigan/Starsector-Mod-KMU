@@ -377,7 +377,7 @@ public final class KmuPoliticalMapSettings {
     private static final FactionPaletteChoice DEFAULT_FACTION_INNER_BORDER_COLOUR =
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_INNER_BORDER_OPACITY = 0.1;
-    private static final double DEFAULT_FACTION_INNER_BORDER_WIDTH = 5.0;
+    private static final double DEFAULT_FACTION_INNER_BORDER_WIDTH = 10.0;
     private static final FactionPaletteChoice DEFAULT_FACTION_FILL_COLOUR =
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_FILL_OPACITY = 0.4;
@@ -391,20 +391,20 @@ public final class KmuPoliticalMapSettings {
     private static final FactionPaletteChoice DEFAULT_INDEPENDENT_INNER_BORDER_COLOUR =
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_INNER_BORDER_OPACITY = 0.1;
-    private static final double DEFAULT_INDEPENDENT_INNER_BORDER_WIDTH = 5.0;
+    private static final double DEFAULT_INDEPENDENT_INNER_BORDER_WIDTH = 10.0;
     private static final FactionPaletteChoice DEFAULT_INDEPENDENT_FILL_COLOUR =
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_FILL_OPACITY = 0.2;
 
     // Fully opaque by default: independent names draw at full colour strength unless faded.
     private static final double DEFAULT_INDEPENDENT_NAME_OPACITY = 1.0;
-    private static final double DEFAULT_DECIVILISED_BORDER_OPACITY = 0.35;
+    private static final double DEFAULT_DECIVILISED_BORDER_OPACITY = 0.45;
     private static final double DEFAULT_DECIVILISED_BORDER_WIDTH = 3.0;
 
     // A faint wash by default: a dead colony was really settled, so it fills rather than reading
     // as a bare ring, but stays well behind a living faction's fill (0.4) and independent
     // space's (0.2 at full colour) since nothing holds it. Mirrors the CSV row's defaultValue.
-    private static final double DEFAULT_DECIVILISED_FILL_OPACITY = 0.2;
+    private static final double DEFAULT_DECIVILISED_FILL_OPACITY = 0.15;
     private static final double DEFAULT_UNINHABITED_BORDER_OPACITY = 0.15;
     private static final double DEFAULT_UNINHABITED_BORDER_WIDTH = 3.0;
 
@@ -414,7 +414,7 @@ public final class KmuPoliticalMapSettings {
     // 30% darker by default: a desaturated bloc paints the Independent grey sunk to 70% brightness,
     // a clear step behind genuine independent-held space without going so dark it reads as unowned.
     // Mirrors the CSV row's defaultValue.
-    private static final double DEFAULT_DESATURATION_DARKENING = 0.3;
+    private static final double DEFAULT_DESATURATION_DARKENING = 0.5;
 
     // All the way to white by default: the neutral and the Independent grey the background sinks
     // from are the same shade, so a partial lift leaves a spared cell reading against the value the
@@ -473,32 +473,30 @@ public final class KmuPoliticalMapSettings {
     private static final boolean DEFAULT_LAYER_HOVER_EFFECTS_ENABLED = true;
     private static final boolean DEFAULT_LAYER_HOVER_TOOLTIP_ENABLED = true;
 
-    // Hover-highlight knobs, mirroring the CSV defaults: the hovered cell's own bright
-    // shade, a four-layer halo peaking at half alpha and fading out by 14 pixels with a slow
-    // quarter-depth breath, and a cell wash of a little over a third alpha under a crisp
-    // near-opaque trace. Tuned to sit over the fills without swamping them - the fills
-    // themselves paint at 0.4 - and expected to move once playtested.
+    // Hover-highlight knobs, mirroring the CSV defaults: the hovered cell's own dark shade, a
+    // four-layer halo peaking at half alpha and fading out by 14 pixels with the breath held
+    // steady, and a cell wash of a little over a third alpha under a crisp near-opaque trace.
+    // Tuned to sit over the fills without swamping them - the fills themselves paint at 0.4.
     private static final FactionPaletteChoice DEFAULT_HOVER_HIGHLIGHT_COLOUR =
-        FactionPaletteChoice.PRIMARY;
+        FactionPaletteChoice.SECONDARY;
     private static final double DEFAULT_HOVER_GLOW_OPACITY = 0.5;
     private static final double DEFAULT_HOVER_GLOW_WIDTH = 14.0;
     private static final int DEFAULT_HOVER_GLOW_LAYERS = 4;
-    private static final double DEFAULT_HOVER_GLOW_PULSE_STRENGTH = 0.25;
-    private static final double DEFAULT_HOVER_GLOW_PULSE_PERIOD_SECONDS = 1.5;
+    private static final double DEFAULT_HOVER_GLOW_PULSE_STRENGTH = 0.0;
+    private static final double DEFAULT_HOVER_GLOW_PULSE_PERIOD_SECONDS = 0.2;
     private static final double DEFAULT_HOVER_WASH_OPACITY = 0.35;
     private static final double DEFAULT_HOVER_WASH_OUTLINE_OPACITY = 0.8;
     private static final double DEFAULT_HOVER_WASH_OUTLINE_WIDTH = 2.0;
 
-    // The picture the overlay painted before the draw order became a choice: the cell geometry
-    // beneath the nebulae, and the two readouts laid over cells - the bands and the names - above
-    // them. Shipping the defaults as that split is what lets a player who never opens this group
-    // see no change at all, which is the whole of what makes the group free to ignore.
+    // The cell geometry and the bands laid on it sink beneath the nebulae, and only the names rise
+    // clear of them - words being the one thing the haze decides whether a reader gets at all,
+    // where a shape it dims is merely quieter.
     private static final NebulaDrawOrderChoice DEFAULT_NEBULA_DRAW_ORDER_FILLS =
         NebulaDrawOrderChoice.BELOW;
     private static final NebulaDrawOrderChoice DEFAULT_NEBULA_DRAW_ORDER_BORDERS =
         NebulaDrawOrderChoice.BELOW;
     private static final NebulaDrawOrderChoice DEFAULT_NEBULA_DRAW_ORDER_RIBBONS =
-        NebulaDrawOrderChoice.ABOVE;
+        NebulaDrawOrderChoice.BELOW;
     private static final NebulaDrawOrderChoice DEFAULT_NEBULA_DRAW_ORDER_LABELS =
         NebulaDrawOrderChoice.ABOVE;
 
@@ -548,7 +546,7 @@ public final class KmuPoliticalMapSettings {
     private static final double DEFAULT_STATION_LOW_STABILITY_PENALTY = 0.5;
 
     // Off by default: patrol strength does not sway dominance until the player opts in.
-    private static final boolean DEFAULT_PATROL_WEIGHS_DOMINANCE = false;
+    private static final boolean DEFAULT_PATROL_WEIGHS_DOMINANCE = true;
 
     // Modest per-tier defaults, tuned so a mid-size military colony adds roughly a
     // colony size point of patrol weight when the factor is enabled; freely tunable.
@@ -591,9 +589,9 @@ public final class KmuPoliticalMapSettings {
 
     // Hatch-fill knobs, mirroring the CSV defaults: ~10 lines across a default-reach cell,
     // laid on a 45-degree diagonal at a hairline stroke.
-    private static final double DEFAULT_HATCH_SPACING = 400.0;
+    private static final double DEFAULT_HATCH_SPACING = 1000.0;
     private static final double DEFAULT_HATCH_ANGLE_DEGREES = 45.0;
-    private static final double DEFAULT_HATCH_WIDTH = 1.0;
+    private static final double DEFAULT_HATCH_WIDTH = 50.0;
 
     // Hard-edged by default, which is the state the hatch was tuned and verified at; what
     // smoothing costs a dense field of short strokes is GlLineQuality's own doc to state. A knob
@@ -611,7 +609,7 @@ public final class KmuPoliticalMapSettings {
     // Stored 0..100 in the CSV as a percentage, exposed as the fraction the hatch merge works in:
     // the slider rounds a Double to two decimals, so a fraction authored directly would collapse to
     // zero the moment it was dragged.
-    private static final double DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT = 0.1;
+    private static final double DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT = 0.2;
     private static final double HATCH_JOIN_TOLERANCE_PERCENT_PER_UNIT = 100.0;
 
     // The diagnostics off by default, so the map draws its result rather than its workings

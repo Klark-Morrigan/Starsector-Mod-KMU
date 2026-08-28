@@ -311,13 +311,13 @@ public final class KmuMapLayerSettings {
     // data/config/LunaSettings.csv and must be kept in step with it.
     // Placement from the screen's top-left corner, pixels. The top padding clears the
     // sector map's own tab strip; the left padding gives a small margin.
-    private static final int DEFAULT_SIDEBAR_PADDING_TOP = 46;
-    private static final int DEFAULT_SIDEBAR_PADDING_LEFT = 12;
+    private static final int DEFAULT_SIDEBAR_PADDING_TOP = 36;
+    private static final int DEFAULT_SIDEBAR_PADDING_LEFT = 9;
 
     // Kept clear at the screen bottom, pixels: the panel body caps its height so the box
     // never runs past this margin, and the bloc list scrolls within what is left. A small
     // margin like the left padding. Mirrors the CSV row's defaultValue.
-    private static final int DEFAULT_SIDEBAR_PADDING_BOTTOM = 12;
+    private static final int DEFAULT_SIDEBAR_PADDING_BOTTOM = 79;
 
     // Intel overlay top padding from the visor's top edge, pixels: clears the vanilla
     // Starscape / fuel-range toggles at the top of the intel map by default, leaving the same
@@ -406,10 +406,10 @@ public final class KmuMapLayerSettings {
     // closer to each other than the things they belong to do, and lines three steps in closer
     // still, so each run reads as one thing without the box's own spacing changing. Mirror the CSV
     // defaultValue column like every fallback here.
-    private static final float DEFAULT_TOOLTIP_NESTING_LEVEL_SHRINK = 0f;
+    private static final float DEFAULT_TOOLTIP_NESTING_LEVEL_SHRINK = 0.75f;
     private static final float DEFAULT_TOOLTIP_LINE_GAP = 4f;
-    private static final float DEFAULT_TOOLTIP_TIER_2_LINE_GAP = 3f;
-    private static final float DEFAULT_TOOLTIP_TIER_3_LINE_GAP = 1f;
+    private static final float DEFAULT_TOOLTIP_TIER_2_LINE_GAP = 0.5f;
+    private static final float DEFAULT_TOOLTIP_TIER_3_LINE_GAP = 0f;
 
     // The connecting line's shipped weights: a whole pixel of thickness, let down to roughly two thirds
     // of the box's own opacity so it reads level with the greyed-out text either side of it rather than
@@ -434,13 +434,13 @@ public final class KmuMapLayerSettings {
     private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
 
     // Label-anchor search knobs.
-    private static final int DEFAULT_ANCHOR_DIRECTION_COUNT = 9;
-    private static final int DEFAULT_ANCHOR_OFFSET_COUNT = 15;
-    private static final double DEFAULT_ANCHOR_VERTICAL_PENALTY_STRENGTH = 0.2;
+    private static final int DEFAULT_ANCHOR_DIRECTION_COUNT = 8;
+    private static final int DEFAULT_ANCHOR_OFFSET_COUNT = 10;
+    private static final double DEFAULT_ANCHOR_VERTICAL_PENALTY_STRENGTH = 0.3;
     private static final double DEFAULT_ANCHOR_VERTICAL_PENALTY_EXPONENT = 2.0;
-    private static final double DEFAULT_ANCHOR_MAX_SLANT_DEGREES = 22.0;
+    private static final double DEFAULT_ANCHOR_MAX_SLANT_DEGREES = 45.0;
     private static final double DEFAULT_ANCHOR_END_INSET_MULTIPLE = 4.0;
-    private static final double DEFAULT_ANCHOR_ICON_CLEARANCE = 750.0;
+    private static final double DEFAULT_ANCHOR_ICON_CLEARANCE = 100.0;
     // One world unit, on a font clamped between 200 and 1200 of them: already far below
     // what a map pixel resolves at any zoom, so the halvings this stops the font search
     // short of would have bought a height difference no one can see.
@@ -450,7 +450,7 @@ public final class KmuMapLayerSettings {
     // a readable line against the map's scale (the border inset channel is 150); three
     // lines is the HOI4-style ceiling; 1.15 leads the lines with a little air.
     private static final double DEFAULT_NAME_MIN_FONT_SIZE = 200.0;
-    private static final double DEFAULT_NAME_MAX_FONT_SIZE = 1200.0;
+    private static final double DEFAULT_NAME_MAX_FONT_SIZE = 4000.0;
     private static final int DEFAULT_NAME_MAX_LINES = 3;
     private static final double DEFAULT_NAME_LINE_SPACING = 1.15;
     private static final double DEFAULT_ANCHOR_BAND_OPACITY = 0.35;
