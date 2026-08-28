@@ -24,6 +24,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -100,6 +101,43 @@ final class FilterSelectionHealTest {
 
                 assertThat(predicate.test("hegemony")).isTrue();
                 assertThat(predicate.test("vanished")).isFalse();
+            }
+        }
+
+        @Test
+        void healStaleSelectionAgainstActiveViewReadsNoBlocsUntilOneIsThereToJudge() {
+            // The cost contract, which matters because every settings change now arrives here and
+            // most saves hold no spotlight: resolving the view's blocs is a whole grouped dominance
+            // pass over the sector, so it must not run before the heal has found a stored id worth
+            // judging. Pinned on the seam that pass goes through, the pass itself being the view's.
+            try (var globalMock = mockStatic(Global.class);
+                    var registryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(sectorMock);
+
+                registryMock
+                    .when(PoliticalMapViewRegistry::getSelectedView)
+                    .thenReturn(viewMock);
+
+                when(viewMock.getId())
+                    .thenReturn("factions");
+
+                doReturn(new ListPicker<>(List.of(), DominanceSortMode.MODES))
+                    .when(viewMock)
+                    .resolveBlocPicker(sectorMock);
+
+                FilterSelectionHeal.healStaleSelectionAgainstActiveView();
+
+                verify(viewMock, never()).resolveBlocPicker(sectorMock);
+
+                // And it is that same predicate that pays the cost once there is an id to judge, so
+                // the work is deferred rather than dropped.
+                capturePredicate(selectionMock).test("hegemony");
+
+                verify(viewMock).resolveBlocPicker(sectorMock);
             }
         }
     }
