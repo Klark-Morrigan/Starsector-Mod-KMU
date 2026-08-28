@@ -322,11 +322,14 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_NONE),
                 CellTooltipRows.NO_SCORE));
         }
-        // The claimant's own standing, or none at all when it holds nothing the box may list: a core
-        // imposed on a system its faction has no colony in is claimed without ever having been scored
-        // for it - so the number and the account beneath it are both read off the one standing rather
-        // than looked up apart, which is what stops a line showing one faction's score over another's
-        // colonies.
+        // The claimant's own standing, or none at all when it holds nothing the box may list. Two
+        // states arrive here: a core imposed on a system its faction has no colony in, claimed
+        // without ever having been scored for it; and a claimant whose every colony the player has
+        // yet to find, which the projection above dropped. The claim is stated either way - vanilla
+        // settles it unfogged and the map paints it, so withholding the line would keep back what
+        // the player can already see - while the number and the account are both read off the one
+        // standing rather than looked up apart, which is what stops a line showing one faction's
+        // score over another's colonies.
         var standing = contest.findStanding(claimantFactionId);
         var claimantLine = standing
             .map(found -> buildStandingLine(sector, found))
@@ -483,9 +486,11 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
          * every colony is withheld would otherwise be named over an account with nothing in it,
          * which is precisely the reading that tells the player what the fog is keeping back.
          *
-         * <p>A weighed standing always survives it: the mechanic scores only markets held in the
-         * open, and one held in the open is one the player knows of. What this ever drops is a
-         * presence-only standing resting on undiscovered colonies alone.
+         * <p>No kind of standing is spared it. The mechanic scores colonies nobody has found, so a
+         * faction can be weighed on a market this box may not name, and a weighed standing whose
+         * every colony is unfound is dropped exactly as a presence-only one is. One found colony is
+         * enough to keep either: the faction is then on the map in its own colours, and naming it
+         * tells the player nothing they cannot already see.
          */
         static ListedClaimContest selectFrom(
                 SystemClaimBreakdown breakdown,

@@ -117,6 +117,11 @@ final class SystemClaimTooltipTest {
     private static final boolean IS_TERRITORIAL = true;
     private static final boolean IS_NON_TERRITORIAL = false;
 
+    // Whether the player has found the colony a standing rests on - the flag the box's projection
+    // reads. Independent of what the mechanic made of that colony: a market held in the open is
+    // weighed whether or not anybody has reached it, so a scored standing can be unfound.
+    private static final boolean IS_UNFOUND_BY_PLAYER = false;
+
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
 
     // The alliance set the box routes its blocks against, restated by the cases about an ally and left
@@ -470,6 +475,50 @@ final class SystemClaimTooltipTest {
 
             assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
                 .containsExactly("Claim:", "The Hegemony");
+        }
+
+        @Test
+        void buildBodySectionsLeavesOutARivalWeighedOnAColonyThePlayerHasNotFound() {
+            // The projection reaches the scored kind too. The mechanic weighs colonies nobody has
+            // reached, so a faction can carry a real score on a market this box may not name - and
+            // listing it would state the very presence the fog is keeping back, over an account
+            // with nothing in it.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(
+                        TRITACHYON,
+                        RIVAL_SCORE,
+                        IS_TERRITORIAL,
+                        IS_UNFOUND_BY_PLAYER))));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly("Claim:", "The Hegemony");
+        }
+
+        @Test
+        void buildBodySectionsStatesTheClaimOfAHolderWeighedOnAColonyThePlayerHasNotFound() {
+            // The claimant is named although the projection dropped its standing: vanilla settles a
+            // claim unfogged and the map paints it, so a box declining the line would keep back
+            // what the player can already see. What the fog takes is the account - the colony that
+            // won the system stays unnamed, leaving the claim stated and unexplained.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(buildStandingOnOneMarket(
+                    HEGEMONY,
+                    TOP_SCORE,
+                    IS_TERRITORIAL,
+                    IS_UNFOUND_BY_PLAYER))));
+
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly("Claim:", "The Hegemony");
+            assertThat(sections.get(CLAIM_SECTION).readRowsInOrder())
+                .hasSize(HEADED_ONE_ENTRY_ROW_COUNT);
         }
 
         @Test
