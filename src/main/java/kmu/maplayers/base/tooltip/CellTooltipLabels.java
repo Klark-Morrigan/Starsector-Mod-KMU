@@ -130,12 +130,6 @@ final class CellTooltipLabels {
     // Adds the name: the blocks a withheld one is shown by, one run, or the stretch that reads as a
     // finding picked out in gold with what surrounds it either side of it.
     //
-    // A withheld name takes the whole of the name's place - the runs after it are laid exactly as they
-    // are on a line that says what it is called, so a redacted line reads as a line of the list with
-    // one part blocked out rather than as a shape of its own. In the line's own colour like the name it
-    // stands for, so a redaction on a quiet line quietens with it and none of them is the loudest thing
-    // in the box.
-    //
     // The stretches are exact substrings and every one past the first is a joined run
     // (LabelRun.isJoinedToPreviousRun, which argues the case), so the name draws as its author spelled
     // it whatever the finding landed beside.
@@ -148,6 +142,10 @@ final class CellTooltipLabels {
             CellTooltipEntryLine line,
             Color lineColour) {
 
+        // A withheld name takes the whole of the name's place, so the runs after it are laid exactly as
+        // they are on a line that says what it is called and a redacted line reads as one of the list
+        // with a part blocked out rather than as a shape of its own. In the line's own colour like the
+        // name it stands for, so a redaction on a quiet line quietens with it.
         if (line.hasRedactedName()) {
             labelRuns.add(new RedactedSpan(line.redactedWordLengths(), lineColour));
             return;

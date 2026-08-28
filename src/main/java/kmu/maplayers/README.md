@@ -388,17 +388,16 @@ about what the overlay means.
   (`LabelRun.isJoinedToPreviousRun`), which is what keeps the split name spelled as its author
   spelled it. At most one stretch per line: a second would cost the line model a list of parts where
   one part does.
-  A line may instead withhold its name outright (`createRedactedLine`), carrying the lengths of the
-  words it was made of where the name would be and drawing one filled block per word
-  (`RedactedSpan`). It is listed rather than left out so whatever the thing contributed to the block's
-  arithmetic is accounted for on a line of its own instead of surfacing as a difference nothing
-  explains, and the redaction takes the whole of the name's place - the mark still opens the line and
-  the place, status and remark run on after it exactly as they do elsewhere, so such a line reads as
-  one of the list with a part blocked out rather than as a shape of its own. A separate factory rather
-  than a refinement, and lengths rather than the name: what the line must not show never reaches it,
-  so no later change is in a position to draw it. The two accounts of what a line is called are
-  exclusive at construction - said or withheld, never both - and a line withholding its name cannot
-  gild a stretch of it, there being no letters to match.
+  A line may instead withhold its name outright (`createRedactedLine`), carrying the shape of it as
+  KMLib's `RedactedSpan` in place of the words. Such a line is listed rather than left out, so
+  whatever the thing contributed to the block's arithmetic is accounted for on a line of its own
+  instead of surfacing as a difference nothing explains, and the redaction takes the whole of the
+  name's place - the mark still opens the line and the place, status and remark run on after it
+  exactly as they do elsewhere, so it reads as one of the list with a part blocked out rather than as
+  a shape of its own. A separate factory rather than a refinement, and word lengths rather than the
+  name: what the line must not show never reaches it, so no later change is in a position to draw it.
+  The two accounts of what a line is called are exclusive at construction - said or withheld, never
+  both - and a line withholding its name cannot gild a stretch of it, there being no letters to match.
   A line may also state where it falls in an ordering (`indexedAt`), as a `CellTooltipIndexPlace` -
   the number the reader sees and, as one value with it, what that place decided
   (`CellTooltipIndexOutcome`). It runs on after the name in the quiet shade, ahead of any qualifier,

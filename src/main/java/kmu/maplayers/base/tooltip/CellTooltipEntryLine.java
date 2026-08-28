@@ -63,21 +63,18 @@ public record CellTooltipEntryLine(
     boolean isAside,
     boolean isValueUncounted) {
 
-    // What the plainest line carries in each of the parts it does not use. Named one per part rather
-    // than passed as bare nulls, so the factory below says what the line has none of instead of
-    // handing the constructor a row of unexplained absences a reader has to count off against the
-    // components - which is a count that goes wrong the moment a part is added.
+    // What a line carries in each of the parts it does not use. Named one per part rather than passed
+    // as bare nulls, so the factories below say what a line has none of instead of handing the
+    // constructor a row of unexplained absences a reader has to count off against the components -
+    // which is a count that goes wrong the moment a part is added. The first two are the one exclusive
+    // pair: a line says its name and holds no redaction, or withholds it and holds no name.
+    private static final String NO_NAME = null;
     private static final List<Integer> NO_REDACTION = null;
     private static final CellTooltipLabelFinding NO_LABEL_FINDING = null;
     private static final CellTooltipIndexPlace NO_PLACE = null;
     private static final String NO_NOTE = null;
     private static final String NO_QUALIFIER = null;
     private static final String NO_WORKING = null;
-
-    // What a line whose name is withheld carries where the name would be. The counterpart of the
-    // redaction above rather than another unused part: a line states one of the two and leaves the
-    // other empty, which is the invariant the constructor holds to.
-    private static final String NO_NAME = null;
 
     // What an ordinary line is: one of the things the block lists rather than a note about them, and
     // carrying a number it earned. Both are the plain case and what every factory below builds.
@@ -86,11 +83,11 @@ public record CellTooltipEntryLine(
 
     /**
      * Rejects a valueless line, and one that neither states a name nor withholds one, at construction,
-     * where the caller that composed it is still on the stack. Both are required because a block lays
-     * every line through the same two columns: a null arriving in either would surface inside a
-     * measurement or a draw, well past the point that could say which line was meant. A line carrying no
-     * number states {@link CellTooltipRows#NO_SCORE}, which is a value the column collapses for rather
-     * than an absence.
+     * where the caller that composed it is still on the stack. A block lays every line through the same
+     * two columns, so a line arriving with nothing for one of them would surface inside a measurement or
+     * a draw, well past the point that could say which line was meant. A line carrying no number states
+     * {@link CellTooltipRows#NO_SCORE}, which is a value the column collapses for rather than an
+     * absence.
      *
      * <p>A name and a redaction of one are refused together for the same reason each is refused alone:
      * the label takes one account of what the line is called, so a line holding both would leave
@@ -106,9 +103,9 @@ public record CellTooltipEntryLine(
         if ((labelText == null) == (redactedWordLengths == null)) {
             throw new IllegalArgumentException("a line states its name or withholds it, never both");
         }
-        redactedWordLengths = redactedWordLengths == null
-            ? NO_REDACTION
-            : List.copyOf(redactedWordLengths);
+        if (redactedWordLengths != null) {
+            redactedWordLengths = List.copyOf(redactedWordLengths);
+        }
     }
 
     /**
