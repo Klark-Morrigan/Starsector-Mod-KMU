@@ -494,13 +494,15 @@ the mechanic gives every market of a faction the same point per other market it 
 once beneath the very markets its count can be checked against, and worked out from that count
 (`Same-faction market bonus   (3 markets) - 1 = +2`, the subtraction being the market being scored,
 which is not its own sibling) rather than as a bare result nobody can check. That line is working
-throughout bar the points it arrives at, so it reads in the quiet shade name and all, and it is
-withheld entirely wherever the list above it is not exactly the markets the count counts - something
-kept off it for being unfound, or an unlisted colony on it that the mechanic never counted - since a
-count that cannot be checked against what is on screen either contradicts it, states the very number
-the withholding exists to keep back, or reads as short by the market it never included. Note that a market's own line carries the
-whole score the contest weighed it at, presence included, so its listed terms are what it adds that
-its siblings' do not. The resolver shares the entry model and the block
+throughout bar the points it arrives at, so it reads in the quiet shade name and all. The count is of
+what the faction holds rather than of the lines above it, so over a list a market was kept off for
+being unfound it stands and reads as exceeding what is shown - which gives away nothing the list has
+not, a market's own line carrying the whole score the contest weighed it at while the terms beneath
+it state its own share alone, so the presence is already the difference between the two on every
+line. Withheld there, it would leave each market short by an amount the reader can see and cannot
+account for. It is withheld only for an unlisted colony on the list, which the mechanic never counted
+and which sits among the very lines the count is checked against: that term would read as short by a
+market on screen, contradicted rather than merely exceeded. The resolver shares the entry model and the block
 vocabulary with the domination pair but not their number grammar - a claim score is a small whole
 number of points with no grid behind it, so no rating-to-weight change is stated),
 `ribbon` (the vocabulary a cell's presence band is planned in - the runs, the dividers between

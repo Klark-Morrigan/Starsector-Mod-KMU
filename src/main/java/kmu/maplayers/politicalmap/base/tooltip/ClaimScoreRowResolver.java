@@ -86,6 +86,19 @@ import java.util.Optional;
  * the foot of the very markets it counts it can be. Stated as the working rather than the result for the
  * same reason: the count is checkable, the result alone is not.
  *
+ * <p>That count is of what the faction holds rather than of the lines above it, so over a list a market
+ * was withheld from it stands all the same and reads as exceeding what is shown. It gives away nothing
+ * the list does not: a market's own line carries the whole score the contest weighed it at while the
+ * terms beneath it state only its own, so on every line the presence is already the difference between
+ * the two. The term names that difference. Withheld, it leaves each market's arithmetic short by an
+ * amount the reader can see and hands them nothing to account for it with - which is the one failure a
+ * box that exists to say what built a number cannot afford.
+ *
+ * <p>It is withheld only where the list carries a market the count never included. A colony the economy
+ * does not list sits among the very lines the count invites the reader to check it against while being
+ * outside it, so the term would read as short by a market on screen: contradicted rather than merely
+ * exceeded.
+ *
  * <p>A term that earned a market nothing has no line. The box exists to say what built a number, and a
  * market that is no garrison is not one whose garrison came to nothing - it is one where the term never
  * arose.
@@ -163,7 +176,7 @@ public final class ClaimScoreRowResolver {
             SystemColonyReading colonyReading,
             boolean isListingUnfoundMarkets) {
 
-        var marketListing = MarketListing.selectFrom(standing, isListingUnfoundMarkets);
+        var listedMarkets = selectListedMarkets(standing, isListingUnfoundMarkets);
 
         // Routed on the kind of standing because the two things the fuller account is built from -
         // the market that carried the score, and the presence term counted for it - exist only on a
@@ -174,9 +187,9 @@ public final class ClaimScoreRowResolver {
                 breakdown,
                 weighedStanding,
                 colonyReading,
-                marketListing);
+                listedMarkets);
         }
-        return resolvePresenceOnlyRows(colonyReading, marketListing.listedMarkets());
+        return resolvePresenceOnlyRows(colonyReading, listedMarkets);
     }
 
     // The account of a faction the contest weighed: its markets strongest first, the one that took
@@ -186,7 +199,7 @@ public final class ClaimScoreRowResolver {
             SystemClaimBreakdown breakdown,
             WeighedClaimStanding standing,
             SystemColonyReading colonyReading,
-            MarketListing marketListing) {
+            List<MarketClaimBreakdown> listedMarkets) {
 
         // Whether this faction is the one the contest handed the system to, and so whose strongest
         // market is the one that took it. A decree settles the system before a single market is
@@ -196,7 +209,7 @@ public final class ClaimScoreRowResolver {
 
         var entries = new ArrayList<CellTooltipEntry>();
 
-        for (var market : marketListing.listedMarkets()) {
+        for (var market : listedMarkets) {
             entries.add(resolveMarketEntry(
                 createMarketLine(market, ClaimTieOutcomes.resolveOutcome(
                     breakdown,
@@ -207,10 +220,11 @@ public final class ClaimScoreRowResolver {
                 isHoldingTheClaim && market == standing.standingMarket()));
         }
 
-        // The presence term is stated only where the list above it is exactly the markets the count
-        // counts. Its whole claim on the reader is that the number can be checked against the list it
-        // follows, and it loses that either way the two can part company.
-        if (marketListing.isEveryListedMarketCounted()) {
+        // Stated unless the list carries a market the count never included, which is the one way the
+        // two can disagree in the direction that reads as the box having miscounted. A count running
+        // ahead of a shortened list says only that the faction holds more than is shown - which every
+        // listed market's own arithmetic says already, its score carrying a presence its terms do not.
+        if (isEveryListedMarketCounted(listedMarkets)) {
             resolveSiblingEntry(standing).ifPresent(entries::add);
         }
         return List.copyOf(entries);
@@ -405,59 +419,40 @@ public final class ClaimScoreRowResolver {
             KmlibNumbers.formatGroupedInteger(siblingMarketCount + THE_MARKET_BEING_SCORED));
     }
 
-    /**
-     * A faction's markets as an account states them: the ones it lists, and the whole set the
-     * standing holds them out of.
-     *
-     * <p>The two travel as one value because the only question either is asked apart from the other
-     * is whether they agree - the presence term is stated only where the list is exactly the markets
-     * the count counts. Passed apart, a listing selected from one standing could arrive beside
-     * another's holdings, and the term would be checked against a list it was never drawn from.
-     */
-    private record MarketListing(
-        List<MarketClaimBreakdown> listedMarkets,
-        List<MarketClaimBreakdown> heldMarkets) {
+    // The markets an account lists, out of everything the standing holds, in the order the contest
+    // would settle them.
+    //
+    // A market the player has not found is left off rather than blanked: it carries nothing the
+    // account needs, and a run of redacted lines would state the very count the withholding exists to
+    // keep. A weighed standing's own strongest market is not spared - the mechanic weighs colonies
+    // nobody has found, so a faction can stand on one the player has no way of seeing, and a listing
+    // that made an exception of it would name exactly the colony the fog is keeping back. What is
+    // left in that case is the faction's score with the market behind it unnamed.
+    private static List<MarketClaimBreakdown> selectListedMarkets(
+            FactionClaimStanding standing,
+            boolean isListingUnfoundMarkets) {
 
-        /**
-         * Selects the markets an account lists from what a standing holds, in the order the contest
-         * would settle them.
-         *
-         * <p>A market the player has not found is left off rather than blanked on the list: it
-         * carries nothing the account needs, and a run of redacted lines would state the very count
-         * the withholding is meant to keep. A weighed standing's strongest is never among them - a
-         * market takes a standing only where it is not hidden, and one that is not hidden is one the
-         * player knows of.
-         */
-        static MarketListing selectFrom(
-                FactionClaimStanding standing,
-                boolean isListingUnfoundMarkets) {
+        return standing
+            .readHeldMarkets()
+            .stream()
+            .filter(market -> isListingUnfoundMarkets || market.isKnownToPlayer())
+            .sorted(MARKET_ORDER)
+            .toList();
+    }
 
-            var heldMarkets = standing.readHeldMarkets();
-
-            return new MarketListing(
-                heldMarkets
-                    .stream()
-                    .filter(market -> isListingUnfoundMarkets || market.isKnownToPlayer())
-                    .sorted(MARKET_ORDER)
-                    .toList(),
-                heldMarkets);
-        }
-
-        /**
-         * Whether the markets listed are neither fewer nor more than the ones the presence count
-         * counts.
-         *
-         * <p>Fewer, where a market was withheld for being unfound: the term would then either
-         * contradict what is on screen or state the very number the withholding exists to keep back.
-         * More, where a market the economy does not list is on the list: the mechanic never reached
-         * it, so the count does not include it, and the term would read as short by exactly that
-         * market.
-         */
-        boolean isEveryListedMarketCounted() {
-            return listedMarkets.size() == heldMarkets.size()
-                && listedMarkets
-                    .stream()
-                    .noneMatch(MarketClaimBreakdown::isOffEconomyMarket);
-        }
+    // Whether every market on the list is one the presence count counts.
+    //
+    // A colony the economy does not list is the one market that fails it: the mechanic never reached
+    // it, so it sits among the very lines the count invites the reader to check it against while
+    // being outside the count, and the term would read as short by a market on screen.
+    //
+    // Asked of the list alone. A market kept off it for being unfound is not on screen to contradict
+    // anything, and the count merely running ahead of what is shown states nothing the listed markets
+    // do not - each carries the whole score it was weighed at, presence included, over terms that
+    // account for its own share only.
+    private static boolean isEveryListedMarketCounted(List<MarketClaimBreakdown> listedMarkets) {
+        return listedMarkets
+            .stream()
+            .noneMatch(MarketClaimBreakdown::isOffEconomyMarket);
     }
 }

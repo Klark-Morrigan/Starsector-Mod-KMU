@@ -106,9 +106,10 @@ final class ClaimScoreRowResolverTest {
     private static final boolean WITHHOLDING_UNFOUND_MARKETS = false;
     private static final boolean LISTING_UNFOUND_MARKETS = true;
 
-    // Whether the player has found a market at all - the flag the withholding reads. An unfound
-    // market is a hidden one, the two arms of "known" being discovery and being held in the open, so
-    // a case posing one poses both.
+    // Whether the player has found a market at all - the flag the withholding reads. Independent of
+    // whether the market is held in the open: the mechanic settles a contest over colonies nobody has
+    // reached, so an open market that is also unfound is the ordinary shape rather than a corner, and
+    // a case wanting a concealed market poses the concealment itself.
     private static final boolean IS_KNOWN_TO_PLAYER = true;
 
     // Every market an ordinary colony somebody is looking at, so no line is qualified and none
@@ -437,12 +438,11 @@ final class ClaimScoreRowResolverTest {
         void resolveMarketRowsLeavesATieWithAHiddenMarketUnjudged() {
             // A hidden market never competes - the mechanic skips it before scoring - so a standing
             // tied only with one won nothing, and marking it would assert a contest that did not
-            // happen. It also keeps the fog honest: an unfound market is a hidden one, so a withheld
-            // line can never be the missing partner of a mark the player can see.
+            // happen.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildMarket("Kanta's Den", STRONGEST_MARKET_SIZE, ONE_SIBLING_MARKET,
-                    SECOND_LISTED, IS_UNFOUND_BY_PLAYER))));
+                List.of(buildFoundHiddenMarket("Kanta's Den", STRONGEST_MARKET_SIZE,
+                    ONE_SIBLING_MARKET, SECOND_LISTED))));
 
             assertThat(rows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
@@ -489,8 +489,9 @@ final class ClaimScoreRowResolverTest {
         @Test
         void resolveMarketRowsWithholdsThePresenceTermOverAListHoldingAnUncountedMarket() {
             // The count is the mechanic's, and the mechanic never saw the off-economy market. Printed
-            // beneath a list carrying it, the term would read as short by exactly that market - the
-            // same broken promise as printing it over a list something was withheld from.
+            // beneath a list carrying it, the term would read as short by exactly that market - a
+            // count the reader can see is contradicted, which is the one way it may not part company
+            // with the list.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
                 List.of(
@@ -536,8 +537,8 @@ final class ClaimScoreRowResolverTest {
 
         @Test
         void resolveMarketRowsLeavesAMarketThePlayerHasNotFoundOffTheList() {
-            // Vanilla settles a claim over colonies nobody has found; repeating what it learned
-            // there would tell the player a system holds something they have no way of knowing.
+            // Vanilla settles a claim over colonies nobody has found; naming one would tell the
+            // player a system holds something they have no way of knowing.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(TWO_SIBLING_MARKETS),
                 List.of(
@@ -546,21 +547,45 @@ final class ClaimScoreRowResolverTest {
                         IS_UNFOUND_BY_PLAYER))));
 
             assertThat(readLabelTexts(rows))
-                .containsExactly(STRONGEST_MARKET, "Culann");
+                .containsExactly(STRONGEST_MARKET, "Culann", PRESENCE_LINE);
         }
 
         @Test
-        void resolveMarketRowsWithholdsThePresenceTermOverAListSomethingWasKeptFrom() {
-            // The term's whole claim on the reader is that its count can be checked against the
-            // markets above it. Printed over a shortened list it would either contradict what is on
-            // screen or state the very number the withholding exists to keep back.
+        void resolveMarketRowsStatesThePresenceTermOverAListSomethingWasKeptFrom() {
+            // The count runs ahead of the shortened list, which is what the reader is owed rather
+            // than what must be kept from them: the market on screen carries a score its own terms
+            // fall short of, so the difference is already stated and the term is the only thing that
+            // names it. Withheld, the account simply does not add up.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
                 List.of(buildMarket("Kanta's Den", 3, ONE_SIBLING_MARKET, SECOND_LISTED,
                     IS_UNFOUND_BY_PLAYER))));
 
             assertThat(readLabelTexts(rows))
-                .containsExactly(STRONGEST_MARKET);
+                .containsExactly(STRONGEST_MARKET, PRESENCE_LINE);
+            assertThat(rows.get(1).line().valueWorkingText())
+                .isEqualTo("(2 markets) - 1 =");
+        }
+
+        @Test
+        void resolveMarketRowsStatesThePresenceTermWhereTheStandingMarketItselfWasKeptBack() {
+            // The shape the fog and the mechanic produce together, and the one a market taking a
+            // standing only where it is open would rule out: the mechanic weighs colonies nobody has
+            // reached, so the very market a faction stands on can be one the player cannot be shown.
+            // Its terms go with it, and what is left is a lesser colony whose own arithmetic the
+            // presence line is the whole remaining account of.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(ONE_SIBLING_MARKET, IS_UNFOUND_BY_PLAYER),
+                List.of(buildMarket("Kanta's Den", 4, ONE_SIBLING_MARKET, SECOND_LISTED))));
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly("Kanta's Den", PRESENCE_LINE);
+            assertThat(rows.get(0).line().valueText())
+                .isEqualTo("5");
+            assertThat(readLabelTexts(rows.get(0).children()))
+                .containsExactly("Size");
+            assertThat(rows.get(1).line().valueText())
+                .isEqualTo("+1");
         }
 
         @Test
@@ -1140,15 +1165,9 @@ final class ClaimScoreRowResolverTest {
         return buildStrongestMarket(siblingMarketCount, IS_KNOWN_TO_PLAYER);
     }
 
-    // How the mechanic met a market the player has, or has not, found. An unfound market is a
-    // concealed one - the two arms of "known" being discovery and being held in the open - so a case
-    // posing one poses both, and a found market is the ordinary competitor.
-    private static ContestAdmission admitAsFound(boolean isKnownToPlayer) {
-        return isKnownToPlayer ? ContestAdmission.WEIGHED : ContestAdmission.HIDDEN;
-    }
-
     // The same market, stated as one the player has or has not found - the two cases the withholding
-    // turns on.
+    // turns on. Held in the open either way, a market carrying a standing being one the mechanic
+    // weighed, so the unfound reading is the standing the player cannot be shown.
     private static MarketClaimBreakdown buildStrongestMarket(
             int siblingMarketCount,
             boolean isKnownToPlayer) {
@@ -1158,7 +1177,7 @@ final class ClaimScoreRowResolverTest {
             nameMarketId(STRONGEST_MARKET),
             FIRST_LISTED,
             isKnownToPlayer,
-            admitAsFound(isKnownToPlayer),
+            ContestAdmission.WEIGHED,
             STRONGEST_MARKET_SIZE,
             siblingMarketCount,
             OptionalInt.empty());
@@ -1277,7 +1296,9 @@ final class ClaimScoreRowResolverTest {
             IS_KNOWN_TO_PLAYER);
     }
 
-    // The same market, stated as one the player has or has not found.
+    // The same market, stated as one the player has or has not found. Held in the open either way,
+    // the two being independent - a case wanting concealment as well poses it with the hidden
+    // builders, so nothing here quietly answers a second question on the fog's behalf.
     private static MarketClaimBreakdown buildMarket(
             String marketName,
             int marketSize,
@@ -1290,7 +1311,7 @@ final class ClaimScoreRowResolverTest {
             nameMarketId(marketName),
             listingPosition,
             isKnownToPlayer,
-            admitAsFound(isKnownToPlayer),
+            ContestAdmission.WEIGHED,
             marketSize,
             siblingMarketCount,
             OptionalInt.empty());
