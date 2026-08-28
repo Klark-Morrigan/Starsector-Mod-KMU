@@ -108,12 +108,15 @@ public final class BorderSmoothing {
             List<double[]> loop,
             CornerRoundingStyle style) {
 
+        // Every corner: a cluster border is a sparse polygon whose every vertex is a real
+        // corner, unlike a sampled curve with a few sharp joins to pick out.
         return PolygonSmoothing.roundCorners(
             loop,
             new CornerRounding(
                 style.cornerRadius(),
                 style.cornerSegments(),
-                style.chamferAngleRadians()));
+                style.chamferAngleRadians(),
+                CornerRounding.ROUND_EVERY_CORNER));
     }
 
     // Applies one pass to every loop, collecting the results. Both passes are per-loop and
