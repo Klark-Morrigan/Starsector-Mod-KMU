@@ -66,10 +66,10 @@ public record DrawnSector(
         new SpikeSandingStyle(true, DEFAULT_SPIKE_HEIGHT, DEFAULT_SPIKE_BELOW_RADIANS),
         new CornerRoundingStyle(
             true,
-            Coastlines.DEFAULT_SANDING.radius(),
-            Coastlines.DEFAULT_SANDING.segmentsPerCorner(),
-            Coastlines.DEFAULT_SANDING.bevelBelowAngleRadians(),
-            Coastlines.DEFAULT_SANDING.roundBelowAngleRadians()));
+            Coastlines.DEFAULT_ROUNDING.radius(),
+            Coastlines.DEFAULT_ROUNDING.segmentsPerCorner(),
+            Coastlines.DEFAULT_ROUNDING.bevelBelowAngleRadians(),
+            Coastlines.DEFAULT_ROUNDING.roundBelowAngleRadians()));
 
     /**
      * Builds the sector as it would be drawn under one set of knobs.

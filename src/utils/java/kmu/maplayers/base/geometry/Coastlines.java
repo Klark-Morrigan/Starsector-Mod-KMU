@@ -102,7 +102,7 @@ public final class Coastlines {
     // all.
     private static final double DEFAULT_MIN_FRONTAGE_SHARE = 0.05;
 
-    // The sanding's own numbers, named so the slider ranges beside them read against
+    // The rounding's own numbers, named so the slider ranges beside them read against
     // something rather than against three literals.
     //
     // The radius steps back along each arm of a corner and is small against a 4000-unit
@@ -111,27 +111,27 @@ public final class Coastlines {
     //
     // The threshold is what makes the pass selective, and is set just under where a coast's
     // own sampled arcs begin: their joints sit at about 173 degrees, so a threshold this
-    // side of that sands every join BETWEEN runs of coast while leaving the samples along
+    // side of that rounds every join BETWEEN runs of coast while leaving the samples along
     // one run alone. Past them the pass has nothing left to find and triples the vertex
     // count saying so.
     //
     // Nothing is ever chamfered, because what is wanted of a needle is a rounded tip rather
     // than a flat one.
-    private static final double DEFAULT_SANDING_RADIUS = 200;
-    private static final int DEFAULT_SANDING_SEGMENTS = 3;
-    private static final double DEFAULT_SAND_BELOW_DEGREES = 170;
+    private static final double DEFAULT_ROUNDING_RADIUS = 200;
+    private static final int DEFAULT_ROUNDING_SEGMENTS = 3;
+    private static final double DEFAULT_ROUND_BELOW_DEGREES = 170;
     private static final double NEVER_CHAMFER = 0;
 
-    // How the drawn coastline is sanded where it turns sharply, out of the numbers above.
+    // How the drawn coastline is rounded where it turns sharply, out of the numbers above.
     //
     // What it is FOR: a kept cell whose two cleared landings cross contributes a single
     // point instead of a fillet, and the two straight runs either side then meet in a
     // needle. Rounding the join takes the needle's tip off without moving either run.
-    public static final CornerRounding DEFAULT_SANDING = new CornerRounding(
-        DEFAULT_SANDING_RADIUS,
-        DEFAULT_SANDING_SEGMENTS,
+    public static final CornerRounding DEFAULT_ROUNDING = new CornerRounding(
+        DEFAULT_ROUNDING_RADIUS,
+        DEFAULT_ROUNDING_SEGMENTS,
         NEVER_CHAMFER,
-        Math.toRadians(DEFAULT_SAND_BELOW_DEGREES));
+        Math.toRadians(DEFAULT_ROUND_BELOW_DEGREES));
 
     private Coastlines() {
     }
@@ -149,7 +149,7 @@ public final class Coastlines {
      * @param minFrontageShare    how much of its own border a cell has to face the void with
      *                            to be worth passing through, as a share of the whole turn.
      *                            Zero asks nothing and drops nobody
-     * @param sanding             how the drawn line is rounded where it turns sharply. The
+     * @param rounding            how the drawn line is rounded where it turns sharply. The
      *                            third smoothing knob, beside the floor above: the floor
      *                            decides which stretches the line passes through, the arc
      *                            sampling how finely each is drawn, and this what becomes of
@@ -158,7 +158,7 @@ public final class Coastlines {
     public record CoastRules(
         double bridgeReachMultiple,
         double minFrontageShare,
-        CornerRounding sanding) {
+        CornerRounding rounding) {
     }
 
     /**
@@ -169,7 +169,7 @@ public final class Coastlines {
      * them saying so.
      */
     public static final CoastRules DEFAULT_RULES = new CoastRules(
-        DEFAULT_BRIDGE_REACH_MULTIPLE, DEFAULT_MIN_FRONTAGE_SHARE, DEFAULT_SANDING);
+        DEFAULT_BRIDGE_REACH_MULTIPLE, DEFAULT_MIN_FRONTAGE_SHARE, DEFAULT_ROUNDING);
 
     /**
      * A traced coast and the two things it was traced against.
@@ -196,9 +196,9 @@ public final class Coastlines {
      *                    Carried for whatever lays more walls alongside them: found again
      *                    from the knobs, they are a second answer that can differ from the
      *                    one the coast was actually walked against
-     * @param drawnRings  the same coasts as the LINE the map draws: sanded where they turn
+     * @param drawnRings  the same coasts as the LINE the map draws: rounded where they turn
      *                    sharply, and so no longer attributable to the cells the vertices
-     *                    above name. Sanded once here rather than at each reader, because
+     *                    above name. Rounded once here rather than at each reader, because
      *                    every one of them - the paint, the SVG, the inside-the-coast test -
      *                    has to be looking at the one line, and because a pass repeated per
      *                    frame is paid for per frame. Read through
@@ -360,25 +360,25 @@ public final class Coastlines {
             smoothed.dropped(),
             union,
             walls,
-            sandCoastRings(smoothed.coasts(), rules.sanding()));
+            roundCoastRings(smoothed.coasts(), rules.rounding()));
     }
 
-    // The drawn line: each smoothed coast as plain points, sanded where it turns sharply.
+    // The drawn line: each smoothed coast as plain points, rounded where it turns sharply.
     //
     // Apart from the smoothing above rather than folded into it, because the two work on
     // different things. The smoothing decides which stretches the coast runs along and hands
     // back vertices that each name the cell they sit on; this rounds the joins BETWEEN those
-    // stretches, and the points it adds sit on no cell at all - so a sanded ring can no
+    // stretches, and the points it adds sit on no cell at all - so a rounded ring can no
     // longer answer what the vertices answer, and is kept beside them rather than replacing
     // them.
-    private static List<List<double[]>> sandCoastRings(
+    private static List<List<double[]>> roundCoastRings(
             List<List<CoastVertex>> coasts,
-            CornerRounding sanding) {
+            CornerRounding rounding) {
 
         var rings = new ArrayList<List<double[]>>(coasts.size());
 
         for (var coast : coasts) {
-            rings.add(PolygonSmoothing.roundCorners(collectPoints(coast), sanding));
+            rings.add(PolygonSmoothing.roundCorners(collectPoints(coast), rounding));
         }
         return List.copyOf(rings);
     }
@@ -540,8 +540,8 @@ public final class Coastlines {
      * The whole drawn coast as plain rings.
      *
      * <p>What a shape is judged against, and what the map puts on screen, are the same line:
-     * void outside it is void nothing shut in, whatever any single reach's line says. Sanded
-     * at the trace rather than by each reader, since three readers sanding it three ways is
+     * void outside it is void nothing shut in, whatever any single reach's line says. Rounded
+     * at the trace rather than by each reader, since three readers rounding it three ways is
      * three answers to one question - and named here rather than read off the record, so
      * that "the line the map draws" is asked for by name.
      *

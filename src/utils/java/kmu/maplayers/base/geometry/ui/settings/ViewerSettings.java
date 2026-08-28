@@ -69,11 +69,11 @@ public final class ViewerSettings {
     // The threshold is asked for in degrees, which is how anyone looking at a corner thinks
     // about it, and is the knob worth reaching for first: it decides which corners on a line
     // are corners at all, and so whether the other two do anything.
-    public static final double ROUNDING_RADIUS_DEFAULT = Coastlines.DEFAULT_SANDING.radius();
+    public static final double ROUNDING_RADIUS_DEFAULT = Coastlines.DEFAULT_ROUNDING.radius();
     public static final int ROUNDING_SEGMENTS_DEFAULT =
-        Coastlines.DEFAULT_SANDING.segmentsPerCorner();
+        Coastlines.DEFAULT_ROUNDING.segmentsPerCorner();
     public static final double ROUND_BELOW_DEGREES_DEFAULT =
-        Math.toDegrees(Coastlines.DEFAULT_SANDING.roundBelowAngleRadians());
+        Math.toDegrees(Coastlines.DEFAULT_ROUNDING.roundBelowAngleRadians());
 
     // The spike-sanding pass that runs before the rounding. A needle whose own edges are
     // shorter than the rounding steps back by survives rounding untouched - the cut clamps to
@@ -356,7 +356,7 @@ public final class ViewerSettings {
         return new CornerRounding(
             roundingRadius,
             roundingSegments,
-            Coastlines.DEFAULT_SANDING.bevelBelowAngleRadians(),
+            Coastlines.DEFAULT_ROUNDING.bevelBelowAngleRadians(),
             Math.toRadians(roundBelowDegrees));
     }
 
