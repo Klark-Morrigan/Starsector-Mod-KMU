@@ -1,9 +1,11 @@
 package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.Angles;
+import kmlib.math.geometry.CornerRounding;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
+import kmlib.math.geometry.PolygonSmoothing;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -99,6 +101,16 @@ public final class Coastlines {
     // deciding what a coast passes through, an opening value of zero would be no smoothing at
     // all.
     private static final double DEFAULT_MIN_FRONTAGE_SHARE = 0.05;
+
+    // How the drawn coastline is sanded where it turns sharply. A kept cell whose two
+    // cleared landings cross contributes a single point instead of a fillet, and the two
+    // straight runs then meet in a needle; the sanding steps 300 back along each arm -
+    // small against a 4000-unit cell, so only the very tip moves - and arcs across in six
+    // segments. Corners flatter than 120 degrees keep their vertex verbatim, since the
+    // rings are densely sampled and everything but a needle is already smooth; nothing is
+    // ever chamfered, because what is wanted of a needle is a rounded tip, not a flat one.
+    private static final CornerRounding COAST_SANDING = new CornerRounding(
+        300, 6, 0, Math.toRadians(120));
 
     private Coastlines() {
     }
@@ -484,7 +496,12 @@ public final class Coastlines {
         var rings = new ArrayList<List<double[]>>(traced.coasts().size());
 
         for (var coast : traced.coasts()) {
-            rings.add(collectPoints(coast));
+
+            // Sanded here rather than where the coast is traced, so every reader of the
+            // DRAWN line - the paint, the SVG, the inside-the-coast test - sees the same
+            // sanded ring, while everything built from the coast's vertices and marks
+            // (reaches, walls, dropped stretches) stays on the geometry it was walked on.
+            rings.add(PolygonSmoothing.roundCorners(collectPoints(coast), COAST_SANDING));
         }
         return rings;
     }
