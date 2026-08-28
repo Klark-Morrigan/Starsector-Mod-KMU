@@ -20,6 +20,7 @@ import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +30,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildPresenceOnlyStanding;
@@ -43,6 +45,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_LABEL_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_QUALIFIER_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARK_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.QUALIFIER_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
@@ -58,9 +61,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the shape a claim contest is read in: the claim is always stated, the rivals who could have
- * taken the system and the ones who never could are told apart into their own blocks, and a system
- * held by decree says so on the claim line without losing the market standings behind it.
+ * Pins the shape a claim contest is read in: the claim is always stated, the claim holder's allies are
+ * taken out of the contest into a block of their own, the rivals who could have taken the system and
+ * the ones who never could are told apart into two more, and a system held by decree says so on the
+ * claim line without losing the market standings behind it.
  *
  * <p>The banner heading a decreed box is the layer's rather than this box's, so it is pinned with the
  * heading itself ({@link PoliticalMapCellTooltipTest}); the marker asserted here is what the banner
@@ -113,7 +117,14 @@ final class SystemClaimTooltipTest {
     private static final boolean IS_NON_TERRITORIAL = false;
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
-    private final SystemClaimTooltip tooltip = new SystemClaimTooltip(claimBreakdownReaderFake);
+
+    // The alliance set the box routes its blocks against, restated by the cases about an ally and left
+    // ungrouped for the rest - which is both the state an install with nothing grouping factions is
+    // permanently in and the state every case predating the allied block was written under.
+    private HolderGrouping holderGrouping = HolderGrouping.identity();
+
+    private final SystemClaimTooltip tooltip =
+        new SystemClaimTooltip(claimBreakdownReaderFake, () -> holderGrouping);
 
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
     private final SectorAPI sectorMock = mock(SectorAPI.class);
@@ -187,6 +198,10 @@ final class SystemClaimTooltipTest {
             // The two kinds of presence answer different questions - who nearly took the system, and
             // who is merely there - so they are told apart by the heading they sit under rather than
             // by a note on a line.
+            //
+            // Posed with nothing grouping the factions, which is what an install without the mod that
+            // supplies alliances is permanently in: the allied block is then empty for every system
+            // and the box reads as these two blocks alone, exactly as it did before it had a third.
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 HEGEMONY,
@@ -273,6 +288,138 @@ final class SystemClaimTooltipTest {
                     "Non-territorial:",
                     "Tri-Tachyon",
                     "Pirates");
+        }
+
+        @Test
+        void buildBodySectionsRoutesTheClaimHoldersAllyOutOfTheContestedBlock() {
+            // The whole point of the third block. Vanilla scores each faction alone and knows nothing
+            // of an alliance, so an ally competes for the system and loses it - left under
+            // `Contested by:`, the box would show a faction fighting its own ally for a system the two
+            // of them jointly hold. The score it lost by is untouched: the heading was the error, not
+            // the number. An unallied faction in the same contest stays where it was, since it really
+            // is contesting the claim.
+            var alliedEntryRow = 3;
+
+            holderGrouping = buildAllianceOf(HEGEMONY, TRITACHYON);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_TERRITORIAL))));
+
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Allied with the claim holder:",
+                    "Tri-Tachyon",
+                    "Contested by:",
+                    "Pirates");
+            assertThat(readTableRow(sections, alliedEntryRow).labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.Text(new TextSpan("8", HIGHLIGHT)));
+        }
+
+        @Test
+        void buildBodySectionsQualifiesAnAllyThatCouldNeverHaveTakenTheSystem() {
+            // The relation places a faction before its eligibility does, so an ineligible ally sits in
+            // the allied block beside one that nearly took the system. That heading names neither
+            // kind, so the line is where this one says which it is.
+            var alliedEntryRow = 3;
+
+            holderGrouping = buildAllianceOf(HEGEMONY, PIRATES);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_NON_TERRITORIAL))));
+
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Allied with the claim holder:",
+                    "Pirates");
+            assertThat(readLabelRun(readTableRow(sections, alliedEntryRow), QUALIFIER_RUN))
+                .isEqualTo(new TextSpan("non-territorial", HIGHLIGHT));
+        }
+
+        @Test
+        void buildBodySectionsLeavesTheQualifierOffTheBlockWhoseHeadingAlreadyStatesIt() {
+            // The same faction unallied falls to `Non-territorial:`, whose heading is that very fact -
+            // so its line is its name and nothing after it, one thing met once in a hover rather than
+            // twice in the space of two rows.
+            var nonTerritorialEntryRow = 3;
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_NON_TERRITORIAL))));
+
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly("Claim:", "The Hegemony", "Non-territorial:", "Pirates");
+            assertThat(readTableRow(sections, nonTerritorialEntryRow).labelRuns())
+                .containsExactly(new TextSpan("Pirates", PLAYER_BRIGHT));
+        }
+
+        @Test
+        void buildBodySectionsCallsEveryTerritorialFactionARivalWhereNobodyHoldsTheSystem() {
+            // There is nobody to be allied with, so a block whose heading names a holder never draws
+            // over a system without one - even where the two factions present are allied to each
+            // other, which is the pair the comparison would otherwise have matched on.
+            holderGrouping = buildAllianceOf(HEGEMONY, TRITACHYON);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                null,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Claim:",
+                    "None",
+                    "Contested by:",
+                    "The Hegemony",
+                    "Tri-Tachyon");
+        }
+
+        @Test
+        void buildBodySectionsRoutesADecreedHoldersAllyIntoTheAlliedBlock() {
+            // A decree settles who the holder is and nothing about how the blocks are routed, so the
+            // decreed faction's ally sorts exactly as a winner's would - and the faction that would
+            // have claimed by score is neither, so it goes on contesting.
+            holderGrouping = buildAllianceOf(PIRATES, TRITACHYON);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                PIRATES,
+                PIRATES,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_TERRITORIAL))));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Claim:",
+                    "Pirates",
+                    "Allied with the claim holder:",
+                    "Tri-Tachyon",
+                    "Contested by:",
+                    "The Hegemony");
         }
 
         @Test
@@ -641,7 +788,8 @@ final class SystemClaimTooltipTest {
             assertThat(tooltip.resolveAccountEntries(
                     SystemClaimContestTooltip.ListedClaimContest.selectFrom(
                         new SystemClaimBreakdown(null, HEGEMONY, List.of()),
-                        ColonyVisibility.BASE_FOG),
+                        ColonyVisibility.BASE_FOG,
+                        HolderGrouping.identity()),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     SystemColonyReading.NONE))
                 .isEmpty();
@@ -660,7 +808,8 @@ final class SystemClaimTooltipTest {
             assertThat(tooltip.resolveAccountEntries(
                     SystemClaimContestTooltip.ListedClaimContest.selectFrom(
                         new SystemClaimBreakdown(null, HEGEMONY, List.of()),
-                        ColonyVisibility.BASE_FOG),
+                        ColonyVisibility.BASE_FOG,
+                        HolderGrouping.identity()),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     new SystemColonyReading(
                         ColonyKindLookup.NONE,
@@ -758,6 +907,19 @@ final class SystemClaimTooltipTest {
             .thenReturn(Optional.of(statusRow));
 
         return statusRow;
+    }
+
+    // Two factions standing in one alliance, which is the state the allied block draws over. Built as
+    // plain data rather than through the mod that supplies alliances: the box asks the grouping which
+    // bloc a faction is in and nothing else, so a hand-built one poses the case exactly.
+    private static HolderGrouping buildAllianceOf(String firstFactionId, String secondFactionId) {
+
+        var allianceBlocId = "alliance-1";
+
+        return new HolderGrouping(
+            Map.of(firstFactionId, allianceBlocId, secondFactionId, allianceBlocId),
+            Map.of(allianceBlocId, firstFactionId),
+            Map.of(allianceBlocId, "Allied Powers"));
     }
 
     // The box read top to bottom as the words a player sees, headings and entries alike - the shape

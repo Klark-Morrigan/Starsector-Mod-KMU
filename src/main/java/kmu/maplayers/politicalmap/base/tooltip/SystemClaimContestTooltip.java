@@ -21,17 +21,20 @@ import kmu.maplayers.base.tooltip.CellTooltipSections;
 import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * The shape every box built on a hovered system's claim contest takes: what the system is, then who
- * claims it, then the rivals who could have taken it, then the factions present that were never
- * eligible to.
+ * claims it, then the factions standing with the claimant, then the rivals who could have taken it,
+ * then the factions present that were never eligible to.
  *
  * <p>The claim mechanic publishes only a winner, so a fill on its own leaves the player guessing at a
  * border they cannot check. Naming the claimant beside the contest behind it is what turns the layer
@@ -45,11 +48,23 @@ import java.util.function.Predicate;
  * with nothing in it is the one thing that banner does not say.
  *
  * <p>A block says how a faction stands to the claim rather than what kind of standing the contest gave
- * it. Both blocks therefore take both kinds - a faction the mechanic weighed and one it never reached -
- * routed on eligibility alone, which is the single axis a reader of this box wants: able to take the
- * system, or not. A faction present through concealed or unregistered colonies alone is a real presence
- * the map is drawing, and blocking it out of the box would leave the fill and the band naming a faction
- * the account of the system does not.
+ * it, so every block takes both kinds - a faction the mechanic weighed and one it never reached. A
+ * faction present through concealed or unregistered colonies alone is a real presence the map is
+ * drawing, and blocking it out of the box would leave the fill and the band naming a faction the
+ * account of the system does not.
+ *
+ * <p>Two axes place a faction, and the relation is the outer one without exception: every faction
+ * sharing the claim holder's bloc goes to the allied block whether or not it could have taken the
+ * system, and eligibility divides only what is left. The claim mechanic is faction-scoped and knows
+ * nothing of an alliance, so two allied factions in one system compete and one of them loses - filed
+ * on eligibility alone, that loser reads as fighting its own ally for a system the two of them jointly
+ * hold, which is the map contradicting itself one view over.
+ *
+ * <p>That leaves the allied block holding both kinds under a heading naming neither, so the fact moves
+ * onto the row: an ineligible faction listed there is qualified on its own line, the device the decreed
+ * claim already uses. The qualifier is drawn only where the heading has not already said it, so it is
+ * absent under the block whose heading is that very fact - one thing said once per hover, the rule
+ * {@link #isStatingCoreClaimInBody} follows for the decree.
  *
  * <p>All of that is settled here rather than per box because two boxes over one system have to be two
  * amounts of detail about the same contest, not two contests. The breakdown is read once, the status is
@@ -58,12 +73,28 @@ import java.util.function.Predicate;
  * called it empty, or sort a rival into a block the other put it elsewhere in. What is left open is the
  * one thing the detail is: what, if anything, a listed faction breaks down into.
  *
- * <p>Stateless past the reader it is built around, so one shared instance per box serves the layer.
+ * <p>Stateless past the two seams it is built around, so one shared instance per box serves the layer.
  */
 public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip {
 
-    protected SystemClaimContestTooltip(ClaimBreakdownReader claimBreakdownReader) {
+    // Whether the block naming a faction has to say on its lines which of them could have taken the
+    // system. The allied block's heading states a relation and no eligibility, so both kinds sit under
+    // it and the line is the only place left to tell them apart; the other two blocks are headed by the
+    // eligibility itself, where a qualifier would state one fact twice in the space of two rows.
+    private static final boolean IS_STATING_ELIGIBILITY_ON_LINE = true;
+    private static final boolean IS_ELIGIBILITY_STATED_BY_THE_HEADING = false;
+
+    // Where the alliance set behind the routing is taken from. A source rather than a grouping,
+    // because a box lives for the whole session while alliances form and dissolve inside it - one
+    // captured at construction would go on filing a faction under the alliance it left an hour ago.
+    private final HolderGroupingSource holderGroupingSource;
+
+    protected SystemClaimContestTooltip(
+            ClaimBreakdownReader claimBreakdownReader,
+            HolderGroupingSource holderGroupingSource) {
+
         super(claimBreakdownReader);
+        this.holderGroupingSource = holderGroupingSource;
     }
 
     @Override
@@ -115,6 +146,15 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
             buildClaimEntries(sector, contest, colonyReading, statusRow.isPresent()));
+
+        // Between the claim and its rivals, so the box reads as the holder, who stands with it, who
+        // stands against it, and who was never in it at all. Empty wherever the claimant has no ally
+        // present - which is every system on an install with nothing grouping factions - and dropped
+        // by the same rule that drops any other block standing over no entries.
+        CellTooltipSections.appendSection(
+            sections,
+            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER),
+            buildAlliedEntries(sector, contest, colonyReading));
 
         CellTooltipSections.appendSection(
             sections,
@@ -230,16 +270,22 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     }
 
     // The hovered system's contest as this box may state it: the whole scored read, the colony rule
-    // it was projected under, and the standings that projection leaves the box free to name.
+    // it was projected under, the standings that projection leaves the box free to name, and the
+    // alliance set they are placed against.
     //
     // One read behind both the body and the key hint at its foot, because the hint offers an account
     // of exactly the factions the body lists. Resolved apart, the two are free to be answered from
     // different readings of one system - and the shape that takes is a box advertising a key that
     // does nothing, or declining to over a system it has just named a faction in.
+    //
+    // The grouping is sampled here for the same reason and travels with the rest of the read: every
+    // block is routed against one reading of the alliance set, so an alliance dissolving between two
+    // of the box's own questions cannot leave one faction filed as an ally and another as a rival.
     private ListedClaimContest readListedContest(StarSystemAPI system) {
         return ListedClaimContest.selectFrom(
             claimBreakdownReader.readBreakdown(system),
-            readColonyVisibility());
+            readColonyVisibility(),
+            holderGroupingSource.resolveGrouping());
     }
 
     // What the claim block lists: the one line naming whoever holds the system, and nothing at all
@@ -333,23 +379,54 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             && breakdown.claimantFactionId().equals(breakdown.overrideFactionId());
     }
 
-    // One rival block's lines: everyone present but the claimant, narrowed to the eligibility that
-    // block is about, already ranked strongest first by the breakdown - the order a contest is read
-    // in, and the same order the mechanic itself settles it in. Each carries whatever this box
-    // accounts for it with, subordinated: an account explains the line it hangs under rather than
-    // restating it more finely.
+    // The allied block's lines: everyone present who stands in the claim holder's bloc, of either
+    // eligibility, since the relation places a faction before its eligibility does. The heading names
+    // no eligibility, so each line states its own where it is the ineligible one.
+    private List<CellTooltipEntry> buildAlliedEntries(
+            SectorAPI sector,
+            ListedClaimContest contest,
+            SystemColonyReading colonyReading) {
+
+        return buildListedEntries(
+            sector,
+            contest,
+            colonyReading,
+            contest.selectAlliedStandings(),
+            IS_STATING_ELIGIBILITY_ON_LINE);
+    }
+
+    // One rival block's lines: everyone present but the claimant and its allies, narrowed to the
+    // eligibility that block is about. That eligibility is the heading, so no line beneath restates it.
     private List<CellTooltipEntry> buildRivalEntries(
             SectorAPI sector,
             ListedClaimContest contest,
             SystemColonyReading colonyReading,
             Predicate<FactionClaimStanding> isWantedKind) {
 
-        var rivalStandings = contest.selectRivalStandings(isWantedKind);
-        var entries = new ArrayList<CellTooltipEntry>(rivalStandings.size());
+        return buildListedEntries(
+            sector,
+            contest,
+            colonyReading,
+            contest.selectRivalStandings(isWantedKind),
+            IS_ELIGIBILITY_STATED_BY_THE_HEADING);
+    }
 
-        for (var standing : rivalStandings) {
+    // One block's entries over the standings routed into it, in the order the breakdown handed them
+    // over - strongest first, which is the order a contest is read in and the same one the mechanic
+    // itself settles it in. Each carries whatever this box accounts for it with, subordinated: an
+    // account explains the line it hangs under rather than restating it more finely.
+    private List<CellTooltipEntry> buildListedEntries(
+            SectorAPI sector,
+            ListedClaimContest contest,
+            SystemColonyReading colonyReading,
+            List<FactionClaimStanding> standings,
+            boolean isStatingEligibilityOnLine) {
+
+        var entries = new ArrayList<CellTooltipEntry>(standings.size());
+
+        for (var standing : standings) {
             entries.add(CellTooltipEntry
-                .createEntry(buildStandingLine(sector, standing))
+                .createEntry(buildListedLine(sector, standing, isStatingEligibilityOnLine))
                 .nesting(resolveAccountEntries(
                     contest,
                     standing,
@@ -358,25 +435,48 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         return entries;
     }
 
+    // One faction's line as the block listing it needs it: its standing, plus the word for a faction
+    // that could never have taken the system where the block's own heading has not already said so.
+    //
+    // Decided by the block rather than by the standing, because what the qualifier answers is what the
+    // heading above it leaves unsaid - the same fact under a heading that states it would be one thing
+    // said twice in the space of two rows.
+    private static CellTooltipEntryLine buildListedLine(
+            SectorAPI sector,
+            FactionClaimStanding standing,
+            boolean isStatingEligibilityOnLine) {
+
+        var standingLine = buildStandingLine(sector, standing);
+
+        if (isStatingEligibilityOnLine && !standing.isTerritorial()) {
+            return standingLine.qualifiedWith(
+                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_NON_TERRITORIAL));
+        }
+        return standingLine;
+    }
+
     /**
-     * The contest as this box may state it: the whole read, and the standings the known projection
-     * leaves it free to name, and the colony rule that projection was taken under.
+     * The contest as this box may state it: the whole read, the standings the known projection leaves
+     * it free to name, the colony rule that projection was taken under, and the alliance set the
+     * blocks are routed against.
      *
-     * <p>The three travel as one value because the standings are a projection of the breakdown under
-     * the rule, and most lines the box draws are read against more than one of them - the claimant
-     * off the breakdown, the number beside its name off the standing the projection kept, the banner
-     * over them both off the rule. Passed apart, one call's standings could arrive beside another
-     * read's breakdown, and the box would state a claimant it had no standing for - or judge a
-     * system's habitation under a rule its listing was never projected through.
+     * <p>They travel as one value because the standings are a projection of the breakdown under the
+     * rule, and most lines the box draws are read against more than one of them - the claimant off the
+     * breakdown, the number beside its name off the standing the projection kept, the banner over them
+     * both off the rule, the block each falls in off the grouping. Passed apart, one call's standings
+     * could arrive beside another read's breakdown, and the box would state a claimant it had no
+     * standing for - or judge a system's habitation under a rule its listing was never projected
+     * through, or route two of its blocks against two different alliance sets.
      */
     record ListedClaimContest(
         SystemClaimBreakdown breakdown,
         ColonyVisibility colonyVisibility,
-        List<FactionClaimStanding> listedStandings) {
+        List<FactionClaimStanding> listedStandings,
+        HolderGrouping holderGrouping) {
 
         /**
          * Selects from a contest the standings the player may be shown, keeping the rule that
-         * selected them.
+         * selected them and the grouping they are placed under.
          *
          * <p>The known projection over the contest - the same fog the market lines beneath a faction
          * are drawn through - applied to the listing rather than line by line, since a faction whose
@@ -389,7 +489,8 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
          */
         static ListedClaimContest selectFrom(
                 SystemClaimBreakdown breakdown,
-                ColonyVisibility colonyVisibility) {
+                ColonyVisibility colonyVisibility,
+                HolderGrouping holderGrouping) {
 
             var isListingUnfoundMarkets = colonyVisibility.shouldIncludeUndiscoveredMarkets();
 
@@ -400,7 +501,8 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                     .scores()
                     .stream()
                     .filter(standing -> isListingUnfoundMarkets || hasFoundColony(standing))
-                    .toList());
+                    .toList(),
+                holderGrouping);
         }
 
         /** Whether anything survived the projection, which is what the box has to state at all. */
@@ -421,9 +523,24 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         }
 
         /**
-         * The standings shown under a block other than the claim: everyone present but the
-         * claimant, narrowed to the eligibility that block is about. The claimant is dropped from
-         * both, since a faction named twice would read as holding two separate presences.
+         * The standings shown under the allied block: everyone present who shares the claim
+         * holder's bloc, of either eligibility.
+         *
+         * <p>Both kinds, because the heading states a relation and the relation is true of an
+         * ineligible ally exactly as it is of a rival that nearly took the system. Which of the two
+         * a line is stays sayable on the line itself, so nothing is lost by not splitting them.
+         */
+        List<FactionClaimStanding> selectAlliedStandings() {
+            return streamListedRivals()
+                .filter(this::isStandingWithClaimHolder)
+                .toList();
+        }
+
+        /**
+         * The standings shown under a block other than the claim and the allied one: everyone
+         * present but the claimant and its allies, narrowed to the eligibility that block is about.
+         * The claimant is dropped from every block, since a faction named twice would read as
+         * holding two separate presences.
          *
          * <p>Narrowed on eligibility rather than on which kind of standing the contest gave a
          * faction, because that is what the two headings actually say. A territorial faction
@@ -435,11 +552,41 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         List<FactionClaimStanding> selectRivalStandings(
                 Predicate<FactionClaimStanding> isWantedKind) {
 
-            return listedStandings
-                .stream()
-                .filter(standing -> !standing.factionId().equals(breakdown.claimantFactionId()))
+            return streamListedRivals()
+                .filter(standing -> !isStandingWithClaimHolder(standing))
                 .filter(isWantedKind)
                 .toList();
+        }
+
+        // Everyone the box may name but the claim holder itself, which is the pool all three blocks
+        // below the claim are drawn from. Dropped once here rather than per block, so no routing rule
+        // added later can readmit the claimant to a block that is by definition about somebody else.
+        private Stream<FactionClaimStanding> streamListedRivals() {
+            return listedStandings
+                .stream()
+                .filter(standing -> !standing.factionId().equals(breakdown.claimantFactionId()));
+        }
+
+        // Whether a faction stands in the claim holder's own bloc. Bloc equality between two distinct
+        // factions is what an alliance amounts to here - the claimant is already out of the pool, so
+        // a faction can never match itself, and an ungrouped faction is its own bloc and matches
+        // nobody. That is why no test of whether the bloc is an alliance is needed beside it, and why
+        // an install with nothing grouping factions routes every rival exactly as it did before.
+        //
+        // A system nobody has claimed guards here rather than resolving a bloc for a claimant that
+        // does not exist: there is nobody to be allied with, so the allied block comes out empty and
+        // its heading - which names a holder - never draws over a system without one.
+        private boolean isStandingWithClaimHolder(FactionClaimStanding standing) {
+
+            var claimantFactionId = breakdown.claimantFactionId();
+
+            if (!KmlibStrings.hasText(claimantFactionId)) {
+                return false;
+            }
+            var claimantBlocId = holderGrouping.resolveBlocId(claimantFactionId);
+
+            return claimantBlocId != null
+                && claimantBlocId.equals(holderGrouping.resolveBlocId(standing.factionId()));
         }
 
         // Whether the player has found any of the colonies a faction's standing rests on - one

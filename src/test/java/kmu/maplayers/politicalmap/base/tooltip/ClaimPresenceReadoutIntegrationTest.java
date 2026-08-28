@@ -124,7 +124,7 @@ final class ClaimPresenceReadoutIntegrationTest {
             var band = new ClaimedSystemRibbonPlanner(claimBreakdownReader, inputs)
                 .planSystemRibbon(system);
 
-            var sections = new SystemClaimTooltip(claimBreakdownReader)
+            var sections = new SystemClaimTooltip(claimBreakdownReader, HolderGrouping::identity)
                 .buildBodySections(sector, system);
 
             assertThat(band.segments())

@@ -85,7 +85,7 @@ Notes on each:
   colours - so a faction that claims nothing still shows where it is while showing that it claims
   none of it. Nothing hatches: a system has exactly one
   claimant, so no claim can be contested the way a held system can. Hovering a system explains its
-  claim: who holds it, who
+  claim: who holds it, who stands in the holder's alliance, who
   contests it, who is present but can never claim it, and whether the hold was won on market
   strength or imposed by decree.
 
@@ -212,7 +212,8 @@ ANDed with the framework's, plus whether either kind of feedback still needs the
 `tooltip` (what this layer says about the hovered system, each view injecting the explanation of the
 mechanic its own fills were painted by into the framework's hover box: `SystemDominationTooltip` -
 the ranked standings behind a faction or alliance fill - and `SystemClaimTooltip` - the scored claim
-contest behind a claims fill, its claimant over the rivals who could have taken the system and the
+contest behind a claims fill, its claimant over the factions standing in its own alliance, the rivals
+who could have taken the system and the
 factions present that never could - plus what both are written from: `FactionTooltipLine` (a faction
 as something a block lists) and `FactionTooltipBanner` (a faction as a verdict over the whole system),
 `StandingRowResolver` (the ranked groups as entries), and the core-territory heading
@@ -381,12 +382,33 @@ box's own walk of the system (`SystemColonyReading`), no row of either box carry
 The claims box has a counterpart of its own on the same terms - `ExpandedSystemClaimTooltip`, which
 opens every faction the contest names into the markets it holds the system with and each market
 into the terms its claim score is built from. Both claim boxes sit on `SystemClaimContestTooltip`,
-which settles the one read behind them, the claimant, the decree marker, and the three blocks, and
+which settles the one read behind them, the claimant, the decree marker, and the four blocks, and
 leaves open only what hangs beneath a faction (`resolveAccountEntries`, hanging nothing by
 default). That account is handed the whole `ListedClaimContest` rather than the scored read alone,
 so the colony rule it draws under is the one the listing above it was projected under: read afresh
 per faction, an account would be free to withhold a colony the line above it had just named, and to
-answer two factions of one box under two different rules. It is also where the layer's heading is declined for both of them: the claim line names
+answer two factions of one box under two different rules. The alliance set travels in that same
+value and for the same reason (`HolderGroupingSource`, bound by `SystemClaimTooltip` and sampled
+per hover - a grouping held for the session would file a faction under the alliance it left an hour
+ago).
+Two axes place a faction below the claim, and the relation is the outer one without exception:
+everyone sharing the claim holder's bloc goes to `Allied with the claim holder:` whether or not they
+could have taken the system, and eligibility divides only what is left. The claim mechanic is
+faction-scoped and knows nothing of an alliance, so two allied factions in one system compete and one
+of them loses - filed on eligibility alone, that loser reads under `Contested by:` as fighting its own
+ally for a system the two of them jointly hold, which is the mod contradicting the alliances view one
+tab over. Bloc equality between two *distinct* factions is the whole test, the claimant being dropped
+before the comparison, so no check of whether the bloc is an alliance is needed beside it and an
+install without Nexerelin - where every faction is its own bloc - reads as the two eligibility blocks
+alone, with no branch taken anywhere. A system nobody claims has nobody to be allied with, and the
+block whose heading names a holder never draws over one. The allied heading names no eligibility, so
+the fact moves onto the row: a faction listed there that could never have claimed the system is
+qualified `non-territorial` on its own line, the device the decreed claim already uses. That
+qualifier is drawn only where the heading has not said it, so it is absent under `Non-territorial:` -
+the same one-fact-once rule `isStatingCoreClaimInBody` follows for the decree. Relations short of an
+alliance route nothing: a cooperative neighbour's colony really did compete and really did lose, a
+disposition threshold would be arbitrary and invisible, and dispositions drift, which would move a
+faction between headings between two hovers of one system. It is also where the layer's heading is declined for both of them: the claim line names
 the decreed holder and marks the hold, so these are the two boxes that state the decree themselves. `ClaimScoreRowResolver` decides those lines: the faction's markets in the order the
 mechanic itself would settle them - strongest first, a tie falling to the earlier place in the
 economy's listing - so the one representing the faction comes out on top by that order rather than
@@ -451,12 +473,12 @@ count and every other term stay on the economy's own half of it, since admitting
 colony there would raise a real one's score above what the game scores it at and could hand the
 system to a different faction.
 A faction holding nothing but unweighed colonies takes a `PresenceOnlyClaimStanding` at nought
-rather than dropping out of the contest, and the box lists it like any other. Both rival blocks, the
-claimant's own line, the account beneath each of them and the `F1` hint read every standing rather
-than the weighed half (`ListedClaimContest.selectFrom`), because a block says how a faction stands to the
-claim and not what kind of record the contest gave it: routing on `isTerritorial` alone draws the one
-axis a reader wants - eligible to take the system, or not - where routing by record kind would file a
-pirate base's owner beside a Remnant station's, which are ineligible and eligible respectively. A
+rather than dropping out of the contest, and the box lists it like any other. Every block below the
+claim, the claimant's own line, the account beneath each of them and the `F1` hint read every
+standing rather than the weighed half (`ListedClaimContest.selectFrom`), because a block says how a
+faction stands to the claim and not what kind of record the contest gave it: routing by record kind
+would file a pirate base's owner beside a Remnant station's, which are ineligible and eligible
+respectively. A
 territorial faction holding only zero-claim colonies did enter the running by the mechanic's own gate
 and scored nothing there, which is what `Contested by:` plus a nought says exactly. That nought reads
 in the quiet shade (`statesUncountedValue`, the same treatment an unweighed market line takes): it is

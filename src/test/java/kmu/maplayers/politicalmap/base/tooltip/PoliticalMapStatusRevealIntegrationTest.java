@@ -74,7 +74,7 @@ final class PoliticalMapStatusRevealIntegrationTest {
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final SystemClaimTooltip claimTooltip =
-        new SystemClaimTooltip(claimBreakdownReaderFake);
+        new SystemClaimTooltip(claimBreakdownReaderFake, HolderGrouping::identity);
     private final SystemDominationTooltip dominationTooltip =
         new SystemDominationTooltip(claimBreakdownReaderFake);
 

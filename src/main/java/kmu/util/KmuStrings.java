@@ -82,6 +82,8 @@ public final class KmuStrings {
         "political_map_tooltip_qualifier_hidden";
     public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_UNLISTED =
         "political_map_tooltip_qualifier_unlisted";
+    public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_NON_TERRITORIAL =
+        "political_map_tooltip_qualifier_non_territorial";
     public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN = "political_map_tooltip_last_seen";
     public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN_TODAY =
         "political_map_tooltip_last_seen_today";
@@ -90,6 +92,8 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN_DAYS_AGO =
         "political_map_tooltip_last_seen_days_ago";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_CLAIM = "political_map_tooltip_section_claim";
+    public static final String POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER =
+        "political_map_tooltip_section_allied_with_holder";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED = "political_map_tooltip_section_contested";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL =
         "political_map_tooltip_section_non_territorial";

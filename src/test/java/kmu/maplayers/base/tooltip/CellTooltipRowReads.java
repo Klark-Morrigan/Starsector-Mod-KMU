@@ -47,6 +47,9 @@ public final class CellTooltipRowReads {
     /** Where a line carrying no mark says its name: its opening run. */
     public static final int LABEL_RUN = 0;
 
+    /** Where an unmarked line's closing qualifier sits, that being the run after its name. */
+    public static final int QUALIFIER_RUN = 1;
+
     /**
      * Where a marked line's mark sits: the opening run, ahead of the words. Shared with the run
      * indices below because a mark shifts every run after it, so a test reading the wrong index on a

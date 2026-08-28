@@ -10,6 +10,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -224,9 +225,15 @@ final class PoliticalMapCellTooltipTest {
                 ParameterDeclarations parameters,
                 ExtensionContext context) {
 
+            // The alliance seam is stood in as the identity grouping: these cases are about the
+            // heading over the box, which no grouping reaches.
             return Stream.of(
-                describeBox("the claims view's box", SystemClaimTooltip::new),
-                describeBox("the claims view's expanded counterpart", ExpandedSystemClaimTooltip::new));
+                describeBox(
+                    "the claims view's box",
+                    reader -> new SystemClaimTooltip(reader, HolderGrouping::identity)),
+                describeBox(
+                    "the claims view's expanded counterpart",
+                    reader -> new ExpandedSystemClaimTooltip(reader, HolderGrouping::identity)));
         }
     }
 

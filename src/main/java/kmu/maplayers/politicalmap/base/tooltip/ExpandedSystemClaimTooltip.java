@@ -4,6 +4,7 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
+import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ import java.util.List;
  * answers who claims the system; this one answers on what, which is a different question and a far
  * longer answer - so it is a box the player asks for rather than one they are always given.
  *
- * <p>It is the same contest either way. The claimant, the decree, the ranking, the three headings and
+ * <p>It is the same contest either way. The claimant, the decree, the ranking, the four headings and
  * the lines naming the factions are all the shared shape's ({@link SystemClaimContestTooltip}), read
  * from the one pass, so the two boxes cannot differ on anything but how far into a faction they go.
  *
@@ -34,12 +35,15 @@ import java.util.List;
  * mechanic skipped before scoring, and a colony the economy does not list - and both are listed at
  * nought, where when it was last seen is the only thing the account has left to add.
  *
- * <p>Stateless past the reader it is built around, like the box it stands in for.
+ * <p>Stateless past the seams it is built around, like the box it stands in for.
  */
 public final class ExpandedSystemClaimTooltip extends SystemClaimContestTooltip {
 
-    ExpandedSystemClaimTooltip(ClaimBreakdownReader claimBreakdownReader) {
-        super(claimBreakdownReader);
+    ExpandedSystemClaimTooltip(
+            ClaimBreakdownReader claimBreakdownReader,
+            HolderGroupingSource holderGroupingSource) {
+
+        super(claimBreakdownReader, holderGroupingSource);
     }
 
     @Override

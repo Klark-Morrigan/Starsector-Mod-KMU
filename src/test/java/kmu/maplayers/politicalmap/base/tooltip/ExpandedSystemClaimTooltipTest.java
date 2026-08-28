@@ -22,6 +22,7 @@ import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
@@ -33,6 +34,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -61,7 +63,7 @@ import static org.mockito.Mockito.when;
  * <p>The one fact this box alone decides is that a faction is accounted for by the colonies its own
  * standing was read from - the thing the line above it cannot say, since a standing is one colony's
  * score and the faction may hold several. Where those colonies then hang, and which of them leads, is
- * the resolver's ({@link ClaimScoreRowResolverTest}); the claimant, the decree, the three headings and
+ * the resolver's ({@link ClaimScoreRowResolverTest}); the claimant, the decree, the four headings and
  * the lines naming the factions belong to the shape both claim boxes share, and are pinned through the
  * ordinary one ({@link SystemClaimTooltipTest}).
  */
@@ -114,11 +116,18 @@ final class ExpandedSystemClaimTooltipTest {
     private static final SystemClaimContestTooltip.ListedClaimContest CONTESTED_CONTEST =
         SystemClaimContestTooltip.ListedClaimContest.selectFrom(
             CONTESTED_SYSTEM,
-            ColonyVisibility.BASE_FOG);
+            ColonyVisibility.BASE_FOG,
+            HolderGrouping.identity());
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
+
+    // The alliance set the box routes its blocks against, restated by the one case that is about an
+    // ally and left ungrouped for every other - the state an install with nothing grouping factions
+    // is permanently in, and the one the accounts below are all posed under.
+    private HolderGrouping holderGrouping = HolderGrouping.identity();
+
     private final ExpandedSystemClaimTooltip tooltip =
-        new ExpandedSystemClaimTooltip(claimBreakdownReaderFake);
+        new ExpandedSystemClaimTooltip(claimBreakdownReaderFake, () -> holderGrouping);
 
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
     private final SectorAPI sectorMock = mock(SectorAPI.class);
@@ -252,7 +261,8 @@ final class ExpandedSystemClaimTooltipTest {
             // be free to answer two factions of one box differently besides.
             var contest = SystemClaimContestTooltip.ListedClaimContest.selectFrom(
                 CONTESTED_SYSTEM,
-                UNDER_THE_REVEAL);
+                UNDER_THE_REVEAL,
+                HolderGrouping.identity());
 
             var standing = new WeighedClaimStanding(
                 HEGEMONY,
@@ -272,7 +282,8 @@ final class ExpandedSystemClaimTooltipTest {
             var entries = tooltip.resolveAccountEntries(
                 SystemClaimContestTooltip.ListedClaimContest.selectFrom(
                     new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()),
-                    ColonyVisibility.BASE_FOG),
+                    ColonyVisibility.BASE_FOG,
+                    HolderGrouping.identity()),
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                 SystemColonyReading.NONE);
 
@@ -302,6 +313,32 @@ final class ExpandedSystemClaimTooltipTest {
                     "Standing Colony",
                     "Size",
                     "Contested by:",
+                    "Tri-Tachyon",
+                    "Standing Colony",
+                    "Size");
+        }
+
+        @Test
+        void buildBodySectionsHangsAnAlliedFactionsColoniesBeneathItsLineInTheAlliedBlock() {
+            // The routing is the shared shape's and pinned there; what this case is about is that the
+            // detail follows a faction into the block the relation put it in. An ally accounted for
+            // only under `Contested by:` would be an account of a line the box no longer draws.
+            holderGrouping = buildAllianceOfBothFactions();
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
+
+            assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Standing Colony",
+                    "Size",
+                    "Allied with the claim holder:",
                     "Tri-Tachyon",
                     "Standing Colony",
                     "Size");
@@ -462,6 +499,19 @@ final class ExpandedSystemClaimTooltipTest {
             .thenReturn(Optional.of(statusRow));
 
         return statusRow;
+    }
+
+    // The two factions posed here standing in one alliance, which is the state the allied block draws
+    // over. Built as plain data rather than through the mod that supplies it: the box asks the grouping
+    // for a bloc and nothing else, so a hand-built one poses the case exactly.
+    private static HolderGrouping buildAllianceOfBothFactions() {
+
+        var allianceBlocId = "alliance-1";
+
+        return new HolderGrouping(
+            Map.of(HEGEMONY, allianceBlocId, TRITACHYON, allianceBlocId),
+            Map.of(allianceBlocId, HEGEMONY),
+            Map.of(allianceBlocId, "Allied Powers"));
     }
 
     // The box read top to bottom as the words a player sees, headings, factions, colonies and terms

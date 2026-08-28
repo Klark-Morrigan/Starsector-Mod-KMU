@@ -318,7 +318,8 @@ final class DerelictReadoutIntegrationTest {
         var pass = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
 
         return new ExpandedSystemClaimTooltip(
-                new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.colonies()))
+                new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.colonies()),
+                HolderGrouping::identity)
             .buildBodySections(sector, buildOnlySystem(sector));
     }
 
