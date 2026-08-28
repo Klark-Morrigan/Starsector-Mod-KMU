@@ -8,6 +8,7 @@ import kmu.maplayers.base.geometry.CoastCrossings;
 import kmu.maplayers.base.geometry.CoastPockets;
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.DiscUnion;
+import kmu.maplayers.base.geometry.DrawnSector;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
@@ -82,19 +83,20 @@ public final class SectorSvgWriter {
     }
 
     /**
-     * Writes the sector's geometry: every raw cell, each unowned cell's shaped outline, and
-     * every owner's traced cluster rings, over the sites they were built from.
+     * Writes the sector as it is being drawn: every raw cell, each unowned cell's shaped
+     * outline, and every owner's smoothed cluster rings, over the sites they were built from.
      *
-     * @param target   file to write; parent directories are created
-     * @param fixture  the sector the geometry was built from
-     * @param geometry the assembled geometry to draw
-     * @param shaping  how far the void shapes are pulled back from what closed them in
+     * <p>Takes what was drawn rather than the geometry alone. Given only the geometry this
+     * traced its own coast at the shipped defaults and stroked the cluster rings unsmoothed,
+     * so a file saved from a window whose knobs had been moved was a picture of a different
+     * map - and a picture that disagrees silently with the thing it is evidence about is
+     * worse than none.
+     *
+     * @param target  file to write; parent directories are created
+     * @param fixture the sector the geometry was built from
+     * @param drawn   the sector as the last rebuild produced it
      */
-    public static void writeSectorSvg(
-            Path target,
-            SectorFixture fixture,
-            SectorGeometry geometry,
-            VoidPockets.PocketShaping shaping) {
+    public static void writeSectorSvg(Path target, SectorFixture fixture, DrawnSector drawn) {
 
         var bounds = expandBy(Bounds.computeEnclosingBounds(fixture.getSites()), MARGIN);
         var drawing = new SvgDrawing(bounds, VIEW_WIDTH, BACKDROP);
@@ -102,10 +104,10 @@ public final class SectorSvgWriter {
         // The raw partition, drawn faintly underneath: it is the reference the shaped cells and
         // traced borders above are read against, so a channel or a fused seam can be seen against
         // the cell edge it came from.
-        drawRawCells(drawing, geometry.cellEdgesByCellId());
-        drawNeutralCells(drawing, geometry);
-        drawOwnerRings(drawing, geometry.ringsByOwner());
-        drawCoastlines(drawing, fixture.getSites(), shaping);
+        drawRawCells(drawing, drawn.geometry().cellEdgesByCellId());
+        drawNeutralCells(drawing, drawn.geometry());
+        drawOwnerRings(drawing, drawn.smoothedRingsByOwner());
+        drawCoastlines(drawing, fixture.getSites(), drawn);
         drawSites(drawing, fixture.getSites());
 
         try {
@@ -183,20 +185,20 @@ public final class SectorSvgWriter {
     private static void drawCoastlines(
             SvgDrawing drawing,
             List<double[]> sites,
-            VoidPockets.PocketShaping shaping) {
+            DrawnSector drawn) {
 
-        var parameters = SectorGeometryParameters.createDefaults();
+        var traced = drawn.coast();
 
-        var traced = Coastlines.traceSectorCoasts(
-            sites, parameters, Coastlines.DEFAULT_RULES);
+        drawCapturedVoid(drawing, sites, drawn);
+        drawTrappedVoid(drawing, traced, sites, drawn.parameters(), drawn.shaping());
 
-        drawCapturedVoid(drawing, sites, parameters, shaping);
-        drawTrappedVoid(drawing, traced, sites, parameters, shaping);
-
-        for (var coast : traced.coasts()) {
+        // The DRAWN ring rather than the traced vertices. What the window strokes is the line
+        // after its corners are rounded, and a picture stroking the vertices underneath it
+        // shows a coast a degree sharper at every join than the one on screen.
+        for (var ring : Coastlines.collectCoastRings(traced)) {
 
             drawing.drawPolygon(
-                Coastlines.collectPoints(coast),
+                ring,
                 SvgPaint.outlineOnly(
                     SvgDrawing.formatColour(MapLook.COASTLINE), MapLook.RING_STROKE));
         }
@@ -214,18 +216,19 @@ public final class SectorSvgWriter {
     private static void drawCapturedVoid(
             SvgDrawing drawing,
             List<double[]> sites,
-            SectorGeometryParameters parameters,
-            VoidPockets.PocketShaping shaping) {
+            DrawnSector drawn) {
+
+        var parameters = drawn.parameters();
 
         var bridges = VoidBridges.findVoidBridges(
             sites,
             parameters.cellRadius(),
-            parameters.cellRadius() * Coastlines.DEFAULT_RULES.bridgeReachMultiple());
+            parameters.cellRadius() * drawn.coastRules().bridgeReachMultiple());
 
         var colour = SvgDrawing.formatColour(MapLook.INLAND_VOID);
 
         for (var outline : VoidBridgePockets.findCapturedPockets(
-                sites, bridges, parameters, shaping)) {
+                sites, bridges, parameters, drawn.shaping())) {
 
             drawing.drawPolygon(
                 outline,

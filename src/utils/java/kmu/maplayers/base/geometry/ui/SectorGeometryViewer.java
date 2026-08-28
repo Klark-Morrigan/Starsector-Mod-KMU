@@ -5,6 +5,7 @@ import kmlib.math.geometry.Limits;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellEdges;
+import kmu.maplayers.base.geometry.DrawnSector;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.NamedRegion;
 import kmu.maplayers.base.geometry.PickLog;
@@ -322,11 +323,11 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             var target = SVG_DIRECTORY.resolve(
                 sectorName.replace(CSV_EXTENSION, SVG_EXTENSION));
 
-            // At whatever shaping the window is showing, which is what "of current shape"
-            // means: a button that saved the other one would hand back a picture of a map
-            // nobody was looking at.
-            SectorSvgWriter.writeSectorSvg(
-                target, fixture, geometry, settings.resolvePocketShaping());
+            // Handed what the window is drawing rather than the geometry alone, which is what
+            // "of current shape" means: given only the geometry the writer traced its own
+            // coast at the shipped defaults, and the file was a picture of a map nobody was
+            // looking at.
+            SectorSvgWriter.writeSectorSvg(target, fixture, buildDrawnSector());
 
             canvas.statusLabel.setText("<html>wrote<br>" + target.toAbsolutePath() + "</html>");
         });
@@ -406,6 +407,26 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
      * where this does not - so a rounding sharp enough to push one arc through another shows
      * here as a crossing the map would have cleaned up.
      */
+    /**
+     * The sector as the window is currently drawing it, for anything that draws it a second
+     * way.
+     *
+     * <p>Assembled here rather than held, because most of it already is: the geometry and the
+     * smoothed rings are what the last rebuild left, and the knobs are read off the settings
+     * at the moment the second drawing is asked for. What it costs is one coast trace, which
+     * is the one thing the window keeps inside an overlay that may be switched off.
+     */
+    private DrawnSector buildDrawnSector() {
+
+        return DrawnSector.buildDrawnSector(
+            fixture,
+            geometry,
+            settings.parameters,
+            settings.resolveBorderSmoothing(),
+            settings.resolveCoastRules(),
+            settings.resolvePocketShaping());
+    }
+
     private Map<String, List<List<double[]>>> smoothClusterRings(SectorGeometry built) {
 
         var profile = settings.resolveBorderSmoothing();

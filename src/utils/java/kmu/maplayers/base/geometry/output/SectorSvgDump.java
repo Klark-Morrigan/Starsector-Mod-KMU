@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry.output;
 
+import kmu.maplayers.base.geometry.Coastlines;
+import kmu.maplayers.base.geometry.DrawnSector;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
@@ -71,7 +73,18 @@ public final class SectorSvgDump {
         var target = SVG_DIRECTORY.resolve(
             sectorName.replace(CSV_EXTENSION, suffix + SVG_EXTENSION));
 
-        SectorSvgWriter.writeSectorSvg(target, fixture, geometry, shaping);
+        // At the shipped defaults, which is what a batch dump is for: a picture of the map as
+        // it comes rather than as anyone has tuned it.
+        SectorSvgWriter.writeSectorSvg(
+            target,
+            fixture,
+            DrawnSector.buildDrawnSector(
+                fixture,
+                geometry,
+                SectorGeometryParameters.createDefaults(),
+                DrawnSector.DEFAULT_SMOOTHING,
+                Coastlines.DEFAULT_RULES,
+                shaping));
 
         System.out.println("wrote " + target.toAbsolutePath());
 
