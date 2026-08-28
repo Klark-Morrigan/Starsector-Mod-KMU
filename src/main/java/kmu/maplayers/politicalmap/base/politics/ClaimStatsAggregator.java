@@ -18,9 +18,9 @@ import java.util.Map;
  * <em>read</em> ({@link HolderPass#readHabitationIn}) and nothing else, so neither stats record can
  * grow a field for the other's benefit.
  *
- * <p>It reads the layer-generic pass rather than a dominance one, which is the whole of what this
- * layer is painted by nothing: a claim comes from the port and a colony size from the colonies
- * themselves, so there is no weighting rule here for a reader to be handed and then misapply.
+ * <p>It reads the layer-generic pass rather than a dominance one, because neither metric weighs
+ * anything: a claim comes from the port and a colony size from the colonies themselves. A reader
+ * handed a weighting rule it never spends is a reader that could spend it wrongly.
  *
  * <p>The two metrics come from two different sources on the same pass over the systems. Claims come
  * from the {@link ClaimReader} port - not the {@code Misc} static behind it - so the aggregation
@@ -61,16 +61,13 @@ public final class ClaimStatsAggregator {
 
         var statsByBlocId = new LinkedHashMap<String, ClaimStats>();
 
-        // Claims are read from the port and so stand on their own, but market sizes need an economy
-        // this sector may not have yet (mid-load). Sampled once rather than per system: a walk cannot
-        // gain an economy halfway through, and the primary metric is still worth counting without one.
-        var hasEconomy = pass.canReadEconomy();
-
+        // Neither fold is guarded on the sector having an economy up yet (mid-load, it may not).
+        // Claims are read from the port and so stand on their own, and the colony walk beneath the
+        // habitation read answers an empty set without one - so the sizes come to nought where the
+        // dominance aggregation's own guard makes it report nothing at all.
         for (var system : pass.readSystems()) {
             accumulateSystemClaim(statsByBlocId, system, pass, claimReader);
-            if (hasEconomy) {
-                accumulateSystemHabitation(statsByBlocId, system, pass);
-            }
+            accumulateSystemHabitation(statsByBlocId, system, pass);
         }
         return statsByBlocId;
     }

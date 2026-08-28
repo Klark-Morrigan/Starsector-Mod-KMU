@@ -61,13 +61,14 @@ public interface DominancePaintedView extends PoliticalMapView {
      * a view's blocs carry, so offering any other vocabulary would rank rows by numbers they do not
      * hold.
      *
-     * @param sector           the sector whose economy the visibility gate reads; null yields an
-     *                         empty picker
-     * @param rules            the dominance-weighting rules for this read, so selectable blocs are
-     *                         gated under the same rule the map paints under
+     * @param sector           the sector whose colonies decide who is listed; null yields an empty
+     *                         picker
+     * @param rules            the dominance-weighting rules for this read, so a listed bloc's
+     *                         score and dominations are the numbers the map paints by; who is
+     *                         listed at all is decided by the colonies, not by this
      * @param colonyVisibility what the player may be shown of a colony, so a bloc is offered on
      *                         the strength of the very colonies the map paints it for
-     * @return this view's picker, its blocs in the order the economy walk surfaces them
+     * @return this view's picker, its blocs in the order the sector walk surfaces them
      */
     @Override
     default ListPicker<RankedBloc<DominanceStats>> resolveBlocPicker(

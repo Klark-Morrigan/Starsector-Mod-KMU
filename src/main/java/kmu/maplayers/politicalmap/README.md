@@ -74,12 +74,10 @@ Notes on each:
 - **Claims.** Shows the vanilla "system claimed by faction" mechanic - the same claim the
   colony-survey panel warns about. Every claimed system is painted solid in its claimant's colours.
   There is no alliance grouping here. The spotlight list ranks by claim count and market size rather
-  than by domination, and it holds every faction that claims a system *or* lives in one: one that
-  claims territory while holding no colony anywhere paints here, so it is worth spotlighting, and one
-  that lives somewhere while claiming nowhere is listed greyed at a count of 0 rather than left out,
-  since a faction the player can plainly see going missing from the list reads as an oversight. Under the
-  default claims-descending sort the greyed rows form a tail below the claimants; sorting by name
-  interleaves them.
+  than by domination, and it takes one faction the general rule below would not reach: a claimant
+  holding no colony anywhere lives nowhere and paints here all the same, so it is listed on the
+  strength of its claims. Under the default claims-descending sort the rows greyed for claiming
+  nothing form a tail below the claimants; sorting by name interleaves them.
   A claimant's systems already share one border and one colour with no filter on, so what
   spotlighting adds here is the contrast: the picked claimant keeps its full strength while every
   other claimant fades into the muted background. Systems the pick *lives in without claiming* keep

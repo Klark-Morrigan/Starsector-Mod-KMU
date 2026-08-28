@@ -7,7 +7,7 @@ package kmu.maplayers.politicalmap.base.dominance;
  * so the same value serves any way markets are grouped into an holder.
  *
  * <p>Each of the three weights is a dominance weight - a market's size rating scaled
- * by its stability on the fixed-point grid {@link KnownMarketFootprints} defines - so
+ * by its stability on the fixed-point grid {@link MarketWeights} defines - so
  * the rule ranks what each market is worth, not merely how big it is. The count
  * beside them is deliberately unweighted: it answers how many holdings there are
  * rather than what they are worth, which is what a readout of a system's makeup needs

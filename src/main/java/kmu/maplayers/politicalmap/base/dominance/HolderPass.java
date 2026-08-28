@@ -368,7 +368,7 @@ public final class HolderPass {
         var sizeByFactionId = new LinkedHashMap<String, Integer>();
         for (var colony : colonies) {
             sizeByFactionId.merge(
-                colony.market().getFaction().getId(),
+                colony.readOwnerId(),
                 colony.market().getSize(),
                 Integer::sum);
         }
@@ -376,11 +376,16 @@ public final class HolderPass {
     }
 
     // The owners of one projection's colonies, each named once however many it holds there.
+    //
+    // Asked of the colony rather than of the faction hanging off its market, as the fold above is.
+    // A market states its owner twice - the id it stores, and the faction that id resolves to -
+    // and a pass reading one where something beside it reads the other would be two answers to a
+    // question the sector has one of.
     private static Set<String> collectFactionIdsOf(List<Colony> colonies) {
 
         var factionIds = new LinkedHashSet<String>();
         for (var colony : colonies) {
-            factionIds.add(colony.market().getFaction().getId());
+            factionIds.add(colony.readOwnerId());
         }
         return factionIds;
     }

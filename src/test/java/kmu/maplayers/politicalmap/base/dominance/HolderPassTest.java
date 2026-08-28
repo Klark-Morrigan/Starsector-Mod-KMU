@@ -346,6 +346,23 @@ final class HolderPassTest {
         }
 
         @Test
+        void sumsSeveralColoniesOfOneOwnerThere() {
+            // The fold beneath the grouping. An owner's colonies are summed before any bloc is
+            // named, so a faction living on two places in one system reads as the whole of what it
+            // lives on rather than as whichever of them the walk reached last.
+            var sector = SectorPoliticsFixtures.buildSectorWith(
+                SYSTEM_ID,
+                SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, 5),
+                SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, 3));
+
+            assertThat(HolderPass
+                    .over(sector, BASE_FOG, HolderGrouping.identity())
+                    .readHabitationIn(SectorPoliticsFixtures.buildOnlySystem(sector))
+                    .colonySizeByBlocId())
+                .containsExactly(entry("hegemony", 8));
+        }
+
+        @Test
         void leavesOutAnOwnerNoBlocCanBeNamedFor() {
             // A colony a mod hung on a faction with no id. The same rule every per-bloc fold on the
             // map applies: a nameless key would travel on as a bloc, and a surface asked to paint

@@ -201,10 +201,12 @@ public interface PoliticalMapView {
      * spotlight inherits one rather than overriding with three arguments it would ignore. A view
      * opts into the spotlight by overriding this, the same way it opts into its own body controls.
      *
-     * @param sector           the sector whose economy the visibility gate reads; null yields an
-     *                         empty picker
-     * @param rules            the dominance-weighting rules for this read, so selectable blocs are
-     *                         gated under the same rule the map paints under
+     * @param sector           the sector whose colonies decide who is listed; null yields an empty
+     *                         picker
+     * @param rules            the dominance-weighting rules for this read, so a listed bloc's
+     *                         numbers are the ones the map paints by; what a layer weighs decides
+     *                         how a row reads rather than whether it is offered, so a layer that
+     *                         weighs nothing spends this on nothing
      * @param colonyVisibility what the player may be shown of a colony, so a bloc is offered on
      *                         the strength of the very colonies the map paints it for
      * @return this view's picker - its blocs in the order the source walk surfaces them, and the
