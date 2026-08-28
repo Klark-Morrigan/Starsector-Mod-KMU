@@ -101,8 +101,9 @@ final class ClaimScoreRowResolverTest {
 
     private static final boolean IS_TERRITORIAL = true;
 
-    // Whether a market the player has not found may be listed: withheld in play, stated in full under
-    // the dev reveal.
+    // Whether an unfound market the contest never weighed may be listed: withheld in play, stated
+    // under the dev reveal. One the contest did weigh is listed either way, its weight being in the
+    // numbers on screen already.
     private static final boolean WITHHOLDING_UNFOUND_MARKETS = false;
     private static final boolean LISTING_UNFOUND_MARKETS = true;
 
@@ -536,15 +537,29 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsLeavesAMarketThePlayerHasNotFoundOffTheList() {
-            // Vanilla settles a claim over colonies nobody has found; naming one would tell the
-            // player a system holds something they have no way of knowing.
+        void resolveMarketRowsLeavesAConcealedMarketThePlayerHasNotFoundOffTheList() {
+            // Both exclusions against it at once: the contest passed it over, so no number on screen
+            // needs it to add up, and the player has not found it, so there is nothing they could
+            // already know. A row would be disclosure and nothing else.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(TWO_SIBLING_MARKETS),
                 List.of(
                     buildMarket("Culann", 3, TWO_SIBLING_MARKETS, SECOND_LISTED),
-                    buildMarket("Kanta's Den", 3, TWO_SIBLING_MARKETS, THIRD_LISTED,
-                        IS_UNFOUND_BY_PLAYER))));
+                    buildUnfoundHiddenMarket("Kanta's Den", 3, TWO_SIBLING_MARKETS, THIRD_LISTED))));
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly(STRONGEST_MARKET, "Culann", PRESENCE_LINE);
+        }
+
+        @Test
+        void resolveMarketRowsListsAMarketTheContestWeighedThoughThePlayerHasNotFoundIt() {
+            // The market's weight is already in the numbers on screen - the faction's score, and the
+            // presence its siblings were each given - so the row is what makes them accountable.
+            // Whether the row may state the colony's name is settled where the row is built.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(ONE_SIBLING_MARKET),
+                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED,
+                    IS_UNFOUND_BY_PLAYER))));
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Culann", PRESENCE_LINE);
@@ -558,8 +573,8 @@ final class ClaimScoreRowResolverTest {
             // names it. Withheld, the account simply does not add up.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildMarket("Kanta's Den", 3, ONE_SIBLING_MARKET, SECOND_LISTED,
-                    IS_UNFOUND_BY_PLAYER))));
+                List.of(buildUnfoundHiddenMarket("Kanta's Den", 3, ONE_SIBLING_MARKET,
+                    SECOND_LISTED))));
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, PRESENCE_LINE);
@@ -568,34 +583,32 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesThePresenceTermWhereTheStandingMarketItselfWasKeptBack() {
-            // The shape the fog and the mechanic produce together, and the one a market taking a
-            // standing only where it is open would rule out: the mechanic weighs colonies nobody has
-            // reached, so the very market a faction stands on can be one the player cannot be shown.
-            // Its terms go with it, and what is left is a lesser colony whose own arithmetic the
-            // presence line is the whole remaining account of.
+        void resolveMarketRowsListsTheStandingMarketThePlayerHasNotFound() {
+            // The mechanic weighs colonies nobody has reached, so the very market a faction stands on
+            // can be one the player has not found - and it is the market the faction's own line states
+            // the score of. Left off, that number would head an account with nothing in it that comes
+            // to the number.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET, IS_UNFOUND_BY_PLAYER),
                 List.of(buildMarket("Kanta's Den", 4, ONE_SIBLING_MARKET, SECOND_LISTED))));
 
             assertThat(readLabelTexts(rows))
-                .containsExactly("Kanta's Den", PRESENCE_LINE);
+                .containsExactly(STRONGEST_MARKET, "Kanta's Den", PRESENCE_LINE);
             assertThat(rows.get(0).line().valueText())
-                .isEqualTo("5");
+                .isEqualTo("8");
             assertThat(readLabelTexts(rows.get(0).children()))
                 .containsExactly("Size");
-            assertThat(rows.get(1).line().valueText())
-                .isEqualTo("+1");
         }
 
         @Test
         void resolveMarketRowsListsEveryMarketUnderTheDevReveal() {
-            // The reveal is the state a player has asked to be shown everything in, so the account is
-            // stated in full - the withholding is about what they have found, not about the box.
+            // The reveal is the state a player has asked to be shown everything in, so even the one
+            // market no number on screen needs - concealed and unfound at once - takes its place in
+            // the account.
             var standing = buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildMarket("Kanta's Den", 3, ONE_SIBLING_MARKET, SECOND_LISTED,
-                    IS_UNFOUND_BY_PLAYER)));
+                List.of(buildUnfoundHiddenMarket("Kanta's Den", 3, ONE_SIBLING_MARKET,
+                    SECOND_LISTED)));
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(HEGEMONY, standing),

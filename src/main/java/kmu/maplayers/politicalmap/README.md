@@ -427,13 +427,11 @@ non-territorial faction's markets are marked only inside their own faction: they
 lead, so a tie against the claimant is not judged, while the tie deciding which of them stands for
 the faction still is. Under a decree the claimant tie goes unjudged too, the system having been
 settled before a market was weighed.
-One further silence is the box's rather than the mechanic's: a tie the walk did settle goes unmarked
-where the market on the other side of it is one the player has not found
-(`ListedClaimMarkets`, the one rule deciding which markets may be named, asked both by the listing
-and by the marks stated over it). A mark answers why two markets on one score are ordered as they
-are, so with one of them withheld there is no ordering in front of the reader for it to answer, and
-what it would state instead is an outcome against a colony they cannot see. Both comparisons hold to
-that, and the dev reveal restores both marks by drawing the other side back in.
+What the player has found silences no mark. A mark answers why two markets on one score are ordered
+as they are, and both sides of a judged tie are markets the contest weighed - which the list carries
+whether or not anybody has found them (`ListedClaimMarkets`, the one rule deciding which markets are
+listed, asked both by the listing and by the marks stated over it) - so the ordering a mark is about
+is always in front of the reader. Both comparisons hold to that, within a faction and between two.
 A market the mechanic never weighed is listed at nought, whichever of the first two it is
 (`MarketClaimBreakdown.isScoredOnItsOwnAccount`, the one question the box asks of the pair): it
 brought nothing to the contest however large it is, and printing the score it would have carried
@@ -482,11 +480,14 @@ in the quiet shade (`statesUncountedValue`, the same treatment an unweighed mark
 the contest's statement about a faction it never weighed rather than a score competed for and lost.
 The claimant's line takes the same nought where a decree holds a system its faction is present in
 through unweighed colonies alone, in place of the blank column a claimant holding nothing there gets.
-A market the player may not be told about is left off the list, since
-vanilla settles a claim over colonies nobody has found and repeating what it learned there would
-name something the player has no way of knowing about; the rule is
-`MarketClaimBreakdown.isKnownToPlayer`, the same one the faction and alliance tabs fog by, so all
-three agree on what the player knows, and the dev reveal states everything in full. What that flag
+A market the player has not found is listed all the same where the contest weighed it: its weight is
+in the numbers on screen already - the claim, the faction's score, the difference between its own
+total and the terms beneath it - and the row is what makes those account for themselves. What is
+left off is the market that is unfound *and* took no part (`ListedClaimMarkets`, over
+`MarketClaimBreakdown.isKnownToPlayer` and `isScoredOnItsOwnAccount`): it accounts for nothing on
+screen, so a row for it would be disclosure and nothing else, and the dev reveal is what states even
+those in full. The knowledge half is the same rule the faction and alliance tabs fog by, so all
+three agree on what the player knows. What that flag
 carries is the composed answer rather than the entity's own: the player has found the market
 **and**, for the shapes a bare fog would leak, somebody has seen it where it stands. The same
 projection reaches the listing above the markets: a standing whose every colony is withheld is left
@@ -505,7 +506,8 @@ once beneath the very markets its count can be checked against, and worked out f
 which is not its own sibling) rather than as a bare result nobody can check. That line is working
 throughout bar the points it arrives at, so it reads in the quiet shade name and all. The count is of
 what the faction holds rather than of the lines above it, so over a list a market was kept off for
-being unfound it stands and reads as exceeding what is shown - which gives away nothing the list has
+being unfound and unweighed at once it stands and reads as exceeding what is shown - which gives away
+nothing the list has
 not, a market's own line carrying the whole score the contest weighed it at while the terms beneath
 it state its own share alone, so the presence is already the difference between the two on every
 line. Withheld there, it would leave each market short by an amount the reader can see and cannot

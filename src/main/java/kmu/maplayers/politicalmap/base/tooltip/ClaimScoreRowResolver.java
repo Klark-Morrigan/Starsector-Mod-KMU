@@ -164,9 +164,10 @@ public final class ClaimScoreRowResolver {
      *                                collapse from an unowned hulk on the list, the only thing that
      *                                can say the player has yet to find either, and the only thing
      *                                that can date them
-     * @param isListingUnfoundMarkets whether a market the player has not found may be listed. False
-     *                                is the ordinary state and leaves those markets off; true is
-     *                                the dev reveal, under which the account is stated in full
+     * @param isListingUnfoundMarkets whether an unfound market the contest never weighed may be
+     *                                listed. False is the ordinary state and leaves those markets
+     *                                off; true is the dev reveal, under which the account is stated
+     *                                in full
      * @return the entries in the order they are read
      */
     public static List<CellTooltipEntry> resolveMarketRows(
@@ -424,12 +425,11 @@ public final class ClaimScoreRowResolver {
     // The markets an account lists, out of everything the standing holds, in the order the contest
     // would settle them.
     //
-    // A market the player has not found is left off rather than blanked: it carries nothing the
-    // account needs, and a run of redacted lines would state the very count the withholding exists to
-    // keep. A weighed standing's own strongest market is not spared - the mechanic weighs colonies
-    // nobody has found, so a faction can stand on one the player has no way of seeing, and a listing
-    // that made an exception of it would name exactly the colony the fog is keeping back. What is
-    // left in that case is the faction's score with the market behind it unnamed.
+    // A market the contest weighed is listed whether or not the player has found it, its weight being
+    // in the numbers on screen already - the claim, the faction's score, the difference between this
+    // market's total and the terms stated beneath it - so the row is what makes those add up. What is
+    // left off is an unfound market the contest never weighed: it accounts for nothing shown, so a
+    // row for it would be disclosure and nothing else.
     private static List<MarketClaimBreakdown> selectListedMarkets(
             FactionClaimStanding standing,
             boolean isListingUnfoundMarkets) {
