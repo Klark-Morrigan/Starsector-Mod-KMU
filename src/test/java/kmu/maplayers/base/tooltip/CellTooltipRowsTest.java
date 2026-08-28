@@ -48,14 +48,12 @@ import static org.assertj.core.api.Assertions.within;
  *
  * <p>A mark is pinned as a run of the label on every shape, listed lines and banner alike, since that is
  * the one rule the box has for images: a marked line and a markless one at the same level have to start
- * their words at the same inset, or a breakdown reads as two staggered columns. What colour that run
- * draws in is pinned beside it, and the two readings are asserted against each other: a mark standing
- * in for the name takes the name's own tier colour, while a crest keeps the colours of its own pixels.
+ * their words at the same inset, or a breakdown reads as two staggered columns.
  *
- * <p>A name that is itself one of the box's findings is pinned as the stretches it splits into, because
- * the split is where the drawn name could stop being the name: the runs past the first butt against
- * what precedes them, so what is drawn is spelled as its author spelled it whatever the finding
- * happened to land beside.
+ * <p>What a label is made of - the mark's own colouring, and the stretches a name saying one of the
+ * box's findings is picked apart into - is {@link CellTooltipLabelsTest}'s. What is pinned here is
+ * the tier each colour comes from, and that a label of several runs reaches one row with everything
+ * after it still in place.
  */
 final class CellTooltipRowsTest {
 
@@ -99,23 +97,9 @@ final class CellTooltipRowsTest {
     // remark has to leave it as: the name and the status, and no run for the remark it never made.
     private static final int QUALIFIED_LINE_RUNS = 2;
 
-    // Where the stretches of a gilded name fall, by where the finding sits in it. A name opening on
-    // the word says it first and runs on into what follows; a name saying it later opens plainly and
-    // picks it out of the middle. Both are counted from the line's first run, so a gilded stretch
-    // pushed along by an absent leading stretch would be visible in the assertions.
-    private static final int GILDED_OPENING_RUN = 0;
-    private static final int NAME_TAIL_RUN = 1;
-    private static final int NAME_HEAD_RUN = 0;
-    private static final int GILDED_MIDDLE_RUN = 1;
-
-    // What a gilded name comes to when the word opens it: the word and the rest of the name, and no
-    // run held open for the nothing that stands in front of it.
-    private static final int GILDED_OPENING_NAME_RUNS = 2;
-
-    // The three a word in the middle of a name comes to, which is the fullest a name is ever drawn as.
-    private static final int GILDED_MIDDLE_NAME_RUNS = 3;
-
-    // Where the status after a gilded name sits: past the two runs the name came to.
+    // Where the status after a gilded name sits: past the two runs such a name came to, where an
+    // unsplit name would have left it at the run above. What the stretches themselves are is
+    // CellTooltipLabelsTest's.
     private static final int GILDED_QUALIFIER_RUN = 2;
 
     // The same two runs on a line led by a mark, each pushed along by the image it opens on.
@@ -187,19 +171,6 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowDrawsAMarkStandingInForTheNameInThatNamesColour() {
-            // An asset coloured to carry across the sector map arrives here brighter than the words
-            // and the numbers around it, so a glyph that is only a shorthand for the name takes the
-            // name's own colour and the pair reads as one thing.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine.createLine(COLONY_MARK, "Jangala", "4,000"),
-                LISTED_LEVEL);
-
-            assertThat(readLabelRun(row, MARK_RUN))
-                .isEqualTo(new ImageSpan(COLONY_ICON, PLAYER_BRIGHT));
-        }
-
-        @Test
         void buildListedRowDrawsAMarkStandingInForTheNameInTheColourOfItsOwnTier() {
             // The colour is the tier's rather than one number written down somewhere, so a mark on a
             // line found beneath another follows that line down to its plainer shade instead of
@@ -210,18 +181,6 @@ final class CellTooltipRowsTest {
 
             assertThat(readLabelRun(row, MARK_RUN))
                 .isEqualTo(new ImageSpan(COLONY_ICON, TEXT));
-        }
-
-        @Test
-        void buildListedRowDrawsAMarkOfItsOwnAsItsAssetAuthoredIt() {
-            // A crest is a picture of a thing rather than a shorthand for it, and its colours are in
-            // its own pixels - multiplied by the line's shade it would come out a tinted smudge.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200"),
-                LISTED_LEVEL);
-
-            assertThat(readLabelRun(row, MARK_RUN))
-                .isEqualTo(new ImageSpan(CREST));
         }
 
         @Test
@@ -293,109 +252,6 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowGildsTheStretchOfANameThatIsAFinding() {
-            // The word is stated where the reader is already looking rather than repeated at the end of
-            // the line, and in the same gold a status after the name reads in - it is the same finding,
-            // drawn somewhere else.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Abandoned Station", "0")
-                    .callsOutInLabel(0, 9),
-                LISTED_LEVEL);
-
-            assertThat(readLabelTextRun(row, GILDED_OPENING_RUN))
-                .isEqualTo(new TextSpan("Abandoned", HIGHLIGHT));
-            assertThat(readLabelTextRun(row, NAME_TAIL_RUN))
-                .isEqualTo(new TextSpan(" Station", PLAYER_BRIGHT).joinsPreviousRun());
-            assertThat(row.labelRuns())
-                .hasSize(GILDED_OPENING_NAME_RUNS);
-        }
-
-        @Test
-        void buildListedRowDrawsAGildedNameAsItsAuthorSpelledIt() {
-            // The reason every stretch past the first joins the one before it: a label spaces its runs,
-            // so a name split anywhere its own spacing does not already part would be drawn with a space
-            // the place is not called by - and a box that misspells the name it is gilding says less
-            // about it than the plain line it replaced.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Abandoned-Station", "0")
-                    .callsOutInLabel(0, 9),
-                LISTED_LEVEL);
-
-            assertThat(readLabelTextRun(row, GILDED_OPENING_RUN))
-                .isEqualTo(new TextSpan("Abandoned", HIGHLIGHT));
-            assertThat(readLabelTextRun(row, NAME_TAIL_RUN))
-                .isEqualTo(new TextSpan("-Station", PLAYER_BRIGHT).joinsPreviousRun());
-        }
-
-        @Test
-        void buildListedRowPicksAFindingOutOfTheMiddleOfAName() {
-            // The fullest a name is drawn as: what stands before the word, the word, and what follows -
-            // the two plain stretches in the line's own colour, so only the finding is picked out.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Old Abandoned Yards", "0")
-                    .callsOutInLabel(4, 13),
-                LISTED_LEVEL);
-
-            assertThat(readLabelTextRun(row, NAME_HEAD_RUN))
-                .isEqualTo(new TextSpan("Old ", PLAYER_BRIGHT));
-            assertThat(readLabelTextRun(row, GILDED_MIDDLE_RUN))
-                .isEqualTo(new TextSpan("Abandoned", HIGHLIGHT).joinsPreviousRun());
-            assertThat(row.labelRuns())
-                .hasSize(GILDED_MIDDLE_NAME_RUNS);
-        }
-
-        @Test
-        void buildListedRowGildsTheWholeOfANameThatSaysNothingElse() {
-            // Nothing stands either side of the word, so the line is the one run it always was rather
-            // than one opening or closing on a stretch that draws nothing.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Abandoned", "0")
-                    .callsOutInLabel(0, 9),
-                LISTED_LEVEL);
-
-            assertThat(row.labelRuns())
-                .containsExactly(new TextSpan("Abandoned", HIGHLIGHT));
-        }
-
-        @Test
-        void buildListedRowKeepsAGildedNameInItsOwnTiersColour() {
-            // Only the finding is gold. What surrounds it follows the line down to whatever shade its
-            // tier speaks in, so a gilded name on a member reads as a member with a word picked out.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Abandoned Station", "0")
-                    .callsOutInLabel(0, 9),
-                MEMBER_LEVEL);
-
-            assertThat(readLabelTextRun(row, GILDED_OPENING_RUN))
-                .isEqualTo(new TextSpan("Abandoned", HIGHLIGHT));
-            assertThat(readLabelTextRun(row, NAME_TAIL_RUN))
-                .isEqualTo(new TextSpan(" Station", TEXT).joinsPreviousRun());
-        }
-
-        @Test
-        void buildListedRowRunsAGildedNameOnPastItsMark() {
-            // A gilded name is still the label, so it opens where the label does - one run past the mark
-            // the line leads with, and the mark still stands its own word space clear of the words.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(CREST_MARK, "Abandoned Station", "0")
-                    .callsOutInLabel(0, 9),
-                LISTED_LEVEL);
-
-            assertThat(readLabelRun(row, MARK_RUN))
-                .isEqualTo(new ImageSpan(CREST));
-            assertThat(readLabelTextRun(row, MARKED_LABEL_RUN))
-                .isEqualTo(new TextSpan("Abandoned", HIGHLIGHT));
-            assertThat(readLabelTextRun(row, MARKED_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan(" Station", PLAYER_BRIGHT).joinsPreviousRun());
-        }
-
-        @Test
         void buildListedRowLeavesAGildedLineReadingAsItsWholeName() {
             // How every box's own suite identifies a line, held against the one shape that splits a
             // name into runs: a fixture named for what it is answers the name it is plainly shown by,
@@ -413,9 +269,10 @@ final class CellTooltipRowsTest {
 
         @Test
         void buildListedRowStillCallsOutWhatFollowsAGildedName() {
-            // Two findings about two different subjects, in the one shade the box reserves for findings:
-            // what the place is, said in its name, and that the player has not found it, said after it.
-            // The status closes the line as a word of its own rather than joining the name it follows.
+            // A name of several runs pushes the status along without unseating it, which is what the
+            // row has to get right about a label it did not compose: two findings about two different
+            // subjects, and the status closes the line as a word of its own rather than joining the
+            // name it follows.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine
                     .createLine(null, "Abandoned Station", "0")
@@ -423,7 +280,7 @@ final class CellTooltipRowsTest {
                     .qualifiedWith("undiscovered"),
                 LISTED_LEVEL);
 
-            assertThat(readLabelTextRun(row, GILDED_OPENING_RUN))
+            assertThat(readLabelTextRun(row, LABEL_RUN))
                 .isEqualTo(new TextSpan("Abandoned", HIGHLIGHT));
             assertThat(readLabelTextRun(row, GILDED_QUALIFIER_RUN))
                 .isEqualTo(new TextSpan("undiscovered", HIGHLIGHT));

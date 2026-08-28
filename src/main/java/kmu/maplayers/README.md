@@ -401,7 +401,12 @@ about what the overlay means.
   one `CellTooltipEntryLevel`, and drops a block that resolved empty; `CellTooltipRows` is the line
   vocabulary it lays them in, which reads the tier and the indent off that level rather than off a
   choice the block makes,
-  plus the banner centred under the title. A mark travels as a run at the head of the line carrying it
+  plus the banner centred under the title. What the sentence at the head of a listed line is made of -
+  the mark and the name, picked apart where the name says a finding - is `CellTooltipLabels`, held
+  apart because it decides what a line *says* where the row decides where it *sits*: it is handed the
+  tier's colour rather than choosing one, and hands back runs rather than a row, so nothing about a
+  label commits it to the shape it ends up on.
+  A mark travels as a run at the head of the line carrying it
   on every shape, never in a leading column, so every line opens at the box's content edge and the
   indent alone says how deep a line sits: a column is one gutter shared down a flat stack, and a
   listing four levels deep would draw a mark several levels in inside the gutter the shallowest marked

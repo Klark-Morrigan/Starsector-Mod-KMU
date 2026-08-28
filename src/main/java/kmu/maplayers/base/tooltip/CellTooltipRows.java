@@ -7,7 +7,6 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.text.KmlibStrings;
 
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,22 +22,12 @@ import java.util.List;
  * for the box. So the choice of builder is a statement about whether a line is one of the findings or a
  * verdict over all of them.
  *
- * <p>A mark travels inside the label on every shape here, never in a leading column. A column is one
- * gutter shared down a stack, and it earns its keep only where markless lines have marked ones to align
- * with; a listing four levels deep has no such stack, so a mark several levels in and reserved as a
- * column would draw in the gutter the shallowest marked line widened, well left of the name it belongs
- * to. Set as a run it lands where the indent already put the line - which is what a banner has always
- * done, so the box has one rule for images rather than two.
- *
- * <p>What colour a mark draws in follows from what it is for, which its line states. A mark standing in
- * for the name beside it takes that name's own colour, so the pair reads as one thing and the eye is
- * not pulled to the run carrying the least of the meaning; a mark that is a picture in its own right -
- * a crest - keeps the colours its asset authored.
- *
- * <p>A name may itself hold one of the box's findings, and that stretch is drawn in the qualifier's
- * gold where it stands rather than repeated at the end of the line. Gilding is cosmetic and reaches
- * nothing else: the same words are picked out of the same name in the same shade a status after the
- * name would have read in, so a finding cannot come out differently for a thing named after itself.
+ * <p>What a listed line's label is made of - the mark it leads with and the name that follows, picked
+ * apart where the name itself says one of the box's findings - is
+ * {@link CellTooltipLabels}'. This decides where a line sits, how loudly it speaks and what fills its
+ * value column; that decides what the sentence at its head says. A mark travels inside the label on
+ * every shape here rather than in a leading column, which is what a banner has always done, so the box
+ * has one rule for images rather than two.
  *
  * <p>Held apart from {@link SystemCellTooltip} because the two answer different questions - that class
  * decides how the box is framed, these decide how one line inside it reads - and because a body is
@@ -67,16 +56,6 @@ public final class CellTooltipRows {
     // three deep steps in evenly instead of collapsing everything below the first level onto one indent
     // no reader could tell apart.
     private static final float MEMBER_INDENT = 14f;
-
-    // Where a line's name opens among its runs. Every line has one, whether the name is a single run
-    // or the first of the stretches a gilded name is split into, so the row is opened on it and the
-    // rest of the name follows.
-    private static final int FIRST_LABEL_SPAN = 0;
-
-    // The most stretches a gilded name comes to - what stands before the finding, the finding, and
-    // what stands after it. Fewer where the finding sits at either end of the name, and the sizing is
-    // the ceiling rather than a promise.
-    private static final int GILDED_LABEL_SPANS = 3;
 
     private CellTooltipRows() {
     }
@@ -248,117 +227,22 @@ public final class CellTooltipRows {
         return appendNote(listedRow, line);
     }
 
-    // Opens a listed line: on the mark it leads with where it carries one, its name following as the
-    // next run of the same sentence, and on the name alone otherwise.
+    // Opens a listed line on its label: the row is created on the first run the label came to and
+    // continued with the rest, so a name picked apart into stretches lands on one row exactly as a
+    // name of one run does.
     //
-    // The mark is a run rather than a leading column because it belongs to the subject of the line it
-    // sits on, at whatever indent that line landed at. Charged to a column it would draw in the gutter
-    // the shallowest marked line in the box widened, well left of the name it prefixes, and every
-    // markless line of the same breakdown would open past a gutter none of them can fill.
-    //
-    // A line carrying no mark opens on its words rather than on an image run with nothing to load, the
-    // same absence rule the banner shape holds to.
-    //
-    // A mark that is a shorthand for the name beside it is drawn in that name's own colour, so the two
-    // read as one thing. Left in the colours its asset authored it would be the loudest run on a line
-    // whose meaning is in the words - an icon coloured to carry across the sector map arrives here far
-    // brighter than the plain text of the account it is sitting in. A crest says otherwise and keeps
-    // its own pixels, being a picture of a thing rather than a shorthand for it.
-    //
-    // The name itself may be more than one run, a line whose name says one of the box's findings
-    // picking that stretch out in the finding's own gold.
+    // What those runs are is CellTooltipLabels', which is the line's sentence rather than its
+    // placement - and the tier's colour is handed over rather than read there, that being the one
+    // thing about a label only the row knows.
     private static TooltipRow.TableRow openLabel(CellTooltipEntryLine line, Color labelColour) {
 
-        var lineColour = resolveLabelColour(line, labelColour);
-        var labelSpans = resolveLabelSpans(line, lineColour);
-        var openingSpan = labelSpans.get(FIRST_LABEL_SPAN);
+        var labelRuns = CellTooltipLabels.resolveLabelRuns(line, labelColour).iterator();
+        var openedRow = TooltipRow.createRow(labelRuns.next());
 
-        var openedRow = line.hasMark()
-            ? TooltipRow.createRow(resolveMarkSpan(line.mark(), lineColour)).continuesWith(openingSpan)
-            : TooltipRow.createRow(openingSpan);
-
-        return continueWithLabelSpans(openedRow, labelSpans);
-    }
-
-    // The runs a line's name is drawn as: one run of its own colour, or the stretch that reads as a
-    // finding picked out in gold with what surrounds it either side of it.
-    //
-    // The stretches are exact substrings and every run past the first is a joined one
-    // (LabelRun.isJoinedToPreviousRun, which argues the case), so the name draws as its author
-    // spelled it whatever the finding landed beside.
-    //
-    // In the same gold the status after the name reads in, through the same run, because it is the
-    // same finding: the word has qualified in every sense the resolution cares about, and only where
-    // it is laid differs.
-    private static List<TextSpan> resolveLabelSpans(CellTooltipEntryLine line, Color lineColour) {
-
-        var labelText = line.labelText();
-        var labelFinding = line.labelFinding();
-
-        if (labelFinding == null) {
-            return List.of(new TextSpan(labelText, lineColour));
+        while (labelRuns.hasNext()) {
+            openedRow = openedRow.continuesWith(labelRuns.next());
         }
-        var findingStart = labelFinding.startIndex();
-        var findingEnd = labelFinding.endIndex();
-        var labelSpans = new ArrayList<TextSpan>(GILDED_LABEL_SPANS);
-
-        appendLabelSpan(
-            labelSpans,
-            new TextSpan(
-                labelText.substring(0, findingStart),
-                lineColour));
-
-        appendLabelSpan(
-            labelSpans,
-            buildQualifierSpan(labelText.substring(findingStart, findingEnd)));
-
-        appendLabelSpan(
-            labelSpans,
-            new TextSpan(
-                labelText.substring(findingEnd),
-                lineColour));
-
-        return labelSpans;
-    }
-
-    // Adds one stretch of a split name, joined to whatever is already there and passed over where the
-    // finding sat at either end of the name and left nothing on that side. An empty run would draw
-    // nothing and be charged nothing, but it would also leave the line stating a run its author never
-    // wrote, which is what the count of runs above it is read against.
-    private static void appendLabelSpan(List<TextSpan> labelSpans, TextSpan labelSpan) {
-
-        if (!labelSpan.hasContent()) {
-            return;
-        }
-        labelSpans.add(labelSpans.isEmpty() ? labelSpan : labelSpan.joinsPreviousRun());
-    }
-
-    // Runs a row on into the rest of a split name. Nothing at all for the ordinary line, whose name is
-    // the single run its row was opened on.
-    private static TooltipRow.TableRow continueWithLabelSpans(
-            TooltipRow.TableRow row,
-            List<TextSpan> labelSpans) {
-
-        var continuedRow = row;
-
-        for (var labelSpan : labelSpans.subList(FIRST_LABEL_SPAN + 1, labelSpans.size())) {
-            continuedRow = continuedRow.continuesWith(labelSpan);
-        }
-        return continuedRow;
-    }
-
-    // The run a mark is drawn as: tinted to the line's own colour where the mark stands in for the
-    // name, and untinted - drawn as its asset authored it - where it does not.
-    //
-    // Read off the mark rather than the sprite, because nothing about a texture says which of the two
-    // it is: the same crest artwork could be either, and only whatever composed the line knows whether
-    // the mark is the subject or a label for it.
-    private static ImageSpan resolveMarkSpan(CellTooltipMark mark, Color lineColour) {
-
-        if (!mark.isInLineColour()) {
-            return new ImageSpan(mark.spritePath());
-        }
-        return new ImageSpan(mark.spritePath(), lineColour);
+        return openedRow;
     }
 
     // Fills a line's value column: its number in the line's own colour, opened where the line states
@@ -416,17 +300,6 @@ public final class CellTooltipRows {
         return row
             .subordinatedAt(level.subordinationLevel())
             .clearsCrestColumn();
-    }
-
-    // What a line's own name reads in: the tier's colour, or the quiet shade for a line that is a note
-    // about the list rather than one of the things in it. One rule for both tiers, so an aside beneath
-    // a listed thing and one beneath a member read alike - and in the same shade a value's working
-    // takes, since both are arithmetic rather than a finding.
-    private static Color resolveLabelColour(CellTooltipEntryLine line, Color tierColour) {
-
-        return line.isAside()
-            ? StarsectorUiColour.VANILLA_GRAY.resolve()
-            : tierColour;
     }
 
     // Runs a line on into where the thing on it falls in its ordering. Laid before any qualifier,
