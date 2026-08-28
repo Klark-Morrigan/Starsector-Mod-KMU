@@ -976,34 +976,39 @@ public final class DiscUnionBoundary {
                 arcs.add(new Arc(
                     circle, coveredTo, cover.start(), departingFrom, cover.arrival()));
 
-            } else if (isChordTerminal(departingFrom) && isChordTerminal(cover.arrival())) {
+            } else if (departingFrom != NO_TERMINAL
+                    && (isChordTerminal(departingFrom) || isChordTerminal(cover.arrival()))) {
 
-                // Two walls whose mouths overlap. The boundary comes back along one and leaves
-                // along the next with nothing on the circle in between, so the stretch between
-                // them is empty rather than absent - given as an arc of no width, since what
-                // the walk wants of it is that its two terminals name each other rather than
-                // any length.
+                // Two overlapping covers, at least one of them a wall's mouth: a wall laid
+                // against another wall's mouth, or laid so close past a third cell that its
+                // mouth and that cell's cover meet. The boundary comes back along one and
+                // leaves along the other with nothing on the circle in between, so the
+                // stretch between them is empty rather than absent - given as an arc of no
+                // width, since what the walk wants of it is that its two terminals name each
+                // other rather than any length.
                 //
-                // Only where WALLS are what overlap. A stretch a neighbouring disc swallows
-                // really is off the boundary, and joining its ends would run a cycle through
-                // space the union covers - which is why a mouth overlapping a disc is refused
-                // outright, leaving this the only kind of overlap that reaches here.
+                // The wall's terminal MUST be paired here, because nowhere else will: a disc
+                // cover ending beyond the mouth takes over as the departure below, and the
+                // mouth's own terminal would then begin no arc at all - the walk arrives at
+                // the wall from the far circle, finds nothing to continue onto, and throws
+                // away every cycle through it. That is a pocket missing behind any wall that
+                // grazes a cell it does not join.
+                //
+                // Never where two DISCS are what overlap. Their crossing lies inside the
+                // union and the boundary transition between them happens out on their own
+                // rims, so joining their terminals here would run a cycle through covered
+                // space. NO_TERMINAL is not a join either: it is the sweep not yet having
+                // passed a cover, not a terminal awaiting a pair.
                 arcs.add(new Arc(
                     circle, coveredTo, coveredTo, departingFrom, cover.arrival()));
 
-                // A mouth swallowed WHOLE reaches no further round the circle than what is
+                // A cover swallowed WHOLE reaches no further round the circle than what is
                 // already covered, so the update below never runs for it and its far terminal
-                // is dropped - leaving that wall an arrival and no departure, which is a chain
-                // the walk runs off rather than a cycle. Handing the departure on makes the
-                // swallowed wall the one the next stretch of boundary leaves from, which is
-                // what the two of them do on the map: the boundary goes out along one wall and
-                // back along the other with nothing on the circle in between.
-                //
-                // Whatever KIND of wall it is. Reaching here already means the swallowing was
-                // done by other walls' mouths - a stretch a neighbouring DISC swallows is off
-                // the boundary and its wall was refused outright - and two walls leaving one
-                // cell within a mouth of each other is the same situation whether they are
-                // coast reaches or bridges.
+                // is dropped - leaving it an arrival and no departure, which is a chain the
+                // walk runs off rather than a cycle. Handing the departure on makes the
+                // swallowed cover the one the next stretch of boundary leaves from, which is
+                // what the pair do on the map: the boundary goes out along one and back along
+                // the other with nothing on the circle in between.
                 //
                 // Nor is a swallowed mouth the same as a crowded-out one. Crowding is a
                 // pairwise test against each earlier mouth; what is covered here is the merged
