@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Pins {@link BlocAffiliation}'s one predicate: two distinct blocs stand together exactly when the
@@ -16,12 +17,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BlocAffiliationTest {
 
     @Nested
+    class Constructor {
+
+        @Test
+        void rejectsNullAllianceSet() {
+            // An affiliation with no alliance set behind it would fault on the first pair it was
+            // asked about rather than at the binding point that failed to supply one; the absence
+            // of alliances is a value of its own - NONE - never a null.
+            assertThatThrownBy(() -> new BlocAffiliation(null))
+                .isInstanceOf(NullPointerException.class);
+        }
+    }
+
+    @Nested
     class AreBlocsAllied {
 
         @Test
         void isTrueForTwoFactionsFoldedIntoOneAlliance() {
-
+            // Asserted in both argument orders: standing together has no direction, so neither may
+            // the predicate.
             assertThat(buildAlliedAffiliation().areBlocsAllied("hegemony", "astral_armada"))
+                .isTrue();
+            assertThat(buildAlliedAffiliation().areBlocsAllied("astral_armada", "hegemony"))
                 .isTrue();
         }
 
@@ -66,15 +83,7 @@ class BlocAffiliationTest {
             // no faction for, so each falls through to itself and no two distinct blocs there ever
             // stand together - the rule stays uniform with no per-layer branch.
             var grouping = new HolderGrouping(
-                Map.of(
-                    "hegemony",
-                    "alliance-1",
-                    "astral_armada",
-                    "alliance-1",
-                    "tritachyon",
-                    "alliance-2",
-                    "persean_league",
-                    "alliance-2"),
+                Map.of("hegemony", "alliance-1", "tritachyon", "alliance-2"),
                 Map.of("alliance-1", "hegemony", "alliance-2", "tritachyon"),
                 Map.of("alliance-1", "Allied Powers", "alliance-2", "Rival Powers"));
 
