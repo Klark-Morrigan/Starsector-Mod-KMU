@@ -211,6 +211,15 @@ dependencies {
     utilsRuntimeOnly lwjglJars
 }
 
+// Room for the geometry integration tests, which build whole generated sectors in memory
+// and partition them. They overrun Gradle's 512 MB default, and an executor that dies of it
+// takes the rest of the suite with it - so a run reports a couple of hundred tests and a
+// heap error rather than a result. Raised here rather than in the shared Java conventions:
+// it is this mod's fixtures that need the room, not every repo applying those conventions.
+test {
+    maxHeapSize = '2g'
+}
+
 tasks.withType(JavaCompile).configureEach {
     doFirst {
         if (consoleCommandsJars.files.isEmpty()) {
