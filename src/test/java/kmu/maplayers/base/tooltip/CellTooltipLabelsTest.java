@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT_GREEN;
+import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT_RED;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 
@@ -186,6 +188,122 @@ final class CellTooltipLabelsTest {
                 .containsExactly(
                     new TextSpan("Abandoned", HIGHLIGHT),
                     new TextSpan(" Station", TEXT).joinsPreviousRun());
+        }
+
+        @Test
+        void resolveLabelRunsRunsAPlaceOnAfterTheNameInTheQuietShade() {
+            // A place identifies the line rather than saying something about it, so it is drawn in the
+            // shade the working behind a value is - not the gold a finding reads in - and sits with the
+            // name it belongs to rather than at the end of the line.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine
+                        .createLine(NO_MARK, "Chicomoztoc", "19")
+                        .indexedAt("[2]", CellTooltipIndexOutcome.UNCONTESTED),
+                    TEXT))
+                .containsExactly(
+                    new TextSpan("Chicomoztoc", TEXT),
+                    new TextSpan("[2]", GRAY));
+        }
+
+        @Test
+        void resolveLabelRunsPicksAPlaceOutOnceItDecidedSomething() {
+            // The moment the number stops being a label: two lines equal on everything else are parted
+            // by it alone, so it reads in vanilla's own positive or negative shade rather than leaving
+            // the reader to work out that the smaller number wins.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine
+                        .createLine(NO_MARK, "Eventide", "6")
+                        .indexedAt("[2]", CellTooltipIndexOutcome.WON),
+                    TEXT))
+                .contains(new TextSpan("[2]", HIGHLIGHT_GREEN));
+
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine
+                        .createLine(NO_MARK, "Culann", "6")
+                        .indexedAt("[5]", CellTooltipIndexOutcome.LOST),
+                    TEXT))
+                .contains(new TextSpan("[5]", HIGHLIGHT_RED));
+        }
+
+        @Test
+        void resolveLabelRunsRunsWhatTheLineRemarksInTheQuietShade() {
+            // A remark is what the box says about its own account of the line rather than something it
+            // has found, so it takes the shade a value's working does. In the qualifier's gold a reader
+            // would weigh it against the numbers on the line.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine
+                        .createLine(NO_MARK, "Sentinel Gantries", "0")
+                        .notedWith("last seen 34 days ago (c206.05.12)"),
+                    PLAYER_BRIGHT))
+                .containsExactly(
+                    new TextSpan("Sentinel Gantries", PLAYER_BRIGHT),
+                    new TextSpan("last seen 34 days ago (c206.05.12)", GRAY));
+        }
+
+        @Test
+        void resolveLabelRunsReadsThePlaceTheStatusAndTheRemarkInThatOrder() {
+            // Three runs answering three questions, in the order a reader meets them: which one this
+            // is, what the box has found about it, and how current the account of it is. The remark
+            // closes the label because it is the only run not about the thing on the line - set ahead
+            // of the gold, it would break a status away from the name it qualifies.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine
+                        .createLine(NO_MARK, "Sentinel Gantries", "0")
+                        .indexedAt("[2]", CellTooltipIndexOutcome.UNCONTESTED)
+                        .notedWith("last seen 34 days ago (c206.05.12)")
+                        .qualifiedWith("strongest"),
+                    TEXT))
+                .containsExactly(
+                    new TextSpan("Sentinel Gantries", TEXT),
+                    new TextSpan("[2]", GRAY),
+                    new TextSpan("strongest", HIGHLIGHT),
+                    new TextSpan("last seen 34 days ago (c206.05.12)", GRAY));
+        }
+
+        @Test
+        void resolveLabelRunsRunsAMarkedLinesPlaceAndStatusOnPastItsMark() {
+            // The fullest label the vocabulary can build, and the one place the mark's cost to every
+            // run after it is legible: name, place and status each sit a run further along than they
+            // would on the same line unmarked, in that order, and the mark still opens the label.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine
+                        .createLine(CREST_MARK, "Chicomoztoc", "19")
+                        .indexedAt("[2]", CellTooltipIndexOutcome.UNCONTESTED)
+                        .qualifiedWith("strongest"),
+                    TEXT))
+                .containsExactly(
+                    new ImageSpan(CREST),
+                    new TextSpan("Chicomoztoc", TEXT),
+                    new TextSpan("[2]", GRAY),
+                    new TextSpan("strongest", HIGHLIGHT));
+        }
+
+        @Test
+        void resolveLabelRunsAddsNoRunForWhateverTheLineLeavesUnsaid() {
+            // The three absences together, and the reason they matter: a run drawing nothing would
+            // still be a run the box measures and parts from its neighbour, so a plain line has to
+            // come to the single run its name is.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine.createLine(NO_MARK, "Ion Storm", CellTooltipRows.NO_SCORE),
+                    TEXT))
+                .containsExactly(new TextSpan("Ion Storm", TEXT));
+        }
+
+        @Test
+        void resolveLabelRunsStandsAStatusClearOfAGildedName() {
+            // Two findings about two different subjects, in the one shade the box reserves for
+            // findings: what the place is, said in its name, and that the player has not found it,
+            // said after it. The status is a word of its own rather than joining the name it follows.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine
+                        .createLine(NO_MARK, "Abandoned Station", "0")
+                        .callsOutInLabel(0, 9)
+                        .qualifiedWith("undiscovered"),
+                    PLAYER_BRIGHT))
+                .containsExactly(
+                    new TextSpan("Abandoned", HIGHLIGHT),
+                    new TextSpan(" Station", PLAYER_BRIGHT).joinsPreviousRun(),
+                    new TextSpan("undiscovered", HIGHLIGHT));
         }
 
         @Test

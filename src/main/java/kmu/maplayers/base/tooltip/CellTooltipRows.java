@@ -22,12 +22,11 @@ import java.util.List;
  * for the box. So the choice of builder is a statement about whether a line is one of the findings or a
  * verdict over all of them.
  *
- * <p>What a listed line's label is made of - the mark it leads with and the name that follows, picked
- * apart where the name itself says one of the box's findings - is
- * {@link CellTooltipLabels}'. This decides where a line sits, how loudly it speaks and what fills its
- * value column; that decides what the sentence at its head says. A mark travels inside the label on
- * every shape here rather than in a leading column, which is what a banner has always done, so the box
- * has one rule for images rather than two.
+ * <p>Everything a listed line <em>says</em> - its mark, its name, where it falls in an ordering, what
+ * it calls out and what it remarks - is {@link CellTooltipLabels}', arriving here as the runs of one
+ * label. This decides only where the line sits, how loudly it speaks and what fills its value column.
+ * A mark travels inside the label on every shape here rather than in a leading column, which is what a
+ * banner has always done, so the box has one rule for images rather than two.
  *
  * <p>Held apart from {@link SystemCellTooltip} because the two answer different questions - that class
  * decides how the box is framed, these decide how one line inside it reads - and because a body is
@@ -35,8 +34,8 @@ import java.util.List;
  * the tooltip composing them, without either having to be the other's subclass.
  *
  * <p>The table shapes take a whole {@link CellTooltipEntryLine} rather than its parts, so the entirety of
- * how a listed thing reads - its tier, its colours, its mark, its value, and the status it calls out -
- * is settled here and a caller destructures nothing. They are the block's alone
+ * how a listed thing reads - its tier, its colours, its label and its value - is settled between here
+ * and the label vocabulary, and a caller destructures nothing. They are the block's alone
  * ({@link CellTooltipSections}), which is why they are not offered past this package: a body states what
  * its blocks list and the block lays those lines out. Which tier a line takes is read off the level it
  * sits at rather than chosen at the call site, so a heading and a listed line cannot drift into each
@@ -70,14 +69,16 @@ public final class CellTooltipRows {
      * ({@code LabelRuns}), spent as the drawing face's own space, so a separator written in here would
      * be the second one on the line.
      *
+     * <p>Offered here because a banner is composed by whoever authors one, while a listed line's own
+     * qualifier travels in with its label. Both are the same run
+     * ({@link CellTooltipLabels#buildFindingSpan}), which is what stops a banner calling something out
+     * in a shade the lines beneath it do not use.
+     *
      * @param text the qualifier continuing a line's label
      * @return the run, ready to continue a line
      */
     public static TextSpan buildQualifierSpan(String text) {
-
-        return new TextSpan(
-            text,
-            StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve());
+        return CellTooltipLabels.buildFindingSpan(text);
     }
 
     /**
@@ -207,8 +208,8 @@ public final class CellTooltipRows {
             textColour);
     }
 
-    // Finishes a listed line once its label is open: its number, where the line sits and how loudly it
-    // speaks, then the place, the status and the remark it runs on into.
+    // Finishes a listed line once its label is open: its number, then where the line sits and how
+    // loudly it speaks. Everything the line says past its name travelled in with the label.
     //
     // Shared by both tiers rather than spelled at each, because everything here is the same at either -
     // which leaves the two shapes differing in exactly what they are meant to differ in, the colours
@@ -220,11 +221,7 @@ public final class CellTooltipRows {
             CellTooltipEntryLevel level,
             Color valueColour) {
 
-        var listedRow = placeRow(appendValue(row, line, valueColour), level);
-        listedRow = appendIndex(listedRow, line);
-        listedRow = appendQualifier(listedRow, line);
-
-        return appendNote(listedRow, line);
+        return placeRow(appendValue(row, line, valueColour), level);
     }
 
     // Opens a listed line on its label: the row is created on the first run the label came to and
@@ -300,78 +297,5 @@ public final class CellTooltipRows {
         return row
             .subordinatedAt(level.subordinationLevel())
             .clearsCrestColumn();
-    }
-
-    // Runs a line on into where the thing on it falls in its ordering. Laid before any qualifier,
-    // because it identifies the line rather than saying something about it: the eye scanning names
-    // meets it as part of the name, and the gold run after it stays what the line calls out.
-    //
-    // Quiet while the place settled nothing, and in vanilla's own positive or negative shade once it
-    // did. That is the moment the number stops being a label: two lines equal on everything else are
-    // parted by it alone, so the reader looking for why one beat the other should find the answer
-    // rather than work out that the smaller number wins.
-    //
-    // A capability of the vocabulary rather than a decision it makes - a line states a place only
-    // where the thing on it belongs to an ordering a reader has some use for, which is the resolver's
-    // to know. Applied at every tier through one helper, for the reason the two runs around it are.
-    private static TooltipRow.TableRow appendIndex(
-            TooltipRow.TableRow row,
-            CellTooltipEntryLine line) {
-
-        if (line.indexPlace() == null) {
-            return row;
-        }
-        return row.continuesWith(new TextSpan(
-            line.indexPlace().text(),
-            resolveIndexColour(line.indexPlace().outcome())));
-    }
-
-    // The shade a place reads in, by what it decided. Settled here rather than at whatever resolved
-    // the outcome, so two layers marking a decided ordering cannot mark it in two different greens.
-    private static Color resolveIndexColour(CellTooltipIndexOutcome outcome) {
-
-        return switch (outcome) {
-            case WON -> StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN.resolve();
-            case LOST -> StarsectorUiColour.VANILLA_HIGHLIGHT_RED.resolve();
-            case UNCONTESTED -> StarsectorUiColour.VANILLA_GRAY.resolve();
-        };
-    }
-
-    // Runs a line on into whatever it remarks about the thing on it. Laid last, after the qualifier,
-    // so a reader meets the line's identity, then what the box has found about the thing, then what
-    // the box has to say about its own account of it - each in the shade that says which it is.
-    //
-    // Last because the remark is the only run that is not about the subject of the line: a finding
-    // set behind it would read as qualifying the remark rather than the colony, so the two findings
-    // a line can carry - its place and its status - stay together on the near side of it.
-    //
-    // In the quiet shade, and that is the whole of what parts it from the gold run before it. A remark
-    // about how current the account is would be read as a finding drawn in gold, which invites the
-    // reader to weigh it against the numbers on the line rather than against the line's standing.
-    //
-    // Applied at every tier through one helper, for the reason the runs around it are.
-    private static TooltipRow.TableRow appendNote(
-            TooltipRow.TableRow row,
-            CellTooltipEntryLine line) {
-
-        if (!KmlibStrings.hasText(line.noteText())) {
-            return row;
-        }
-        return row.continuesWith(new TextSpan(
-            line.noteText(),
-            StarsectorUiColour.VANILLA_GRAY.resolve()));
-    }
-
-    // Runs a line on into whatever it calls out. Applied at every tier through one helper, so a status
-    // stated on a member reads exactly as one stated on the entry it belongs to - and a line calling
-    // nothing out is left as the single run it was, rather than ending on a run that draws nothing.
-    private static TooltipRow.TableRow appendQualifier(
-            TooltipRow.TableRow row,
-            CellTooltipEntryLine line) {
-
-        if (!KmlibStrings.hasText(line.qualifierText())) {
-            return row;
-        }
-        return row.continuesWith(buildQualifierSpan(line.qualifierText()));
     }
 }

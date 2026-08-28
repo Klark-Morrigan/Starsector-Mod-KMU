@@ -15,8 +15,6 @@ import java.util.List;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
-import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT_GREEN;
-import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT_RED;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.PLAYER_BRIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.LABEL_RUN;
@@ -80,31 +78,6 @@ final class CellTooltipRowsTest {
     private static final CellTooltipEntryLevel PEER_LEVEL = new CellTooltipEntryLevel(1, 0);
     private static final CellTooltipEntryLevel MEMBER_LEVEL = new CellTooltipEntryLevel(1, 1);
     private static final CellTooltipEntryLevel NESTED_MEMBER_LEVEL = new CellTooltipEntryLevel(2, 2);
-
-    // Where a place a line holds in an ordering sits, and what that pushes the qualifier to. Held here
-    // rather than beside the shared indices because only the vocabulary's own cases state a place: a
-    // line stating none closes the gap, so its qualifier takes the run the place would have.
-    private static final int QUALIFIER_RUN = 1;
-    private static final int INDEX_RUN = 1;
-    private static final int INDEXED_QUALIFIER_RUN = 2;
-
-    // Where a line's remark sits: alone, and last on a line that also states a place and a status.
-    // Stated as the counts they are, for the reason the levels above are.
-    private static final int NOTE_RUN = 1;
-    private static final int INDEXED_QUALIFIED_NOTE_RUN = 3;
-
-    // What a line naming something and calling one thing out is made of, which is what an absent
-    // remark has to leave it as: the name and the status, and no run for the remark it never made.
-    private static final int QUALIFIED_LINE_RUNS = 2;
-
-    // Where the status after a gilded name sits: past the two runs such a name came to, where an
-    // unsplit name would have left it at the run above. What the stretches themselves are is
-    // CellTooltipLabelsTest's.
-    private static final int GILDED_QUALIFIER_RUN = 2;
-
-    // The same two runs on a line led by a mark, each pushed along by the image it opens on.
-    private static final int MARKED_INDEX_RUN = 2;
-    private static final int MARKED_INDEXED_QUALIFIER_RUN = 3;
 
     @BeforeEach
     void installColours() {
@@ -268,37 +241,6 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowStillCallsOutWhatFollowsAGildedName() {
-            // A name of several runs pushes the status along without unseating it, which is what the
-            // row has to get right about a label it did not compose: two findings about two different
-            // subjects, and the status closes the line as a word of its own rather than joining the
-            // name it follows.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Abandoned Station", "0")
-                    .callsOutInLabel(0, 9)
-                    .qualifiedWith("undiscovered"),
-                LISTED_LEVEL);
-
-            assertThat(readLabelTextRun(row, LABEL_RUN))
-                .isEqualTo(new TextSpan("Abandoned", HIGHLIGHT));
-            assertThat(readLabelTextRun(row, GILDED_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan("undiscovered", HIGHLIGHT));
-        }
-
-        @Test
-        void buildListedRowSaysNothingMoreForALineCallingNothingOut() {
-            // The absence is a line of one run rather than one ending on a run that draws nothing, so a
-            // plain line measures as the words it actually says.
-            var row = CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine.createLine(null, "Ion Storm", "42"),
-                LISTED_LEVEL);
-
-            assertThat(row.labelRuns())
-                .hasSize(1);
-        }
-
-        @Test
         void buildListedRowIndentsWhatWasFoundUnderALineInThePlainColour() {
 
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
@@ -404,120 +346,6 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowRunsAPlaceOnAfterTheNameInTheQuietShade() {
-            // A place identifies the line rather than saying something about it, so it is drawn in the
-            // shade the working behind a value is - not the gold a finding reads in - and sits with the
-            // name it belongs to rather than at the end of the line.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Chicomoztoc", "19")
-                    .indexedAt("[2]", CellTooltipIndexOutcome.UNCONTESTED),
-                MEMBER_LEVEL);
-
-            assertThat(readLabelTextRun(row, INDEX_RUN))
-                .isEqualTo(new TextSpan("[2]", GRAY));
-        }
-
-        @Test
-        void buildListedRowRunsAPlaceAheadOfWhatTheLineCallsOut() {
-            // The two runs answer different questions, and in that order: which one this is, then what
-            // is true of it. Reversed, the gold status would break the name from the number naming it.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Chicomoztoc", "19")
-                    .indexedAt("[2]", CellTooltipIndexOutcome.UNCONTESTED)
-                    .qualifiedWith("strongest"),
-                MEMBER_LEVEL);
-
-            assertThat(readLabelTextRun(row, INDEX_RUN))
-                .isEqualTo(new TextSpan("[2]", GRAY));
-            assertThat(readLabelTextRun(row, INDEXED_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan("strongest", HIGHLIGHT));
-        }
-
-        @Test
-        void buildListedRowRunsWhatTheLineRemarksInTheQuietShade() {
-            // A remark is what the box says about its own account of the line rather than something
-            // it has found, so it takes the shade a value's working does. In the qualifier's gold a
-            // reader would weigh it against the numbers on the line.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Sentinel Gantries", "0")
-                    .notedWith("last seen 34 days ago (c206.05.12)"),
-                LISTED_LEVEL);
-
-            assertThat(readLabelTextRun(row, NOTE_RUN))
-                .isEqualTo(new TextSpan("last seen 34 days ago (c206.05.12)", GRAY));
-        }
-
-        @Test
-        void buildListedRowRunsARemarkPastWhatTheLineCallsOut() {
-            // Three runs answering three questions, in the order a reader meets them: which one this
-            // is, what the box has found about it, and how current the account of it is. The remark
-            // closes the line because it is the only run not about the thing on it.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Sentinel Gantries", "0")
-                    .indexedAt("[2]", CellTooltipIndexOutcome.UNCONTESTED)
-                    .notedWith("last seen 34 days ago (c206.05.12)")
-                    .qualifiedWith("strongest"),
-                MEMBER_LEVEL);
-
-            assertThat(readLabelTextRun(row, INDEX_RUN))
-                .isEqualTo(new TextSpan("[2]", GRAY));
-            assertThat(readLabelTextRun(row, INDEXED_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan("strongest", HIGHLIGHT));
-            assertThat(readLabelTextRun(row, INDEXED_QUALIFIED_NOTE_RUN))
-                .isEqualTo(new TextSpan("last seen 34 days ago (c206.05.12)", GRAY));
-        }
-
-        @Test
-        void buildListedRowRunsAMarkedLinesPlaceAndStatusOnPastItsMark() {
-            // The fullest line the vocabulary can build, and the one place the mark's cost to every run
-            // after it is legible: name, place and status each sit a run further along than they would
-            // on the same line unmarked, in that order, and the mark still opens the line.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(CREST_MARK, "Chicomoztoc", "19")
-                    .indexedAt("[2]", CellTooltipIndexOutcome.UNCONTESTED)
-                    .qualifiedWith("strongest"),
-                MEMBER_LEVEL);
-
-            assertThat(readLabelRun(row, MARK_RUN))
-                .isEqualTo(new ImageSpan(CREST));
-            assertThat(readLabelTextRun(row, MARKED_LABEL_RUN).text())
-                .isEqualTo("Chicomoztoc");
-            assertThat(readLabelTextRun(row, MARKED_INDEX_RUN))
-                .isEqualTo(new TextSpan("[2]", GRAY));
-            assertThat(readLabelTextRun(row, MARKED_INDEXED_QUALIFIER_RUN))
-                .isEqualTo(new TextSpan("strongest", HIGHLIGHT));
-        }
-
-        @Test
-        void buildListedRowPicksAPlaceOutOnceItDecidedSomething() {
-            // The moment the number stops being a label: two lines equal on everything else are
-            // parted by it alone, so it reads in vanilla's own positive or negative shade rather than
-            // leaving the reader to work out that the smaller number wins.
-            var wonRow = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Eventide", "6")
-                    .indexedAt("[2]", CellTooltipIndexOutcome.WON),
-                MEMBER_LEVEL);
-
-            assertThat(readLabelTextRun(wonRow, INDEX_RUN))
-                .isEqualTo(new TextSpan("[2]", HIGHLIGHT_GREEN));
-
-            var lostRow = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Culann", "6")
-                    .indexedAt("[5]", CellTooltipIndexOutcome.LOST),
-                MEMBER_LEVEL);
-
-            assertThat(readLabelTextRun(lostRow, INDEX_RUN))
-                .isEqualTo(new TextSpan("[5]", HIGHLIGHT_RED));
-        }
-
-        @Test
         void buildListedRowQuietensTheNameOfAnAside() {
             // An aside stating how a number above it was arrived at is not one of the things the block
             // lists, so it reads in the shade a value's working does - name and all - and only the
@@ -552,35 +380,6 @@ final class CellTooltipRowsTest {
                 .isEqualTo(new TextSpan("Tigra City", TEXT));
             assertThat(row.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan("0", GRAY)));
-        }
-
-        @Test
-        void buildListedRowAddsNoRunForALineWithNoPlaceToState() {
-            // The ordinary line, and every line of the box that is not part of an ordering: it keeps the
-            // runs it had rather than opening one that draws nothing between its name and its status.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Ion Storm", CellTooltipRows.NO_SCORE)
-                    .qualifiedWith("worsening"),
-                MEMBER_LEVEL);
-
-            assertThat(readLabelTextRun(row, QUALIFIER_RUN))
-                .isEqualTo(new TextSpan("worsening", HIGHLIGHT));
-        }
-
-        @Test
-        void buildListedRowAddsNoRunForALineRemarkingNothing() {
-            // The third absence, pinned for the reason the two above it are: the remark closes the
-            // line, so a line making none has to end on the run it already had rather than on an
-            // empty one the box would still measure and part from its neighbour.
-            var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
-                CellTooltipEntryLine
-                    .createLine(null, "Ion Storm", CellTooltipRows.NO_SCORE)
-                    .qualifiedWith("worsening"),
-                MEMBER_LEVEL);
-
-            assertThat(row.labelRuns())
-                .hasSize(QUALIFIED_LINE_RUNS);
         }
 
         @Test

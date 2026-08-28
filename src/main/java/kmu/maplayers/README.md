@@ -401,11 +401,16 @@ about what the overlay means.
   one `CellTooltipEntryLevel`, and drops a block that resolved empty; `CellTooltipRows` is the line
   vocabulary it lays them in, which reads the tier and the indent off that level rather than off a
   choice the block makes,
-  plus the banner centred under the title. What the sentence at the head of a listed line is made of -
-  the mark and the name, picked apart where the name says a finding - is `CellTooltipLabels`, held
-  apart because it decides what a line *says* where the row decides where it *sits*: it is handed the
-  tier's colour rather than choosing one, and hands back runs rather than a row, so nothing about a
-  label commits it to the shape it ends up on.
+  plus the banner centred under the title. Everything a listed line *says* - its mark, its name picked
+  apart where the name itself says a finding, its place in an ordering, what it calls out and what it
+  remarks - is `CellTooltipLabels`, arriving at the row as the runs of one label. The seam is says
+  against sits: the row decides where the line lands, how loudly it speaks and what fills its value
+  column, and nothing else. The label is handed the tier's colour rather than choosing one, and hands
+  back runs rather than a row, so nothing about what a line says commits it to the shape it says it on.
+  Only the findings read gold (`CellTooltipLabels.buildFindingSpan`, which the banner's public
+  `buildQualifierSpan` is the outward face of); a place identifies the line and a remark is the box
+  talking about its own account, so both stay quiet and a reader scanning for findings passes over
+  them.
   A mark travels as a run at the head of the line carrying it
   on every shape, never in a leading column, so every line opens at the box's content edge and the
   indent alone says how deep a line sits: a column is one gutter shared down a flat stack, and a
