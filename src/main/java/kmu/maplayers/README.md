@@ -258,11 +258,23 @@ about what the overlay means.
   whatever is covering them. `MapCover` is the role - one thing that can be over the cursor - and
   `MapCoverReader` holds the set and stops at the first that answers.
 
-  Three are always in the set and live here: `PauseMenuMapCover` (the campaign's pause menu, raised
+  Four are always in the set and live here: `HeldPointerMapCover` (a held left button, on which the
+  pointer is pressing rather than pointing), `PauseMenuMapCover` (the campaign's pause menu, raised
   over the screen without taking it down, so the map keeps drawing behind it), `SidebarMapCover`
   (any host's panel, through `SidebarHosts`), and `VanillaChromeMapCover` (the map's own tab strip
   and control bar, stated as "outside the map surface" since the chrome widgets are a fact about one
   game build).
+
+  The held-button one is the odd member and worth reading twice, because what it covers is not
+  drawn by anyone here. A left press over a system marker opens vanilla's own short menu - "Show
+  system info", "Lay in course" - which lives exactly as long as the hold and consumes every input
+  event while it does, so vanilla widgets under it fall quiet on their own. A hover cannot: it polls
+  the pointer rather than joining that chain, and the menu is a transient child of the widget tree's
+  top, inside the surface the chrome cover measures and above all of it. So the button is read
+  instead of the menu - the wider condition of the two, opening before the menu is built and closing
+  after it is gone, and free of any obfuscated class whose identity is a fact about one game build.
+  It also covers a left-drag pan, which is wanted: the pointer is still while the sector slides
+  under it, so each cell crossing beneath would otherwise arrive as a fresh hover and tick.
 
   Two more belong to optional mods, live with those mods' own integrations, and join the set only
   where the mod is installed - presence being the one condition that cannot move within a run, so
@@ -275,9 +287,9 @@ about what the overlay means.
   switches a parked surface off and with the tooltip step-aside's search root, so the three cannot
   act on different answers.
 
-  They are held in ascending cost - a published one-call read, then a settled flag, then arithmetic
-  over a box this mod laid out, then the two that walk the live widget tree - so the order is the
-  composition's and each cover states only its own reading. All but the last fail open: what cannot be
+  They are held in ascending cost - a polled mouse flag, then a published one-call read, then a
+  settled flag, then arithmetic over a box this mod laid out, then the two that walk the live widget
+  tree - so the order is the composition's and each cover states only its own reading. All but the last fail open: what cannot be
   established is not covering, since a read taken to refine the hover must not be able to switch it
   off. One set for every layer, not one per layer, because nothing about a cover is a layer's own -
   a layer holding its own could be given a cover its neighbour was not, which is how a console came

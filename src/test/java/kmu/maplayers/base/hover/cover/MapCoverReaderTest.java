@@ -89,6 +89,7 @@ final class MapCoverReaderTest {
 
                 assertThat(MapCoverReader.composeLiveCovers())
                     .hasExactlyElementsOfTypes(
+                        HeldPointerMapCover.class,
                         PauseMenuMapCover.class,
                         SidebarMapCover.class,
                         VanillaChromeMapCover.class);
