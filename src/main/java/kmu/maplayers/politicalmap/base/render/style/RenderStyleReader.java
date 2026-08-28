@@ -100,7 +100,8 @@ public final class RenderStyleReader {
                 KmuPoliticalMapSettings.shouldRoundBorderCorners(),
                 KmuPoliticalMapSettings.getPoliticalMapBorderCornerRadius(),
                 KmuPoliticalMapSettings.getPoliticalMapBorderCornerSegments(),
-                KmuPoliticalMapSettings.getPoliticalMapBorderChamferAngleRadians()));
+                KmuPoliticalMapSettings.getPoliticalMapBorderChamferAngleRadians(),
+                KmuPoliticalMapSettings.getPoliticalMapBorderRoundBelowAngleRadians()));
     }
 
     // Reads the cursor's feedback into one style: the shared palette choice both its elements

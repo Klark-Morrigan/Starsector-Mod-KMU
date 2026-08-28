@@ -320,6 +320,8 @@ public final class KmuPoliticalMapSettings {
         "kmu_politicalMapBorderCornerSegments";
     private static final String BORDER_CHAMFER_ANGLE_FIELD =
         "kmu_politicalMapBorderChamferAngle";
+    private static final String BORDER_ROUND_BELOW_ANGLE_FIELD =
+        "kmu_politicalMapBorderRoundBelowAngle";
 
     // Hatch fill (Map - Dev tab): the diagonal line pattern that fills the filter's contested
     // cluster - the spotlighted bloc's present-but-dominated systems - so it reads as
@@ -577,6 +579,15 @@ public final class KmuPoliticalMapSettings {
     private static final double DEFAULT_BORDER_CORNER_RADIUS = 300.0;
     private static final int DEFAULT_BORDER_CORNER_SEGMENTS = 3;
     private static final double DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES = 35.0;
+
+    // Under where a cluster border's own arc samples meet, which is about 173 degrees at the
+    // shipped cell-bound sampling, with a couple of degrees to spare rather than right at the
+    // edge - the exact joint angle is a fact about the sampling, and a default flush against
+    // it would flip to rounding every sample the moment that sampling coarsens. Above the
+    // joints the pass arcs the samples along one run as well as the joins between runs: about
+    // twice the border vertices, for a line that moves some ten world units - a tenth of a
+    // pixel at the zoom a sector is read at.
+    private static final double DEFAULT_BORDER_ROUND_BELOW_ANGLE_DEGREES = 170.0;
 
     // Hatch-fill knobs, mirroring the CSV defaults: ~10 lines across a default-reach cell,
     // laid on a 45-degree diagonal at a hairline stroke.
@@ -1168,6 +1179,20 @@ public final class KmuPoliticalMapSettings {
         return Math.toRadians(KmuLunaSettings.readDouble(
             BORDER_CHAMFER_ANGLE_FIELD,
             DEFAULT_BORDER_CHAMFER_ANGLE_DEGREES));
+    }
+
+    /**
+     * @return the interior angle above which a national-border corner keeps its vertex
+     *         rather than being rounded, in radians (the setting is authored in degrees
+     *         and converted here, since the rounding math works in radians). A border is
+     *         arcs sampled at fixed angles joined by straight runs, so a setting past
+     *         where those samples meet rounds them too - twice the vertices for a line in
+     *         all but the same place
+     */
+    public static double getPoliticalMapBorderRoundBelowAngleRadians() {
+        return Math.toRadians(KmuLunaSettings.readDouble(
+            BORDER_ROUND_BELOW_ANGLE_FIELD,
+            DEFAULT_BORDER_ROUND_BELOW_ANGLE_DEGREES));
     }
 
     /**

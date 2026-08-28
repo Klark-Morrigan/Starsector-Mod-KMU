@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
+import kmlib.math.geometry.CornerRounding;
 import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.geometry.ShapedCell;
@@ -535,7 +536,8 @@ final class StyledCellBuilderTest {
                         true,
                         CORNER_RADIUS,
                         CORNER_SEGMENTS,
-                        NO_CHAMFER))),
+                        NO_CHAMFER,
+                        CornerRounding.ROUND_EVERY_CORNER))),
                 null,
                 ElementStyleAdjustment.NONE);
         }

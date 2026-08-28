@@ -46,7 +46,7 @@ public final class ThemeFixtures {
      *         drawables built off it
      */
     public static GlobalStyle createInertGlobalStyle() {
-        return createGlobalStyleRoundingBy(new CornerRoundingStyle(false, 0, 0, 0));
+        return createGlobalStyleRoundingBy(new CornerRoundingStyle(false, 0, 0, 0, 0));
     }
 
     /**

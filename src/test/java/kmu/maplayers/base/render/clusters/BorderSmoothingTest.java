@@ -1,5 +1,7 @@
 package kmu.maplayers.base.render.clusters;
 
+import kmlib.math.geometry.CornerRounding;
+
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
@@ -59,6 +61,10 @@ class BorderSmoothingTest {
     private static final int CORNER_SEGMENTS = 3;
     private static final double NO_CHAMFER = 0.0;
 
+    // Every corner rounded, which is what these fixtures are: shapes whose every vertex is a
+    // deliberate corner, with no sampled arc among them for a threshold to pick out.
+    private static final double ROUND_EVERY_CORNER = CornerRounding.ROUND_EVERY_CORNER;
+
     // A second radius, used to prove a pass answers to the profile it is given rather than to
     // one fixed set of numbers.
     private static final double WIDER_CORNER_RADIUS = 25.0;
@@ -68,8 +74,14 @@ class BorderSmoothingTest {
     // reads it off the profile below.
     private static final SpikeSandingStyle SANDING_SHAPE =
         new SpikeSandingStyle(true, SPIKE_HEIGHT, SPIKE_ANGLE_RADIANS);
+
     private static final CornerRoundingStyle ROUNDING_SHAPE =
-        new CornerRoundingStyle(true, CORNER_RADIUS, CORNER_SEGMENTS, NO_CHAMFER);
+        new CornerRoundingStyle(
+            true,
+            CORNER_RADIUS,
+            CORNER_SEGMENTS,
+            NO_CHAMFER,
+            ROUND_EVERY_CORNER);
 
     private static final BorderSmoothingStyle BOTH_GATES_OFF = buildStyleWithGates(false, false);
     private static final BorderSmoothingStyle SANDING_ONLY = buildStyleWithGates(true, false);
@@ -91,7 +103,8 @@ class BorderSmoothingTest {
                 shouldRoundCorners,
                 CORNER_RADIUS,
                 CORNER_SEGMENTS,
-                NO_CHAMFER));
+                NO_CHAMFER,
+                ROUND_EVERY_CORNER));
     }
 
     // Loops as plain coordinate lists, so two results compare by value: a loop is a list of
@@ -220,7 +233,8 @@ class BorderSmoothingTest {
                     true,
                     WIDER_CORNER_RADIUS,
                     CORNER_SEGMENTS,
-                    NO_CHAMFER));
+                    NO_CHAMFER,
+                    ROUND_EVERY_CORNER));
 
             assertThat(flattenLoops(wide))
                 .isNotEqualTo(flattenLoops(narrow));

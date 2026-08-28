@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
+import kmlib.math.geometry.CornerRounding;
 import kmlib.math.geometry.RingPath;
 import kmlib.starsector.factions.FactionPalette;
 
@@ -300,7 +301,7 @@ final class PoliticalMapTerritoriesTest {
             var globalStyle = new GlobalStyle(ThemeFixtures.createHatchStyle(5, 5, 5),
                 new BorderSmoothingStyle(
                     new SpikeSandingStyle(true, 5, 5),
-                    new CornerRoundingStyle(true, 5, 5, 5)),
+                    new CornerRoundingStyle(true, 5, 5, 5, CornerRounding.ROUND_EVERY_CORNER)),
                 ThemeFixtures.NO_HOVER_HIGHLIGHT,
                 0.3,
                 0.2);

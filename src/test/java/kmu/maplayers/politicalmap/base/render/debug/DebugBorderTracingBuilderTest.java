@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.render.debug;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.math.geometry.CornerRounding;
+
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
@@ -366,7 +368,8 @@ final class DebugBorderTracingBuilderTest {
                 shouldRoundCorners,
                 CORNER_RADIUS,
                 CORNER_SEGMENTS,
-                CHAMFER_ANGLE_RADIANS));
+                CHAMFER_ANGLE_RADIANS,
+                CornerRounding.ROUND_EVERY_CORNER));
     }
 
     // The theme as the builder reads it: the smoothing profile it stages the passes by, and the
