@@ -10,7 +10,6 @@ import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
 import kmu.maplayers.politicalmap.base.PoliticalMapInstaller;
 import kmu.settings.KmuLunaSettings;
-import kmu.settings.KmuRetiredSettings;
 import kmu.starsector.rat.RandomAssortmentOfThingsSettings;
 
 import org.junit.jupiter.api.Nested;
@@ -58,10 +57,9 @@ class KMU_ModPluginTest {
         void standsUpEveryStepALaunchIsMadeOf() {
             // The list is the whole subject: a step nobody named is a feature that silently never
             // runs, which is how a settings change came to leave a stale spotlight standing. Held
-            // over all five at once, so a step dropped from the wiring fails here rather than in
+            // over all four at once, so a step dropped from the wiring fails here rather than in
             // play.
             try (var lunaSettingsMock = mockStatic(KmuLunaSettings.class);
-                    var retiredSettingsMock = mockStatic(KmuRetiredSettings.class);
                     var mapLayersMock = mockStatic(MapLayers.class);
                     var filterHealMock = mockStatic(FilterSelectionHeal.class);
                     var ratSettingsMock = mockStatic(RandomAssortmentOfThingsSettings.class)) {
@@ -69,7 +67,6 @@ class KMU_ModPluginTest {
                 new KMU_ModPlugin().onApplicationLoad();
 
                 lunaSettingsMock.verify(KmuLunaSettings::installBindings);
-                retiredSettingsMock.verify(KmuRetiredSettings::clearRetiredSettings);
                 mapLayersMock.verify(MapLayers::registerAll);
                 filterHealMock.verify(FilterSelectionHeal::installHealOnSettingsChange);
 

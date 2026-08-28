@@ -26,7 +26,7 @@ public final class NoLayer implements MapLayer {
     // framework was carved out. LunaLib stores a rebound key under the field id, so renaming it
     // would silently reset every player's binding for this tab back to N; the id therefore stays
     // frozen and only its tab placement and label are framework-scoped.
-    private static final String SHORTCUT_FIELD = "kmu_politicalMapNoLayerKey";
+    private static final String SHORTCUT_FIELD = "kmu_map_keybinds_layers_noLayer";
 
     private NoLayer() {
     }

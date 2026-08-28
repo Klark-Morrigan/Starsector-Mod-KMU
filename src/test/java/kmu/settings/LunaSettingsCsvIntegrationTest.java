@@ -53,13 +53,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * not mark a string as a setting - unrelated ids such as the terrain plugin's share it - so that second
  * walk names its exceptions rather than assuming there are none.
  *
- * <p>A retired id is the other exception, and the one that has to keep working after the row is gone.
- * LunaLib seeds defaults and prunes nothing, so a withdrawn field's value stays in the player's settings
- * file until something takes it out; the sweep that does is the only source that may still name the id.
- * The pair of walks over those ids holds both ends of that: the file declares no row for one, and some
- * source still sweeps it - so a row deleted without a sweep, or a sweep dropped while the id sits listed,
- * fails here rather than leaving a value nothing will ever reach again.
- *
  * <p>A Boolean row's default column is held the same way where the value is a decision rather than a
  * taste: the hover tiers ship on so that switching them is the player's move and not the file's, the
  * visibility overrides ship off so that a fresh player is shown what the ordinary rules admit and
@@ -111,11 +104,11 @@ final class LunaSettingsCsvIntegrationTest {
     // switched off, and the two ids a player may already have turned off are meant to keep switching
     // the same feedback off after being lifted a tier.
     private static final List<String> HOVER_TIER_FIELD_IDS = List.of(
-        "kmu_mapVisualsHoveringEnabled",
-        "kmu_politicalMapHoverEnabled",
-        "kmu_politicalMapHoverTooltipEnabled",
-        "kmu_mapPoliticsVisualsHoverEffectsEnabled",
-        "kmu_mapPoliticsVisualsHoverTooltipEnabled");
+        "kmu_map_visuals_hovering_isEnabled",
+        "kmu_map_visuals_hovering_areEffectsEnabled",
+        "kmu_map_visuals_hovering_areTooltipsEnabled",
+        "kmu_map_politics_visuals_hoverHighlight_areEffectsEnabled",
+        "kmu_map_politics_visuals_hoverTooltip_isEnabled");
 
     // The visibility overrides, held to shipping off for the reason the hover tiers above are
     // held to shipping on, and with more riding on it. Every one is named for what switching it
@@ -127,10 +120,10 @@ final class LunaSettingsCsvIntegrationTest {
     // no "off" for it to ship at - a survey bar always applies. What holds its shipped value is the
     // choice-backed table above, which pins it to the constant the getter falls back on.
     private static final List<String> VISIBILITY_OVERRIDE_FIELD_IDS = List.of(
-        "kmu_map_visibility_overrides_showUnseenAbandonedStations",
-        "kmu_map_visibility_overrides_showUnseenHiddenMarkets",
-        "kmu_map_visibility_overrides_showUndiscoveredMarkets",
-        "kmu_map_visibility_overrides_showHiddenSystems");
+        "kmu_map_visibility_overrides_shouldShowUnseenAbandonedStations",
+        "kmu_map_visibility_overrides_shouldShowUnseenHiddenMarkets",
+        "kmu_map_visibility_overrides_shouldShowUndiscoveredMarkets",
+        "kmu_map_visibility_overrides_shouldShowHiddenSystems");
 
     // The tabs the settings screen is laid out into. LunaLib creates a tab by being asked for one,
     // so a mistyped tab name is not an error there - it silently opens a tab of its own holding
@@ -161,7 +154,7 @@ final class LunaSettingsCsvIntegrationTest {
     // against one. The log level's options are log4j's own level names, which KmLogging hands
     // straight to the logger; naming them here is what keeps the coverage walk exhaustive without
     // pretending the row is choice-backed.
-    private static final List<String> NON_CHOICE_BACKED_RADIO_FIELDS = List.of("kmu_logLevel");
+    private static final List<String> NON_CHOICE_BACKED_RADIO_FIELDS = List.of("kmu_dev_logging_level");
 
     // The Radio fields whose stored label a LabeledChoice enum maps back to a choice, each with the
     // constant its getter names as a fallback. Listed here rather than read from the settings classes
@@ -169,19 +162,19 @@ final class LunaSettingsCsvIntegrationTest {
     // (no such row, or no such declaration) rather than quietly skipping a field.
     private static final List<ChoiceBackedRadio> CHOICE_BACKED_RADIOS = List.of(
         new ChoiceBackedRadio(
-            "kmu_politicalMapSidebarColourScheme",
+            "kmu_map_visuals_sidebar_colours_scheme",
             "DEFAULT_SIDEBAR_COLOUR_SCHEME",
             SidebarColourSchemeChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_politicalMapSidebarChevronColor",
+            "kmu_map_visuals_sidebar_colours_chevron",
             "DEFAULT_SIDEBAR_CHEVRON_COLOUR",
             NotchChevronColourChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_politicalMapHiddenMarketScaling",
+            "kmu_map_politics_domination_hiddenMarkets_scaling",
             "DEFAULT_HIDDEN_MARKET_SCALING",
             HiddenMarketScalingChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_map_visibility_overrides_showDecivilisedWorldsAtSurveyLevel",
+            "kmu_map_visibility_overrides_decivilisedWorldSurveyLevel",
             "DEFAULT_DECIVILISED_WORLD_SURVEY_LEVEL",
             SurveyLevelChoice.values()),
         new ChoiceBackedRadio(
@@ -205,31 +198,31 @@ final class LunaSettingsCsvIntegrationTest {
             "DEFAULT_NEBULA_DRAW_ORDER_LABELS",
             NebulaDrawOrderChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_politicalMapFactionOuterBorderColor",
+            "kmu_map_politics_visuals_faction_outerBorderColour",
             "DEFAULT_FACTION_OUTER_BORDER_COLOUR",
             FactionPaletteChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_politicalMapFactionInnerBorderColor",
+            "kmu_map_politics_visuals_faction_innerBorderColour",
             "DEFAULT_FACTION_INNER_BORDER_COLOUR",
             FactionPaletteChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_politicalMapFactionFillColor",
+            "kmu_map_politics_visuals_faction_fillColour",
             "DEFAULT_FACTION_FILL_COLOUR",
             FactionPaletteChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_politicalMapIndependentOuterBorderColor",
+            "kmu_map_politics_visuals_independent_outerBorderColour",
             "DEFAULT_INDEPENDENT_OUTER_BORDER_COLOUR",
             FactionPaletteChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_politicalMapIndependentInnerBorderColor",
+            "kmu_map_politics_visuals_independent_innerBorderColour",
             "DEFAULT_INDEPENDENT_INNER_BORDER_COLOUR",
             FactionPaletteChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_politicalMapIndependentFillColor",
+            "kmu_map_politics_visuals_independent_fillColour",
             "DEFAULT_INDEPENDENT_FILL_COLOUR",
             FactionPaletteChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_politicalMapHoverHighlightColor",
+            "kmu_map_politics_visuals_hoverHighlight_colour",
             "DEFAULT_HOVER_HIGHLIGHT_COLOUR",
             FactionPaletteChoice.values()));
 
@@ -290,20 +283,6 @@ final class LunaSettingsCsvIntegrationTest {
             "kmu_sector_map_layer_starscape_terrain",
             "kmu_sector_map_layer_above_starscape_nebulae_terrain",
             "kmu_openly_known_colony");
-
-    // The ids of rows KMU has shipped and since withdrawn. Each is still named by a source - the
-    // load-time sweep that takes its orphaned value out of the player's settings file - so the walk
-    // over named ids has to know them, or a retired row would read as a getter fetching a key the
-    // file never writes. LunaLib prunes nothing itself, which is why the sweep exists at all.
-    //
-    // Restated here rather than read off KmuRetiredSettings, whose list is private, and read out of
-    // the source text by nothing: the two checks below are what stop this pair falling out of step -
-    // an id the file still declares, or an id no source sweeps, fails rather than sitting here as a
-    // stale exemption.
-    private static final Set<String> RETIRED_FIELD_IDS = Set.of(
-            "kmu_map_politics_visuals_presenceRibbons_uncontestedEnabled",
-            "kmu_map_dev_visibilityOverrides_showUndiscoveredMarkets",
-            "kmu_map_dev_visibilityOverrides_showHiddenSystems");
 
     // A field id as the sources spell it: quoted, so a mention in prose or a comment does not count
     // as reading the field.
@@ -477,11 +456,7 @@ final class LunaSettingsCsvIntegrationTest {
         void everyFieldIdNamedBySourceIsDeclaredInTheFile() {
 
             var declaredFieldIds = Stream
-                .of(
-                    readDeclaredFieldIds().stream(),
-                    NON_SETTINGS_PREFIXED_IDS.stream(),
-                    RETIRED_FIELD_IDS.stream())
-                .flatMap(ids -> ids)
+                .concat(readDeclaredFieldIds().stream(), NON_SETTINGS_PREFIXED_IDS.stream())
                 .toList();
 
             assertThat(readFieldIdLiteralsInMainSources())
@@ -492,35 +467,6 @@ final class LunaSettingsCsvIntegrationTest {
                     MAIN_SOURCE_ROOT,
                     SETTINGS_CSV)
                 .isSubsetOf(declaredFieldIds);
-        }
-    }
-
-    @Nested
-    class RetiredFieldIds {
-
-        @Test
-        void noRetiredFieldIdIsStillDeclaredInTheFile() {
-
-            assertThat(readDeclaredFieldIds())
-                .as(
-                    "rows %s still declares for ids listed as retired, so a field the mod treats as"
-                        + " withdrawn is still on the settings screen - and the sweep at load"
-                        + " deletes the value the player just set on it",
-                    SETTINGS_CSV)
-                .doesNotContainAnyElementsOf(RETIRED_FIELD_IDS);
-        }
-
-        @Test
-        void everyRetiredFieldIdIsStillNamedBySomeSource() {
-            // The sweep is the only thing that may name one, and it is what stops the orphaned
-            // value travelling in the player's file forever. An id listed here and named nowhere
-            // is a sweep that was dropped along with the reader it belonged to.
-            assertThat(RETIRED_FIELD_IDS)
-                .as(
-                    "ids listed as retired that no source under %s names, so nothing takes their"
-                        + " orphaned values out of the player's stored settings",
-                    MAIN_SOURCE_ROOT)
-                .isSubsetOf(readFieldIdLiteralsInMainSources());
         }
     }
 

@@ -4,7 +4,6 @@ import kmlib.logging.KmLogging;
 import kmlib.settings.LabeledChoice;
 import kmlib.settings.LabeledChoices;
 import kmlib.settings.LunaSettingsReader;
-import kmlib.settings.LunaSettingsWriter;
 
 import kmu.KmuMod;
 
@@ -35,20 +34,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * same reads against the same id - and because a fallback that mirrors a CSV default belongs
  * beside the accessor that answers with it, not beside the reader that fetches it.
  *
+ * <p>Every field id spells the tab path a player finds the row under, segment by segment -
+ * {@code kmu_<tab>_<section>_<knob>} - so a knob's stored key says where it is set rather than
+ * which feature first wanted it. A switch names itself as a predicate ({@code is}, {@code are},
+ * {@code should}) so its id reads as the question the row answers.
+ *
  * <p>A LunaLib field id is the key its value is stored under, so ids are frozen once
  * shipped: renaming one resets that setting for every existing player, exactly as a
- * persisted class or memory key cannot be renamed.
- *
- * <p>A diagnostic that defaults off is the one id worth renaming anyway. What a rename
- * costs is a value a player set on purpose, and a toggle that draws the map's own workings
- * is switched on to answer a question and off again after - so there is nothing to reset,
- * and the id can be made to say what its subject actually is rather than which layer
- * happened to want it first.
- *
- * <p>{@link KmuRetiredSettings} is the counterpart to that freeze, holding the ids of fields
- * withdrawn since shipping and sweeping their orphaned values at load. It reaches the store
- * through here for the reason the three above do - the mod id is bound in one place - and holds
- * its ids apart from theirs because a retired id has no reader to be paired with.
+ * persisted class or memory key cannot be renamed. LunaLib only ever adds - it seeds a default
+ * for every row the shipped table declares and prunes nothing - so a value left behind by a
+ * renamed or withdrawn row stays in the player's settings file unread rather than being
+ * cleaned up, and would be handed to any later field that reused the id.
  */
 public final class KmuLunaSettings {
 
@@ -59,7 +55,7 @@ public final class KmuLunaSettings {
     // a settings id and a logger namespace.
     private static final String MOD_ID = KmuMod.MOD_ID;
     private static final String LOGGER_ROOT = "kmu";
-    private static final String LOG_LEVEL_FIELD = "kmu_logLevel";
+    private static final String LOG_LEVEL_FIELD = "kmu_dev_logging_level";
 
     // Bumped on every change to KMU's LunaLib settings. Consumers that cache
     // derived state (e.g. the political-map overlay) read this revision and
@@ -105,14 +101,6 @@ public final class KmuLunaSettings {
      */
     public static int getSettingsRevision() {
         return settingsRevision.get();
-    }
-
-    // Sheds a retired field's stored value, binding this mod's settings id the way the reads below
-    // do. The only write here, and it writes nothing: what it removes is a key no accessor names,
-    // so no listener is told and no consumer has anything to rebuild over. Which ids are retired is
-    // KmuRetiredSettings', that being a list with no reader rather than settings machinery.
-    static void clearSetting(String fieldId) {
-        LunaSettingsWriter.removeSetting(MOD_ID, fieldId);
     }
 
     // Reads any Radio field and maps its stored label back to a choice, falling back on that

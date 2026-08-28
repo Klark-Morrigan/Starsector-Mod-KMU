@@ -11,21 +11,12 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
  * arrive through this class - which is what stops the framework depending on a feature for
  * its own appearance.
  *
- * <p>Many field ids read as the political map's - {@code kmu_politicalMapSidebar*},
- * {@code kmu_politicalMapAnchor*}, {@code kmu_politicalMapBorderWeldTolerance} - while the
- * getters over them are named for the framework that reads them. The ids predate the
- * framework and cannot follow it, being frozen for the reason {@link KmuLunaSettings}
- * gives. A getter is a Java name and costs nothing to change, so the mismatch is parked
- * where it does no harm - the Java side says which half of the map code owns a knob, the
- * stored key stays put.
- *
- * <p>The visibility overrides and the axis diagnostics below are the exception that rule
- * allows: a toggle defaulting off holds nothing a rename could cost, so their ids say the
- * tab and section a player finds them under - {@code kmu_map_visibility_overrides_*} and
- * {@code kmu_map_dev_diagnostics_*} - rather than the layer that first wanted them. The
- * overrides took that allowance twice, having shipped under {@code kmu_map_dev_*} before
- * they earned a tab of their own; {@link KmuRetiredSettings} sweeps what the old ids left
- * in the player's settings file.
+ * <p>Every field id here spells the tab and section a player finds the row under, the way
+ * {@link KmuLunaSettings} states: {@code kmu_map_visuals_sidebar_*} for the overlay box,
+ * {@code kmu_map_dev_labelAnchors_*} for the anchor search, {@code kmu_map_visibility_overrides_*}
+ * for the reveal gates. So an id says where a knob is set rather than which layer first wanted it,
+ * and a knob moving between tabs is a rename - which costs the player's stored value, and is why a
+ * section is worth settling before it ships.
  *
  * <p>The knobs lay out across six tabs. {@code Map - Visuals} carries the overlay
  * sidebar, the map labels, the two upper hover tiers and how tightly a hover box is set -
@@ -55,22 +46,22 @@ public final class KmuMapLayerSettings {
     // corner; border width frames it (0 = no border); opacity is its background
     // translucency.
     private static final String SIDEBAR_PADDING_TOP_FIELD =
-        "kmu_politicalMapSidebarPaddingTop";
+        "kmu_map_visuals_sidebar_paddingTop";
     private static final String SIDEBAR_PADDING_LEFT_FIELD =
-        "kmu_politicalMapSidebarPaddingLeft";
+        "kmu_map_visuals_sidebar_paddingLeft";
     private static final String SIDEBAR_PADDING_BOTTOM_FIELD =
-        "kmu_politicalMapSidebarPaddingBottom";
+        "kmu_map_visuals_sidebar_paddingBottom";
     private static final String SIDEBAR_BORDER_WIDTH_FIELD =
-        "kmu_politicalMapSidebarBorderWidth";
+        "kmu_map_visuals_sidebar_borderWidth";
     private static final String SIDEBAR_OPACITY_FIELD =
-        "kmu_politicalMapSidebarOpacity";
+        "kmu_map_visuals_sidebar_opacity";
 
     // How long the sidebar's collapse handle takes to fold the body to its docked rail (and
     // unfold it), in seconds; 0 snaps it instantly. Player-facing animation pace, so it sits
     // in the Overlay sidebar section of the Map - Visuals tab beside the box's other
     // appearance knobs.
     private static final String SIDEBAR_COLLAPSE_SECONDS_FIELD =
-        "kmu_politicalMapSidebarCollapseSeconds";
+        "kmu_map_visuals_sidebar_collapseSeconds";
 
     // Overlay sidebar colour fields (Map - Visuals tab), their own section below the box's
     // dimensions: which palette the panel is coloured from, and which colour the collapse
@@ -78,9 +69,9 @@ public final class KmuMapLayerSettings {
     // option resolves through whichever scheme is chosen, so a player changing one is very
     // likely looking for the other.
     private static final String SIDEBAR_COLOUR_SCHEME_FIELD =
-        "kmu_politicalMapSidebarColourScheme";
+        "kmu_map_visuals_sidebar_colours_scheme";
     private static final String SIDEBAR_CHEVRON_COLOR_FIELD =
-        "kmu_politicalMapSidebarChevronColor";
+        "kmu_map_visuals_sidebar_colours_chevron";
 
     // Intel-screen overlay field (Map - Visuals tab): the same sidebar box drawn on the intel
     // screen sits flush against the left edge of that screen's map preview (the "visor") and
@@ -88,7 +79,7 @@ public final class KmuMapLayerSettings {
     // / fuel-range toggles at the top of the intel map. The visor's height caps the box, so no
     // left or bottom knob is needed.
     private static final String INTEL_SIDEBAR_PADDING_TOP_FIELD =
-        "kmu_politicalMapIntelSidebarPaddingTop";
+        "kmu_map_visuals_sidebar_intelPaddingTop";
 
     // Diagnostics (Map - Dev tab): how hard each sidebar row's hard-edged labels read. Both rows are
     // lettered in atlases carrying no antialiasing of their own, which the font loader hands over
@@ -97,9 +88,9 @@ public final class KmuMapLayerSettings {
     // intel row against that screen's raised buttons, the map row against the Sector/System tabs a
     // tab-height above it, and the two settled at opposite ends of the range.
     private static final String INTEL_SIDEBAR_PIXEL_FONT_SHARPNESS_FIELD =
-        "kmu_dev_map_ui_fontSharpness_tabHeaders_sidebar_intelScreen";
+        "kmu_map_dev_ui_fontSharpness_tabHeaders_sidebar_intelScreen";
     private static final String MAP_SIDEBAR_PIXEL_FONT_SHARPNESS_FIELD =
-        "kmu_dev_map_ui_fontSharpness_tabHeaders_sidebar_mMap";
+        "kmu_map_dev_ui_fontSharpness_tabHeaders_sidebar_mMap";
 
     // Hover tiers, the top two (Map - Visuals tab): whether the map answers the cursor at all,
     // and then whether each kind of answer does - both across every map layer. The master gates
@@ -110,11 +101,11 @@ public final class KmuMapLayerSettings {
     // the other layers' with it. The lower two ids read as the political map's because they
     // predate the framework - the mismatch this class's note above explains.
     private static final String HOVERING_ENABLED_FIELD =
-        "kmu_mapVisualsHoveringEnabled";
+        "kmu_map_visuals_hovering_isEnabled";
     private static final String HOVER_EFFECTS_ENABLED_FIELD =
-        "kmu_politicalMapHoverEnabled";
+        "kmu_map_visuals_hovering_areEffectsEnabled";
     private static final String HOVER_TOOLTIP_ENABLED_FIELD =
-        "kmu_politicalMapHoverTooltipEnabled";
+        "kmu_map_visuals_hovering_areTooltipsEnabled";
 
     // Compatibility with maps this mod does not own (Map - Compatibility tab). The hook the layers
     // draw through is the sector map's by convention only, and a mod that builds a map of its own
@@ -122,7 +113,7 @@ public final class KmuMapLayerSettings {
     // where it was not expected, and defaults off: a foreign map drawing the layers is a sight the
     // player can judge for themselves.
     private static final String MAP_LAYERS_ONLY_ON_THEIR_HOSTS_FIELD =
-        "kmu_map_compatibility_foreignMapSurfaces_mapLayersOnlyOnTheirHosts";
+        "kmu_map_compatibility_foreignMapSurfaces_areLayersConstrainedToTheirHosts";
 
     // What the layers may answer the cursor on, beside it. Stated as two permissions rather than as
     // one restriction, because a tab holding a switch that grants next to one that restricts cannot
@@ -133,9 +124,9 @@ public final class KmuMapLayerSettings {
     // on, the game-space one adds nothing and says nothing wrong, so no control has to prevent the
     // combination and no reader has to hold three named states in mind to see what one tick box does.
     private static final String MAP_LAYER_MOUSEOVER_IS_GLOBAL_FIELD =
-        "kmu_map_compatibility_foreignMapSurfaces_mapLayerMouseoverIsGlobal";
+        "kmu_map_compatibility_foreignMapSurfaces_isMouseoverGlobal";
     private static final String MAP_LAYER_MOUSEOVER_IN_GAME_SPACE_FIELD =
-        "kmu_map_compatibility_foreignMapSurfaces_mapLayerMouseoverInGameSpace";
+        "kmu_map_compatibility_foreignMapSurfaces_isMouseoverEnabledInGameSpace";
 
     // The one foreign map surface named rather than described (Map - Compatibility tab). Random
     // Assortment of Things puts a sector map where the campaign radar was, which the general
@@ -147,7 +138,7 @@ public final class KmuMapLayerSettings {
     // saved rather than by what the mode is called here; the tab prefix carries "compatibility"
     // either way.
     private static final String RANDOM_ASSORTMENT_OF_THINGS_COMPATIBILITY_MODE_FIELD =
-        "kmu_map_compatibility_foreignMapSurfaces_randomAssortmentOfThingsMode";
+        "kmu_map_compatibility_foreignMapSurfaces_isRandomAssortmentOfThingsModeEnabled";
 
     // Hover tooltip density (Map - Visuals tab): how tightly a hover box is set, across every map
     // layer. The shrink is how much smaller each step of indent draws than the step above it; the
@@ -210,9 +201,9 @@ public final class KmuMapLayerSettings {
     // cell edges into one outline. Always applied - it is upstream of the smoothing passes a
     // layer may gate - so it has no switch of its own.
     private static final String BORDER_WELD_TOLERANCE_FIELD =
-        "kmu_politicalMapBorderWeldTolerance";
+        "kmu_map_dev_borderTracing_weldTolerance";
     private static final String BORDER_MITER_LIMIT_FIELD =
-        "kmu_politicalMapBorderMiterLimit";
+        "kmu_map_dev_borderTracing_miterLimit";
 
     // Label anchors (Map - Dev tab): the modifiers of the per-cluster label-anchor search -
     // the straight line a cluster's name will sit on, chosen by scoring many candidate
@@ -229,29 +220,29 @@ public final class KmuMapLayerSettings {
     // cost knob beside the two counts and the one that says how much of the search is
     // spent per candidate rather than how many there are.
     private static final String ANCHOR_DIRECTION_COUNT_FIELD =
-        "kmu_politicalMapAnchorDirectionCount";
+        "kmu_map_dev_labelAnchors_directionCount";
     private static final String ANCHOR_OFFSET_COUNT_FIELD =
-        "kmu_politicalMapAnchorOffsetCount";
+        "kmu_map_dev_labelAnchors_offsetCount";
     private static final String ANCHOR_VERTICAL_PENALTY_STRENGTH_FIELD =
-        "kmu_politicalMapAnchorVerticalPenaltyStrength";
+        "kmu_map_dev_labelAnchors_verticalPenaltyStrength";
     private static final String ANCHOR_VERTICAL_PENALTY_EXPONENT_FIELD =
-        "kmu_politicalMapAnchorVerticalPenaltyExponent";
+        "kmu_map_dev_labelAnchors_verticalPenaltyExponent";
     private static final String ANCHOR_MAX_SLANT_DEGREES_FIELD =
-        "kmu_politicalMapAnchorMaxSlantDegrees";
+        "kmu_map_dev_labelAnchors_maxSlantDegrees";
     private static final String ANCHOR_END_INSET_MULTIPLE_FIELD =
-        "kmu_politicalMapAnchorEndInsetMultiple";
+        "kmu_map_dev_labelAnchors_endInsetMultiple";
     private static final String ANCHOR_ICON_CLEARANCE_FIELD =
-        "kmu_politicalMapAnchorIconClearance";
+        "kmu_map_dev_labelAnchors_iconClearance";
     private static final String ANCHOR_FONT_HEIGHT_TOLERANCE_FIELD =
-        "kmu_politicalMapAnchorFontHeightTolerance";
+        "kmu_map_dev_labelAnchors_fontHeightTolerance";
 
     // Debug band-quad knobs (Map - Dev tab, Label anchors): the opacity is the band quad's
     // fill alpha, and the line opacity the separate alpha of that box's strokes so the
     // outline can read stronger than the fill it sits on.
     private static final String ANCHOR_BAND_OPACITY_FIELD =
-        "kmu_politicalMapAnchorBandOpacity";
+        "kmu_map_dev_labelAnchors_bandOpacity";
     private static final String ANCHOR_BAND_LINE_OPACITY_FIELD =
-        "kmu_politicalMapAnchorBandLineOpacity";
+        "kmu_map_dev_labelAnchors_bandLineOpacity";
 
     // Name-fit knobs (Map - Visuals tab, Map labels): a label is a box with
     // girth, sized to the space it sits in and to the owner's actual name - player-facing
@@ -260,13 +251,13 @@ public final class KmuMapLayerSettings {
     // readability floor and the oversize ceiling); max lines and line spacing let a
     // length-poor cluster wrap the name into a taller-font block instead of shrinking it.
     private static final String NAME_MIN_FONT_SIZE_FIELD =
-        "kmu_politicalMapNameMinFontSize";
+        "kmu_map_visuals_labels_minFontSize";
     private static final String NAME_MAX_FONT_SIZE_FIELD =
-        "kmu_politicalMapNameMaxFontSize";
+        "kmu_map_visuals_labels_maxFontSize";
     private static final String NAME_MAX_LINES_FIELD =
-        "kmu_politicalMapNameMaxLines";
+        "kmu_map_visuals_labels_maxLines";
     private static final String NAME_LINE_SPACING_FIELD =
-        "kmu_politicalMapNameLineSpacing";
+        "kmu_map_visuals_labels_lineSpacing";
 
     // Diagnostics (Map - Dev tab): the two extra anchor lines layered under the accepted one,
     // each behind its own toggle so the anchor overlay stays readable by default. The
@@ -304,21 +295,16 @@ public final class KmuMapLayerSettings {
     //
     // Each reaches exactly the one thing it names. A knob that also cleared a neighbour's gate
     // would show a player a second thing they never asked for, with nothing on screen saying why.
-    //
-    // The ids are the framework's own rather than inherited, unlike most above, and the two that
-    // shipped under kmu_map_dev_* were renamed here rather than frozen: a toggle defaulting off
-    // holds nothing a rename could cost, which is the allowance this class's note above states.
-    // KmuRetiredSettings sweeps what they left behind.
     private static final String SHOW_UNSEEN_ABANDONED_STATIONS_FIELD =
-        "kmu_map_visibility_overrides_showUnseenAbandonedStations";
+        "kmu_map_visibility_overrides_shouldShowUnseenAbandonedStations";
     private static final String SHOW_UNSEEN_HIDDEN_MARKETS_FIELD =
-        "kmu_map_visibility_overrides_showUnseenHiddenMarkets";
+        "kmu_map_visibility_overrides_shouldShowUnseenHiddenMarkets";
     private static final String SHOW_UNDISCOVERED_MARKETS_FIELD =
-        "kmu_map_visibility_overrides_showUndiscoveredMarkets";
+        "kmu_map_visibility_overrides_shouldShowUndiscoveredMarkets";
     private static final String SHOW_DECIVILISED_WORLDS_AT_SURVEY_LEVEL_FIELD =
-        "kmu_map_visibility_overrides_showDecivilisedWorldsAtSurveyLevel";
+        "kmu_map_visibility_overrides_decivilisedWorldSurveyLevel";
     private static final String SHOW_HIDDEN_SYSTEMS_FIELD =
-        "kmu_map_visibility_overrides_showHiddenSystems";
+        "kmu_map_visibility_overrides_shouldShowHiddenSystems";
 
     // Fallbacks used only when a setting is read before LunaLib has loaded it;
     // the live values come from LunaLib. These mirror the defaultValue column in

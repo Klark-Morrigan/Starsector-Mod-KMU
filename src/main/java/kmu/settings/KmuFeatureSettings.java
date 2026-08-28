@@ -16,7 +16,7 @@ public final class KmuFeatureSettings {
     // Whether the sector map's overlays are wired at all: the layers, their render surfaces, the
     // sidebar and the hover box. Read on load and again whenever the settings change, so switching
     // it takes effect on the spot.
-    private static final String MAP_LAYERS_FIELD = "kmu_features_toggles_mapLayers";
+    private static final String MAP_LAYERS_FIELD = "kmu_features_toggles_areMapLayersEnabled";
 
     private static final boolean DEFAULT_MAP_LAYERS = true;
 

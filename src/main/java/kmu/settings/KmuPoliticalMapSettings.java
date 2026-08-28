@@ -78,55 +78,55 @@ public final class KmuPoliticalMapSettings {
     // own names without touching independent space's. A fade, not a fit knob - it dims the
     // name colour without touching the box the fit sized.
     private static final String FACTION_OUTER_BORDER_COLOR_FIELD =
-        "kmu_politicalMapFactionOuterBorderColor";
+        "kmu_map_politics_visuals_faction_outerBorderColour";
     private static final String FACTION_OUTER_BORDER_OPACITY_FIELD =
-        "kmu_politicalMapFactionOuterBorderOpacity";
+        "kmu_map_politics_visuals_faction_outerBorderOpacity";
     private static final String FACTION_OUTER_BORDER_WIDTH_FIELD =
-        "kmu_politicalMapFactionOuterBorderWidth";
+        "kmu_map_politics_visuals_faction_outerBorderWidth";
     private static final String FACTION_INNER_BORDER_COLOR_FIELD =
-        "kmu_politicalMapFactionInnerBorderColor";
+        "kmu_map_politics_visuals_faction_innerBorderColour";
     private static final String FACTION_INNER_BORDER_OPACITY_FIELD =
-        "kmu_politicalMapFactionInnerBorderOpacity";
+        "kmu_map_politics_visuals_faction_innerBorderOpacity";
     private static final String FACTION_INNER_BORDER_WIDTH_FIELD =
-        "kmu_politicalMapFactionInnerBorderWidth";
-    private static final String FACTION_FILL_COLOR_FIELD = "kmu_politicalMapFactionFillColor";
-    private static final String FACTION_FILL_OPACITY_FIELD = "kmu_politicalMapFactionFillOpacity";
-    private static final String FACTION_NAME_OPACITY_FIELD = "kmu_politicalMapFactionNameOpacity";
+        "kmu_map_politics_visuals_faction_innerBorderWidth";
+    private static final String FACTION_FILL_COLOR_FIELD = "kmu_map_politics_visuals_faction_fillColour";
+    private static final String FACTION_FILL_OPACITY_FIELD = "kmu_map_politics_visuals_faction_fillOpacity";
+    private static final String FACTION_NAME_OPACITY_FIELD = "kmu_map_politics_visuals_faction_nameOpacity";
 
     // Independent (independent-held cluster) style fields, the same shape as faction (its
     // name opacity fades only the independent group's names).
     private static final String INDEPENDENT_OUTER_BORDER_COLOR_FIELD =
-        "kmu_politicalMapIndependentOuterBorderColor";
+        "kmu_map_politics_visuals_independent_outerBorderColour";
     private static final String INDEPENDENT_OUTER_BORDER_OPACITY_FIELD =
-        "kmu_politicalMapIndependentOuterBorderOpacity";
+        "kmu_map_politics_visuals_independent_outerBorderOpacity";
     private static final String INDEPENDENT_OUTER_BORDER_WIDTH_FIELD =
-        "kmu_politicalMapIndependentOuterBorderWidth";
+        "kmu_map_politics_visuals_independent_outerBorderWidth";
     private static final String INDEPENDENT_INNER_BORDER_COLOR_FIELD =
-        "kmu_politicalMapIndependentInnerBorderColor";
+        "kmu_map_politics_visuals_independent_innerBorderColour";
     private static final String INDEPENDENT_INNER_BORDER_OPACITY_FIELD =
-        "kmu_politicalMapIndependentInnerBorderOpacity";
+        "kmu_map_politics_visuals_independent_innerBorderOpacity";
     private static final String INDEPENDENT_INNER_BORDER_WIDTH_FIELD =
-        "kmu_politicalMapIndependentInnerBorderWidth";
+        "kmu_map_politics_visuals_independent_innerBorderWidth";
     private static final String INDEPENDENT_FILL_COLOR_FIELD =
-        "kmu_politicalMapIndependentFillColor";
+        "kmu_map_politics_visuals_independent_fillColour";
     private static final String INDEPENDENT_FILL_OPACITY_FIELD =
-        "kmu_politicalMapIndependentFillOpacity";
+        "kmu_map_politics_visuals_independent_fillOpacity";
     private static final String INDEPENDENT_NAME_OPACITY_FIELD =
-        "kmu_politicalMapIndependentNameOpacity";
+        "kmu_map_politics_visuals_independent_nameOpacity";
 
     // Decivilised and uninhabited (factionless) style fields. Neither has a colour choice:
     // a factionless cell has no faction palette to pick from, so it always paints in the
     // shared neutral colour and the opacity knobs alone decide what shows.
     private static final String DECIVILISED_BORDER_OPACITY_FIELD =
-        "kmu_politicalMapDecivilisedBorderOpacity";
+        "kmu_map_politics_visuals_decivilised_borderOpacity";
     private static final String DECIVILISED_BORDER_WIDTH_FIELD =
-        "kmu_politicalMapDecivilisedBorderWidth";
+        "kmu_map_politics_visuals_decivilised_borderWidth";
     private static final String DECIVILISED_FILL_OPACITY_FIELD =
-        "kmu_politicalMapDecivilisedFillOpacity";
+        "kmu_map_politics_visuals_decivilised_fillOpacity";
     private static final String UNINHABITED_BORDER_OPACITY_FIELD =
-        "kmu_politicalMapUninhabitedBorderOpacity";
+        "kmu_map_politics_visuals_uninhabited_borderOpacity";
     private static final String UNINHABITED_BORDER_WIDTH_FIELD =
-        "kmu_politicalMapUninhabitedBorderWidth";
+        "kmu_map_politics_visuals_uninhabited_borderWidth";
 
     // Recede styling settings (Map - Politics - Visuals tab): the two settings-screen knobs
     // supplementary to the sidebar recede toggles, shared across both recede sets (the spotlight
@@ -137,11 +137,11 @@ public final class KmuPoliticalMapSettings {
     // independent-held space. The toggles themselves are sidebar-only per-save choices (sector
     // memory), not LunaLib fields, since every LunaLib field would render on a settings tab.
     private static final String ALLIANCE_MUTED_OPACITY_MODIFIER_FIELD =
-        "kmu_politicalMapAllianceMutedOpacityModifier";
+        "kmu_map_politics_visuals_styleMutators_mutedOpacityModifier";
     private static final String DESATURATION_DARKENING_FIELD =
-        "kmu_politicalMapDesaturationDarkening";
+        "kmu_map_politics_visuals_styleMutators_desaturationDarkening";
     private static final String PRESENCE_LIGHTENING_FIELD =
-        "kmu_politicalMapPresenceLightening";
+        "kmu_map_politics_visuals_styleMutators_presenceLightening";
 
     // Presence band fields (Map - Politics - Visuals tab): the banded stroke a cell draws inside
     // its own border to say which factions hold colonies in that system and how many. The switch
@@ -161,15 +161,15 @@ public final class KmuPoliticalMapSettings {
     // that a band does keep clear, how much of the ring a name is taken to occupy - the box its
     // placement reserved, or the words as drawn.
     private static final String RIBBON_ENABLED_FIELD =
-        "kmu_map_politics_visuals_presenceRibbons_enabled";
+        "kmu_map_politics_visuals_presenceRibbons_areEnabled";
     private static final String RIBBON_UNCONTESTED_SHORT_RUNS_FIELD =
-        "kmu_map_politics_visuals_presenceRibbons_uncontestedShortRuns";
+        "kmu_map_politics_visuals_presenceRibbons_shouldShortenUncontestedRuns";
     private static final String RIBBON_KEEP_CLEAR_OF_NAMES_FIELD =
-        "kmu_map_politics_visuals_presenceRibbons_keepClearOfNames";
+        "kmu_map_politics_visuals_presenceRibbons_shouldKeepClearOfNames";
     private static final String RIBBON_NAME_CLEARANCE_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_nameClearance";
     private static final String RIBBON_ALWAYS_DRAWN_FIELD =
-        "kmu_map_politics_visuals_presenceRibbons_alwaysDrawn";
+        "kmu_map_politics_visuals_presenceRibbons_areAlwaysDrawn";
     private static final String RIBBON_WIDTH_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_width";
     private static final String RIBBON_INSET_PAD_FIELD =
@@ -184,9 +184,9 @@ public final class KmuPoliticalMapSettings {
     // with the global switch of its kind, so a layer switch only takes away feedback the tiers
     // above already allow - which is what lets one layer keep its box while another's is off.
     private static final String LAYER_HOVER_EFFECTS_ENABLED_FIELD =
-        "kmu_mapPoliticsVisualsHoverEffectsEnabled";
+        "kmu_map_politics_visuals_hoverHighlight_areEffectsEnabled";
     private static final String LAYER_HOVER_TOOLTIP_ENABLED_FIELD =
-        "kmu_mapPoliticsVisualsHoverTooltipEnabled";
+        "kmu_map_politics_visuals_hoverTooltip_isEnabled";
 
     // Hover highlight styling (Map - Politics - Visuals tab): what the halo around the hovered
     // territory's frontier and the wash over the one hovered cell look like, both drawn in the
@@ -198,23 +198,23 @@ public final class KmuPoliticalMapSettings {
     // live on the open map - which is the point of exposing them: the look is dialed in-engine
     // against real territory rather than guessed at build time.
     private static final String HOVER_HIGHLIGHT_COLOR_FIELD =
-        "kmu_politicalMapHoverHighlightColor";
+        "kmu_map_politics_visuals_hoverHighlight_colour";
     private static final String HOVER_GLOW_OPACITY_FIELD =
-        "kmu_politicalMapHoverGlowOpacity";
+        "kmu_map_politics_visuals_hoverHighlight_glowOpacity";
     private static final String HOVER_GLOW_WIDTH_FIELD =
-        "kmu_politicalMapHoverGlowWidth";
+        "kmu_map_politics_visuals_hoverHighlight_glowWidth";
     private static final String HOVER_GLOW_LAYERS_FIELD =
-        "kmu_politicalMapHoverGlowLayers";
+        "kmu_map_politics_visuals_hoverHighlight_glowLayers";
     private static final String HOVER_GLOW_PULSE_STRENGTH_FIELD =
-        "kmu_politicalMapHoverGlowPulseStrength";
+        "kmu_map_politics_visuals_hoverHighlight_glowPulseStrength";
     private static final String HOVER_GLOW_PULSE_PERIOD_FIELD =
-        "kmu_politicalMapHoverGlowPulsePeriod";
+        "kmu_map_politics_visuals_hoverHighlight_glowPulsePeriod";
     private static final String HOVER_WASH_OPACITY_FIELD =
-        "kmu_politicalMapHoverWashOpacity";
+        "kmu_map_politics_visuals_hoverHighlight_washOpacity";
     private static final String HOVER_WASH_OUTLINE_OPACITY_FIELD =
-        "kmu_politicalMapHoverWashOutlineOpacity";
+        "kmu_map_politics_visuals_hoverHighlight_washOutlineOpacity";
     private static final String HOVER_WASH_OUTLINE_WIDTH_FIELD =
-        "kmu_politicalMapHoverWashOutlineWidth";
+        "kmu_map_politics_visuals_hoverHighlight_washOutlineWidth";
 
     // Nebula draw order (Map - Politics - Visuals tab): which side of the map's own nebulae each
     // of the overlay's four visible sub-layers paints on. The map draws its nebulae between two
@@ -248,33 +248,33 @@ public final class KmuPoliticalMapSettings {
     // collapses at zero stability. All fold into one DominanceRules read once per
     // resolution pass.
     private static final String COLONY_SIZE_WEIGHT_FIELD =
-        "kmu_politicalMapColonySizeWeight";
+        "kmu_map_politics_domination_colonySize_weight";
     private static final String HIDDEN_MARKET_SCALING_FIELD =
-        "kmu_politicalMapHiddenMarketScaling";
+        "kmu_map_politics_domination_hiddenMarkets_scaling";
     private static final String HIDDEN_MARKET_FIXED_WEIGHT_FIELD =
-        "kmu_politicalMapHiddenMarketFixedWeight";
+        "kmu_map_politics_domination_hiddenMarkets_fixedWeight";
     private static final String STABILITY_WEIGHS_DOMINANCE_FIELD =
-        "kmu_politicalMapStabilityWeighsDominance";
+        "kmu_map_politics_domination_stability_shouldWeigh";
     private static final String NORMAL_LOW_STABILITY_PENALTY_FIELD =
-        "kmu_politicalMapNormalLowStabilityPenalty";
+        "kmu_map_politics_domination_colonySize_lowStabilityPenalty";
     private static final String STATION_WEIGHS_DOMINANCE_FIELD =
-        "kmu_politicalMapStationWeighsDominance";
+        "kmu_map_politics_domination_stations_shouldWeigh";
     private static final String STATION_WEIGHT_FIELD =
-        "kmu_politicalMapStationWeight";
+        "kmu_map_politics_domination_stations_weight";
     private static final String STATION_HIDDEN_MARKET_RATE_FIELD =
-        "kmu_politicalMapStationHiddenMarketRate";
+        "kmu_map_politics_domination_stations_hiddenMarketRate";
     private static final String STATION_LOW_STABILITY_PENALTY_FIELD =
-        "kmu_politicalMapStationLowStabilityPenalty";
+        "kmu_map_politics_domination_stations_lowStabilityPenalty";
     private static final String PATROL_WEIGHS_DOMINANCE_FIELD =
-        "kmu_politicalMapPatrolWeighsDominance";
+        "kmu_map_politics_domination_patrols_shouldWeigh";
     private static final String PATROL_SMALL_WEIGHT_FIELD =
-        "kmu_politicalMapPatrolSmallWeight";
+        "kmu_map_politics_domination_patrols_smallWeight";
     private static final String PATROL_MEDIUM_WEIGHT_FIELD =
-        "kmu_politicalMapPatrolMediumWeight";
+        "kmu_map_politics_domination_patrols_mediumWeight";
     private static final String PATROL_LARGE_WEIGHT_FIELD =
-        "kmu_politicalMapPatrolLargeWeight";
+        "kmu_map_politics_domination_patrols_largeWeight";
     private static final String PATROL_LOW_STABILITY_PENALTY_FIELD =
-        "kmu_politicalMapPatrolLowStabilityPenalty";
+        "kmu_map_politics_domination_patrols_lowStabilityPenalty";
 
     // Cell geometry (Map - Dev tab): the resolution of the raw Voronoi cells, upstream of
     // any border shaping. Unlike the border fields below - which restyle fixed
@@ -282,7 +282,7 @@ public final class KmuPoliticalMapSettings {
     // it feeds the geometry rebuild. Every segment is a vertex on each frontier cell,
     // so it is the lever for trading map FPS against frontier smoothness.
     private static final String CELL_BOUND_SEGMENTS_FIELD =
-        "kmu_politicalMapCellBoundSegments";
+        "kmu_map_dev_cellGeometry_cellBoundSegments";
 
     // Cell reach (Map - Dev tab, Cell geometry): how far each system's territory extends into empty
     // space before the frontier bound closes it off. Sits beside the resolution knob above
@@ -290,7 +290,7 @@ public final class KmuPoliticalMapSettings {
     // cells the map is partitioned into - and both reseed the cells, so it feeds the geometry
     // rebuild rather than the drawables restyle.
     private static final String CELL_RADIUS_FIELD =
-        "kmu_politicalMapCellRadius";
+        "kmu_map_dev_cellGeometry_cellRadius";
 
     // National-border geometry (Map - Dev tab): the shape of the frontier stroked and filled
     // per cluster, exposed for live tuning rather than baked as constants. All feed the
@@ -303,23 +303,23 @@ public final class KmuPoliticalMapSettings {
     // height) from the resolved border before rounding. The gate leaves both knobs
     // unread when off, so their values survive for when it is switched back on.
     private static final String SAND_SPIKES_FIELD =
-        "kmu_politicalMapSandSpikes";
+        "kmu_map_dev_spikeSanding_isEnabled";
     private static final String BORDER_SPIKE_HEIGHT_FIELD =
-        "kmu_politicalMapBorderSpikeHeight";
+        "kmu_map_dev_spikeSanding_spikeHeight";
     private static final String BORDER_SPIKE_ANGLE_FIELD =
-        "kmu_politicalMapBorderSpikeAngle";
+        "kmu_map_dev_spikeSanding_spikeAngle";
 
     // Corner rounding: gate then its knobs. Replaces each sharp corner with an arc. The
     // gate leaves the radius, segments, and chamfer unread when off, and also covers the
     // factionless cell outlines, which reuse this same corner-rounding pass.
     private static final String ROUND_CORNERS_FIELD =
-        "kmu_politicalMapRoundCorners";
+        "kmu_map_dev_cornerRounding_isEnabled";
     private static final String BORDER_CORNER_RADIUS_FIELD =
-        "kmu_politicalMapBorderCornerRadius";
+        "kmu_map_dev_cornerRounding_cornerRadius";
     private static final String BORDER_CORNER_SEGMENTS_FIELD =
-        "kmu_politicalMapBorderCornerSegments";
+        "kmu_map_dev_cornerRounding_cornerSegments";
     private static final String BORDER_CHAMFER_ANGLE_FIELD =
-        "kmu_politicalMapBorderChamferAngle";
+        "kmu_map_dev_cornerRounding_chamferAngle";
     private static final String BORDER_ROUND_BELOW_ANGLE_FIELD =
         "kmu_map_dev_cornerRounding_angleThreshold";
 
@@ -335,19 +335,19 @@ public final class KmuPoliticalMapSettings {
     // player tuning how the hatch reads reaches for it beside the width it trades against -
     // a smoothed line reads wider and lighter than the same width stroked hard-edged.
     private static final String HATCH_SPACING_FIELD =
-        "kmu_politicalMapHatchSpacing";
+        "kmu_map_dev_hatchFill_spacing";
     private static final String HATCH_ANGLE_FIELD =
-        "kmu_politicalMapHatchAngle";
+        "kmu_map_dev_hatchFill_angle";
     private static final String HATCH_WIDTH_FIELD =
-        "kmu_politicalMapHatchWidth";
+        "kmu_map_dev_hatchFill_width";
     private static final String HATCH_SMOOTHING_FIELD =
-        "kmu_politicalMapHatchSmoothing";
+        "kmu_map_dev_hatchFill_isSmoothed";
 
     // Hatch fill - joining (Map - Dev tab): how near two of one hatch line's crossings must be to
     // count as the same stroke. Its own section because it tunes the merge that packs the
     // clipped crossings into segments, not the pattern those lines are laid out in.
     private static final String HATCH_JOIN_TOLERANCE_FIELD =
-        "kmu_politicalMapHatchJoinTolerance";
+        "kmu_map_dev_hatchJoining_tolerance";
 
     // Diagnostics (Map - Dev tab): draws the per-cluster label anchors (a centre dot and the
     // accepted label line in green) so the clustering and axis fit behind the map

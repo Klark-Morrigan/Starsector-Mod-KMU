@@ -16,7 +16,7 @@ public final class KmuMarketConditionSettings {
     // Market-conditions tab: whether the condition picker offers every market
     // condition, or only the planetary ones vanilla treats as hand-placeable.
     private static final String OFFER_ALL_CONDITIONS_FIELD =
-        "kmu_conditionsShowAll";
+        "kmu_mcm_conditions_shouldShowAll";
 
     // On by default: the picker is a hands-on condition manager, so it lists every
     // condition unless the player narrows it to vanilla's planetary set. Used only when the

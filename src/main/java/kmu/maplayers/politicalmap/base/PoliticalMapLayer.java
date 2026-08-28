@@ -46,7 +46,7 @@ public final class PoliticalMapLayer implements MapLayer {
     // Jumps here on P by default. Mirrors the Keycode default in LunaSettings.csv. This is a LunaLib
     // settings field id, not sector memory; it keeps its original spelling until a settings-side
     // migration renames the CSV field and carries the player's stored keybind across.
-    private static final String SHORTCUT_FIELD = "kmu_politicalMapFactionsKey";
+    private static final String SHORTCUT_FIELD = "kmu_map_keybinds_layers_factions";
 
     private PoliticalMapLayer() {
     }
