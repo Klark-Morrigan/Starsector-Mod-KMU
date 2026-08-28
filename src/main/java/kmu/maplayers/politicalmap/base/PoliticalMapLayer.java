@@ -5,7 +5,6 @@ import com.fs.starfarer.api.Global;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.ColumnSelectionBinder;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
@@ -37,26 +36,10 @@ public final class PoliticalMapLayer implements MapLayer {
     // in the active-tab memory key.
     private static final String LAYER_ID = "political_map";
 
-    // The id this tab stored before it was generalised from the faction layer into the view-neutral
-    // political-map tab. A pre-rename save holds this under the active-tab key; migrateLegacyStoredId
-    // rewrites it to LAYER_ID so the stored value tracks the current implementation and no stale
-    // spelling lingers in the save.
-    private static final String LEGACY_LAYER_ID = "factions";
-
     // LunaLib stores a rebound key under the field id.
     private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_factions";
 
     private PoliticalMapLayer() {
-    }
-
-    /**
-     * Rewrites a pre-rename save's stored tab id ({@link #LEGACY_LAYER_ID}) to the current
-     * {@link #LAYER_ID}, so the active-tab pick tracks the current implementation and the stale
-     * spelling does not linger in the save. A no-op when the save holds the current id or no pick.
-     * Call once on game load.
-     */
-    public static void migrateLegacyStoredId() {
-        MapLayerRegistry.migrateStoredLayerId(LEGACY_LAYER_ID, LAYER_ID);
     }
 
     @Override

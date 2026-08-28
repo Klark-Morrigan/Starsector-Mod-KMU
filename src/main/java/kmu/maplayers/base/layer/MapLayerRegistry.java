@@ -25,9 +25,8 @@ import java.util.List;
  * The set of layers and the default pick are supplied once at startup by a composition root
  * through {@link #registerLayers}, so a new view is added by registering it rather than by
  * editing this class. Each pick lives in sector memory under a stable key, so it serialises into
- * the save and survives reload; an untouched save resolves to the registered default. A pre-split
- * save stored one shared pick under an un-suffixed key; {@link #migrateLegacyActiveLayerKey} fans
- * that into both screens' keys on load and clears it, so no leftover key lingers.
+ * the save and survives reload; an untouched save resolves to the registered default, as does one
+ * holding an id no longer registered.
  */
 public final class MapLayerRegistry {
 
@@ -36,13 +35,9 @@ public final class MapLayerRegistry {
     private static final String MAP_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_map";
     private static final String INTEL_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_intel";
 
-    // The un-suffixed key a pre-split save stored the single shared pick under, before the map and
-    // intel screens each took their own key. Fanned into both screens' keys on load, then cleared.
-    private static final String LEGACY_ACTIVE_LAYER_KEY = "$kmu_political_active_layer";
-
     // Each screen's pick, persisted under its own frozen key. The map host draws through the map
     // selection and the overlay follows it; the intel host draws through the intel selection. Held here
-    // so both keys and the legacy migration that seeds them sit in one place.
+    // so both keys sit in one place.
     private static final PersistedActiveLayerSelection MAP_SELECTION =
         new PersistedActiveLayerSelection(MAP_ACTIVE_LAYER_KEY);
     private static final PersistedActiveLayerSelection INTEL_SELECTION =
@@ -145,36 +140,6 @@ public final class MapLayerRegistry {
     public static boolean isActive(MapLayer layer) {
         // Layers are singletons, so identity settles it without an id compare.
         return getActiveLayer() == layer;
-    }
-
-    /**
-     * Fans a pre-split save's shared active-layer pick from the un-suffixed legacy key into both screens'
-     * keys, then clears the legacy key, so an upgraded save keeps its pick on both screens (each then
-     * diverging independently) and no un-suffixed key lingers. A no-op on a save with no legacy key. Call
-     * once on game load, before {@link #migrateStoredLayerId} so a layer-id rewrite lands on the
-     * carried-over value.
-     */
-    public static void migrateLegacyActiveLayerKey() {
-        PersistedActiveLayerSelection.migrateLegacyKeyInto(
-            LEGACY_ACTIVE_LAYER_KEY,
-            MAP_SELECTION,
-            INTEL_SELECTION);
-    }
-
-    /**
-     * Rewrites each screen's stored pick from a layer's former id to its current one, so a save written
-     * before a layer's id was renamed tracks the current id in place rather than falling back to the
-     * default and leaving the stale id in the save. Both screens' keys are rewritten, so a pick fanned
-     * into both by {@link #migrateLegacyActiveLayerKey} tracks the rename on each. The mechanism only -
-     * the caller (which owns the concrete rename) supplies the ids, so this framework stays agnostic to
-     * which layers exist. A no-op before the sector exists or when a stored pick is not {@code legacyId}.
-     *
-     * @param legacyId  the id the layer stored before it was renamed
-     * @param currentId the layer's current id to rewrite the stored pick to
-     */
-    public static void migrateStoredLayerId(String legacyId, String currentId) {
-        MAP_SELECTION.migrateStoredLayerId(legacyId, currentId);
-        INTEL_SELECTION.migrateStoredLayerId(legacyId, currentId);
     }
 
     // The pick of the screen that is up: the intel screen's while its tab is the one open, the map

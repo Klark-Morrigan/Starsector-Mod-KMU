@@ -116,9 +116,8 @@ flowchart TD
     A --> O([What the overlay paints])
 ```
 
-Switching tabs on one screen leaves the other where it was. Both picks persist; a save written
-before the split stored one shared pick, which `migrateLegacyActiveLayerKey` fans into both keys on
-load.
+Switching tabs on one screen leaves the other where it was. Both picks persist; a save holding no
+pick, or one naming a layer no longer registered, resolves to the registered default.
 
 ## What is per screen
 

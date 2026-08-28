@@ -15,31 +15,25 @@ import org.mockito.MockedStatic;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * Pins the framework registry's contract with fake layers: the tab order it hands back, the pick an
- * untouched save resolves to, the frozen keys each screen's selection reads and writes, and how it fans a
- * pre-split save's shared pick into both screens' keys. The generic persisted-pick logic is
- * {@link PersistedActiveLayerSelectionTest}'s; this pins only what the registry adds - the frozen map,
- * intel, and legacy keys, and how {@link MapLayerRegistry#isActive} resolves which screen's pick is the
- * live one. The screens themselves are stand-in gates here: which concrete screens exist is the
- * composition root's business, and this pins only that the showing one wins.
+ * untouched save resolves to, and the frozen keys each screen's selection reads and writes. The generic
+ * persisted-pick logic is {@link PersistedActiveLayerSelectionTest}'s; this pins only what the registry
+ * adds - the frozen map and intel keys, and how {@link MapLayerRegistry#isActive} resolves which
+ * screen's pick is the live one. The screens themselves are stand-in gates here: which concrete screens
+ * exist is the composition root's business, and this pins only that the showing one wins.
  */
 final class MapLayerRegistryTest {
     // The frozen sector-memory keys, pinned as literals so a rename - which would silently reset every
-    // existing save - fails this test rather than shipping. The map and intel keys are the current
-    // per-screen ones; the legacy key is the pre-split un-suffixed key both are migrated from.
+    // existing save - fails this test rather than shipping. One per screen, so the two picks stay
+    // independent.
     private static final String MAP_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_map";
     private static final String INTEL_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_intel";
-    private static final String LEGACY_ACTIVE_LAYER_KEY = "$kmu_political_active_layer";
 
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);
@@ -183,100 +177,6 @@ final class MapLayerRegistryTest {
 
                 assertThat(MapLayerRegistry.isActive(secondLayerMock)).isTrue();
                 assertThat(MapLayerRegistry.isActive(firstLayerMock)).isFalse();
-            }
-        }
-    }
-
-    @Nested
-    class MigrateStoredLayerId {
-
-        @Test
-        void migrateStoredLayerIdRewritesEachScreensStoredPickWhenItIsTheLegacyId() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(MAP_ACTIVE_LAYER_KEY)).thenReturn(true);
-                when(memoryMock.getString(MAP_ACTIVE_LAYER_KEY)).thenReturn("old_id");
-                when(memoryMock.contains(INTEL_ACTIVE_LAYER_KEY)).thenReturn(true);
-                when(memoryMock.getString(INTEL_ACTIVE_LAYER_KEY)).thenReturn("old_id");
-
-                MapLayerRegistry.migrateStoredLayerId("old_id", "new_id");
-
-                verify(memoryMock).set(MAP_ACTIVE_LAYER_KEY, "new_id");
-                verify(memoryMock).set(INTEL_ACTIVE_LAYER_KEY, "new_id");
-            }
-        }
-
-        @Test
-        void migrateStoredLayerIdLeavesAPickThatIsNotTheLegacyId() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(MAP_ACTIVE_LAYER_KEY)).thenReturn(true);
-                when(memoryMock.getString(MAP_ACTIVE_LAYER_KEY)).thenReturn("some_current_id");
-                when(memoryMock.contains(INTEL_ACTIVE_LAYER_KEY)).thenReturn(true);
-                when(memoryMock.getString(INTEL_ACTIVE_LAYER_KEY)).thenReturn("some_current_id");
-
-                MapLayerRegistry.migrateStoredLayerId("old_id", "new_id");
-
-                verify(memoryMock, never()).set(anyString(), any());
-            }
-        }
-    }
-
-    @Nested
-    class MigrateLegacyActiveLayerKey {
-
-        @Test
-        void migrateLegacyActiveLayerKeyFansTheLegacyPickIntoBothKeysAndClearsTheLegacyKey() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(LEGACY_ACTIVE_LAYER_KEY)).thenReturn(true);
-                when(memoryMock.getString(LEGACY_ACTIVE_LAYER_KEY)).thenReturn("first");
-                when(memoryMock.contains(MAP_ACTIVE_LAYER_KEY)).thenReturn(false);
-                when(memoryMock.contains(INTEL_ACTIVE_LAYER_KEY)).thenReturn(false);
-
-                MapLayerRegistry.migrateLegacyActiveLayerKey();
-
-                verify(memoryMock).set(MAP_ACTIVE_LAYER_KEY, "first");
-                verify(memoryMock).set(INTEL_ACTIVE_LAYER_KEY, "first");
-                verify(memoryMock).unset(LEGACY_ACTIVE_LAYER_KEY);
-            }
-        }
-
-        @Test
-        void migrateLegacyActiveLayerKeySeedsOnlyTheEmptyKeyButStillClearsTheLegacyKey() {
-            // A save written after the split already holds a map pick, so the stale legacy value must not
-            // overwrite it - but the empty intel key is still seeded, and the legacy key is cleared so no
-            // un-suffixed key lingers.
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(LEGACY_ACTIVE_LAYER_KEY)).thenReturn(true);
-                when(memoryMock.getString(LEGACY_ACTIVE_LAYER_KEY)).thenReturn("first");
-                when(memoryMock.contains(MAP_ACTIVE_LAYER_KEY)).thenReturn(true);
-                when(memoryMock.contains(INTEL_ACTIVE_LAYER_KEY)).thenReturn(false);
-
-                MapLayerRegistry.migrateLegacyActiveLayerKey();
-
-                verify(memoryMock, never()).set(eq(MAP_ACTIVE_LAYER_KEY), any());
-                verify(memoryMock).set(INTEL_ACTIVE_LAYER_KEY, "first");
-                verify(memoryMock).unset(LEGACY_ACTIVE_LAYER_KEY);
-            }
-        }
-
-        @Test
-        void migrateLegacyActiveLayerKeyIsANoOpWithoutALegacyKey() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(LEGACY_ACTIVE_LAYER_KEY)).thenReturn(false);
-
-                MapLayerRegistry.migrateLegacyActiveLayerKey();
-
-                verify(memoryMock, never()).set(anyString(), any());
-                verify(memoryMock, never()).unset(anyString());
             }
         }
     }

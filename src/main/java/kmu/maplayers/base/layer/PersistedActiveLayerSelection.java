@@ -52,54 +52,6 @@ public final class PersistedActiveLayerSelection implements ActiveLayerSelection
         memory.set(memoryKey, layer.getId());
     }
 
-    /**
-     * Carries a pick stored under {@code legacyKey} into every one of {@code targets} that holds no pick
-     * yet, then clears the legacy key once, so an upgraded save seeds each screen's own new key from the
-     * single old key and no leftover key lingers. A target that already holds a pick keeps it, so a pick
-     * written under a new key wins over the stale shared one. Reading the legacy value once and clearing
-     * it only after every target has adopted is what lets one old key fan out into several new ones - a
-     * per-target clear would starve the targets that ran after the first. A no-op before the sector
-     * exists or when the legacy key holds nothing.
-     *
-     * @param legacyKey the former shared key to carry over and then clear
-     * @param targets   the per-screen selections to seed, each adopting only into its own empty key
-     */
-    public static void migrateLegacyKeyInto(
-            String legacyKey,
-            PersistedActiveLayerSelection... targets) {
-
-        var memory = SectorMemoryAccess.readSectorMemory();
-        if (memory == null || !memory.contains(legacyKey)) {
-            return;
-        }
-        var legacyValue = memory.getString(legacyKey);
-        for (var target : targets) {
-            if (!memory.contains(target.memoryKey)) {
-                memory.set(target.memoryKey, legacyValue);
-            }
-        }
-        memory.unset(legacyKey);
-    }
-
-    /**
-     * Rewrites the stored pick from a layer's former id to its current one, so a save written before a
-     * layer's id was renamed tracks the current id in place rather than falling back to the default and
-     * leaving the stale id in the save. The mechanism only - the caller (which owns the concrete rename)
-     * supplies the ids. A no-op before the sector exists or when the stored pick is not {@code legacyId}.
-     *
-     * @param legacyId  the id the layer stored before it was renamed
-     * @param currentId the layer's current id to rewrite the stored pick to
-     */
-    public void migrateStoredLayerId(String legacyId, String currentId) {
-        var memory = SectorMemoryAccess.readSectorMemory();
-        if (memory == null || !memory.contains(memoryKey)) {
-            return;
-        }
-        if (legacyId.equals(memory.getString(memoryKey))) {
-            memory.set(memoryKey, currentId);
-        }
-    }
-
     // Reads the stored layer id under this pick's key, or null when the sector is absent or the key was
     // never written - the caller resolves either to the default.
     private String readStoredLayerId() {

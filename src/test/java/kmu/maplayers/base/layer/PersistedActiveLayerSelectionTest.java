@@ -13,7 +13,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -30,7 +29,6 @@ import static org.mockito.Mockito.when;
 final class PersistedActiveLayerSelectionTest {
     private static final String KEY = "$kmu_test_layer";
     private static final String OTHER_KEY = "$kmu_test_layer_other";
-    private static final String LEGACY_KEY = "$kmu_test_layer_legacy";
 
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);
@@ -110,93 +108,6 @@ final class PersistedActiveLayerSelectionTest {
 
                 verify(memoryMock).set(KEY, "first");
                 verify(memoryMock, never()).set(eq(OTHER_KEY), any());
-            }
-        }
-    }
-
-    @Nested
-    class MigrateStoredLayerId {
-
-        @Test
-        void migrateStoredLayerIdRewritesTheStoredPickWhenItIsTheLegacyId() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(KEY)).thenReturn(true);
-                when(memoryMock.getString(KEY)).thenReturn("old_id");
-
-                selection.migrateStoredLayerId("old_id", "new_id");
-
-                verify(memoryMock).set(KEY, "new_id");
-            }
-        }
-
-        @Test
-        void migrateStoredLayerIdIsANoOpWithoutAStoredPick() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(KEY)).thenReturn(false);
-
-                selection.migrateStoredLayerId("old_id", "new_id");
-
-                verify(memoryMock, never()).set(anyString(), any());
-            }
-        }
-    }
-
-    @Nested
-    class MigrateLegacyKeyInto {
-
-        @Test
-        void migrateLegacyKeyIntoFansTheLegacyPickIntoEveryEmptyTargetAndClearsTheLegacyKey() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(LEGACY_KEY)).thenReturn(true);
-                when(memoryMock.getString(LEGACY_KEY)).thenReturn("first");
-                when(memoryMock.contains(KEY)).thenReturn(false);
-                when(memoryMock.contains(OTHER_KEY)).thenReturn(false);
-
-                PersistedActiveLayerSelection.migrateLegacyKeyInto(LEGACY_KEY, selection, otherSelection);
-
-                verify(memoryMock).set(KEY, "first");
-                verify(memoryMock).set(OTHER_KEY, "first");
-                verify(memoryMock).unset(LEGACY_KEY);
-            }
-        }
-
-        @Test
-        void migrateLegacyKeyIntoSeedsOnlyTheEmptyTargetsButStillClearsTheLegacyKey() {
-            // A target already holding a pick keeps it over the stale legacy value, while an empty target is
-            // still seeded; the legacy key is cleared once, after both targets have had their chance.
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(LEGACY_KEY)).thenReturn(true);
-                when(memoryMock.getString(LEGACY_KEY)).thenReturn("first");
-                when(memoryMock.contains(KEY)).thenReturn(true);
-                when(memoryMock.contains(OTHER_KEY)).thenReturn(false);
-
-                PersistedActiveLayerSelection.migrateLegacyKeyInto(LEGACY_KEY, selection, otherSelection);
-
-                verify(memoryMock, never()).set(eq(KEY), any());
-                verify(memoryMock).set(OTHER_KEY, "first");
-                verify(memoryMock).unset(LEGACY_KEY);
-            }
-        }
-
-        @Test
-        void migrateLegacyKeyIntoIsANoOpWithoutALegacyKey() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(LEGACY_KEY)).thenReturn(false);
-
-                PersistedActiveLayerSelection.migrateLegacyKeyInto(LEGACY_KEY, selection, otherSelection);
-
-                verify(memoryMock, never()).set(anyString(), any());
-                verify(memoryMock, never()).unset(anyString());
             }
         }
     }

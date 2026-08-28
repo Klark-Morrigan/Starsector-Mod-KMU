@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.memory.SectorMemoryString;
 import kmlib.starsector.ui.controls.ControlSpec;
 
@@ -36,11 +35,6 @@ public final class PoliticalMapViewRegistry {
     // Save-serialised id of the active view, or the off sentinel; frozen once shipped, since
     // renaming it silently resets every existing save to the default.
     private static final String ACTIVE_VIEW_KEY = "$kmu_political_active_view";
-
-    // The key the single faction-overlay on/off boolean lived under before the view selection
-    // replaced it. Read once on game load to carry a pre-view save's overlay choice into the new
-    // selection, then shed; kept as a literal only for that self-heal.
-    private static final String LEGACY_FACTION_OVERLAY_KEY = "$kmu_political_faction_overlay_on";
 
     // The stored value meaning "no view paints" - the map is dark while the political-map tab stays
     // open. Empty because no view id is empty, so it never collides with a real pick. Only the
@@ -81,28 +75,6 @@ public final class PoliticalMapViewRegistry {
         orderedViews = List.copyOf(views);
         PoliticalMapViewRegistry.defaultView = defaultView;
         PoliticalMapViewRegistry.hostTab = hostTab;
-    }
-
-    /**
-     * Carries a pre-view save's faction-overlay boolean into the active-view selection and sheds
-     * the dead key - the self-heal for saves written before the view selection replaced the single
-     * overlay toggle. Overlay off maps to the off sentinel (the map stays dark, as it was); overlay
-     * on maps to the default view (the only view that existed then, which was showing). A no-op once
-     * the new key exists (already migrated, or the player has since set a view) or when there is no
-     * legacy key to carry. Call once on game load, after {@link #registerViews}.
-     */
-    public static void migrateLegacyOverlaySelection() {
-        var memory = SectorMemoryAccess.readSectorMemory();
-        if (memory == null || defaultView == null) {
-            return;
-        }
-        if (memory.contains(ACTIVE_VIEW_KEY) || !memory.contains(LEGACY_FACTION_OVERLAY_KEY)) {
-            return;
-        }
-        var wasOverlayOn = memory.getBoolean(LEGACY_FACTION_OVERLAY_KEY);
-
-        memory.set(ACTIVE_VIEW_KEY, wasOverlayOn ? defaultView.getId() : OFF_SELECTION);
-        memory.unset(LEGACY_FACTION_OVERLAY_KEY);
     }
 
     /** @return the registered views in radio-segment order. */

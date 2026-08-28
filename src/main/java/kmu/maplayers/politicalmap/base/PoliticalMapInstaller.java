@@ -43,11 +43,13 @@ public final class PoliticalMapInstaller {
      */
     public static void installAll(SectorAPI sector) {
 
-        // Self-heal pre-rename saves before the terrain reads them. One seam owns the full set of
-        // political-map heals, so this call site never has to track which migrations exist.
+        // Clear a spotlight the loaded save's active view no longer offers, before the terrain reads
+        // it - a bloc can lapse while a save sits unopened (a faction removed by a mod change, an
+        // alliance dissolved), and a dangling spotlight would recede the sector behind a bloc the
+        // player cannot unpick.
         runGuardedStep(
-            PoliticalMapSaveMigrations::healLoadedSave,
-            "Failed to migrate KMU political map state");
+            FilterSelectionHeal::healStaleSelectionAgainstActiveView,
+            "Failed to heal KMU political map spotlight selection");
 
         // The layer renderer is a process-lifetime singleton, so without this the sector just left
         // keeps painting over the one being loaded.

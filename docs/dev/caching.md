@@ -481,10 +481,13 @@ against the new sector rebuilds both halves from scratch.
 
 What *is* persisted is only the player's choices that feed it - the active layer,
 the sidebar fold, the spotlight selection, the shared toggles - and those live in
-sector memory as small scalars.
-[`PoliticalMapSaveMigrations`](../../src/main/java/kmu/maplayers/politicalmap/base/PoliticalMapSaveMigrations.java)
-is how one of those keys is migrated when its shape changes, since an old save
-carries the previous shape.
+sector memory as small scalars. Each key is frozen once shipped: nothing carries an
+old spelling forward, so renaming one resets every existing save's choice under it
+to the default. A stored value the current build cannot resolve - a layer id no
+longer registered, a spotlight on a bloc that has lapsed - falls back to the default
+rather than stranding the reader, and
+[`FilterSelectionHeal`](../../src/main/java/kmu/maplayers/politicalmap/base/FilterSelectionHeal.java)
+clears the spotlight case outright, on load and on every settings change.
 
 ## Rules
 

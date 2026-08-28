@@ -17,11 +17,8 @@ import org.mockito.MockedStatic;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -272,104 +269,6 @@ final class PoliticalMapViewRegistryTest {
 
                 verify(memoryMock)
                     .set(ACTIVE_VIEW_KEY, "first");
-            }
-        }
-    }
-
-    @Nested
-    class MigrateLegacyOverlaySelection {
-        // The frozen key the pre-view faction-overlay boolean lived under, pinned as a literal so a
-        // rename that would break the self-heal fails here rather than silently dropping old saves.
-        private static final String LEGACY_KEY = "$kmu_political_faction_overlay_on";
-
-        @Test
-        void migrateLegacyOverlaySelectionCarriesAnOffOverlayToTheOffSentinel() {
-            try (var globalMock = mockStatic(Global.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-
-                linkSectorMemoryTo(globalMock, memoryMock);
-
-                when(memoryMock.contains(ACTIVE_VIEW_KEY))
-                    .thenReturn(false);
-                when(memoryMock.contains(LEGACY_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getBoolean(LEGACY_KEY))
-                    .thenReturn(false);
-
-                PoliticalMapViewRegistry.migrateLegacyOverlaySelection();
-
-                verify(memoryMock)
-                    .set(ACTIVE_VIEW_KEY, "");
-                verify(memoryMock)
-                    .unset(LEGACY_KEY);
-            }
-        }
-
-        @Test
-        void migrateLegacyOverlaySelectionCarriesAnOnOverlayToTheDefaultView() {
-            try (var globalMock = mockStatic(Global.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-
-                linkSectorMemoryTo(globalMock, memoryMock);
-
-                when(memoryMock.contains(ACTIVE_VIEW_KEY))
-                    .thenReturn(false);
-                when(memoryMock.contains(LEGACY_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getBoolean(LEGACY_KEY))
-                    .thenReturn(true);
-
-                PoliticalMapViewRegistry.migrateLegacyOverlaySelection();
-
-                // The only view that existed pre-migration is the default, so an on overlay pins it.
-                verify(memoryMock)
-                    .set(ACTIVE_VIEW_KEY, "first");
-                verify(memoryMock)
-                    .unset(LEGACY_KEY);
-            }
-        }
-
-        @Test
-        void migrateLegacyOverlaySelectionDoesNothingWhenTheNewKeyIsAlreadyPresent() {
-            try (var globalMock = mockStatic(Global.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-
-                linkSectorMemoryTo(globalMock, memoryMock);
-
-                when(memoryMock.contains(ACTIVE_VIEW_KEY))
-                    .thenReturn(true);
-
-                PoliticalMapViewRegistry.migrateLegacyOverlaySelection();
-
-                verify(memoryMock, never())
-                    .set(anyString(), any());
-                verify(memoryMock, never())
-                    .unset(anyString());
-            }
-        }
-
-        @Test
-        void migrateLegacyOverlaySelectionDoesNothingWithoutALegacyKey() {
-            try (var globalMock = mockStatic(Global.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-
-                linkSectorMemoryTo(globalMock, memoryMock);
-
-                when(memoryMock.contains(ACTIVE_VIEW_KEY))
-                    .thenReturn(false);
-                when(memoryMock.contains(LEGACY_KEY))
-                    .thenReturn(false);
-
-                PoliticalMapViewRegistry.migrateLegacyOverlaySelection();
-
-                verify(memoryMock, never())
-                    .set(anyString(), any());
-                verify(memoryMock, never())
-                    .unset(anyString());
             }
         }
     }
