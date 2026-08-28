@@ -58,19 +58,29 @@ public final class ViewerSettings {
     // than a difference that was there from the first frame.
     public static final double CONTINENT_MIN_FRONTAGE_DEFAULT = COAST_MIN_FRONTAGE_DEFAULT;
 
-    // The sanding, read off the coast's own default for the reason the frontage floor is.
+    // The rounding, read off the coast's own default for the reason the frontage floor is.
     // Split into its three numbers because that is what a slider writes; put back together
-    // by resolveCoastSanding.
+    // by resolveLineRounding.
     //
     // The threshold is asked for in degrees, which is how anyone looking at a corner thinks
-    // about it, and is the knob worth reaching for first: at the default only the sharp
-    // joins are touched, and winding it up to a straight pass-through rounds every corner
-    // on the line - the ordinary cell-to-cell joins included.
-    public static final double SANDING_RADIUS_DEFAULT = Coastlines.DEFAULT_SANDING.radius();
-    public static final int SANDING_SEGMENTS_DEFAULT =
+    // about it, and is the knob worth reaching for first: it decides which corners on a line
+    // are corners at all, and so whether the other two do anything.
+    public static final double ROUNDING_RADIUS_DEFAULT = Coastlines.DEFAULT_SANDING.radius();
+    public static final int ROUNDING_SEGMENTS_DEFAULT =
         Coastlines.DEFAULT_SANDING.segmentsPerCorner();
-    public static final double SAND_BELOW_DEGREES_DEFAULT =
+    public static final double ROUND_BELOW_DEGREES_DEFAULT =
         Math.toDegrees(Coastlines.DEFAULT_SANDING.roundBelowAngleRadians());
+
+    // The spike-sanding pass that runs before the rounding, at the numbers the shipped map
+    // offers for it. A needle whose own edges are shorter than the rounding steps back by
+    // survives rounding untouched - the cut clamps to those edges - so it has to come out
+    // first or not at all.
+    //
+    // On here, where the shipped map leaves it off. This window exists to look at shapes, and
+    // a pass left off by default is a pass nobody looks at; what it costs is one slider back
+    // to zero, which is the pass switched off.
+    public static final double SPIKE_HEIGHT_DEFAULT = 150.0;
+    public static final double SPIKE_BELOW_DEGREES_DEFAULT = 60.0;
 
     public static final Color CONTINENT_COAST_DEFAULT = MapLook.CONTINENT_COAST;
 
@@ -190,13 +200,22 @@ public final class ViewerSettings {
     // smoothed: one intrinsic measure, with nothing carried from one stretch to the next.
     public double coastMinFrontageShare = COAST_MIN_FRONTAGE_DEFAULT;
 
-    // How the drawn line is rounded where it turns sharply. Shared by both coasts rather
-    // than split the way the frontage floors are: it is a knob about how a line is DRAWN,
-    // and the two coasts are on screen to be compared, so drawing them to different
-    // roundings would put a difference between them that is not a difference in the coasts.
-    public double sandingRadius = SANDING_RADIUS_DEFAULT;
-    public int sandingSegments = SANDING_SEGMENTS_DEFAULT;
-    public double sandBelowDegrees = SAND_BELOW_DEGREES_DEFAULT;
+    // How a drawn line is rounded where it turns sharply, for every line on the map that is
+    // rounded at all - both coasts and the cluster borders alike.
+    //
+    // One set of knobs rather than a set per line. Rounding is a question about how a LINE is
+    // drawn, not about what any of these constructions mean, and the lines are on screen to
+    // be compared: rounded to different numbers, a difference between two of them would be
+    // partly a difference between the sliders that drew them.
+    public double roundingRadius = ROUNDING_RADIUS_DEFAULT;
+    public int roundingSegments = ROUNDING_SEGMENTS_DEFAULT;
+    public double roundBelowDegrees = ROUND_BELOW_DEGREES_DEFAULT;
+
+    // How tall a protrusion may be and still be spliced out before the rounding, and how
+    // sharp it has to be to count as one at all. Either at zero switches the pass off, which
+    // is what the pass itself reads a non-positive threshold as.
+    public double spikeHeight = SPIKE_HEIGHT_DEFAULT;
+    public double spikeBelowDegrees = SPIKE_BELOW_DEGREES_DEFAULT;
 
     // The v3 coast's own frontage floor, apart from the settled coast's above.
     //
@@ -281,21 +300,26 @@ public final class ViewerSettings {
     // drawings then describe maps that were never the same.
     public Coastlines.CoastRules resolveCoastRules() {
         return new Coastlines.CoastRules(
-            bridgeReachMultiple, coastMinFrontageShare, resolveCoastSanding());
+            bridgeReachMultiple, coastMinFrontageShare, resolveLineRounding());
     }
 
-    // How sharply the drawn line has to turn to be sanded, and what it is sanded to. Put
-    // back together here rather than at each coast, so the two lines cannot be drawn to
-    // roundings that drifted apart.
-    //
-    // Never chamfered, whatever the sliders say: a chamfer cuts a needle flat, and what is
-    // wanted of one is a rounded tip.
-    private CornerRounding resolveCoastSanding() {
+    /**
+     * How sharply a drawn line has to turn to be rounded, and what it is rounded to.
+     *
+     * <p>Put back together here rather than at each line, so no two of them can be drawn to
+     * roundings that drifted apart.
+     *
+     * <p>Never chamfered, whatever the sliders say: a chamfer cuts a sharp turn flat, and
+     * what is wanted of one is a rounded tip.
+     *
+     * @return the corner shape every rounded line on the map is drawn to
+     */
+    public CornerRounding resolveLineRounding() {
         return new CornerRounding(
-            sandingRadius,
-            sandingSegments,
+            roundingRadius,
+            roundingSegments,
             Coastlines.DEFAULT_SANDING.bevelBelowAngleRadians(),
-            Math.toRadians(sandBelowDegrees));
+            Math.toRadians(roundBelowDegrees));
     }
 
     // How v3's bridges are offered and judged, asked of the settings for the same reason the
@@ -317,6 +341,6 @@ public final class ViewerSettings {
     // ever comes to be read the two coasts are still looking at one sector.
     public Coastlines.CoastRules resolveContinentCoastRules() {
         return new Coastlines.CoastRules(
-            bridgeReachMultiple, continentMinFrontageShare, resolveCoastSanding());
+            bridgeReachMultiple, continentMinFrontageShare, resolveLineRounding());
     }
 }

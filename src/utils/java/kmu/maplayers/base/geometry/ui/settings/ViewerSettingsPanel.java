@@ -99,39 +99,56 @@ public final class ViewerSettingsPanel {
 
     private static final double MIN_FRONTAGE_MAXIMUM = 25;
 
-    // How the drawn coastline is sanded where it turns sharply.
+    // How every rounded line on the map is rounded where it turns sharply - the coasts and
+    // the cluster borders alike.
     //
     // The radius is how far back along each arm of a corner the arc starts, in map units.
     // Zero is the pass switched off, which is what every setting of it is judged against;
-    // the ceiling is a quarter of a cell radius, past which the sanding stops touching only
+    // the ceiling is a quarter of a cell radius, past which the rounding stops touching only
     // the tip of a corner and begins reshaping the runs either side of it.
     //
     // The segment count decides how smooth each rounded corner comes out. One is the
     // coarsest thing that is still a cut rather than a point; the ceiling is past where more
     // segments stop being visible at the zoom a sector is read at.
     //
-    // The threshold is how sharply the line has to turn to be sanded at all, in degrees.
+    // The threshold is how sharply a line has to turn to be rounded at all, in degrees.
     // Zero rounds nothing whatever the radius says.
     //
-    // The ceiling stops just short of where a coast's own sampled arcs begin. Those samples
-    // join at about 173 degrees, and a threshold past them rounds every one: the drawn line
-    // goes nowhere it was not already going - the same 28 units off the traced one at 174 as
-    // at 170 - while the vertex count triples, 2637 to 7737 on the larger fixture. Below
-    // that the pass finds joins between runs of coast, which is what it is for.
+    // Its ceiling stops just short of where a line's own sampled arcs begin. Both kinds of
+    // line here are cell arcs sampled at the same fixed angles joined by straight runs, and
+    // those samples meet at about 173 degrees: a threshold past them rounds every one, which
+    // moves the drawn line nowhere it was not already going - the same 28 units off the
+    // traced coast at 174 as at 170 - while tripling the vertex count, 2637 to 7737 on the
+    // larger fixture. Below that the pass finds the joins BETWEEN runs, which is what it is
+    // for.
     //
     // Tied to how finely arcs are sampled rather than to a round number, so it wants
     // re-measuring if that changes.
-    private static final double SANDING_RADIUS_MINIMUM = 0;
+    private static final double ROUNDING_RADIUS_MINIMUM = 0;
 
-    private static final double SANDING_RADIUS_MAXIMUM = 1000;
+    private static final double ROUNDING_RADIUS_MAXIMUM = 1000;
 
-    private static final double SANDING_SEGMENTS_MINIMUM = 1;
+    private static final double ROUNDING_SEGMENTS_MINIMUM = 1;
 
-    private static final double SANDING_SEGMENTS_MAXIMUM = 16;
+    private static final double ROUNDING_SEGMENTS_MAXIMUM = 16;
 
-    private static final double SAND_BELOW_MINIMUM = 0;
+    private static final double ROUND_BELOW_MINIMUM = 0;
 
-    private static final double SAND_BELOW_MAXIMUM = 172;
+    private static final double ROUND_BELOW_MAXIMUM = 172;
+
+    // The spike-sanding pass ahead of the rounding, which splices out a protrusion both
+    // sharper than its angle and shallower than its height. Either at zero switches it off.
+    //
+    // The height ceiling is half a cell radius, past which what is being spliced out is a
+    // peninsula rather than a needle. The angle ceiling is a right angle: a corner blunter
+    // than that is shape, whatever its height, and sanding it would flatten real geometry.
+    private static final double SPIKE_HEIGHT_MINIMUM = 0;
+
+    private static final double SPIKE_HEIGHT_MAXIMUM = 2000;
+
+    private static final double SPIKE_BELOW_MINIMUM = 0;
+
+    private static final double SPIKE_BELOW_MAXIMUM = 90;
 
     // How far off a wall already down a span may run and still count as running along it, in
     // map units. Zero asks for lines that coincide exactly, which catches only the spans that
@@ -266,48 +283,67 @@ public final class ViewerSettingsPanel {
             "Void fill opacity",
             opacity -> settings.voidFillOpacity = (int) opacity));
 
-        addCoastSandingRows(controls);
+        addLineRoundingRows(controls);
     }
 
-    // How sharply the drawn coastline is allowed to turn, and what a turn sharper than that
-    // is rounded to.
+    // How sharply any drawn line is allowed to turn, and what a turn sharper than that is
+    // rounded to.
     //
-    // Among the knobs reaching both constructions because sanding is about how a LINE is
-    // drawn rather than about how either coast is traced, and the two are on screen to be
-    // compared: drawn to different roundings, a difference between them would be partly a
-    // difference between the sliders.
+    // Among the knobs reaching both constructions because rounding is about how a LINE is
+    // drawn rather than about how anything is traced - it reaches the cluster borders too,
+    // which belong to neither - and because the lines are on screen to be compared: drawn to
+    // different roundings, a difference between two of them would be partly a difference
+    // between the sliders.
     //
-    // Every one rebuilds rather than repaints. The sanded ring is worked out once when the
-    // coast is traced and carried on it, so moving any of these is a change to the geometry
+    // Every one rebuilds rather than repaints. Each rounded line is worked out once when its
+    // geometry is built and carried on it, so moving any of these is a change to the geometry
     // the frame is drawn from rather than to the way that geometry is painted.
-    private void addCoastSandingRows(JPanel controls) {
+    private void addLineRoundingRows(JPanel controls) {
 
         // First of the three, because it is the one that decides whether the others do
-        // anything: at the bottom of its range nothing is sanded whatever they say, and at
-        // the top every join between two runs of coast is.
+        // anything: at the bottom of its range nothing is rounded whatever they say, and at
+        // the top every join between two runs of line is.
         controls.add(buildSlider(
-            "sandBelowDegrees",
-            "Sand corners sharper than, in degrees",
-            SAND_BELOW_MINIMUM,
-            SAND_BELOW_MAXIMUM,
-            ViewerSettings.SAND_BELOW_DEGREES_DEFAULT,
-            degrees -> settings.sandBelowDegrees = degrees));
+            "roundBelowDegrees",
+            "Round corners sharper than, in degrees",
+            ROUND_BELOW_MINIMUM,
+            ROUND_BELOW_MAXIMUM,
+            ViewerSettings.ROUND_BELOW_DEGREES_DEFAULT,
+            degrees -> settings.roundBelowDegrees = degrees));
 
         controls.add(buildSlider(
-            "sandingRadius",
-            "Corner sanding radius, in map units",
-            SANDING_RADIUS_MINIMUM,
-            SANDING_RADIUS_MAXIMUM,
-            ViewerSettings.SANDING_RADIUS_DEFAULT,
-            radius -> settings.sandingRadius = radius));
+            "roundingRadius",
+            "Corner rounding radius, in map units",
+            ROUNDING_RADIUS_MINIMUM,
+            ROUNDING_RADIUS_MAXIMUM,
+            ViewerSettings.ROUNDING_RADIUS_DEFAULT,
+            radius -> settings.roundingRadius = radius));
 
         controls.add(buildSlider(
-            "sandingSegments",
-            "Segments per sanded corner",
-            SANDING_SEGMENTS_MINIMUM,
-            SANDING_SEGMENTS_MAXIMUM,
-            ViewerSettings.SANDING_SEGMENTS_DEFAULT,
-            segments -> settings.sandingSegments = (int) segments));
+            "roundingSegments",
+            "Segments per rounded corner",
+            ROUNDING_SEGMENTS_MINIMUM,
+            ROUNDING_SEGMENTS_MAXIMUM,
+            ViewerSettings.ROUNDING_SEGMENTS_DEFAULT,
+            segments -> settings.roundingSegments = (int) segments));
+
+        // The pass that runs BEFORE the three above, and so is read after them: what it takes
+        // out is what the rounding would otherwise be handed and be unable to fix.
+        controls.add(buildSlider(
+            "spikeBelowDegrees",
+            "Sand spikes sharper than, in degrees",
+            SPIKE_BELOW_MINIMUM,
+            SPIKE_BELOW_MAXIMUM,
+            ViewerSettings.SPIKE_BELOW_DEGREES_DEFAULT,
+            degrees -> settings.spikeBelowDegrees = degrees));
+
+        controls.add(buildSlider(
+            "spikeHeight",
+            "Tallest spike sanded, in map units",
+            SPIKE_HEIGHT_MINIMUM,
+            SPIKE_HEIGHT_MAXIMUM,
+            ViewerSettings.SPIKE_HEIGHT_DEFAULT,
+            height -> settings.spikeHeight = height));
     }
 
     // Everything a cell is drawn WITH, as against what it is shaped like: the fills and their

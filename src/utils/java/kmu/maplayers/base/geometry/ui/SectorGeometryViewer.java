@@ -2,6 +2,7 @@ package kmu.maplayers.base.geometry.ui;
 
 import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Limits;
+import kmlib.math.geometry.PolygonSmoothing;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellEdges;
@@ -42,7 +43,9 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -100,12 +103,18 @@ import javax.swing.SwingUtilities;
  *       {@code buildStyledCellForSystem}, {@code buildFactionTerritory},
  *       {@code BorderSmoothing.sandBorderSpikes}, {@code roundBorderCorners},
  *       {@code PolygonTessellator.tessellateToBoundaryLoops}, {@code tessellateToTriangles},
- *       {@code Hatching.computeHatchRun}, {@code GlVertexRuns.flattenVertices}.</li>
+ *       {@code Hatching.computeHatchRun}, {@code GlVertexRuns.flattenVertices}. This window
+ *       smooths its own cluster borders through {@code PolygonSmoothing.removeSpikes} and
+ *       {@code roundCorners} - the two primitives underneath {@code BorderSmoothing}, in the
+ *       same order - but to its own profile, and without the tessellator's resolve on either
+ *       side. So a border here is that shape SMOOTHABLE rather than the shape the shipped
+ *       theme draws, and a rounding sharp enough to push one arc through another shows as a
+ *       crossing the map would have resolved away.</li>
  *   <li><i>Painting it</i> - {@code RenderStyleReader.readRenderStyle}, {@code MapPalettes},
  *       {@code ClusterRenderer}, the label pass, and {@code KmuPoliticalMapSettings} entirely.
  *       Nothing reads {@code Global}. Colours here are hash-derived hues for telling owners
  *       apart, never the faction palette, and this is Java2D, so no blend mode, line
- *       smoothing, corner rounding, hatching, or layering against vanilla is exercised.</li>
+ *       smoothing, hatching, or layering against vanilla is exercised.</li>
  * </ul>
  *
  * <p>So: the rings on screen are the rings the mod would trace. Everything about how they
@@ -165,6 +174,16 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
     private List<List<double[]>> unboundedCells = List.of();
     private SectorGeometry geometry;
+
+    // Each owner's cluster rings as the LINE the map draws: rounded where they turn sharply,
+    // by the same knobs the coasts are rounded by.
+    //
+    // Held beside the geometry rather than folded into it. What SectorGeometry hands back is
+    // the shape the cells make, which several things measure against; this is one way of
+    // drawing that shape, and a record that carried both would be answering two questions
+    // with one name. Rounded once here rather than in the paint, because the paint runs per
+    // frame and this changes only when the geometry or the knobs do.
+    private Map<String, List<List<double[]>>> smoothedRingsByOwner = Map.of();
     private long lastBuildMillis;
     private final ViewerSettings settings = new ViewerSettings();
 
@@ -372,11 +391,53 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         canvas.repaint();
     }
 
+    /**
+     * Every owner's cluster rings as the line the map draws: spikes spliced out, then the
+     * corners that remain rounded.
+     *
+     * <p>In that order, and not in the other. A needle whose own edges are shorter than the
+     * rounding steps back by survives rounding untouched, since the cut clamps to those
+     * edges - so a rounding pass handed one draws it as it was. Sanding first is what leaves
+     * the rounding clean geometry to work on.
+     *
+     * <p>Rounded to the same knobs the coasts are, because it is the same question: a cluster
+     * border is cell arcs sampled at fixed angles joined by straight runs, and what wants
+     * rounding is the joins between those runs rather than the samples along one.
+     *
+     * <p>The game runs both passes through {@code BorderSmoothing}, which this window does
+     * not. These are the same two primitives underneath, so a shape judged here is a shape
+     * the mod could draw - but the profile is this window's, and the game resolves its loops
+     * again afterwards where this does not, so a rounding sharp enough to push one arc
+     * through another shows here as a crossing the map would have cleaned up.
+     */
+    private Map<String, List<List<double[]>>> smoothClusterRings(SectorGeometry built) {
+
+        var rounding = settings.resolveLineRounding();
+        var smoothed = new LinkedHashMap<String, List<List<double[]>>>();
+
+        for (var byOwner : built.ringsByOwner().entrySet()) {
+
+            var rings = new ArrayList<List<double[]>>(byOwner.getValue().size());
+
+            for (var ring : byOwner.getValue()) {
+                rings.add(PolygonSmoothing.roundCorners(
+                    PolygonSmoothing.removeSpikes(
+                        ring,
+                        settings.spikeHeight,
+                        Math.toRadians(settings.spikeBelowDegrees)),
+                    rounding));
+            }
+            smoothed.put(byOwner.getKey(), rings);
+        }
+        return smoothed;
+    }
+
     @Override
     public void rebuildGeometry() {
 
         var start = System.nanoTime();
         geometry = SectorGeometry.buildSectorGeometry(fixture, settings.parameters);
+        smoothedRingsByOwner = smoothClusterRings(geometry);
         cellNames = buildCellNames();
 
         readout.nameRegionsFrom(cellNames, voidSections.getSections());
@@ -723,7 +784,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         // what it means.
         private void paintOwnerClusters(Graphics2D g2) {
 
-            for (var entry : geometry.ringsByOwner().entrySet()) {
+            for (var entry : smoothedRingsByOwner.entrySet()) {
 
                 var cluster = new Path2D.Double(Path2D.WIND_EVEN_ODD);
 
