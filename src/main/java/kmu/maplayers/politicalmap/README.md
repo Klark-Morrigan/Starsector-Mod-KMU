@@ -480,16 +480,19 @@ in the quiet shade (`statesUncountedValue`, the same treatment an unweighed mark
 the contest's statement about a faction it never weighed rather than a score competed for and lost.
 The claimant's line takes the same nought where a decree holds a system its faction is present in
 through unweighed colonies alone, in place of the blank column a claimant holding nothing there gets.
-A market the player has not found is listed all the same where the contest weighed it: its weight is
+An undiscovered market is listed all the same where the contest weighed it: its weight is
 in the numbers on screen already - the claim, the faction's score, the difference between its own
 total and the terms beneath it - and the row is what makes those account for themselves. What is
-left off is the market that is unfound *and* took no part (`ListedClaimMarkets`, over
+left off is the market the player knows nothing of *and* that took no part (`ListedClaimMarkets`, over
 `MarketClaimBreakdown.isKnownToPlayer` and `isScoredOnItsOwnAccount`): it accounts for nothing on
 screen, so a row for it would be disclosure and nothing else, and the dev reveal is what states even
 those in full. The knowledge half is the same rule the faction and alliance tabs fog by, so all
 three agree on what the player knows. What that flag
-carries is the composed answer rather than the entity's own: the player has found the market
-**and**, for the shapes a bare fog would leak, somebody has seen it where it stands. The same
+carries is the composed answer rather than the entity's own: the player has discovered the market
+**and**, for the shapes a bare fog would leak, somebody has seen it where it stands. Which is why
+the listed rows are undiscovered colonies exactly - a market the contest weighed is open and on the
+economy's books, so no gate covers it and discovery is the whole of the question - while the rule
+that leaves one off is asked in the wider terms a concealed base needs. The same
 projection reaches the listing above the markets: a standing whose every colony is withheld is left
 off the box entirely (`ListedClaimContest.selectFrom` again), since naming a faction over an account with
 nothing in it would tell the player exactly what the fog is keeping back - and `F1` is offered only
@@ -506,7 +509,7 @@ once beneath the very markets its count can be checked against, and worked out f
 which is not its own sibling) rather than as a bare result nobody can check. That line is working
 throughout bar the points it arrives at, so it reads in the quiet shade name and all. The count is of
 what the faction holds rather than of the lines above it, so over a list a market was kept off for
-being unfound and unweighed at once it stands and reads as exceeding what is shown - which gives away
+being unknown and unweighed at once it stands and reads as exceeding what is shown - which gives away
 nothing the list has
 not, a market's own line carrying the whole score the contest weighed it at while the terms beneath
 it state its own share alone, so the presence is already the difference between the two on every

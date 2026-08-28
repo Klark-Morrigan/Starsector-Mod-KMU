@@ -33,7 +33,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
-import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithUnfound;
+import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithUndiscovered;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -101,17 +101,23 @@ final class ClaimScoreRowResolverTest {
 
     private static final boolean IS_TERRITORIAL = true;
 
-    // Whether an unfound market the contest never weighed may be listed: withheld in play, stated
-    // under the dev reveal. One the contest did weigh is listed either way, its weight being in the
-    // numbers on screen already.
-    private static final boolean WITHHOLDING_UNFOUND_MARKETS = false;
-    private static final boolean LISTING_UNFOUND_MARKETS = true;
+    // Whether a market the contest never weighed may be listed though nobody has discovered it:
+    // withheld in play, stated under the dev reveal. One the contest did weigh is listed either way,
+    // its weight being in the numbers on screen already.
+    private static final boolean WITHHOLDING_UNDISCOVERED_MARKETS = false;
+    private static final boolean LISTING_UNDISCOVERED_MARKETS = true;
 
-    // Whether the player has found a market at all - the flag the withholding reads. Independent of
-    // whether the market is held in the open: the mechanic settles a contest over colonies nobody has
-    // reached, so an open market that is also unfound is the ordinary shape rather than a corner, and
-    // a case wanting a concealed market poses the concealment itself.
+    // Whether the player knows of a market at all - the flag the withholding reads. Independent of
+    // whether the market is held in the open: the mechanic settles a contest over colonies nobody
+    // has reached, so an open market that is also undiscovered is the ordinary shape rather than a
+    // corner, and a case wanting a concealed market poses the concealment itself.
     private static final boolean IS_KNOWN_TO_PLAYER = true;
+
+    // The same flag false, named for the two shapes that reach it. An open market is unknown only
+    // by being undiscovered; a concealed one stays unknown until somebody has seen it standing
+    // there, whatever its entity says - so a case posing one of them says which it means.
+    private static final boolean IS_UNDISCOVERED_BY_PLAYER = false;
+    private static final boolean IS_UNKNOWN_TO_PLAYER = false;
 
     // Every market an ordinary colony somebody is looking at, so no line is qualified and none
     // carries a date. Both halves of what the box's walk of the system adds to a row, stated once
@@ -125,7 +131,6 @@ final class ClaimScoreRowResolverTest {
         ColonyDiscoveryLookup.NONE,
         OpenlyKnownColonyLookup.NONE,
         ColonyObservationNotes.NONE);
-    private static final boolean IS_UNFOUND_BY_PLAYER = false;
 
     // A market the sector map marks with a glyph, and one it marks with none - the two readings a
     // market line's opening run turns on. The authored colour is carried because the read hands one
@@ -289,13 +294,13 @@ final class ClaimScoreRowResolverTest {
                 breakdown,
                 claimant,
                 NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNFOUND_MARKETS);
+                WITHHOLDING_UNDISCOVERED_MARKETS);
 
             var rivalRows = ClaimScoreRowResolver.resolveMarketRows(
                 breakdown,
                 rival,
                 NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNFOUND_MARKETS);
+                WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(claimantRows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.WON);
@@ -313,7 +318,7 @@ final class ClaimScoreRowResolverTest {
                 new SystemClaimBreakdown(null, HEGEMONY, List.of(claimant, rival)),
                 claimant,
                 NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNFOUND_MARKETS);
+                WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(rows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
@@ -337,12 +342,12 @@ final class ClaimScoreRowResolverTest {
                 breakdown,
                 claimant,
                 NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNFOUND_MARKETS);
+                WITHHOLDING_UNDISCOVERED_MARKETS);
             var outsiderRows = ClaimScoreRowResolver.resolveMarketRows(
                 breakdown,
                 outsider,
                 NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNFOUND_MARKETS);
+                WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(claimantRows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
@@ -360,7 +365,7 @@ final class ClaimScoreRowResolverTest {
                 new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of(claimant, rival)),
                 claimant,
                 NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNFOUND_MARKETS);
+                WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(rows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
@@ -537,7 +542,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsLeavesAConcealedMarketThePlayerHasNotFoundOffTheList() {
+        void resolveMarketRowsLeavesAConcealedMarketUnknownToThePlayerOffTheList() {
             // Both exclusions against it at once: the contest passed it over, so no number on screen
             // needs it to add up, and the player has not found it, so there is nothing they could
             // already know. A row would be disclosure and nothing else.
@@ -545,21 +550,21 @@ final class ClaimScoreRowResolverTest {
                 buildStrongestMarket(TWO_SIBLING_MARKETS),
                 List.of(
                     buildMarket("Culann", 3, TWO_SIBLING_MARKETS, SECOND_LISTED),
-                    buildUnfoundHiddenMarket("Kanta's Den", 3, TWO_SIBLING_MARKETS, THIRD_LISTED))));
+                    buildUnknownHiddenMarket("Kanta's Den", 3, TWO_SIBLING_MARKETS, THIRD_LISTED))));
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Culann", PRESENCE_LINE);
         }
 
         @Test
-        void resolveMarketRowsListsAMarketTheContestWeighedThoughThePlayerHasNotFoundIt() {
+        void resolveMarketRowsListsAMarketTheContestWeighedThoughItsColonyIsUndiscovered() {
             // The market's weight is already in the numbers on screen - the faction's score, and the
             // presence its siblings were each given - so the row is what makes them accountable.
             // Whether the row may state the colony's name is settled where the row is built.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
                 List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED,
-                    IS_UNFOUND_BY_PLAYER))));
+                    IS_UNDISCOVERED_BY_PLAYER))));
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Culann", PRESENCE_LINE);
@@ -573,7 +578,7 @@ final class ClaimScoreRowResolverTest {
             // names it. Withheld, the account simply does not add up.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildUnfoundHiddenMarket("Kanta's Den", 3, ONE_SIBLING_MARKET,
+                List.of(buildUnknownHiddenMarket("Kanta's Den", 3, ONE_SIBLING_MARKET,
                     SECOND_LISTED))));
 
             assertThat(readLabelTexts(rows))
@@ -583,13 +588,13 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsListsTheStandingMarketThePlayerHasNotFound() {
+        void resolveMarketRowsListsTheStandingMarketOnAnUndiscoveredColony() {
             // The mechanic weighs colonies nobody has reached, so the very market a faction stands on
             // can be one the player has not found - and it is the market the faction's own line states
             // the score of. Left off, that number would head an account with nothing in it that comes
             // to the number.
             var rows = resolveContestedRows(buildStanding(
-                buildStrongestMarket(ONE_SIBLING_MARKET, IS_UNFOUND_BY_PLAYER),
+                buildStrongestMarket(ONE_SIBLING_MARKET, IS_UNDISCOVERED_BY_PLAYER),
                 List.of(buildMarket("Kanta's Den", 4, ONE_SIBLING_MARKET, SECOND_LISTED))));
 
             assertThat(readLabelTexts(rows))
@@ -603,38 +608,38 @@ final class ClaimScoreRowResolverTest {
         @Test
         void resolveMarketRowsListsEveryMarketUnderTheDevReveal() {
             // The reveal is the state a player has asked to be shown everything in, so even the one
-            // market no number on screen needs - concealed and unfound at once - takes its place in
-            // the account.
+            // market no number on screen needs - concealed and undiscovered at once - takes its
+            // place in the account.
             var standing = buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildUnfoundHiddenMarket("Kanta's Den", 3, ONE_SIBLING_MARKET,
+                List.of(buildUnknownHiddenMarket("Kanta's Den", 3, ONE_SIBLING_MARKET,
                     SECOND_LISTED)));
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
                 NOTHING_BEYOND_THE_SCORE,
-                LISTING_UNFOUND_MARKETS);
+                LISTING_UNDISCOVERED_MARKETS);
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Kanta's Den", PRESENCE_LINE);
         }
 
         @Test
-        void resolveMarketRowsCallsAnUnfoundMarketUndiscoveredUnderTheReveal() {
-            // The reveal is the one state such a market is listed in at all, and the word comes off
-            // the box's own walk of the system rather than off the contest: no claim row carries
-            // what the player has found, the entity's flag being nowhere in the arithmetic.
+        void resolveMarketRowsCallsOutAnUndiscoveredMarket() {
+            // Posed in play, that being where such a market is now listed: the contest weighed it.
+            // The word comes off the box's own walk of the system rather than off the contest - no
+            // claim row carries the entity's flag, which is nowhere in the arithmetic.
             var standing = buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
                 List.of(buildMarket("Kanta's Den", 3, ONE_SIBLING_MARKET, SECOND_LISTED,
-                    IS_UNFOUND_BY_PLAYER)));
+                    IS_UNDISCOVERED_BY_PLAYER)));
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
-                buildReadingWithUnfound("kanta's_den"),
-                LISTING_UNFOUND_MARKETS);
+                buildReadingWithUndiscovered("kanta's_den"),
+                WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(rows.get(1).line().qualifierText())
                 .isEqualTo("undiscovered");
@@ -694,7 +699,7 @@ final class ClaimScoreRowResolverTest {
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
                 NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNFOUND_MARKETS);
+                WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(rows.get(0).line().qualifierText())
                 .isNull();
@@ -710,7 +715,7 @@ final class ClaimScoreRowResolverTest {
                 new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of(standing)),
                 standing,
                 NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNFOUND_MARKETS);
+                WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(rows.get(0).line().qualifierText())
                 .isNull();
@@ -726,7 +731,7 @@ final class ClaimScoreRowResolverTest {
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
                 NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNFOUND_MARKETS);
+                WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Culann", PRESENCE_LINE);
@@ -937,25 +942,25 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsWithholdsAPresenceOnlyFactionsUnfoundColony() {
+        void resolveMarketRowsWithholdsAPresenceOnlyFactionsUnknownColony() {
             // The withholding is the account's rather than the standing's, so it reaches both kinds:
-            // a colony nobody has found is left off whichever kind of faction holds it.
+            // a colony nobody knows of is left off whichever kind of faction holds it.
             var standing = buildPresenceOnlyStanding(
                 buildFoundHiddenMarket("Kanta's Den", 6, ONE_SIBLING_MARKET, SECOND_LISTED),
-                buildUnfoundHiddenMarket("Chalcedon", 4, ONE_SIBLING_MARKET, THIRD_LISTED));
+                buildUnknownHiddenMarket("Chalcedon", 4, ONE_SIBLING_MARKET, THIRD_LISTED));
 
             assertThat(readLabelTexts(ClaimScoreRowResolver.resolveMarketRows(
                     buildBreakdownClaimedBy(HEGEMONY, standing),
                     standing,
                     NOTHING_BEYOND_THE_SCORE,
-                    WITHHOLDING_UNFOUND_MARKETS)))
+                    WITHHOLDING_UNDISCOVERED_MARKETS)))
                 .containsExactly("Kanta's Den");
 
             assertThat(readLabelTexts(ClaimScoreRowResolver.resolveMarketRows(
                     buildBreakdownClaimedBy(HEGEMONY, standing),
                     standing,
                     NOTHING_BEYOND_THE_SCORE,
-                    LISTING_UNFOUND_MARKETS)))
+                    LISTING_UNDISCOVERED_MARKETS)))
                 .containsExactly("Kanta's Den", "Chalcedon");
         }
 
@@ -982,7 +987,7 @@ final class ClaimScoreRowResolverTest {
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
                 buildReadingRemarkingOn("kanta's_den"),
-                WITHHOLDING_UNFOUND_MARKETS);
+                WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(rows.get(0).line().noteText())
                 .isEqualTo(LAST_SEEN);
@@ -999,7 +1004,7 @@ final class ClaimScoreRowResolverTest {
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
                 buildReadingRemarkingOn(nameMarketId("Kirov Reserve")),
-                WITHHOLDING_UNFOUND_MARKETS);
+                WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(rows.get(0).line().noteText())
                 .isEqualTo(LAST_SEEN);
@@ -1015,7 +1020,7 @@ final class ClaimScoreRowResolverTest {
                 buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
                 buildReadingRemarkingOn(nameMarketId(STRONGEST_MARKET)),
-                WITHHOLDING_UNFOUND_MARKETS);
+                WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(rows.get(0).line().noteText())
                 .isEqualTo(LAST_SEEN);
@@ -1031,7 +1036,7 @@ final class ClaimScoreRowResolverTest {
                 buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
                 buildReadingRemarkingOn(nameMarketId(STRONGEST_MARKET)),
-                WITHHOLDING_UNFOUND_MARKETS);
+                WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(rows.get(0).children())
                 .allSatisfy(term -> assertThat(term.line().noteText()).isNull());
@@ -1066,7 +1071,7 @@ final class ClaimScoreRowResolverTest {
             buildBreakdownClaimedBy(HEGEMONY, standing),
             standing,
             colonyReading,
-            WITHHOLDING_UNFOUND_MARKETS);
+            WITHHOLDING_UNDISCOVERED_MARKETS);
     }
 
     // The id the walk that met a colony recorded for it, derived from its name so a case naming a
@@ -1108,7 +1113,7 @@ final class ClaimScoreRowResolverTest {
             buildBreakdownClaimedBy(TRITACHYON, standing),
             standing,
             colonyReading,
-            WITHHOLDING_UNFOUND_MARKETS);
+            WITHHOLDING_UNDISCOVERED_MARKETS);
     }
 
     // A faction present in the system through the given colonies alone, none of which the mechanic
@@ -1119,9 +1124,9 @@ final class ClaimScoreRowResolverTest {
         return new PresenceOnlyClaimStanding(HEGEMONY, IS_TERRITORIAL, List.of(unweighedMarkets));
     }
 
-    // A concealed colony the player has not found either - the two arms of "known" both against it,
-    // which is the shape the withholding keeps off the list.
-    private static MarketClaimBreakdown buildUnfoundHiddenMarket(
+    // A concealed colony the player knows nothing of either - the two arms of "known" both against
+    // it, which is the shape the withholding keeps off the list.
+    private static MarketClaimBreakdown buildUnknownHiddenMarket(
             String marketName,
             int marketSize,
             int siblingMarketCount,
@@ -1131,7 +1136,7 @@ final class ClaimScoreRowResolverTest {
             EntityNameplate.createUnmarkedNameplate(marketName),
             nameMarketId(marketName),
             listingPosition,
-            IS_UNFOUND_BY_PLAYER,
+            IS_UNKNOWN_TO_PLAYER,
             ContestAdmission.HIDDEN,
             marketSize,
             siblingMarketCount,
@@ -1178,9 +1183,9 @@ final class ClaimScoreRowResolverTest {
         return buildStrongestMarket(siblingMarketCount, IS_KNOWN_TO_PLAYER);
     }
 
-    // The same market, stated as one the player has or has not found - the two cases the withholding
+    // The same market, stated as one the player knows of or does not - the two cases the withholding
     // turns on. Held in the open either way, a market carrying a standing being one the mechanic
-    // weighed, so the unfound reading is the standing the player cannot be shown.
+    // weighed, so the second reading is a faction standing on a colony nobody has discovered.
     private static MarketClaimBreakdown buildStrongestMarket(
             int siblingMarketCount,
             boolean isKnownToPlayer) {

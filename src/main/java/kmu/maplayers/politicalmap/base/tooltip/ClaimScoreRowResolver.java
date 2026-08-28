@@ -152,31 +152,32 @@ public final class ClaimScoreRowResolver {
      * strongest first, each carrying the terms of its own score - closed by the presence its several
      * holdings earned every one of them.
      *
-     * @param breakdown               the whole contest the standing was ranked in - what settles
-     *                                who the claim holder is and which listing ties actually
-     *                                decided something, neither of which one faction's standing
-     *                                can answer
-     * @param standing                the faction's ranked place in that contest, of either kind
-     * @param colonyReading           what the box may say about the system's colonies beyond their
-     *                                scores, folded once for the whole box. A claim row carries the
-     *                                id of the market it was scored from and nothing of the place
-     *                                behind it, so this is the only thing parting an unowned
-     *                                collapse from an unowned hulk on the list, the only thing that
-     *                                can say the player has yet to find either, and the only thing
-     *                                that can date them
-     * @param isListingUnfoundMarkets whether an unfound market the contest never weighed may be
-     *                                listed. False is the ordinary state and leaves those markets
-     *                                off; true is the dev reveal, under which the account is stated
-     *                                in full
+     * @param breakdown                    the whole contest the standing was ranked in - what
+     *                                     settles who the claim holder is and which listing ties
+     *                                     actually decided something, neither of which one
+     *                                     faction's standing can answer
+     * @param standing                     the faction's ranked place in that contest, of either
+     *                                     kind
+     * @param colonyReading                what the box may say about the system's colonies beyond
+     *                                     their scores, folded once for the whole box. A claim row
+     *                                     carries the id of the market it was scored from and
+     *                                     nothing of the place behind it, so this is the only thing
+     *                                     parting an unowned collapse from an unowned hulk on the
+     *                                     list, the only thing that can say the player has yet to
+     *                                     find either, and the only thing that can date them
+     * @param isListingUndiscoveredMarkets whether a market on an undiscovered entity may be listed
+     *                                     though the contest never weighed it. False is the
+     *                                     ordinary state and leaves those markets off; true is the
+     *                                     dev reveal, under which the account is stated in full
      * @return the entries in the order they are read
      */
     public static List<CellTooltipEntry> resolveMarketRows(
             SystemClaimBreakdown breakdown,
             FactionClaimStanding standing,
             SystemColonyReading colonyReading,
-            boolean isListingUnfoundMarkets) {
+            boolean isListingUndiscoveredMarkets) {
 
-        var listedMarkets = selectListedMarkets(standing, isListingUnfoundMarkets);
+        var listedMarkets = selectListedMarkets(standing, isListingUndiscoveredMarkets);
 
         // Routed on the kind of standing because the two things the fuller account is built from -
         // the market that carried the score, and the presence term counted for it - exist only on a
@@ -188,7 +189,7 @@ public final class ClaimScoreRowResolver {
                 weighedStanding,
                 colonyReading,
                 listedMarkets,
-                isListingUnfoundMarkets);
+                isListingUndiscoveredMarkets);
         }
         return resolvePresenceOnlyRows(colonyReading, listedMarkets);
     }
@@ -201,7 +202,7 @@ public final class ClaimScoreRowResolver {
             WeighedClaimStanding standing,
             SystemColonyReading colonyReading,
             List<MarketClaimBreakdown> listedMarkets,
-            boolean isListingUnfoundMarkets) {
+            boolean isListingUndiscoveredMarkets) {
 
         // Whether this faction is the one the contest handed the system to, and so whose strongest
         // market is the one that took it. A decree settles the system before a single market is
@@ -217,7 +218,7 @@ public final class ClaimScoreRowResolver {
                     breakdown,
                     standing,
                     market,
-                    isListingUnfoundMarkets)),
+                    isListingUndiscoveredMarkets)),
                 market,
                 colonyReading,
                 isHoldingTheClaim && market == standing.standingMarket()));
@@ -425,19 +426,19 @@ public final class ClaimScoreRowResolver {
     // The markets an account lists, out of everything the standing holds, in the order the contest
     // would settle them.
     //
-    // A market the contest weighed is listed whether or not the player has found it, its weight being
-    // in the numbers on screen already - the claim, the faction's score, the difference between this
-    // market's total and the terms stated beneath it - so the row is what makes those add up. What is
-    // left off is an unfound market the contest never weighed: it accounts for nothing shown, so a
-    // row for it would be disclosure and nothing else.
+    // A market the contest weighed is listed however undiscovered its colony, its weight being in
+    // the numbers on screen already - the claim, the faction's score, the difference between this
+    // market's total and the terms stated beneath it - so the row is what makes those add up. What
+    // is left off is a market the contest never weighed and the player knows nothing of: it accounts
+    // for nothing shown, so a row for it would be disclosure and nothing else.
     private static List<MarketClaimBreakdown> selectListedMarkets(
             FactionClaimStanding standing,
-            boolean isListingUnfoundMarkets) {
+            boolean isListingUndiscoveredMarkets) {
 
         return standing
             .readHeldMarkets()
             .stream()
-            .filter(market -> ListedClaimMarkets.isListedMarket(market, isListingUnfoundMarkets))
+            .filter(market -> ListedClaimMarkets.isListedMarket(market, isListingUndiscoveredMarkets))
             .sorted(MARKET_ORDER)
             .toList();
     }
@@ -448,10 +449,10 @@ public final class ClaimScoreRowResolver {
     // it, so it sits among the very lines the count invites the reader to check it against while
     // being outside the count, and the term would read as short by a market on screen.
     //
-    // Asked of the list alone. A market kept off it for being unfound is not on screen to contradict
-    // anything, and the count merely running ahead of what is shown states nothing the listed markets
-    // do not - each carries the whole score it was weighed at, presence included, over terms that
-    // account for its own share only.
+    // Asked of the list alone. A market kept off it for being unknown to the player is not on screen
+    // to contradict anything, and the count merely running ahead of what is shown states nothing the
+    // listed markets do not - each carries the whole score it was weighed at, presence included,
+    // over terms that account for its own share only.
     private static boolean isEveryListedMarketCounted(List<MarketClaimBreakdown> listedMarkets) {
         return listedMarkets
             .stream()

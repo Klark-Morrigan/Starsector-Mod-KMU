@@ -473,18 +473,18 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
          * every colony is withheld would otherwise be named over an account with nothing in it,
          * which is precisely the reading that tells the player what the fog is keeping back.
          *
-         * <p>No kind of standing is spared it. The mechanic scores colonies nobody has found, so a
-         * faction can be weighed on a market this box may not name, and a weighed standing whose
-         * every colony is unfound is dropped exactly as a presence-only one is. One found colony is
-         * enough to keep either: the faction is then on the map in its own colours, and naming it
-         * tells the player nothing they cannot already see.
+         * <p>No kind of standing is spared it. The mechanic scores colonies nobody has discovered,
+         * so a faction can be weighed on a market this box may not name, and a weighed standing
+         * whose every colony is unknown to the player is dropped exactly as a presence-only one is.
+         * One known colony is enough to keep either: the faction is then on the map in its own
+         * colours, and naming it tells the player nothing they cannot already see.
          */
         static ListedClaimContest selectFrom(
                 SystemClaimBreakdown breakdown,
                 ColonyVisibility colonyVisibility,
                 HolderGrouping holderGrouping) {
 
-            var isListingUnfoundMarkets = colonyVisibility.shouldIncludeUndiscoveredMarkets();
+            var isListingUndiscoveredMarkets = colonyVisibility.shouldIncludeUndiscoveredMarkets();
 
             return new ListedClaimContest(
                 breakdown,
@@ -492,7 +492,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                 breakdown
                     .scores()
                     .stream()
-                    .filter(standing -> isListingUnfoundMarkets || hasFoundColony(standing))
+                    .filter(standing -> isListingUndiscoveredMarkets || hasFoundColony(standing))
                     .toList(),
                 holderGrouping);
         }

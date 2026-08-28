@@ -31,13 +31,13 @@ final class SystemColonyReadingFixture {
     }
 
     /**
-     * A walk of a system holding one colony the player has yet to find, which is the half of a
-     * line's account neither a score nor a weight can supply.
+     * A walk of a system holding one colony whose entity the player has yet to discover, which is
+     * the half of a line's account neither a score nor a weight can supply.
      *
      * @param colonyId the colony's market id, as the account listing it carries
-     * @return a reading answering that colony unfound and every other found
+     * @return a reading answering that colony undiscovered and every other discovered
      */
-    static SystemColonyReading buildReadingWithUnfound(String colonyId) {
+    static SystemColonyReading buildReadingWithUndiscovered(String colonyId) {
         return new SystemColonyReading(
             ColonyKindLookup.NONE,
             new ColonyDiscoveryLookup(Set.of(colonyId)),

@@ -34,7 +34,7 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FU
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
-import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithUnfound;
+import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithUndiscovered;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -276,15 +276,14 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsAnUnfoundColonyUndiscovered() {
-            // The reveal is the one state such a colony is weighed and listed in at all, and the
-            // word comes off the box's own walk of the system: no breakdown carries what the player
-            // has found, the entity's flag being nowhere in the arithmetic.
+        void resolveMarketRowsCallsOutAnUndiscoveredColony() {
+            // The word comes off the box's own walk of the system: no breakdown carries what the
+            // player has discovered, the entity's flag being nowhere in the arithmetic.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules(),
-                buildReadingWithUnfound("jangala"));
+                buildReadingWithUndiscovered("jangala"));
 
             assertThat(rows.get(0).line().qualifierText())
                 .isEqualTo("undiscovered");
