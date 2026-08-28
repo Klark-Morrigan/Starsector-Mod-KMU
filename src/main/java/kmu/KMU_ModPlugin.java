@@ -4,9 +4,6 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
-import kmlib.settings.LunaSettingsReader;
-
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
@@ -19,6 +16,7 @@ import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuRetiredSettings;
 import kmu.starsector.rat.RandomAssortmentOfThingsCompatibilityInstaller;
 import kmu.starsector.rat.RandomAssortmentOfThingsCompatibilityMode;
+import kmu.starsector.rat.RandomAssortmentOfThingsSettings;
 import kmu.ui.context.MarketUiContextInstaller;
 
 /**
@@ -108,15 +106,11 @@ public class KMU_ModPlugin extends BaseModPlugin {
             FilterSelectionHeal::installHealOnSettingsChange,
             "Failed to install KMU map filter heal listener");
 
-        // The same reaction to Random Assortment of Things' own saves: LunaLib announces every
-        // mod's settings to every listener, so that mod flipping its own minimap switch is as
-        // observable as our knobs are, and the compatibility follows it live instead of at the next
-        // load. Registered without asking whether the mod is installed, since the listener is bound
-        // to that mod's id: on an install without it nothing ever announces that id, so this simply
-        // never fires.
+        // The same reaction to Random Assortment of Things' own saves, so the compatibility follows
+        // that mod flipping its minimap switch live instead of at the next load. A second settings
+        // source rather than a second kind of step, which is why it reads like the one above.
         KmuWiringSteps.runGuardedStep(
-            () -> LunaSettingsReader.runOnSettingsChange(
-                RandomAssortmentOfThingsPresence.MOD_ID,
+            () -> RandomAssortmentOfThingsSettings.runOnSettingsChange(
                 KMU_ModPlugin::applySwitchedFeatures),
             "Failed to install KMU Random Assortment of Things settings listener");
     }

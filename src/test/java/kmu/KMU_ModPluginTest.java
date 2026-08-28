@@ -3,29 +3,36 @@ package kmu;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
+import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
 import kmu.maplayers.politicalmap.base.PoliticalMapInstaller;
+import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuRetiredSettings;
+import kmu.starsector.rat.RandomAssortmentOfThingsSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 
 /**
  * Pins what the entry point itself is answerable for: being the plugin the engine constructs, and
- * the composition it names - which installers the map layers are made of, and that switching them
- * off reaches every one of them.
+ * the composition it names - which steps a launch is made of, which installers the map layers are
+ * made of, and that switching them off reaches every one of them.
  *
- * <p>The application-load list is not among them, and cannot be: its last step reaches LunaLib
- * through {@code LunaSettingsReader}, and LunaLib is on no test classpath, so the class fails to
- * initialise and the step throws an {@code Error} the wiring guard deliberately does not catch.
- * Pinning that list needs each step to name a class this mod owns first.
+ * <p>Every step a launch runs names a class this mod owns, which is what makes the list assertable
+ * at all: LunaLib is on no test classpath, so a step reaching it directly would fail to initialise
+ * and throw an {@code Error} the wiring guard deliberately does not catch. The one binding that
+ * must touch LunaLib is held behind {@code RandomAssortmentOfThingsSettings}, which is stood in for
+ * here like the rest.
  *
  * <p>What each installer registers is pinned beside that installer, and when a switch is worth
  * acting on is pinned on {@link KmuToggledFeature}. Neither is re-asserted here: this suite is
@@ -41,6 +48,39 @@ class KMU_ModPluginTest {
 
             assertThat(new KMU_ModPlugin())
                 .isInstanceOf(BaseModPlugin.class);
+        }
+    }
+
+    @Nested
+    class OnApplicationLoad {
+
+        @Test
+        void standsUpEveryStepALaunchIsMadeOf() {
+            // The list is the whole subject: a step nobody named is a feature that silently never
+            // runs, which is how a settings change came to leave a stale spotlight standing. Held
+            // over all five at once, so a step dropped from the wiring fails here rather than in
+            // play.
+            try (var lunaSettingsMock = mockStatic(KmuLunaSettings.class);
+                    var retiredSettingsMock = mockStatic(KmuRetiredSettings.class);
+                    var mapLayersMock = mockStatic(MapLayers.class);
+                    var filterHealMock = mockStatic(FilterSelectionHeal.class);
+                    var ratSettingsMock = mockStatic(RandomAssortmentOfThingsSettings.class)) {
+
+                new KMU_ModPlugin().onApplicationLoad();
+
+                lunaSettingsMock.verify(KmuLunaSettings::installBindings);
+                retiredSettingsMock.verify(KmuRetiredSettings::clearRetiredSettings);
+                mapLayersMock.verify(MapLayers::registerAll);
+                filterHealMock.verify(FilterSelectionHeal::installHealOnSettingsChange);
+
+                // The two settings listeners are pinned on the announcement each answers rather
+                // than on the reaction it carries: which mod's settings a listener is bound to is
+                // the part a call site can get wrong, and a method reference has no identity to
+                // assert on anyway.
+                lunaSettingsMock.verify(() -> KmuLunaSettings.runOnSettingsChange(any()));
+                ratSettingsMock.verify(
+                    () -> RandomAssortmentOfThingsSettings.runOnSettingsChange(any()));
+            }
         }
     }
 
