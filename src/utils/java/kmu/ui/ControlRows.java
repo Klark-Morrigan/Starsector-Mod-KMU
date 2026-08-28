@@ -226,7 +226,7 @@ public final class ControlRows {
             () -> {
 
                 for (var index = 0; index < toggles.length; index++) {
-                    
+
                     checks
                         .get(index)
                         .setSelected(toggles[index].fallback());

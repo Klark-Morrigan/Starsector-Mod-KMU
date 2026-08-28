@@ -135,7 +135,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     // Narrow enough to push the knobs aside for a good look at the map, wide enough that
     // the divider is still findable.
     private static final int CONTROL_MINIMUM_WIDTH = 80;
-    
+
     // A slider row is about this tall, so one wheel notch moves the control panel by roughly
     // one knob rather than by one pixel.
     private static final int SCROLL_UNIT_INCREMENT = 16;

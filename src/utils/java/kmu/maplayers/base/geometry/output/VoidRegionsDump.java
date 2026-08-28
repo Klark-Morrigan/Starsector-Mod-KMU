@@ -97,7 +97,7 @@ public final class VoidRegionsDump {
             PickedPointCheck.reportPickedPoints(fixture, sectorName, laid);
             CoastVoidReport.reportCoastlines(laid, MapLook.RING_STROKE);
             VoidSectionReport.reportSections(fixture, laid);
-            
+
             reportPockets(
                 VoidPockets.findVoidPockets(
                     sites,
