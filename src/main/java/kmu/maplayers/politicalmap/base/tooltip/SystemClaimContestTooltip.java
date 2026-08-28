@@ -186,24 +186,11 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     }
 
     @Override
-    protected final Optional<String> resolveExpandedDetailName(
-            SectorAPI sector,
-            StarSystemAPI system) {
-
+    protected final boolean hasExpandableAccountFor(SectorAPI sector, StarSystemAPI system) {
         // The counterpart accounts for the colonies behind the factions this box lists, so a box
         // listing none has nothing for it to account for: both boxes would state the same claim line
-        // and the key would do nothing the player could see. Asked through the very read and the very
-        // projection the body is built from, so it can never offer to expand a contest it is about to
-        // draw as empty - which the fog alone can produce, a faction present only through colonies
-        // the player has not found leaving a standing the box may not state.
-        if (!readListedContest(system).hasListedStanding()) {
-            return Optional.empty();
-        }
-        // Answered for the pair at once rather than by each box, because it is the one thing they agree
-        // on: the counterpart accounts for the very scores the ordinary box states, so a player
-        // switching either way is being offered the same account. Which direction the hint reads
-        // follows from which of the two is being drawn, and is none of this class's business.
-        return Optional.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_DETAIL_CONTRIBUTIONS));
+        // and the key would do nothing the player could see.
+        return readListedContest(system).hasListedStanding();
     }
 
     /**

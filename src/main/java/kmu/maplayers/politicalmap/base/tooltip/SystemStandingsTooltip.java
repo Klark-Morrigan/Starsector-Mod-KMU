@@ -65,10 +65,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     }
 
     @Override
-    protected final Optional<String> resolveExpandedDetailName(
-            SectorAPI sector,
-            StarSystemAPI system) {
-
+    protected final boolean hasExpandableAccountFor(SectorAPI sector, StarSystemAPI system) {
         // The counterpart accounts for the colonies behind the standings, so a system ranking none
         // has nothing for it to account for: both boxes would state the same banner and the key
         // would do nothing the player could see.
@@ -78,14 +75,9 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         // place, while the standings name everyone the player may be told about. A system whose
         // colonies are all collapsed or derelict is headed Decivilised or Unpopulated and still
         // ranks whoever holds them - and those colonies are exactly what the counterpart opens up.
-        //
-        // Answered for the pair of boxes at once rather than by each, because it is the one thing
-        // they agree on: the counterpart accounts for the very scores the ordinary box ranks by, so
-        // a player switching either way is being offered the same account. Which direction the hint
-        // reads follows from which of the two is being drawn, and is none of this class's business.
         return readRankedStandings(sector, system)
             .filter(RankedStandings::hasStanding)
-            .map(ranking -> KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_DETAIL_CONTRIBUTIONS));
+            .isPresent();
     }
 
     /**

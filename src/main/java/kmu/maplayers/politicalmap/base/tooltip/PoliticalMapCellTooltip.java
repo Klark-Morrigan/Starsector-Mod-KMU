@@ -7,8 +7,10 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.SystemCellTooltip;
+import kmu.util.KmuStrings;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * What every political-map view's hover box is beneath the framework's shape: a cell tooltip that may
@@ -67,6 +69,47 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
             sector,
             claimBreakdownReader.readCoreFactionId(system),
             isStatingCoreClaimInBody());
+    }
+
+    @Override
+    protected final Optional<String> resolveExpandedDetailName(
+            SectorAPI sector,
+            StarSystemAPI system) {
+
+        // What the counterpart adds is the same subject for every box of this layer - the account
+        // behind the numbers on screen - so the layer names it once rather than each body naming it.
+        // Two bodies answering separately could offer the player different words for one account, and
+        // the hint would then describe the key rather than what pressing it shows.
+        //
+        // Whether there is anything to expand into stays each body's own question, that being a fact
+        // about what this box drew for this system rather than about the layer.
+        return hasExpandableAccountFor(sector, system)
+            ? Optional.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_DETAIL_CONTRIBUTIONS))
+            : Optional.empty();
+    }
+
+    /**
+     * Whether this box's richer counterpart would state anything more about the system than this box
+     * already does.
+     *
+     * <p>Asked per hovered system rather than once per box: the counterpart accounts for the colonies
+     * behind what this box lists, so a system it lists nothing for has nothing to account for, and
+     * both boxes would draw the same thing. The hint is dropped there rather than offering a key that
+     * changes nothing on screen.
+     *
+     * <p>Answered through the very read the body is built from, so a box cannot offer to expand a
+     * listing it is about to draw as empty - which the fog alone can produce, a faction present only
+     * through colonies the player has not found leaving nothing this box may state.
+     *
+     * <p>Taking no part is the default, so a box whose subject has no richer counterpart overrides
+     * nothing.
+     *
+     * @param sector the live sector, whose economy the answer may read
+     * @param system the star system under the cursor
+     * @return true where the counterpart would show the player something this box does not
+     */
+    protected boolean hasExpandableAccountFor(SectorAPI sector, StarSystemAPI system) {
+        return false;
     }
 
     /**
