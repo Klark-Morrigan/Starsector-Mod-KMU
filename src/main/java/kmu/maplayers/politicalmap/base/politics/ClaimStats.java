@@ -24,8 +24,9 @@ import kmu.maplayers.politicalmap.base.PaintingBlocMetrics;
  * <p>Plain data with no Starsector types, so the aggregation is exercised on hand-built inputs.
  *
  * @param claims     the number of star systems the bloc claims, under the active grouping
- * @param marketSize the bloc's summed raw colony size across every market it owns anywhere in the
- *                   sector, not only in the systems it claims
+ * @param marketSize the bloc's summed raw colony size across every colony it lives on anywhere in
+ *                   the sector - whether or not the economy lists it, and not only in the systems
+ *                   it claims
  */
 public record ClaimStats(
     int claims,
@@ -64,7 +65,7 @@ public record ClaimStats(
      * {@link #addClaim} because the two metrics are scoped differently - a system contributes a
      * claim, a market size, both, or neither - so neither fold may assume the other ran.
      *
-     * @param systemMarketSize the summed raw colony size of the bloc's markets in one system
+     * @param systemMarketSize the summed raw colony size of the bloc's colonies in one system
      * @return a new stats value including those colonies
      */
     public ClaimStats addMarketSize(int systemMarketSize) {

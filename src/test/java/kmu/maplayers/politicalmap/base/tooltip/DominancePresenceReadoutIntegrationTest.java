@@ -13,6 +13,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.dominance.ribbon.HeldSystemRibbonPlanner;
@@ -46,22 +47,24 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the agreement on the faction and alliance views that the claims layer's own suite pins for
- * its box: every faction the band under a cell draws a run for is a faction the box over that cell
- * names.
+ * its box: every faction the band under a cell draws a run for is one the box over that cell names
+ * and the spotlight picker offers.
  *
- * <p>Neither surface alone can show it. The band counts the shared colony set while the box lists
- * what the weighing produced, so the two answer through different reads of one system - and they
- * parted company exactly where a faction held nothing the economy lists: every term of a dominance
- * weight is economy-fed, so such a faction raised no footprint, took no standing, and went unnamed
- * while the band beneath the cursor drew its run.
+ * <p>No surface alone can show it. The band counts the shared colony set while the box lists what
+ * the weighing produced and the picker lists what it totalled, so the three answer through
+ * different reads of one system - and they parted company exactly where a faction held nothing the
+ * economy lists: every term of a dominance weight is economy-fed, so such a faction raised no
+ * footprint, took no standing, took no stats entry, and went unnamed while the band beneath the
+ * cursor drew its run.
  *
  * <p>The system is wired as that case: one faction holding a registered colony beside another
  * present through an unregistered station alone, which is what vanilla builds Galatia Academy as.
  * Which heading each lands under is the box's own business and follows from the ranking - what this
- * asserts is the one thing neither suite can, that the two surfaces name one set of factions.
+ * asserts is the one thing no single suite can, that the surfaces name one set of factions.
  *
- * <p>The two read the system through passes of their own, as a live bake and the hover above it do,
- * so the agreement is between two readings rather than between two views of one hand-built answer.
+ * <p>Each reads the system through a pass of its own, as a live bake, the hover above it and the
+ * sidebar beside it do, so the agreement is between separate readings rather than between several
+ * views of one hand-built answer.
  */
 final class DominancePresenceReadoutIntegrationTest {
 
@@ -150,6 +153,35 @@ final class DominancePresenceReadoutIntegrationTest {
                     "The Hegemony",
                     "Contested by:",
                     "Tri-Tachyon");
+        }
+    }
+
+    @Nested
+    class AggregateDominanceStats {
+
+        @Test
+        void listsEveryBlocTheBandBeneathTheCellDrawsARunFor() {
+            // The third surface, and the last one that answered off the weights. The picker's rows
+            // are this fold's own keys, so a bloc it leaves out is a bloc the player cannot pick
+            // out however plainly the band beneath the cursor draws its run - and the unregistered
+            // holder is exactly the bloc no weight was ever worked out for.
+            var sector = buildSectorHoldingAnUnregisteredStation();
+            var holding = buildHolderPassOver(sector);
+
+            var band = new HeldSystemRibbonPlanner(
+                    DominancePass.over(holding, buildStabilityWeightedRules()),
+                    buildInputsFor(holding))
+                .planSystemRibbon(buildOnlySystem(sector));
+
+            assertThat(band.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, COLONY_RUN),
+                    new RibbonSegment(HEGEMONY_DARK, PARTING_RUN),
+                    new RibbonSegment(TRITACHYON_BRIGHT, COLONY_RUN));
+
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(
+                    DominancePass.over(holding, buildStabilityWeightedRules())))
+                .containsOnlyKeys(HEGEMONY, TRITACHYON);
         }
     }
 

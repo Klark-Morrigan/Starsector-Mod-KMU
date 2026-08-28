@@ -9,6 +9,7 @@ import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.politics.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
@@ -39,24 +40,24 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the agreement the whole widening exists for: every faction the band under a cell draws a run
- * for is a faction the box over that cell names.
+ * for is one the box over that cell names and the spotlight picker offers.
  *
- * <p>Neither surface alone can show it, which is why this is an integration test rather than a case
- * in either suite. The band counts the shared colony set and the box lists the contest's standings,
- * so the two answer through different reads of one system - and they parted company exactly where a
- * faction held nothing the mechanic weighed: the band drew its run while the box, listing weighed
- * standings alone, named nobody and printed {@code Claim: None} over a station the map was plainly
- * drawing in that faction's colours.
+ * <p>No surface alone can show it, which is why this is an integration test rather than a case in
+ * any one suite. The band counts the shared colony set, the box lists the contest's standings and
+ * the picker lists what a sector walk totalled, so they answer through different reads of one
+ * system - and they parted company exactly where a faction held nothing the mechanic weighed: the
+ * band drew its run while the box, listing weighed standings alone, named nobody and printed
+ * {@code Claim: None} over a station the map was plainly drawing in that faction's colours.
  *
  * <p>The system is wired as that very case, which is the common one across a sector rather than a
  * corner of it: a faction holding an open colony beside one holding a concealed base alone. Which
  * heading each of them lands under is the box's own suite's subject and is left alone here - neither
- * faction carries the territorial flag, so both read as present and ineligible, and what this case
- * asserts is the one thing neither suite can: that the two surfaces name one set of factions.
+ * faction carries the territorial flag, so both read as present and ineligible, and what these cases
+ * assert is the one thing no single suite can: that the surfaces name one set of factions.
  *
  * <p>Driven through the real claim reader over a stubbed sector, since a fake contest would be the
- * one thing that cannot be posed here: what is on trial is whether two surfaces reading one system
- * report one set of factions, and handing both the same hand-built answer would assert it by
+ * one thing that cannot be posed here: what is on trial is whether surfaces reading one system
+ * report one set of factions, and handing them the same hand-built answer would assert it by
  * construction.
  */
 final class ClaimPresenceReadoutIntegrationTest {
@@ -139,6 +140,38 @@ final class ClaimPresenceReadoutIntegrationTest {
                     "Non-territorial:",
                     "The Hegemony",
                     "Tri-Tachyon");
+        }
+    }
+
+    @Nested
+    class AggregateClaimStats {
+
+        @Test
+        void listsEveryFactionTheBandBeneathTheCellDrawsARunFor() {
+            // The third surface. The picker's rows are this fold's own keys, so a faction it leaves
+            // out is one the player cannot pick out however plainly the band draws its run - and a
+            // spotlight is the only way to ask the map where a faction that claims nothing is.
+            var sector = buildSectorHoldingAConcealedBase();
+            var inputs = RibbonPlanFixtures.buildInputsOver(
+                sector,
+                HolderGrouping.identity(),
+                BASE_FOG);
+
+            var claimBreakdownReader = new VanillaClaimBreakdownReader(
+                inputs.pass().colonyKnowledge(),
+                inputs.pass().colonies());
+
+            var band = new ClaimedSystemRibbonPlanner(claimBreakdownReader, inputs)
+                .planSystemRibbon(buildOnlySystem(sector));
+
+            assertThat(band.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, COLONY_RUN),
+                    new RibbonSegment(HEGEMONY_DARK, PARTING_RUN),
+                    new RibbonSegment(TRITACHYON_BRIGHT, COLONY_RUN));
+
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(inputs.pass(), claimBreakdownReader))
+                .containsOnlyKeys(HEGEMONY, TRITACHYON);
         }
     }
 

@@ -307,10 +307,12 @@ public record DominancePass(
 
     /**
      * This system's per-bloc footprints under the pass's weighting rule, colony rule and
-     * grouping: the per-faction footprints regrouped into per-bloc footprints (a no-op fold
-     * under identity, a member-summing
-     * merge under an alliance grouping). The one read shared by the holder resolve and the
-     * filter's presence resolve, so both rank the same footprints.
+     * grouping: the per-faction footprints regrouped into per-bloc footprints (a no-op fold under
+     * identity, a member-summing merge under an alliance grouping).
+     *
+     * <p>The one read every reader ranking by weight makes - the holder resolve, the filter's
+     * fallback to the real holder, and the picker's stats - so none of them can rank a system by
+     * footprints another was never shown.
      *
      * @param system the system whose markets are folded
      * @return each present bloc's footprint in the system; empty when no bloc holds a folded market
@@ -320,34 +322,6 @@ public record DominancePass(
             readFootprintsByFaction(system),
             MarketFootprint.EMPTY,
             MarketFootprint::merge);
-    }
-
-    /**
-     * This system's per-bloc contributions under the pass's weighting rule, colony rule and
-     * grouping: each faction's markets folded into its dominance footprint and raw colony size,
-     * then regrouped so
-     * an alliance's members sum into the alliance's one contribution.
-     *
-     * <p>The whole read {@link #readBlocFootprints} projects down to, for the stats aggregations
-     * that also need raw colony size. Held here rather than at each aggregation because assembling
-     * it means naming the weighting rule, the colony rule, the grouping, and the fold
-     * identity together - four knobs a caller would otherwise thread by hand, and four chances
-     * for one aggregation to read
-     * the economy under a different set than another.
-     *
-     * @param system the system whose markets are folded
-     * @return each present bloc's contribution in the system; empty when no bloc holds a folded
-     *         market
-     */
-    public Map<String, FactionMarketContribution> readBlocContributions(StarSystemAPI system) {
-
-        return grouping().regroupByBloc(
-            KnownMarketFootprints.readContributionsByFaction(
-                readColoniesIn(system),
-                rules,
-                colonyKnowledge()),
-            FactionMarketContribution.EMPTY,
-            FactionMarketContribution::merge);
     }
 
     /**

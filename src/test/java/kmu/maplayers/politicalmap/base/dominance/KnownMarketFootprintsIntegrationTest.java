@@ -81,9 +81,9 @@ import static org.mockito.Mockito.when;
  * {@link MarketWeightBreakdownTest}.
  *
  * <p>The third read - the colonies present that the economy does not list - is covered over the same
- * economy, and beside what it finds sits what it must not move: the contributions, the footprints
- * and the standings a system holding one resolves to are asserted to be the ones it resolves to
- * without it, since the whole reason those colonies are read apart is that no mechanic may see them.
+ * economy, and beside what it finds sits what it must not move: the footprints and the standings a
+ * system holding one resolves to are asserted to be the ones it resolves to without it, since the
+ * whole reason those colonies are read apart is that no mechanic may see them.
  */
 class KnownMarketFootprintsIntegrationTest {
 
@@ -1582,7 +1582,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readUnweighedColoniesByFactionLeavesTheWeighedContributionsWhereTheyWere() {
+        void readUnweighedColoniesByFactionLeavesTheWeighedFootprintsWhereTheyWere() {
             // The whole point of the second walk: an unlisted colony reaches the account and not the
             // pass. Admitted to the weight it would fold in at a nominal size nobody worked out - it
             // has no industries, no conditions and no computed stability - and could hand the system
@@ -1596,19 +1596,17 @@ class KnownMarketFootprintsIntegrationTest {
                 listedColony,
                 withName(buildVisibleMarket(hegemony, 4), "Galatia Academy"));
 
-            var contributions = KnownMarketFootprints.readContributionsByFaction(
+            var footprints = KnownMarketFootprints.readByFaction(
                 readColoniesIn(sector),
                 buildRules().build(),
                 buildKnowledgeUnderTheFog());
 
-            assertThat(contributions.get("hegemony").footprint().totalWeight())
+            assertThat(footprints.get("hegemony").totalWeight())
                 .isEqualTo(5 * DOMINANCE_WEIGHT_SCALE);
-            assertThat(contributions.get("hegemony").marketSize())
-                .isEqualTo(5);
 
             // The count is held to the same line as the weight: the unlisted colony does not lift
             // it either, so nothing reading the count can show a holding the pass never weighed.
-            assertThat(contributions.get("hegemony").footprint().marketCount())
+            assertThat(footprints.get("hegemony").marketCount())
                 .isEqualTo(1);
         }
 

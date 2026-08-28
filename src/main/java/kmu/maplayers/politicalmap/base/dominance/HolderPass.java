@@ -15,6 +15,7 @@ import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,11 +56,12 @@ public final class HolderPass {
 
     // Each system's habitation, resolved on first ask and remembered for the rest of the pass.
     //
-    // Memoised because two readers ask for it per system and they run in separate walks of the
-    // sector: the filter's holder resolve asks every system for its blocs, and the inhabitation
-    // scan asks every system for its emptiness. The colony walk beneath is already shared, so what
-    // repeated was the projection and the two folds over it - cheap each, and paid for the whole
-    // sector twice on every filtered rebuild.
+    // Memoised because several readers ask for it per system and they run in separate walks of the
+    // sector: the filter's holder resolve asks every system for its blocs, the inhabitation scan
+    // asks every system for its emptiness, and each picker's stats fold asks every system for the
+    // blocs living in it and what they live on. The colony walk beneath is already shared, so what
+    // repeated was the projection and the folds over it - cheap each, and paid for the whole sector
+    // over again per reader.
     //
     // Keyed by system id on the same terms the colony index is, and for the same reason: an
     // unkeyable system is resolved afresh rather than pooled with every other under a shared key.
@@ -308,15 +310,15 @@ public final class HolderPass {
     /**
      * What one system's habitation amounts to, off this pass's one walk of it - the value every
      * surface answering about habitation shares, and {@link SystemHabitation} says why it is one
-     * value rather than two reads.
+     * value rather than a read apiece.
      *
      * <p>Habitation rather than the wider listing {@link #readKnownColonyFactionIds} answers, and
      * the difference is the derelict: a hulk somebody has seen is named in a box and settles
      * nothing, so no bloc is living in a system holding one alone and none is spared the recede
      * there.
      *
-     * <p>Worked out on the first ask and remembered for the rest of the pass, since the two
-     * readers ask it in separate walks of the sector.
+     * <p>Worked out on the first ask and remembered for the rest of the pass, since its readers
+     * ask it in separate walks of the sector.
      *
      * @param system the system to read; null yields an empty habitation
      * @return the system's habitation under this pass's rule and grouping
@@ -340,19 +342,40 @@ public final class HolderPass {
     }
 
     // One system's habitation worked out, for the memo above to remember: the habitation
-    // projection over this pass's walk, with the blocs folded from those very colonies.
+    // projection over this pass's walk, with the blocs and their sizes folded from those very
+    // colonies.
     private SystemHabitation resolveHabitationIn(StarSystemAPI system) {
 
         var inhabitingColonies = readInhabitingColoniesIn(system);
 
         return new SystemHabitation(
             inhabitingColonies,
-            grouping.collectBlocIds(collectFactionIdsOf(inhabitingColonies)));
+            grouping.regroupByBloc(
+                sumColonySizesByFaction(inhabitingColonies),
+                0,
+                Integer::sum));
     }
 
-    // The owners of one projection's colonies, each named once however many it holds there. Shared
-    // by the two folds above so a listing's owners and a habitation's blocs are gathered by one
-    // rule - which colonies were handed in is the only thing that separates them.
+    // Each owner's summed raw colony size among the colonies handed in - the sizes the habitation
+    // fold above regroups.
+    //
+    // Summed per owner before the grouping rather than per bloc after it, so the one fold that
+    // decides which owners can be named a bloc for decides it for the sizes as well: a bloc's
+    // presence and the size beside it are then the same colonies counted twice over, never two
+    // selections that could differ by one.
+    private static Map<String, Integer> sumColonySizesByFaction(List<Colony> colonies) {
+
+        var sizeByFactionId = new LinkedHashMap<String, Integer>();
+        for (var colony : colonies) {
+            sizeByFactionId.merge(
+                colony.market().getFaction().getId(),
+                colony.market().getSize(),
+                Integer::sum);
+        }
+        return sizeByFactionId;
+    }
+
+    // The owners of one projection's colonies, each named once however many it holds there.
     private static Set<String> collectFactionIdsOf(List<Colony> colonies) {
 
         var factionIds = new LinkedHashSet<String>();

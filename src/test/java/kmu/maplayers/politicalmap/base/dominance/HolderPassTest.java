@@ -19,6 +19,7 @@ import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_R
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -47,8 +48,8 @@ final class HolderPassTest {
     private static final FactionAPI HEGEMONY_FACTION = SectorPoliticsFixtures
         .buildFaction("hegemony");
 
-    // The size every posed colony carries. The projection reads ownership and discovery, so a case
-    // varying size would vary nothing it can see.
+    // The size every posed colony carries where a case is not about size. The projections read
+    // ownership and discovery, so only the habitation fold's own sums vary it.
     private static final int COLONY_SIZE = 5;
 
     // The bloc the two posed owners fold into where a case reads presence per bloc rather than per
@@ -322,6 +323,26 @@ final class HolderPassTest {
                     .readHabitationIn(SectorPoliticsFixtures.buildOnlySystem(sector))
                     .blocIds())
                 .containsExactly(ALLIANCE_ID);
+        }
+
+        @Test
+        void sumsWhatEachBlocLivesOnThere() {
+            // The picker's size metric comes off this fold as well, so a bloc's presence and the
+            // size beside it are one set of colonies counted twice over rather than two selections
+            // that could differ by one. Allied members sum into the bloc they paint as, as their
+            // claims and their weights do.
+            var sector = SectorPoliticsFixtures.buildSectorWith(
+                SYSTEM_ID,
+                SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, 5),
+                SectorPoliticsFixtures.buildVisibleMarket(
+                    SectorPoliticsFixtures.buildFaction("tritachyon"),
+                    3));
+
+            assertThat(HolderPass
+                    .over(sector, BASE_FOG, ALLIED_HEGEMONY_AND_TRITACHYON)
+                    .readHabitationIn(SectorPoliticsFixtures.buildOnlySystem(sector))
+                    .colonySizeByBlocId())
+                .containsExactly(entry(ALLIANCE_ID, 8));
         }
 
         @Test

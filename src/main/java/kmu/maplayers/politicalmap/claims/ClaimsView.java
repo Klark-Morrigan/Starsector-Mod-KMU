@@ -13,8 +13,8 @@ import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
-import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 import kmu.maplayers.politicalmap.base.politics.ClaimStatsAggregator;
@@ -42,7 +42,7 @@ import java.util.Optional;
  * drifting on how a plain faction bloc paints and reads.
  *
  * <p>Its spotlight picker is its own, not the held layers': the blocs it offers are the ones that
- * claim a system or hold a colony, and they carry claim metrics rather than domination ones, so the
+ * claim a system or live in one, and they carry claim metrics rather than domination ones, so the
  * sort selector can only offer numbers this layer is actually painted by. A bloc that holds colonies
  * while claiming nothing is listed receded at a count of zero rather than dropped, so the list
  * accounts for every faction the player can see instead of appearing to have forgotten one.
@@ -153,26 +153,26 @@ public final class ClaimsView implements PoliticalMapView {
 
     /**
      * The claims picker: every bloc the sector walk surfaced - each one that claims a system or
-     * holds a colony - carrying its whole-sector {@link ClaimStats}, paired with
+     * lives in one - carrying its whole-sector {@link ClaimStats}, paired with
      * {@link ClaimSortMode}'s vocabulary.
      *
-     * <p>No gate of its own, so the list is whoever paints or holds something. A faction that claims
+     * <p>No gate of its own, so the list is whoever paints or lives somewhere. A faction that claims
      * a system but holds no colony anywhere is listed because it paints territory here; a faction
      * with colonies but no claim is listed because leaving it out reads as the map having forgotten
      * a faction the player can plainly see, and its row says what it is - receded, with a claim count
      * of zero - before the pick is made. A bloc with neither never reached the fold, so the list is
-     * everyone who paints or holds, not every faction in the sector.
+     * everyone who paints or lives somewhere, not every faction in the sector.
      *
      * <p>A claimless bloc stays pickable. Spotlighting one paints no territory, which is the honest
      * answer to "show me what this faction claims" when the answer is nowhere - but the systems it
      * lives in are spared the recede, so the pick still shows where the faction is while showing
      * that it claims none of it. Re-picking the lit row clears it as any other pick does.
      *
-     * @param sector           the sector whose systems and economy the claim stats are read from;
+     * @param sector           the sector whose systems and colonies the claim stats are read from;
      *                         null yields an empty picker
-     * @param rules            the dominance-weighting rules for this read; carried by the shared
-     *                         pass, which the market-size half of the stats reads its economy
-     *                         through
+     * @param rules            the dominance-weighting rule the view seam carries; this layer is
+     *                         painted by the claim mechanic and weighs nothing, so it reaches
+     *                         nothing here
      * @param colonyVisibility what the player may be shown of a colony, so a bloc's market size
      *                         counts the very colonies the map paints it for
      * @return this view's picker, its blocs in the order the sector walk surfaces them
@@ -186,11 +186,15 @@ public final class ClaimsView implements PoliticalMapView {
         // The grouping is resolved once and handed to both halves, so the numbers, the crest, and the
         // name all read against one snapshot rather than three live samples.
         var grouping = resolveGrouping();
-        var pass = DominancePass.over(sector, rules, colonyVisibility, grouping);
+
+        // The layer-generic pass, the weighting rule the seam carries reaching nothing here: this
+        // layer is painted by claims, and a claim count and a colony size are read without weighing
+        // anything.
+        var pass = HolderPass.over(sector, colonyVisibility, grouping);
 
         // The claim half reads through the pass's own colony walk, so the two metrics cost one
         // traversal of each system between them rather than one apiece - and are answered off the
-        // same reading of the sector, which is what keeps a claim count and a market size from
+        // same reading of the sector, which is what keeps a claim count and a colony size from
         // describing a system at two different moments.
         return new ListPicker<>(
             buildSelectableBlocs(

@@ -94,7 +94,7 @@ public interface DominancePaintedView extends PoliticalMapView {
      * Which of the present blocs this view offers as spotlight targets - the one decision that
      * differs between views the contest paints, which is why it is the only thing this interface
      * leaves abstract. The presence gate itself is not asked for here: a bloc reaches the test only
-     * when the shared stats read already found it holding a visible market somewhere.
+     * when the shared stats read already found it living somewhere the player can see.
      *
      * @param grouping the grouping the blocs were folded under, so a gate that asks what a bloc is
      *                 (an alliance, a lone faction) reads the same snapshot the numbers came from

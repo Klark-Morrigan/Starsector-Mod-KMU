@@ -74,77 +74,33 @@ public final class KnownMarketFootprints {
             DominanceRules rules,
             ColonyKnowledge colonyKnowledge) {
 
-        // The dominance-only projection of the fuller contribution read: a footprint-only caller
-        // (the dominance resolve, the watcher's diff) drops the raw market size the picker's stats
-        // need, so both share the one market walk and colony filter rather than defining a second.
         var footprintByFactionId = new LinkedHashMap<String, MarketFootprint>();
-
-        for (var entry : readContributionsByFaction(
-                    colonies,
-                    rules,
-                    colonyKnowledge)
-                .entrySet()) {
-
-            footprintByFactionId.put(
-                entry.getKey(),
-                entry.getValue().footprint());
-        }
-        return footprintByFactionId;
-    }
-
-    /**
-     * Folds each faction's markets in one system into its {@link FactionMarketContribution} - the
-     * dominance footprint plus the raw summed colony size the picker's market-size metric reads -
-     * from a single walk of the system's markets under the one "counts as a colony" filter.
-     *
-     * <p>The read {@link #readByFaction} projects down to when only the footprint is wanted, and the
-     * picker's stats aggregation reads whole to also see raw market size. Keeping both concerns on
-     * one walk means the colony filter and the weight read are defined once, not duplicated per
-     * caller.
-     *
-     * @param colonies         the system's colony set, as one walk of it reported; empty yields
-     *                         an empty map
-     * @param rules            the dominance-weighting rules for this pass, read once per pass by
-     *                         the caller so a whole pass resolves under one rule
-     * @param colonyKnowledge what the player may be shown of a colony, read once per pass by the
-     *                         caller so every fold in the pass runs over the one set of colonies
-     * @return each faction's contribution in the system, keyed by faction id; empty when the system
-     *         holds no folded market
-     */
-    public static Map<String, FactionMarketContribution> readContributionsByFaction(
-            Colonies colonies,
-            DominanceRules rules,
-            ColonyKnowledge colonyKnowledge) {
-
-        var contributionByFactionId = new LinkedHashMap<String, FactionMarketContribution>();
         for (var market : readWeighedColonies(colonies, colonyKnowledge)) {
             var factionId = market.getFaction().getId();
             var breakdown = MarketWeights.readBreakdown(market, rules);
-            var contribution = contributionByFactionId.getOrDefault(
-                factionId,
-                FactionMarketContribution.EMPTY);
 
             // Whether the colony is on a planet is read off the breakdown rather than from the
             // market again: the tie-break here and the box that names a station colony's station
             // must not be able to disagree about what kind of place a colony is.
-            contributionByFactionId.put(
+            footprintByFactionId.put(
                 factionId,
-                contribution.addMarket(
-                    breakdown.computeTotalWeight(),
-                    !breakdown.isStationMarket(),
-                    market.getSize()));
+                footprintByFactionId
+                    .getOrDefault(factionId, MarketFootprint.EMPTY)
+                    .addMarket(
+                        breakdown.computeTotalWeight(),
+                        !breakdown.isStationMarket()));
         }
-        return contributionByFactionId;
+        return footprintByFactionId;
     }
 
     /**
      * Reads each faction's markets in one system as the arithmetic behind their dominance
      * weights, rather than as the weights alone.
      *
-     * <p>The explaining half of {@link #readContributionsByFaction}: the same market walk under
-     * the same "counts as a colony" filter and the same per-market weight read, kept whole
-     * instead of summed away. What paints the map reads the totals; what has to justify a
-     * painted system to the player reads the parts those totals are made of.
+     * <p>The explaining half of {@link #readByFaction}: the same market walk under the same
+     * "counts as a colony" filter and the same per-market weight read, kept whole instead of
+     * summed away. What paints the map reads the totals; what has to justify a painted system to
+     * the player reads the parts those totals are made of.
      *
      * @param colonies         the system's colony set, as one walk of it reported; empty yields
      *                         an empty map

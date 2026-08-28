@@ -11,26 +11,34 @@ import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
  * totals, and the sidebar then reads the totals rather than walking the sector again per frame.
  *
  * <p>The four are deliberately distinct measures a player might sort by. Domination and presence are
- * system counts - how many systems the bloc wins outright versus how many it merely holds a market
- * in - so a bloc concentrated in a few contested systems reads differently from one spread thin.
+ * system counts - how many systems the bloc wins outright versus how many it merely lives in - so a
+ * bloc concentrated in a few contested systems reads differently from one spread thin.
  * Score is the summed dominance weight (the size-times-stability worth {@link MarketFootprint}
  * carries), and market size is the summed raw {@code MarketAPI.getSize()}, so a heavily-weighted bloc
  * and a merely-large one are told apart. Market size is kept here rather than in {@link
  * MarketFootprint}, which stays scoped to the dominance-weight quantities the rule compares.
  *
- * <p>Presence in these stats is not the same as painting something. Dominance weight is what these
- * layers paint by, and it is economy-fed - a colony the economy does not list has no industries, no
- * conditions and no computed stability - so a bloc present through such colonies alone folds in at a
- * score of nought and paints nowhere. That is what {@link #isPaintingNothing} answers.
+ * <p>The two halves are scoped differently on purpose, and that is what lets a bloc be listed at
+ * nought. Domination and score answer what the contest made of the bloc, so they count only the
+ * colonies it weighed; presence and market size answer how much of the sector the bloc lives in, so
+ * they count every colony the player may be shown it living on - a station the economy never
+ * registered included.
+ *
+ * <p>Presence in these stats is therefore not the same as painting something. Dominance weight is
+ * what these layers paint by, and it is economy-fed - a colony the economy does not list has no
+ * industries, no conditions and no computed stability - so a bloc present through such colonies
+ * alone folds in at a score of nought and paints nowhere. That is what {@link #isPaintingNothing}
+ * answers.
  *
  * <p>Plain data with no Starsector types, so the aggregation is exercised on hand-built inputs.
  *
  * @param domination the number of systems the bloc is the dominant holder of, under the active
  *                   grouping
- * @param presence   the number of systems the bloc holds a counted market in; a bloc in these stats
- *                   at all has presence of at least one
+ * @param presence   the number of systems the bloc lives in; a bloc in these stats at all has
+ *                   presence of at least one
  * @param score      the bloc's combined dominance weight summed across every system it is present in
- * @param marketSize the bloc's summed raw colony size across every market it owns
+ * @param marketSize the bloc's summed raw colony size across every colony it lives on, whether or
+ *                   not the economy lists it
  */
 public record DominanceStats(
     int domination,
@@ -58,14 +66,15 @@ public record DominanceStats(
     }
 
     /**
-     * Folds one system the bloc holds a market in into these stats: a present-system entry always,
-     * a domination count only when the bloc wins that system.
+     * Folds one system the bloc lives in into these stats: a present-system entry always, a
+     * domination count only when the bloc wins that system.
      *
      * @param isDominant       whether the bloc is this system's dominant holder, which adds one to
      *                         domination; a present-but-not-dominant bloc adds to presence alone
-     * @param systemScore      the bloc's combined dominance weight in this system, added to score
-     * @param systemMarketSize the summed raw colony size of the bloc's markets in this system, added
-     *                         to market size
+     * @param systemScore      the bloc's combined dominance weight in this system, added to score;
+     *                         nought for a bloc the contest weighed nothing of here
+     * @param systemMarketSize the summed raw colony size of the bloc's colonies in this system,
+     *                         added to market size
      * @return a new stats value including this system
      */
     public DominanceStats addSystem(boolean isDominant, int systemScore, int systemMarketSize) {

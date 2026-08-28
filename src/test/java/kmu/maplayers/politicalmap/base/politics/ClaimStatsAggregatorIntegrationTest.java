@@ -2,9 +2,8 @@ package kmu.maplayers.politicalmap.base.politics;
 
 import kmlib.testfixtures.starsector.systems.claims.ClaimReaderFake;
 
-import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,29 +14,32 @@ import java.util.Map;
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildEconomylessSectorWithSystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildPassOver;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHolderPassOver;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWithSystems;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStabilityWeightedRules;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.findSystemIn;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
 /**
  * Integration coverage for {@link ClaimStatsAggregator}'s whole-sector totals end to end: claims
- * read through a {@link ClaimReaderFake} and colony sizes read from a stubbed economy through the
- * real {@link kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints}, folded together on
- * one walk. Exercises them together because the value is the wiring - two differently scoped metrics
- * off two different sources landing in one per-bloc entry - which mocking either source would hide.
+ * read through a {@link ClaimReaderFake} and colony sizes read off the real colony walk behind a
+ * stubbed sector, folded together on one pass. Exercises them together because the value is the
+ * wiring - two differently scoped metrics off two different sources landing in one per-bloc entry -
+ * which mocking either source would hide.
+ *
+ * <p>The last cases ask what makes an entry at all, which is the sector's habitation rather than its
+ * economy: a bloc living somewhere is offered to be spotlighted there whether or not the economy
+ * lists what it lives on, and a bloc whose only holding is a hulk nobody lives on is offered
+ * nothing.
  */
 final class ClaimStatsAggregatorIntegrationTest {
-
-    // The stability-only weighting rule these suites share; the live entry reads the rule from
-    // LunaLib settings only the running game provides.
-    private static final DominanceRules STABILITY_WEIGHTED = buildStabilityWeightedRules();
 
     @Nested
     class AggregateClaimStats {
@@ -57,7 +59,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             claimReaderFake.setClaim("system-a", "hegemony");
             claimReaderFake.setClaim("system-b", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake))
                 .containsExactly(entry("hegemony", new ClaimStats(2, 0)));
         }
 
@@ -76,7 +78,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake))
                 .containsExactly(entry("hegemony", new ClaimStats(1, 8)));
         }
 
@@ -93,7 +95,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake))
                 .containsExactly(entry("hegemony", new ClaimStats(1, 0)));
         }
 
@@ -111,7 +113,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("shared-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake))
                 .containsExactly(
                     entry("hegemony", new ClaimStats(1, 0)),
                     entry("tritachyon", new ClaimStats(0, 4)));
@@ -137,7 +139,7 @@ final class ClaimStatsAggregatorIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    DominancePass.over(sectorMock, STABILITY_WEIGHTED, BASE_FOG, grouping),
+                    HolderPass.over(sectorMock, BASE_FOG, grouping),
                     claimReaderFake))
                 .containsExactly(entry("alliance-1", new ClaimStats(1, 3)));
         }
@@ -148,7 +150,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             // so a bloc absent from the map is absent from the picker rather than listed at nothing.
             var sectorMock = buildSectorWithSystems(List.of(), listSystemMarkets("empty-system"));
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(sectorMock), new ClaimReaderFake()))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), new ClaimReaderFake()))
                 .isEmpty();
         }
 
@@ -161,13 +163,74 @@ final class ClaimStatsAggregatorIntegrationTest {
 
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake))
                 .containsExactly(entry("hegemony", new ClaimStats(1, 0)));
         }
 
         @Test
         void aggregateClaimStatsIsEmptyForNullSector() {
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildPassOver(null), new ClaimReaderFake()))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(null), new ClaimReaderFake()))
+                .isEmpty();
+        }
+
+        @Test
+        void aggregateClaimStatsListsABlocLivingOnAnOffEconomyColonyAlone() {
+            // The row the picker had no way to offer: a faction whose one station the economy never
+            // registered lives in the sector, so the map draws it a run and the box names it - and
+            // until the fold read habitation it had no entry here to be listed by.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var sectorMock = buildSectorWithSystems(
+                List.of(hegemony),
+                listSystemMarkets("unregistered-system"));
+
+            placeMarketsOnSystemEntities(
+                findSystemIn(sectorMock, "unregistered-system"),
+                buildVisibleMarket(hegemony, 4));
+
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                    buildHolderPassOver(sectorMock),
+                    new ClaimReaderFake()))
+                .containsExactly(entry("hegemony", new ClaimStats(0, 4)));
+        }
+
+        @Test
+        void aggregateClaimStatsSumsBothKindsOfColonyIntoOneSize() {
+            // A bloc holding one of each reads one combined size rather than the listed half alone.
+            // The metric answers how much colony the bloc lives on, so what the economy happens to
+            // register is no part of the question.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var listedColony = buildVisibleMarket(hegemony, 5);
+            var sectorMock = buildSectorWithSystems(
+                List.of(hegemony),
+                listSystemMarkets("mixed-system", listedColony));
+
+            placeMarketsOnSystemEntities(
+                findSystemIn(sectorMock, "mixed-system"),
+                listedColony,
+                buildVisibleMarket(hegemony, 4));
+
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                    buildHolderPassOver(sectorMock),
+                    new ClaimReaderFake()))
+                .containsExactly(entry("hegemony", new ClaimStats(0, 9)));
+        }
+
+        @Test
+        void aggregateClaimStatsLeavesOutABlocHoldingOnlyADerelict() {
+            // The line habitation draws that the listing does not. A hulk's owner is named in a box
+            // and lives nowhere, and a spotlight lights territory - so offering the row would offer
+            // a pick that lights nothing anywhere, which is not what a greyed row means.
+            var sectorMock = buildSectorWithSystems(
+                List.of(),
+                listSystemMarkets("derelict-system"));
+
+            placeMarketsOnSystemEntities(
+                findSystemIn(sectorMock, "derelict-system"),
+                buildAbandonedStationMarket(4));
+
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                    buildHolderPassOver(sectorMock),
+                    new ClaimReaderFake()))
                 .isEmpty();
         }
     }

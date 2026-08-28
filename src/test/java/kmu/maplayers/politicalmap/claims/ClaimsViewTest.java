@@ -17,7 +17,6 @@ import kmu.maplayers.base.visibility.RevelationGate;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
-import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
@@ -470,7 +469,7 @@ final class ClaimsViewTest {
             var openedOver = new ArrayList<SystemColoniesIndex>();
             var openedUnder = new ArrayList<KnownColonyReader>();
 
-            var aggregatedPasses = new ArrayList<DominancePass>();
+            var aggregatedPasses = new ArrayList<HolderPass>();
 
             var view = new ClaimsView((knownColonyReader, colonies) -> {
                 openedUnder.add(knownColonyReader);

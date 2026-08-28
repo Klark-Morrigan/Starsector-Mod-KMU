@@ -20,6 +20,7 @@ import static kmu.maplayers.SectorScenarioFixtures.buildUnvisitedSectorHoldingGa
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildConditionOnlyMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildEconomylessSectorWithSystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
@@ -29,8 +30,10 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.bu
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWithSystems;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStabilityWeightedRules;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.findSystemIn;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.markSystemAsVisitedByPlayer;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -42,6 +45,11 @@ import static org.mockito.Mockito.mockStatic;
  * {@link SystemDominance}, then folding each bloc's four metrics across systems. Exercises them
  * together because the value is the wiring - one walk yielding dominations, presences, summed
  * weight, and summed raw size - which mocking either collaborator would hide.
+ *
+ * <p>The middle cases ask what makes an entry at all, which is the sector's habitation rather than
+ * its economy: a bloc living somewhere is listed whether or not the economy lists what it lives on,
+ * a bloc whose only holding is a hulk nobody lives on is not, and neither answer may move a
+ * domination count - the contest still settles a system from the colonies it weighed alone.
  *
  * <p>The last cases below ask the other half of the same question: not what a bloc's totals come to
  * once it is here, but whether it is offered at all. The picker's selectable set is this fold's key
@@ -142,6 +150,106 @@ class DominanceStatsAggregatorIntegrationTest {
             var sector = buildSectorWithSystems(
                 List.of(hegemony),
                 listSystemMarkets("bare-system", buildConditionOnlyMarket(hegemony, 6)));
+
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+                .isEmpty();
+        }
+
+        @Test
+        void aggregateDominanceStatsListsABlocLivingOnAnOffEconomyColonyAlone() {
+            // The row the picker had no way to offer: every term of a dominance weight is
+            // economy-fed, so a faction whose one station the economy never registered weighs
+            // nothing - and reading presence off the weights left it out of the list while the band
+            // beneath its cell drew its run.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var sector = buildSectorWithSystems(
+                List.of(hegemony),
+                listSystemMarkets("unregistered-system"));
+
+            placeMarketsOnSystemEntities(
+                findSystemIn(sector, "unregistered-system"),
+                buildVisibleMarket(hegemony, 4));
+
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+                .containsExactly(entry("hegemony", new DominanceStats(0, 1, 0, 4)));
+        }
+
+        @Test
+        void aggregateDominanceStatsLeavesTheDominationWithTheBlocTheContestWeighed() {
+            // The unweighed bloc joins the listing and takes no part in the contest: the system is
+            // still won by the one colony the economy lists, at the weight it always had.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var sector = buildSectorWithSystems(
+                List.of(hegemony, tritachyon),
+                listSystemMarkets("shared-system", buildVisibleMarket(hegemony, 5)));
+
+            placeMarketsOnSystemEntities(
+                findSystemIn(sector, "shared-system"),
+                buildVisibleMarket(tritachyon, 4));
+
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+                .containsExactly(
+                    entry("hegemony", new DominanceStats(1, 1, 5000, 5)),
+                    entry("tritachyon", new DominanceStats(0, 1, 0, 4)));
+        }
+
+        @Test
+        void aggregateDominanceStatsCountsNoDominationWhereTheContestWeighedNobody() {
+            // The trap the fold is ordered around. Both blocs live here on colonies the economy does
+            // not list, so nothing was weighed and the map paints no fill - and folding them into
+            // the ranking would hand one of them a domination anyway, the first entry being the
+            // leader before anything is compared and the tie-break settling which by proximity.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var sector = buildSectorWithSystems(
+                List.of(hegemony, tritachyon),
+                listSystemMarkets("unregistered-system"));
+
+            placeMarketsOnSystemEntities(
+                findSystemIn(sector, "unregistered-system"),
+                buildVisibleMarket(hegemony, 5),
+                buildVisibleMarket(tritachyon, 4));
+
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+                .containsExactly(
+                    entry("hegemony", new DominanceStats(0, 1, 0, 5)),
+                    entry("tritachyon", new DominanceStats(0, 1, 0, 4)));
+        }
+
+        @Test
+        void aggregateDominanceStatsSumsBothKindsOfColonyIntoOneSize() {
+            // A bloc holding one of each reads one combined size while its score counts the listed
+            // half alone: the two halves of these stats are scoped differently on purpose, one
+            // answering what the contest made of the bloc and the other how much of the sector it
+            // lives in.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var listedColony = buildVisibleMarket(hegemony, 5);
+            var sector = buildSectorWithSystems(
+                List.of(hegemony),
+                listSystemMarkets("mixed-system", listedColony));
+
+            placeMarketsOnSystemEntities(
+                findSystemIn(sector, "mixed-system"),
+                listedColony,
+                buildVisibleMarket(hegemony, 4));
+
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+                .containsExactly(entry("hegemony", new DominanceStats(1, 1, 5000, 9)));
+        }
+
+        @Test
+        void aggregateDominanceStatsLeavesOutABlocHoldingOnlyADerelict() {
+            // The line habitation draws that the listing does not. A hulk's owner is named in a box
+            // and lives nowhere, and a spotlight lights territory - so offering the row would offer
+            // a pick that lights nothing anywhere, which is not what a greyed row means.
+            var sector = buildSectorWithSystems(
+                List.of(),
+                listSystemMarkets("derelict-system"));
+
+            placeMarketsOnSystemEntities(
+                findSystemIn(sector, "derelict-system"),
+                buildAbandonedStationMarket(4));
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
                 .isEmpty();

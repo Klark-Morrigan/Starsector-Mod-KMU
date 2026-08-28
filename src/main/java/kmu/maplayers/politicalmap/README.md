@@ -58,7 +58,7 @@ questions, and the pipeline paints the answer without knowing which view asked:
 | --- | --- | --- | --- | --- |
 | **Factions** | each faction on its own | held territory, per faction | any faction | always (default) |
 | **Alliances** | allied factions fused per alliance | held territory, alliances as one bloc | alliances only | Nexerelin |
-| **Claims** | each claiming faction on its own | claimed systems, per faction | any faction that claims or holds something | always |
+| **Claims** | each claiming faction on its own | claimed systems, per faction | any faction that claims a system or lives in one | always |
 
 Notes on each:
 
@@ -74,10 +74,10 @@ Notes on each:
 - **Claims.** Shows the vanilla "system claimed by faction" mechanic - the same claim the
   colony-survey panel warns about. Every claimed system is painted solid in its claimant's colours.
   There is no alliance grouping here. The spotlight list ranks by claim count and market size rather
-  than by domination, and it holds every faction that claims *or* holds something: one that claims
-  territory while holding no colony anywhere paints here, so it is worth spotlighting, and one that
-  holds colonies while claiming nowhere is listed greyed at a count of 0 rather than left out, since
-  a faction the player can plainly see going missing from the list reads as an oversight. Under the
+  than by domination, and it holds every faction that claims a system *or* lives in one: one that
+  claims territory while holding no colony anywhere paints here, so it is worth spotlighting, and one
+  that lives somewhere while claiming nowhere is listed greyed at a count of 0 rather than left out,
+  since a faction the player can plainly see going missing from the list reads as an oversight. Under the
   default claims-descending sort the greyed rows form a tail below the claimants; sorting by name
   interleaves them.
   A claimant's systems already share one border and one colour with no filter on, so what
@@ -143,6 +143,12 @@ on without naming either. Factions and Alliances are painted by the same contest
 `DominancePaintedView` answers that once for both and leaves them only the one thing they differ on,
 which is the Spotlight targets column above. A view painted by another mechanic implements the seam
 directly and pairs its own list with its own vocabulary rather than widening theirs.
+
+What every picker lists is who *lives* somewhere the map draws, which is the same reading of a system
+the cells are painted from and the bands counted from - not who the layer's mechanic weighed. So a
+faction whose only colony the economy never registered is offered, and so is `Neutral`, which is what
+a revealed dead world is owned by. A bloc whose only holding is a derelict nobody lives on is not:
+a spotlight lights territory, and there is none to light.
 
 A listed bloc that paints nothing on the layer greys, and stays pickable: it is listed because it is
 present, greyed because there is nothing here to light. What "nothing" counts as is the layer's own
