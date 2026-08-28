@@ -8,6 +8,9 @@ import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
+import kmu.maplayers.base.theme.BorderSmoothingStyle;
+import kmu.maplayers.base.theme.CornerRoundingStyle;
+import kmu.maplayers.base.theme.SpikeSandingStyle;
 
 import java.awt.Color;
 
@@ -58,9 +61,10 @@ public final class ViewerSettings {
     // than a difference that was there from the first frame.
     public static final double CONTINENT_MIN_FRONTAGE_DEFAULT = COAST_MIN_FRONTAGE_DEFAULT;
 
-    // The rounding, read off the coast's own default for the reason the frontage floor is.
-    // Split into its three numbers because that is what a slider writes; put back together
-    // by resolveLineRounding.
+    // The rounding every drawn line takes, opened at the coast's own default for the reason
+    // the frontage floor is: one number, in one place, so the sliders and everything that
+    // reports on a line describe the same map. Split into its three parts because that is
+    // what a slider writes; put back together by resolveLineRounding.
     //
     // The threshold is asked for in degrees, which is how anyone looking at a corner thinks
     // about it, and is the knob worth reaching for first: it decides which corners on a line
@@ -71,14 +75,18 @@ public final class ViewerSettings {
     public static final double ROUND_BELOW_DEGREES_DEFAULT =
         Math.toDegrees(Coastlines.DEFAULT_SANDING.roundBelowAngleRadians());
 
-    // The spike-sanding pass that runs before the rounding, at the numbers the shipped map
-    // offers for it. A needle whose own edges are shorter than the rounding steps back by
-    // survives rounding untouched - the cut clamps to those edges - so it has to come out
-    // first or not at all.
+    // The spike-sanding pass that runs before the rounding. A needle whose own edges are
+    // shorter than the rounding steps back by survives rounding untouched - the cut clamps to
+    // those edges - so it has to come out first or not at all.
     //
-    // On here, where the shipped map leaves it off. This window exists to look at shapes, and
-    // a pass left off by default is a pass nobody looks at; what it costs is one slider back
-    // to zero, which is the pass switched off.
+    // This window's own opening numbers, not the shipped ones. They read the same today, but
+    // the map keeps its behind LunaLib where nothing outside the game can reach them, so
+    // these are a second answer rather than the same one - and a window that claimed
+    // otherwise would go on claiming it after the map moved.
+    //
+    // On here, where the shipped map leaves the pass off. This window exists to look at
+    // shapes, and a pass left off by default is a pass nobody looks at; what it costs is one
+    // slider back to zero, which is the pass switched off.
     public static final double SPIKE_HEIGHT_DEFAULT = 150.0;
     public static final double SPIKE_BELOW_DEGREES_DEFAULT = 60.0;
 
@@ -314,6 +322,36 @@ public final class ViewerSettings {
      *
      * @return the corner shape every rounded line on the map is drawn to
      */
+    /**
+     * The smoothing profile the cluster borders are drawn through, in the shape the shipped
+     * pass takes it.
+     *
+     * <p>Built here so the window can run {@code BorderSmoothing} itself rather than repeat
+     * what it does. The two passes and the order they run in are that class's answer, and a
+     * window that reimplemented them would be drawing a border the mod does not.
+     *
+     * <p>Both gates on, always. What the shipped profile gates with a switch this window
+     * gates with the knobs themselves - a zero radius rounds nothing and a zero spike height
+     * sands nothing, which is what each pass already reads a non-positive setting as - so a
+     * gate here would be a second way to say off, and a slider that did nothing while it was
+     * set.
+     *
+     * @return the profile, at whatever the sliders are set to
+     */
+    public BorderSmoothingStyle resolveBorderSmoothing() {
+
+        var rounding = resolveLineRounding();
+
+        return new BorderSmoothingStyle(
+            new SpikeSandingStyle(true, spikeHeight, Math.toRadians(spikeBelowDegrees)),
+            new CornerRoundingStyle(
+                true,
+                rounding.radius(),
+                rounding.segmentsPerCorner(),
+                rounding.bevelBelowAngleRadians(),
+                rounding.roundBelowAngleRadians()));
+    }
+
     public CornerRounding resolveLineRounding() {
         return new CornerRounding(
             roundingRadius,

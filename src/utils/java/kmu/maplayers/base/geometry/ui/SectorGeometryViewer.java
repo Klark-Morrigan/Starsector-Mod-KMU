@@ -2,7 +2,6 @@ package kmu.maplayers.base.geometry.ui;
 
 import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Limits;
-import kmlib.math.geometry.PolygonSmoothing;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellEdges;
@@ -24,6 +23,7 @@ import kmu.maplayers.base.geometry.ui.overlays.voidpockets.v3.ContinentCoastOver
 import kmu.maplayers.base.geometry.ui.settings.ViewerRefreshes;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettingsPanel;
+import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.ui.ControlRows;
 import kmu.ui.SavedValues;
 import kmu.ui.WindowLayout;
@@ -81,6 +81,10 @@ import javax.swing.SwingUtilities;
  *       the same {@code CellShaper.BORDER_INSET_DISTANCE}; only the weld tolerance and
  *       miter limit arrive from {@link SectorGeometryParameters} instead of
  *       {@code KmuMapLayerSettings}.</li>
+ *   <li>{@code BorderSmoothing.smoothBorderLoops} - both smoothing passes and the order they
+ *       run in, over the traced cluster rings. The profile comes from this window's sliders
+ *       rather than from the player's theme, and both gates are held on, so what each pass
+ *       does is decided by the knobs alone.</li>
  * </ul>
  *
  * <p><b>Where it stops.</b> Everything below is production code the map runs and this window
@@ -101,15 +105,11 @@ import javax.swing.SwingUtilities;
  *       the game resolves. There is no view switching, filter, or spotlight.</li>
  *   <li><i>Turning rings into a picture</i> - {@code TerritoryBuilder.buildTerritories},
  *       {@code buildStyledCellForSystem}, {@code buildFactionTerritory},
- *       {@code BorderSmoothing.sandBorderSpikes}, {@code roundBorderCorners},
  *       {@code PolygonTessellator.tessellateToBoundaryLoops}, {@code tessellateToTriangles},
- *       {@code Hatching.computeHatchRun}, {@code GlVertexRuns.flattenVertices}. This window
- *       smooths its own cluster borders through {@code PolygonSmoothing.removeSpikes} and
- *       {@code roundCorners} - the two primitives underneath {@code BorderSmoothing}, in the
- *       same order - but to its own profile, and without the tessellator's resolve on either
- *       side. So a border here is that shape SMOOTHABLE rather than the shape the shipped
- *       theme draws, and a rounding sharp enough to push one arc through another shows as a
- *       crossing the map would have resolved away.</li>
+ *       {@code Hatching.computeHatchRun}, {@code GlVertexRuns.flattenVertices}. The
+ *       smoothing itself does run, above; what does not is the tessellator's resolve either
+ *       side of it, so a rounding sharp enough to push one arc through another shows here as
+ *       a crossing the map would have resolved away.</li>
  *   <li><i>Painting it</i> - {@code RenderStyleReader.readRenderStyle}, {@code MapPalettes},
  *       {@code ClusterRenderer}, the label pass, and {@code KmuPoliticalMapSettings} entirely.
  *       Nothing reads {@code Global}. Colours here are hash-derived hues for telling owners
@@ -392,42 +392,29 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     }
 
     /**
-     * Every owner's cluster rings as the line the map draws: spikes spliced out, then the
-     * corners that remain rounded.
+     * Every owner's cluster rings as the line the map draws, smoothed through the shipped
+     * pass.
      *
-     * <p>In that order, and not in the other. A needle whose own edges are shorter than the
-     * rounding steps back by survives rounding untouched, since the cut clamps to those
-     * edges - so a rounding pass handed one draws it as it was. Sanding first is what leaves
-     * the rounding clean geometry to work on.
+     * <p>Through {@link BorderSmoothing} rather than through the two primitives it is made
+     * of. Which passes run, and the order they run in, is that class's answer - sanding
+     * before rounding, because a needle whose own edges are shorter than the rounding steps
+     * back by survives rounding untouched - and a window that answered it again here would
+     * be drawing a border the mod does not.
      *
-     * <p>Rounded to the same knobs the coasts are, because it is the same question: a cluster
-     * border is cell arcs sampled at fixed angles joined by straight runs, and what wants
-     * rounding is the joins between those runs rather than the samples along one.
-     *
-     * <p>The game runs both passes through {@code BorderSmoothing}, which this window does
-     * not. These are the same two primitives underneath, so a shape judged here is a shape
-     * the mod could draw - but the profile is this window's, and the game resolves its loops
-     * again afterwards where this does not, so a rounding sharp enough to push one arc
-     * through another shows here as a crossing the map would have cleaned up.
+     * <p>Two things still differ from the map. The profile is this window's sliders rather
+     * than the player's theme, and the map resolves its loops either side of the smoothing
+     * where this does not - so a rounding sharp enough to push one arc through another shows
+     * here as a crossing the map would have cleaned up.
      */
     private Map<String, List<List<double[]>>> smoothClusterRings(SectorGeometry built) {
 
-        var rounding = settings.resolveLineRounding();
+        var profile = settings.resolveBorderSmoothing();
         var smoothed = new LinkedHashMap<String, List<List<double[]>>>();
 
         for (var byOwner : built.ringsByOwner().entrySet()) {
-
-            var rings = new ArrayList<List<double[]>>(byOwner.getValue().size());
-
-            for (var ring : byOwner.getValue()) {
-                rings.add(PolygonSmoothing.roundCorners(
-                    PolygonSmoothing.removeSpikes(
-                        ring,
-                        settings.spikeHeight,
-                        Math.toRadians(settings.spikeBelowDegrees)),
-                    rounding));
-            }
-            smoothed.put(byOwner.getKey(), rings);
+            smoothed.put(
+                byOwner.getKey(),
+                BorderSmoothing.smoothBorderLoops(byOwner.getValue(), profile));
         }
         return smoothed;
     }

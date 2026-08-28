@@ -283,22 +283,26 @@ public final class ViewerSettingsPanel {
             "Void fill opacity",
             opacity -> settings.voidFillOpacity = (int) opacity));
 
-        addLineRoundingRows(controls);
+        addLineSmoothingRows(controls);
     }
 
-    // How sharply any drawn line is allowed to turn, and what a turn sharper than that is
-    // rounded to.
+    // What becomes of a drawn line where it turns sharply: which turns are rounded and to
+    // what, then which protrusions are spliced out ahead of that rounding.
     //
-    // Among the knobs reaching both constructions because rounding is about how a LINE is
+    // Both passes here rather than the rounding alone, because the pair is one answer: the
+    // sanding exists to hand the rounding geometry it can work on, and reading either without
+    // the other says nothing about the line that comes out.
+    //
+    // Among the knobs reaching both constructions because smoothing is about how a LINE is
     // drawn rather than about how anything is traced - it reaches the cluster borders too,
-    // which belong to neither - and because the lines are on screen to be compared: drawn to
-    // different roundings, a difference between two of them would be partly a difference
+    // which belong to neither - and because the lines are on screen to be compared: smoothed
+    // to different numbers, a difference between two of them would be partly a difference
     // between the sliders.
     //
-    // Every one rebuilds rather than repaints. Each rounded line is worked out once when its
+    // Every one rebuilds rather than repaints. Each smoothed line is worked out once when its
     // geometry is built and carried on it, so moving any of these is a change to the geometry
     // the frame is drawn from rather than to the way that geometry is painted.
-    private void addLineRoundingRows(JPanel controls) {
+    private void addLineSmoothingRows(JPanel controls) {
 
         // First of the three, because it is the one that decides whether the others do
         // anything: at the bottom of its range nothing is rounded whatever they say, and at
