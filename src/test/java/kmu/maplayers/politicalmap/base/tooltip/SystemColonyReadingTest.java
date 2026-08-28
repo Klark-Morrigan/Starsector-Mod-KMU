@@ -61,6 +61,9 @@ final class SystemColonyReadingTest {
     private static final boolean IS_A_SECRET = false;
     private static final boolean IS_UNLISTED = false;
 
+    // The concealment a case hands in, which is the one fact of the three no reading answers.
+    private static final boolean IS_CONCEALED = true;
+
     @BeforeEach
     void installStrings() {
         StarsectorSettingsFake.installSettings();
@@ -200,6 +203,34 @@ final class SystemColonyReadingTest {
 
             assertThat(reading.isOpenlyKnownColony(DERELICT_ID))
                 .isFalse();
+        }
+    }
+
+    @Nested
+    class ReadConcealmentOf {
+
+        @Test
+        void readConcealmentOfGathersItsOwnTwoAnswersAndTheOneHandedIn() {
+            // The three facts in the order the value names them, so a transposition here would be a
+            // failing assertion rather than a line calling out the wrong word.
+            var reading = new SystemColonyReading(
+                ColonyKindLookup.NONE,
+                new ColonyDiscoveryLookup(Set.of(DERELICT_ID)),
+                new OpenlyKnownColonyLookup(Set.of(DERELICT_ID)),
+                ColonyObservationNotes.NONE);
+
+            assertThat(reading.readConcealmentOf(DERELICT_ID, IS_CONCEALED))
+                .isEqualTo(new ColonyConcealment(false, true, true));
+        }
+
+        @Test
+        void readConcealmentOfCarriesTheConcealmentItIsHandedRatherThanAnyOfItsOwn() {
+            // The one fact no reading of a system can answer: it travels on the account's own
+            // breakdown, so a colony this reading knows nothing else about still states it.
+            var reading = new SystemColonyReading(null, null, null, null);
+
+            assertThat(reading.readConcealmentOf(DERELICT_ID, IS_OPEN))
+                .isEqualTo(new ColonyConcealment(true, false, false));
         }
     }
 

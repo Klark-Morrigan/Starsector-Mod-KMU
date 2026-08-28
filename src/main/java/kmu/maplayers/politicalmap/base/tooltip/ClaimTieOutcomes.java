@@ -49,37 +49,27 @@ public final class ClaimTieOutcomes {
      * standing selection where a market drew both - being the faction's strongest is a smaller fact
      * than having lost the system over it.
      *
-     * @param breakdown                    the whole contest, whose standings the cross-faction
-     *                                     comparison runs over
-     * @param standing                     the faction the market belongs to, as ranked in that
-     *                                     contest
-     * @param market                       one of that faction's markets
-     * @param isListingUndiscoveredMarkets whether a market on an undiscovered entity may be listed
-     *                                     though the contest never weighed it - handed on to the
-     *                                     listing rule, which every market a tie is judged over
-     *                                     passes on its own account
+     * @param breakdown the whole contest, whose standings the cross-faction comparison runs over
+     * @param standing  the faction the market belongs to, as ranked in that contest
+     * @param market    one of that faction's markets
      * @return what the market's place decided
      */
     public static CellTooltipIndexOutcome resolveOutcome(
             SystemClaimBreakdown breakdown,
             WeighedClaimStanding standing,
-            MarketClaimBreakdown market,
-            boolean isListingUndiscoveredMarkets) {
+            MarketClaimBreakdown market) {
 
         if (!market.isScoredOnItsOwnAccount()) {
             return CellTooltipIndexOutcome.UNCONTESTED;
         }
         if (market == standing.standingMarket()) {
-            var contestOutcome = resolveClaimantContestOutcome(
-                breakdown,
-                standing,
-                isListingUndiscoveredMarkets);
+            var contestOutcome = resolveClaimantContestOutcome(breakdown, standing);
 
             if (contestOutcome != CellTooltipIndexOutcome.UNCONTESTED) {
                 return contestOutcome;
             }
         }
-        return resolveStandingSelectionOutcome(standing, market, isListingUndiscoveredMarkets);
+        return resolveStandingSelectionOutcome(standing, market);
     }
 
     // The cross-faction half: whether this faction's standing market tied for the system itself.
@@ -88,8 +78,7 @@ public final class ClaimTieOutcomes {
     // lead at all.
     private static CellTooltipIndexOutcome resolveClaimantContestOutcome(
             SystemClaimBreakdown breakdown,
-            WeighedClaimStanding standing,
-            boolean isListingUndiscoveredMarkets) {
+            WeighedClaimStanding standing) {
 
         if (breakdown.isSettledByDecree()
                 || !KmlibStrings.hasText(breakdown.claimantFactionId())
@@ -101,18 +90,12 @@ public final class ClaimTieOutcomes {
         if (claimantStanding == null || standing.score() != claimantStanding.score()) {
             return CellTooltipIndexOutcome.UNCONTESTED;
         }
-        // The market that took the system is one side of every tie judged here, so nothing is marked
-        // where the box does not list it. It always does - a standing rests on a market the contest
-        // weighed, and the listing admits those whatever the player knows of them.
-        if (!ListedClaimMarkets.isStandingMarketListed(claimantStanding, isListingUndiscoveredMarkets)) {
-            return CellTooltipIndexOutcome.UNCONTESTED;
-        }
         // A rival tied at the winning score lost the system to the listing order alone: the walk
         // reached the claimant's market first, or that rival would be the claimant.
         if (!standing.factionId().equals(breakdown.claimantFactionId())) {
             return CellTooltipIndexOutcome.LOST;
         }
-        return hasTiedTerritorialRival(breakdown, standing, isListingUndiscoveredMarkets)
+        return hasTiedTerritorialRival(breakdown, standing)
             ? CellTooltipIndexOutcome.WON
             : CellTooltipIndexOutcome.UNCONTESTED;
     }
@@ -122,31 +105,21 @@ public final class ClaimTieOutcomes {
     // outcome that order decided, and two lesser markets tied below it won and lost nothing.
     private static CellTooltipIndexOutcome resolveStandingSelectionOutcome(
             WeighedClaimStanding standing,
-            MarketClaimBreakdown market,
-            boolean isListingUndiscoveredMarkets) {
+            MarketClaimBreakdown market) {
 
         if (market.computeTotalScore() != standing.score()) {
             return CellTooltipIndexOutcome.UNCONTESTED;
         }
         // The tie needs a competitor besides the standing market, and a market the walk passed over
         // is not it: the mechanic never compares one, so a standing tied only with such a market
-        // won nothing. The listing test beside it turns nothing further away - being scored on its
-        // own account is by itself enough to list a market.
+        // won nothing.
         var isAnyOpenSiblingTied = standing
             .otherMarkets()
             .stream()
             .anyMatch(other -> other.isScoredOnItsOwnAccount()
-                && other.computeTotalScore() == standing.score()
-                && ListedClaimMarkets.isListedMarket(other, isListingUndiscoveredMarkets));
+                && other.computeTotalScore() == standing.score());
 
-        // The standing market is the other side of every tie judged here, so a mark waits on it
-        // being drawn too - and it is, for the same reason: the mechanic weighed it, which is what
-        // puts a market on the list.
-        if (!isAnyOpenSiblingTied
-                || !ListedClaimMarkets.isListedMarket(
-                    standing.standingMarket(),
-                    isListingUndiscoveredMarkets)) {
-
+        if (!isAnyOpenSiblingTied) {
             return CellTooltipIndexOutcome.UNCONTESTED;
         }
         return market == standing.standingMarket()
@@ -178,17 +151,20 @@ public final class ClaimTieOutcomes {
 
     // Whether any other territorial faction's standing tied the given one's score - the test that
     // parts a claimant that won a tie from one that simply had no equal.
+    //
+    // No test of what kind of standing the rival took, because the score does it: this is asked only
+    // of a claimant the contest settled the system on, whose score is strictly greater than nought,
+    // and a standing the mechanic never weighed scores exactly nought. So a presence-only standing
+    // can never match here.
     private static boolean hasTiedTerritorialRival(
             SystemClaimBreakdown breakdown,
-            WeighedClaimStanding standing,
-            boolean isListingUndiscoveredMarkets) {
+            WeighedClaimStanding standing) {
 
         return breakdown
             .scores()
             .stream()
             .anyMatch(other -> other != standing
                 && other.isTerritorial()
-                && other.score() == standing.score()
-                && ListedClaimMarkets.isStandingMarketListed(other, isListingUndiscoveredMarkets));
+                && other.score() == standing.score());
     }
 }

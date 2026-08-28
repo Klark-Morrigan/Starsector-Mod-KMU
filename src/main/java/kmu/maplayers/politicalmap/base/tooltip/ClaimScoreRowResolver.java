@@ -184,12 +184,7 @@ public final class ClaimScoreRowResolver {
         // weighed one. The other arm is the presence-only kind, the standing being sealed over the
         // two.
         if (standing instanceof WeighedClaimStanding weighedStanding) {
-            return resolveWeighedRows(
-                breakdown,
-                weighedStanding,
-                colonyReading,
-                listedMarkets,
-                isListingUndiscoveredMarkets);
+            return resolveWeighedRows(breakdown, weighedStanding, colonyReading, listedMarkets);
         }
         return resolvePresenceOnlyRows(colonyReading, listedMarkets);
     }
@@ -201,8 +196,7 @@ public final class ClaimScoreRowResolver {
             SystemClaimBreakdown breakdown,
             WeighedClaimStanding standing,
             SystemColonyReading colonyReading,
-            List<MarketClaimBreakdown> listedMarkets,
-            boolean isListingUndiscoveredMarkets) {
+            List<MarketClaimBreakdown> listedMarkets) {
 
         // Whether this faction is the one the contest handed the system to, and so whose strongest
         // market is the one that took it. A decree settles the system before a single market is
@@ -217,8 +211,7 @@ public final class ClaimScoreRowResolver {
                 createMarketLine(market, ClaimTieOutcomes.resolveOutcome(
                     breakdown,
                     standing,
-                    market,
-                    isListingUndiscoveredMarkets)),
+                    market)),
                 market,
                 colonyReading,
                 isHoldingTheClaim && market == standing.standingMarket()));
@@ -303,10 +296,7 @@ public final class ClaimScoreRowResolver {
         var facts = new ColonyQualifierFacts(
             colonyReading.readKindOf(market.marketId()),
             isHoldingTheClaim,
-            new ColonyConcealment(
-                colonyReading.isDiscoveredColony(market.marketId()),
-                market.isHiddenMarket(),
-                colonyReading.isOpenlyKnownColony(market.marketId())),
+            colonyReading.readConcealmentOf(market.marketId(), market.isHiddenMarket()),
             !market.isOffEconomyMarket());
 
         // Described whatever the contest made of the market, because neither what sort of place a

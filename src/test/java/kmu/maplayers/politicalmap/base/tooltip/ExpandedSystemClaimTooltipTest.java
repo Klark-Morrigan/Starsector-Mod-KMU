@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 
 import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.PresenceOnlyClaimStanding;
@@ -15,6 +14,7 @@ import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
+import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
@@ -35,7 +35,6 @@ import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildStandingOnOneMarket;
 
@@ -92,10 +91,11 @@ final class ExpandedSystemClaimTooltipTest {
     private static final int FIRST_LISTED = 1;
     private static final int SECOND_LISTED = 2;
 
-    // Every market posed here is one the player has found and one the mechanic weighed. What the
-    // box withholds of a market they have not found, and which listing ties it marks, are the
-    // resolver's and pinned there; the cases below are about which faction gets an account at all.
-    private static final boolean IS_KNOWN_TO_PLAYER = true;
+    // Whether the player knows of the market. Nearly every case poses one they do - the fixture's
+    // resting state - the one exception being the case about which rule decides that a market is
+    // listed at all. What such a row then states, and which listing ties it marks, are the
+    // resolver's and pinned there.
+    private static final boolean IS_UNDISCOVERED_BY_PLAYER = false;
 
     // What a colony's kind states on a line, and when it was last seen, are the resolver's and
     // pinned there - so every account here is resolved over a reading that says neither, which is
@@ -526,55 +526,40 @@ final class ExpandedSystemClaimTooltipTest {
     // Concealment rather than an absence from the economy's listing, arbitrarily: the two suppress
     // scoring identically and no case here is about which of them did it.
     private static MarketClaimBreakdown buildConcealedMarket(String marketName, int listingPosition) {
-        return new MarketClaimBreakdown(
-            EntityNameplate.createUnmarkedNameplate(marketName),
-            nameMarketId(marketName),
-            listingPosition,
-            IS_KNOWN_TO_PLAYER,
-            ContestAdmission.HIDDEN,
-            LESSER_SCORE,
-            NO_SIBLING_MARKETS,
-            OptionalInt.empty());
+        return ClaimMarketFixture
+            .startMarket(marketName)
+            .setListingPosition(listingPosition)
+            .setAdmission(ContestAdmission.HIDDEN)
+            .setMarketSize(LESSER_SCORE)
+            .setSiblingMarketCount(NO_SIBLING_MARKETS)
+            .buildMarket();
     }
 
-    // The id the walk that met a colony recorded for it, derived from its name so a case naming a
-    // market on the list has one identity for it throughout.
-    private static String nameMarketId(String marketName) {
-        return marketName.toLowerCase(java.util.Locale.ROOT).replace(' ', '_');
+    // The same market on a colony nobody has discovered, listed after the one above it, for a case
+    // about which rule decides whether it is drawn at all.
+    private static MarketClaimBreakdown buildUndiscoveredMarket(String marketName, int marketSize) {
+        return ClaimMarketFixture
+            .startMarket(marketName)
+            .setListingPosition(SECOND_LISTED)
+            .setKnownToPlayer(IS_UNDISCOVERED_BY_PLAYER)
+            .setMarketSize(marketSize)
+            .setSiblingMarketCount(NO_SIBLING_MARKETS)
+            .buildMarket();
     }
 
     // A market scoring its size alone, for a standing a case states by the markets under it rather
     // than by the arithmetic inside one. Every one of them heads the listing, since no case here is
     // about a tie or where the economy put anything.
-    // A market of the same shape the player has yet to find, for a case about which rule decides
-    // whether it is listed at all.
-    private static MarketClaimBreakdown buildUndiscoveredMarket(String marketName, int marketSize) {
-
-        var isKnownToPlayer = false;
-
-        return new MarketClaimBreakdown(
-            EntityNameplate.createUnmarkedNameplate(marketName),
-            nameMarketId(marketName),
-            SECOND_LISTED,
-            isKnownToPlayer,
-            ContestAdmission.WEIGHED,
-            marketSize,
-            NO_SIBLING_MARKETS,
-            OptionalInt.empty());
-    }
-
+    //
+    // Marked with no glyph: whether a market line leads with one is the resolver's and pinned there,
+    // and a mark on every line would run through the reading-order assertions these cases are
+    // actually about.
     private static MarketClaimBreakdown buildMarket(String marketName, int marketSize) {
-        // Marked with no glyph: whether a market line leads with one is the resolver's and pinned
-        // there, and a mark on every line would run through the reading-order assertions these cases
-        // are actually about.
-        return new MarketClaimBreakdown(
-            EntityNameplate.createUnmarkedNameplate(marketName),
-            nameMarketId(marketName),
-            FIRST_LISTED,
-            IS_KNOWN_TO_PLAYER,
-            ContestAdmission.WEIGHED,
-            marketSize,
-            NO_SIBLING_MARKETS,
-            OptionalInt.empty());
+        return ClaimMarketFixture
+            .startMarket(marketName)
+            .setListingPosition(FIRST_LISTED)
+            .setMarketSize(marketSize)
+            .setSiblingMarketCount(NO_SIBLING_MARKETS)
+            .buildMarket();
     }
 }

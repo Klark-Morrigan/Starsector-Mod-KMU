@@ -8,6 +8,7 @@ import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.PresenceOnlyClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
+import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
@@ -24,10 +25,8 @@ import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
@@ -200,19 +199,18 @@ final class ClaimScoreRowResolverTest {
             // from the list whether or not anything weighed it.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(new MarketClaimBreakdown(
-                    new EntityNameplate(
+                List.of(ClaimMarketFixture
+                    .startMarket("Tigra City")
+                    .setNameplate(new EntityNameplate(
                         "Tigra City",
                         Optional.of(new EntityMapIcon(
                             "graphics/warroom/icon_planet.png",
-                            new Color(120, 200, 90)))),
-                    nameMarketId("Tigra City"),
-                    SECOND_LISTED,
-                    IS_KNOWN_TO_PLAYER,
-                    ContestAdmission.HIDDEN,
-                    9,
-                    ONE_SIBLING_MARKET,
-                    OptionalInt.empty()))));
+                            new Color(120, 200, 90)))))
+                    .setListingPosition(SECOND_LISTED)
+                    .setAdmission(ContestAdmission.HIDDEN)
+                    .setMarketSize(9)
+                    .setSiblingMarketCount(ONE_SIBLING_MARKET)
+                    .buildMarket())));
 
             assertThat(rows.get(1).line().valueText())
                 .isEqualTo("0");
@@ -836,15 +834,13 @@ final class ClaimScoreRowResolverTest {
             // garrison rather than a garrison worth nothing - two different markets a "+0" would
             // print alike.
             var garrisoned = resolveContestedRows(buildStanding(
-                new MarketClaimBreakdown(
-                    UNMARKED_MARKET,
-                    nameMarketId(STRONGEST_MARKET),
-                    FIRST_LISTED,
-                    IS_KNOWN_TO_PLAYER,
-                    ContestAdmission.WEIGHED,
-                    STRONGEST_MARKET_SIZE,
-                    NO_SIBLING_MARKETS,
-                    OptionalInt.of(MILITARY_BONUS)),
+                ClaimMarketFixture
+                    .startMarket(STRONGEST_MARKET)
+                    .setNameplate(UNMARKED_MARKET)
+                    .setListingPosition(FIRST_LISTED)
+                    .setMarketSize(STRONGEST_MARKET_SIZE)
+                    .setMilitaryBonus(MILITARY_BONUS)
+                    .buildMarket(),
                 List.of()));
 
             assertThat(readLabelTexts(garrisoned.get(0).children()))
@@ -898,7 +894,7 @@ final class ClaimScoreRowResolverTest {
             // separation the word was wanted for - the box says the economy does not carry the
             // Academy rather than that the Academy is hiding.
             var rows = resolvePresenceOnlyRows(
-                buildReadingWithOpenlyKnown(nameMarketId("Galatia Academy")),
+                buildReadingWithOpenlyKnown(ClaimMarketFixture.nameMarketId("Galatia Academy")),
                 buildFoundHiddenOffEconomyMarket("Galatia Academy"));
 
             assertThat(rows.get(0).line().qualifierText())
@@ -1003,7 +999,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
-                buildReadingRemarkingOn(nameMarketId("Kirov Reserve")),
+                buildReadingRemarkingOn(ClaimMarketFixture.nameMarketId("Kirov Reserve")),
                 WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(rows.get(0).line().noteText())
@@ -1019,7 +1015,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
-                buildReadingRemarkingOn(nameMarketId(STRONGEST_MARKET)),
+                buildReadingRemarkingOn(ClaimMarketFixture.nameMarketId(STRONGEST_MARKET)),
                 WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(rows.get(0).line().noteText())
@@ -1035,7 +1031,7 @@ final class ClaimScoreRowResolverTest {
             var rows = ClaimScoreRowResolver.resolveMarketRows(
                 buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
-                buildReadingRemarkingOn(nameMarketId(STRONGEST_MARKET)),
+                buildReadingRemarkingOn(ClaimMarketFixture.nameMarketId(STRONGEST_MARKET)),
                 WITHHOLDING_UNDISCOVERED_MARKETS);
 
             assertThat(rows.get(0).children())
@@ -1072,13 +1068,6 @@ final class ClaimScoreRowResolverTest {
             standing,
             colonyReading,
             WITHHOLDING_UNDISCOVERED_MARKETS);
-    }
-
-    // The id the walk that met a colony recorded for it, derived from its name so a case naming a
-    // market on the list and a case posing that market's kind agree without stating the pairing
-    // twice.
-    private static String nameMarketId(String marketName) {
-        return marketName.toLowerCase(Locale.ROOT).replace(' ', '_');
     }
 
     // A contest the given faction won on the scores, holding the one standing posed against it. The
@@ -1132,15 +1121,14 @@ final class ClaimScoreRowResolverTest {
             int siblingMarketCount,
             int listingPosition) {
 
-        return new MarketClaimBreakdown(
-            EntityNameplate.createUnmarkedNameplate(marketName),
-            nameMarketId(marketName),
-            listingPosition,
-            IS_UNKNOWN_TO_PLAYER,
-            ContestAdmission.HIDDEN,
-            marketSize,
-            siblingMarketCount,
-            OptionalInt.empty());
+        return ClaimMarketFixture
+            .startMarket(marketName)
+            .setListingPosition(listingPosition)
+            .setKnownToPlayer(IS_UNKNOWN_TO_PLAYER)
+            .setAdmission(ContestAdmission.HIDDEN)
+            .setMarketSize(marketSize)
+            .setSiblingMarketCount(siblingMarketCount)
+            .buildMarket();
     }
 
     // A rival faction standing on one market of the given size, listed after the standing every case
@@ -1190,30 +1178,27 @@ final class ClaimScoreRowResolverTest {
             int siblingMarketCount,
             boolean isKnownToPlayer) {
 
-        return new MarketClaimBreakdown(
-            UNMARKED_MARKET,
-            nameMarketId(STRONGEST_MARKET),
-            FIRST_LISTED,
-            isKnownToPlayer,
-            ContestAdmission.WEIGHED,
-            STRONGEST_MARKET_SIZE,
-            siblingMarketCount,
-            OptionalInt.empty());
+        return ClaimMarketFixture
+            .startMarket(STRONGEST_MARKET)
+            .setNameplate(UNMARKED_MARKET)
+            .setListingPosition(FIRST_LISTED)
+            .setKnownToPlayer(isKnownToPlayer)
+            .setMarketSize(STRONGEST_MARKET_SIZE)
+            .setSiblingMarketCount(siblingMarketCount)
+            .buildMarket();
     }
 
     // The market a standing rests on, stated as one the sector map marks with the given glyph or with
     // none - the two readings the line's opening run turns on. A garrison, so the cases about which
     // lines carry a mark have a term line beneath the market to read.
     private static MarketClaimBreakdown buildMarkedMarket(EntityNameplate market) {
-        return new MarketClaimBreakdown(
-            market,
-            nameMarketId(market.displayName()),
-            FIRST_LISTED,
-            IS_KNOWN_TO_PLAYER,
-            ContestAdmission.WEIGHED,
-            STRONGEST_MARKET_SIZE,
-            NO_SIBLING_MARKETS,
-            OptionalInt.of(MILITARY_BONUS));
+        return ClaimMarketFixture
+            .startMarket(market.displayName())
+            .setNameplate(market)
+            .setListingPosition(FIRST_LISTED)
+            .setMarketSize(STRONGEST_MARKET_SIZE)
+            .setMilitaryBonus(MILITARY_BONUS)
+            .buildMarket();
     }
 
     // A market held out of the open that the player has nonetheless found - the one combination the
@@ -1256,15 +1241,14 @@ final class ClaimScoreRowResolverTest {
             int listingPosition,
             ContestAdmission admission) {
 
-        return new MarketClaimBreakdown(
-            EntityNameplate.createUnmarkedNameplate(marketName),
-            nameMarketId(marketName),
-            listingPosition,
-            IS_KNOWN_TO_PLAYER,
-            admission,
-            marketSize,
-            siblingMarketCount,
-            OptionalInt.empty());
+        return ClaimMarketFixture
+            .startMarket(marketName)
+            .setListingPosition(listingPosition)
+            .setKnownToPlayer(IS_KNOWN_TO_PLAYER)
+            .setAdmission(admission)
+            .setMarketSize(marketSize)
+            .setSiblingMarketCount(siblingMarketCount)
+            .buildMarket();
     }
 
     // A colony the economy does not list - a real market on a real entity the mechanic never reached.
@@ -1287,15 +1271,14 @@ final class ClaimScoreRowResolverTest {
     // A market every term of the score arose on, for the cases about the whole sum rather than about
     // one term of it: its own size, two others beside it, and a garrison on it.
     private static MarketClaimBreakdown buildFullyScoredMarket() {
-        return new MarketClaimBreakdown(
-            UNMARKED_MARKET,
-            nameMarketId(STRONGEST_MARKET),
-            FIRST_LISTED,
-            IS_KNOWN_TO_PLAYER,
-            ContestAdmission.WEIGHED,
-            STRONGEST_MARKET_SIZE,
-            TWO_SIBLING_MARKETS,
-            OptionalInt.of(MILITARY_BONUS));
+        return ClaimMarketFixture
+            .startMarket(STRONGEST_MARKET)
+            .setNameplate(UNMARKED_MARKET)
+            .setListingPosition(FIRST_LISTED)
+            .setMarketSize(STRONGEST_MARKET_SIZE)
+            .setSiblingMarketCount(TWO_SIBLING_MARKETS)
+            .setMilitaryBonus(MILITARY_BONUS)
+            .buildMarket();
     }
 
     // One of the faction's other markets, one the player has found. It carries the same sibling count
@@ -1324,14 +1307,12 @@ final class ClaimScoreRowResolverTest {
             int listingPosition,
             boolean isKnownToPlayer) {
 
-        return new MarketClaimBreakdown(
-            EntityNameplate.createUnmarkedNameplate(marketName),
-            nameMarketId(marketName),
-            listingPosition,
-            isKnownToPlayer,
-            ContestAdmission.WEIGHED,
-            marketSize,
-            siblingMarketCount,
-            OptionalInt.empty());
+        return ClaimMarketFixture
+            .startMarket(marketName)
+            .setListingPosition(listingPosition)
+            .setKnownToPlayer(isKnownToPlayer)
+            .setMarketSize(marketSize)
+            .setSiblingMarketCount(siblingMarketCount)
+            .buildMarket();
     }
 }

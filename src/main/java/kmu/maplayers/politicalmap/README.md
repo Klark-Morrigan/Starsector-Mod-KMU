@@ -18,6 +18,14 @@ Part of [map layers](../README.md); see the
 - [Claim extensions](#claim-extensions)
 - [How a view drives the pipeline](#how-a-view-drives-the-pipeline)
 - [Where each part lives](#where-each-part-lives)
+  - [Refresh](#refresh-baserefresh)
+  - [Render orchestration](#render-orchestration-baserender-baserenderhover)
+  - [Hover tooltips](#hover-tooltips-basetooltip)
+  - [The domination boxes](#the-domination-boxes)
+  - [The status line and the colony vocabulary](#the-status-line-and-the-colony-vocabulary)
+  - [The claims boxes](#the-claims-boxes)
+  - [The presence ribbon](#the-presence-ribbon-baseribbon-and-its-counting-rules)
+  - [Sidebar controls](#sidebar-controls-basesidebar)
 - [When the map is rebuilt](#when-the-map-is-rebuilt)
 
 ## What the player sees
@@ -182,50 +190,64 @@ Everything above is drawn over the systems the framework's `base/visibility` adm
 belong to the framework rather than to this layer: they work on an opaque owner, and the views
 decide that the key names a bloc.
 
-The rest of `base` carries the supporting parts: `politics` (grouping and the held/claim resolvers),
-`refresh` (the economy-event listeners, `PoliticalMapStalenessSource` - what this layer counts
-as a change the engine fired no event for, answered into the framework's poll, plus the one
-passenger that writes rather than reads: each system's own inhabitants observing the colonies a
-revelation gate holds back, recorded here because nothing in the engine announces a derelict
-arriving among witnesses. The economy-event listeners record the same thing for the one system they
-name (`MarketPoliticsRefresh`), the event being the moment the observation is worth dating rather
-than a poll cycle later - and a decivilisation is recorded on the `aboutToBe` phase, since once the
-colony has died there is nobody left to date what it vouched for. Where an event fires too late to
-read the system as it was - an abandonment, a Nex transfer - the comment at that listener says so,
-and the colony keeps the sighting it already had - and
-`PoliticalMapRefreshSignal`, the coarse changes only this layer can raise on the shared board,
-alliance membership being the one),
-`render` (`PoliticalMapOverlayRenderer` - the order the sub-layers are stacked in, bottom to top,
-and the only place it is written down; plus `PoliticalMapBandLayout` - which side of the map's own
-nebulae each of them paints on, read per pass from the player's four **Nebula draw order**
-settings. The order among the sub-layers is the layer's and the side of the nebulae is the player's,
-which is the whole division: what makes a sub-layer legible against the ones under it is fixed, and
-what a haze over it costs is taste. Three
-sub-layers ride with a chosen one rather than being chosen themselves - the contested hatch inside
-the fill it is half of, and the hover feedback and the debug overlays with the base view they
-brighten, annotate, or replace),
-`render/hover` (`PoliticalMapHoverHighlightSource` - this layer's answers about the cell under
-the cursor: the owner's border loops it might sit inside and the shade its fill draws in, over
-the frame's painted shapes it hands the framework unchanged;
-and `PoliticalMapHoverGates` - whether this layer answers the cursor at all, its own two switches
-ANDed with the framework's, plus whether either kind of feedback still needs the cursor read),
-`tooltip` (what this layer says about the hovered system, each view injecting the explanation of the
-mechanic its own fills were painted by into the framework's hover box: `SystemDominationTooltip` -
-the ranked standings behind a faction or alliance fill - and `SystemClaimTooltip` - the scored claim
-contest behind a claims fill, its claimant over the factions standing in its own alliance, the rivals
-who could have taken the system and the
-factions present that never could - plus what both are written from: `FactionTooltipLine` (a faction
-as something a block lists) and `FactionTooltipBanner` (a faction as a verdict over the whole system),
-`StandingRowResolver` (the ranked groups as entries), and the core-territory heading
-(`CoreTerritoryHeading`) and status lines. All of
-them sit on `PoliticalMapCellTooltip`, which binds the claim read for the whole layer and heads
-its boxes with the decree holding the system: any box may have to say a system is held
-by decree, and a decree resolved - or drawn - one way on one view and another way on the next would
+The rest of `base` carries the supporting parts, a subsection each below: `politics` (grouping and
+the held/claim resolvers, under the ownership link above), `refresh`, `render` and `render/hover`,
+`tooltip`, `ribbon`, and `sidebar`.
+
+### Refresh (`base/refresh`)
+
+The economy-event listeners, and `PoliticalMapStalenessSource` - what this layer counts as a change
+the engine fired no event for, answered into the framework's poll - plus the one passenger that
+writes rather than reads: each system's own inhabitants observing the colonies a revelation gate
+holds back, recorded here because nothing in the engine announces a derelict arriving among
+witnesses. The economy-event listeners record the same thing for the one system they name
+(`MarketPoliticsRefresh`), the event being the moment the observation is worth dating rather than a
+poll cycle later - and a decivilisation is recorded on the `aboutToBe` phase, since once the colony
+has died there is nobody left to date what it vouched for. Where an event fires too late to read the
+system as it was - an abandonment, a Nex transfer - the comment at that listener says so, and the
+colony keeps the sighting it already had.
+
+Beside those sits `PoliticalMapRefreshSignal`, the coarse changes only this layer can raise on the
+shared board, alliance membership being the one.
+
+### Render orchestration (`base/render`, `base/render/hover`)
+
+`PoliticalMapOverlayRenderer` is the order the sub-layers are stacked in, bottom to top, and the
+only place it is written down; `PoliticalMapBandLayout` is which side of the map's own nebulae each
+of them paints on, read per pass from the player's four **Nebula draw order** settings. The order
+among the sub-layers is the layer's and the side of the nebulae is the player's, which is the whole
+division: what makes a sub-layer legible against the ones under it is fixed, and what a haze over it
+costs is taste. Three sub-layers ride with a chosen one rather than being chosen themselves - the
+contested hatch inside the fill it is half of, and the hover feedback and the debug overlays with
+the base view they brighten, annotate, or replace.
+
+In `render/hover`, `PoliticalMapHoverHighlightSource` is this layer's answers about the cell under
+the cursor: the owner's border loops it might sit inside and the shade its fill draws in, over the
+frame's painted shapes it hands the framework unchanged. `PoliticalMapHoverGates` is whether this
+layer answers the cursor at all, its own two switches ANDed with the framework's, plus whether
+either kind of feedback still needs the cursor read.
+### Hover tooltips (`base/tooltip`)
+
+What this layer says about the hovered system, each view injecting the explanation of the mechanic
+its own fills were painted by into the framework's hover box: `SystemDominationTooltip` - the ranked
+standings behind a faction or alliance fill - and `SystemClaimTooltip` - the scored claim contest
+behind a claims fill, its claimant over the factions standing in its own alliance, the rivals who
+could have taken the system and the factions present that never could. Both are written from
+`FactionTooltipLine` (a faction as something a block lists) and `FactionTooltipBanner` (a faction as
+a verdict over the whole system), `StandingRowResolver` (the ranked groups as entries), and the
+core-territory heading (`CoreTerritoryHeading`) and status lines.
+
+All of them sit on `PoliticalMapCellTooltip`, which binds the claim read for the whole layer and
+heads its boxes with the decree holding the system: any box may have to say a system is held by
+decree, and a decree resolved - or drawn - one way on one view and another way on the next would
 answer one hover two ways a keystroke apart. A box whose own body already states the decree says so
 (`isStatingCoreClaimInBody`) and goes without the heading, so the one fact is met once rather than
 twice in a single hover. Both reasons a box goes unheaded - no decree at all, and a decree the body
 states itself - are settled inside `CoreTerritoryHeading` and answer alike, so no call site can drop
 the heading by claiming there is no decree.
+
+### The domination boxes
+
 The domination box has a second, fuller version - `ExpandedSystemDominationTooltip`, the counterpart
 it offers the framework's detail mode - which lists every faction holding the system over the
 colonies its score was summed from and each colony over the factors behind its weight, down to a
@@ -236,27 +258,29 @@ to be two amounts of detail about the same contest rather than two contests. Wha
 answer: what to hang beneath a faction as the account of its score (`FactionAccountResolver`), asked
 for once per paint and applied by `StandingRowResolver` where the standing and the line named from
 it are both in hand, so no box can list one faction's colonies under another's name. Hanging nothing
-is the shared default, so the ordinary box overrides nothing at all. What that pair offers the player is named
-there too, once for both: "score contributions", which the framework puts at the foot of whichever
-of the two is drawn, beside the key that switches between them. Named here rather than by the
-framework because only this layer knows what its counterpart holds, and once rather than per box
-because the account is the same thing whichever way the player is switching.
-It is offered only where the system ranks somebody, since the counterpart accounts for the colonies
-behind the standings and a system ranking none gives it nothing to account for. That is asked of the
-ranking and not of the status line above it, both boxes reading the system through one
-`readRankedStandings`: the line and the listing answer different questions of the same pass - whether
-anybody *runs* the place, against everybody the player may be *told* about - so a system whose
-colonies have all collapsed is headed `Decivilised` and still ranks whoever holds them, and those
-colonies are exactly what the counterpart opens up. Judged off the line, that system - the one whose
-whole account is the collapse - is the one the detail is withheld on. The parts come
-from the very arithmetic the scores were summed over (`KnownMarketFootprints.readBreakdownByFaction`,
-which folds what `MarketWeights` works out per colony - the base size, station and patrol factors and
-the stability cut each takes, plus the grid a worth in size points is rounded onto),
-so the lines always add up to the number the ordinary box and the fills show;
-`MarketWeightRowResolver` decides which lines a colony breaks into and `MarketFactorText` how one
-line's numbers read - a rating as the player set it, a weight on the grid the rest of the box counts
-in, no cut that took nothing, and a patrol tier's rate stated apart from the total it explains so the
-box draws the arithmetic quieter than the finding).
+is the shared default, so the ordinary box overrides nothing at all.
+
+What that pair offers the player is named there too, once for both: "score contributions", which the
+framework puts at the foot of whichever of the two is drawn, beside the key that switches between
+them. Named here rather than by the framework because only this layer knows what its counterpart
+holds, and once rather than per box because the account is the same thing whichever way the player
+is switching. It is offered only where the system ranks somebody, since the counterpart accounts for
+the colonies behind the standings and a system ranking none gives it nothing to account for. That is
+asked of the ranking and not of the status line above it, both boxes reading the system through one
+`readRankedStandings`: the line and the listing answer different questions of the same pass -
+whether anybody *runs* the place, against everybody the player may be *told* about - so a system
+whose colonies have all collapsed is headed `Decivilised` and still ranks whoever holds them, and
+those colonies are exactly what the counterpart opens up. Judged off the line, that system - the one
+whose whole account is the collapse - is the one the detail is withheld on.
+
+The parts come from the very arithmetic the scores were summed over
+(`KnownMarketFootprints.readBreakdownByFaction`, which folds what `MarketWeights` works out per
+colony - the base size, station and patrol factors and the stability cut each takes, plus the grid a
+worth in size points is rounded onto), so the lines always add up to the number the ordinary box and
+the fills show. `MarketWeightRowResolver` decides which lines a colony breaks into and
+`MarketFactorText` how one line's numbers read - a rating as the player set it, a weight on the grid
+the rest of the box counts in, no cut that took nothing, and a patrol tier's rate stated apart from
+the total it explains so the box draws the arithmetic quieter than the finding.
 Every colony line leads with the glyph the sector map marks that colony's entity with. What that mark
 is for and why it takes the line's own colour rather than the shade the map paints it are
 `CellTooltipMark.resolveMarkForMapIcon`'s, stated there once for every surface that lists entities.
@@ -266,14 +290,15 @@ What is this layer's is where the glyph comes from: name and glyph travel as one
 where the line is drawn, the same rule every other part of the account is read under: the box reads
 what the pass recorded, so there is no second market lookup free to answer for a different one - and
 no way for one colony's name to be drawn beside another's glyph, the pair never being apart.
-The station line beneath a colony takes one on the same terms
-(`StationFactor.stationNameplate`, read through `EntityNameplates.readNameplate` where the
-connected-entity scan answered the token rather than beside the name, so the glyph can only be the
-station whose bonus is stated by it): it is the one
-term of the account named for a thing on the map rather than for a piece of arithmetic, and the mark
-settles more there than a level up, a system's stations being told apart on the map by their glyph as
-much as by their name. Every other line beneath a colony stays unmarked - a stability or a size has
-nothing on the map to point at.
+
+The station line beneath a colony takes one on the same terms (`StationFactor.stationNameplate`,
+read through `EntityNameplates.readNameplate` where the connected-entity scan answered the token
+rather than beside the name, so the glyph can only be the station whose bonus is stated by it): it
+is the one term of the account named for a thing on the map rather than for a piece of arithmetic,
+and the mark settles more there than a level up, a system's stations being told apart on the map by
+their glyph as much as by their name. Every other line beneath a colony stays unmarked - a stability
+or a size has nothing on the map to point at.
+
 Where that station shares the colony's name the line says which of the two it is about
 (`MarketFactorText.formatMilitaryStationName`). A colony on a station is one place to the player and
 two entries to the economy - the colony and the military station defending it - which vanilla names
@@ -285,29 +310,32 @@ player can see apart on the map, so a clarifier there would answer a question th
 reads in the line's own colour rather than the qualifier's gold: the parentheses already say the run
 is an aside, and the gold is reserved for findings - the words a colony's own line calls out, the
 claims box's `(core)` - which a disambiguation is not.
+
 That box lists one kind of colony no score above it accounts for: one the economy does not list,
 which the weight read has nothing to weigh. It is the other half of the one colony set the weighed
 read selects from - the colonies the economy does not list
 (`KnownMarketFootprints.readUnweighedColoniesByFaction`), carried as an `UnweighedColony` - a
 nameplate, the colony's own id, and the two facts its line calls out that no weight would carry:
-what kind of place it is and whether it conceals itself - rather
-than as a zeroed `MarketWeightBreakdown` - zero weight is not absence on this side, a weightless
-colony still marking presence and painting its system unopposed, so a value that could be summed into
-a footprint would leave the pass one forgotten branch away from painting a system for a faction the
-mechanic never counted, and a name with a glyph cannot be summed into anything. It is named at the foot of the faction's list, led by the map's glyph like any
-other colony - it being the only trace of such a colony the player has beside the name - at nought in
-the quiet shade, and breaks down into no factors - the same sentence the claims box speaks for a
-market its own mechanic never weighed, and for the same reason: the colony is there and it moved
-nothing, which is the whole of what the account has to say about it.
+what kind of place it is and whether it conceals itself - rather than as a zeroed
+`MarketWeightBreakdown`. Zero weight is not absence on this side, a weightless colony still marking
+presence and painting its system unopposed, so a value that could be summed into a footprint would
+leave the pass one forgotten branch away from painting a system for a faction the mechanic never
+counted, and a name with a glyph cannot be summed into anything. It is named at the foot of the
+faction's list, led by the map's glyph like any other colony - it being the only trace of such a
+colony the player has beside the name - at nought in the quiet shade, and breaks down into no
+factors - the same sentence the claims box speaks for a market its own mechanic never weighed, and
+for the same reason: the colony is there and it moved nothing, which is the whole of what the
+account has to say about it.
+
 Every colony line, weighed or not, says how old the box's news of it is where nobody is looking at
 the colony as the box is drawn (`ColonyObservationNotes`, run onto the line as a grey remark through
 `CellTooltipEntryLine.notedWith`). In sight the name stands alone; out of sight it carries
 `last seen 34 days ago (c206.05.12)`, closing the line past whatever qualifier it calls out - the
 remark is about the box's account rather than about the colony, and set ahead of the gold it would
 break a word like `abandoned` away from the name it qualifies. Two things count as looking at it,
-being the two routes an
-observation is ever made by: the player's fleet is in the system, or the system's own inhabitants
-can see the colony - the owner-aware reading the visibility rule itself uses. Only then is the
+being the two routes an observation is ever made by: the player's fleet is in the system, or the
+system's own inhabitants can see the colony - the owner-aware reading the visibility rule itself
+uses. Only then is the
 sighting register reached for, so the ordinary case costs a location comparison and an owner-set
 read, and the elapsed span and the date are built off `CampaignClockAPI` per remarked line. That
 matters most for the colonies a revelation gate admitted on the strength of an observation - a
@@ -317,6 +345,7 @@ observation was, a colony would blink out of a box the player was reading it in.
 the remark is matched to its line by the colony's own id (`MarketWeightBreakdown.marketId`,
 `UnweighedColony.marketId`) rather than by name - vanilla names a station colony and its defending
 station alike.
+
 A faction whose only colony in the system is one of these is listed all the same, at a nought of its
 own. Presence and weight are two questions, so the ranking (`SystemStandings`) is handed both: who is
 in the system (`HolderPass.readKnownColonyFactionIds` - the owners of everything the box may name,
@@ -330,6 +359,9 @@ one. The nought reads in the quiet shade at both tiers (`statesUncountedValue` a
 `GroupStanding.hasWeighedMember` for the bloc line over it) - a bloc counts as weighed where any one
 member was, so an alliance holding one registered colony beside two unregistered ones keeps an
 aggregate somebody worked out.
+
+### The status line and the colony vocabulary
+
 The status line above that listing (`SystemStatusRow`) answers a different question of the same
 colony rule, and the two are meant to part over one shape. It asks habitation - whether anybody
 lives here - where the listing asks what the player may be told about, so a system whose only market
@@ -342,6 +374,7 @@ The one shape habitation admits that nobody runs is the collapsed colony
 rather than asking its emptiness: a decivilised world is still populated - drawn as settled rather
 than dropped as empty space - and still headed `Decivilised`, since what it lacks is a polity and
 not people, and the status row keeps its capitalised `Decivilised` for the banner it is.
+
 Both boxes then say what they have found out about the place on the line naming it
 (`ColonyQualifier`, gold, one read for the two families so neither can call a world dead the other
 lists as living). Five words, in a fixed order: `claim holder`, then the kind - `abandoned` for a
@@ -349,12 +382,14 @@ hulk, `decivilised` for a collapse - then `undiscovered`, `hidden` and `unlisted
 hulk reach a listing identically, unowned and off-economy and at nought, and nothing else on either
 line would tell them apart; the last three are the three separate ways a colony can be out of plain
 view, and they were each stated in one box and not the other before the read was shared.
-Two of the five never join what stands above them. `undiscovered` displaces `hidden` - a colony the
-player has not found is concealed from them by that alone - and `unlisted` speaks only where nothing
-above it held, or it would repeat itself on every derelict and every dead world, both being
+
+Two of the five never join what stands above them. `undiscovered` displaces `hidden` - an
+undiscovered colony is concealed from the player by that alone - and `unlisted` speaks only where
+nothing above it held, or it would repeat itself on every derelict and every dead world, both being
 off-economy by construction. The suppression is by the condition holding rather than by where a word
 ends up being stated, which is what lets a station already called *Abandoned Station* say its word
 inside its own name and still suppress `unlisted` below.
+
 That name is the second place a word can be stated. Where the colony is already called one of the
 five, the occurrence *in the name* is drawn in the qualifier's gold
 (`CellTooltipEntryLine.callsOutInLabel`) and nothing is repeated at the end of the line - so the one
@@ -363,22 +398,27 @@ whatever about. The resolution is untouched: the same words in the same order, a
 qualified in every sense, drawn somewhere else. At most one stretch is gilded, the first the name
 carries, and the rest close the line as usual - so an *Abandoned Station* the player has not found
 gilds `Abandoned` and still reads `undiscovered`. What counts as the name saying a word is
-`KmlibStrings.findWholeWordIndex`, and what is drawn is the name's own spelling of
-it. `hidden` is withheld from a colony the sector openly points at -
-Galatia Academy, whose station is permanently visible while the market hung on it is a stand-in
-vanilla never registers with the economy and marks hidden to keep off the books, so it wears the
-identical flag a pirate base does for an entirely different reason. Nothing on either market parts
-them, so the exemption
-is an identity: `OpenlyKnownColonyRegistry` holds the entity ids `MapLayers` seeds it with beside a
-tag another mod hangs on content of its own, and `OpenlyKnownColonyLookup` folds the answer by
-colony id off the box's own walk. The Academy then falls through to `unlisted`, which is the
-separation the word was wanted for. The exemption excuses that one word and nothing else: the
-Academy is a hidden colony to `ColonyVisibility` still, gated still, and admitted still only by
-Ancyra settling the system.
+`KmlibStrings.findWholeWordIndex`, and what is drawn is the name's own spelling of it.
+
+`hidden` is withheld from a colony the sector openly points at - Galatia Academy, whose station is
+permanently visible while the market hung on it is a stand-in vanilla never registers with the
+economy and marks hidden to keep off the books, so it wears the identical flag a pirate base does
+for an entirely different reason. Nothing on either market parts them, so the exemption is an
+identity: `OpenlyKnownColonyRegistry` holds the entity ids `MapLayers` seeds it with beside a tag
+another mod hangs on content of its own, and `OpenlyKnownColonyLookup` folds the answer by colony id
+off the box's own walk. The Academy then falls through to `unlisted`, which is the separation the
+word was wanted for. The exemption excuses that one word and nothing else: the Academy is a hidden
+colony to `ColonyVisibility` still, gated still, and admitted still only by Ancyra settling the
+system.
+
 Each box fills in a small `ColonyQualifierFacts` from what it holds - the claims box off
 `MarketClaimBreakdown`'s admission, the domination box off `MarketWeightBreakdown.isHiddenMarket` or
 the `UnweighedColony` - and the kind, the discovery answer and the landmark answer come off the
-box's own walk of the system (`SystemColonyReading`), no row of either box carrying any of them.
+box's own walk of the system (`SystemColonyReading`, whose `readConcealmentOf` gathers its two
+answers with the account's own concealment fact), no row of either box carrying any of them.
+
+### The claims boxes
+
 The claims box has a counterpart of its own on the same terms - `ExpandedSystemClaimTooltip`, which
 opens every faction the contest names into the markets it holds the system with and each market
 into the terms its claim score is built from. Both claim boxes sit on `SystemClaimContestTooltip`,
@@ -391,19 +431,24 @@ answer two factions of one box under two different rules. The alliance set trave
 value and for the same reason (`HolderGroupingSource`, bound by `SystemClaimTooltip` and sampled
 per hover - a grouping held for the session would file a faction under the alliance it left an hour
 ago).
+
 Two axes place a faction into those blocks, and the relation to the claim holder is the outer one:
 `Allied with the claim holder:` takes everyone in the holder's bloc whatever their eligibility, and
 the two eligibility blocks divide what is left. Where an alliance leaves the heading unable to say
 which kind a line is, the line says it (`non-territorial`). Why the relation outranks eligibility,
 why an alliance and not a disposition routes, and why an install without Nexerelin needs no branch
-are all `SystemClaimContestTooltip`'s to state. It is also where the layer's heading is declined for both of them: the claim line names
-the decreed holder and marks the hold, so these are the two boxes that state the decree themselves. `ClaimScoreRowResolver` decides those lines: the faction's markets in the order the
-mechanic itself would settle them - strongest first, a tie falling to the earlier place in the
-economy's listing - so the one representing the faction comes out on top by that order rather than
-by being put there. Exactly one market in the whole box is called out, as the `claim holder`: the
-one that actually took the system. Every faction is represented by its strongest, but only one of
-those won anything, and a marker on each would read as several holders of a system that can only
-have one; over a decree it goes unsaid entirely, since nothing any market scored settled the matter.
+are all `SystemClaimContestTooltip`'s to state. It is also where the layer's heading is declined for
+both of them: the claim line names the decreed holder and marks the hold, so these are the two boxes
+that state the decree themselves.
+
+`ClaimScoreRowResolver` decides those lines: the faction's markets in the order the mechanic itself
+would settle them - strongest first, a tie falling to the earlier place in the economy's listing -
+so the one representing the faction comes out on top by that order rather than by being put there.
+Exactly one market in the whole box is called out, as the `claim holder`: the one that actually took
+the system. Every faction is represented by its strongest, but only one of those won anything, and a
+marker on each would read as several holders of a system that can only have one; over a decree it
+goes unsaid entirely, since nothing any market scored settled the matter.
+
 Every market line leads with the glyph the sector map marks that market's entity with, scored or not,
 on the same terms the domination box's colony lines take one: read off the breakdown the market
 arrived in (`MarketClaimBreakdown.marketNameplate`, resolved by `VanillaClaimBreakdownReader` through
@@ -411,6 +456,7 @@ arrived in (`MarketClaimBreakdown.marketNameplate`, resolved by `VanillaClaimBre
 lookup can answer for a different colony, and drawn in the market name's own colour rather than the
 map's. The term lines beneath a market carry no mark - a size or a garrison bonus has nothing on the
 map to point at.
+
 Every market also states where the economy lists it, as a quiet `[n]` run after its name
 (`MarketClaimBreakdown.listingPosition`, numbered across the system's owned markets rather than
 within one faction's): the contest is settled on a strictly greater score, so a tie - between two of
@@ -427,11 +473,12 @@ non-territorial faction's markets are marked only inside their own faction: they
 lead, so a tie against the claimant is not judged, while the tie deciding which of them stands for
 the faction still is. Under a decree the claimant tie goes unjudged too, the system having been
 settled before a market was weighed.
-What the player has found silences no mark. A mark answers why two markets on one score are ordered
-as they are, and both sides of a judged tie are markets the contest weighed - which the list carries
-whether or not anybody has found them (`ListedClaimMarkets`, the one rule deciding which markets are
-listed, asked both by the listing and by the marks stated over it) - so the ordering a mark is about
-is always in front of the reader. Both comparisons hold to that, within a faction and between two.
+
+What the player has discovered silences no mark. A mark answers why two markets on one score are
+ordered as they are, and both sides of a judged tie are markets the contest weighed - which the list
+carries whatever the player knows of them (`ListedClaimMarkets`, the one listing rule) - so the
+ordering a mark is about is always in front of the reader, within a faction and between two.
+
 A market the mechanic never weighed is listed at nought, whichever of the first two it is
 (`MarketClaimBreakdown.isScoredOnItsOwnAccount`, the one question the box asks of the pair): it
 brought nothing to the contest however large it is, and printing the score it would have carried
@@ -445,6 +492,7 @@ market rather than anything the market scored, and in the list's own colour it w
 score competed with and lost on. Which of the two it was is said after the name rather than beside
 the number - `hidden` or `unlisted`, in the shared vocabulary above - those being findings about the
 place instead of statements about what the contest made of it.
+
 Every market line carries the same last-seen remark the domination box's colony lines take, on the
 same terms and matched to its line by the same kind of identity (`MarketClaimBreakdown.marketId`).
 It reaches further on this list than on that one, for the reason `ExpandedSystemClaimTooltip` gives.
@@ -452,13 +500,13 @@ The remark, the kind and the discovery answer travel together as one value (`Sys
 folded once for the whole box off the very walk of the system the status line comes from: all three
 are read per row and none can be answered from a claim score or a dominance weight, so resolved
 where an account is built they would read the system once for every faction the contest lists. The
-domination box takes the same value on the same terms.
-That value also lays what it knows onto the line (`SystemColonyReading.describeColony`, taking the
-findings the account holds and applying them beside its own date), and the date is reachable no
-other way. Both are due on the same lines for the same reason - a row naming a colony says what the
-arithmetic could not - so an account free to reach them apart is one that can lay a finding and
-forget the date, and which it forgot is invisible: a line missing its date reads exactly like a
-colony somebody is standing over.
+domination box takes the same value on the same terms. That value also lays what it knows onto the
+line (`SystemColonyReading.describeColony`, taking the findings the account holds and applying them
+beside its own date), and the date is reachable no other way. Both are due on the same lines for the
+same reason - a row naming a colony says what the arithmetic could not - so an account free to reach
+them apart is one that can lay a finding and forget the date, and which it forgot is invisible: a
+line missing its date reads exactly like a colony somebody is standing over.
+
 The unlisted colony is vanilla's own doing: Galatia Academy is built as a real market on a real
 station and deliberately never registered, so the mechanic's economy walk never sees it and a box
 reading the economy alone reports that station as nobody's. The contest is read over
@@ -467,77 +515,88 @@ keeps the condition-only market every surveyed rock carries out of the account -
 count and every other term stay on the economy's own half of it, since admitting an unregistered
 colony there would raise a real one's score above what the game scores it at and could hand the
 system to a different faction.
+
 A faction holding nothing but unweighed colonies takes a `PresenceOnlyClaimStanding` at nought
 rather than dropping out of the contest, and the box lists it like any other. Every block below the
 claim, the claimant's own line, the account beneath each of them and the `F1` hint read every
 standing rather than the weighed half (`ListedClaimContest.selectFrom`), because a block says how a
 faction stands to the claim and not what kind of record the contest gave it: routing by record kind
 would file a pirate base's owner beside a Remnant station's, which are ineligible and eligible
-respectively. A
-territorial faction holding only zero-claim colonies did enter the running by the mechanic's own gate
-and scored nothing there, which is what `Contested by:` plus a nought says exactly. That nought reads
-in the quiet shade (`statesUncountedValue`, the same treatment an unweighed market line takes): it is
-the contest's statement about a faction it never weighed rather than a score competed for and lost.
-The claimant's line takes the same nought where a decree holds a system its faction is present in
-through unweighed colonies alone, in place of the blank column a claimant holding nothing there gets.
+respectively. A territorial faction holding only zero-claim colonies did enter the running by the
+mechanic's own gate and scored nothing there, which is what `Contested by:` plus a nought says
+exactly. That nought reads in the quiet shade (`statesUncountedValue`, the same treatment an
+unweighed market line takes): it is the contest's statement about a faction it never weighed rather
+than a score competed for and lost. The claimant's line takes the same nought where a decree holds a
+system its faction is present in through unweighed colonies alone, in place of the blank column a
+claimant holding nothing there gets.
+
 An undiscovered market is listed all the same where the contest weighed it: its weight is
 in the numbers on screen already - the claim, the faction's score, the difference between its own
 total and the terms beneath it - and the row is what makes those account for themselves. What is
-left off is the market the player knows nothing of *and* that took no part (`ListedClaimMarkets`, over
-`MarketClaimBreakdown.isKnownToPlayer` and `isScoredOnItsOwnAccount`): it accounts for nothing on
-screen, so a row for it would be disclosure and nothing else, and the dev reveal is what states even
-those in full. The knowledge half is the same rule the faction and alliance tabs fog by, so all
-three agree on what the player knows. What that flag
-carries is the composed answer rather than the entity's own: the player has discovered the market
-**and**, for the shapes a bare fog would leak, somebody has seen it where it stands. Which is why
-the listed rows are undiscovered colonies exactly - a market the contest weighed is open and on the
-economy's books, so no gate covers it and discovery is the whole of the question - while the rule
-that leaves one off is asked in the wider terms a concealed base needs. The same
-projection reaches the listing above the markets: a standing whose every colony is withheld is left
-off the box entirely (`ListedClaimContest.selectFrom` again), since naming a faction over an account with
-nothing in it would tell the player exactly what the fog is keeping back - and `F1` is offered only
-where a standing survives that filter (`hasListedStanding`), so the key is never advertised over a box
-the fog has emptied. Both boxes ask that through one read of the contest
+left off is the market the player knows nothing of *and* that took no part (`ListedClaimMarkets`,
+over `MarketClaimBreakdown.isKnownToPlayer` and `isScoredOnItsOwnAccount`): it accounts for nothing
+on screen, so a row for it would be disclosure and nothing else, and the dev reveal is what states
+even those in full. The knowledge half is the same rule the faction and alliance tabs fog by, so all
+three agree on what the player knows. What that flag carries is the composed answer rather than the
+entity's own: the player has discovered the market **and**, for the shapes a bare fog would leak,
+somebody has seen it where it stands. Which is why the listed rows are undiscovered colonies exactly
+- a market the contest weighed is open and on the economy's books, so no gate covers it and
+discovery is the whole of the question - while the rule that leaves one off is asked in the wider
+terms a concealed base needs.
+
+The same projection reaches the listing above the markets: a standing whose every colony is withheld
+is left off the box entirely (`ListedClaimContest.selectFrom` again), since naming a faction over an
+account with nothing in it would tell the player exactly what the fog is keeping back - and `F1` is
+offered only where a standing survives that filter (`hasListedStanding`), so the key is never
+advertised over a box the fog has emptied. Both boxes ask that through one read of the contest
 (`SystemClaimContestTooltip.readListedContest`): the hint offers an account of exactly the factions
-the body lists, so answering the two apart would let a box advertise a key that does nothing.
-A weighed standing is not spared that filter: the mechanic weighs what vanilla weighs, and vanilla
+the body lists, so answering the two apart would let a box advertise a key that does nothing. A
+weighed standing is not spared that filter: the mechanic weighs what vanilla weighs, and vanilla
 weighs colonies the player has never reached.
+
 Closing the list is the presence term, which is the faction's rather than any one market's, since
 the mechanic gives every market of a faction the same point per other market it holds there: stated
 once beneath the very markets its count can be checked against, and worked out from that count
 (`Same-faction market bonus   (3 markets) - 1 = +2`, the subtraction being the market being scored,
 which is not its own sibling) rather than as a bare result nobody can check. That line is working
-throughout bar the points it arrives at, so it reads in the quiet shade name and all. The count is of
-what the faction holds rather than of the lines above it, so over a list a market was kept off for
-being unknown and unweighed at once it stands and reads as exceeding what is shown - which gives away
-nothing the list has
-not, a market's own line carrying the whole score the contest weighed it at while the terms beneath
-it state its own share alone, so the presence is already the difference between the two on every
-line. Withheld there, it would leave each market short by an amount the reader can see and cannot
-account for. It is withheld only for an unlisted colony on the list, which the mechanic never counted
-and which sits among the very lines the count is checked against: that term would read as short by a
-market on screen, contradicted rather than merely exceeded. The resolver shares the entry model and the block
-vocabulary with the domination pair but not their number grammar - a claim score is a small whole
-number of points with no grid behind it, so no rating-to-weight change is stated),
-`ribbon` (the vocabulary a cell's presence band is planned in - the runs, the dividers between
-them, and the two-armed gate deciding which cells band at all - held apart from where a band's
-colony counts come from, since that is each painting mechanic's own business and keeping it there
-is what makes one band mean one thing on every view. The band spans four packages, each with its
-own register: the [plan and its gate](base/ribbon/README.md), the
+throughout bar the points it arrives at, so it reads in the quiet shade name and all. The count is
+of what the faction holds rather than of the lines above it, so over a list a market was kept off
+for being unknown and unweighed at once it stands and reads as exceeding what is shown - which gives
+away nothing the list has not, a market's own line carrying the whole score the contest weighed it
+at while the terms beneath it state its own share alone, so the presence is already the difference
+between the two on every line. Withheld there, it would leave each market short by an amount the
+reader can see and cannot account for. It is withheld only for an unlisted colony on the list, which
+the mechanic never counted and which sits among the very lines the count is checked against: that
+term would read as short by a market on screen, contradicted rather than merely exceeded.
+
+The resolver shares the entry model and the block vocabulary with the domination pair but not their
+number grammar - a claim score is a small whole number of points with no grid behind it, so no
+rating-to-weight change is stated.
+
+### The presence ribbon (`base/ribbon` and its counting rules)
+
+The vocabulary a cell's presence band is planned in - the runs, the dividers between them, and the
+two-armed gate deciding which cells band at all - held apart from where a band's colony counts come
+from, since that is each painting mechanic's own business and keeping it there is what makes one
+band mean one thing on every view. The band spans four packages, each with its own register: the
+[plan and its gate](base/ribbon/README.md), the
 [ring geometry and the draw](base/render/ribbon/README.md), and the two counting rules -
-[held cells](dominance/ribbon/README.md), counted off the very footprints the fill was ranked
-from, and [claims-layer cells](claims/ribbon/README.md), counted off the contest over the system -
-the cells no claim covers among them, since the claim walk never sees a hidden or player-owned
-market and a band is the only thing that reports those systems. Which of the two answers for a cell is the view's own call, made through the same seam it
-picks its holder source and its hover box by),
-and `sidebar` - the last being this layer's own body
-controls, neither the box they sit in nor the spotlight picker among them, both of which are
-reached through [the sidebar](../base/sidebar/README.md) one level up (the picker is KMLib's, bound
-to this mod's save slots there). What stays here is what that picker refuses
-to know: which blocs are on offer and what makes that list stale (`SelectableBlocCache`), and the
+[held cells](dominance/ribbon/README.md), counted off the very footprints the fill was ranked from,
+and [claims-layer cells](claims/ribbon/README.md), counted off the contest over the system - the
+cells no claim covers among them, since the claim walk never sees a hidden or player-owned market
+and a band is the only thing that reports those systems. Which of the two answers for a cell is the
+view's own call, made through the same seam it picks its holder source and its hover box by.
+
+### Sidebar controls (`base/sidebar`)
+
+This layer's own body controls, neither the box they sit in nor the spotlight picker among them,
+both of which are reached through [the sidebar](../base/sidebar/README.md) one level up (the picker
+is KMLib's, bound to this mod's save slots there). What stays here is what that picker refuses to
+know: which blocs are on offer and what makes that list stale (`SelectableBlocCache`), and the
 recede toggles the layer pairs with the picker's sort (`RecedeControl`).
-The class that names and orders the views is `kmu.maplayers.MapLayers`, also one level
-up; how a layer is picked and what each screen remembers is [map layers](../README.md).
+
+The class that names and orders the views is `kmu.maplayers.MapLayers`, also one level up; how a
+layer is picked and what each screen remembers is [map layers](../README.md).
 
 ## When the map is rebuilt
 

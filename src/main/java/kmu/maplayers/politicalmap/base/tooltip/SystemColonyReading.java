@@ -157,6 +157,26 @@ public final class SystemColonyReading {
     }
 
     /**
+     * The three ways the colony with this id may be out of plain view, gathered into the value a
+     * line's wording is chosen from.
+     *
+     * <p>Assembled here because two of the three are this reading's own answers and only the third
+     * comes off the account. Left to each account, the assembly is the same three arguments written
+     * out per box, where transposing two of them still compiles and simply calls out the wrong word.
+     *
+     * @param colonyId       the colony's market id, as the account listing it carries
+     * @param isHiddenMarket whether the colony conceals itself, which only the account's own
+     *                       breakdown carries
+     * @return the three facts, in the order the value names them
+     */
+    public ColonyConcealment readConcealmentOf(String colonyId, boolean isHiddenMarket) {
+        return new ColonyConcealment(
+            isDiscoveredColony(colonyId),
+            isHiddenMarket,
+            isOpenlyKnownColony(colonyId));
+    }
+
+    /**
      * Runs a colony's line on into everything a box has to say about the place beside its own
      * number: what it has found out about it, and how current that account is.
      *

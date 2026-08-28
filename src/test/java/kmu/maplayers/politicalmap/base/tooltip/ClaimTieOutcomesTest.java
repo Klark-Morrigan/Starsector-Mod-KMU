@@ -1,10 +1,10 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
+import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
 
@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.OptionalInt;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -73,11 +72,6 @@ final class ClaimTieOutcomesTest {
     // are one and the same answer.
     private static final boolean IS_KNOWN_TO_PLAYER = true;
     private static final boolean IS_UNDISCOVERED_BY_PLAYER = false;
-
-    // Whether a market on an undiscovered entity may be drawn though the contest never weighed it:
-    // withheld in play, stated under the dev reveal. Every tie here is judged between markets the
-    // contest did weigh, which the list carries either way, so every case is posed in play.
-    private static final boolean WITHHOLDING_UNDISCOVERED_MARKETS = false;
 
     @Nested
     class ResolveOutcome {
@@ -284,20 +278,14 @@ final class ClaimTieOutcomesTest {
         return resolveOutcome(breakdown, standing, standing.standingMarket());
     }
 
-    // The reading in play, where an undiscovered colony the contest never weighed is kept off the
-    // list.
-    // Every case is posed here: a tie is judged between weighed markets, which the list carries in
-    // play as under the reveal, so nothing here would read differently either way.
+    // Named beside the standing reading above so every case states the same call, whichever of the
+    // two comparisons it is about.
     private static CellTooltipIndexOutcome resolveOutcome(
             SystemClaimBreakdown breakdown,
             WeighedClaimStanding standing,
             MarketClaimBreakdown market) {
 
-        return ClaimTieOutcomes.resolveOutcome(
-            breakdown,
-            standing,
-            market,
-            WITHHOLDING_UNDISCOVERED_MARKETS);
+        return ClaimTieOutcomes.resolveOutcome(breakdown, standing, market);
     }
 
     // A contest the given faction won on the scores, holding the standings posed against it.
@@ -392,22 +380,21 @@ final class ClaimTieOutcomesTest {
             List.of());
     }
 
+    // Named and identified off its place in the listing, since a tie is judged over places and this
+    // suite reads no line at all - only the outcome a place carries.
     private static MarketClaimBreakdown buildMarket(
             int listingPosition,
             int marketScore,
             ContestAdmission admission,
             boolean isKnownToPlayer) {
 
-        // Marked with no glyph: what identifies a market beyond its name is nothing a tie is judged
-        // on, and this suite reads no line at all - only the outcome a place carries.
-        return new MarketClaimBreakdown(
-            EntityNameplate.createUnmarkedNameplate("Market " + listingPosition),
-            "market_" + listingPosition,
-            listingPosition,
-            isKnownToPlayer,
-            admission,
-            marketScore,
-            NO_SIBLING_MARKETS,
-            OptionalInt.empty());
+        return ClaimMarketFixture
+            .startMarket("Market " + listingPosition)
+            .setListingPosition(listingPosition)
+            .setKnownToPlayer(isKnownToPlayer)
+            .setAdmission(admission)
+            .setMarketSize(marketScore)
+            .setSiblingMarketCount(NO_SIBLING_MARKETS)
+            .buildMarket();
     }
 }

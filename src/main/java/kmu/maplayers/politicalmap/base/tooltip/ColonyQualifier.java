@@ -30,7 +30,7 @@ import java.util.Optional;
  *
  * <p>The order runs from what a place <em>is</em> to how it is concealed: the claim it took, then
  * its kind, then the three ways it may be out of sight. Two of those never join what stands above
- * them. {@code undiscovered} displaces {@code hidden}, a colony the player has not found being
+ * them. {@code undiscovered} displaces {@code hidden}, an undiscovered colony being
  * concealed from them by that fact alone; {@code unlisted} is a fallback and speaks only where
  * nothing above it held, or it would repeat itself on every derelict and every dead world, both
  * being off-economy by construction.
@@ -133,8 +133,8 @@ public final class ColonyQualifier {
         }
         resolveKindWord(facts.kind()).ifPresent(words::add);
 
-        // Displacement rather than a pair: a colony the player has not found is concealed from them
-        // by that alone, and the market's own flag adds nothing a reader could act on.
+        // Displacement rather than a pair: an undiscovered colony is concealed from the player by
+        // that alone, and the market's own flag adds nothing a reader could act on.
         //
         // A concealment the sector openly points at says nothing either. The word is what parts a
         // base keeping itself out of sight from an ordinary colony, and a landmark that merely
