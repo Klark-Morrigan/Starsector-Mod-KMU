@@ -8,6 +8,8 @@ import kmlib.math.geometry.RingPath;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture;
+import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
@@ -66,6 +68,11 @@ import static org.mockito.Mockito.when;
  * anything - a cell answered after its ring was walked has already paid the cost the gate exists
  * to save.
  *
+ * <p>The alliance cases are about the pass rather than about any one cell: what the bands judge a
+ * contest against is read once, before the first cell is counted, so two cells in one bake can never
+ * be banded against two readings of who stands with whom. The switched-off pass is held to the same
+ * bar it is held to everywhere else here - it reads nothing, an alliance set no more than a size.
+ *
  * <p>The diagnostic trace is pinned against the same gate rather than against its own, because
  * what makes the overlay worth looking at is that it answers for exactly the cells the band pass
  * considered. A trace reaching wider would ring cells no band was ever going to be laid on;
@@ -85,6 +92,11 @@ final class CellRibbonSourceTest {
     // A second cell, for the one case that is about the ring being kept per cell rather than per
     // pass: a path standing for one cell is no answer for another's.
     private static final String OTHER_CELL = "other";
+
+    // Two factions a case stands together, for the alliance-set cases. Named rather than any pair
+    // because the fixture's fold has to be asked back about the same ids it was built from.
+    private static final String HEGEMONY = "hegemony";
+    private static final String ASTRAL_ARMADA = "astral_armada";
 
     private static final Color BAND_COLOUR = new Color(140, 160, 220);
 
@@ -218,13 +230,9 @@ final class CellRibbonSourceTest {
 
             var viewMock = buildViewMock(system -> ANY_PLAN);
 
-            buildThrough(viewMock, new CellRingPathCache());
+            buildThrough(viewMock, new CellRingPathCache(), HolderGrouping::identity);
 
-            var inputsCaptor = ArgumentCaptor.forClass(RibbonPlanInputs.class);
-
-            verify(viewMock)
-                .resolveRibbonPlanner(inputsCaptor.capture());
-            assertThat(inputsCaptor.getValue().rules().uncontestedRuns())
+            assertThat(captureInputsHandedTo(viewMock).rules().uncontestedRuns())
                 .isEqualTo(new UncontestedRibbonRuns(false));
         }
 
@@ -342,6 +350,80 @@ final class CellRibbonSourceTest {
         }
     }
 
+    @Nested
+    class CreateForPass {
+
+        @Test
+        void handsTheLiveAllianceSetToTheMechanicTheViewCountsBy() {
+            // The one place the alliance set reaches a band. Read anywhere else, or not read at
+            // all, two allies sharing a system would band against each other at full contested
+            // length while the box over the cell files them as standing together.
+            var viewMock = buildViewMock(system -> ANY_PLAN);
+
+            buildThrough(
+                viewMock,
+                new CellRingPathCache(),
+                () -> HolderGroupingFixture.buildAllianceOf(HEGEMONY, ASTRAL_ARMADA));
+
+            assertThat(captureInputsHandedTo(viewMock).affiliation()
+                    .areBlocsAllied(HEGEMONY, ASTRAL_ARMADA))
+                .isTrue();
+        }
+
+        @Test
+        void alliesNobodyWhereNothingGroupsFactions() {
+            // The install without the mod that supplies alliances, which the gate answers with the
+            // identity grouping: every band judges its contest as it did before the axis existed,
+            // and no layer needs a branch to get there.
+            var viewMock = buildViewMock(system -> ANY_PLAN);
+
+            buildThrough(viewMock, new CellRingPathCache(), HolderGrouping::identity);
+
+            assertThat(captureInputsHandedTo(viewMock).affiliation()
+                    .areBlocsAllied(HEGEMONY, ASTRAL_ARMADA))
+                .isFalse();
+        }
+
+        @Test
+        void readsTheAllianceSetOnceHoweverManyCellsAreBaked() {
+            // Sampled with the sizes and the laying rules, and for the same reason: an alliance
+            // formed while a bake was running would otherwise leave one cell banded as a contest
+            // between two blocs and the cell beside it banded as their joint holding.
+            var allianceSourceMock = mock(HolderGroupingSource.class);
+
+            when(allianceSourceMock.resolveGrouping())
+                .thenReturn(HolderGrouping.identity());
+
+            var ribbonSource = buildThrough(
+                buildViewMock(system -> ANY_PLAN),
+                new CellRingPathCache(),
+                allianceSourceMock);
+
+            ribbonSource.buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passTimings);
+            ribbonSource.buildCellRibbon(OTHER_CELL, INHABITED_SYSTEM, SQUARE_CELL, passTimings);
+
+            verify(allianceSourceMock, times(1))
+                .resolveGrouping();
+        }
+
+        @Test
+        void readsNoAllianceSetWhileTheBandsAreSwitchedOff() {
+            // A switched-off pass reads no live state at all, the alliance set no more than the
+            // sizes: nothing it sampled would settle anything, every cell being answered at the
+            // gate.
+            switchBandsOff();
+
+            var allianceSourceMock = mock(HolderGroupingSource.class);
+
+            buildThrough(
+                buildViewMock(system -> ANY_PLAN),
+                new CellRingPathCache(),
+                allianceSourceMock);
+
+            verifyNoInteractions(allianceSourceMock);
+        }
+    }
+
     private CellRibbon buildFor(String drawnSystemId) {
         return buildWith(system -> ANY_PLAN)
             .buildCellRibbon(CELL, drawnSystemId, SQUARE_CELL, passTimings);
@@ -369,7 +451,22 @@ final class CellRibbonSourceTest {
             SystemRibbonPlanner planner,
             CellRingPathCache ringPathCache) {
 
-        return buildThrough(buildViewMock(planner), ringPathCache);
+        // Nothing groups factions in the cases about which cells are walked at all: what a band
+        // reports a contest as is settled elsewhere, and posing an alliance here would only add a
+        // fold no case reads back.
+        return buildThrough(buildViewMock(planner), ringPathCache, HolderGrouping::identity);
+    }
+
+    // The inputs the pass built its planner from, which is where everything sampled once per bake
+    // arrives. Read back through the view because that is the one hand-off the source makes.
+    private static RibbonPlanInputs captureInputsHandedTo(PoliticalMapView viewMock) {
+
+        var inputsCaptor = ArgumentCaptor.forClass(RibbonPlanInputs.class);
+
+        verify(viewMock)
+            .resolveRibbonPlanner(inputsCaptor.capture());
+
+        return inputsCaptor.getValue();
     }
 
     // The view the pass asks for its mechanic, answering with the given planner. Built apart from
@@ -386,7 +483,8 @@ final class CellRibbonSourceTest {
 
     private static CellRibbonSource buildThrough(
             PoliticalMapView viewMock,
-            CellRingPathCache ringPathCache) {
+            CellRingPathCache ringPathCache,
+            HolderGroupingSource allianceSource) {
 
         // The systems are built before the stubbing rather than inside it: each is itself a mock,
         // and building one while another stubbing is open reads to Mockito as an unfinished stub.
@@ -411,7 +509,8 @@ final class CellRibbonSourceTest {
                 // No names anywhere near these cells: where a name falls is pinned by the builder
                 // that lays a band inside one cell, not by which cells are offered a band at all.
                 List.of(),
-                ringPathCache));
+                ringPathCache),
+            allianceSource);
     }
 
     private static StarSystemAPI buildSystem(String systemId) {

@@ -55,8 +55,10 @@ blocs no cell was drawn for.
 
 `CellRibbonSource` is a source rather than a builder because the per-cell work is
 `CellRibbonBuilder`'s; what it adds is the pass that work is done under - the planner the view
-resolved, the player's sizes, and the drawn map those bands go on, each sampled once so no two
-cells of one pass are settled differently. That map is `RibbonBakeSurface`: the inhabitation gate,
+resolved, the player's sizes, the live alliance set a contest is judged against, and the drawn map
+those bands go on, each sampled once so no two cells of one pass are settled differently. The
+alliance read is also the bands' only tie to whatever supplies alliances, bound there and answered
+with the identity grouping wherever that mod is absent, so no rule below it carries a branch. That map is `RibbonBakeSurface`: the inhabitation gate,
 the sites, the names' boxes and the rings, read together off cells that have already been shaped
 and named, so a bake cannot be handed a gate from one reading and sites from another. It also
 settles which cells get a band at all, in

@@ -7,6 +7,7 @@ import kmlib.starsector.systems.SectorStarSystems;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
+import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
@@ -15,6 +16,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.ribbon.UncontestedRibbonRuns;
 import kmu.settings.KmuPoliticalMapSettings;
+import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import java.util.List;
 import java.util.Map;
@@ -26,10 +28,18 @@ import java.util.Set;
  *
  * <p>What it holds is what must not vary across a pass: the planner the active view paints by, so
  * no cell is counted by a different mechanic; one read of the player's proportions, so a slider
- * moved mid-pass cannot leave two cells drawn to different designs; and the map those bands go on
+ * moved mid-pass cannot leave two cells drawn to different designs; one reading of the live alliance
+ * set, so an alliance formed or dissolved mid-pass cannot leave one cell banded as a contest between
+ * two blocs and the cell beside it banded as their joint holding; and the map those bands go on
  * ({@link RibbonBakeSurface}). Sampling them here mirrors how the rest of a rebuild is driven - one
  * snapshot, then a per-item call over it - and is what lets the incremental re-shape bake a band
  * identical to the one the full rebuild would have.
+ *
+ * <p>That alliance reading is where the bands are bound to whatever supplies alliances, and the only
+ * place they name it. The gate behind the binding answers with the identity grouping wherever the
+ * mod is absent, so no planner, rule or view carries a branch for an install without it: every band
+ * there judges its contest as one where nothing groups factions, which is what the bands already
+ * said before the axis existed.
  *
  * <p>The reading of the sector the counts are made off arrives rather than being opened here,
  * because how current it has to be is the caller's question and not this one's: a bake in the same
@@ -116,29 +126,7 @@ public final class CellRibbonSource {
             PoliticalMapView view,
             RibbonBakeSurface surface) {
 
-        if (!KmuPoliticalMapSettings.shouldDrawPoliticalMapRibbons()) {
-            return createBandlessPass();
-        }
-        var style = RibbonStyleReader.readRibbonStyle();
-
-        // The colour source and the laying rules are sampled here, once, and handed to whatever
-        // planner the view resolves - so both mechanics read a bloc's shades through one object
-        // and lay their cells by one rule.
-        var inputs = RibbonPlanInputs.createForPass(
-            pass,
-            // TODO: sample the live alliance set here, once per bake, and hand it over in place of
-            // this. Until then every layer judges its contest as an install with nothing grouping
-            // factions does, which is what the bands already say.
-            BlocAffiliation.NONE,
-            new RibbonPlanRules(
-                style.lengths(),
-                UncontestedRibbonRuns.readFromLunaSettings()));
-
-        return new CellRibbonSource(
-            view.resolveRibbonPlanner(inputs),
-            style,
-            surface,
-            SectorStarSystems.indexById(pass.sector()));
+        return createForPass(pass, view, surface, NexerelinAlliances::resolveGrouping);
     }
 
     /**
@@ -211,6 +199,40 @@ public final class CellRibbonSource {
         return site == null
             ? CellRibbonPath.NONE
             : RibbonPathTracer.traceInspectedRibbonPath(fillPolygon, site, style);
+    }
+
+    // The same pass over an alliance set the caller names, so a case can pose factions standing
+    // together without a running game behind them. The bound factory above is the one the map bakes
+    // through.
+    static CellRibbonSource createForPass(
+            HolderPass pass,
+            PoliticalMapView view,
+            RibbonBakeSurface surface,
+            HolderGroupingSource allianceSource) {
+
+        // Asked before the alliance set is read, so a pass with the bands switched off reads no
+        // more live state than it reads sizes: nothing it sampled would settle anything.
+        if (!KmuPoliticalMapSettings.shouldDrawPoliticalMapRibbons()) {
+            return createBandlessPass();
+        }
+        var style = RibbonStyleReader.readRibbonStyle();
+
+        // The colour source, the alliance set and the laying rules are sampled here, once, and
+        // handed to whatever planner the view resolves - so both mechanics read a bloc's shades
+        // through one object, judge a contest against one alliance set, and lay their cells by one
+        // rule.
+        var inputs = RibbonPlanInputs.createForPass(
+            pass,
+            new BlocAffiliation(allianceSource.resolveGrouping()),
+            new RibbonPlanRules(
+                style.lengths(),
+                UncontestedRibbonRuns.readFromLunaSettings()));
+
+        return new CellRibbonSource(
+            view.resolveRibbonPlanner(inputs),
+            style,
+            surface,
+            SectorStarSystems.indexById(pass.sector()));
     }
 
     // The ring this cell's band runs along: the one already traced inside the shape the cell holds
