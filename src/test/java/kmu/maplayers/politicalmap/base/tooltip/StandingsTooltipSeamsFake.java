@@ -15,6 +15,10 @@ import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
+import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
+import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -58,6 +62,27 @@ public final class StandingsTooltipSeamsFake {
         Map.of("hegemony", "rebel_pact", "tritachyon", "rebel_pact"),
         Map.of("rebel_pact", "hegemony"),
         Map.of("rebel_pact", "Rebel Pact"));
+
+    /**
+     * The weighting a suite installs when its cases are about how groups are laid out rather than
+     * about what any of them was weighed at. Forwarded to the stood-in ranking, so it never reaches
+     * an assertion - which is exactly why it is shared: two suites spelling out weights neither of
+     * them reads is two chances to state a rule that means nothing, differently.
+     */
+    public static final DominanceRules ANY_RULES = new DominanceRules(false,
+        new BaseSizeWeighting(1.0, null, 1.0, 1.0),
+        new StationWeighting(false, 1.0, 0.5, 0.5),
+        new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
+
+    /**
+     * That weighting over no sector under {@link #VIEW_GROUPING} - what {@link #installSeams} is
+     * handed by a suite whose boxes read no colonies of their own, so the set behind the pass is
+     * nothing its cases have an opinion about.
+     *
+     * <p>A suite turning on the rule or the dev reveal builds its own and installs it instead.
+     */
+    public static final DominancePass ANY_PASS =
+        DominancePass.over(null, ANY_RULES, ColonyVisibility.BASE_FOG, VIEW_GROUPING);
 
     // What a standing carries when a case is about how groups are laid out rather than about what any
     // of them is made of. Never asserted on - a case that cares states its own standing. The bloc is

@@ -141,6 +141,26 @@ class StandingBlockRoutingTest {
         }
     }
 
+    @Nested
+    class HasAnyStanding {
+
+        @Test
+        void hasAnyStandingCountsAGroupInEveryBlockAlike() {
+            // What the box asks to decide whether it has anything to list at all. A bloc out of the
+            // running is still somebody standing in the system, so a system holding only the
+            // placeholder is not an empty one.
+            assertThat(routeWithoutAlliances(PLACEHOLDER_BLOC).hasAnyStanding())
+                .isTrue();
+        }
+
+        @Test
+        void hasAnyStandingAnswersNoForASystemTheRankingFoundNobodyIn() {
+
+            assertThat(routeWithoutAlliances().hasAnyStanding())
+                .isFalse();
+        }
+    }
+
     // The ranking as an install with nothing grouping factions produces it: no two blocs stand
     // together, which is the state every case not about the allied block is posed in.
     private static StandingBlockRouting routeWithoutAlliances(String... rankedBlocIds) {

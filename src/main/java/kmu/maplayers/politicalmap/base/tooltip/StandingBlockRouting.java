@@ -15,12 +15,12 @@ import java.util.function.Predicate;
  * Which block each of a hovered system's ranked groups is listed under, settled once for the whole
  * box.
  *
- * <p>The blocks nest as one chain of axes rather than as four tests of equal standing. The outermost
- * is whether a bloc is in the running at all: everyone barred from the contest is taken out before a
- * holder is picked, so the placeholder owner is never named as holding a system whatever it outranked
- * to get there. The strongest of those left holds it, and the rest are placed either side of that
- * holder by {@link ContestSides} - the one placement every surface reporting a contest routes
- * through - rather than by comparing blocs again here.
+ * <p>The blocks nest as one chain of axes rather than as tests of equal standing. The outermost is
+ * whether a bloc is in the running at all: everyone barred from the contest is taken out before a
+ * holder is picked, so a bloc that takes no part in one is never named as holding a system whatever
+ * it outranked to get there. The strongest of those left holds it, and the rest are placed either
+ * side of that holder by {@link ContestSides} - the one placement every surface reporting a contest
+ * routes through - rather than by comparing blocs again here.
  *
  * <p>Answered in one pass and held, because a box lays its blocks down one after another and asking
  * per block would re-derive the whole split each time, off inputs that could be sampled apart.
@@ -114,6 +114,24 @@ public final class StandingBlockRouting {
     public List<GroupStanding> selectStandingsIn(StandingBlock block) {
 
         return standingsByBlock.getOrDefault(block, List.of());
+    }
+
+    /**
+     * Whether anybody stands in the hovered system at all - everyone the ranking found, whether or
+     * not they were in the running for it.
+     *
+     * <p>Read off the placement rather than off the ranking beside it, so a caller asking what the
+     * box has to list and a caller laying the blocks down cannot be answered from two readings of
+     * one system.
+     *
+     * @return true where at least one group was placed in a block
+     */
+    public boolean hasAnyStanding() {
+
+        return standingsByBlock
+            .values()
+            .stream()
+            .anyMatch(standings -> !standings.isEmpty());
     }
 
     // The bloc every contestant is placed against, or none where nobody is in the running - read off

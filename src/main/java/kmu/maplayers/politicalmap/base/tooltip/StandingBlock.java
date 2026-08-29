@@ -30,9 +30,9 @@ public enum StandingBlock {
     CONTESTED(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
 
     /**
-     * The blocs that take no part in the contest for the system - the sector's placeholder owner,
-     * which holds every abandoned station and collapsed colony and has no interests to contest
-     * anything with. Listed with whatever it scored, and never named as holding the system.
+     * The blocs that take no part in the contest for the system. Listed with whatever they scored,
+     * and never named as holding it. Which blocs those are is
+     * {@link kmu.maplayers.politicalmap.base.dominance.BlocCandidacy}'s answer.
      */
     NON_POLITICAL(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_POLITICAL);
 

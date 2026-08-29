@@ -12,7 +12,6 @@ import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.BlocCandidacy;
 import kmu.maplayers.politicalmap.base.dominance.ContestSides;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
 import kmu.util.KmuStrings;
@@ -34,7 +33,7 @@ import java.util.Optional;
  * <p>Which group that is and where every other one is listed is {@link StandingBlockRouting}'s
  * answer, taken once per hover. A group taking no part in the contest - the placeholder owner of
  * every abandoned station - is set aside before a holder is picked, so the box never heads a system
- * with a bloc that has no interests to hold it with. A group standing in the leader's own alliance
+ * with a bloc that has no interests to hold it with. A group standing in the holder's own alliance
  * is not one of the rivals either, and is lifted into a block of its own ({@link ContestSides}):
  * filed under the contested heading, two allies jointly holding a system would read as fighting each
  * other over it, which is the map contradicting itself one view over.
@@ -43,7 +42,7 @@ import java.util.Optional;
  * which is what keeps the box an explanation of the cell beneath it: two allies at 6,000 each under
  * a rival at 7,000 paint the rival, and a box headed by the alliance would answer a hover over a
  * cell in the rival's colours by naming somebody else. What is taken from the alliances layer is
- * the shape - a relation block between the leader and the rest - never its grouping, which would
+ * the shape - a relation block between the holder and the rest - never its grouping, which would
  * merge allied runs, fills and rows.
  *
  * <p>What the system is beyond its standings - dead or unpopulated - is stated above the contest,
@@ -100,7 +99,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         // colonies are all collapsed or derelict is headed Decivilised or Unpopulated and still
         // ranks whoever holds them - and those colonies are exactly what the counterpart opens up.
         return readRankedStandings(sector, system)
-            .filter(RankedStandings::hasStanding)
+            .filter(ranking -> ranking.routing().hasAnyStanding())
             .isPresent();
     }
 
@@ -161,13 +160,11 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         // Ranks the hovered system under the active view's grouping and dominance rule - the same the
         // map paints under - so the tooltip's numbers and its bloc grouping match the fills exactly.
         var pass = DominancePass.readFromLunaSettings(sector, activeView.resolveGrouping());
-        var groupStandings = SystemStandings.rankByDominationScore(system, pass);
 
         return Optional.of(new RankedStandings(
             pass,
-            groupStandings,
             StandingBlockRouting.routeRankedStandings(
-                groupStandings,
+                SystemStandings.rankByDominationScore(system, pass),
                 BlocCandidacy.createForGrouping(pass.grouping()),
                 new BlocAffiliation(holderGroupingSource.resolveGrouping()))));
     }
@@ -240,23 +237,20 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     }
 
     /**
-     * One reading of a hovered system's standings: the pass it was ranked under, the ranking
-     * itself, and where each ranked group is listed.
+     * One reading of a hovered system's standings: the pass it was ranked under, and where the
+     * groups it ranked are listed.
      *
-     * <p>The three travel as one value because the box reads them against each other - the status
-     * line and the accounts hanging under the groups come off the pass, the groups themselves off
-     * the ranking, the block each falls in off the routing. Passed apart, one read's ranking could
-     * arrive beside another read's pass, and the box would explain one reading of the system under
-     * another's rule - or lay its blocks down off a routing taken over a third.
+     * <p>The two travel as one value because the box reads them against each other - the status
+     * line and the accounts hanging under the groups come off the pass, the block each group falls
+     * in off the routing. Passed apart, one read's routing could arrive beside another read's pass,
+     * and the box would explain one reading of the system under another's rule.
+     *
+     * <p>The ranking itself is not carried beside them. Every group it found is placed in some
+     * block, so the routing answers both what the box lists and what it has to list at all, and a
+     * value holding the ranking as well would be holding one thing in two states.
      */
     private record RankedStandings(
         DominancePass pass,
-        List<GroupStanding> groupStandings,
         StandingBlockRouting routing) {
-
-        /** Whether anybody stands in the system at all, which is what a box has to list. */
-        boolean hasStanding() {
-            return !groupStandings.isEmpty();
-        }
     }
 }

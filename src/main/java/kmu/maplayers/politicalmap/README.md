@@ -262,30 +262,27 @@ it are both in hand, so no box can list one faction's colonies under another's n
 is the shared default, so the ordinary box overrides nothing at all.
 
 Where each ranked group is listed is `StandingBlockRouting`'s one answer, taken per hover over the
-closed set of blocks in `StandingBlock` - which also carries each block's heading, so the order they
-read in is that declaration order rather than a sequence of calls that could drift from it. The
-blocks nest as a chain of axes rather than as four tests of equal standing.
+closed set of blocks `StandingBlock` names - which carries each block's heading too, so the order
+they read in is that declaration order rather than a sequence of calls that could drift from it. Why
+the blocks nest as they do is the routing's own doc; what it costs is here.
 
-The outermost is whether a bloc is in the running at all (`BlocCandidacy`, off the pass's own
-grouping so the box bars exactly who the fills bar). Everyone barred goes to `Non-political:` before
-a holder is picked, which is why the placeholder owner of every abandoned station and collapsed
-colony is never headed `Dominated by:` however far it outranked the rest. This is the one place the
-box and the fill part company: a system whose only presence is `neutral` is still painted, bordered
-and labelled for it, while the box drops the `Dominated by:` heading entirely and lists it below.
-Naming the placeholder as holding the system is the statement the block exists to stop making, and
-saying nothing about who holds a system nobody political holds is the truer answer.
+The outer axis is `BlocCandidacy`, read off the pass's own grouping so the box bars exactly who the
+fills bar - and that is the one place the box and the fill part company. A system whose only presence
+is `neutral` is still painted, bordered and labelled for it, while the box drops `Dominated by:`
+entirely and lists it under `Non-political:`. Naming the placeholder as holding the system is the
+statement the block exists to stop making, and saying nothing about who holds a system nobody
+political holds is the truer answer.
 
-The strongest of those left holds it, and the rest split in two: `Allied with the system holder:`
-takes everyone standing in the holder's own alliance and `Contested by:` everyone else. That split
-is `ContestSides` - the one placement every surface reporting a contest routes its blocks through,
-over the `BlocAffiliation` the bands judge their contest by (`HolderGroupingSource`, bound by
-`SystemDominationTooltip` and sampled per hover) - so no two surfaces over one system can put a bloc
-on different sides of it, and a box cannot disagree with the band beneath it about who is a rival. The headline stays on the group the map painted the cell for rather than on
-its alliance, which is what keeps the box an explanation of the cell beneath it - what is taken from
-the alliances layer is the shape and never its grouping, which would merge allied runs, fills and
-rows. Only the holder's allies are lifted out; two rivals allied with each other stay contested,
-the block stating relations to the group that holds the system. It is naturally empty on the
-alliances layer, where members are already one bloc, and on an install with nothing grouping
+Below the holder the split is `ContestSides` - the one placement every surface reporting a contest
+routes its blocks through, over the `BlocAffiliation` the bands judge their contest by
+(`HolderGroupingSource`, bound by `SystemDominationTooltip` and sampled per hover) - so no two
+surfaces over one system can put a bloc on different sides of it, and a box cannot disagree with the
+band beneath it about who is a rival. The headline stays on the group the map painted the cell for
+rather than on its alliance, which is what keeps the box an explanation of the cell beneath it - what
+is taken from the alliances layer is the shape and never its grouping, which would merge allied runs,
+fills and rows. Only the holder's allies are lifted out; two rivals allied with each other stay
+contested, the block stating relations to the group that holds the system. It is naturally empty on
+the alliances layer, where members are already one bloc, and on an install with nothing grouping
 factions - dropped there by the same rule that drops any other block standing over no entries.
 
 What that pair offers the player is named there too, once for both: "score contributions", which the

@@ -41,6 +41,18 @@ public final class StarsectorSettingsFake {
         kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.clearSettings();
     }
 
+    /**
+     * The wording this fake answers with, for the walk that holds it against the shipped strings
+     * file. Restating that wording here rather than reading the file is what keeps a unit test off
+     * the disk, and it is also what lets the two drift apart - so the map is readable, and one walk
+     * checks it says what the game says.
+     *
+     * @return each stubbed key's wording
+     */
+    public static Map<String, String> readStringsByKey() {
+        return Map.copyOf(STRINGS_BY_KEY);
+    }
+
     private static final Map<String, String> STRINGS_BY_KEY = buildStringsByKey();
 
     /**

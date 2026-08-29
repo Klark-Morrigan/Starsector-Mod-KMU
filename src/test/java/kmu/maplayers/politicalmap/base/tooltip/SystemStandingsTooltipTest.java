@@ -24,10 +24,6 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
-import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
-import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
-import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,10 +37,10 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.LABEL_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARK_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
-import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
-import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.VIEW_GROUPING;
+import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.ANY_PASS;
+import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.ANY_RULES;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -53,7 +49,7 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the shape every box built on a hovered system's standings takes, whichever of them drew it:
  * ranked under the view that painted the fills, what the system is stated above the contest, and the
- * groups split between whoever dominates it, whoever stands with them, and whoever else is present.
+ * groups laid out under the blocks they route into.
  *
  * <p>Asserted over the shape rather than over either box, because the point is not that the glance and
  * the detail agree today but that agreeing is not either box's decision to make: a case here that
@@ -97,17 +93,6 @@ final class SystemStandingsTooltipTest {
     // What a stood-up group is weighed at. Forwarded to the (stood-in) naming, so it never reaches
     // an assertion - which block a group falls in is read off its bloc alone.
     private static final int ANY_SCORE = 0;
-
-    // The weights are forwarded to the (stood-in) ranking, so they never reach an assertion.
-    private static final DominanceRules ANY_RULES = new DominanceRules(false,
-        new BaseSizeWeighting(1.0, null, 1.0, 1.0),
-        new StationWeighting(false, 1.0, 0.5, 0.5),
-        new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
-
-    // Opened over no sector: the shared shape reads no colonies of its own, so the set behind the
-    // pass is nothing any case here has an opinion about.
-    private static final DominancePass ANY_PASS =
-        DominancePass.over(null, ANY_RULES, BASE_FOG, VIEW_GROUPING);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
 

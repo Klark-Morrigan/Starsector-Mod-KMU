@@ -16,14 +16,9 @@ import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
-import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
-import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
-import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
-import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,10 +38,9 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
-import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
-import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.VIEW_GROUPING;
+import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.ANY_PASS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -103,17 +97,6 @@ final class SystemDominationTooltipTest {
     private static final int ANY_SCORE = 0;
     private static final String MEMBER_SCORE = "900";
     private static final String OTHER_MEMBER_SCORE = "300";
-
-    // The weights are forwarded to the (stood-in) ranking, so they never reach an assertion.
-    private static final DominanceRules ANY_RULES = new DominanceRules(false,
-        new BaseSizeWeighting(1.0, null, 1.0, 1.0),
-        new StationWeighting(false, 1.0, 0.5, 0.5),
-        new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
-
-    // Opened over no sector: this box reads no colonies of its own, so the set behind the pass is
-    // nothing any case here has an opinion about.
-    private static final DominancePass ANY_PASS =
-        DominancePass.over(null, ANY_RULES, BASE_FOG, VIEW_GROUPING);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
 
