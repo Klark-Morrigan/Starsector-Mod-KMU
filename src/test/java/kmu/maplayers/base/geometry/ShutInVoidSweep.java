@@ -6,8 +6,10 @@ import kmlib.math.geometry.Segments;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The void a sector's cells and walls shut in, found by trying to get out of it.
@@ -63,7 +65,9 @@ final class ShutInVoidSweep {
             overSites.maxX() + margin,
             overSites.maxY() + margin);
 
-        return floodTheVoid(stampLand(union, walked, stride), walls);
+        var grid = stampLand(union, walked, stride);
+
+        return floodTheVoid(grid, WallIndex.over(grid, walls));
     }
 
     /**
@@ -102,9 +106,7 @@ final class ShutInVoidSweep {
     }
 
     // Floods every piece of water in turn, keeping the ones that never reach the border.
-    private static List<ShutInVoid> floodTheVoid(
-            FloodGrid grid,
-            List<DiscUnionBoundary.Chord> walls) {
+    private static List<ShutInVoid> floodTheVoid(FloodGrid grid, WallIndex walls) {
 
         var found = new ArrayList<ShutInVoid>();
 
@@ -136,7 +138,7 @@ final class ShutInVoidSweep {
             int startX,
             int startY,
             FloodGrid grid,
-            List<DiscUnionBoundary.Chord> walls) {
+            WallIndex walls) {
 
         var points = new ArrayList<double[]>();
         var pending = new ArrayDeque<int[]>();
@@ -169,7 +171,9 @@ final class ShutInVoidSweep {
                 // as obeyed, because which walls shut a piece in is what says whose fill
                 // the water is owed.
                 var blockedBy = findBlockingChord(
-                    here, grid.findSquareAt(nextX, nextY), walls);
+                    here,
+                    grid.findSquareAt(nextX, nextY),
+                    walls.findWallsNear(square[0], square[1]));
 
                 if (blockedBy != null) {
                     blocking.add(blockedBy);
@@ -191,6 +195,61 @@ final class ShutInVoidSweep {
             }
         }
         return null;
+    }
+
+    /**
+     * The walls each square could be stopped by, so a step tests a handful rather than all of
+     * them.
+     *
+     * <p>A sector carries hundreds of walls and millions of squares, and the flood asks its
+     * blocking question at nearly every square it steps onto - so scanning the whole wall list
+     * per step is what a sweep spends its time on, not the walking. Bucketed against the same
+     * squares the flood walks, since that is the only key it has to hand when it asks.
+     *
+     * @param wallsBySquare the walls filed against each square they could stop a step out of
+     */
+    private record WallIndex(Map<Long, List<DiscUnionBoundary.Chord>> wallsBySquare) {
+
+        // How far around a wall's own box its squares are filed. One square: a step spans
+        // exactly one, so a step a wall crosses starts within a square of the crossing point,
+        // and the crossing point is inside the box.
+        private static final int REACHING_SQUARES = 1;
+
+        static WallIndex over(FloodGrid grid, List<DiscUnionBoundary.Chord> walls) {
+
+            var wallsBySquare = new HashMap<Long, List<DiscUnionBoundary.Chord>>();
+
+            for (var wall : walls) {
+
+                var start = wall.findStart();
+                var end = wall.findEnd();
+
+                var fromX = grid.findColumnAt(Math.min(start[0], end[0])) - REACHING_SQUARES;
+                var toX = grid.findColumnAt(Math.max(start[0], end[0])) + REACHING_SQUARES;
+                var fromY = grid.findRowAt(Math.min(start[1], end[1])) - REACHING_SQUARES;
+                var toY = grid.findRowAt(Math.max(start[1], end[1])) + REACHING_SQUARES;
+
+                for (var x = fromX; x <= toX; x++) {
+                    for (var y = fromY; y <= toY; y++) {
+
+                        wallsBySquare
+                            .computeIfAbsent(keyFor(x, y), square -> new ArrayList<>())
+                            .add(wall);
+                    }
+                }
+            }
+            return new WallIndex(wallsBySquare);
+        }
+
+        // One key per square, packed rather than boxed as a pair: the flood asks for a square's
+        // walls millions of times, and a key object per ask costs more than the scan saved.
+        private static long keyFor(int x, int y) {
+            return ((long) x << Integer.SIZE) | Integer.toUnsignedLong(y);
+        }
+
+        List<DiscUnionBoundary.Chord> findWallsNear(int x, int y) {
+            return wallsBySquare.getOrDefault(keyFor(x, y), List.of());
+        }
     }
 
     /**
@@ -259,6 +318,18 @@ final class ShutInVoidSweep {
         // points a piece of void is made of all have to agree about it exactly.
         double[] findSquareAt(int x, int y) {
             return new double[] {walked.minX() + x * stride, walked.minY() + y * stride};
+        }
+
+        // The other direction: which column and row a place in the world falls in. Rounded
+        // down rather than to the nearest, so that a point and the square it is filed under
+        // are never more than one stride apart - which is what lets a box grown by a single
+        // square hold every step that crosses what the box was drawn around.
+        int findColumnAt(double x) {
+            return (int) Math.floor((x - walked.minX()) / stride);
+        }
+
+        int findRowAt(double y) {
+            return (int) Math.floor((y - walked.minY()) / stride);
         }
     }
 
