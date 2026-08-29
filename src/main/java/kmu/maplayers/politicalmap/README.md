@@ -262,10 +262,11 @@ it are both in hand, so no box can list one faction's colonies under another's n
 is the shared default, so the ordinary box overrides nothing at all.
 
 Below the leader the ranked groups split in two: `Allied with the dominant faction:` takes everyone
-standing in the leader's own alliance and `Contested by:` everyone else, routed through the
+standing in the leader's own alliance and `Contested by:` everyone else. The split is `ContestSides`
+- the one placement every surface reporting a contest routes its blocks through, over the
 `BlocAffiliation` the bands judge their contest by (`HolderGroupingSource`, bound by
-`SystemDominationTooltip` and sampled per hover), so a box and the band beneath it cannot disagree
-about who is a rival. The headline stays on the group the map painted the cell for rather than on
+`SystemDominationTooltip` and sampled per hover) - so no two surfaces over one system can put a bloc
+on different sides of it, and a box cannot disagree with the band beneath it about who is a rival. The headline stays on the group the map painted the cell for rather than on
 its alliance, which is what keeps the box an explanation of the cell beneath it - what is taken from
 the alliances layer is the shape and never its grouping, which would merge allied runs, fills and
 rows. Only the leader's allies are lifted out; two rivals allied with each other stay contested,
@@ -443,8 +444,8 @@ per faction, an account would be free to withhold a colony the line above it had
 answer two factions of one box under two different rules. The alliance set travels in that same
 value and for the same reason, as the `BlocAffiliation` the blocks are routed against
 (`HolderGroupingSource`, bound by `SystemClaimTooltip` and sampled per hover - a set held for the
-session would file a faction under the alliance it left an hour ago). It is the same axis the bands
-judge a contest by, so a box and the band beneath it cannot disagree about who is a rival.
+session would file a faction under the alliance it left an hour ago), placed by the same
+`ContestSides` split the domination box routes its own blocks through.
 
 Two axes place a faction into those blocks, and the relation to the claim holder is the outer one:
 `Allied with the claim holder:` takes everyone standing with the holder whatever their eligibility,

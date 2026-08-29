@@ -14,7 +14,9 @@ import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
+import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
+import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
@@ -41,6 +43,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.VIEW_GROUPING;
 
@@ -67,6 +70,7 @@ final class SystemDominationTooltipTest {
 
     private static final String SYSTEM_ID = "askonia";
     private static final String CORE_FACTION = "hegemony";
+    private static final String ALLY_FACTION = "tritachyon";
 
     private static final String BLOC_CREST = "graphics/rebel_pact_crest.png";
     private static final CellTooltipMark BLOC_MARK =
@@ -85,6 +89,11 @@ final class SystemDominationTooltipTest {
     // The scores reach this box already worded by the resolver, so they stand in as the text they draw
     // as - what the box does with them is carry them into the value column.
     private static final String BLOC_SCORE = "1,200";
+    private static final String ALLY_SCORE = "800";
+
+    // What a stood-up group is weighed at, forwarded to the (stood-in) naming: the case using it is
+    // about which block a group falls in, which is read off its bloc alone.
+    private static final int ANY_SCORE = 0;
     private static final String MEMBER_SCORE = "900";
     private static final String OTHER_MEMBER_SCORE = "300";
 
@@ -100,8 +109,13 @@ final class SystemDominationTooltipTest {
         DominancePass.over(null, ANY_RULES, BASE_FOG, VIEW_GROUPING);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
+
+    // The alliance set the box routes its blocks against, restated by the case about the counterpart
+    // and left ungrouped for the rest - the state an install with nothing grouping factions is in.
+    private HolderGrouping allianceSet = HolderGrouping.identity();
+
     private final SystemDominationTooltip tooltip =
-        new SystemDominationTooltip(claimBreakdownReaderFake, HolderGrouping::identity);
+        new SystemDominationTooltip(claimBreakdownReaderFake, () -> allianceSet);
 
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
@@ -226,6 +240,26 @@ final class SystemDominationTooltipTest {
             assertThat(expandedVariant.claimBreakdownReader)
                 .isSameAs(claimBreakdownReaderFake);
         }
+
+        @Test
+        void resolveExpandedVariantPlacesAnAllyThroughThisBoxsOwnAllianceSeam() {
+            // An ally filed with the leader on the glance and against it on the detail would answer
+            // one hover two ways, an F1 apart - so the counterpart is built on this box's own seam
+            // rather than reaching for an alliance set of its own. Asserted on the block the seam
+            // decides, that being the only place a counterpart wired to a different set shows.
+            allianceSet = buildAllianceOf(CORE_FACTION, ALLY_FACTION);
+
+            StandingsTooltipSeamsFake.stubRankedGroups(
+                List.of(
+                    new GroupStanding(CORE_FACTION, ANY_SCORE, List.of()),
+                    new GroupStanding(ALLY_FACTION, ANY_SCORE, List.of())),
+                List.of(createLoneGroupEntry(), createAlliedGroupEntry()));
+
+            var expandedVariant = (SystemStandingsTooltip) tooltip.resolveExpandedVariant().get();
+
+            assertThat(readLabelTexts(expandedVariant.buildBodySections(sectorMock, systemMock)))
+                .contains("Allied with the dominant faction:");
+        }
     }
 
     // The body read top to bottom as the lines a player sees, which is the shape these cases are about.
@@ -251,6 +285,21 @@ final class SystemDominationTooltipTest {
     private static CellTooltipEntry createLoneGroupEntry() {
         return CellTooltipEntry.createEntry(
             CellTooltipEntryLine.createLine(BLOC_MARK, "Rebel Pact", BLOC_SCORE));
+    }
+
+    // A second group named apart from the leader, for the case about the block an alliance routes it
+    // into: its line is never read, only the heading it ends up under.
+    private static CellTooltipEntry createAlliedGroupEntry() {
+        return CellTooltipEntry.createEntry(
+            CellTooltipEntryLine.createLine(MEMBER_MARK, "Tri-Tachyon", ALLY_SCORE));
+    }
+
+    private static List<String> readLabelTexts(List<TooltipSection> sections) {
+        return TooltipSection
+            .readRowsInOrder(sections)
+            .stream()
+            .map(CellTooltipRowReads::readOpeningWords)
+            .toList();
     }
 
     // One member faction beneath a bloc, told apart from its siblings by its score alone.

@@ -241,7 +241,7 @@ final class SystemStandingsTooltipTest {
 
         @Test
         void buildBodySectionsNamesTheStrongestGroupAsHoldingTheSystemAndTheRestAsContestingIt() {
-            // The two headings are what turn a ranked list into an answer: the map fills the system in
+            // The headings are what turn a ranked list into an answer: the map fills the system in
             // the leader's colour, so the box says outright that the leader holds it and the others are
             // merely present, rather than leaving that to be read off the row order.
             StandingsTooltipSeamsFake.stubGroupEntries(

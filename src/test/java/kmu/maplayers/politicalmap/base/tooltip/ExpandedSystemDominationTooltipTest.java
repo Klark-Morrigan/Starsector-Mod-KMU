@@ -64,8 +64,8 @@ import static org.mockito.Mockito.when;
  * own is here.
  *
  * <p>Where those colonies then hang is the shared resolution's ({@link StandingRowResolverTest}), and
- * the ranking, the status line, the decree, the two headings and the lines naming the blocs belong to
- * the shape both boxes share ({@link SystemStandingsTooltipTest}).
+ * the ranking, the status line, the decree, the three headings and the lines naming the blocs belong
+ * to the shape both boxes share ({@link SystemStandingsTooltipTest}).
  */
 final class ExpandedSystemDominationTooltipTest {
 

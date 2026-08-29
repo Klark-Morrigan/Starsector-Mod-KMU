@@ -9,6 +9,8 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
+import kmu.maplayers.politicalmap.base.dominance.ContestSide;
+import kmu.maplayers.politicalmap.base.dominance.ContestSides;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
@@ -18,7 +20,7 @@ import kmu.util.KmuStrings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.function.BiConsumer;
 
 /**
  * The shape every box built on a hovered system's standings takes: what the system is, then who
@@ -30,19 +32,17 @@ import java.util.stream.Stream;
  * is stated outright instead of being left to be inferred from which line happens to sit at the
  * top.
  *
- * <p>A group standing in the leader's own alliance is not one of those rivals, and is lifted out
- * into a block of its own: filed under the contested heading, two allies jointly holding a system
- * would read as fighting each other over it, which is the map contradicting itself one view over.
- * Only the leader's allies are lifted - two rivals allied with each other but not with the leader
- * stay contested, the box stating relations to the group that holds the system, which is the
- * question a hover asks.
+ * <p>A group standing in the leader's own alliance is not one of those rivals, and is lifted into a
+ * block of its own ({@link ContestSides}): filed under the contested heading, two allies jointly
+ * holding a system would read as fighting each other over it, which is the map contradicting itself
+ * one view over.
  *
  * <p>The headline stays on the group the map painted the cell for rather than on its alliance,
- * which is what keeps the box an explanation of the cell beneath it: two allies at 6,000 each
- * under a rival at 7,000 paint the rival, and a box headed by the alliance would answer a hover
- * over a cell in the rival's colours by naming somebody else. What is taken from the alliances
- * layer is the shape - a relation block between the leader and the rest - and never its grouping,
- * which would merge allied runs, fills and rows.
+ * which is what keeps the box an explanation of the cell beneath it: two allies at 6,000 each under
+ * a rival at 7,000 paint the rival, and a box headed by the alliance would answer a hover over a
+ * cell in the rival's colours by naming somebody else. What is taken from the alliances layer is
+ * the shape - a relation block between the leader and the rest - never its grouping, which would
+ * merge allied runs, fills and rows.
  *
  * <p>What the system is beyond its standings - dead or unpopulated - is stated above the contest,
  * so a player crossing between this layer and the claims layer reads one fact one way. A system
@@ -221,32 +221,29 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
 
         var grouping = ranking.pass().grouping();
 
-        CellTooltipSections.appendSection(
-            sections,
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED),
-            StandingRowResolver.resolveRows(
-                sector,
-                ranking.selectDominantStandings(),
-                grouping,
-                accountResolver));
+        // One way of laying a block down, bound to everything the three share, so a block is stated
+        // as the heading it carries and the groups it takes and nothing else can drift between them.
+        BiConsumer<String, List<GroupStanding>> appendBlock = (headingKey, blockStandings) ->
+            CellTooltipSections.appendSection(
+                sections,
+                KmuStrings.get(headingKey),
+                StandingRowResolver.resolveRows(
+                    sector,
+                    blockStandings,
+                    grouping,
+                    accountResolver));
 
-        CellTooltipSections.appendSection(
-            sections,
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_DOMINANT),
-            StandingRowResolver.resolveRows(
-                sector,
-                ranking.selectAlliedStandings(),
-                grouping,
-                accountResolver));
+        appendBlock.accept(
+            KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED,
+            ranking.selectDominantStandings());
 
-        CellTooltipSections.appendSection(
-            sections,
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
-            StandingRowResolver.resolveRows(
-                sector,
-                ranking.selectRivalStandings(),
-                grouping,
-                accountResolver));
+        appendBlock.accept(
+            KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_DOMINANT,
+            ranking.selectStandingsOn(ContestSide.ALLIED));
+
+        appendBlock.accept(
+            KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED,
+            ranking.selectStandingsOn(ContestSide.RIVAL));
     }
 
     /**
@@ -284,57 +281,39 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         }
 
         /**
-         * The groups listed as standing with the leader: everyone else present in the leader's own
-         * alliance, in the order they ranked.
-         */
-        List<GroupStanding> selectAlliedStandings() {
-            return streamRankedRivals()
-                .filter(this::isStandingWithLeader)
-                .toList();
-        }
-
-        /**
-         * The groups listed as contesting the system: everyone present but the leader and its
-         * allies, in the order they ranked.
+         * The groups listed on one side of the contest below the leader: those standing in the
+         * leader's own alliance, or those contesting the system, in the order they ranked.
          *
-         * <p>Two rivals standing together and not with the leader are both listed here. The block
-         * states relations to the group that holds the system, which is the question a hover asks,
-         * and the pair fight the leader for it whatever they are to each other.
+         * <p>Placed by the shared split rather than by comparing blocs here, so this box files a
+         * group by the same rule the claims box and the bands beneath both do.
+         *
+         * @param side the side the block being built is about
+         * @return the groups that side takes, the leader itself on neither
          */
-        List<GroupStanding> selectRivalStandings() {
-            return streamRankedRivals()
-                .filter(standing -> !isStandingWithLeader(standing))
-                .toList();
+        List<GroupStanding> selectStandingsOn(ContestSide side) {
+            return new ContestSides(resolveLeaderBlocId(), affiliation)
+                .selectSide(side, selectRankedRivals(), GroupStanding::blocId);
         }
 
         // Everyone the box ranks but the leader itself, which is the pool both blocks below it are
         // drawn from. Dropped once here rather than per block, so no routing rule added later can
         // readmit the leader to a block that is by definition about somebody else.
-        private Stream<GroupStanding> streamRankedRivals() {
+        private List<GroupStanding> selectRankedRivals() {
             return groupStandings
                 .stream()
-                .skip(DOMINATING_GROUP_COUNT);
+                .skip(DOMINATING_GROUP_COUNT)
+                .toList();
         }
 
-        // Whether a ranked group stands in the leader's alliance, which is what routes it into the
-        // allied block rather than the contested one. Asked through the affiliation rather than by
-        // comparing blocs here, so the box files a group by the same rule the band beneath it lays
-        // its runs at contested length by - two answers to one question being the disagreement
-        // between a box and its band that the whole axis exists to rule out.
-        //
-        // A system nobody ranks stands nobody with anybody: there is no leader to be allied with,
-        // and a bloc with no id resolves to no bloc. An install with nothing grouping factions is
-        // the same answer for the same reason, which is why every group routes exactly as it did
-        // before the block existed.
-        private boolean isStandingWithLeader(GroupStanding standing) {
-            return affiliation.areBlocsAllied(resolveLeaderBlocId(), standing.blocId());
-        }
-
-        // The bloc every group below the leader is placed against, or none where nobody ranks.
+        // The bloc every group below the leader is placed against, or none where nobody ranks -
+        // read off the very block that names the leader, so which group that is cannot be settled
+        // one way there and another here.
         private String resolveLeaderBlocId() {
-            return groupStandings.isEmpty()
-                ? null
-                : groupStandings.get(0).blocId();
+            return selectDominantStandings()
+                .stream()
+                .map(GroupStanding::blocId)
+                .findFirst()
+                .orElse(null);
         }
     }
 }

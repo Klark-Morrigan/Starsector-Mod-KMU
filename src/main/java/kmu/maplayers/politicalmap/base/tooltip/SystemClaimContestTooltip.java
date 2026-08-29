@@ -21,6 +21,8 @@ import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
+import kmu.maplayers.politicalmap.base.dominance.ContestSide;
+import kmu.maplayers.politicalmap.base.dominance.ContestSides;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.util.KmuStrings;
 
@@ -28,7 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 /**
  * The shape every box built on a hovered system's claim contest takes: what the system is, then who
@@ -529,9 +530,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
          * a line is stays sayable on the line itself, so nothing is lost by not splitting them.
          */
         List<FactionClaimStanding> selectAlliedStandings() {
-            return streamListedRivals()
-                .filter(this::isStandingWithClaimant)
-                .toList();
+            return selectStandingsOn(ContestSide.ALLIED);
         }
 
         /**
@@ -550,8 +549,8 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         List<FactionClaimStanding> selectRivalStandings(
                 Predicate<FactionClaimStanding> isWantedKind) {
 
-            return streamListedRivals()
-                .filter(standing -> !isStandingWithClaimant(standing))
+            return selectStandingsOn(ContestSide.RIVAL)
+                .stream()
                 .filter(isWantedKind)
                 .toList();
         }
@@ -559,27 +558,22 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // Everyone the box may name but the claim holder itself, which is the pool all three blocks
         // below the claim are drawn from. Dropped once here rather than per block, so no routing rule
         // added later can readmit the claimant to a block that is by definition about somebody else.
-        private Stream<FactionClaimStanding> streamListedRivals() {
+        private List<FactionClaimStanding> selectListedRivals() {
             return listedStandings
                 .stream()
-                .filter(standing -> !standing.factionId().equals(breakdown.claimantFactionId()));
+                .filter(standing -> !standing.factionId().equals(breakdown.claimantFactionId()))
+                .toList();
         }
 
-        // Whether a listed faction stands with the claim holder, which is what routes it into the
-        // allied block rather than a rival one. Asked through the affiliation rather than by
-        // comparing blocs here, so the box files a faction by the same rule the band beneath it
-        // lays its runs at contested length by - two answers to one question being the disagreement
-        // between a box and its band that the whole axis exists to rule out.
+        // The factions on one side of the contest below the claim, before the eligibility a block
+        // may narrow them by. Placed by the shared split rather than by comparing blocs here, so
+        // this box files a faction by the same rule the standings box and the bands beneath both do.
         //
-        // An unclaimed system stands nobody with anybody: there is no holder to be allied with, and
-        // an id naming no faction resolves to no bloc. So the allied block comes out empty, and its
-        // heading - which names a holder - never draws over a system without one. An install with
-        // nothing grouping factions is the same answer for the same reason, which is why every rival
-        // routes exactly as it did before the block existed.
-        private boolean isStandingWithClaimant(FactionClaimStanding standing) {
-            return affiliation.areBlocsAllied(
-                breakdown.claimantFactionId(),
-                standing.factionId());
+        // A faction is its own bloc on this layer, the fills being pinned to the claiming faction,
+        // so the faction id is the bloc id the alliance set is read against.
+        private List<FactionClaimStanding> selectStandingsOn(ContestSide side) {
+            return new ContestSides(breakdown.claimantFactionId(), affiliation)
+                .selectSide(side, selectListedRivals(), FactionClaimStanding::factionId);
         }
 
         // Whether any colony a faction's standing rests on is one the box may name the faction over.

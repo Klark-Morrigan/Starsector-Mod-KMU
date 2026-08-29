@@ -62,7 +62,7 @@ public final class StandingsTooltipSeamsFake {
     // What a standing carries when a case is about how groups are laid out rather than about what any
     // of them is made of. Never asserted on - a case that cares states its own standing. The bloc is
     // a stem a rank is appended to, so no two stood-up groups are the same bloc.
-    private static final String ANY_BLOC_ID = "bloc-";
+    private static final String ANY_BLOC_ID_STEM = "bloc-";
     private static final int ANY_SCORE = 0;
 
     // Where the standings a block is being named sit in the resolver's parameters, which is what the
@@ -156,7 +156,7 @@ public final class StandingsTooltipSeamsFake {
         var rankedStandings = new ArrayList<GroupStanding>(groupEntries.length);
 
         for (var index = 0; index < groupEntries.length; index++) {
-            rankedStandings.add(new GroupStanding(ANY_BLOC_ID + index, ANY_SCORE, List.of()));
+            rankedStandings.add(new GroupStanding(ANY_BLOC_ID_STEM + index, ANY_SCORE, List.of()));
         }
         stubRankedGroups(rankedStandings, List.of(groupEntries));
     }
