@@ -393,25 +393,32 @@ public final class ClaimScoreRowResolver {
     // states it. Everywhere else the column stands empty, the row being ranked by the score all the
     // same, so the lines either side of it bound what it came to without the box stating the figure.
     //
-    // No quiet reading on that number: a market weighed on its own account competed on the figure, so
-    // where it is stated at all it is read as loudly as its neighbours'.
+    // A market the contest never scored is the exception, and states its nought outright: the figure is
+    // the contest's own statement that the market counted for nothing, which is no part of what the row
+    // withholds, where an empty column would read as a figure kept back from a row that has none.
     //
-    // A market the contest never scored is the other shape, and it states its nought outright. The
-    // figure is the contest's own statement that the market counted for nothing - the same statement
-    // its named counterpart makes, and no part of what the row withholds - where an empty column here
-    // would read as a figure kept back from a row that has none.
+    // Quietened on exactly the same reading as its named counterpart, and by the same call, so the two
+    // shapes cannot come to disagree about which numbers were competed on.
     private static CellTooltipEntryLine createBlockedOutMarketLine(
             MarketClaimBreakdown market,
             boolean isCarryingTheStanding) {
 
-        if (!market.isScoredOnItsOwnAccount()) {
-            return RedactedMarketLines
-                .createRedactedLine(market, formatContestScore(market))
-                .statesUncountedValue();
-        }
-        return RedactedMarketLines.createRedactedLine(
+        var line = RedactedMarketLines.createRedactedLine(
             market,
-            isCarryingTheStanding ? formatContestScore(market) : CellTooltipRows.NO_SCORE);
+            resolveBlockedOutValueText(market, isCarryingTheStanding));
+
+        return market.isScoredOnItsOwnAccount() ? line : line.statesUncountedValue();
+    }
+
+    // What number a blocked-out row states, if any: the nought of a market the contest never scored,
+    // the score of the market its faction stands on, and nothing at all in between.
+    private static String resolveBlockedOutValueText(
+            MarketClaimBreakdown market,
+            boolean isCarryingTheStanding) {
+
+        return !market.isScoredOnItsOwnAccount() || isCarryingTheStanding
+            ? formatContestScore(market)
+            : CellTooltipRows.NO_SCORE;
     }
 
     // What a market's number reads as, wherever a line states one. Named so the two shapes of line
@@ -516,10 +523,9 @@ public final class ClaimScoreRowResolver {
     // it, so it sits among the very lines the count invites the reader to check it against while
     // being outside the count, and the term would read as short by a market on screen.
     //
-    // Asked of the list alone. A market kept off it for being unknown to the player is not on screen
-    // to contradict anything, and the count merely running ahead of what is shown states nothing the
-    // listed markets do not - each carries the whole score it was weighed at, presence included,
-    // over terms that account for its own share only.
+    // Asked of the list alone, which is all it has to be asked of: every market the count counts is
+    // one the listing rule draws, so the list can be contradicted by an uncounted line but can no
+    // longer fall short of the count.
     private static boolean isEveryListedMarketCounted(List<MarketClaimBreakdown> listedMarkets) {
         return listedMarkets
             .stream()

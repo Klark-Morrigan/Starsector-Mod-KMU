@@ -11,8 +11,9 @@ import kmlib.starsector.systems.claims.WeighedClaimStanding;
  * <p>The two rules live together, named apart from the account that spends them, because they are
  * statements about what the player may be shown rather than steps in drawing a list - and the box
  * states outcomes over the very colonies they decide, so a copy of either living beside those would be
- * free to disagree with it. Together rather than apart because the second is a strict tightening of
- * the first, and two types could not hold them that way.
+ * free to disagree with it. Together rather than apart because the faction rule is a strict tightening
+ * of the row rule: the row rule is written as that one plus its own extra term, so the nesting holds
+ * by construction and a change to what names a faction cannot leave the rows behind.
  *
  * <p>Both admit a colony the player knows of, which is the half they share: such a colony is on the map
  * in its faction's colours already, so naming it tells them nothing they cannot see. What the two
@@ -27,15 +28,15 @@ import kmlib.starsector.systems.claims.WeighedClaimStanding;
  * a nought with nothing under it. A row for either would be disclosure and nothing else.
  *
  * <p>A <strong>faction</strong> is named only where the contest weighed one of its markets. The
- * sibling term is not enough here, because it pays a faction for markets it already has rows for: a
- * faction present through concealed colonies alone is counted nowhere, scores nothing, and has no
- * number on screen its absence leaves short - so naming it would state the very presence the fog is
- * keeping back. The nesting is what keeps the pair honest: a market that only the sibling term counts
- * is drawn under a faction that some other market already put on the box.
+ * sibling term cannot carry it, because that term is the account's own working: it is stated beneath a
+ * market this faction was already weighed on, so a faction present through concealed colonies alone
+ * has no such market, no count, and no number on screen its absence leaves short - and naming it would
+ * state the very presence the fog is keeping back. The nesting is what keeps the pair honest: a market
+ * that only the sibling term counts is drawn under a faction some other market already put on the box.
  *
- * <p>Knowledge rather than discovery on both, since the markets these decide anything about are the
- * ones the contest passed over - a concealed base among them, which is found and still withheld until
- * somebody has seen it standing there.
+ * <p>Knowledge rather than discovery on both, since either may be asked of a market the contest passed
+ * over - a concealed base among them, which is found and still withheld until somebody has seen it
+ * standing there, so the entity's own flag would admit a colony nobody has laid eyes on.
  *
  * <p>Whether a listed row may state the colony's name is a separate question, settled where the row is
  * built. These settle only that the row, or the faction, is there.
@@ -77,9 +78,7 @@ final class ListedClaimMarkets {
             FactionClaimStanding standing,
             boolean isListingUndiscoveredMarkets) {
 
-        return isListingUndiscoveredMarkets
-            || market.isKnownToPlayer()
-            || market.isScoredOnItsOwnAccount()
+        return isFactionNamingMarket(market, isListingUndiscoveredMarkets)
             || isMarketBehindAStatedSiblingCount(market, standing);
     }
 

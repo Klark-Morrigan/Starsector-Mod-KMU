@@ -478,7 +478,7 @@ settled before a market was weighed.
 
 What the player has discovered silences no mark. A mark answers why two markets on one score are
 ordered as they are, and both sides of a judged tie are markets the contest weighed - which the list
-carries whatever the player knows of them (`ListedClaimMarkets`, the one listing rule) - so the
+carries whatever the player knows of them (`ListedClaimMarkets.isListedMarket`) - so the
 ordering a mark is about is always in front of the reader, within a faction and between two.
 
 A market the mechanic never weighed is listed at nought, whichever of the first two it is
@@ -532,19 +532,27 @@ than a score competed for and lost. The claimant's line takes the same nought wh
 system its faction is present in through unweighed colonies alone, in place of the blank column a
 claimant holding nothing there gets.
 
-An undiscovered market is listed all the same where the contest weighed it: its weight is
-in the numbers on screen already - the claim, the faction's score, the difference between its own
-total and the terms beneath it - and the row is what makes those account for themselves. What is
-left off is the market the player knows nothing of *and* that took no part (`ListedClaimMarkets`,
-over `MarketClaimBreakdown.isKnownToPlayer` and `isScoredOnItsOwnAccount`): it accounts for nothing
-on screen, so a row for it would be disclosure and nothing else, and the dev reveal is what states
-even those in full. The knowledge half is the same rule the faction and alliance tabs fog by, so all
-three agree on what the player knows. What that flag carries is the composed answer rather than the
-entity's own: the player has discovered the market **and**, for the shapes a bare fog would leak,
-somebody has seen it where it stands. Which is why the listed rows are undiscovered colonies exactly
-- a market the contest weighed is open and on the economy's books, so no gate covers it and
-discovery is the whole of the question - while the rule that leaves one off is asked in the wider
-terms a concealed base needs.
+A market on a colony nobody has found is listed all the same wherever the contest counted it into a
+number the account states: its effect is on screen already - the claim, the faction's score, the
+count of markets the faction was paid a point each for - and the row is what makes those account for
+themselves. Two ways in, then. A market the contest **weighed** always qualifies. A market it merely
+**counted as a sibling** qualifies under an account that goes on to state that count, which is a
+weighed standing's; under a presence-only standing there is no count on screen, so there is nothing
+for such a row to account for.
+
+What is left off is the market the player knows nothing of that reaches neither
+(`ListedClaimMarkets.isListedMarket`, over `MarketClaimBreakdown.isKnownToPlayer`,
+`isScoredOnItsOwnAccount` and `isCountedTowardSiblings`): the sibling count walks the economy's
+listing, so the market failing all three is the unregistered colony the walk never reached at all. It
+accounts for nothing on screen, so a row for it would be disclosure and nothing else, and the dev
+reveal is what states even those in full.
+
+The knowledge half is the same rule the faction and alliance tabs fog by, so all three agree on what
+the player knows. What that flag carries is the composed answer rather than the entity's own: the
+player has discovered the market **and**, for the shapes a bare fog would leak, somebody has seen it
+where it stands. Both halves of that are load-bearing here, because a listed row may be a concealed
+colony as well as an undiscovered one - which is why such a row says `hidden` where the entity has
+been found and `undiscovered` where it has not, the qualifier displacing one with the other.
 
 Such a row is drawn with its name blocked out. Whether a row may name its market, and what stands in
 where it may not, is `RedactedMarketLines` - the sibling of `ListedClaimMarkets`, asked straight after
@@ -561,22 +569,29 @@ the map's glyph says what sort of place the colony is - the very thing being wit
 line's own colour like any other market glyph (`CellTooltipMark.resolveMarkInLineColour`).
 
 What such a row keeps is everything that is not the name, and that part is the account's
-(`ClaimScoreRowResolver`): the listing place, the tie outcome that place settled, and `undiscovered`
-after it - off the same walk of the system every other row's words come from, so the finding is stated
-as loudly here as anywhere. A claimant standing on such a colony reads `claim holder, undiscovered`,
-the map already painting that system in its holder's colours. What the row gives up besides the name
-is the value column and the breakdown beneath - unless it is the market its faction stands on, where
-the score is stated because the faction's own line above already carries it and withholding it there
-would hide nothing while leaving the block's arithmetic unaccountable. It is ranked on its real score
+(`ClaimScoreRowResolver`): the listing place, the tie outcome that place settled, and the word for why
+the box cannot name it - off the same walk of the system every other row's words come from, so the
+finding is stated as loudly here as anywhere. A claimant standing on such a colony reads
+`claim holder, undiscovered`, the map already painting that system in its holder's colours. What the
+row gives up besides the name is the value column and the breakdown beneath - unless it is the market
+its faction stands on, where the score is stated because the faction's own line above already carries
+it and withholding it there would hide nothing while leaving the block's arithmetic unaccountable, or
+unless the contest never scored it, where the nought is stated because that nought is the contest's
+own statement rather than anything the row withholds. It is ranked on its real score
 all the same, so its neighbours bound what it scored to within a point or two: the box declines to
 *state* a number for a place the player has not found, and does not go on to pretend the contest ran
 in some other order.
 
-That same listing rule decides the factions above the markets, asked of a standing as a whole rather
-than line by line: a faction is kept where the box may draw a row for at least one of its colonies,
-and left off entirely where every one of them is withheld (`ListedClaimContest.selectFrom`, calling
-`ListedClaimMarkets` rather than restating it - the box states outcomes over the very colonies it
-decides, so a second copy of the rule beside it would be free to disagree). Naming a faction over an
+A second rule decides the factions above the markets, asked of a standing as a whole rather than line
+by line: a faction is kept where at least one of its colonies is known or was weighed, and left off
+entirely where none is (`ListedClaimContest.selectFrom`, calling
+`ListedClaimMarkets.isFactionNamingMarket` rather than restating it - the box states outcomes over
+the very colonies it decides, so a second copy of the rule beside it would be free to disagree). It
+is the tighter of the two and deliberately so: the sibling count cannot name a faction, being the
+account's own working, stated beneath a market that faction was already weighed on. The two live in
+one class, the row rule written as this one plus its extra term, so the nesting holds by construction
+- a market only the count reaches earns a row under a faction some other market already put on the
+box, and never a box of its own. Naming a faction over an
 account with nothing in it would tell the player exactly what the fog is keeping back - and `F1` is
 offered only where a standing survives that filter (`hasListedStanding`), so the key is never
 advertised over a box the fog has emptied. Both boxes ask that through one read of the contest
@@ -598,15 +613,13 @@ the mechanic gives every market of a faction the same point per other market it 
 once beneath the very markets its count can be checked against, and worked out from that count
 (`Same-faction market bonus   (3 markets) - 1 = +2`, the subtraction being the market being scored,
 which is not its own sibling) rather than as a bare result nobody can check. That line is working
-throughout bar the points it arrives at, so it reads in the quiet shade name and all. The count is
-of what the faction holds rather than of the lines above it, so over a list a market was kept off
-for being unknown and unweighed at once it stands and reads as exceeding what is shown - which gives
-away nothing the list has not, a market's own line carrying the whole score the contest weighed it
-at while the terms beneath it state its own share alone, so the presence is already the difference
-between the two on every line. Withheld there, it would leave each market short by an amount the
-reader can see and cannot account for. It is withheld only for an unlisted colony on the list, which
-the mechanic never counted and which sits among the very lines the count is checked against: that
-term would read as short by a market on screen, contradicted rather than merely exceeded.
+throughout bar the points it arrives at, so it reads in the quiet shade name and all. That the count
+can be checked against the lines above it is the listing rule's doing rather than a coincidence:
+every market the count counts is one the rule draws, blocked out where nobody has found it, so the
+term never stands over a list short of what it counted. It is withheld for the one market that can
+contradict it - an unlisted colony on the list, which the mechanic never counted and which sits among
+the very lines the count invites the reader to check it against, where the term would read as short
+by a market on screen.
 
 The resolver shares the entry model and the block vocabulary with the domination pair but not their
 number grammar - a claim score is a small whole number of points with no grid behind it, so no

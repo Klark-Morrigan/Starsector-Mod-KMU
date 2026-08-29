@@ -49,16 +49,25 @@ final class ListedClaimMarketsTest {
     private static final boolean IS_UNDISCOVERED_BY_PLAYER = false;
     private static final boolean IS_UNKNOWN_TO_PLAYER = false;
 
+    // Whose account the rows would be drawn under. One faction throughout - nothing here compares two -
+    // and territorial, which no rule these cases exercise reads either way.
+    private static final String FACTION_ID = "hegemony";
+    private static final boolean IS_TERRITORIAL = true;
+
+    // What the weighed account's own market came to. Any weight serves: what the cases read off this
+    // standing is which kind it is, never the number.
+    private static final int STANDING_SCORE = 12;
+
     // The account a row would be drawn under. Weighed for every case but the one about the other kind,
     // because that is the account that states a sibling count at all - and the count is what a row for
     // a market the contest never scored has to account for.
     private static final FactionClaimStanding WEIGHED_STANDING =
-        buildStandingOnOneMarket("hegemony", 12, true);
+        buildStandingOnOneMarket(FACTION_ID, STANDING_SCORE, IS_TERRITORIAL);
 
     // The account that states no count: a faction present through colonies the contest never weighed
     // scores a named nought with no terms beneath it.
     private static final FactionClaimStanding PRESENCE_ONLY_STANDING =
-        buildPresenceOnlyStanding("hegemony", true);
+        buildPresenceOnlyStanding(FACTION_ID, IS_TERRITORIAL);
 
     @Nested
     class IsFactionNamingMarket {

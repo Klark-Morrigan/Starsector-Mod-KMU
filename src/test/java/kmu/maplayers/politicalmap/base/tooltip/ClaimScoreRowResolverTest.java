@@ -587,6 +587,34 @@ final class ClaimScoreRowResolverTest {
                 .containsExactly(STRONGEST_MARKET, "Culann", NO_NAME_STATED, PRESENCE_LINE);
             assertThat(rows.get(2).line().hasRedactedName())
                 .isTrue();
+
+            // And says why it was passed over, as loudly as any other line says it. The word is the
+            // one thing separating this row from the weighed kind's, both being blocked out - so a row
+            // that lost it would read as a market the contest weighed and declined to explain.
+            assertThat(rows.get(2).line().qualifierText())
+                .isEqualTo("hidden");
+        }
+
+        @Test
+        void resolveMarketRowsCallsABlockedOutConcealedMarketUndiscoveredWhereItsEntityIsToo() {
+            // The displacement the qualifier makes, on a row that now exists to carry it: a concealed
+            // colony on an entity nobody has found is undiscovered first and concealed second, since a
+            // reader who has not found the place has no use for being told what is hidden on it.
+            var standing = buildStanding(
+                buildStrongestMarket(ONE_SIBLING_MARKET),
+                List.of(buildUnknownHiddenMarket("Kanta's Den", 3, ONE_SIBLING_MARKET,
+                    SECOND_LISTED)));
+
+            var rows = ClaimScoreRowResolver.resolveMarketRows(
+                buildBreakdownClaimedBy(HEGEMONY, standing),
+                standing,
+                buildReadingWithUndiscovered(nameMarketId("Kanta's Den")),
+                WITHHOLDING_UNDISCOVERED_MARKETS);
+
+            assertThat(rows.get(1).line().hasRedactedName())
+                .isTrue();
+            assertThat(rows.get(1).line().qualifierText())
+                .isEqualTo("undiscovered");
         }
 
         @Test
