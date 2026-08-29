@@ -196,9 +196,11 @@ sector memory rather than as LunaLib fields, so flipping one does *not* bump
 those toggles repaint the overlay live despite never touching the settings screen.
 
 The **content revision** is the seam that keeps the shared pipeline from naming any
-concrete view: a view folds its own live inputs into one int, so the alliances view
-can invalidate on an alliance-membership change while the faction view - which
-samples nothing live - returns a constant and never forces a rebuild on its own.
+concrete view: a view folds its own live inputs into one int, so each invalidates on
+what it actually reads. All three political views fold the alliance revision, for
+different reasons - the alliances view because membership decides what it paints, the
+faction and claims views because their bands judge a contest against it - while a view
+that samples nothing live folds no sources and never forces a rebuild on its own.
 
 ## Layer 3: the caches
 

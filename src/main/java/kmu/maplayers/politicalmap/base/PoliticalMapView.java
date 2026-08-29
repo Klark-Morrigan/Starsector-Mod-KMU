@@ -61,10 +61,11 @@ public interface PoliticalMapView {
      * drawables' content token so a change to any of them forces a rebuild even when no
      * setting moved. A view composes it from its own sources ({@link
      * kmlib.math.hashing.Fingerprints#compute}), so its number of live inputs can grow
-     * without widening this contract: the faction view samples nothing live and returns a constant,
-     * never triggering a rebuild on its own; the alliances view folds the live alliance-set
-     * revision and its non-allied recede toggles, so either a membership change or a toggle
-     * flip repaints it. This is what lets the shared plugin invalidate on a view's live data
+     * without widening this contract: the faction view folds the live alliance-set revision alone,
+     * since that is all its per-faction painting reads; the alliances view folds that same revision
+     * plus its non-allied recede toggles, so either a membership change or a toggle flip repaints
+     * it. A view sampling nothing live folds no sources and returns a constant, never triggering a
+     * rebuild on its own. This is what lets the shared plugin invalidate on a view's live data
      * without naming any concrete view - each view declares its own fingerprint.
      *
      * @return this view's content fingerprint; a constant for a view with no live inputs

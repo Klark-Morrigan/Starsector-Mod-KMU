@@ -7,6 +7,7 @@ import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.visibility.ColonyVisibility;
@@ -19,6 +20,7 @@ import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 import kmu.maplayers.politicalmap.base.politics.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
@@ -81,11 +83,17 @@ public final class ClaimsView implements PoliticalMapView {
 
     @Override
     public int getContentRevision() {
-        // The market-inferred claims that make up the majority change with the economy, which the
-        // shared economy revision already repaints on, so this view samples no live input of its own
-        // and returns the fixed no-source constant. A live fingerprint for explicit claim-flag flips
-        // is a later concern; until then a flag-only claim change waits for the next economy rebuild.
-        return Fingerprints.compute();
+        // The alliance set is this view's one live input. The fills do not move with it - they are
+        // pinned to the claiming faction - but the bands over them do: a run is laid at contested
+        // length only against a bloc the claimant is not allied with, so membership moving in play
+        // must repaint them rather than leave every band at the old lengths.
+        //
+        // The market-inferred claims that make up the majority of what is painted change with the
+        // economy, which the shared economy revision already repaints on. A live fingerprint for
+        // explicit claim-flag flips is a later concern; until then a flag-only claim change waits for
+        // the next economy rebuild.
+        return Fingerprints.compute(
+            () -> MapLayerRefresh.getRevision(PoliticalMapRefreshSignal.ALLIANCES));
     }
 
     @Override
@@ -93,10 +101,13 @@ public final class ClaimsView implements PoliticalMapView {
         // Claims are grouped strictly by claiming faction - no alliance rollup in what this layer
         // paints - so the pipeline resolves plain faction holding.
         //
-        // About the fills alone. The hover box over them does consult the live alliance set, to say
-        // which of the factions in a system stand with its claim holder, and it samples that for
-        // itself rather than through this: pinned here, the block naming them would be permanently
-        // empty on the one layer that draws it.
+        // About the fills alone. Both surfaces drawn over them consult the live alliance set and
+        // sample it for themselves rather than through this: the hover box to say which of the
+        // factions in a system stand with its claim holder, and the band beneath it to judge which of
+        // them are actually rivals. Pinned here, the two allied claimants would fuse into one
+        // territory in one of their colours and the block naming them would be permanently empty on
+        // the one layer that draws it - which is why what fuses and who stands together stay two
+        // separate reads.
         return HolderGrouping.identity();
     }
 

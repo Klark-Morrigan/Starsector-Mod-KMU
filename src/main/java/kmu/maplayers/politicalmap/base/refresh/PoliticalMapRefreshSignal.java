@@ -11,11 +11,12 @@ import kmu.maplayers.base.refresh.MapLayerRefreshSignal;
 public enum PoliticalMapRefreshSignal implements MapLayerRefreshSignal {
 
     /**
-     * An alliance formed, dissolved, or gained or lost a member. Only the alliances view reads
-     * it - that view fuses allied factions into one bloc, so membership is one of its live
-     * inputs - which leaves the faction view untouched by a change it does not render. The
-     * sector watcher fingerprints the live alliance set each poll and raises this when the
-     * fingerprint moves.
+     * An alliance formed, dissolved, or gained or lost a member. Every political view reads it, for
+     * two different reasons: the alliances view fuses allied factions into one bloc, so membership
+     * decides what it paints, while the faction and claims views paint per faction and read the
+     * alliance set only to judge a contest - which of the blocs in a cell are rivals rather than
+     * partners. The sector watcher fingerprints the live alliance set each poll and raises this when
+     * the fingerprint moves.
      */
     ALLIANCES;
 

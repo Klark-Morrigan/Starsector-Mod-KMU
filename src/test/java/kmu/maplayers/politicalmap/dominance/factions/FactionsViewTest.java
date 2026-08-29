@@ -6,6 +6,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.systems.SystemColoniesIndex;
 
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.DominanceSortMode;
@@ -130,14 +131,26 @@ final class FactionsViewTest {
     class GetContentRevision {
 
         @Test
-        void getContentRevisionIsInvariantAcrossAllianceChanges() {
-            // The identity grouping never changes in a session, so an alliance forming or
-            // dissolving (which bumps the shared alliance revision) must leave the faction
-            // view's contribution fixed - that is what keeps an alliance change from churning
-            // the faction view.
+        void getContentRevisionShiftsWhenTheAllianceRevisionMoves() {
+            // The alliance set is this view's one live input: its bands lay a contested run only
+            // against a bloc the painter is not allied with, so a membership change must shift the
+            // revision - that is what repaints the bands at their new lengths instead of leaving
+            // them stale until an unrelated rebuild.
             var before = FactionsView.INSTANCE.getContentRevision();
 
             MapLayerRefresh.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
+
+            assertThat(FactionsView.INSTANCE.getContentRevision())
+                .isNotEqualTo(before);
+        }
+
+        @Test
+        void getContentRevisionIsInvariantAcrossAnUnrelatedSignal() {
+            // Only the alliance set is folded in, so a signal this view renders nothing from - a
+            // geometry rebuild here - leaves its contribution fixed rather than churning the view.
+            var before = FactionsView.INSTANCE.getContentRevision();
+
+            MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
 
             assertThat(FactionsView.INSTANCE.getContentRevision())
                 .isEqualTo(before);

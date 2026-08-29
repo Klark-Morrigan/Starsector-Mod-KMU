@@ -6,11 +6,13 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.math.hashing.Fingerprints;
 
+import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.DominancePaintedView;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.util.KmuStrings;
 
@@ -49,10 +51,13 @@ public final class FactionsView implements DominancePaintedView {
 
     @Override
     public int getContentRevision() {
-        // The faction view samples nothing live - its grouping is identity and never changes in a
-        // session - so it folds no sources and returns the fixed no-source constant. An alliance
-        // change (which only the alliances view renders) therefore never churns the faction view.
-        return Fingerprints.compute();
+        // The alliance set is this view's one live input. Nothing it paints moves with it - the
+        // grouping is identity and never changes in a session - but what its bands report does: a run
+        // is laid at contested length only against a bloc the painter is not allied with. Without
+        // this fold, an alliance formed or dissolved in play leaves every band drawn at the old
+        // lengths until an unrelated economy change happens to rebuild the map.
+        return Fingerprints.compute(
+            () -> MapLayerRefresh.getRevision(PoliticalMapRefreshSignal.ALLIANCES));
     }
 
     @Override

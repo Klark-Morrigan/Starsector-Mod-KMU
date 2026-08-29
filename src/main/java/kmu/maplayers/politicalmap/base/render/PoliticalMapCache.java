@@ -451,10 +451,11 @@ final class PoliticalMapCache {
     // marks just its system stale now. The active view is folded in so switching views (their
     // grouping, styling, and labels differ) rebuilds the territories under the newly-selected view
     // rather than reusing the previous view's. The view's content fingerprint is folded in too, so
-    // a change to any live input the active view samples - the alliances view's alliance set -
-    // rebuilds the territories even though no setting moved. The faction view samples nothing live
-    // and contributes a constant, so an alliance change never churns it; the pipeline stays
-    // view-neutral by reading this off the view rather than naming the alliance signal itself. The
+    // a change to any live input the active view samples - the alliance set every political view
+    // reads, whether to fuse blocs or only to judge a contest - rebuilds the territories even though
+    // no setting moved. The pipeline stays view-neutral by reading this off the view rather than
+    // naming the alliance signal itself, so a view that samples nothing simply contributes a
+    // constant and is never churned by a change it does not render. The
     // filter, recede-style, and map-style revisions are folded in at this pipeline level rather than
     // through any view, since each is a mode or an appearance toggle either view can be under: a
     // filter pick or clear, a recede Mute/Desaturate flip, or a flip of the sidebar's shared

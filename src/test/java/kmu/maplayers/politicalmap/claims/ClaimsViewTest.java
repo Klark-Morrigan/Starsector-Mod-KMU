@@ -9,6 +9,7 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.visibility.ColonyKnowledge;
@@ -146,13 +147,26 @@ final class ClaimsViewTest {
     class GetContentRevision {
 
         @Test
-        void getContentRevisionIsInvariantAcrossAllianceChanges() {
-            // The claims view samples no live input of its own - its market-inferred claims repaint on
-            // the shared economy revision, not here - so an alliance forming or dissolving (which the
-            // alliances view renders) must leave its contribution fixed and never churn this view.
+        void getContentRevisionShiftsWhenTheAllianceRevisionMoves() {
+            // The alliance set is this view's one live input: the fills stay per-claimant, but the
+            // bands over them lay a contested run only against a bloc the claimant is not allied
+            // with, so a membership change must shift the revision and repaint them.
             var before = ClaimsView.INSTANCE.getContentRevision();
 
             MapLayerRefresh.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
+
+            assertThat(ClaimsView.INSTANCE.getContentRevision())
+                .isNotEqualTo(before);
+        }
+
+        @Test
+        void getContentRevisionIsInvariantAcrossAnUnrelatedSignal() {
+            // Only the alliance set is folded in - the market-inferred claims repaint on the shared
+            // economy revision, not here - so a signal this view renders nothing from, a geometry
+            // rebuild here, leaves its contribution fixed.
+            var before = ClaimsView.INSTANCE.getContentRevision();
+
+            MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
 
             assertThat(ClaimsView.INSTANCE.getContentRevision())
                 .isEqualTo(before);
