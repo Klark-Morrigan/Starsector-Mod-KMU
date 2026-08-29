@@ -85,11 +85,13 @@ public final class CoastFrontages {
     // question about two sets of lines, and a second copy of the walk is how the two come to
     // cut frontages differently.
     private static Map<Integer, List<List<double[]>>> collectFrontagesAlong(
-            List<List<Coastlines.CoastVertex>> rings) {
+            List<Coastlines.Coast> coasts) {
 
         var frontages = new LinkedHashMap<Integer, List<List<double[]>>>();
 
-        for (var coast : rings) {
+        for (var line : coasts) {
+
+            var coast = line.vertices();
 
             if (coast.isEmpty()) {
                 continue;

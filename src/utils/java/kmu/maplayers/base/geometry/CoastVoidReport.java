@@ -53,7 +53,7 @@ public final class CoastVoidReport {
         var points = 0;
 
         for (var coast : traced.coasts()) {
-            points += coast.size();
+            points += coast.vertices().size();
         }
 
         System.out.printf(

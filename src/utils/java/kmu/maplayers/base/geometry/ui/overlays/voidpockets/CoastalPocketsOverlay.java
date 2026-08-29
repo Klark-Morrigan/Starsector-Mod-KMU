@@ -156,7 +156,7 @@ public final class CoastalPocketsOverlay {
             MapPainting.paintBetweenRings(
                 g2,
                 lake.waterEdge(),
-                lake.drawnRing(),
+                lake.shore().drawnRing(),
                 fill,
                 settings.voidFillOpacity,
                 edge);
@@ -175,10 +175,7 @@ public final class CoastalPocketsOverlay {
      */
     public void paintLakeRings(Graphics2D g2, Color colour) {
 
-        MapPainting.paintLineRings(
-            g2,
-            traced.lakes().stream().map(Coastlines.Lake::drawnRing).toList(),
-            colour);
+        MapPainting.paintLineRings(g2, Coastlines.collectLakeRings(traced), colour);
     }
 
     /**

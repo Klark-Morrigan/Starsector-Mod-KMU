@@ -88,13 +88,13 @@ public final class ContinentCoastOverlay {
         // Under the switch over the whole continent construction, which suppresses this
         // without touching any of its own - so what was showing comes back when it is lifted.
         if (!settings.showContinentVoid
-                || (!settings.showContinentCoasts
-                    && !settings.showContinentCoastalFill
-                    && !settings.showContinentLakeCoasts
+                || (!settings.showContinentLakeCoastline
                     && !settings.showContinentLakeFill
                     && !settings.showContinentLakeFrontages
-                    && !settings.showContinentBridges
-                    && !settings.showBridgeFrontages)) {
+                    && !settings.showContinentCoastline
+                    && !settings.showContinentCoastFill
+                    && !settings.showContinentCoastFrontages
+                    && !settings.showContinentBridges)) {
 
             return;
         }
@@ -109,7 +109,7 @@ public final class ContinentCoastOverlay {
         // fill comes from. Not a second way of arriving at the same thing: a coast reach is a
         // wall, and what a wall shuts in is one question however the coast that offered it was
         // traced.
-        if (settings.showContinentCoastalFill) {
+        if (settings.showContinentCoastFill) {
             coast.findPockets(fixture);
         }
 
@@ -119,7 +119,7 @@ public final class ContinentCoastOverlay {
         // identically, and which shore a stretch belongs to is told by the line it sits on.
         var eligible = new ArrayList<List<double[]>>();
 
-        if (settings.showBridgeFrontages) {
+        if (settings.showContinentCoastFrontages) {
             eligible.addAll(flattenFrontages(
                 CoastFrontages.collectBridgeFrontages(coast.getTrace())));
         }
@@ -156,7 +156,7 @@ public final class ContinentCoastOverlay {
             return;
         }
 
-        if (settings.showContinentCoastalFill) {
+        if (settings.showContinentCoastFill) {
 
             coast.paintPocketFills(
                 g2, settings.continentCoastalVoidColour, settings.continentCoastalVoidEdge);
@@ -185,7 +185,7 @@ public final class ContinentCoastOverlay {
 
         paintBridges(g2);
 
-        if (settings.showContinentCoasts) {
+        if (settings.showContinentCoastline) {
 
             coast.paintCoastRings(g2, settings.continentCoastColour);
             coast.paintDroppedStretches(g2);
@@ -194,7 +194,7 @@ public final class ContinentCoastOverlay {
         // A lake shore is this construction's coast seen from the water's side, so it is
         // drawn in the coasts' own colour - under its own switch, since which of the two a
         // reader is judging decides which they want out of the way.
-        if (settings.showContinentLakeCoasts) {
+        if (settings.showContinentLakeCoastline) {
             coast.paintLakeRings(g2, settings.continentCoastColour);
         }
 

@@ -174,48 +174,46 @@ public final class ViewerSettings {
     // void group: a cell is there whatever the void is doing.
     public boolean showCellNames;
 
-    // The per-continent coast preview. Not part of the void group either, and off by default:
-    // it is a rival construction being judged against the settled coast, not a part of it.
-    public boolean showContinentCoasts;
-
-    // The void each continent coast shuts in behind it, filled. The same construction the
-    // settled coast's fill comes from, asked of the other coast - which is what makes the two
-    // worth putting on screen together, since the difference between them is then the coast
-    // rather than the way the void behind it was worked out.
-    public boolean showContinentCoastalFill;
-
-    // The lakes: void the continents' cells closed around unaided, drawn as interior
-    // coastlines. The trial of drawing captured void as a shore rather than as v2's
-    // bridge-and-fill, so it lives with the construction proposing it.
+    // The per-continent coast preview, in its two shores. Not part of the void group, and off
+    // by default: it is a rival construction being judged against the settled coast, not a
+    // part of it.
     //
-    // Split the way the exterior coast's switches are - line, fill, frontage - because the
-    // two shores are the same kind of line seen from opposite sides, and a reader judging
-    // one wants the same handles on it they have on the other.
-    public boolean showContinentLakeCoasts;
-    public boolean showContinentLakeFill;
+    // Line, fill and frontage for each, in the same order and under the same names, because
+    // the two shores are one kind of line seen from opposite sides - the interior one bounds
+    // water the cells closed around, the exterior one the open void beyond them. A reader
+    // judging either wants the handles they already know from the other.
 
-    // The stretches of lake shore a bridge could anchor on. Display-only eligibility for
-    // now: the bridge search still anchors on exterior coasts alone, so what this shows is
-    // where a span could start once lakes learn bridges.
+    // The lake shores: void the continents' cells closed around unaided. The trial of drawing
+    // captured void as a shore rather than as v2's bridge-and-fill.
+    public boolean showContinentLakeCoastline;
+    public boolean showContinentLakeFill;
     public boolean showContinentLakeFrontages;
+
+    // The outer shores, and the void each shuts in behind it. The fill is the same
+    // construction the settled coast's comes from, asked of the other coast - which is what
+    // makes the two worth putting on screen together, since the difference between them is
+    // then the coast rather than the way the void behind it was worked out.
+    public boolean showContinentCoastline;
+    public boolean showContinentCoastFill;
+    public boolean showContinentCoastFrontages;
+
+    // Both frontage switches are diagnostic: they answer "why did that span go THERE" rather
+    // than showing anything the map proposes. A span can only reach a part of a cell its coast
+    // actually runs along, so one that looks as though it ignored a nearer cell has usually
+    // been offered nowhere nearer to anchor - which is invisible until the eligible stretches
+    // are on screen beside the spans that used them.
+    //
+    // The lake shores' are eligibility alone for now: the bridge search anchors on the outer
+    // shores only, so what they show is where a span could start once lakes learn bridges.
 
     // The bridges v3 would lay once its coastlines are down - the same search the settled map
     // uses, offered the same cells, so the only difference between the two sets is which spans
     // the coastlines then refuse.
     //
-    // Off by default and apart from the coasts' own switch, because it is the next proposal
+    // Off by default and apart from the shores' own switches, because it is the next proposal
     // rather than another view of this one - and it is only meaningful with the coasts traced,
     // since the coastlines are what decides which bridges survive.
     public boolean showContinentBridges;
-
-    // The stretches of cell border a bridge may anchor on, drawn on the coast they are part of.
-    //
-    // Off by default and diagnostic: it answers "why did that span go THERE" rather than
-    // showing anything the map proposes. A span can only reach a part of a cell the coast
-    // actually runs along, so a span that looks as though it ignored a nearer cell has usually
-    // been offered nowhere nearer to anchor - which is invisible until the eligible stretches
-    // are on screen beside the spans that used them.
-    public boolean showBridgeFrontages;
 
     // Every stretch of frontage the smoothing chose not to pass through, on whichever coasts
     // are being drawn. One switch rather than one per coast: it shows a DECISION rather than a

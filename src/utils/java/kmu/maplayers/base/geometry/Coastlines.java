@@ -197,15 +197,15 @@ public final class Coastlines {
      * those walls. Rebuilt separately by each asker, they can be built from knobs that have
      * since moved.
      *
-     * @param coasts      one closed run of points per run of connected cells
+     * @param coasts      one coast per run of connected cells
      * @param silhouettes the stretches of coast the cells make, in walk order, before any
      *                    smoothing. Carried rather than walked again by whatever wants them:
      *                    the walk is not cheap, and a second one is a second answer that can
      *                    disagree with the coast it is supposed to describe
-     * @param dropped     the stretches the smoothing chose not to pass through, which is the
-     *                    one thing about a finished coast that cannot be read back off the
-     *                    line: a stretch the walk never offered and a stretch a rule threw
-     *                    away are both simply absent from it
+     * @param dropped     the stretches the smoothing chose not to pass through, over both
+     *                    kinds of coast, which is the one thing about a finished line that
+     *                    cannot be read back off it: a stretch the walk never offered and a
+     *                    stretch a rule threw away are both simply absent from it
      * @param union       the discs it was walked and drawn against, which are the same discs:
      *                     a coast is a border, and everything measured from a border has to
      *                     be measured from the one the map draws
@@ -213,46 +213,57 @@ public final class Coastlines {
      *                    Carried for whatever lays more walls alongside them: found again
      *                    from the knobs, they are a second answer that can differ from the
      *                    one the coast was actually walked against
-     * @param drawnRings  the same coasts as the LINE the map draws: rounded where they turn
-     *                    sharply, and so no longer attributable to the cells the vertices
-     *                    above name. Rounded once here rather than at each reader, because
-     *                    every one of them - the paint, the SVG, the inside-the-coast test -
-     *                    has to be looking at the one line, and because a pass repeated per
-     *                    frame is paid for per frame. Read through
-     *                    {@link #collectCoastRings}
      * @param lakes       the void the cells closed around unaided - inland water, ringed by
      *                    land the whole way round. Out of the same walk and the same
      *                    smoothing as the coasts above, because a lake shore and an outer
      *                    shore are the same kind of line looked at from opposite sides
      */
     public record TracedCoasts(
-        List<List<CoastVertex>> coasts,
+        List<Coast> coasts,
         List<List<DiscUnionBoundary.CoastMark>> silhouettes,
         List<DiscUnionBoundary.CoastMark> dropped,
         DiscUnion union,
         DiscUnionBoundary.Walls walls,
-        List<List<double[]>> drawnRings,
         List<Lake> lakes) {
+    }
+
+    /**
+     * One smoothed coast, in the two forms everything downstream asks it for.
+     *
+     * <p>The pair travels together because they are one line described twice and only mean
+     * anything against each other. Held as parallel lists they line up by index alone, which
+     * is a correspondence nothing checks and the smoothing can break: a coast dropped for
+     * coming out degenerate leaves the two lists a place apart from there on.
+     *
+     * @param vertices  the line as points that each name the cell they sit on, which is what
+     *                  anything reasoning about WHERE a coast runs needs
+     * @param drawnRing the same line as the map draws it: rounded where it turns sharply, and
+     *                  so no longer attributable to the cells the vertices name. Rounded once
+     *                  at the trace rather than at each reader, because every one of them -
+     *                  the paint, the SVG, the inside-the-coast test - has to be looking at
+     *                  the one line, and because a pass repeated per frame is paid for per
+     *                  frame
+     */
+    public record Coast(
+        List<CoastVertex> vertices,
+        List<double[]> drawnRing) {
     }
 
     /**
      * One inland lake: a hole the cells closed around unaided, drawn the way a coast is.
      *
-     * <p>One value rather than parallel lists on the trace, because the drawing needs the two
-     * lines of the SAME lake against each other - and the smoothing drops a degenerate lake
-     * on the way through, so lists built apart stop lining up exactly when a sector has the
-     * lake that would expose it.
+     * <p>Built ON a coast rather than beside one, because that is what a lake shore is - the
+     * same smoothing over the same kind of marks, read from the water's side. What a lake
+     * adds is the edge that water actually runs to.
      *
-     * @param shore     the smoothed shore, as vertices that each name their cell
-     * @param drawnRing the shore as the line the map draws, rounded the way every coast is
+     * @param shore     the lake's coast, smoothed and drawn like any other
      * @param waterEdge the water's true edge: the cells' own arcs around the hole, sampled.
      *                  What the fill runs against - the lake's margin is the water between
      *                  the drawn shore and this edge, and the open water inside the shore is
      *                  left to the backdrop the way the open void outside the sector is
      */
     public record Lake(
-        List<CoastVertex> shore,
-        List<double[]> drawnRing,
+        Coast shore,
         List<double[]> waterEdge) {
     }
 
@@ -402,18 +413,31 @@ public final class Coastlines {
             parameters.measureArcSegments());
 
         var smoothed = smoothSilhouettes(silhouettes, union, bridged, smoothingRules);
-
-        var dropped = new ArrayList<>(smoothed.dropped());
-        var lakes = buildLakes(runs.lakes(), union, bridged, smoothingRules, rules, dropped);
+        var water = buildLakes(runs.lakes(), union, bridged, smoothingRules, rules);
 
         return new TracedCoasts(
-            smoothed.coasts(),
+            buildCoasts(smoothed.coasts(), rules.rounding()),
             silhouettes,
-            List.copyOf(dropped),
+            concatenateDropped(smoothed.dropped(), water.dropped()),
             union,
             walls,
-            roundCoastRings(smoothed.coasts(), rules.rounding()),
-            lakes);
+            water.lakes());
+    }
+
+    // The stretches both kinds of coast left out, as the one list the diagnostic draws. A
+    // stretch a rule threw away is the same kind of fact on a lake shore as on the outer
+    // shore, and the drawing tells them apart by the line each sits beside.
+    private static List<DiscUnionBoundary.CoastMark> concatenateDropped(
+            List<DiscUnionBoundary.CoastMark> fromCoasts,
+            List<DiscUnionBoundary.CoastMark> fromLakes) {
+
+        var dropped = new ArrayList<DiscUnionBoundary.CoastMark>(
+            fromCoasts.size() + fromLakes.size());
+
+        dropped.addAll(fromCoasts);
+        dropped.addAll(fromLakes);
+
+        return List.copyOf(dropped);
     }
 
     // The lakes, each smoothed through the SAME pipeline as the outer coasts: a lake shore is
@@ -426,15 +450,15 @@ public final class Coastlines {
     // its output stops lining up with its input exactly when a sector has such a lake. What a
     // drop leaves behind is still recorded: the stretches go on the shared dropped list, where
     // the diagnostic draws them beside whichever line replaced them.
-    private static List<Lake> buildLakes(
+    private static TracedLakes buildLakes(
             List<List<DiscUnionBoundary.CoastMark>> lakeRuns,
             DiscUnion union,
             Set<Integer> bridged,
             SmoothingRules smoothingRules,
-            CoastRules rules,
-            List<DiscUnionBoundary.CoastMark> dropped) {
+            CoastRules rules) {
 
         var lakes = new ArrayList<Lake>(lakeRuns.size());
+        var dropped = new ArrayList<DiscUnionBoundary.CoastMark>();
         var leastWater = rules.minLakeShare() * Math.PI * union.reach() * union.reach();
 
         for (var run : lakeRuns) {
@@ -451,22 +475,31 @@ public final class Coastlines {
                 continue;
             }
 
-            var one = smoothSilhouettes(List.of(run), union, bridged, smoothingRules);
+            var one = smoothOneCoast(run, union, bridged, smoothingRules);
 
             dropped.addAll(one.dropped());
 
-            if (one.coasts().isEmpty()) {
-                continue;
+            if (!one.outline().isEmpty()) {
+                lakes.add(new Lake(
+                    buildCoast(one.outline(), rules.rounding()), waterEdge));
             }
-
-            var shore = one.coasts().get(0);
-
-            lakes.add(new Lake(
-                shore,
-                PolygonSmoothing.roundCorners(collectPoints(shore), rules.rounding()),
-                waterEdge));
         }
-        return List.copyOf(lakes);
+        return new TracedLakes(List.copyOf(lakes), List.copyOf(dropped));
+    }
+
+    /**
+     * The lakes a trace found, and what their shores left out on the way.
+     *
+     * <p>The drops travel with them for the reason {@link SmoothedCoasts}' do: a lake that
+     * came out wrong looks the same on screen whether a rule dropped too much or the walk
+     * never offered the stretch, and those are opposite faults with opposite fixes.
+     *
+     * @param lakes   the lakes, in the order they were traced
+     * @param dropped every stretch their shores were not drawn through, over all of them
+     */
+    private record TracedLakes(
+        List<Lake> lakes,
+        List<DiscUnionBoundary.CoastMark> dropped) {
     }
 
     // The water's true edge: every mark of the lake's ring sampled along its own arc, joined
@@ -484,24 +517,35 @@ public final class Coastlines {
         return List.copyOf(edge);
     }
 
-    // The drawn line: each smoothed coast as plain points, rounded where it turns sharply.
-    //
-    // Apart from the smoothing above rather than folded into it, because the two work on
-    // different things. The smoothing decides which stretches the coast runs along and hands
-    // back vertices that each name the cell they sit on; this rounds the joins BETWEEN those
-    // stretches, and the points it adds sit on no cell at all - so a rounded ring can no
-    // longer answer what the vertices answer, and is kept beside them rather than replacing
-    // them.
-    private static List<List<double[]>> roundCoastRings(
-            List<List<CoastVertex>> coasts,
+    private static List<Coast> buildCoasts(
+            List<List<CoastVertex>> outlines,
             CornerRounding rounding) {
 
-        var rings = new ArrayList<List<double[]>>(coasts.size());
+        var coasts = new ArrayList<Coast>(outlines.size());
 
-        for (var coast : coasts) {
-            rings.add(PolygonSmoothing.roundCorners(collectPoints(coast), rounding));
+        for (var outline : outlines) {
+            coasts.add(buildCoast(outline, rounding));
         }
-        return List.copyOf(rings);
+        return List.copyOf(coasts);
+    }
+
+    // A smoothed outline paired with the line the map draws for it: the same points, rounded
+    // where they turn sharply.
+    //
+    // The rounding is apart from the smoothing rather than folded into it, because the two
+    // work on different things. The smoothing decides which stretches the coast runs along
+    // and hands back vertices that each name the cell they sit on; this rounds the joins
+    // BETWEEN those stretches, and the points it adds sit on no cell at all - so a rounded
+    // ring can no longer answer what the vertices answer, and is kept beside them rather than
+    // replacing them.
+    //
+    // The one place a Coast is made, so no caller can pair an outline with a ring rounded to
+    // different numbers, or with a ring off some other outline entirely.
+    private static Coast buildCoast(List<CoastVertex> outline, CornerRounding rounding) {
+
+        return new Coast(
+            outline,
+            PolygonSmoothing.roundCorners(collectPoints(outline), rounding));
     }
 
     /**
@@ -563,34 +607,79 @@ public final class Coastlines {
         var smoothed = new ArrayList<List<CoastVertex>>();
         var dropped = new ArrayList<DiscUnionBoundary.CoastMark>();
 
-        for (var coast : silhouettes) {
+        for (var silhouette : silhouettes) {
 
-            var kept = keepSmoothedMarks(coast, union, bridged, rules);
-            var outline = buildClearedOutline(coast, kept, union, rules);
+            var one = smoothOneCoast(silhouette, union, bridged, rules);
 
-            for (var index = 0; index < coast.size(); index++) {
+            dropped.addAll(one.dropped());
 
-                if (!kept.contains(index)) {
-                    dropped.add(coast.get(index));
-                }
-            }
-
-            if (outline.size() >= Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
-                smoothed.add(outline);
+            if (!one.outline().isEmpty()) {
+                smoothed.add(one.outline());
             }
         }
         return new SmoothedCoasts(smoothed, List.copyOf(dropped));
     }
 
     /**
-     * What the smoothing made, and what it left out on the way.
+     * The same smoothing over ONE run of coast marks, whichever kind of coast it came off.
+     *
+     * <p>Named on its own because two callers want it one run at a time: the silhouettes go
+     * through in a batch, and a lake pairs its finished shore with its own water's edge, so
+     * it has to keep hold of which run produced which. Called through the batch with a
+     * one-element list, a lake would have to read the answer back out of a list that may have
+     * dropped it.
+     *
+     * @param coast   one run of coast marks, in walk order
+     * @param union   the discs to draw against
+     * @param bridged the cells a laid wall attaches to, which are never skipped
+     * @param rules   how aggressively to smooth, and how finely
+     * @return the smoothed outline and the stretches left out of it. The outline is empty
+     *         where what came out was too small to enclose anything, which is what a run that
+     *         could not be built comes to
+     */
+    private static SmoothedCoast smoothOneCoast(
+            List<DiscUnionBoundary.CoastMark> coast,
+            DiscUnion union,
+            Set<Integer> bridged,
+            SmoothingRules rules) {
+
+        var kept = keepSmoothedMarks(coast, union, bridged, rules);
+        var outline = buildClearedOutline(coast, kept, union, rules);
+        var dropped = new ArrayList<DiscUnionBoundary.CoastMark>();
+
+        for (var index = 0; index < coast.size(); index++) {
+
+            if (!kept.contains(index)) {
+                dropped.add(coast.get(index));
+            }
+        }
+
+        return new SmoothedCoast(
+            outline.size() >= Limits.MIN_VERTICES_TO_ENCLOSE_AREA ? outline : List.of(),
+            List.copyOf(dropped));
+    }
+
+    /**
+     * What the smoothing made of one run of coast, and what it left out on the way.
+     *
+     * @param outline the smoothed line, or empty where it came out too small to be a shape
+     * @param dropped every stretch of this run the line was not drawn through
+     */
+    private record SmoothedCoast(
+        List<CoastVertex> outline,
+        List<DiscUnionBoundary.CoastMark> dropped) {
+    }
+
+    /**
+     * What the smoothing made of a batch of them, and what it left out over all of them.
      *
      * <p>The stretches dropped are kept rather than discarded because they are the only record
      * of a decision the smoothing otherwise makes silently. A coast that came out wrong looks
      * the same on screen whether a rule dropped too much or the walk never offered the stretch
      * at all, and those are opposite faults with opposite fixes.
      *
-     * @param coasts  one closed run of points per run of connected cells
+     * @param coasts  one closed run of points per run of connected cells, degenerate ones
+     *                left out - so this does NOT line up with what went in
      * @param dropped every stretch the coast was not drawn through, over all of them
      */
     private record SmoothedCoasts(
@@ -641,10 +730,13 @@ public final class Coastlines {
         var reaches = new ArrayList<CoastReach>();
 
         for (var coast : traced.coasts()) {
-            for (var index = 0; index < coast.size(); index++) {
 
-                var from = coast.get(index);
-                var to = coast.get((index + 1) % coast.size());
+            var vertices = coast.vertices();
+
+            for (var index = 0; index < vertices.size(); index++) {
+
+                var from = vertices.get(index);
+                var to = vertices.get((index + 1) % vertices.size());
 
                 if (from.circle() != to.circle()
                         && Points.computeDistance(from.point(), to.point())
@@ -658,19 +750,28 @@ public final class Coastlines {
     }
 
     /**
-     * The whole drawn coast as plain rings.
+     * Every outer coast as the plain ring the map draws.
      *
      * <p>What a shape is judged against, and what the map puts on screen, are the same line:
-     * void outside it is void nothing shut in, whatever any single reach's line says. Rounded
-     * at the trace rather than by each reader, since three readers rounding it three ways is
-     * three answers to one question - and named here rather than read off the record, so
-     * that "the line the map draws" is asked for by name.
+     * void outside it is void nothing shut in, whatever any single reach's line says. So the
+     * readers that only draw or test against the line ask for it here, without carrying the
+     * vertices they have no use for.
      *
      * @param traced the coast
      * @return one ring per stretch of coast, in the order they were traced
      */
     public static List<List<double[]>> collectCoastRings(TracedCoasts traced) {
-        return traced.drawnRings();
+        return traced.coasts().stream().map(Coast::drawnRing).toList();
+    }
+
+    /**
+     * Every lake shore as the plain ring the map draws, for the same readers as above.
+     *
+     * @param traced the coast
+     * @return one ring per lake, in the order they were traced
+     */
+    public static List<List<double[]>> collectLakeRings(TracedCoasts traced) {
+        return traced.lakes().stream().map(lake -> lake.shore().drawnRing()).toList();
     }
 
     /**

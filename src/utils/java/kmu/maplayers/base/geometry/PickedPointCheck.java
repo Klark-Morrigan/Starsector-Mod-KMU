@@ -394,10 +394,13 @@ public final class PickedPointCheck {
         CoastStep nearest = null;
 
         for (var coast : traced.coasts()) {
-            for (var index = 0; index < coast.size(); index++) {
 
-                var from = coast.get(index);
-                var to = coast.get((index + 1) % coast.size());
+            var vertices = coast.vertices();
+
+            for (var index = 0; index < vertices.size(); index++) {
+
+                var from = vertices.get(index);
+                var to = vertices.get((index + 1) % vertices.size());
                 var away = Segments.computeDistanceToPoint(
                     from.point(), to.point(), pick);
 

@@ -66,13 +66,13 @@ public final class ViewerSettingsPanel {
     private static final String COASTAL_FILL = "showCoastalFill";
     private static final String COASTAL_NAMES = "showCoastalNames";
 
-    private static final String CONTINENT_COASTS = "showContinentCoasts";
-    private static final String CONTINENT_FILL = "showContinentCoastalFill";
-    private static final String LAKE_COASTS = "showContinentLakeCoasts";
+    private static final String LAKE_COASTLINE = "showContinentLakeCoastline";
     private static final String LAKE_FILL = "showContinentLakeFill";
     private static final String LAKE_FRONTAGES = "showContinentLakeFrontages";
+    private static final String CONTINENT_COASTLINE = "showContinentCoastline";
+    private static final String CONTINENT_FILL = "showContinentCoastFill";
+    private static final String CONTINENT_FRONTAGES = "showContinentCoastFrontages";
     private static final String CONTINENT_BRIDGES = "showContinentBridges";
-    private static final String BRIDGE_FRONTAGES = "showBridgeFrontages";
 
     // What each section remembers its switch and its folded state under. Named for the
     // construction rather than taken from the heading, which is copy and gets reworded.
@@ -754,14 +754,14 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofRollUp(
                 0,
                 "Continent void",
-                LAKE_COASTS, LAKE_FILL, LAKE_FRONTAGES,
-                CONTINENT_COASTS, CONTINENT_FILL, BRIDGE_FRONTAGES,
+                LAKE_COASTLINE, LAKE_FILL, LAKE_FRONTAGES,
+                CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES,
                 CONTINENT_BRIDGES),
             ToggleTree.Row.ofRollUp(
-                1, "Interior coastlines", LAKE_COASTS, LAKE_FILL, LAKE_FRONTAGES),
+                1, "Interior coastlines", LAKE_COASTLINE, LAKE_FILL, LAKE_FRONTAGES),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
-                LAKE_COASTS, "Coastline", false,
-                on -> settings.showContinentLakeCoasts = on)),
+                LAKE_COASTLINE, "Coastline", false,
+                on -> settings.showContinentLakeCoastline = on)),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 LAKE_FILL, "Fill", false,
                 on -> settings.showContinentLakeFill = on)),
@@ -769,24 +769,24 @@ public final class ViewerSettingsPanel {
                 LAKE_FRONTAGES, "Bridgeable frontage", false,
                 on -> settings.showContinentLakeFrontages = on)),
             ToggleTree.Row.ofRollUp(
-                1, "Exterior coastlines", CONTINENT_COASTS, CONTINENT_FILL, BRIDGE_FRONTAGES),
+                1, "Exterior coastlines", CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
-                CONTINENT_COASTS, "Coastline", false,
-                on -> settings.showContinentCoasts = on)),
+                CONTINENT_COASTLINE, "Coastline", false,
+                on -> settings.showContinentCoastline = on)),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 CONTINENT_FILL, "Fill", false,
-                on -> settings.showContinentCoastalFill = on)),
+                on -> settings.showContinentCoastFill = on)),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
-                BRIDGE_FRONTAGES, "Bridgeable frontage", false,
-                on -> settings.showBridgeFrontages = on)),
+                CONTINENT_FRONTAGES, "Bridgeable frontage", false,
+                on -> settings.showContinentCoastFrontages = on)),
             ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
                 CONTINENT_BRIDGES, "Inlet bridges", false,
                 on -> settings.showContinentBridges = on)),
-            ToggleTree.Row.ofRollUp(1, "Coastline", LAKE_COASTS, CONTINENT_COASTS),
+            ToggleTree.Row.ofRollUp(1, "Coastline", LAKE_COASTLINE, CONTINENT_COASTLINE),
             ToggleTree.Row.ofRollUp(1, "Fill", LAKE_FILL, CONTINENT_FILL),
-            ToggleTree.Row.ofRollUp(1, "Bridgeable frontage", LAKE_FRONTAGES, BRIDGE_FRONTAGES),
+            ToggleTree.Row.ofRollUp(1, "Bridgeable frontage", LAKE_FRONTAGES, CONTINENT_FRONTAGES),
             ToggleTree.Row.ofRollUp(
-                1, "Walls", LAKE_COASTS, CONTINENT_COASTS, CONTINENT_BRIDGES));
+                1, "Walls", LAKE_COASTLINE, CONTINENT_COASTLINE, CONTINENT_BRIDGES));
     }
 
     // What the v3 coastlines are and how they are drawn, which is what everything below is
