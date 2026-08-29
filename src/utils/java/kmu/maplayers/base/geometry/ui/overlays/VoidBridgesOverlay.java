@@ -2,8 +2,8 @@ package kmu.maplayers.base.geometry.ui.overlays;
 
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.SectorFixture;
+import kmu.maplayers.base.geometry.VoidBridgeCache;
 import kmu.maplayers.base.geometry.VoidBridgePockets;
-import kmu.maplayers.base.geometry.VoidBridges;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
@@ -31,8 +31,15 @@ public final class VoidBridgesOverlay {
     private List<CellGap> bridges = List.of();
     private List<List<double[]>> captured = List.of();
 
-    public VoidBridgesOverlay(ViewerSettings settings) {
+    // The settled bridge search, shared with the continent construction that also asks it.
+    // Handed in rather than made here: two overlays asking one question of one sector have to
+    // be one search, and a cache each would be exactly the second answer it exists to prevent.
+    private final VoidBridgeCache sectorBridges;
+
+    public VoidBridgesOverlay(ViewerSettings settings, VoidBridgeCache sectorBridges) {
+
         this.settings = settings;
+        this.sectorBridges = sectorBridges;
     }
 
     /**
@@ -51,7 +58,7 @@ public final class VoidBridgesOverlay {
             && (settings.showInlandBridges || settings.showInlandFill);
 
         bridges = wanted
-            ? VoidBridges.findVoidBridges(
+            ? sectorBridges.findVoidBridges(
                 fixture.getSites(),
                 settings.parameters.cellRadius(),
                 settings.parameters.cellRadius() * settings.bridgeReachMultiple)
@@ -80,17 +87,12 @@ public final class VoidBridgesOverlay {
             return;
         }
 
-        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
-
-        for (var outline : captured) {
-
-            MapPainting.paintFilledShape(
-                g2,
-                MapPainting.buildPath(outline),
-                settings.inlandVoidColour,
-                settings.voidFillOpacity,
-                settings.inlandVoidEdge);
-        }
+        MapPainting.paintRingFills(
+            g2,
+            captured,
+            settings.inlandVoidColour,
+            settings.voidFillOpacity,
+            settings.inlandVoidEdge);
     }
 
     /**

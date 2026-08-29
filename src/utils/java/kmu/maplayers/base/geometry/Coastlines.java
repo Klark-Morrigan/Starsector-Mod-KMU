@@ -280,12 +280,14 @@ public final class Coastlines {
      * itself, and the cells that ring it - which is what a bridge across it is laid between.
      *
      * @param waterEdge the water, as the cells' own arcs around the hole, sampled
-     * @param ringCells the cells whose borders make that edge, in the order the walk met
-     *                  them, each once
+     * @param ringCells the cells whose borders make that edge. A set, because the only thing
+     *                  ever asked of it is whether a given cell is in it - a bridge belongs to
+     *                  a puddle when both its cells ring that puddle - and the walk order it
+     *                  would otherwise carry is order nothing reads
      */
     public record Puddle(
         List<double[]> waterEdge,
-        List<Integer> ringCells) {
+        Set<Integer> ringCells) {
     }
 
     /**
@@ -512,20 +514,17 @@ public final class Coastlines {
             List.copyOf(lakes), List.copyOf(puddles), List.copyOf(dropped));
     }
 
-    // The cells a run of marks passes over, first appearance order, each once. A mark per
-    // stretch rather than per cell, so a cell facing the water twice would otherwise arrive
-    // twice.
-    private static List<Integer> collectRingCells(List<DiscUnionBoundary.CoastMark> run) {
+    // The cells a run of marks passes over. A set rather than a run, because the walk offers
+    // a mark per STRETCH and a cell facing the water twice contributes two of them - so the
+    // duplicates have to go, and once they have there is no order left worth keeping.
+    private static Set<Integer> collectRingCells(List<DiscUnionBoundary.CoastMark> run) {
 
-        var cells = new ArrayList<Integer>();
+        var cells = new LinkedHashSet<Integer>();
 
         for (var mark : run) {
-
-            if (!cells.contains(mark.circle())) {
-                cells.add(mark.circle());
-            }
+            cells.add(mark.circle());
         }
-        return List.copyOf(cells);
+        return Set.copyOf(cells);
     }
 
     /**

@@ -7,6 +7,8 @@ import kmu.ui.ControlRows;
 import kmu.ui.SliderRows;
 import kmu.ui.ToggleTree;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 
@@ -752,15 +754,28 @@ public final class ViewerSettingsPanel {
     // switching one on is what makes it exist, not merely what shows it.
     private JPanel buildContinentVoidToggles() {
 
+        var rows = new ArrayList<ToggleTree.Row>();
+
+        rows.add(ToggleTree.Row.ofRollUp(
+            0,
+            "Continent void",
+            PUDDLE_BRIDGES, PUDDLE_FILL,
+            LAKE_COASTLINE, LAKE_FILL, LAKE_FRONTAGES,
+            CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES,
+            CONTINENT_BRIDGES));
+
+        rows.addAll(buildContinentBranchRows());
+        rows.addAll(buildContinentGlobalRows());
+
         return ToggleTree.buildToggleTree(
-            refreshes::refreshCoastlines,
-            ToggleTree.Row.ofRollUp(
-                0,
-                "Continent void",
-                PUDDLE_BRIDGES, PUDDLE_FILL,
-                LAKE_COASTLINE, LAKE_FILL, LAKE_FRONTAGES,
-                CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES,
-                CONTINENT_BRIDGES),
+            refreshes::refreshCoastlines, rows.toArray(ToggleTree.Row[]::new));
+    }
+
+    // The branches: one per thing the construction makes, each with the switches that thing
+    // has. In the order water gets smaller, then the spans laid over it.
+    private List<ToggleTree.Row> buildContinentBranchRows() {
+
+        return List.of(
             ToggleTree.Row.ofRollUp(
                 1, "Puddle pockets", PUDDLE_BRIDGES, PUDDLE_FILL),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
@@ -781,7 +796,9 @@ public final class ViewerSettingsPanel {
                 LAKE_FRONTAGES, "Bridgeable frontage", false,
                 on -> settings.showContinentLakeFrontages = on)),
             ToggleTree.Row.ofRollUp(
-                1, "Exterior coastlines", CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES),
+                1,
+                "Exterior coastlines",
+                CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 CONTINENT_COASTLINE, "Coastline", false,
                 on -> settings.showContinentCoastline = on)),
@@ -794,12 +811,22 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofRollUp(1, "Inlet bridges", CONTINENT_BRIDGES),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 CONTINENT_BRIDGES, "Bridges", false,
-                on -> settings.showContinentBridges = on)),
+                on -> settings.showContinentBridges = on)));
+    }
+
+    // The globals: one per KIND of thing, cutting across every branch above. No switches of
+    // their own - a roll-up reads as on, mixed or off over the keys it names and writes all
+    // of them, which is what keeps a nested switch and its global answer synced.
+    private List<ToggleTree.Row> buildContinentGlobalRows() {
+
+        return List.of(
             ToggleTree.Row.ofRollUp(
-                1, "Walls",
+                1,
+                "Walls",
                 LAKE_COASTLINE, CONTINENT_COASTLINE, CONTINENT_BRIDGES, PUDDLE_BRIDGES),
             ToggleTree.Row.ofRollUp(1, "Coastline", LAKE_COASTLINE, CONTINENT_COASTLINE),
-            ToggleTree.Row.ofRollUp(1, "Bridgeable frontage", LAKE_FRONTAGES, CONTINENT_FRONTAGES),
+            ToggleTree.Row.ofRollUp(
+                1, "Bridgeable frontage", LAKE_FRONTAGES, CONTINENT_FRONTAGES),
             ToggleTree.Row.ofRollUp(1, "Bridges", PUDDLE_BRIDGES, CONTINENT_BRIDGES),
             ToggleTree.Row.ofRollUp(1, "Fill", LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL));
     }

@@ -9,6 +9,7 @@ import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -89,14 +90,37 @@ public final class MapPainting {
     }
 
     /**
-     * The one way a set of pockets is filled here: each outline as a translucent body under an
-     * opaque edge, at fill weight.
+     * The one way closed void is filled here: each ring as a translucent body under an opaque
+     * edge, at fill weight.
      *
      * <p>Shared by every construction that shuts void in, because they exist to be compared. A
      * coast round the whole sector and a coast round each continent close off the same kind of
      * thing, and two of these written separately is how the two come to be drawn at different
      * weights - at which point the difference on screen is the drawing rather than the
      * construction, and looking at them side by side stops answering anything.
+     *
+     * @param g2    what to draw with
+     * @param rings the closed outlines to fill
+     * @param fill  what to fill them with
+     * @param alpha how solid the body is
+     * @param edge  what to outline them in
+     */
+    public static void paintRingFills(
+            Graphics2D g2,
+            List<List<double[]>> rings,
+            Color fill,
+            int alpha,
+            Color edge) {
+
+        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
+
+        for (var ring : rings) {
+            paintFilledShape(g2, buildPath(ring), fill, alpha, edge);
+        }
+    }
+
+    /**
+     * The same fill for pockets, which carry their outlines rather than being one.
      *
      * @param g2      what to draw with
      * @param pockets the pockets, each of which may carry more than one outline
@@ -111,14 +135,19 @@ public final class MapPainting {
             int alpha,
             Color edge) {
 
-        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
+        paintRingFills(g2, collectPocketOutlines(pockets), fill, alpha, edge);
+    }
+
+    // Every outline of every pocket, flattened - which is what filling them asks for, a
+    // pocket's grouping of its own outlines mattering to what made them rather than to paint.
+    private static List<List<double[]>> collectPocketOutlines(List<WalledPocket> pockets) {
+
+        var outlines = new ArrayList<List<double[]>>(pockets.size());
 
         for (var walled : pockets) {
-            for (var outline : walled.pocket().outlines()) {
-
-                paintFilledShape(g2, buildPath(outline), fill, alpha, edge);
-            }
+            outlines.addAll(walled.pocket().outlines());
         }
+        return outlines;
     }
 
     /**

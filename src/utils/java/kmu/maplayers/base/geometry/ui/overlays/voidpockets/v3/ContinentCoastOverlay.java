@@ -6,6 +6,7 @@ import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.ContinentBridges;
 import kmu.maplayers.base.geometry.PuddlePockets;
 import kmu.maplayers.base.geometry.SectorFixture;
+import kmu.maplayers.base.geometry.VoidBridgeCache;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.ui.overlays.voidpockets.CoastalPocketsOverlay;
@@ -19,8 +20,10 @@ import java.util.Map;
 
 /**
  * <b>The continent coast (v3), orchestrated.</b> Each touching-connected run of cells traced as
- * its own closed coast, the inlet bridges that survive those coasts, and the void each coast
- * shuts in.
+ * its own closed coast, and everything that reading of the sector then produces: the outer
+ * shores and the void behind them, the lake shores round the water the cells closed unaided,
+ * the puddles too small for a shore, and the spans laid across both the inlets and the
+ * puddles.
  *
  * <p>What makes this one the continent coast is that it traces with NO bridges laid, so a run
  * of cells a bridge would have joined comes back as several shapes rather than one, and under
@@ -33,6 +36,10 @@ import java.util.Map;
  * tissue and traces one line round everything it joins; the proposal is to give each continent
  * its own smoothed coast and lay spans across the inlets those coasts leave. Whether that is
  * worth building turns on where the spans actually fall, which is only legible on screen.
+ *
+ * <p>The puddle spans are the settled search asked about smaller water, reused rather than
+ * reinvented: water too small to deserve a shoreline is water in exactly the position the
+ * settled map already fills by bridging it.
  *
  * <p>Drawn as a line over everything for the same reason the settled coast is: it is a
  * proposal, and the only way to judge it is against the bridges and the coast it would
@@ -57,6 +64,11 @@ public final class ContinentCoastOverlay {
     // for the same reason.
     private List<CellGap> puddleBridges = List.of();
 
+    // The settled bridge search, shared with the construction that also asks it. Handed in
+    // rather than made here: two overlays asking one question of one sector have to be one
+    // search, and a cache each would be exactly the second answer it exists to prevent.
+    private final VoidBridgeCache sectorBridges;
+
     // The stretches of border a bridge may anchor on - exterior coasts, lake shores, or both,
     // as the switches asked - held beside the trace that decided them. One run per stretch
     // rather than one list per cell, because a cell facing the void twice is eligible in two
@@ -64,9 +76,10 @@ public final class ContinentCoastOverlay {
     // between them.
     private List<List<double[]>> frontages = List.of();
 
-    public ContinentCoastOverlay(ViewerSettings settings) {
+    public ContinentCoastOverlay(ViewerSettings settings, VoidBridgeCache sectorBridges) {
 
         this.settings = settings;
+        this.sectorBridges = sectorBridges;
         this.coast = new CoastalPocketsOverlay(settings);
     }
 
@@ -93,17 +106,7 @@ public final class ContinentCoastOverlay {
         //
         // Under the switch over the whole continent construction, which suppresses this
         // without touching any of its own - so what was showing comes back when it is lifted.
-        if (!settings.showContinentVoid
-                || (!settings.showContinentPuddleBridges
-                    && !settings.showContinentPuddleFill
-                    && !settings.showContinentLakeCoastline
-                    && !settings.showContinentLakeFill
-                    && !settings.showContinentLakeFrontages
-                    && !settings.showContinentCoastline
-                    && !settings.showContinentCoastFill
-                    && !settings.showContinentCoastFrontages
-                    && !settings.showContinentBridges)) {
-
+        if (!settings.isAnyContinentLayerShown()) {
             return;
         }
 
@@ -147,14 +150,17 @@ public final class ContinentCoastOverlay {
                 settings.resolveContinentBridgeRules());
         }
 
-        // At the settled bridges' own reach, because they ARE the settled bridges asked
-        // about smaller water - reusing that knob is what keeps the two sets one search.
+        // Claimed from the settled search rather than searched for again: these ARE the
+        // settled bridges asked about smaller water, at the settled reach, so the cache hands
+        // back whatever the inland overlay already found for this same sector.
         if (settings.showContinentPuddleBridges) {
 
-            puddleBridges = PuddlePockets.findPuddleBridges(
+            puddleBridges = PuddlePockets.claimPuddleBridges(
                 coast.getTrace(),
-                settings.parameters,
-                settings.bridgeReachMultiple);
+                sectorBridges.findVoidBridges(
+                    fixture.getSites(),
+                    settings.parameters.cellRadius(),
+                    settings.parameters.cellRadius() * settings.bridgeReachMultiple));
         }
     }
 
@@ -173,27 +179,21 @@ public final class ContinentCoastOverlay {
             return;
         }
 
+        // One colour for all three, read once. Every one of them is water this construction's
+        // coasts shut in - behind the outer shore, ringed by land, or too small for a shore at
+        // all - and three readings of the pair is how they come to be drawn as three kinds of
+        // thing when they are one.
+        var water = settings.continentCoastalVoidColour;
+        var edge = settings.continentCoastalVoidEdge;
+
         if (settings.showContinentCoastFill) {
-
-            coast.paintPocketFills(
-                g2, settings.continentCoastalVoidColour, settings.continentCoastalVoidEdge);
+            coast.paintPocketFills(g2, water, edge);
         }
-
-        // In the coastal fill's water colour, because it is the same water: void this
-        // construction's coasts shut in, differing only in being ringed by land all round
-        // rather than lying behind the outer shore.
         if (settings.showContinentLakeFill) {
-
-            coast.paintLakeFills(
-                g2, settings.continentCoastalVoidColour, settings.continentCoastalVoidEdge);
+            coast.paintLakeFills(g2, water, edge);
         }
-
-        // Same water again, one size down: what a puddle loses against a lake is its shore,
-        // never its colour.
         if (settings.showContinentPuddleFill) {
-
-            coast.paintPuddleFills(
-                g2, settings.continentCoastalVoidColour, settings.continentCoastalVoidEdge);
+            coast.paintPuddleFills(g2, water, edge);
         }
     }
 

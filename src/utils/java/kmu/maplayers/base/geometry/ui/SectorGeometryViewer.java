@@ -13,6 +13,7 @@ import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.UnboundedCells;
+import kmu.maplayers.base.geometry.VoidBridgeCache;
 import kmu.maplayers.base.geometry.output.SectorSvgWriter;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
@@ -190,9 +191,15 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
     // Opened with the window and emptied there, so a session's picks are its own.
     private final PickLog picks = PickLog.startPickLog();
-    private final VoidBridgesOverlay voidBridges = new VoidBridgesOverlay(settings);
+    // One settled bridge search for the whole window. Both constructions that ask for it get
+    // this, so the answer is found once per rebuild however many of them want it.
+    private final VoidBridgeCache sectorBridges = new VoidBridgeCache();
+
+    private final VoidBridgesOverlay voidBridges =
+        new VoidBridgesOverlay(settings, sectorBridges);
     private final SectorCoastOverlay sectorCoasts = new SectorCoastOverlay(settings);
-    private final ContinentCoastOverlay continentCoasts = new ContinentCoastOverlay(settings);
+    private final ContinentCoastOverlay continentCoasts =
+        new ContinentCoastOverlay(settings, sectorBridges);
     private final VoidSectionsOverlay voidSections = new VoidSectionsOverlay(settings);
 
     // The cells as named regions, so the pointer can be told which one it is over and a name

@@ -29,23 +29,20 @@ public final class PuddlePockets {
     }
 
     /**
-     * The bridges laid across every puddle of a trace.
+     * Which of the settled bridges are laid across a puddle.
      *
-     * <p>Found by the settled search over the whole sector and claimed by the puddles, rather
-     * than searched per puddle: the search's crossing rule holds over everything it keeps,
-     * and per-puddle runs would each keep spans a sector-wide pass refuses.
+     * <p>Claimed from a search already made rather than searched for here, and that is the
+     * whole of this pass. The settled search is sector-wide and its crossing rule holds over
+     * everything it keeps, so per-puddle runs would each keep spans a sector-wide pass
+     * refuses - and asking for the same search twice is the one answer paid for twice.
      *
-     * @param traced        the coasts whose puddles want bridging
-     * @param parameters    the knobs the cells are built under
-     * @param reachMultiple how far apart two cells may sit and still be bridged, in cell
-     *                      radii - the settled bridges' own knob, because these are the
-     *                      settled bridges asked about smaller water
-     * @return every span whose void is a puddle's water, narrowest first
+     * @param traced  the coasts whose puddles are claiming
+     * @param bridges the settled bridges, as the search reports them for the whole sector
+     * @return every span whose void is a puddle's water, in the order they were offered
      */
-    public static List<CellGap> findPuddleBridges(
+    public static List<CellGap> claimPuddleBridges(
             Coastlines.TracedCoasts traced,
-            SectorGeometryParameters parameters,
-            double reachMultiple) {
+            List<CellGap> bridges) {
 
         if (traced.puddles().isEmpty()) {
             return List.of();
@@ -53,10 +50,7 @@ public final class PuddlePockets {
 
         var laid = new ArrayList<CellGap>();
 
-        for (var bridge : VoidBridges.findVoidBridges(
-                traced.union().sites(),
-                parameters.cellRadius(),
-                parameters.cellRadius() * reachMultiple)) {
+        for (var bridge : bridges) {
 
             if (isAcrossAnyPuddle(bridge, traced.puddles())) {
                 laid.add(bridge);

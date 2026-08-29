@@ -332,6 +332,31 @@ public final class ViewerSettings {
         return VoidPockets.PocketShaping.AT_TRUE_EXTENT;
     }
 
+    /**
+     * Whether any part of the continent construction is on screen, and so whether tracing it
+     * buys anything.
+     *
+     * <p>Asked of the settings rather than worked out at the overlay that acts on it, because
+     * the answer is an enumeration of the continent switches and this is the file that
+     * declares them: one added to that list and forgotten here is a feature that silently
+     * never builds, and the two living together is what makes that hard to do.
+     *
+     * @return true where at least one of them is switched on
+     */
+    public boolean isAnyContinentLayerShown() {
+
+        return showContinentVoid
+            && (showContinentPuddleBridges
+                || showContinentPuddleFill
+                || showContinentLakeCoastline
+                || showContinentLakeFill
+                || showContinentLakeFrontages
+                || showContinentCoastline
+                || showContinentCoastFill
+                || showContinentCoastFrontages
+                || showContinentBridges);
+    }
+
     // How the coast is traced, for the same reason. More than one overlay walks the cells with
     // the coast's walls laid, and a wall set built twice from the same sliders is still two
     // answers - one of them can have a different wall crowded out of a mouth, and the two

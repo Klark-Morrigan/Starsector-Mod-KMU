@@ -5,11 +5,9 @@ import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.WalledPocket;
-import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.List;
@@ -180,17 +178,12 @@ public final class CoastalPocketsOverlay {
      */
     public void paintPuddleFills(Graphics2D g2, Color fill, Color edge) {
 
-        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
-
-        for (var puddle : traced.puddles()) {
-
-            MapPainting.paintFilledShape(
-                g2,
-                MapPainting.buildPath(puddle.waterEdge()),
-                fill,
-                settings.voidFillOpacity,
-                edge);
-        }
+        MapPainting.paintRingFills(
+            g2,
+            traced.puddles().stream().map(Coastlines.Puddle::waterEdge).toList(),
+            fill,
+            settings.voidFillOpacity,
+            edge);
     }
 
     /**
