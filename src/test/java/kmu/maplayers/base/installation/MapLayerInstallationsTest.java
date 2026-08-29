@@ -100,6 +100,33 @@ class MapLayerInstallationsTest {
             assertThat(MapLayerInstallations.resolveInstallationFor(otherSectorMock))
                 .isSameAs(otherInstallation);
         }
+
+        @Test
+        void standsDownForASectorWithNothingInstalled() {
+            // A load that finds the overlay switched off takes it back from a sector it was never
+            // installed on, so this is an ordinary path rather than a misuse - and the detached
+            // installation an uninstalled sector resolves to is shared, so releasing it here would
+            // reach every other sector-less caller.
+            var sectorMock = mock(SectorAPI.class);
+
+            MapLayerInstallations.uninstallMachineryFrom(sectorMock);
+
+            assertThat(MapLayerInstallations.resolveInstallationFor(sectorMock).isDisposed())
+                .isFalse();
+        }
+
+        @Test
+        void standsDownForNoSector() {
+            // The switch can be flipped with no game loaded, so the entry point reaches here
+            // holding null.
+            MapLayerInstallations.uninstallMachineryFrom(null);
+
+            var detachedInstallation =
+                MapLayerInstallations.resolveInstallationFor(mock(SectorAPI.class));
+
+            assertThat(detachedInstallation.isDisposed())
+                .isFalse();
+        }
     }
 
     @Nested
