@@ -127,6 +127,28 @@ class StandingBlockRoutingTest {
         }
 
         @Test
+        void routeRankedStandingsPlacesEveryRankedGroupInExactlyOneBlock() {
+            // The invariant the axes have to leave intact between them: the blocks partition the
+            // ranking. A group taken by two of them is listed twice under two headings that
+            // contradict each other, and one taken by none disappears from a box that ranked it -
+            // neither of which the block set being closed says anything about.
+            var routing = StandingBlockRouting.routeRankedStandings(
+                createRankedStandings(HOLDER_BLOC, ALLY_BLOC, RIVAL_BLOC, PLACEHOLDER_BLOC),
+                IS_POLITICAL_BLOC,
+                new BlocAffiliation(HolderGroupingFixture.buildAllianceOf(HOLDER_BLOC, ALLY_BLOC)));
+
+            assertThat(Arrays
+                    .stream(StandingBlock.values())
+                    .flatMap(block -> routing.selectStandingsIn(block).stream())
+                    .toList())
+                .containsExactlyInAnyOrder(
+                    createGroupStanding(HOLDER_BLOC),
+                    createGroupStanding(ALLY_BLOC),
+                    createGroupStanding(RIVAL_BLOC),
+                    createGroupStanding(PLACEHOLDER_BLOC));
+        }
+
+        @Test
         void routeRankedStandingsKeepsTheOrderTheGroupsRankedInInsideABlock() {
             // The groups arrive strongest first and a block reads in that order rather than in one
             // the partition invented, so the box lists them exactly as the fills rank them.

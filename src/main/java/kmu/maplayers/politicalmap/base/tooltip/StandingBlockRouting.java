@@ -86,34 +86,35 @@ public final class StandingBlockRouting {
         var sides = new ContestSides(resolveHolderBlocId(holder), affiliation);
         var standingsByBlock = new EnumMap<StandingBlock, List<GroupStanding>>(StandingBlock.class);
 
-        standingsByBlock.put(
-            StandingBlock.HOLDER,
-            holder);
+        // Every block is filled by walking the block set itself, and what each one takes is answered
+        // by a switch with no default arm. That is what makes the closed set worth being one: a block
+        // added to StandingBlock and not answered for here fails to compile, where a map filled by a
+        // put per block would simply have drawn a block that never filled. Adding a default arm - or
+        // reaching for one to silence the error - gives that guarantee away.
+        for (var block : StandingBlock.values()) {
 
-        standingsByBlock.put(
-            StandingBlock.ALLIED,
-            sides.selectSide(ContestSide.ALLIED, contestants, GroupStanding::blocId));
-
-        standingsByBlock.put(
-            StandingBlock.CONTESTED,
-            sides.selectSide(ContestSide.RIVAL, contestants, GroupStanding::blocId));
-
-        standingsByBlock.put(
-            StandingBlock.NON_POLITICAL,
-            List.copyOf(nonPolitical));
-
+            standingsByBlock.put(block, switch (block) {
+                case HOLDER -> holder;
+                case ALLIED -> sides.selectSide(ContestSide.ALLIED, contestants, GroupStanding::blocId);
+                case CONTESTED -> sides.selectSide(ContestSide.RIVAL, contestants, GroupStanding::blocId);
+                case NON_POLITICAL -> List.copyOf(nonPolitical);
+            });
+        }
         return new StandingBlockRouting(standingsByBlock);
     }
 
     /**
      * The groups one block lists, in the order they ranked.
      *
+     * <p>Every block is answered, the routing having filled them all; a block with nothing in it
+     * comes back empty, which is what drops its heading.
+     *
      * @param block the block being laid down
-     * @return its groups; empty where nothing routed there, which is what drops its heading
+     * @return its groups
      */
     public List<GroupStanding> selectStandingsIn(StandingBlock block) {
 
-        return standingsByBlock.getOrDefault(block, List.of());
+        return standingsByBlock.get(block);
     }
 
     /**
