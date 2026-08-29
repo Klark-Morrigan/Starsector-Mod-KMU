@@ -138,7 +138,9 @@ final class DominancePresenceReadoutIntegrationTest {
                     buildInputsFor(holding))
                 .planSystemRibbon(system);
 
-            var sections = new SystemDominationTooltip(new ClaimBreakdownReaderFake())
+            var sections = new SystemDominationTooltip(
+                    new ClaimBreakdownReaderFake(),
+                    HolderGrouping::identity)
                 .buildBodySections(sector, system);
 
             assertThat(band.segments())

@@ -108,6 +108,9 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED, "Contested by:");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL, "Non-territorial:");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED, "Dominated by:");
+        stringsByKey.put(
+            KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_DOMINANT,
+            "Allied with the dominant faction:");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_STABILITY, "Stability");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE, "Size");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS, "Patrols");

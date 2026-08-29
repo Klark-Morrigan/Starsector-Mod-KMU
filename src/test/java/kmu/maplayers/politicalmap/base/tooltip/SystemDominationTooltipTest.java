@@ -15,6 +15,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -56,8 +57,8 @@ import static org.mockito.Mockito.when;
  * asserted here is that it stays the default - a group made up of nothing reads as one flat line, and
  * one carrying members reads over them indented, exactly as the resolver handed it over.
  *
- * <p>The ranking, the status line, the headings and the two blocks belong to the shape every standings
- * box shares and are pinned with it ({@link SystemStandingsTooltipTest}); the decree heading the box
+ * <p>The ranking, the status line, the headings and the three blocks belong to the shape every
+ * standings box shares and are pinned with it ({@link SystemStandingsTooltipTest}); the decree heading the box
  * belongs to every one of the layer's boxes and is pinned with the heading itself
  * ({@link PoliticalMapCellTooltipTest}). What the counterpart goes on to say is
  * {@link ExpandedSystemDominationTooltipTest}'s.
@@ -100,7 +101,7 @@ final class SystemDominationTooltipTest {
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final SystemDominationTooltip tooltip =
-        new SystemDominationTooltip(claimBreakdownReaderFake);
+        new SystemDominationTooltip(claimBreakdownReaderFake, HolderGrouping::identity);
 
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);

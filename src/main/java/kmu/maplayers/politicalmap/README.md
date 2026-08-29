@@ -252,13 +252,26 @@ The domination box has a second, fuller version - `ExpandedSystemDominationToolt
 it offers the framework's detail mode - which lists every faction holding the system over the
 colonies its score was summed from and each colony over the factors behind its weight, down to a
 colony's patrol tiers. Both sit on `SystemStandingsTooltip`, which settles everything but that
-nesting - one pass read from the active view, the ranking, the status line, the two headings, the
-lines naming the blocs and the member factions inside them - because two boxes over one system have
-to be two amounts of detail about the same contest rather than two contests. What a box adds is one
+nesting - one pass read from the active view, the ranking, the status line, the three headings and
+which of them a group falls under, the lines naming the blocs and the member factions inside them -
+because two boxes over one system have to be two amounts of detail about the same contest rather
+than two contests. What a box adds is one
 answer: what to hang beneath a faction as the account of its score (`FactionAccountResolver`), asked
 for once per paint and applied by `StandingRowResolver` where the standing and the line named from
 it are both in hand, so no box can list one faction's colonies under another's name. Hanging nothing
 is the shared default, so the ordinary box overrides nothing at all.
+
+Below the leader the ranked groups split in two: `Allied with the dominant faction:` takes everyone
+standing in the leader's own alliance and `Contested by:` everyone else, routed through the
+`BlocAffiliation` the bands judge their contest by (`HolderGroupingSource`, bound by
+`SystemDominationTooltip` and sampled per hover), so a box and the band beneath it cannot disagree
+about who is a rival. The headline stays on the group the map painted the cell for rather than on
+its alliance, which is what keeps the box an explanation of the cell beneath it - what is taken from
+the alliances layer is the shape and never its grouping, which would merge allied runs, fills and
+rows. Only the leader's allies are lifted out; two rivals allied with each other stay contested,
+the block stating relations to the group that holds the system. It is naturally empty on the
+alliances layer, where members are already one bloc, and on an install with nothing grouping
+factions - dropped there by the same rule that drops any other block standing over no entries.
 
 What that pair offers the player is named there too, once for both: "score contributions", which the
 framework puts at the foot of whichever of the two is drawn, beside the key that switches between

@@ -224,15 +224,16 @@ final class DerelictReadoutIntegrationTest {
     // with the listing beneath it.
     private static List<String> readDominationLabels(SectorAPI sector) {
 
-        return readLabelTexts(new SystemDominationTooltip(new ClaimBreakdownReaderFake())
-            .buildBodySections(sector, buildOnlySystem(sector)));
+        return readLabelTexts(
+            new SystemDominationTooltip(new ClaimBreakdownReaderFake(), HolderGrouping::identity)
+                .buildBodySections(sector, buildOnlySystem(sector)));
     }
 
     // What the key at the foot of the dominance box offers over the sector's one system, or nothing
     // where it offers no key at all - read through the same box the labels above come from.
     private static Optional<String> resolveDominationDetailName(SectorAPI sector) {
 
-        return new SystemDominationTooltip(new ClaimBreakdownReaderFake())
+        return new SystemDominationTooltip(new ClaimBreakdownReaderFake(), HolderGrouping::identity)
             .resolveExpandedDetailName(sector, buildOnlySystem(sector));
     }
 
@@ -306,7 +307,9 @@ final class DerelictReadoutIntegrationTest {
     // reads, opened down to the colonies each faction holds it with.
     private static List<TooltipSection> readExpandedDominationSections(SectorAPI sector) {
 
-        return new ExpandedSystemDominationTooltip(new ClaimBreakdownReaderFake())
+        return new ExpandedSystemDominationTooltip(
+                new ClaimBreakdownReaderFake(),
+                HolderGrouping::identity)
             .buildBodySections(sector, buildOnlySystem(sector));
     }
 

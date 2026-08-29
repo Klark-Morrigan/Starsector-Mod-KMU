@@ -19,7 +19,8 @@ import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +28,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -58,9 +60,14 @@ public final class StandingsTooltipSeamsFake {
         Map.of("rebel_pact", "Rebel Pact"));
 
     // What a standing carries when a case is about how groups are laid out rather than about what any
-    // of them is made of. Never asserted on - a case that cares states its own standing.
-    private static final String ANY_BLOC_ID = "rebel_pact";
+    // of them is made of. Never asserted on - a case that cares states its own standing. The bloc is
+    // a stem a rank is appended to, so no two stood-up groups are the same bloc.
+    private static final String ANY_BLOC_ID = "bloc-";
     private static final int ANY_SCORE = 0;
+
+    // Where the standings a block is being named sit in the resolver's parameters, which is what the
+    // stand-in reads to answer that block with its own entries rather than with the whole box's.
+    private static final int STANDINGS_ARGUMENT = 1;
 
     private static MockedStatic<PoliticalMapViewRegistry> viewRegistryMock;
     private static MockedStatic<DominancePass> dominancePassMock;
@@ -138,24 +145,54 @@ public final class StandingsTooltipSeamsFake {
      * <p>The ranking behind them is stood up to match, one standing per entry, because a box forwards
      * the ranked standings into the resolution: a case stubbing the entries alone would leave the box
      * naming a different number of groups than it ranked, which is a fixture inventing a state the
-     * game cannot produce. What each of those standings carries is deliberately nothing worth reading,
-     * since a case about how groups are laid out is not about what any of them is made of.
+     * game cannot produce. Each standing is its own bloc and nothing else worth reading, since a case
+     * about how groups are laid out is not about what any of them is made of - and no two of them
+     * stand together under any alliance set, which is the ordinary shape.
      *
      * @param groupEntries the system's groups in ranked order, each as the entry naming it
      */
     public static void stubGroupEntries(CellTooltipEntry... groupEntries) {
 
+        var rankedStandings = new ArrayList<GroupStanding>(groupEntries.length);
+
+        for (var index = 0; index < groupEntries.length; index++) {
+            rankedStandings.add(new GroupStanding(ANY_BLOC_ID + index, ANY_SCORE, List.of()));
+        }
+        stubRankedGroups(rankedStandings, List.of(groupEntries));
+    }
+
+    /**
+     * The same, with the blocs the groups are spelled out - for a case turning on which bloc a group
+     * is, which is what an alliance set is read against.
+     *
+     * <p>The resolution answers per block rather than for the box as a whole: a box lists its groups
+     * under several headings, so a fixture answering every call with every entry would put every
+     * group under every heading and no case about routing could fail.
+     *
+     * @param rankedStandings the system's groups in ranked order, as the blocs they are
+     * @param groupEntries    the entry naming each of those groups, in the same order
+     */
+    public static void stubRankedGroups(
+            List<GroupStanding> rankedStandings,
+            List<CellTooltipEntry> groupEntries) {
+
+        var entriesByStanding = new HashMap<GroupStanding, CellTooltipEntry>();
+
+        for (var index = 0; index < rankedStandings.size(); index++) {
+            entriesByStanding.put(rankedStandings.get(index), groupEntries.get(index));
+        }
+
         standingsMock
             .when(() -> SystemStandings.rankByDominationScore(
                 any(StarSystemAPI.class),
                 any(DominancePass.class)))
-            .thenReturn(Collections.nCopies(
-                groupEntries.length,
-                new GroupStanding(ANY_BLOC_ID, ANY_SCORE, List.of())));
+            .thenReturn(List.copyOf(rankedStandings));
 
         rowResolverMock
             .when(() -> StandingRowResolver.resolveRows(any(), any(), any(), any()))
-            .thenReturn(List.of(groupEntries));
+            .thenAnswer(invocation -> selectEntriesFor(
+                invocation.getArgument(STANDINGS_ARGUMENT),
+                entriesByStanding));
     }
 
     /**
@@ -182,10 +219,17 @@ public final class StandingsTooltipSeamsFake {
             () -> DominancePass.readFromLunaSettings(any(), same(VIEW_GROUPING)));
     }
 
-    /** Asserts the ranked groups were named under that same grouping. */
+    /**
+     * Asserts the ranked groups were named under that same grouping.
+     *
+     * <p>Matched over the calls rather than counted, a box naming its groups one block at a time:
+     * every block goes through the one call site, so what is worth pinning is the grouping that
+     * reached it and not how many blocks the box happens to offer.
+     */
     public static void verifyGroupsResolvedUnderTheViewsGrouping(SectorAPI sector) {
         rowResolverMock.verify(
-            () -> StandingRowResolver.resolveRows(same(sector), any(), same(VIEW_GROUPING), any()));
+            () -> StandingRowResolver.resolveRows(same(sector), any(), same(VIEW_GROUPING), any()),
+            atLeastOnce());
     }
 
     /**
@@ -198,7 +242,8 @@ public final class StandingsTooltipSeamsFake {
             FactionAccountResolver accountResolver) {
 
         rowResolverMock.verify(
-            () -> StandingRowResolver.resolveRows(any(), any(), any(), same(accountResolver)));
+            () -> StandingRowResolver.resolveRows(any(), any(), any(), same(accountResolver)),
+            atLeastOnce());
     }
 
     /**
@@ -221,6 +266,18 @@ public final class StandingsTooltipSeamsFake {
                 any(),
                 argThat(knowledge -> knowledge != null
                     && colonyVisibility.equals(knowledge.rule()))));
+    }
+
+    // The entries naming exactly the groups a block was handed, in the order it handed them over -
+    // which is what the real resolver answers with, one entry per group and no reordering of its own.
+    private static List<CellTooltipEntry> selectEntriesFor(
+            List<GroupStanding> blockStandings,
+            Map<GroupStanding, CellTooltipEntry> entriesByStanding) {
+
+        return blockStandings
+            .stream()
+            .map(entriesByStanding::get)
+            .toList();
     }
 
     // A system with nothing to say about itself beyond its standings, which is the ordinary case and

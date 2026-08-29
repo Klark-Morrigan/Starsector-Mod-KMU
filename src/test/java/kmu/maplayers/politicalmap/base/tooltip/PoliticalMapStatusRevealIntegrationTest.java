@@ -76,7 +76,7 @@ final class PoliticalMapStatusRevealIntegrationTest {
     private final SystemClaimTooltip claimTooltip =
         new SystemClaimTooltip(claimBreakdownReaderFake, HolderGrouping::identity);
     private final SystemDominationTooltip dominationTooltip =
-        new SystemDominationTooltip(claimBreakdownReaderFake);
+        new SystemDominationTooltip(claimBreakdownReaderFake, HolderGrouping::identity);
 
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
 

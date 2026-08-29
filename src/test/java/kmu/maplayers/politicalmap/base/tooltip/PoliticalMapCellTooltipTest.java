@@ -206,11 +206,17 @@ final class PoliticalMapCellTooltipTest {
                 ParameterDeclarations parameters,
                 ExtensionContext context) {
 
+            // The alliance seam is stood in as the identity grouping: these cases are about the
+            // heading over the box, which no grouping reaches.
             return Stream.of(
-                describeBox("the faction and alliance views' box", SystemDominationTooltip::new),
+                describeBox(
+                    "the faction and alliance views' box",
+                    reader -> new SystemDominationTooltip(reader, HolderGrouping::identity)),
                 describeBox(
                     "the faction and alliance views' expanded counterpart",
-                    ExpandedSystemDominationTooltip::new));
+                    reader -> new ExpandedSystemDominationTooltip(
+                        reader,
+                        HolderGrouping::identity)));
         }
     }
 

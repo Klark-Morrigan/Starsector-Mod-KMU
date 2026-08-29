@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
+import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 
 import java.util.List;
 
@@ -16,8 +17,9 @@ import java.util.List;
  * box answers who holds the system; this one answers why, which is a different question and a far
  * longer answer - so it is a box the player asks for rather than one they are always given.
  *
- * <p>It is the same contest either way. The ranking, the status line, the decree, the two headings, the
- * lines naming the blocs and the member factions inside them are all the shared shape's
+ * <p>It is the same contest either way. The ranking, the status line, the decree, the three headings
+ * and which of them a group falls under, the lines naming the blocs and the member factions inside
+ * them are all the shared shape's
  * ({@link SystemStandingsTooltip}), read from the one pass, so the two boxes cannot differ on anything
  * but how far into a group they go. What differs is only that: every faction listed is opened up here
  * into the colonies it holds the system with. The colonies hang under the faction flying them rather
@@ -47,8 +49,11 @@ import java.util.List;
  */
 public final class ExpandedSystemDominationTooltip extends SystemStandingsTooltip {
 
-    ExpandedSystemDominationTooltip(ClaimBreakdownReader claimBreakdownReader) {
-        super(claimBreakdownReader);
+    ExpandedSystemDominationTooltip(
+            ClaimBreakdownReader claimBreakdownReader,
+            HolderGroupingSource holderGroupingSource) {
+
+        super(claimBreakdownReader, holderGroupingSource);
     }
 
     @Override

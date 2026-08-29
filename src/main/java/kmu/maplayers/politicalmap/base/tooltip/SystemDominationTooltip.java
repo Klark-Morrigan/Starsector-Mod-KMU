@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
+import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
+import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import java.util.Optional;
 
@@ -27,23 +29,40 @@ import java.util.Optional;
  * player has asked for it, so the ordinary hover stays a glance and the detail is there for the asking
  * rather than always on screen.
  *
- * <p>Stateless past the reader it is built around - the view, the live economy, and the settings are
- * read afresh each paint - so one shared instance serves both views.
+ * <p>Stateless past the seams it is built around - the view, the live economy, the alliance set and
+ * the settings are read afresh each paint - so one shared instance serves both views.
  */
 public final class SystemDominationTooltip extends SystemStandingsTooltip {
 
-    /** The one shared instance; stateless, so both views inject it. */
-    public static final SystemDominationTooltip INSTANCE =
-        new SystemDominationTooltip(VANILLA_CLAIM_BREAKDOWN_READER);
+    /**
+     * The one shared instance; stateless, so both views inject it.
+     *
+     * <p>This is where the alliance set behind the allied block is bound, and the only place either
+     * domination box names where alliances come from. The gate answers with the identity grouping
+     * wherever the mod supplying them is absent, so the box needs no branch of its own and reads as
+     * its dominating and contested blocks alone on such an install.
+     *
+     * <p>Deliberately not the active view's own grouping, which is what the map paints under: the
+     * faction view pins that to identity so fills, runs and rows stay per faction, and reusing it
+     * would leave the block permanently empty on the one layer that draws it.
+     */
+    public static final SystemDominationTooltip INSTANCE = new SystemDominationTooltip(
+        VANILLA_CLAIM_BREAKDOWN_READER,
+        NexerelinAlliances::resolveGrouping);
 
     // The counterpart drawn in this box's place while the player has asked for detail. Built here on
-    // this box's own claim read rather than reached for as a shared instance, so the pair can never
-    // answer a decree from two different readers - which is the whole point of the layer binding one.
+    // this box's own claim read and alliance seam rather than reached for as a shared instance, so
+    // the pair can never answer a decree - or place an ally - from two different sources.
     private final ExpandedSystemDominationTooltip expandedVariant;
 
-    SystemDominationTooltip(ClaimBreakdownReader claimBreakdownReader) {
-        super(claimBreakdownReader);
-        this.expandedVariant = new ExpandedSystemDominationTooltip(claimBreakdownReader);
+    SystemDominationTooltip(
+            ClaimBreakdownReader claimBreakdownReader,
+            HolderGroupingSource holderGroupingSource) {
+
+        super(claimBreakdownReader, holderGroupingSource);
+        this.expandedVariant = new ExpandedSystemDominationTooltip(
+            claimBreakdownReader,
+            holderGroupingSource);
     }
 
     @Override

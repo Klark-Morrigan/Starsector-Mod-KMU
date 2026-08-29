@@ -13,6 +13,7 @@ import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.maplayers.base.visibility.ColonySightings;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PresenceOnlyFactionStanding;
@@ -120,7 +121,7 @@ final class ExpandedSystemDominationTooltipTest {
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final ExpandedSystemDominationTooltip tooltip =
-        new ExpandedSystemDominationTooltip(claimBreakdownReaderFake);
+        new ExpandedSystemDominationTooltip(claimBreakdownReaderFake, HolderGrouping::identity);
 
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);

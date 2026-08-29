@@ -19,7 +19,9 @@ import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
+import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
@@ -41,6 +43,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.VIEW_GROUPING;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,7 +53,7 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the shape every box built on a hovered system's standings takes, whichever of them drew it:
  * ranked under the view that painted the fills, what the system is stated above the contest, and the
- * groups split between whoever dominates it and whoever else is present.
+ * groups split between whoever dominates it, whoever stands with them, and whoever else is present.
  *
  * <p>Asserted over the shape rather than over either box, because the point is not that the glance and
  * the detail agree today but that agreeing is not either box's decision to make: a case here that
@@ -73,12 +76,27 @@ final class SystemStandingsTooltipTest {
     private static final CellTooltipMark RIVAL_MARK =
         CellTooltipMark.resolveMarkAsAuthored(RIVAL_CREST);
 
+    private static final String ALLY_CREST = "graphics/tritachyon_crest.png";
+    private static final CellTooltipMark ALLY_MARK =
+        CellTooltipMark.resolveMarkAsAuthored(ALLY_CREST);
+
+    // The blocs the three groups are, which is all a case about routing needs of them: an alliance
+    // set is read against bloc ids alone.
+    private static final String LEADER_BLOC = "hegemony";
+    private static final String ALLY_BLOC = "tritachyon";
+    private static final String RIVAL_BLOC = "persean_league";
+
     // The lines a box with no status and no decree lays out, in draw order.
     private static final int DOMINATED_HEADING_ROW = 0;
 
     // The scores reach a box already worded by the resolver, so they stand in as the text they draw as.
     private static final String BLOC_SCORE = "1,200";
+    private static final String ALLY_SCORE = "800";
     private static final String RIVAL_SCORE = "400";
+
+    // What a stood-up group is weighed at. Forwarded to the (stood-in) naming, so it never reaches
+    // an assertion - which block a group falls in is read off its bloc alone.
+    private static final int ANY_SCORE = 0;
 
     // The weights are forwarded to the (stood-in) ranking, so they never reach an assertion.
     private static final DominanceRules ANY_RULES = new DominanceRules(false,
@@ -92,8 +110,14 @@ final class SystemStandingsTooltipTest {
         DominancePass.over(null, ANY_RULES, BASE_FOG, VIEW_GROUPING);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
+
+    // The alliance set the box routes its blocks against, restated by the cases about an ally and left
+    // ungrouped for the rest - which is both the state an install with nothing grouping factions is
+    // permanently in and the state every case predating the allied block was written under.
+    private HolderGrouping allianceSet = HolderGrouping.identity();
+
     private final SystemStandingsTooltip tooltip =
-        new ListingStandingsTooltip(claimBreakdownReaderFake);
+        new ListingStandingsTooltip(claimBreakdownReaderFake, () -> allianceSet);
 
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
@@ -229,6 +253,97 @@ final class SystemStandingsTooltipTest {
                     "Dominated by:",
                     "Rebel Pact",
                     "Contested by:",
+                    "Persean League");
+        }
+
+        @Test
+        void buildBodySectionsListsAGroupStandingWithTheLeaderUnderItsOwnHeading() {
+            // The block the whole axis exists for: an ally holding markets beside the leader is not
+            // fighting it for the system, and filed under the contested heading the box would say
+            // two allies were at war over a system they jointly hold.
+            allianceSet = buildAllianceOf(LEADER_BLOC, ALLY_BLOC);
+
+            stubThreeGroupsRanked();
+
+            assertThat(readBodyLabelTexts())
+                .containsExactly(
+                    "Dominated by:",
+                    "Rebel Pact",
+                    "Allied with the dominant faction:",
+                    "Tri-Tachyon",
+                    "Contested by:",
+                    "Persean League");
+        }
+
+        @Test
+        void buildBodySectionsKeepsAGroupAlliedWithARivalUnderTheContestedHeading() {
+            // Only the leader's own allies are lifted out. Two rivals standing together and not with
+            // the leader are both fighting it for the system, which is the relation the box states.
+            allianceSet = buildAllianceOf(RIVAL_BLOC, ALLY_BLOC);
+
+            stubThreeGroupsRanked();
+
+            assertThat(readBodyLabelTexts())
+                .containsExactly(
+                    "Dominated by:",
+                    "Rebel Pact",
+                    "Contested by:",
+                    "Tri-Tachyon",
+                    "Persean League");
+        }
+
+        @Test
+        void buildBodySectionsOmitsTheAlliedHeadingWithNothingGroupingFactions() {
+            // The install without the mod that supplies alliances, where no two groups ever stand
+            // together: every group below the leader contests the system exactly as it did before
+            // the block existed, and the heading is dropped rather than left standing over nothing.
+            stubThreeGroupsRanked();
+
+            assertThat(readBodyLabelTexts())
+                .containsExactly(
+                    "Dominated by:",
+                    "Rebel Pact",
+                    "Contested by:",
+                    "Tri-Tachyon",
+                    "Persean League");
+        }
+
+        @Test
+        void buildBodySectionsListsTheLeaderOnceWhereItStandsInAnAlliance() {
+            // A leader in an alliance is not its own ally: routed on the bloc alone it would be
+            // lifted into the allied block as well and read as two holders of one system.
+            allianceSet = buildAllianceOf(LEADER_BLOC, ALLY_BLOC);
+
+            StandingsTooltipSeamsFake.stubRankedGroups(
+                List.of(createGroupStanding(LEADER_BLOC)),
+                List.of(createLeadingGroupEntry()));
+
+            assertThat(readBodyLabelTexts())
+                .containsExactly("Dominated by:", "Rebel Pact");
+        }
+
+        @Test
+        void buildBodySectionsRoutesEachHoverAgainstTheAllianceSetAsItStandsThen() {
+            // Why the box holds the means of sampling a grouping rather than a grouping: it lives for
+            // the whole session while alliances form and dissolve inside it, so one taken at
+            // construction would go on filing a group under the alliance it left an hour ago. Posed
+            // as the alliance dissolving between two hovers of the one system, which is the moment a
+            // held grouping would answer for a sector that had moved on.
+            allianceSet = buildAllianceOf(LEADER_BLOC, ALLY_BLOC);
+
+            stubThreeGroupsRanked();
+
+            assertThat(readBodyLabelTexts())
+                .contains("Allied with the dominant faction:");
+
+            allianceSet = HolderGrouping.identity();
+
+            assertThat(readBodyLabelTexts())
+                .containsExactly(
+                    "Dominated by:",
+                    "Rebel Pact",
+                    "Contested by:",
+                    "Tri-Tachyon",
                     "Persean League");
         }
 
@@ -373,6 +488,33 @@ final class SystemStandingsTooltipTest {
             CellTooltipEntryLine.createLine(RIVAL_MARK, "Persean League", RIVAL_SCORE));
     }
 
+    // A third group between the two, named and scored apart from both, so a case about the block an
+    // alliance routes a group into cannot pass by reading either of the other lines.
+    private static CellTooltipEntry createAlliedGroupEntry() {
+        return CellTooltipEntry.createEntry(
+            CellTooltipEntryLine.createLine(ALLY_MARK, "Tri-Tachyon", ALLY_SCORE));
+    }
+
+    // One ranked group as the box places it: the bloc it is. What it is weighed at and made up of are
+    // the naming's business, which is stood in for, so which block it falls in turns on the bloc alone.
+    private static GroupStanding createGroupStanding(String blocId) {
+        return new GroupStanding(blocId, ANY_SCORE, List.of());
+    }
+
+    // The three groups every routing case is posed over, ranked leader first: an alliance set states
+    // which of them stand together, so the ranking itself is the same in all of them.
+    private static void stubThreeGroupsRanked() {
+        StandingsTooltipSeamsFake.stubRankedGroups(
+            List.of(
+                createGroupStanding(LEADER_BLOC),
+                createGroupStanding(ALLY_BLOC),
+                createGroupStanding(RIVAL_BLOC)),
+            List.of(
+                createLeadingGroupEntry(),
+                createAlliedGroupEntry(),
+                createRivalGroupEntry()));
+    }
+
     private static List<String> readLabelTexts(List<TooltipRow> rows) {
         return rows
             .stream()
@@ -396,8 +538,11 @@ final class SystemStandingsTooltipTest {
      */
     private static final class ListingStandingsTooltip extends SystemStandingsTooltip {
 
-        private ListingStandingsTooltip(ClaimBreakdownReader claimBreakdownReader) {
-            super(claimBreakdownReader);
+        private ListingStandingsTooltip(
+                ClaimBreakdownReader claimBreakdownReader,
+                HolderGroupingSource holderGroupingSource) {
+
+            super(claimBreakdownReader, holderGroupingSource);
         }
     }
 
@@ -415,7 +560,7 @@ final class SystemStandingsTooltipTest {
                 CellTooltipEntryLine.createLine(null, standing.factionId(), "1")));
 
         private AccountingStandingsTooltip(ClaimBreakdownReader claimBreakdownReader) {
-            super(claimBreakdownReader);
+            super(claimBreakdownReader, HolderGrouping::identity);
         }
 
         @Override
