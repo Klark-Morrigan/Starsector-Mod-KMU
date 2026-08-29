@@ -65,9 +65,6 @@ public record RibbonPlan(
     // The cell draws no band: nothing is present in it, so there is no footprint to report.
     public static final RibbonPlan NONE = new RibbonPlan(List.of());
 
-    // A cell no bloc holds anything in, which has no footprint to report.
-    private static final int NO_BLOCS = 0;
-
     public RibbonPlan {
         segments = List.copyOf(segments);
     }
@@ -94,14 +91,21 @@ public record RibbonPlan(
             BlocAffiliation affiliation,
             RibbonPlanRules rules) {
 
-        if (isCellContested(paintingBlocId, rankedPresences, affiliation)) {
+        var firstPresentBlocId = findFirstPresentBlocId(rankedPresences);
+
+        // Who the cell is judged against: the bloc its fill names, or - where no fill covers it -
+        // whichever bloc is there first, since with nobody painted the question is not who the
+        // rivals are but whether the blocs present fall into more than one side at all.
+        var judgedAgainstBlocId = paintingBlocId.or(() -> firstPresentBlocId);
+
+        if (isCellContested(judgedAgainstBlocId, rankedPresences, affiliation)) {
             return layBlocRuns(rankedPresences, rules.lengths());
         }
 
         // Nothing the fill does not already say is here, so what is left to report is the size of
         // the footprint - and there has to be one, which a decreed system its decreed bloc holds
         // nothing in has not.
-        if (countPresentBlocs(rankedPresences) == NO_BLOCS) {
+        if (firstPresentBlocId.isEmpty()) {
             return NONE;
         }
         return layBlocRuns(rankedPresences, rules.resolveUncontestedLengths());
@@ -158,35 +162,45 @@ public record RibbonPlan(
         return new RibbonPlan(segments);
     }
 
-    // Whether the band would say anything the cell's own fill does not, which is what decides
-    // the lengths its runs are laid at.
+    // Whether the band would say anything the cell's own fill does not, which is what decides the
+    // lengths its runs are laid at: somebody holding something in the cell stands apart from the
+    // bloc it is judged against.
     //
-    // Branched on whether there is a painter at all rather than letting an absent one stand in as
-    // an id no bloc carries: that sentinel leaves every bloc a rival, so a lone haven no fill
-    // covers would band at contested length as though it were fought over.
+    // One reading serves both kinds of cell because an affiliation is a fold. Blocs that all stand
+    // with one bloc all stand with each other, so asking every bloc about the one it is judged
+    // against settles whether there is a second side, and on a painted cell that same question is
+    // already the one worth asking: is anybody here a rival of the bloc named by the fill.
+    //
+    // Empty only where the cell has neither a painter nor a bloc in it, which is nothing to report
+    // rather than a contest. A cell no fill covers is anchored on a bloc genuinely present rather
+    // than on an id no bloc carries: that sentinel leaves every bloc a rival, so a lone haven no
+    // fill covers would band at contested length as though it were fought over.
     private static boolean isCellContested(
-            Optional<String> paintingBlocId,
+            Optional<String> judgedAgainstBlocId,
             List<BlocPresence> rankedPresences,
             BlocAffiliation affiliation) {
 
-        return paintingBlocId
+        return judgedAgainstBlocId
             .map(blocId -> hasRivalPresence(blocId, rankedPresences, affiliation))
-            .orElseGet(() -> hasOpposedSides(rankedPresences, affiliation));
+            .orElse(false);
     }
 
-    // Whether any bloc holding something in the cell is neither the painter nor standing with it.
-    // An ally is not a rival: the two of them hold the system between them, and the fill naming one
-    // of them says nothing the other contradicts.
+    // Whether any bloc holding something in the cell is neither the judged bloc itself nor standing
+    // with it. An ally is not a rival: the two of them hold the system between them, and a fill
+    // naming one of them says nothing the other contradicts.
+    //
+    // The judged bloc drops out on its own id, which is what lets an anchor drawn from the cell's
+    // own presences ask about the rest without being counted as a side against itself.
     private static boolean hasRivalPresence(
-            String paintingBlocId,
+            String judgedAgainstBlocId,
             List<BlocPresence> rankedPresences,
             BlocAffiliation affiliation) {
 
         for (var presence : rankedPresences) {
 
             if (presence.hasMarkets()
-                    && !presence.blocId().equals(paintingBlocId)
-                    && !affiliation.areBlocsAllied(paintingBlocId, presence.blocId())) {
+                    && !presence.blocId().equals(judgedAgainstBlocId)
+                    && !affiliation.areBlocsAllied(judgedAgainstBlocId, presence.blocId())) {
 
                 return true;
             }
@@ -194,53 +208,22 @@ public record RibbonPlan(
         return false;
     }
 
-    // Whether the blocs present in a cell no fill covers fall into two or more sides, which is what
-    // makes such a cell a contest: with nobody painted there is no rival to be found, only the
-    // question of how many camps are in the system.
+    // The first bloc of the ranking that holds something in the cell, which answers two questions
+    // at once: whether there is any footprint to report at all, and which bloc a cell no fill
+    // covers judges the rest against.
     //
-    // Every bloc is weighed against the first one present rather than against every other, an
-    // affiliation being a fold: blocs that all stand with one bloc all stand with each other, so a
-    // second side shows itself the moment one of them does not.
-    private static boolean hasOpposedSides(
-            List<BlocPresence> rankedPresences,
-            BlocAffiliation affiliation) {
-
-        String firstBlocId = null;
-
-        for (var presence : rankedPresences) {
-
-            if (!presence.hasMarkets()) {
-
-                continue;
-            }
-            if (firstBlocId == null) {
-
-                firstBlocId = presence.blocId();
-                continue;
-            }
-            if (!firstBlocId.equals(presence.blocId())
-                    && !affiliation.areBlocsAllied(firstBlocId, presence.blocId())) {
-
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // How many blocs hold something in the cell, which the check for a footprint at all is read
-    // off. Counted over the blocs that hold something rather than over the list, a bloc ranked and
-    // holding nothing being one a mechanic listed rather than one the cell has in it - a decreed
-    // system its decreed bloc holds nothing in being the case that produces one.
-    private static int countPresentBlocs(List<BlocPresence> rankedPresences) {
-
-        var presentBlocs = 0;
+    // Read over the blocs that hold something rather than over the list, a bloc ranked and holding
+    // nothing being one a mechanic listed rather than one the cell has in it - a decreed system its
+    // decreed bloc holds nothing in being the case that produces one. Anchored on such a bloc, a
+    // cell would be judged against somebody who is not in it.
+    private static Optional<String> findFirstPresentBlocId(List<BlocPresence> rankedPresences) {
 
         for (var presence : rankedPresences) {
             if (presence.hasMarkets()) {
-                presentBlocs++;
+                return Optional.of(presence.blocId());
             }
         }
-        return presentBlocs;
+        return Optional.empty();
     }
 
     // Lays down one bloc's run: a bright segment per market, parted by a dark interjection.

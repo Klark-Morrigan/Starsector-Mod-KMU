@@ -40,10 +40,11 @@ What follows here is that this layer's fill *is* the claim, so over those system
 all, and the band is the only readout there is.
 
 `ClaimedSystemRibbonPlanner` therefore plans such a system with **no painter** rather than refusing
-it. That absence is a case of its own, not an id no bloc happens to carry: with a painter, one rival
-makes a contest; with none, there is nobody to be a rival of, so it takes two blocs. Which cells
-reach the planner at all is [`base.render.ribbon`](../../base/render/ribbon/README.md)'s gate, and it
-reads the pass's inhabitation scan for the same reason.
+it. That absence is a case of its own, not an id no bloc happens to carry, and what the shared rule
+makes of it - there being nobody to be a rival of - is
+[`base.ribbon`](../../base/ribbon/README.md)'s to state. Which cells reach the planner at all is
+[`base.render.ribbon`](../../base/render/ribbon/README.md)'s gate, and it reads the pass's
+inhabitation scan for the same reason.
 
 A system nobody claims *and* nobody lives in counts nought for every bloc, so it draws nothing under
 either arm - the widening reaches settled space and stops there.

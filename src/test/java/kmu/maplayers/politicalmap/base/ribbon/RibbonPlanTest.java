@@ -22,6 +22,7 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.NO_PAINT
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAllianceOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,7 +45,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Both readings are then stated a third time over an alliance set, since who counts as a rival
  * is the one thing an affiliation moves: a bloc standing with the painter, and a pair standing
  * together on a cell no fill covers, fall to the shortened runs, and an outsider beside either of
- * them puts the cell back on the authored ones. Every other case here is posed under
+ * them puts the cell back on the authored ones. A cell no fill covers is stated once more with a
+ * bloc listed ahead of the rest holding nothing, since who such a cell is judged against is only
+ * visible where standing together changes the answer. Every other case here is posed under
  * {@link BlocAffiliation#NONE}, which is both the install with nothing grouping factions and the
  * statement that nothing about a band changed for it.
  *
@@ -78,7 +81,7 @@ final class RibbonPlanTest {
     // shared alliance shape rather than stated here, a hand-rolled grouping being the one way this
     // suite could come to mean something the affiliation's own suite does not.
     private static final BlocAffiliation ALLIED_HEGEMONY_AND_TRITACHYON =
-        new BlocAffiliation(RibbonPlanFixtures.buildAllianceOf(HEGEMONY, TRITACHYON));
+        new BlocAffiliation(buildAllianceOf(HEGEMONY, TRITACHYON));
 
     @Nested
     class PlanCellRibbon {
@@ -392,6 +395,28 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 NO_PAINTER,
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
+                ALLIED_HEGEMONY_AND_TRITACHYON,
+                RULES_SHORTENING_UNCONTESTED_RUNS);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 1));
+        }
+
+        @Test
+        void judgesACellNoFillCoversAgainstABlocActuallyInIt() {
+            // The Diktat is ranked first and holds nothing, and the two blocs behind it stand
+            // together: one side, so the cell takes the shortened runs. Judged against the listed
+            // but absent bloc instead, both allies would read as rivals of somebody who is not in
+            // the system at all and the cell would band as a war.
+            var plan = RibbonPlan.planCellRibbon(
+                NO_PAINTER,
+                List.of(
+                    buildDiktatPresence(0),
+                    buildHegemonyPresence(1),
+                    buildTriTachyonPresence(1)),
                 ALLIED_HEGEMONY_AND_TRITACHYON,
                 RULES_SHORTENING_UNCONTESTED_RUNS);
 
