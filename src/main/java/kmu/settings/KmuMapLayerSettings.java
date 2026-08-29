@@ -152,11 +152,11 @@ public final class KmuMapLayerSettings {
     private static final String TOOLTIP_NESTING_LEVEL_SHRINK_FIELD =
         "kmu_map_visuals_tooltips_density_nestingLevelShrink";
     private static final String TOOLTIP_LINE_GAP_FIELD =
-        "kmu_map_visuals_tooltips_density_lineGap";
+        "kmu_map_visuals_tooltips_density_lineGap_tier1";
     private static final String TOOLTIP_TIER_2_LINE_GAP_FIELD =
-        "kmu_map_visuals_tooltips_density_tier2LineGap";
+        "kmu_map_visuals_tooltips_density_lineGap_tier2";
     private static final String TOOLTIP_TIER_3_LINE_GAP_FIELD =
-        "kmu_map_visuals_tooltips_density_tier3LineGap";
+        "kmu_map_visuals_tooltips_density_lineGap_tier3";
 
     // The line a hover box runs from a label across to its value (Map - Visuals tab). Its weight is the
     // one thing about the box that cannot be settled in code: how heavy a solid run looks beside a line
@@ -203,7 +203,7 @@ public final class KmuMapLayerSettings {
     // sidebar's levels rather than among them: a cell is not a control and the tick is its own sample, so
     // what it shares with them is the moment being answered at all and not the balance they are tuned to.
     private static final String MAP_CELL_ARRIVAL_VOLUME_FIELD =
-        "kmu_map_sound_map_cellArrival";
+        "kmu_map_sound_map_arrival_cell";
 
     // Border tracing (Map - Dev tab): the raw ring chaining and miter inset that turn a cluster's
     // cell edges into one outline. Always applied - it is upstream of the smoothing passes a
@@ -232,9 +232,9 @@ public final class KmuMapLayerSettings {
     private static final String ANCHOR_OFFSET_COUNT_FIELD =
         "kmu_map_dev_labelAnchors_offsetCount";
     private static final String ANCHOR_VERTICAL_PENALTY_STRENGTH_FIELD =
-        "kmu_map_dev_labelAnchors_verticalPenaltyStrength";
+        "kmu_map_dev_labelAnchors_verticalPenalty_strength";
     private static final String ANCHOR_VERTICAL_PENALTY_EXPONENT_FIELD =
-        "kmu_map_dev_labelAnchors_verticalPenaltyExponent";
+        "kmu_map_dev_labelAnchors_verticalPenalty_exponent";
     private static final String ANCHOR_MAX_SLANT_DEGREES_FIELD =
         "kmu_map_dev_labelAnchors_maxSlantDegrees";
     private static final String ANCHOR_END_INSET_MULTIPLE_FIELD =
@@ -259,9 +259,9 @@ public final class KmuMapLayerSettings {
     // readability floor and the oversize ceiling); max lines and line spacing let a
     // length-poor cluster wrap the name into a taller-font block instead of shrinking it.
     private static final String NAME_MIN_FONT_SIZE_FIELD =
-        "kmu_map_visuals_labels_minFontSize";
+        "kmu_map_visuals_labels_fontSize_min";
     private static final String NAME_MAX_FONT_SIZE_FIELD =
-        "kmu_map_visuals_labels_maxFontSize";
+        "kmu_map_visuals_labels_fontSize_max";
     private static final String NAME_MAX_LINES_FIELD =
         "kmu_map_visuals_labels_maxLines";
     private static final String NAME_LINE_SPACING_FIELD =

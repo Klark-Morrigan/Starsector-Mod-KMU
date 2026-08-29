@@ -170,7 +170,7 @@ final class LunaSettingsCsvIntegrationTest {
             "DEFAULT_SIDEBAR_CHEVRON_COLOUR",
             NotchChevronColourChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_map_politics_domination_hiddenMarkets_scaling",
+            "kmu_map_politics_domination_hiddenMarkets_weight_scaling",
             "DEFAULT_HIDDEN_MARKET_SCALING",
             HiddenMarketScalingChoice.values()),
         new ChoiceBackedRadio(
@@ -198,27 +198,27 @@ final class LunaSettingsCsvIntegrationTest {
             "DEFAULT_NEBULA_DRAW_ORDER_LABELS",
             NebulaDrawOrderChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_map_politics_visuals_faction_outerBorderColour",
+            "kmu_map_politics_visuals_faction_outerBorder_colour",
             "DEFAULT_FACTION_OUTER_BORDER_COLOUR",
             FactionPaletteChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_map_politics_visuals_faction_innerBorderColour",
+            "kmu_map_politics_visuals_faction_innerBorder_colour",
             "DEFAULT_FACTION_INNER_BORDER_COLOUR",
             FactionPaletteChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_map_politics_visuals_faction_fillColour",
+            "kmu_map_politics_visuals_faction_fill_colour",
             "DEFAULT_FACTION_FILL_COLOUR",
             FactionPaletteChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_map_politics_visuals_independent_outerBorderColour",
+            "kmu_map_politics_visuals_independent_outerBorder_colour",
             "DEFAULT_INDEPENDENT_OUTER_BORDER_COLOUR",
             FactionPaletteChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_map_politics_visuals_independent_innerBorderColour",
+            "kmu_map_politics_visuals_independent_innerBorder_colour",
             "DEFAULT_INDEPENDENT_INNER_BORDER_COLOUR",
             FactionPaletteChoice.values()),
         new ChoiceBackedRadio(
-            "kmu_map_politics_visuals_independent_fillColour",
+            "kmu_map_politics_visuals_independent_fill_colour",
             "DEFAULT_INDEPENDENT_FILL_COLOUR",
             FactionPaletteChoice.values()),
         new ChoiceBackedRadio(
