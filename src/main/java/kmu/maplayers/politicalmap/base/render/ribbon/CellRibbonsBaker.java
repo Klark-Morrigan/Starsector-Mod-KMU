@@ -6,10 +6,7 @@ import kmlib.profiling.Timings;
 
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
-import kmu.maplayers.base.labels.LabelLineBoxes;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
-import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
-import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.settings.KmuPoliticalMapSettings;
@@ -96,27 +93,17 @@ public final class CellRibbonsBaker {
             HolderPass pass,
             List<ClusterAnchor> clusterAnchors) {
 
-        // Both geometry reads are taken here, once, rather than per cell inside the loop: each
-        // hands back a fresh unmodifiable view over the live cells, so asking per cell would mint
-        // a wrapper per cell to answer one lookup. Taking them apart here is also what lets each
-        // consumer state the one map it reads instead of holding the cache both live in.
+        // The cell-to-system lookup is taken here, once, rather than per cell inside the loop: the
+        // read hands back a fresh unmodifiable view over the live cells, so asking per cell would
+        // mint a wrapper per cell to answer one lookup. Taking it apart from the cache is also what
+        // lets this state the one map it reads instead of holding the cache it lives in.
         return new CellRibbonsBaker(
             territories,
             geometryCache.getSystemIdByCellId(),
             CellRibbonSource.createForPass(
                 pass,
                 territories.getViewGrouping().view(),
-                // The pass's inhabitation scan rather than its holding, so a settled system this
-                // layer gives to nobody - an unclaimed pirate haven on the claims layer - is still
-                // offered a band. It is the same set the factionless cell beneath it is classified
-                // from, so a cell drawn as settled and a cell offered a band are one set.
-                territories.getInhabitedSystemIds(),
-                geometryCache.getSiteBySystemId(),
-                resolveNameBoxes(clusterAnchors),
-                // The cells' own store, so a ring walked by one bake is the ring the next reads
-                // back - and so that a cell re-shaped between the two drops its path with its
-                // shape rather than through anything this pass has to remember to do.
-                territories.getRingPathCache()),
+                RibbonBakeSurface.createForPass(territories, geometryCache, clusterAnchors)),
             KmuPoliticalMapSettings.shouldShowPoliticalMapRibbonPaths());
     }
 
@@ -158,32 +145,6 @@ public final class CellRibbonsBaker {
             + " banded=" + bakedCells
             + " took=" + Timings.formatMillis(System.nanoTime() - bakeStart)
             + " " + timings.describePhaseTotals());
-    }
-
-    // The room the names take up, or none at all for either of two reasons, answered side by side
-    // so they read in one place: the player has the names switched off, in which case there is
-    // nothing on the map for a band to be interrupted by, whatever placements the anchor overlay
-    // may still be holding; or the player would rather the bands ran whole beneath the names.
-    // Nothing downstream branches on why - the builder takes the boxes and carves what it is
-    // handed, which is what keeps the carve a matter of the boxes and nothing else.
-    //
-    // How much room a name is then taken to need is the player's too, and the two readings differ
-    // by more than they sound: a placement's fitted box is the chord the search accepted, which
-    // overhangs the words by whatever it beat them by, while the drawn lines are what the reader
-    // sees a name occupying. Both come back as world boxes, so the choice reaches no further than
-    // this call.
-    private static List<List<double[]>> resolveNameBoxes(List<ClusterAnchor> clusterAnchors) {
-
-        var isBandKeptClearOfNames = NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
-            && KmuPoliticalMapSettings.shouldKeepPoliticalMapRibbonsClearOfNames();
-
-        if (!isBandKeptClearOfNames) {
-            return List.of();
-        }
-        return switch (KmuPoliticalMapSettings.getPoliticalMapRibbonNameClearance()) {
-            case FITTED_BOX -> ClusterNameBoxes.listNameBoxes(clusterAnchors);
-            case WORDS -> LabelLineBoxes.listLineBoxes(clusterAnchors);
-        };
     }
 
     // Bakes each named cell's band inside the shape that cell already records, reporting how many

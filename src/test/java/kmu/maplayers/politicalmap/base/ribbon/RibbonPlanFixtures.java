@@ -9,6 +9,7 @@ import kmlib.starsector.factions.FactionPalette;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 
 import java.awt.Color;
@@ -48,13 +49,6 @@ public final class RibbonPlanFixtures {
     public static final String NEUTRAL = Factions.NEUTRAL;
 
     /**
-     * The alliance the allies fold into, named by the synthetic id an alliance record carries
-     * rather than by either member: a bloc is its own thing, and its shades are its colour
-     * faction's, resolved before a band ever asks for them.
-     */
-    public static final String HEGEMONY_ALLIANCE = "hegemony_compact";
-
-    /**
      * A bloc the map can no longer colour: it holds colonies, but its colour faction has gone from
      * the sector, so the palette read below has nothing to answer with.
      */
@@ -75,11 +69,15 @@ public final class RibbonPlanFixtures {
      * The shades every bloc draws in, read by bloc id exactly as the live map reads them. A bloc
      * absent from this map has no colour to resolve, which is the drop case
      * {@link #VANISHED_BLOC} poses.
+     *
+     * <p>The alliance bloc draws in the Hegemony's shades because that is its colour faction: every
+     * alliance these fixtures pose is led by the Hegemony, and a bloc paints in the shades of the
+     * member it was folded around rather than in any of its own.
      */
     public static final BlocPaletteReader PALETTES = Map.of(
             HEGEMONY,
             new FactionPalette(HEGEMONY_BRIGHT, HEGEMONY_DARK),
-            HEGEMONY_ALLIANCE,
+            HolderGroupingFixture.ALLIANCE_BLOC_ID,
             new FactionPalette(HEGEMONY_BRIGHT, HEGEMONY_DARK),
             TRITACHYON,
             new FactionPalette(TRITACHYON_BRIGHT, TRITACHYON_DARK),
@@ -130,7 +128,7 @@ public final class RibbonPlanFixtures {
      * would merge the two into one run instead of leaving them their own.
      */
     public static final BlocAffiliation ALLIED_HEGEMONY_AND_TRITACHYON =
-        new BlocAffiliation(buildAllianceOf(HEGEMONY, TRITACHYON));
+        new BlocAffiliation(HolderGroupingFixture.buildAllianceOf(HEGEMONY, TRITACHYON));
 
     /**
      * A cell no bloc's fill covers, which is what an unclaimed populated system draws as. There is
@@ -144,25 +142,6 @@ public final class RibbonPlanFixtures {
     private static final int COLONY_SIZE = 5;
 
     private RibbonPlanFixtures() {
-    }
-
-    /**
-     * A grouping in which the two named factions share one alliance bloc under the alliance's own
-     * id, coloured off the first of them - the shape the alliances view folds a bloc in.
-     *
-     * @param colourFactionId the member whose shades the bloc draws in
-     * @param memberFactionId the other member, folding into the same bloc
-     * @return the alliance grouping
-     */
-    public static HolderGrouping buildAllianceOf(String colourFactionId, String memberFactionId) {
-        return new HolderGrouping(
-            Map.of(
-                colourFactionId,
-                HEGEMONY_ALLIANCE,
-                memberFactionId,
-                HEGEMONY_ALLIANCE),
-            Map.of(HEGEMONY_ALLIANCE, colourFactionId),
-            Map.of(HEGEMONY_ALLIANCE, "Hegemony Compact"));
     }
 
     /**

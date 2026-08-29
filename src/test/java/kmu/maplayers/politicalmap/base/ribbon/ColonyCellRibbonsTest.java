@@ -13,6 +13,8 @@ import java.util.Optional;
 
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.ALLIANCE_BLOC_ID;
+import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHiddenMarket;
@@ -22,7 +24,6 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.bu
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_ALLIANCE;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.NO_PAINTER;
@@ -33,7 +34,6 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHY
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.VANISHED_BLOC;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
 
@@ -282,8 +282,8 @@ final class ColonyCellRibbonsTest {
                 TRITACHYON);
 
             var plan = planThrough(
-                Optional.of(HEGEMONY_ALLIANCE),
-                List.of(HEGEMONY_ALLIANCE, TRITACHYON),
+                Optional.of(ALLIANCE_BLOC_ID),
+                List.of(ALLIANCE_BLOC_ID, TRITACHYON),
                 buildOnlySystem(sector),
                 buildInputsOver(sector, buildAllianceOf(HEGEMONY, PERSEAN), BASE_FOG));
 

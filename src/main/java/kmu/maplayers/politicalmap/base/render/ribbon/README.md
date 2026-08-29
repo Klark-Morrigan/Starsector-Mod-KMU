@@ -26,13 +26,14 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 
 ## The classes that build one
 
-Five collaborators with deliberately different jobs, since the names are close enough to be worth
+Six collaborators with deliberately different jobs, since the names are close enough to be worth
 stating apart, plus the accumulator they charge what they spend to:
 
 | Class | Scope | Job |
 | --- | --- | --- |
 | `CellRibbonsBaker` | the pass | drives the loop over cells and writes each band back |
 | `CellRibbonSource` | the pass | holds what a pass is settled from; answers one cell at a time |
+| `RibbonBakeSurface` | the pass | the drawn map bands go on: which cells take one, where each starts, the room it keeps clear of, the rings already traced |
 | `CellRibbonBuilder` | one cell | pure geometry: path plus plan in, `CellRibbon` out |
 | `RibbonPathTracer` | one cell | pure geometry: the ring a band runs along, at whichever inset fits |
 | `CellRingPathCache` | one build | the rings already walked, so a re-bake walks only what was re-shaped |
@@ -54,8 +55,11 @@ blocs no cell was drawn for.
 
 `CellRibbonSource` is a source rather than a builder because the per-cell work is
 `CellRibbonBuilder`'s; what it adds is the pass that work is done under - the planner the view
-resolved, the player's sizes, the inhabitation gate, and the names' boxes, each sampled once so no
-two cells of one pass are settled differently. It also settles which cells get a band at all, in
+resolved, the player's sizes, and the drawn map those bands go on, each sampled once so no two
+cells of one pass are settled differently. That map is `RibbonBakeSurface`: the inhabitation gate,
+the sites, the names' boxes and the rings, read together off cells that have already been shaped
+and named, so a bake cannot be handed a gate from one reading and sites from another. It also
+settles which cells get a band at all, in
 three refusals read in one place: a cell nobody lives in or with nowhere to start from, a system the
 sector no longer lists, and a cell whose plan came back empty. Each is a cost gate as much as an
 answer - the claim mechanic's count walks a system's whole market list, and the empty plan is what

@@ -24,15 +24,12 @@ import java.util.Set;
  * One bake's band source: everything a cell's band is settled from, sampled once, so asking
  * for a cell's band is a call rather than a fresh set of reads.
  *
- * <p>What it holds is what must not vary across a pass. The planner is the mechanic the active
- * view paints by, resolved once so no cell is counted by a different one; the sizes are one read
- * of the player's proportions, so a slider moved mid-pass cannot leave two cells drawn to
- * different designs; the inhabited systems are the pass's own, so the cells that get a band are
- * exactly the cells something stands in; and the names' boxes are one reading of where the map's
- * names ended up, so no two cells keep clear of different placements of the same name. Sampling
- * them here mirrors how the rest of a rebuild is driven -
- * one snapshot, then a per-item call over it - and is what lets the incremental re-shape bake a
- * band identical to the one the full rebuild would have.
+ * <p>What it holds is what must not vary across a pass: the planner the active view paints by, so
+ * no cell is counted by a different mechanic; one read of the player's proportions, so a slider
+ * moved mid-pass cannot leave two cells drawn to different designs; and the map those bands go on
+ * ({@link RibbonBakeSurface}). Sampling them here mirrors how the rest of a rebuild is driven - one
+ * snapshot, then a per-item call over it - and is what lets the incremental re-shape bake a band
+ * identical to the one the full rebuild would have.
  *
  * <p>The reading of the sector the counts are made off arrives rather than being opened here,
  * because how current it has to be is the caller's question and not this one's: a bake in the same
@@ -41,18 +38,13 @@ import java.util.Set;
  * caller owes either way is a reading folded by the grouping the fills were painted under, without
  * which a band would plan against blocs no cell was drawn for.
  *
- * <p>Inhabitation rather than this layer's holding, because that is the question a band is actually
- * about: a system splits whether or not the mechanic painting the map gives it to anybody, and a
- * layer's holding can leave a settled system unaccounted for - see
- * {@link kmu.maplayers.politicalmap.base.politics.holders} for why the claims layer routinely
- * does. Every held system is inhabited, a bloc holding one only by having a colony in it, so the
- * wider set can only add cells.
- *
- * <p>The inhabited set is also the cost gate, and the reason it is held rather than looked up per
- * call site. Most of the sector is empty space, and asking for a band walks the system's colonies -
- * and on the claims layer settles a whole contest over them; without the gate, every empty cell in
- * the sector would pay for a contest nobody is contesting. Being the wider set, it gates more
- * loosely than the holding did, and what that costs is weighed in this package's README.
+ * <p>The surface gates on inhabitation rather than on this layer's holding, because that is the
+ * question a band is actually about: a system splits whether or not the mechanic painting the map
+ * gives it to anybody, and a layer's holding can leave a settled system unaccounted for - see
+ * {@link kmu.maplayers.politicalmap.base.politics.holders} for why the claims layer routinely does.
+ * That gate is also what keeps a bake affordable, most of the sector being empty space and every
+ * ask walking a system's colonies - on the claims layer settling a whole contest over them. What
+ * its looser reading costs is weighed in this package's README.
  *
  * <p>Which cells get a band at all is settled here, in three refusals read in one place: a cell
  * nothing lives in or with nowhere to start from, a system the sector no longer lists, and a cell
@@ -60,18 +52,15 @@ import java.util.Set;
  * geometry rather than inside it, since what it saves is the ring walk - the single-holder cell
  * is most of the sector, and it costs a bake nothing.
  *
- * <p>The ring a band runs along outlives the bake that traced it. A bake runs whenever a name may
- * have moved, while a ring moves only when its cell is re-shaped, so the path is asked of
- * {@link CellRingPathCache} before it is traced and kept there once it is - which leaves a re-bake
- * walking rings only for the cells a change actually re-shaped.
+ * <p>A cell's ring is asked of the surface's store before it is traced and written back once it is,
+ * which leaves a re-bake walking rings only for the cells a change actually re-shaped.
  *
  * <p>The diagnostic overlay's paths are traced through the same pass, from the same sizes and the
  * same gate, for the reason the overlay exists at all: it is worth looking at only while it is the
  * cells' own paths it is drawing. A pass with the bands switched off holds nothing to lay them out
- * from, so it traces nothing either - there is no band design in play for an overlay to report on.
- * That trace is taken fresh rather than read from the cache above, because the overlay walks its
- * own inset ladder: the cells it exists to explain are exactly the ones the band pass refused a
- * path.
+ * from, so it traces nothing either. That trace is taken fresh rather than read from the store,
+ * because the overlay walks its own inset ladder: the cells it exists to explain are exactly the
+ * ones the band pass refused a path.
  *
  * <p>Named a source rather than a builder because the per-cell work is
  * {@link CellRibbonBuilder}'s: what this adds is the pass the work is done under, which is the
@@ -89,28 +78,19 @@ public final class CellRibbonSource {
 
     private final SystemRibbonPlanner planner;
     private final RibbonStyle style;
-    private final Set<String> inhabitedSystemIds;
+    private final RibbonBakeSurface surface;
     private final Map<String, StarSystemAPI> systemById;
-    private final Map<String, double[]> siteBySystemId;
-    private final List<List<double[]>> nameBoxes;
-    private final CellRingPathCache ringPathCache;
 
     private CellRibbonSource(
             SystemRibbonPlanner planner,
             RibbonStyle style,
-            Set<String> inhabitedSystemIds,
-            Map<String, StarSystemAPI> systemById,
-            Map<String, double[]> siteBySystemId,
-            List<List<double[]>> nameBoxes,
-            CellRingPathCache ringPathCache) {
+            RibbonBakeSurface surface,
+            Map<String, StarSystemAPI> systemById) {
 
         this.planner = planner;
         this.style = style;
-        this.inhabitedSystemIds = inhabitedSystemIds;
+        this.surface = surface;
         this.systemById = systemById;
-        this.siteBySystemId = siteBySystemId;
-        this.nameBoxes = nameBoxes;
-        this.ringPathCache = ringPathCache;
     }
 
     /**
@@ -124,30 +104,17 @@ public final class CellRibbonSource {
      *                           how current it is, is the caller's to decide
      * @param view               the active view, supplying the mechanic its cells are counted by -
      *                           the same one they were painted by
-     * @param inhabitedSystemIds every system something stands in this pass, the gate deciding
-     *                           which cells are asked for a band at all. The pass's own scan
-     *                           rather than its holding, so a settled system this layer gives to
-     *                           nobody is still counted
-     * @param siteBySystemId     each system's own site, the point a band's start is found above.
-     *                           Taken as the one map this reads rather than as the geometry cache
-     *                           holding it, so what a band is laid out from is stated in the
-     *                           signature rather than reachable through it
-     * @param nameBoxes          the room the drawn cluster names take up, which every cell's band
-     *                           keeps out of; the whole map's, since a name reaches into cells its
-     *                           own cluster does not hold
-     * @param ringPathCache      the rings already traced inside the cells' current shapes, asked
-     *                           before a cell's ring is walked and written back when one is. Taken
-     *                           from whatever holds those shapes, so its lifetime is theirs and a
-     *                           path can never be served against a shape it was not traced inside
+     * @param surface            the drawn map the bands go on: which cells take one, where each
+     *                           starts, the room it keeps clear of, and the rings already traced.
+     *                           Taken as the one value this reads rather than as the cells and
+     *                           caches holding those answers, so what a band is laid out from is
+     *                           stated in the signature rather than reachable through it
      * @return the source the pass bakes its bands through
      */
     public static CellRibbonSource createForPass(
             HolderPass pass,
             PoliticalMapView view,
-            Set<String> inhabitedSystemIds,
-            Map<String, double[]> siteBySystemId,
-            List<List<double[]>> nameBoxes,
-            CellRingPathCache ringPathCache) {
+            RibbonBakeSurface surface) {
 
         if (!KmuPoliticalMapSettings.shouldDrawPoliticalMapRibbons()) {
             return createBandlessPass();
@@ -170,11 +137,8 @@ public final class CellRibbonSource {
         return new CellRibbonSource(
             view.resolveRibbonPlanner(inputs),
             style,
-            inhabitedSystemIds,
-            SectorStarSystems.indexById(pass.sector()),
-            siteBySystemId,
-            nameBoxes,
-            ringPathCache);
+            surface,
+            SectorStarSystems.indexById(pass.sector()));
     }
 
     /**
@@ -221,7 +185,7 @@ public final class CellRibbonSource {
             findOrTraceRingPath(cellId, fillPolygon, site, timings),
             plan,
             style,
-            nameBoxes,
+            surface.nameBoxes(),
             timings);
     }
 
@@ -268,7 +232,7 @@ public final class CellRibbonSource {
             double[] site,
             RibbonBakeTimings timings) {
 
-        var standingPath = ringPathCache.findRingPathOf(cellId);
+        var standingPath = surface.ringPathCache().findRingPathOf(cellId);
 
         if (standingPath != null) {
             return standingPath;
@@ -277,7 +241,7 @@ public final class CellRibbonSource {
         var tracedPath = RibbonPathTracer.traceLaidRibbonPath(fillPolygon, site, style);
         timings.addTraceNanos(System.nanoTime() - traceStart);
 
-        ringPathCache.putRingPath(cellId, tracedPath);
+        surface.ringPathCache().putRingPath(cellId, tracedPath);
 
         return tracedPath;
     }
@@ -294,10 +258,10 @@ public final class CellRibbonSource {
     // paths where no band was ever going to be laid.
     private double[] resolveBandLayoutSite(String drawnSystemId) {
 
-        if (drawnSystemId == null || !inhabitedSystemIds.contains(drawnSystemId)) {
+        if (drawnSystemId == null || !surface.inhabitedSystemIds().contains(drawnSystemId)) {
             return null;
         }
-        return siteBySystemId.get(drawnSystemId);
+        return surface.siteBySystemId().get(drawnSystemId);
     }
 
     // A pass with the bands switched off, which the empty inhabited set states outright: that set
@@ -310,10 +274,7 @@ public final class CellRibbonSource {
         return new CellRibbonSource(
             system -> RibbonPlan.NONE,
             BANDLESS_STYLE,
-            Set.of(),
-            Map.of(),
-            Map.of(),
-            List.of(),
-            new CellRingPathCache());
+            new RibbonBakeSurface(Set.of(), Map.of(), List.of(), new CellRingPathCache()),
+            Map.of());
     }
 }

@@ -17,9 +17,13 @@ import java.util.Map;
  */
 public final class HolderGroupingFixture {
 
-    // The one alliance every posed grouping is built around. Any id serves - nothing reads it but the
-    // grouping's own three maps, which is exactly why it is written once rather than per suite.
-    private static final String ALLIANCE_BLOC_ID = "alliance-1";
+    /**
+     * The bloc the factions below fold into, and the id a suite names that bloc by - the painter of
+     * a cell, the key of a count, the bloc a palette answers for. Exported because a suite reading
+     * a fold back has to name what it produced, and one spelling the id for itself would pose a
+     * bloc this fixture never built.
+     */
+    public static final String ALLIANCE_BLOC_ID = "alliance-1";
 
     // What the alliance is called on screen. Spelled here and asserted as a literal wherever a case
     // turns on it, so an assertion states the words a player would read rather than agreeing with

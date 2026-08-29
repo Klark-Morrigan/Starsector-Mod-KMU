@@ -18,18 +18,18 @@ import java.util.List;
 import java.util.Optional;
 
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.ALLIANCE_BLOC_ID;
+import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.DIKTAT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.DIKTAT_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_ALLIANCE;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAlliedInputsOver;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
@@ -155,7 +155,7 @@ final class ClaimCellRibbonsTest {
                 buildStanding(HEGEMONY, TRAILING_SCORE));
 
             var plan = planThrough(
-                HEGEMONY_ALLIANCE,
+                ALLIANCE_BLOC_ID,
                 contest,
                 sector,
                 buildInputsOver(sector, buildAllianceOf(HEGEMONY, PERSEAN), BASE_FOG));

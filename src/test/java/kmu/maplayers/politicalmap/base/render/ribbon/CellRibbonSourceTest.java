@@ -403,14 +403,15 @@ final class CellRibbonSourceTest {
         return CellRibbonSource.createForPass(
             HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, HolderGrouping.identity()),
             viewMock,
-            Set.of(INHABITED_SYSTEM, SITELESS_SYSTEM),
-            // Only the placed system has a site; the other settled one is what a band with
-            // nowhere to start is posed on.
-            Map.of(INHABITED_SYSTEM, new double[] {2000.0, 2000.0}),
-            // No names anywhere near these cells: where a name falls is pinned by the builder
-            // that lays a band inside one cell, not by which cells are offered a band at all.
-            List.of(),
-            ringPathCache);
+            new RibbonBakeSurface(
+                Set.of(INHABITED_SYSTEM, SITELESS_SYSTEM),
+                // Only the placed system has a site; the other settled one is what a band with
+                // nowhere to start is posed on.
+                Map.of(INHABITED_SYSTEM, new double[] {2000.0, 2000.0}),
+                // No names anywhere near these cells: where a name falls is pinned by the builder
+                // that lays a band inside one cell, not by which cells are offered a band at all.
+                List.of(),
+                ringPathCache));
     }
 
     private static StarSystemAPI buildSystem(String systemId) {
