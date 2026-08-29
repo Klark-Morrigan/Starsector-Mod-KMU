@@ -22,6 +22,7 @@ import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
+import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -118,7 +119,7 @@ final class ExpandedSystemClaimTooltipTest {
         SystemClaimContestTooltip.ListedClaimContest.selectFrom(
             CONTESTED_SYSTEM,
             ColonyVisibility.BASE_FOG,
-            HolderGrouping.identity());
+            BlocAffiliation.NONE);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
 
@@ -263,7 +264,7 @@ final class ExpandedSystemClaimTooltipTest {
             var contest = SystemClaimContestTooltip.ListedClaimContest.selectFrom(
                 CONTESTED_SYSTEM,
                 UNDER_THE_REVEAL,
-                HolderGrouping.identity());
+                BlocAffiliation.NONE);
 
             var standing = new WeighedClaimStanding(
                 HEGEMONY,
@@ -289,7 +290,7 @@ final class ExpandedSystemClaimTooltipTest {
                 SystemClaimContestTooltip.ListedClaimContest.selectFrom(
                     new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()),
                     ColonyVisibility.BASE_FOG,
-                    HolderGrouping.identity()),
+                    BlocAffiliation.NONE),
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                 SystemColonyReading.NONE);
 

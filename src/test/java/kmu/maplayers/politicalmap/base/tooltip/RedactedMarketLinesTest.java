@@ -21,10 +21,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Pins which markets a claim row may not name, and what such a row shows in the name's place.
  *
- * <p>The rule is asserted over all four combinations of its two halves rather than over the one that
- * fires, since what makes it a rule is the three shapes it declines: a market the contest passed over
- * accounts for nothing on screen and is left off the list entirely, and a market the player knows of
- * has nothing to withhold.
+ * <p>The rule is asserted across the admissions as well as the knowledge flag, though only the flag
+ * decides it. That is the point being pinned: the rule answers the same way whatever the contest made
+ * of the market, because which rows exist is the listing rule's question and a copy of it here would be
+ * free to disagree with the original.
  *
  * <p>What the line looks like is pinned here alone. Which rows a whole account draws this way, what
  * number one of them carries and what it declines to break into are the resolver's decisions and are
@@ -37,8 +37,8 @@ final class RedactedMarketLinesTest {
     // in for it pin a shape rather than a single number.
     private static final String WITHHELD_MARKET = "Kapteyn Starworks";
 
-    // Whether the player knows of the market at all - one half of the rule. The other is the admission,
-    // which the fixture leaves at the weighed reading unless a case says otherwise.
+    // Whether the player knows of the market at all, which is the whole of the rule. The admission is
+    // varied beside it to pin that it changes nothing here.
     private static final boolean IS_KNOWN_TO_PLAYER = true;
     private static final boolean IS_UNKNOWN_TO_PLAYER = false;
 
@@ -80,14 +80,25 @@ final class RedactedMarketLinesTest {
         }
 
         @Test
-        void isRedactedMarketNamesAMarketTheContestPassedOverThatThePlayerDoesNotKnowOf() {
-            // The shape that never reaches a row at all: unweighed and unknown, so the listing rule
-            // drops it before this one is asked. Answered false rather than true so the two rules
-            // cannot both claim it - a blocked-out row for a market nothing on screen needs would be
-            // disclosure and nothing else.
+        void isRedactedMarketWithholdsTheNameOfASiblingCountedMarketThePlayerDoesNotKnow() {
+            // A concealed colony nobody has found, which the sibling term counts all the same - so its
+            // faction's block is paid a point the block's own rows have to account for. The row is
+            // there for that count to add up, and the name is no more the box's to state than a
+            // weighed market's would be.
             assertThat(RedactedMarketLines.isRedactedMarket(
                     buildMarket(ContestAdmission.HIDDEN, IS_UNKNOWN_TO_PLAYER)))
-                .isFalse();
+                .isTrue();
+        }
+
+        @Test
+        void isRedactedMarketWithholdsTheNameOfAnUnlistedMarketThePlayerDoesNotKnow() {
+            // The shape that never reaches a row at all: off the economy's books and unknown, so the
+            // listing rule drops it before this one is asked. Answered on knowledge alone regardless,
+            // because restating the listing rule's own question here is what would let the two drift
+            // into disagreeing about a market either could answer for.
+            assertThat(RedactedMarketLines.isRedactedMarket(
+                    buildMarket(ContestAdmission.OFF_ECONOMY, IS_UNKNOWN_TO_PLAYER)))
+                .isTrue();
         }
     }
 

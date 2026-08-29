@@ -393,12 +393,22 @@ public final class ClaimScoreRowResolver {
     // states it. Everywhere else the column stands empty, the row being ranked by the score all the
     // same, so the lines either side of it bound what it came to without the box stating the figure.
     //
-    // No quiet reading on that number: this is a market the contest weighed, so where the figure is
-    // stated at all it is one the market competed on and is read as loudly as its neighbours'.
+    // No quiet reading on that number: a market weighed on its own account competed on the figure, so
+    // where it is stated at all it is read as loudly as its neighbours'.
+    //
+    // A market the contest never scored is the other shape, and it states its nought outright. The
+    // figure is the contest's own statement that the market counted for nothing - the same statement
+    // its named counterpart makes, and no part of what the row withholds - where an empty column here
+    // would read as a figure kept back from a row that has none.
     private static CellTooltipEntryLine createBlockedOutMarketLine(
             MarketClaimBreakdown market,
             boolean isCarryingTheStanding) {
 
+        if (!market.isScoredOnItsOwnAccount()) {
+            return RedactedMarketLines
+                .createRedactedLine(market, formatContestScore(market))
+                .statesUncountedValue();
+        }
         return RedactedMarketLines.createRedactedLine(
             market,
             isCarryingTheStanding ? formatContestScore(market) : CellTooltipRows.NO_SCORE);
@@ -482,11 +492,11 @@ public final class ClaimScoreRowResolver {
     // The markets an account lists, out of everything the standing holds, in the order the contest
     // would settle them.
     //
-    // A market the contest weighed is listed however undiscovered its colony, its weight being in
-    // the numbers on screen already - the claim, the faction's score, the difference between this
-    // market's total and the terms stated beneath it - so the row is what makes those add up. What
-    // is left off is a market the contest never weighed and the player knows nothing of: it accounts
-    // for nothing shown, so a row for it would be disclosure and nothing else.
+    // A market the contest counted is listed however undiscovered its colony - weighed on its own
+    // account or merely counted toward the sibling term, either way its effect is in the numbers on
+    // screen already, so the row is what makes those add up. What is left off is a market the economy
+    // never listed and the player knows nothing of: it reaches no term of the arithmetic, so a row for
+    // it would be disclosure and nothing else.
     private static List<MarketClaimBreakdown> selectListedMarkets(
             FactionClaimStanding standing,
             boolean isListingUndiscoveredMarkets) {
@@ -494,7 +504,8 @@ public final class ClaimScoreRowResolver {
         return standing
             .readHeldMarkets()
             .stream()
-            .filter(market -> ListedClaimMarkets.isListedMarket(market, isListingUndiscoveredMarkets))
+            .filter(market ->
+                ListedClaimMarkets.isListedMarket(market, standing, isListingUndiscoveredMarkets))
             .sorted(MARKET_ORDER)
             .toList();
     }

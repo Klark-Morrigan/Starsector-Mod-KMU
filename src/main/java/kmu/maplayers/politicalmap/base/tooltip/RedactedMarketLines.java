@@ -18,11 +18,10 @@ import java.util.Objects;
  * each is stated apart from the account that spends it - and apart from each other, a market being
  * listed and a market being named having no rule in common.
  *
- * <p>A market the contest weighed on a colony nobody has found is drawn with its name blocked out
- * rather than left off. Its weight is already showing in the numbers on screen - the claim, the
- * faction's score, the difference between a listed market's total and the terms beneath it - so the row
- * is what makes those account for themselves, while the name is the one thing the box has no business
- * stating.
+ * <p>A listed market on a colony nobody has found is drawn with its name blocked out rather than left
+ * off. Its effect is already showing in the numbers on screen - the claim, the faction's score, the
+ * count of markets its faction was paid a point each for - so the row is what makes those account for
+ * themselves, while the name is the one thing the box has no business stating.
  *
  * <p>What stands in its place is the shape of the name: one block per word, as long as the word ran
  * ({@link kmlib.starsector.ui.text.RedactedSpan}). The name itself never reaches the line, only the
@@ -47,21 +46,24 @@ final class RedactedMarketLines {
     /**
      * Whether a market's row stands for its name instead of stating it.
      *
-     * <p>Both halves are the row's warrant. What the contest weighed is already showing in numbers on
-     * screen, so the row has to be there for those to add up; what the player has not found is not the
-     * box's to name. A market failing either half is drawn as it always was - one the contest passed
-     * over accounts for nothing on screen and is dropped by the listing rule instead, and one the
-     * player knows of has nothing to withhold.
+     * <p>Knowledge is the whole of it. Whether the row exists at all is the listing rule's, asked and
+     * answered before this one is reached, so restating any part of that here would be a second copy of
+     * it free to disagree - and the disagreement would show as a market listed under a name the box had
+     * already decided it could not state. What is left for this rule is the one question the listing
+     * rule does not answer: whether the player has found the place.
      *
-     * <p>Knowledge is the whole of the second half rather than discovery alone, because the two agree
-     * over exactly these markets: a market the contest weighed is held in the open and on the economy's
-     * books, so no revelation gate stands over it and the composed answer is the entity's flag.
+     * <p>Knowledge rather than discovery alone, because a listed market may be a concealed one - and
+     * concealment is exactly the case where the two part company, a base being discovered the moment it
+     * is raided and still unknown until somebody has seen it standing there.
      *
-     * @param market the market a line would be drawn for
+     * <p>The dev reveal needs no arm here. It is folded into knowledge upstream, where the breakdown is
+     * read, so under the reveal every market arrives known and no row withholds anything.
+     *
+     * @param market the market a line is being drawn for
      * @return true when the line withholds the market's name
      */
     static boolean isRedactedMarket(MarketClaimBreakdown market) {
-        return market.isScoredOnItsOwnAccount() && !market.isKnownToPlayer();
+        return !market.isKnownToPlayer();
     }
 
     /**

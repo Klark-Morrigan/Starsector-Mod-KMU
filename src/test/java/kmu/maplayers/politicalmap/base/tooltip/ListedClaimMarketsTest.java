@@ -1,26 +1,36 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.systems.claims.ContestAdmission;
+import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildPresenceOnlyStanding;
+import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildStandingOnOneMarket;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins which markets a claim account may list, over the two grounds either of which is enough: the
- * player knows of the colony, or the contest weighed it.
+ * Pins the two rules a claim account is shown through: which markets get a row, and which markets are
+ * enough on their own to name the faction standing on them.
  *
- * <p>The four shapes the pair produces are asserted one by one, because each is a different
- * statement about the box. A colony the player knows of is theirs to be shown whatever the mechanic
- * made of it. A colony the contest weighed is already in the numbers on screen, so its row is what
- * makes them add up. The one that fails both is the only market a row would purely disclose, and the
- * dev reveal exists to state even that.
+ * <p>The shapes are asserted one by one, because each is a different statement about the box. A colony
+ * the player knows of is theirs to be shown whatever the mechanic made of it. A colony the contest
+ * counted - weighed, or merely paid for through the sibling term - is already in the numbers on screen,
+ * so its row is what makes them add up. A colony off the economy's books that nobody has found reaches
+ * no term at all and is the only market a row would purely disclose; the dev reveal exists to state
+ * even that.
  *
- * <p>Asserted here rather than only through the rows an account draws, because this is the rule the
- * box is held to rather than a step in drawing a list: a case reading it off row output would pass
- * on a resolver that had quietly stopped asking.
+ * <p>The cases where the two rules part company are the ones worth reading: a concealed colony nobody
+ * has found earns a row and does not earn its faction a name. That nesting is what keeps the box
+ * honest, and a rule that quietly collapsed into the other would show as a faction named over an
+ * account with nothing in it, or as a market count standing over a list short of what it counted.
+ *
+ * <p>Asserted here rather than only through the rows an account draws, because these are the rules the
+ * box is held to rather than steps in drawing a list: a case reading them off row output would pass on
+ * a resolver that had quietly stopped asking.
  */
 final class ListedClaimMarketsTest {
 
@@ -39,6 +49,82 @@ final class ListedClaimMarketsTest {
     private static final boolean IS_UNDISCOVERED_BY_PLAYER = false;
     private static final boolean IS_UNKNOWN_TO_PLAYER = false;
 
+    // The account a row would be drawn under. Weighed for every case but the one about the other kind,
+    // because that is the account that states a sibling count at all - and the count is what a row for
+    // a market the contest never scored has to account for.
+    private static final FactionClaimStanding WEIGHED_STANDING =
+        buildStandingOnOneMarket("hegemony", 12, true);
+
+    // The account that states no count: a faction present through colonies the contest never weighed
+    // scores a named nought with no terms beneath it.
+    private static final FactionClaimStanding PRESENCE_ONLY_STANDING =
+        buildPresenceOnlyStanding("hegemony", true);
+
+    @Nested
+    class IsFactionNamingMarket {
+
+        @Test
+        void isFactionNamingMarketNamesAFactionOverAMarketTheContestWeighed() {
+            // The mechanic weighed the colony and could have handed it the system, so the faction is
+            // part of what decided the contest whether or not anybody has been there.
+            var market = ClaimMarketFixture
+                .startMarket(COLONY)
+                .setKnownToPlayer(IS_UNDISCOVERED_BY_PLAYER)
+                .buildMarket();
+
+            assertThat(ListedClaimMarkets
+                .isFactionNamingMarket(market, WITHHOLDING_UNDISCOVERED_MARKETS))
+                .isTrue();
+        }
+
+        @Test
+        void isFactionNamingMarketNamesAFactionOverAColonyThePlayerKnowsOf() {
+            // The colony is on the map in its faction's colours, so naming the faction tells the player
+            // nothing they cannot already see.
+            var market = ClaimMarketFixture
+                .startMarket(COLONY)
+                .setAdmission(ContestAdmission.HIDDEN)
+                .setKnownToPlayer(IS_KNOWN_TO_PLAYER)
+                .buildMarket();
+
+            assertThat(ListedClaimMarkets
+                .isFactionNamingMarket(market, WITHHOLDING_UNDISCOVERED_MARKETS))
+                .isTrue();
+        }
+
+        @Test
+        void isFactionNamingMarketLeavesOutAFactionCountedOnlyAsItsOwnSibling() {
+            // Where the two rules part company, and the reason they are two. A concealed colony nobody
+            // has found earns a row under a faction already on the box, the sibling term having paid
+            // for it - but it puts no faction there itself: a faction present through such colonies
+            // alone is counted nowhere, scores nothing, and leaves no number on screen short, so naming
+            // it would state the very presence the fog is keeping back.
+            var market = ClaimMarketFixture
+                .startMarket(COLONY)
+                .setAdmission(ContestAdmission.HIDDEN)
+                .setKnownToPlayer(IS_UNKNOWN_TO_PLAYER)
+                .buildMarket();
+
+            assertThat(ListedClaimMarkets
+                .isFactionNamingMarket(market, WITHHOLDING_UNDISCOVERED_MARKETS))
+                .isFalse();
+        }
+
+        @Test
+        void isFactionNamingMarketNamesAFactionOverTheWithheldShapeUnderTheDevReveal() {
+
+            var market = ClaimMarketFixture
+                .startMarket(COLONY)
+                .setAdmission(ContestAdmission.HIDDEN)
+                .setKnownToPlayer(IS_UNKNOWN_TO_PLAYER)
+                .buildMarket();
+
+            assertThat(ListedClaimMarkets
+                .isFactionNamingMarket(market, LISTING_UNDISCOVERED_MARKETS))
+                .isTrue();
+        }
+    }
+
     @Nested
     class IsListedMarket {
 
@@ -52,7 +138,8 @@ final class ListedClaimMarketsTest {
                 .setKnownToPlayer(IS_UNDISCOVERED_BY_PLAYER)
                 .buildMarket();
 
-            assertThat(ListedClaimMarkets.isListedMarket(market, WITHHOLDING_UNDISCOVERED_MARKETS))
+            assertThat(ListedClaimMarkets
+                .isListedMarket(market, WEIGHED_STANDING, WITHHOLDING_UNDISCOVERED_MARKETS))
                 .isTrue();
         }
 
@@ -67,21 +154,40 @@ final class ListedClaimMarketsTest {
                 .setKnownToPlayer(IS_KNOWN_TO_PLAYER)
                 .buildMarket();
 
-            assertThat(ListedClaimMarkets.isListedMarket(market, WITHHOLDING_UNDISCOVERED_MARKETS))
+            assertThat(ListedClaimMarkets
+                .isListedMarket(market, WEIGHED_STANDING, WITHHOLDING_UNDISCOVERED_MARKETS))
                 .isTrue();
         }
 
         @Test
-        void isListedMarketWithholdsAMarketThatIsNeitherKnownNorWeighed() {
-            // Both exclusions at once, which is the one shape a row would be pure disclosure of: it
-            // accounts for no number on screen, and the player has nothing to recognise it by.
+        void isListedMarketListsAConcealedMarketTheSiblingTermCountsThoughNobodyKnowsOfIt() {
+            // The concealed market's one reach into the contest: the sibling count walks the economy's
+            // listing and counts it there, so its faction's block is paid a point for a market the block
+            // would otherwise not show - a count of three standing over two rows.
             var market = ClaimMarketFixture
                 .startMarket(COLONY)
                 .setAdmission(ContestAdmission.HIDDEN)
                 .setKnownToPlayer(IS_UNKNOWN_TO_PLAYER)
                 .buildMarket();
 
-            assertThat(ListedClaimMarkets.isListedMarket(market, WITHHOLDING_UNDISCOVERED_MARKETS))
+            assertThat(ListedClaimMarkets
+                .isListedMarket(market, WEIGHED_STANDING, WITHHOLDING_UNDISCOVERED_MARKETS))
+                .isTrue();
+        }
+
+        @Test
+        void isListedMarketWithholdsAConcealedMarketUnderAnAccountThatStatesNoCount() {
+            // The same market under the other kind of account. A presence-only standing scores a named
+            // nought with no terms beneath it, so the count that pays for this colony is nowhere on
+            // screen - and a row nothing shown needs is disclosure rather than accounting.
+            var market = ClaimMarketFixture
+                .startMarket(COLONY)
+                .setAdmission(ContestAdmission.HIDDEN)
+                .setKnownToPlayer(IS_UNKNOWN_TO_PLAYER)
+                .buildMarket();
+
+            assertThat(ListedClaimMarkets
+                .isListedMarket(market, PRESENCE_ONLY_STANDING, WITHHOLDING_UNDISCOVERED_MARKETS))
                 .isFalse();
         }
 
@@ -91,11 +197,12 @@ final class ListedClaimMarketsTest {
             // market both grounds turn away is stated like any other.
             var market = ClaimMarketFixture
                 .startMarket(COLONY)
-                .setAdmission(ContestAdmission.HIDDEN)
+                .setAdmission(ContestAdmission.OFF_ECONOMY)
                 .setKnownToPlayer(IS_UNKNOWN_TO_PLAYER)
                 .buildMarket();
 
-            assertThat(ListedClaimMarkets.isListedMarket(market, LISTING_UNDISCOVERED_MARKETS))
+            assertThat(ListedClaimMarkets
+                .isListedMarket(market, WEIGHED_STANDING, LISTING_UNDISCOVERED_MARKETS))
                 .isTrue();
         }
 
@@ -110,7 +217,8 @@ final class ListedClaimMarketsTest {
                 .setKnownToPlayer(IS_KNOWN_TO_PLAYER)
                 .buildMarket();
 
-            assertThat(ListedClaimMarkets.isListedMarket(market, WITHHOLDING_UNDISCOVERED_MARKETS))
+            assertThat(ListedClaimMarkets
+                .isListedMarket(market, WEIGHED_STANDING, WITHHOLDING_UNDISCOVERED_MARKETS))
                 .isTrue();
         }
 
@@ -124,7 +232,8 @@ final class ListedClaimMarketsTest {
                 .setKnownToPlayer(IS_UNDISCOVERED_BY_PLAYER)
                 .buildMarket();
 
-            assertThat(ListedClaimMarkets.isListedMarket(market, WITHHOLDING_UNDISCOVERED_MARKETS))
+            assertThat(ListedClaimMarkets
+                .isListedMarket(market, WEIGHED_STANDING, WITHHOLDING_UNDISCOVERED_MARKETS))
                 .isFalse();
         }
     }

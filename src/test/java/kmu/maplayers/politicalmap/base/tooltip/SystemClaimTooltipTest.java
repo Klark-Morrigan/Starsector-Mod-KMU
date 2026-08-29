@@ -20,6 +20,7 @@ import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
+import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 import org.junit.jupiter.api.AfterEach;
@@ -875,7 +876,7 @@ final class SystemClaimTooltipTest {
                     SystemClaimContestTooltip.ListedClaimContest.selectFrom(
                         new SystemClaimBreakdown(null, HEGEMONY, List.of()),
                         ColonyVisibility.BASE_FOG,
-                        HolderGrouping.identity()),
+                        BlocAffiliation.NONE),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     SystemColonyReading.NONE))
                 .isEmpty();
@@ -895,7 +896,7 @@ final class SystemClaimTooltipTest {
                     SystemClaimContestTooltip.ListedClaimContest.selectFrom(
                         new SystemClaimBreakdown(null, HEGEMONY, List.of()),
                         ColonyVisibility.BASE_FOG,
-                        HolderGrouping.identity()),
+                        BlocAffiliation.NONE),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     new SystemColonyReading(
                         ColonyKindLookup.NONE,
