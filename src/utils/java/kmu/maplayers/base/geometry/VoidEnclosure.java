@@ -63,33 +63,43 @@ public final class VoidEnclosure {
     private static final byte BLOCKED_SQUARE = 1;
     private static final byte REACHED_SQUARE = 2;
 
-    private final Bounds walked;
-    private final double stride;
-    private final int across;
-    private final int up;
+    private final WalkedGrid grid;
     private final byte[] squares;
     private final int[] regionAt;
     private final double[] areas;
-    private final int regions;
 
-    private VoidEnclosure(
-            Bounds walked,
-            double stride,
-            int across,
-            int up,
-            byte[] squares,
-            int[] regionAt,
-            double[] areas,
-            int regions) {
+    private VoidEnclosure(WalkedGrid grid, byte[] squares, int[] regionAt, double[] areas) {
 
-        this.walked = walked;
-        this.stride = stride;
-        this.across = across;
-        this.up = up;
+        this.grid = grid;
         this.squares = squares;
         this.regionAt = regionAt;
         this.areas = areas;
-        this.regions = regions;
+    }
+
+    /**
+     * The squares the flood walked, as the four numbers that only mean anything together: a
+     * square's place is read out of all of them at once, and three of the four paired with a
+     * stride from somewhere else describes a grid nothing was ever walked on.
+     *
+     * @param walked what the grid spans, in map units
+     * @param stride how far one square is across
+     * @param across how many squares wide it is
+     * @param up     how many squares tall
+     */
+    private record WalkedGrid(Bounds walked, double stride, int across, int up) {
+
+        static WalkedGrid over(Bounds walked, double stride) {
+
+            return new WalkedGrid(
+                walked,
+                stride,
+                (int) Math.ceil((walked.maxX() - walked.minX()) / stride) + 1,
+                (int) Math.ceil((walked.maxY() - walked.minY()) / stride) + 1);
+        }
+
+        int countSquares() {
+            return across * up;
+        }
     }
 
     /**
@@ -115,15 +125,14 @@ public final class VoidEnclosure {
             overSites.maxX() + margin,
             overSites.maxY() + margin);
 
-        var across = (int) Math.ceil((walked.maxX() - walked.minX()) / stride) + 1;
-        var up = (int) Math.ceil((walked.maxY() - walked.minY()) / stride) + 1;
-        var squares = new byte[across * up];
+        var grid = WalkedGrid.over(walked, stride);
+        var squares = new byte[grid.countSquares()];
 
-        stampLand(squares, union, walked, stride, across, up);
-        stampBarriers(squares, barriers, walked, stride, across, up);
-        floodFromTheBorder(squares, across, up);
+        stampLand(squares, union, grid);
+        stampBarriers(squares, barriers, grid);
+        floodFromTheBorder(squares, grid.across(), grid.up());
 
-        return labelHeldWater(walked, stride, across, up, squares);
+        return labelHeldWater(grid, squares);
     }
 
     /**
@@ -136,14 +145,14 @@ public final class VoidEnclosure {
      */
     public int findRegionAt(double x, double y) {
 
-        var atX = (int) Math.round((x - walked.minX()) / stride);
-        var atY = (int) Math.round((y - walked.minY()) / stride);
+        var atX = (int) Math.round((x - grid.walked().minX()) / grid.stride());
+        var atY = (int) Math.round((y - grid.walked().minY()) / grid.stride());
 
-        if (atX < 0 || atY < 0 || atX >= across || atY >= up) {
+        if (atX < 0 || atY < 0 || atX >= grid.across() || atY >= grid.up()) {
             return OPEN_VOID;
         }
 
-        var at = atY * across + atX;
+        var at = atY * grid.across() + atX;
 
         return squares[at] == BLOCKED_SQUARE ? INSIDE_WALL : regionAt[at];
     }
@@ -165,7 +174,7 @@ public final class VoidEnclosure {
      * @return the stride, in map units
      */
     public double getStride() {
-        return stride;
+        return grid.stride();
     }
 
     /**
@@ -174,27 +183,24 @@ public final class VoidEnclosure {
      * @return the count
      */
     public int countRegions() {
-        return regions;
+        return areas.length;
     }
 
     // Every square whose centre a cell covers, disc by disc rather than square by square:
     // every square a cell covers is reachable from that cell's own square, which turns a
     // sweep over every site for every square into one pass over the sites.
-    private static void stampLand(
-            byte[] squares,
-            DiscUnion union,
-            Bounds walked,
-            double stride,
-            int across,
-            int up) {
+    private static void stampLand(byte[] squares, DiscUnion union, WalkedGrid grid) {
+
+        var walked = grid.walked();
+        var stride = grid.stride();
 
         for (var site : union.sites()) {
 
             var fromX = Math.max(0, (int) ((site[0] - union.reach() - walked.minX()) / stride));
-            var toX = Math.min(across - 1, (int) Math.ceil(
+            var toX = Math.min(grid.across() - 1, (int) Math.ceil(
                 (site[0] + union.reach() - walked.minX()) / stride));
             var fromY = Math.max(0, (int) ((site[1] - union.reach() - walked.minY()) / stride));
-            var toY = Math.min(up - 1, (int) Math.ceil(
+            var toY = Math.min(grid.up() - 1, (int) Math.ceil(
                 (site[1] + union.reach() - walked.minY()) / stride));
 
             for (var x = fromX; x <= toX; x++) {
@@ -204,7 +210,7 @@ public final class VoidEnclosure {
                     var atY = walked.minY() + y * stride;
 
                     if (Points.computeDistance(new double[] {atX, atY}, site) < union.reach()) {
-                        squares[y * across + x] = BLOCKED_SQUARE;
+                        squares[y * grid.across() + x] = BLOCKED_SQUARE;
                     }
                 }
             }
@@ -215,10 +221,10 @@ public final class VoidEnclosure {
     private static void stampBarriers(
             byte[] squares,
             List<double[][]> barriers,
-            Bounds walked,
-            double stride,
-            int across,
-            int up) {
+            WalkedGrid grid) {
+
+        var walked = grid.walked();
+        var stride = grid.stride();
 
         for (var barrier : barriers) {
 
@@ -234,8 +240,8 @@ public final class VoidEnclosure {
                 var atY = (int) Math.round(
                     (barrier[0][1] + alongY * step / steps - walked.minY()) / stride);
 
-                if (atX >= 0 && atY >= 0 && atX < across && atY < up) {
-                    squares[atY * across + atX] = BLOCKED_SQUARE;
+                if (atX >= 0 && atY >= 0 && atX < grid.across() && atY < grid.up()) {
+                    squares[atY * grid.across() + atX] = BLOCKED_SQUARE;
                 }
             }
         }
@@ -289,14 +295,11 @@ public final class VoidEnclosure {
     }
 
     // What the flood never reached, gathered into pieces and measured.
-    private static VoidEnclosure labelHeldWater(
-            Bounds walked,
-            double stride,
-            int across,
-            int up,
-            byte[] squares) {
+    private static VoidEnclosure labelHeldWater(WalkedGrid grid, byte[] squares) {
 
-        var regionAt = new int[across * up];
+        var across = grid.across();
+        var up = grid.up();
+        var regionAt = new int[grid.countSquares()];
         var counts = new ArrayList<Integer>();
 
         Arrays.fill(regionAt, OPEN_VOID);
@@ -344,10 +347,9 @@ public final class VoidEnclosure {
         var areas = new double[counts.size()];
 
         for (var region = 0; region < counts.size(); region++) {
-            areas[region] = counts.get(region) * stride * stride;
+            areas[region] = counts.get(region) * grid.stride() * grid.stride();
         }
 
-        return new VoidEnclosure(
-            walked, stride, across, up, squares, regionAt, areas, counts.size());
+        return new VoidEnclosure(grid, squares, regionAt, areas);
     }
 }
