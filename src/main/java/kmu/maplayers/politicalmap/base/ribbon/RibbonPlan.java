@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.ribbon;
 
 import kmlib.starsector.factions.FactionPalette;
 
+import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -25,11 +27,19 @@ import java.util.Optional;
  * one takes whatever {@link UncontestedRibbonRuns} answers. Contest is one question - does the
  * band say something its own fill does not - asked of the two kinds of fill a cell can have.
  *
- * <p>With a painter, that is any other bloc holding something. A system claimed by decree whose
- * decreed bloc holds nothing there still draws the one bloc present, alone, because the fill names
- * the decreed bloc and the band names somebody else. With no painter - an unclaimed cell, which no
- * bloc's fill covers - there is nobody to be a rival of, so the reading falls to the count: one
- * bloc alone is a footprint nothing contradicts, and two are a contest.
+ * <p>With a painter, that is any other bloc holding something and not standing with the painter.
+ * A system claimed by decree whose decreed bloc holds nothing there still draws the one bloc
+ * present, alone, because the fill names the decreed bloc and the band names somebody else. With no
+ * painter - an unclaimed cell, which no bloc's fill covers - there is nobody to be a rival of, so
+ * the reading falls to how many sides are in it: one side alone is a footprint nothing contradicts,
+ * and two are a contest.
+ *
+ * <p>Sides rather than blocs, because two allies jointly holding a system are not fighting over it,
+ * and a band laid at contested length there would say they were. Who stands with whom is the
+ * {@link BlocAffiliation} the caller hands over and never the fold the presences were counted
+ * under: allies keep their own runs in their own colours, and all that changes is the length those
+ * runs are laid at. Where nothing groups factions the affiliation stands nobody together, and every
+ * cell reads exactly as it does with no alliances in play.
  *
  * <p>Contest decides the lengths and never whether there is a band, which is what keeps the one
  * band a map must not be able to lose - the one saying a system is contested - out of reach of
@@ -55,10 +65,6 @@ public record RibbonPlan(
     // The cell draws no band: nothing is present in it, so there is no footprint to report.
     public static final RibbonPlan NONE = new RibbonPlan(List.of());
 
-    // What makes a painterless cell contested. With no fill naming anyone, a lone bloc is a
-    // footprint nothing already said rather than a rivalry, so it takes a second bloc.
-    private static final int CONTESTING_BLOC_COUNT = 2;
-
     // A cell no bloc holds anything in, which has no footprint to report.
     private static final int NO_BLOCS = 0;
 
@@ -75,6 +81,9 @@ public record RibbonPlan(
      *                        happens to differ from
      * @param rankedPresences the blocs present in the cell, already ranked as the fill was
      *                        decided, since the runs come out in exactly this order
+     * @param affiliation     who among those blocs stands together, which is what keeps two allies
+     *                        in one system from banding as though they fought over it;
+     *                        {@link BlocAffiliation#NONE} where nothing groups factions
      * @param rules           how a band is laid: the run lengths, and how far they reach on a cell
      *                        nobody contests
      * @return the cell's runs in draw order, or {@link #NONE} where the cell draws no band
@@ -82,9 +91,10 @@ public record RibbonPlan(
     public static RibbonPlan planCellRibbon(
             Optional<String> paintingBlocId,
             List<BlocPresence> rankedPresences,
+            BlocAffiliation affiliation,
             RibbonPlanRules rules) {
 
-        if (isCellContested(paintingBlocId, rankedPresences)) {
+        if (isCellContested(paintingBlocId, rankedPresences, affiliation)) {
             return layBlocRuns(rankedPresences, rules.lengths());
         }
 
@@ -128,6 +138,7 @@ public record RibbonPlan(
 
         var segments = new ArrayList<RibbonSegment>();
         BlocPresence outgoingBloc = null;
+
         for (var presence : rankedPresences) {
             // A bloc holding nothing counted lays no run, so it opens no handover either: a
             // divider laid for it would part two blocs across a run that is not there, and
@@ -155,31 +166,71 @@ public record RibbonPlan(
     // covers would band at contested length as though it were fought over.
     private static boolean isCellContested(
             Optional<String> paintingBlocId,
-            List<BlocPresence> rankedPresences) {
+            List<BlocPresence> rankedPresences,
+            BlocAffiliation affiliation) {
 
         return paintingBlocId
-            .map(blocId -> hasRivalPresence(blocId, rankedPresences))
-            .orElseGet(() -> countPresentBlocs(rankedPresences) >= CONTESTING_BLOC_COUNT);
+            .map(blocId -> hasRivalPresence(blocId, rankedPresences, affiliation))
+            .orElseGet(() -> hasOpposedSides(rankedPresences, affiliation));
     }
 
-    // Whether any bloc but the painter holds something in the cell.
+    // Whether any bloc holding something in the cell is neither the painter nor standing with it.
+    // An ally is not a rival: the two of them hold the system between them, and the fill naming one
+    // of them says nothing the other contradicts.
     private static boolean hasRivalPresence(
             String paintingBlocId,
-            List<BlocPresence> rankedPresences) {
+            List<BlocPresence> rankedPresences,
+            BlocAffiliation affiliation) {
 
         for (var presence : rankedPresences) {
-            if (presence.hasMarkets() && !presence.blocId().equals(paintingBlocId)) {
+
+            if (presence.hasMarkets()
+                    && !presence.blocId().equals(paintingBlocId)
+                    && !affiliation.areBlocsAllied(paintingBlocId, presence.blocId())) {
+
                 return true;
             }
         }
         return false;
     }
 
-    // How many blocs hold something in the cell, which both the painterless contest and the check
-    // for a footprint at all are read off. Counted over the blocs that hold something rather than
-    // over the list, a bloc ranked and holding nothing being one a mechanic listed rather than one
-    // the cell has in it - a decreed system its decreed bloc holds nothing in being the case that
-    // produces one.
+    // Whether the blocs present in a cell no fill covers fall into two or more sides, which is what
+    // makes such a cell a contest: with nobody painted there is no rival to be found, only the
+    // question of how many camps are in the system.
+    //
+    // Every bloc is weighed against the first one present rather than against every other, an
+    // affiliation being a fold: blocs that all stand with one bloc all stand with each other, so a
+    // second side shows itself the moment one of them does not.
+    private static boolean hasOpposedSides(
+            List<BlocPresence> rankedPresences,
+            BlocAffiliation affiliation) {
+
+        String firstBlocId = null;
+
+        for (var presence : rankedPresences) {
+
+            if (!presence.hasMarkets()) {
+
+                continue;
+            }
+            if (firstBlocId == null) {
+
+                firstBlocId = presence.blocId();
+                continue;
+            }
+            if (!firstBlocId.equals(presence.blocId())
+                    && !affiliation.areBlocsAllied(firstBlocId, presence.blocId())) {
+
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // How many blocs hold something in the cell, which the check for a footprint at all is read
+    // off. Counted over the blocs that hold something rather than over the list, a bloc ranked and
+    // holding nothing being one a mechanic listed rather than one the cell has in it - a decreed
+    // system its decreed bloc holds nothing in being the case that produces one.
     private static int countPresentBlocs(List<BlocPresence> rankedPresences) {
 
         var presentBlocs = 0;
@@ -202,7 +253,9 @@ public record RibbonPlan(
             RibbonSegmentLengths lengths) {
 
         var palette = presence.palette();
+
         for (var market = 0; market < presence.marketCount(); market++) {
+
             if (market > 0) {
                 segments.add(createParting(palette, lengths));
             }

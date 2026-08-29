@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colony;
 
+import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 import java.util.ArrayList;
@@ -89,6 +90,10 @@ public final class ColonyCellRibbons {
                         inputs.grouping()),
                     rankedBlocIds),
                 inputs.palettes()),
+            // TODO: carry the bake's affiliation on the inputs and hand it over here. Until then
+            // every layer judges its contest as an install with nothing grouping factions does,
+            // which is what the bands already say.
+            BlocAffiliation.NONE,
             inputs.rules());
     }
 

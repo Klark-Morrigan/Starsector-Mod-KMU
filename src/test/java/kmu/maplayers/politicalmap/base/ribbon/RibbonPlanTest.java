@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.ribbon;
 
 import kmlib.starsector.factions.FactionPalette;
 
+import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +41,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * run long enough to have an inside, across a handover, and at the end of a band, which is the one
  * boundary that stays open.
  *
+ * <p>Both readings are then stated a third time over an alliance set, since who counts as a rival
+ * is the one thing an affiliation moves: a bloc standing with the painter, and a pair standing
+ * together on a cell no fill covers, fall to the shortened runs, and an outsider beside either of
+ * them puts the cell back on the authored ones. Every other case here is posed under
+ * {@link BlocAffiliation#NONE}, which is both the install with nothing grouping factions and the
+ * statement that nothing about a band changed for it.
+ *
  * <p>Every case names its blocs in a deliberate order and expects that same order out, since
  * the rule ranks nothing itself and a case that happened to be sorted would hide it.
  */
@@ -64,6 +73,13 @@ final class RibbonPlanTest {
     private static final RibbonPlanRules RULES_SHORTENING_UNCONTESTED_RUNS =
         new RibbonPlanRules(STANDARD_LENGTHS, new UncontestedRibbonRuns(true));
 
+    // An alliance set standing the Hegemony and Tri-Tachyon together, with the Diktat left outside
+    // it, so one value poses the ally, the rival and the painter's own bloc at once. Built off the
+    // shared alliance shape rather than stated here, a hand-rolled grouping being the one way this
+    // suite could come to mean something the affiliation's own suite does not.
+    private static final BlocAffiliation ALLIED_HEGEMONY_AND_TRITACHYON =
+        new BlocAffiliation(RibbonPlanFixtures.buildAllianceOf(HEGEMONY, TRITACHYON));
+
     @Nested
     class PlanCellRibbon {
 
@@ -74,6 +90,7 @@ final class RibbonPlanTest {
             assertThat(RibbonPlan.planCellRibbon(
                     Optional.of(HEGEMONY),
                     List.of(),
+                    BlocAffiliation.NONE,
                     STANDARD_RULES))
                 .isEqualTo(RibbonPlan.NONE);
         }
@@ -85,6 +102,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(2)),
+                BlocAffiliation.NONE,
                 STANDARD_RULES);
 
             assertThat(plan.segments())
@@ -102,6 +120,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(2), buildTriTachyonPresence(0)),
+                BlocAffiliation.NONE,
                 RULES_SHORTENING_UNCONTESTED_RUNS);
 
             assertThat(plan.segments())
@@ -120,6 +139,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(3)),
+                BlocAffiliation.NONE,
                 RULES_SHORTENING_UNCONTESTED_RUNS);
 
             assertThat(plan.segments())
@@ -139,6 +159,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
+                BlocAffiliation.NONE,
                 RULES_SHORTENING_UNCONTESTED_RUNS);
 
             assertThat(plan.segments())
@@ -149,6 +170,48 @@ final class RibbonPlanTest {
         }
 
         @Test
+        void shortensTheRunsWhereTheOnlyOtherBlocStandsWithThePainter() {
+            // The same cell as the contested one above, under an alliance set that stands its two
+            // blocs together: they hold the system between them rather than fighting over it, so
+            // the band is a tally of that joint footprint. Both keep their own run in their own
+            // colours - what standing together changes is the length, never the fold.
+            var plan = RibbonPlan.planCellRibbon(
+                Optional.of(HEGEMONY),
+                List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
+                ALLIED_HEGEMONY_AND_TRITACHYON,
+                RULES_SHORTENING_UNCONTESTED_RUNS);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 1));
+        }
+
+        @Test
+        void keepsTheAuthoredRunLengthWhereARivalStandsBesideThePainterAndItsAlly() {
+            // An ally does not make a cell uncontested - it only stops being a rival itself. The
+            // Diktat is in nobody's alliance here, so the cell is the contest it looks like and
+            // keeps the authored lengths even under the shortening.
+            var plan = RibbonPlan.planCellRibbon(
+                Optional.of(HEGEMONY),
+                List.of(
+                    buildHegemonyPresence(1),
+                    buildTriTachyonPresence(1),
+                    buildDiktatPresence(1)),
+                ALLIED_HEGEMONY_AND_TRITACHYON,
+                RULES_SHORTENING_UNCONTESTED_RUNS);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                    new RibbonSegment(TRITACHYON_DARK, 1),
+                    new RibbonSegment(DIKTAT_BRIGHT, 3));
+        }
+
+        @Test
         void drawsNoRibbonInACellHeldByDecreeAlone() {
             // A system its decreed bloc holds nothing in: the uncontested reading reports the size
             // of a footprint, and there is none here - so banding the cell would lay a band of no
@@ -156,6 +219,7 @@ final class RibbonPlanTest {
             assertThat(RibbonPlan.planCellRibbon(
                     Optional.of(HEGEMONY),
                     List.of(buildHegemonyPresence(0)),
+                    BlocAffiliation.NONE,
                     RULES_SHORTENING_UNCONTESTED_RUNS))
                 .isEqualTo(RibbonPlan.NONE);
         }
@@ -168,6 +232,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(3)),
+                BlocAffiliation.NONE,
                 STANDARD_RULES);
 
             assertThat(plan.segments())
@@ -190,6 +255,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(3), buildTriTachyonPresence(2)),
+                BlocAffiliation.NONE,
                 STANDARD_RULES);
 
             assertThat(plan.segments())
@@ -216,6 +282,7 @@ final class RibbonPlanTest {
                     buildHegemonyPresence(1),
                     buildTriTachyonPresence(1),
                     buildDiktatPresence(1)),
+                BlocAffiliation.NONE,
                 STANDARD_RULES);
 
             assertThat(plan.segments())
@@ -235,6 +302,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
+                BlocAffiliation.NONE,
                 STANDARD_RULES);
 
             assertThat(plan.segments())
@@ -251,6 +319,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(DIKTAT),
                 List.of(buildTriTachyonPresence(2)),
+                BlocAffiliation.NONE,
                 STANDARD_RULES);
 
             assertThat(plan.segments())
@@ -269,6 +338,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 NO_PAINTER,
                 List.of(buildTriTachyonPresence(2)),
+                BlocAffiliation.NONE,
                 RULES_SHORTENING_UNCONTESTED_RUNS);
 
             assertThat(plan.segments())
@@ -286,6 +356,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 NO_PAINTER,
                 List.of(buildTriTachyonPresence(1), buildDiktatPresence(1)),
+                BlocAffiliation.NONE,
                 RULES_SHORTENING_UNCONTESTED_RUNS);
 
             assertThat(plan.segments())
@@ -303,6 +374,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 NO_PAINTER,
                 List.of(buildTriTachyonPresence(2), buildDiktatPresence(0)),
+                BlocAffiliation.NONE,
                 RULES_SHORTENING_UNCONTESTED_RUNS);
 
             assertThat(plan.segments())
@@ -313,12 +385,54 @@ final class RibbonPlanTest {
         }
 
         @Test
+        void shortensTwoAlliesRunsOnACellNoFillCovers() {
+            // An unclaimed system settled by two blocs standing together. With no fill naming
+            // either of them the reading falls to how many sides are in it, and allies are one -
+            // so the band tallies their joint footprint rather than announcing a war.
+            var plan = RibbonPlan.planCellRibbon(
+                NO_PAINTER,
+                List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
+                ALLIED_HEGEMONY_AND_TRITACHYON,
+                RULES_SHORTENING_UNCONTESTED_RUNS);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 1));
+        }
+
+        @Test
+        void keepsTheAuthoredRunLengthForAnAlliedPairAndARivalOnACellNoFillCovers() {
+            // The same unclaimed system with an outsider settled in it: two sides are present, so
+            // it is a contest and keeps the authored lengths. Read against the case above, this is
+            // what says the painterless reading counts sides rather than allowing at most one bloc.
+            var plan = RibbonPlan.planCellRibbon(
+                NO_PAINTER,
+                List.of(
+                    buildHegemonyPresence(1),
+                    buildTriTachyonPresence(1),
+                    buildDiktatPresence(1)),
+                ALLIED_HEGEMONY_AND_TRITACHYON,
+                RULES_SHORTENING_UNCONTESTED_RUNS);
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                    new RibbonSegment(TRITACHYON_DARK, 1),
+                    new RibbonSegment(DIKTAT_BRIGHT, 3));
+        }
+
+        @Test
         void keepsTheBlocOrderItWasHandedRatherThanRankingThemItself() {
             // The painter is listed second and stays second: the caller ranked these, and a
             // ribbon that re-sorted could disagree with the fill about who leads the system.
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildTriTachyonPresence(1), buildHegemonyPresence(1)),
+                BlocAffiliation.NONE,
                 STANDARD_RULES);
 
             assertThat(plan.segments())
@@ -340,6 +454,7 @@ final class RibbonPlanTest {
                     buildHegemonyPresence(2),
                     buildDiktatPresence(0),
                     buildTriTachyonPresence(1)),
+                BlocAffiliation.NONE,
                 STANDARD_RULES);
 
             assertThat(plan.segments())
@@ -362,6 +477,7 @@ final class RibbonPlanTest {
                     buildDiktatPresence(0),
                     buildHegemonyPresence(2),
                     buildTriTachyonPresence(1)),
+                BlocAffiliation.NONE,
                 STANDARD_RULES);
 
             assertThat(plan.segments())
@@ -385,6 +501,7 @@ final class RibbonPlanTest {
                     buildHegemonyPresence(1),
                     buildTriTachyonPresence(1),
                     buildDiktatPresence(0)),
+                BlocAffiliation.NONE,
                 STANDARD_RULES);
 
             assertThat(plan.segments())
@@ -402,6 +519,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(2), buildTriTachyonPresence(1)),
+                BlocAffiliation.NONE,
                 new RibbonPlanRules(
                     new RibbonSegmentLengths(4, 2),
                     UNSHORTENED_RUNS));
@@ -439,6 +557,7 @@ final class RibbonPlanTest {
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(3), buildTriTachyonPresence(2)),
+                BlocAffiliation.NONE,
                 STANDARD_RULES);
 
             assertThat(plan.sumLengthUnits())

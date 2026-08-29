@@ -103,14 +103,21 @@ screen entirely.
 **What contested means** depends on whether the cell has a painter, which the rule takes as a value
 that can state absence rather than as an id no bloc happens to carry:
 
-- **With a painter**, any other bloc holding something. A system claimed by decree whose decreed
-  bloc holds nothing there still bands, against the one rival present, because the fill names the
-  decreed bloc and the band names somebody else.
-- **With none** - an unclaimed cell, which no bloc's fill covers - two or more blocs holding
-  something. There is nobody to be a rival of, so a lone holder says nothing its fill contradicts.
+- **With a painter**, any other bloc holding something that does not stand with the painter. A
+  system claimed by decree whose decreed bloc holds nothing there still bands, against the one rival
+  present, because the fill names the decreed bloc and the band names somebody else.
+- **With none** - an unclaimed cell, which no bloc's fill covers - blocs holding something that fall
+  into two or more sides. There is nobody to be a rival of, so a lone side says nothing its fill
+  contradicts.
 
 Under a sentinel painter the second case collapsed into the first, every bloc differing from an id
 nobody carries, and a lone haven banded at contested length as though it were fought over.
+
+**Who stands with whom** is a `BlocAffiliation` the rule is handed, never the grouping the counts
+were folded under. Two allies each keep their own run in their own colour - merging them is the
+alliances layer's job - and all the affiliation decides is that the cell they hold between them is
+not a war. Where nothing groups factions it stands nobody together, and every cell reads as it
+always has.
 
 ## What is not here
 
