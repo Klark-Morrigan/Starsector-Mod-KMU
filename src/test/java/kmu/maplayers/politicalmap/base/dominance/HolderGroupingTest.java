@@ -333,6 +333,24 @@ class HolderGroupingTest {
         }
 
         @Test
+        void namesOnlyTheFactionsFoldedIntoTheBlocAskedAbout() {
+            // Two alliances at once, which is the only shape that pins the read as a filter rather
+            // than as a walk: with one alliance in the grouping, every folded faction is that bloc's
+            // and a read ignoring which bloc it was asked about comes back correct all the same.
+            var grouping = new HolderGrouping(
+                Map.of(
+                    "hegemony", "alliance-1",
+                    "astral_armada", "alliance-1",
+                    "tritachyon", "alliance-2",
+                    "luddic_church", "alliance-2"),
+                Map.of("alliance-1", "hegemony", "alliance-2", "tritachyon"),
+                Map.of("alliance-1", "Allied Powers", "alliance-2", "Free Traders"));
+
+            assertThat(grouping.resolveMemberFactionIds("alliance-2"))
+                .containsExactlyInAnyOrder("tritachyon", "luddic_church");
+        }
+
+        @Test
         void namesALoneFactionBlocAsItsOwnSoleMember() {
             // Nothing folds into an outsider's bloc, and its id is that faction's own - the
             // membership of one every read under no alliance comes back with.

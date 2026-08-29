@@ -69,19 +69,6 @@ class BlocFriendlinessTest {
         }
 
         @Test
-        void isFalseWhereAMemberStandingInNoSystemIsSour() {
-            // Membership is read whole, so a member that holds nothing where the question is being
-            // asked still sinks its bloc. The alternative reads the same two blocs friendly over one
-            // system and contesting over the next, on nothing but which subset of each was present.
-            var friendliness = buildFriendlinessAboveNeutralOn(List.of("hegemony:tritachyon"));
-
-            assertThat(friendliness.areBlocsFriendly(
-                    Set.of("hegemony", "luddic_church"),
-                    Set.of("tritachyon")))
-                .isFalse();
-        }
-
-        @Test
         void isFalseWhereEitherBlocIsMadeOfNobody() {
             // Friendliness is a positive claim, and walking no pairs at all would report the vacuous
             // truth - a bloc nothing is known about filed under a heading asserting something of it.

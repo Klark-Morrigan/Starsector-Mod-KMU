@@ -173,7 +173,8 @@ public record HolderGrouping(
      *
      * @param blocId the bloc to read; a bloc with no id is made of nobody, there being nothing to
      *               have named it
-     * @return the bloc's member factions, in no meaningful order; empty for a bloc with no id
+     * @return the bloc's member factions, immutable and in no meaningful order; empty for a bloc
+     *         with no id
      */
     public Set<String> resolveMemberFactionIds(String blocId) {
 
@@ -192,9 +193,13 @@ public record HolderGrouping(
         // Nothing folds into a bloc that is a lone faction - the sparse map holds an entry only
         // where a faction is grouped away from itself - and there the bloc id is that faction's own
         // id, which is the membership of one every identity-grouping read comes back with.
+        //
+        // Copied rather than handed out as it stands, so both answers are immutable: a caller that
+        // may add to a membership scanned out of the fold and not to one of a single faction would
+        // be free to do so or to fault on it depending on which bloc it happened to ask about.
         return memberFactionIds.isEmpty()
             ? Set.of(blocId)
-            : memberFactionIds;
+            : Set.copyOf(memberFactionIds);
     }
 
     /**
