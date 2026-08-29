@@ -220,6 +220,11 @@ public final class ContinentCoastOverlay {
      * draw a chord across the cell it is drawn on - a mark that looks like an eligible span and
      * is nothing of the kind.
      *
+     * <p>A frontage of ONE point gets a dot. A cell squeezed by its neighbours offers exactly
+     * one place a span may start, and an open path through one point draws nothing - so spans
+     * were leaving coast that showed no eligibility at all, on about a third of the eligible
+     * cells. The dot is the honest mark: eligibility really is a point there, not a stretch.
+     *
      * @param g2 what to draw with
      */
     private void paintFrontages(Graphics2D g2) {
@@ -236,7 +241,13 @@ public final class ContinentCoastOverlay {
             settings.bridgeFrontageColour, MapLook.OPAQUE_ALPHA));
 
         for (var frontage : frontages) {
-            g2.draw(MapPainting.buildOpenPath(frontage));
+
+            if (frontage.size() >= 2) {
+                g2.draw(MapPainting.buildOpenPath(frontage));
+            } else {
+                g2.fill(MapPainting.buildCircle(
+                    frontage.get(0), MapLook.FRONTAGE_DOT_RADIUS));
+            }
         }
     }
 

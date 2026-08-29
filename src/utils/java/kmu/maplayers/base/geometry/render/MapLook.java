@@ -113,6 +113,14 @@ public final class MapLook {
     // beside the coast - a second line, where there is only one line with two kinds of stretch.
     public static final float FRONTAGE_STROKE = RING_STROKE;
 
+    // The mark for a frontage that is a single point: a cell squeezed by its neighbours until
+    // its whole eligible stretch collapsed to the one place a span may start. An open path of
+    // one point draws NOTHING, and about a third of a sector's eligible frontage is exactly
+    // that - so without a mark, a span appears to leave a coast that was never marked
+    // bridgeable. A touch wider than the line it sits on, so it reads as a tick rather than
+    // vanishing into the stroke.
+    public static final float FRONTAGE_DOT_RADIUS = FRONTAGE_STROKE * 1.5f;
+
     // The void a continent coast shuts in, filled. Its own colour rather than the settled
     // coast's, for the reason its line has one: the two constructions are on screen together
     // to be compared, and one colour for both would hide the difference being looked at.
