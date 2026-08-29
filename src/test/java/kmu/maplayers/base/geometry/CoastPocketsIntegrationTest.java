@@ -179,7 +179,7 @@ class CoastPocketsIntegrationTest {
 
         var coastFill = collectFill(findPocketsAt(sector, SHIPPED_FRONTAGE_FLOOR, shaping));
         var bridgeFill = collectBridgeFill(fixture, shaping);
-        var coast = Coastlines.collectCoastRings(traced);
+        var coast = measureBounds(Coastlines.collectCoastRings(traced));
 
         var unfilled = new ArrayList<String>();
 
@@ -253,12 +253,7 @@ class CoastPocketsIntegrationTest {
             PARAMETERS,
             shaping);
 
-        var fill = new ArrayList<BoundedOutline>(captured.size());
-
-        for (var outline : captured) {
-            fill.add(BoundedOutline.measure(outline));
-        }
-        return fill;
+        return measureBounds(captured);
     }
 
     private static List<BoundedOutline> concatenate(
@@ -275,18 +270,48 @@ class CoastPocketsIntegrationTest {
     // Void shut in by walls can still be open sea: a wall closes the gap between two cells
     // wherever it is laid, seaward of the coast as readily as landward of it. Only water inside
     // the drawn coast is water a fill is owed.
+    //
+    // Stops as soon as the majority is settled either way. A piece of water carries thousands
+    // of points and nearly every one of them agrees with the rest, so counting the remainder
+    // out is the bulk of the work and none of the answer.
     private static boolean isMostlyInsideCoast(
             ShutInVoidSweep.ShutInVoid water,
-            List<List<double[]>> coast) {
+            List<BoundedOutline> coast) {
+
+        var counted = water.points().size();
+        var majority = counted / 2;
 
         var inside = 0;
+        var outside = 0;
 
         for (var point : water.points()) {
-            if (Coastlines.isInsideCoast(coast, point)) {
+
+            if (isPointCovered(point, coast)) {
                 inside++;
+            } else {
+                outside++;
+            }
+
+            if (inside > majority) {
+                return true;
+            }
+            if (outside >= counted - majority) {
+                return false;
             }
         }
-        return inside > water.points().size() / 2;
+        return inside > majority;
+    }
+
+    // Rings with their bounds measured once, so the point tests below reject the far-away ones
+    // on four comparisons instead of walking them.
+    private static List<BoundedOutline> measureBounds(List<List<double[]>> rings) {
+
+        var bounded = new ArrayList<BoundedOutline>(rings.size());
+
+        for (var ring : rings) {
+            bounded.add(BoundedOutline.measure(ring));
+        }
+        return bounded;
     }
 
     // Whether a fill covers any of these points. One point is enough: the question asked of
@@ -298,10 +323,19 @@ class CoastPocketsIntegrationTest {
             List<BoundedOutline> fill) {
 
         for (var point : points) {
-            for (var outline : fill) {
-                if (outline.holds(point)) {
-                    return true;
-                }
+            if (isPointCovered(point, fill)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Whether any one of a set of outlines holds a point.
+    private static boolean isPointCovered(double[] point, List<BoundedOutline> outlines) {
+
+        for (var outline : outlines) {
+            if (outline.holds(point)) {
+                return true;
             }
         }
         return false;

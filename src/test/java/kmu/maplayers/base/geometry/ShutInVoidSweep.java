@@ -28,9 +28,12 @@ import java.util.Map;
 final class ShutInVoidSweep {
 
     // Room beyond the outermost cell for open sea to reach the border of the grid and be
-    // recognised as open. Any water this far out is past every disc and every wall, so it
-    // needs only enough space to be walked to the edge.
-    private static final double MARGIN_IN_CELL_RADII = 3;
+    // recognised as open. One reach clears every disc and every wall, since both are drawn
+    // from the sites; past that all the flood needs is a ring of water wide enough to walk
+    // round the land to the edge, and in strides because that is what it walks in. Wider
+    // margins buy nothing and cost the whole grid: the squares they add are open sea, which
+    // is the one piece of water the sweep throws away.
+    private static final int MARGIN_IN_STRIDES = 2;
 
     // The four squares a flood steps to from any one. Held rather than written into the loop,
     // where it is rebuilt for every square the flood stands on.
@@ -57,7 +60,7 @@ final class ShutInVoidSweep {
             double stride) {
 
         var overSites = Bounds.computeEnclosingBounds(union.sites());
-        var margin = union.reach() + MARGIN_IN_CELL_RADII * union.reach();
+        var margin = union.reach() + MARGIN_IN_STRIDES * stride;
 
         var walked = new Bounds(
             overSites.minX() - margin,
