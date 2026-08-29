@@ -20,11 +20,15 @@ import java.util.List;
  * coast's reaches shut a long corridor into separate holes before there is anything to name,
  * so nothing here divides or draws a division.
  *
- * <p><b>Built whether or not anything is switched on.</b> Everything else here is built only
- * while it is on screen, because the work is per-frame-visible. This is not: the pointer readout
- * names whatever piece of void it is over, and a readout that only worked while the names
- * happened to be drawn would be a readout with a hidden precondition. The cost is one coast
- * trace per rebuild, beside the trace the coast overlay already does.
+ * <p><b>A pointer names only what the map drew.</b> A pocket is offered to the readout when it
+ * is on screen - its wall drawn AND its water filled - and not otherwise. Both, because either
+ * alone leaves nothing a reader could have been pointing at: a fill with no wall is water whose
+ * edge the map never drew, and a wall with no fill is a line with nothing behind it. Named
+ * regardless, the readout answers about void the reader cannot see, cannot point at a second
+ * time, and cannot check the answer against.
+ *
+ * <p>Separate from whether each name is WRITTEN on its pocket, which is its own switch: one
+ * decides what the map says when asked, the other what it says unprompted.
  *
  * <p>The sections are taken at the cells' own reach whatever the pocket shaping is set to. What
  * a piece of void is and what it is called are facts about the void itself; the shaping decides
@@ -52,6 +56,15 @@ public final class VoidSectionsOverlay {
      */
     public void refresh(SectorFixture fixture) {
 
+        inland = List.of();
+        coastal = List.of();
+
+        // Nothing reads the sections but the readout and the written names, so with every one
+        // of those off the trace below would be paid for an answer no one receives.
+        if (!isAnySectionWanted()) {
+            return;
+        }
+
         // Walls laid, because a wall closes void the cells did not close on their own and those
         // pieces are sections like any other. Traced here rather than taken from the coast
         // overlay so that the sections do not appear and vanish with a toggle about whether the
@@ -77,22 +90,24 @@ public final class VoidSectionsOverlay {
     }
 
     /**
-     * Every section, whichever kind, for a reader asking which one the pointer is over.
+     * The sections a reader could be pointing at: those whose pocket is on screen.
      *
-     * <p>Both kinds whatever is switched on: the pointer names the piece of void it is over,
-     * and a readout that went quiet because the names happened to be hidden would be a readout
-     * with a hidden precondition.
+     * <p>Each kind on its own terms, so a reader who has put one construction aside is not
+     * told about it by the pointer while looking at the other.
      *
-     * @return the named sections
+     * @return the named sections of every pocket the map is drawing
      */
-    public List<NamedRegion> getSections() {
+    public List<NamedRegion> collectShownSections() {
 
-        var all = new ArrayList<NamedRegion>(inland.size() + coastal.size());
+        var shown = new ArrayList<NamedRegion>(inland.size() + coastal.size());
 
-        all.addAll(inland);
-        all.addAll(coastal);
-
-        return all;
+        if (isInlandPocketShown()) {
+            shown.addAll(inland);
+        }
+        if (isCoastalPocketShown()) {
+            shown.addAll(coastal);
+        }
+        return shown;
     }
 
     /**
@@ -103,10 +118,6 @@ public final class VoidSectionsOverlay {
      */
     public void paintNames(Graphics2D g2, AffineTransform worldToScreen) {
 
-        // The DRAWING goes under the settled construction's switch; the sections themselves do
-        // not, and are still found above. The pointer names whatever piece of void it is over
-        // whether or not that construction is being shown, and a readout that went quiet
-        // because a section was set aside would be a readout with a hidden precondition.
         if (!settings.showSectorVoid) {
             return;
         }
@@ -117,5 +128,32 @@ public final class VoidSectionsOverlay {
         if (settings.showCoastalNames) {
             NamedRegions.paintNames(g2, worldToScreen, coastal, settings.regionNameColour);
         }
+    }
+
+    // Whether an inland pocket is on screen, which is what makes it something to point at.
+    private boolean isInlandPocketShown() {
+
+        return settings.showSectorVoid
+            && settings.showInlandBridges
+            && settings.showInlandFill;
+    }
+
+    // The coastal pocket's own answer. Its wall is the coastline where the inland pocket's is
+    // a bridge, which is the whole of the difference between the two.
+    private boolean isCoastalPocketShown() {
+
+        return settings.showSectorVoid
+            && settings.showCoastline
+            && settings.showCoastalFill;
+    }
+
+    // Whether anything will ask for the sections at all: a pointer can name a pocket that is
+    // on screen, and either kind's names can be written across it.
+    private boolean isAnySectionWanted() {
+
+        return isInlandPocketShown()
+            || isCoastalPocketShown()
+            || (settings.showSectorVoid
+                && (settings.showInlandNames || settings.showCoastalNames));
     }
 }

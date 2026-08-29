@@ -391,7 +391,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     private void refreshVoidSections() {
 
         voidSections.refresh(fixture);
-        readout.nameRegionsFrom(cellNames, voidSections.getSections());
+        readout.nameRegionsFrom(cellNames, voidSections.collectShownSections());
         repaintMap();
     }
 
@@ -456,7 +456,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         smoothedRingsByOwner = smoothClusterRings(geometry);
         cellNames = buildCellNames();
 
-        readout.nameRegionsFrom(cellNames, voidSections.getSections());
+        readout.nameRegionsFrom(cellNames, voidSections.collectShownSections());
 
         if (settings.showUnboundedCells) {
 
