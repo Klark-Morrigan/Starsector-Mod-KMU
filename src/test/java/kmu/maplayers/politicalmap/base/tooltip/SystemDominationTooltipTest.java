@@ -258,7 +258,7 @@ final class SystemDominationTooltipTest {
             var expandedVariant = (SystemStandingsTooltip) tooltip.resolveExpandedVariant().get();
 
             assertThat(readLabelTexts(expandedVariant.buildBodySections(sectorMock, systemMock)))
-                .contains("Allied with the dominant faction:");
+                .contains("Allied with the system holder:");
         }
     }
 

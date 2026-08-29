@@ -238,7 +238,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             ranking.selectDominantStandings());
 
         appendBlock.accept(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_DOMINANT,
+            KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_SYSTEM_HOLDER,
             ranking.selectStandingsOn(ContestSide.ALLIED));
 
         appendBlock.accept(

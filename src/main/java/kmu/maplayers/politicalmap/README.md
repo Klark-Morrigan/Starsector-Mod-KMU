@@ -261,7 +261,7 @@ for once per paint and applied by `StandingRowResolver` where the standing and t
 it are both in hand, so no box can list one faction's colonies under another's name. Hanging nothing
 is the shared default, so the ordinary box overrides nothing at all.
 
-Below the leader the ranked groups split in two: `Allied with the dominant faction:` takes everyone
+Below the leader the ranked groups split in two: `Allied with the system holder:` takes everyone
 standing in the leader's own alliance and `Contested by:` everyone else. The split is `ContestSides`
 - the one placement every surface reporting a contest routes its blocks through, over the
 `BlocAffiliation` the bands judge their contest by (`HolderGroupingSource`, bound by

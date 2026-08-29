@@ -77,7 +77,7 @@
     "political_map_tooltip_section_contested": "Contested by:",
     "political_map_tooltip_section_non_territorial": "Non-territorial:",
     "political_map_tooltip_section_dominated": "Dominated by:",
-    "political_map_tooltip_section_allied_with_dominant": "Allied with the dominant faction:",
+    "political_map_tooltip_section_allied_with_system_holder": "Allied with the system holder:",
 
     "political_map_tooltip_factor_stability": "Stability",
     "political_map_tooltip_factor_size": "Size",

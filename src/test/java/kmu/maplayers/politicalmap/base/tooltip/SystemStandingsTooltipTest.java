@@ -269,7 +269,7 @@ final class SystemStandingsTooltipTest {
                 .containsExactly(
                     "Dominated by:",
                     "Rebel Pact",
-                    "Allied with the dominant faction:",
+                    "Allied with the system holder:",
                     "Tri-Tachyon",
                     "Contested by:",
                     "Persean League");
@@ -334,7 +334,7 @@ final class SystemStandingsTooltipTest {
             stubThreeGroupsRanked();
 
             assertThat(readBodyLabelTexts())
-                .contains("Allied with the dominant faction:");
+                .contains("Allied with the system holder:");
 
             allianceSet = HolderGrouping.identity();
 
