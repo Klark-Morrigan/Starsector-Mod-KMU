@@ -19,9 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * nobody is in a position to tell it that one is gone.
  *
  * <p>Resolution takes two forms because the seams do. A caller already holding a sector asks for
- * that sector's; a seam vanilla hands no sector at all - the terrain hook is the one that matters,
- * being the map's own render pass - asks for the live sector's, which is the single place a global
- * read stands in for a sector nobody passed down.
+ * that sector's; a seam vanilla hands no sector at all - its map render hook is passed a fade factor
+ * and nothing else - asks for the live sector's, which is the single place a global read stands in
+ * for a sector nobody passed down.
  *
  * <p>A sector with nothing installed resolves to a detached installation rather than to null. The
  * map layers sit behind a switch a player can leave off, so an uninstalled sector is an ordinary

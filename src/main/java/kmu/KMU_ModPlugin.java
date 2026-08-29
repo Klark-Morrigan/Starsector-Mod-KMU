@@ -150,8 +150,8 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // What the map layers need of a sector while they are on, in the order they need it in.
     static void installMapLayers(SectorAPI sector) {
 
-        // First, because it is what the rest is installed into: everything below derives its state
-        // from this sector, and this is the thing that sector's share of it is held in.
+        // First, and taken back last: everything below derives what it draws from this sector, and
+        // this is where that sector's share of it is held.
         MapLayerInstallations.installMachineryOn(sector);
 
         // Before the render surfaces, because its save heal repairs what the terrain then reads.
@@ -175,7 +175,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
         PoliticalMapInstaller.uninstallAll(sector);
 
         // Last, mirroring the install: the four above are taken back through the state this holds,
-        // so releasing it first would leave them undoing their work against nothing.
+        // so releasing it first would leave them undoing their work against nothing. Reached with a
+        // sector nothing was ever installed on too, since a load with the overlay switched off
+        // takes it back rather than declining to stand it up.
         MapLayerInstallations.uninstallMachineryFrom(sector);
     }
 }
