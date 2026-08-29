@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -19,6 +20,7 @@ import static kmu.maplayers.SectorScenarioFixtures.CONCEALED_HOLDER_ID;
 import static kmu.maplayers.SectorScenarioFixtures.buildUnvisitedSectorHoldingGatedPair;
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.NEUTRAL_BASE;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildConditionOnlyMarket;
@@ -103,6 +105,25 @@ class DominanceStatsAggregatorIntegrationTest {
                 .containsExactly(
                     entry("hegemony", new DominanceStats(1, 1, 5000, 5)),
                     entry("tritachyon", new DominanceStats(0, 1, 3000, 3)));
+        }
+
+        @Test
+        void aggregateDominanceStatsCountsNoDominationForANeutralMarketOutweighingAColony() {
+            // Neutral is barred from the contest, so the picker's domination count goes to the
+            // faction whose cell actually paints. Its presence and its totals stand: the bar is on
+            // the candidacy, never on the arithmetic, so the placeholder is still offered and still
+            // shown what it scored.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var neutral = buildFaction(Factions.NEUTRAL, NEUTRAL_BASE);
+            var sector = buildSectorWith(
+                "salvage-system",
+                buildVisibleMarket(neutral, 6),
+                buildVisibleMarket(hegemony, 3));
+
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+                .contains(
+                    entry(Factions.NEUTRAL, new DominanceStats(0, 1, 6000, 6)),
+                    entry("hegemony", new DominanceStats(1, 1, 3000, 3)));
         }
 
         @Test

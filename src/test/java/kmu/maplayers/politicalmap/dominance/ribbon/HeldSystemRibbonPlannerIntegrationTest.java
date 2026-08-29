@@ -21,6 +21,7 @@ import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.NEUTRAL;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsFor;
@@ -146,6 +147,21 @@ final class HeldSystemRibbonPlannerIntegrationTest {
         @Test
         void handsBackThePlanOfASystemItCounts() {
             var sector = buildSectorContestedBy(HEGEMONY, TRITACHYON);
+
+            assertThat(buildPlanner(sector).planSystemRibbon(systemOf(sector)).segments())
+                .startsWith(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+        }
+
+        @Test
+        void opensTheBandOnTheFactionSharingASystemWithAHeavierNeutralMarket() {
+            // Neutral takes no part in the contest for a system, so the band opens on the bloc the
+            // cell is painted for rather than on the placeholder outweighing it. The band and the
+            // fill settle their winner under one set of rules, and this is the case that parts them
+            // if they ever stop doing so.
+            var sector = SectorPoliticsFixtures.buildSectorWith(
+                SYSTEM_ID,
+                buildColony(NEUTRAL, LARGER_COLONY),
+                buildColony(HEGEMONY, SMALLER_COLONY));
 
             assertThat(buildPlanner(sector).planSystemRibbon(systemOf(sector)).segments())
                 .startsWith(new RibbonSegment(HEGEMONY_BRIGHT, 3));

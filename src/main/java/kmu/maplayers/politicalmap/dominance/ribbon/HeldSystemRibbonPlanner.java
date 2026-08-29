@@ -85,8 +85,7 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
         // do not say so.
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
             footprintByBlocId,
-            pass.tieBreakFor(system),
-            pass.resolveBlocCandidacy());
+            pass.resolveRankingRulesFor(system));
 
         return Optional.of(HeldCellRibbons.planHeldCellRibbon(
             dominantBlocId,

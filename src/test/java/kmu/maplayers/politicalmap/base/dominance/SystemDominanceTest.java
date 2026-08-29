@@ -31,6 +31,10 @@ class SystemDominanceTest {
     private static final String PLACEHOLDER = "placeholder";
     private static final String SECOND_PLACEHOLDER = "placeholder-second";
 
+    // Stated here rather than taken from HolderRankingRules' own open contest, so a case about
+    // the weight levels poses its candidacy as plainly as a case about the bar does.
+    private static final Predicate<String> EVERY_BLOC = factionId -> true;
+
     // Both placeholder ids sort below the scoring factions below, so a case a bar decides cannot
     // be passing on the natural id order instead.
     private static final Predicate<String> BARS_PLACEHOLDERS =
@@ -41,7 +45,9 @@ class SystemDominanceTest {
 
         @Test
         void returnsNullForNoOwnedMarkets() {
-            assertThat(SystemDominance.resolveDominantFactionId(Map.of(), BlocCandidacy.NONE_BARRED))
+            assertThat(SystemDominance.resolveDominantFactionId(
+                    Map.of(),
+                    HolderRankingRules.createOpenContestByLowestId()))
                 .isNull();
         }
 
@@ -52,7 +58,9 @@ class SystemDominanceTest {
                 "hegemony",
                 buildWeightedFootprint(7, 5, 5));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints, BlocCandidacy.NONE_BARRED))
+            assertThat(SystemDominance.resolveDominantFactionId(
+                    footprints,
+                    HolderRankingRules.createOpenContestByLowestId()))
                 .isEqualTo("hegemony");
         }
 
@@ -67,7 +75,9 @@ class SystemDominanceTest {
                 "hegemony",
                 buildWeightedFootprint(8, 4, 0));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints, BlocCandidacy.NONE_BARRED))
+            assertThat(SystemDominance.resolveDominantFactionId(
+                    footprints,
+                    HolderRankingRules.createOpenContestByLowestId()))
                 .isEqualTo("hegemony");
         }
 
@@ -80,7 +90,9 @@ class SystemDominanceTest {
                 "hegemony",
                 buildWeightedFootprint(9, 6, 0));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints, BlocCandidacy.NONE_BARRED))
+            assertThat(SystemDominance.resolveDominantFactionId(
+                    footprints,
+                    HolderRankingRules.createOpenContestByLowestId()))
                 .isEqualTo("hegemony");
         }
 
@@ -94,7 +106,9 @@ class SystemDominanceTest {
                 "hegemony",
                 buildWeightedFootprint(9, 5, 7));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints, BlocCandidacy.NONE_BARRED))
+            assertThat(SystemDominance.resolveDominantFactionId(
+                    footprints,
+                    HolderRankingRules.createOpenContestByLowestId()))
                 .isEqualTo("hegemony");
         }
 
@@ -108,7 +122,9 @@ class SystemDominanceTest {
                 "hegemony",
                 buildWeightedFootprint(9, 5, 5));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints, BlocCandidacy.NONE_BARRED))
+            assertThat(SystemDominance.resolveDominantFactionId(
+                    footprints,
+                    HolderRankingRules.createOpenContestByLowestId()))
                 .isEqualTo("hegemony");
         }
 
@@ -125,8 +141,7 @@ class SystemDominanceTest {
 
             assertThat(SystemDominance.resolveDominantFactionId(
                     footprints,
-                    Comparator.<String>reverseOrder(),
-                    BlocCandidacy.NONE_BARRED))
+                    new HolderRankingRules(Comparator.reverseOrder(), EVERY_BLOC)))
                 .isEqualTo("tritachyon");
         }
 
@@ -147,8 +162,7 @@ class SystemDominanceTest {
 
             assertThat(SystemDominance.resolveDominantFactionId(
                     footprints,
-                    throwingTieBreak,
-                    BlocCandidacy.NONE_BARRED))
+                    new HolderRankingRules(throwingTieBreak, EVERY_BLOC)))
                 .isEqualTo("hegemony");
         }
 
@@ -162,7 +176,9 @@ class SystemDominanceTest {
                 "tritachyon",
                 buildWeightedFootprint(1, 1, 0));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints, BARS_PLACEHOLDERS))
+            assertThat(SystemDominance.resolveDominantFactionId(
+                    footprints,
+                    HolderRankingRules.createByLowestId(BARS_PLACEHOLDERS)))
                 .isEqualTo("tritachyon");
         }
 
@@ -176,7 +192,9 @@ class SystemDominanceTest {
                 "tritachyon",
                 buildWeightedFootprint(0, 0, 0));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints, BARS_PLACEHOLDERS))
+            assertThat(SystemDominance.resolveDominantFactionId(
+                    footprints,
+                    HolderRankingRules.createByLowestId(BARS_PLACEHOLDERS)))
                 .isEqualTo("tritachyon");
         }
 
@@ -188,7 +206,9 @@ class SystemDominanceTest {
                 PLACEHOLDER,
                 buildWeightedFootprint(4, 4, 0));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints, BARS_PLACEHOLDERS))
+            assertThat(SystemDominance.resolveDominantFactionId(
+                    footprints,
+                    HolderRankingRules.createByLowestId(BARS_PLACEHOLDERS)))
                 .isEqualTo(PLACEHOLDER);
         }
 
@@ -202,7 +222,9 @@ class SystemDominanceTest {
                 PLACEHOLDER,
                 buildWeightedFootprint(9, 5, 5));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints, BARS_PLACEHOLDERS))
+            assertThat(SystemDominance.resolveDominantFactionId(
+                    footprints,
+                    HolderRankingRules.createByLowestId(BARS_PLACEHOLDERS)))
                 .isEqualTo(PLACEHOLDER);
         }
     }

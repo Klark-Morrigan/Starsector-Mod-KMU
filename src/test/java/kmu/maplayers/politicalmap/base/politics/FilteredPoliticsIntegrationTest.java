@@ -20,6 +20,7 @@ import java.util.function.Function;
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.NEUTRAL_BASE;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.PERSEAN_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
@@ -210,6 +211,29 @@ class FilteredPoliticsIntegrationTest {
                 .isTrue();
             assertThat(holder.primaryColour())
                 .isEqualTo(HEGEMONY_BRIGHT);
+        }
+
+        @Test
+        void reportsTheSpotlitFactionUncontestedBesideAHeavierNeutralMarket() {
+            // Neutral outweighs the spotlit faction and is barred from winning anything, so the
+            // faction holds the system outright and its cell fills solid. Judged under the pass's
+            // own rules: were the spotlight to settle a winner under any other, it would hatch a
+            // cell the base layers paint solid, which is a spotlight moving a fill.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var neutral = buildFaction(Factions.NEUTRAL, NEUTRAL_BASE);
+            var sector = buildSectorWith(
+                "salvage-system",
+                List.of(neutral, hegemony),
+                buildVisibleMarket(neutral, 6),
+                buildVisibleMarket(hegemony, 3));
+
+            var filtered = resolveFor(sector, "hegemony");
+
+            assertThat(FilteredPolitics.isSpotlitBloc(
+                    filtered.ownerBySystemId().get("salvage-system").factionId()))
+                .isTrue();
+            assertThat(filtered.contestedSystemIds())
+                .doesNotContain("salvage-system");
         }
 
         @Test

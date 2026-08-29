@@ -77,8 +77,7 @@ public final class DominanceStatsAggregator {
         // weighed nothing here.
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
             footprintByBlocId,
-            pass.tieBreakFor(system),
-            pass.resolveBlocCandidacy());
+            pass.resolveRankingRulesFor(system));
 
         // Presence is habitation rather than the weights, so a bloc living here on a colony the
         // economy does not list is listed at the size it lives on and a score of nought, as the

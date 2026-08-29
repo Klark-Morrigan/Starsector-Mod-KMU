@@ -89,7 +89,14 @@ path, so a view that never contests or unfills pays nothing for the split.
 ## The three sources
 
 - **`DefaultHolderProvider`** - held territory from the live economy. Off filter, each system
-  goes to its single dominant owner, with no exceptions. Under a spotlight it switches to the
+  goes to its single dominant owner, with no exceptions. Who may *be* that owner is settled with
+  the tie-break, as `HolderRankingRules` off the pass: `neutral` - the placeholder vanilla hands
+  every abandoned station, derelict and collapsed colony to - is barred from the contest, so it can
+  neither take a system from a bloc that scores nor win a tie against one. Barred from winning is
+  not barred from holding: where nothing else is present the ranking reopens, and a system only
+  `neutral` lives in keeps exactly the fill, border and label it always had. The bar is on the
+  candidate and never on the weight, so every score the map and the picker show is the one the
+  weighting produced. Under a spotlight it switches to the
   presence-aware resolver: the chosen bloc stays drawn wherever it holds a colony - solid where it
   wins, hatched where it does not. Presence there is read off the colonies rather than off the
   weights, because every term of a weight is economy-fed: a bloc whose only foothold in a system is

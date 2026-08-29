@@ -21,13 +21,6 @@ import java.util.function.Predicate;
  */
 public final class BlocCandidacy {
 
-    /**
-     * The candidacy barring nobody, for a ranking that is about weights rather than about who is
-     * allowed to win one. Named rather than written out at each site so a ranking that opens the
-     * contest to everyone says so.
-     */
-    public static final Predicate<String> NONE_BARRED = blocId -> true;
-
     private BlocCandidacy() {
     }
 

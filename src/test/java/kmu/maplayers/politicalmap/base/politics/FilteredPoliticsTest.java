@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import kmu.maplayers.politicalmap.base.dominance.HolderRankingRules;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics.SelectedBlocPresence;
 
@@ -24,6 +25,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class FilteredPoliticsTest {
 
+    // Nobody barred: every case here poses ordinary factions, so the bar has nothing to say
+    // about them and stating it would only obscure what each case is actually about.
+    private static final HolderRankingRules OPEN_CONTEST =
+        HolderRankingRules.createOpenContestByLowestId();
+
     @Nested
     class ClassifySelectedBlocPresence {
 
@@ -36,7 +42,8 @@ class FilteredPoliticsTest {
             assertThat(FilteredPolitics.classifySelectedBlocPresence(
                     footprints,
                     Set.of("hegemony"),
-                    "tritachyon"))
+                    "tritachyon",
+                    OPEN_CONTEST))
                 .isEqualTo(SelectedBlocPresence.ABSENT);
         }
 
@@ -44,7 +51,11 @@ class FilteredPoliticsTest {
         void returnsAbsentForAnEmptySystem() {
             // An uninhabited system holds nobody's colony, so the selected bloc is absent there
             // like everywhere it owns nothing.
-            assertThat(FilteredPolitics.classifySelectedBlocPresence(Map.of(), Set.of(), "hegemony"))
+            assertThat(FilteredPolitics.classifySelectedBlocPresence(
+                    Map.of(),
+                    Set.of(),
+                    "hegemony",
+                    OPEN_CONTEST))
                 .isEqualTo(SelectedBlocPresence.ABSENT);
         }
 
@@ -60,7 +71,8 @@ class FilteredPoliticsTest {
             assertThat(FilteredPolitics.classifySelectedBlocPresence(
                     footprints,
                     Set.of("hegemony", "tritachyon"),
-                    "hegemony"))
+                    "hegemony",
+                    OPEN_CONTEST))
                 .isEqualTo(SelectedBlocPresence.DOMINATES);
         }
 
@@ -77,7 +89,8 @@ class FilteredPoliticsTest {
             assertThat(FilteredPolitics.classifySelectedBlocPresence(
                     footprints,
                     Set.of("hegemony", "tritachyon"),
-                    "tritachyon"))
+                    "tritachyon",
+                    OPEN_CONTEST))
                 .isEqualTo(SelectedBlocPresence.PRESENT_BUT_DOMINATED);
         }
 
@@ -90,7 +103,8 @@ class FilteredPoliticsTest {
             assertThat(FilteredPolitics.classifySelectedBlocPresence(
                     footprints,
                     Set.of("hegemony"),
-                    "hegemony"))
+                    "hegemony",
+                    OPEN_CONTEST))
                 .isEqualTo(SelectedBlocPresence.DOMINATES);
         }
 
@@ -104,7 +118,8 @@ class FilteredPoliticsTest {
             assertThat(FilteredPolitics.classifySelectedBlocPresence(
                     footprints,
                     Set.of("hegemony", "tritachyon"),
-                    "tritachyon"))
+                    "tritachyon",
+                    OPEN_CONTEST))
                 .isEqualTo(SelectedBlocPresence.PRESENT_BUT_DOMINATED);
         }
 
@@ -116,7 +131,8 @@ class FilteredPoliticsTest {
             assertThat(FilteredPolitics.classifySelectedBlocPresence(
                     Map.of(),
                     Set.of("pirates"),
-                    "pirates"))
+                    "pirates",
+                    OPEN_CONTEST))
                 .isEqualTo(SelectedBlocPresence.PRESENT_BUT_DOMINATED);
         }
     }

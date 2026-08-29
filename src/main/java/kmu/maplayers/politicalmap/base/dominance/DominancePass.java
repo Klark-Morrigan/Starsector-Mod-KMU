@@ -9,12 +9,10 @@ import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
 
 /**
  * One dominance pass over the sector: a rebuild's reading of it, plus the weighting rule that
@@ -301,40 +299,29 @@ public record DominancePass(
     }
 
     /**
-     * Which blocs may win a system under this pass's grouping - everyone but the bloc painting in
-     * the neutral placeholder faction.
+     * How this system's holder is settled once its weights are in: who may win it under this
+     * pass's grouping - everyone but the bloc painting in the neutral placeholder faction - and
+     * who takes a dead heat.
      *
-     * <p>Beside {@link #tieBreakFor} for the same reason that one is here: both are knobs the
-     * ranking is taken under rather than parts of the ranking itself, and both have to be the very
-     * ones the fills were resolved with or a reader would rank a system the map painted under
-     * another rule. Grouping-wide rather than per-system, the answer turning on who a bloc is and
-     * not on where it stands.
+     * <p>The two travel as one because a reader taking the bar from the pass that painted the map
+     * and the tie-break from anywhere else would rank a system under a rule no fill was resolved
+     * with. Offered here rather than on the reading of the sector this pass is built over, because
+     * both are settled among the colonies <em>this</em> mechanic weighs, which no other layer's
+     * pass has any use for.
      *
-     * @return the candidacy a ranking over this pass's bloc ids is taken under
+     * <p>The tie-break inside is lazy: it reads no geometry unless a tie forces it, so a system
+     * with a clear winner - nearly every system - pays nothing for carrying one.
+     *
+     * @param system the system whose ranking these rules settle
+     * @return the rules a ranking of this system's footprints is taken under
      */
-    public Predicate<String> resolveBlocCandidacy() {
-        return BlocCandidacy.createForGrouping(grouping());
-    }
-
-    /**
-     * The market-proximity tie-break for this system under the pass's colony rule and grouping,
-     * consulted only when blocs tie on every weight level so it resolves a dead heat by who holds
-     * the market nearest the system centre. Lazy - it reads no geometry unless a tie forces it - so
-     * every pass shares one on-demand tie-break rather than each resolver building its own.
-     *
-     * <p>Here rather than on the reading of the sector it is built from, because a tie is settled
-     * among the colonies this mechanic weighs: the tie-break reaches the same weighed selection
-     * the ranking that tied was folded from, and a reading of the sector that named it would be
-     * carrying a mechanic no other layer's pass has any use for.
-     *
-     * @param system the system the tie-break ranks blocs within
-     * @return the comparator that orders tied bloc ids for this system
-     */
-    public Comparator<String> tieBreakFor(StarSystemAPI system) {
-        return MarketProximityTieBreak.forSystem(
-            system,
-            readColoniesIn(system),
-            colonyKnowledge(),
-            grouping());
+    public HolderRankingRules resolveRankingRulesFor(StarSystemAPI system) {
+        return new HolderRankingRules(
+            MarketProximityTieBreak.forSystem(
+                system,
+                readColoniesIn(system),
+                colonyKnowledge(),
+                grouping()),
+            BlocCandidacy.createForGrouping(grouping()));
     }
 }

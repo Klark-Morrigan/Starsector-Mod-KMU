@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verify;
  *
  * <p>What each per-system read <em>answers</em> - {@link DominancePass#readBlocFootprints},
  * {@link DominancePass#readKnownColonyFactionIds}, {@link DominancePass#readHabitationIn},
- * {@link DominancePass#tieBreakFor} and {@link DominancePass#resolveBlocCandidacy} - is covered
+ * {@link DominancePass#resolveRankingRulesFor} - is covered
  * end to end by the
  * {@link kmu.maplayers.politicalmap.base.politics.SectorPolitics},
  * {@link kmu.maplayers.politicalmap.base.politics.FilteredPolitics}, the standings suites, and the
@@ -87,7 +87,7 @@ class DominancePassTest {
             pass.readKnownColonyFactionIds(system);
             pass.readHabitationIn(system);
             pass.readBlocFootprints(system);
-            pass.tieBreakFor(system);
+            pass.resolveRankingRulesFor(system);
 
             // Counted on the entity scan, which one walk of a system makes exactly once - the
             // economy read beside it is made twice by the walk itself, so counting that would pin

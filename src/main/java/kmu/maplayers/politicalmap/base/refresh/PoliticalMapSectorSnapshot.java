@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.refresh;
 import kmu.maplayers.base.visibility.MapVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityPass;
 import kmu.maplayers.politicalmap.base.dominance.BlocCandidacy;
+import kmu.maplayers.politicalmap.base.dominance.HolderRankingRules;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -139,7 +140,7 @@ public record PoliticalMapSectorSnapshot(
             // before and after, leaving the map showing whatever it last built there.
             var dominantFactionId = SystemDominance.resolveDominantFactionId(
                 footprintByFactionId,
-                BlocCandidacy::isCandidateFaction);
+                HolderRankingRules.createByLowestId(BlocCandidacy::isCandidateFaction));
 
             if (dominantFactionId != null) {
                 ownerBySystemId.put(systemId, dominantFactionId);

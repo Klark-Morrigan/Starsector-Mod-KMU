@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.dominance;
 
 import java.util.Comparator;
 import java.util.Map;
-import java.util.function.Predicate;
 
 /**
  * Picks the faction that dominates a star system from its market footprint.
@@ -26,12 +25,11 @@ import java.util.function.Predicate;
  *       instead breaks the tie by system geometry.</li>
  * </ol>
  *
- * <p>Who is ranked at all is the caller's to say, through a candidacy predicate
- * over the ids ({@link BlocCandidacy}). Only candidates compete; where no
- * footprint is one, the whole map is ranked instead, so a holder barred from the
- * contest still holds what nobody contests. The bar is on the id and never on
- * the weight, so every score this rule compares is the one the weighting
- * produced.
+ * <p>Who is ranked at all, and who wins a dead heat, arrive together as
+ * {@link HolderRankingRules}. Only candidates compete; where no footprint is
+ * one, the whole map is ranked instead, so a holder barred from the contest
+ * still holds what nobody contests. The bar is on the id and never on the
+ * weight, so every score this rule compares is the one the weighting produced.
  *
  * <p>Weights arrive as exact integers (the fixed-point grid the footprint read
  * rounds onto), so every comparison here is exact and the tie-break is only
@@ -47,64 +45,38 @@ public final class SystemDominance {
     }
 
     /**
-     * Resolves the dominant faction for one system, breaking an exact tie on
-     * every weight level by lowest id.
+     * Resolves the dominant faction for one system under the rules its ranking
+     * is settled by.
      *
-     * @param footprintByFactionId each faction's footprint in the system; an
-     *                             empty map means no owned markets
-     * @param candidacy            which ids may win the system; the rest are
-     *                             ranked only where no candidate is present
-     * @return the dominant faction's id, or {@code null} when the map is empty
-     *         (an uninhabited system has no holder)
-     */
-    public static String resolveDominantFactionId(
-            Map<String, MarketFootprint> footprintByFactionId,
-            Predicate<String> candidacy) {
-        return resolveDominantFactionId(
-            footprintByFactionId,
-            Comparator.naturalOrder(),
-            candidacy);
-    }
-
-    /**
-     * Resolves the dominant faction for one system, breaking an exact tie on
-     * every weight level with the supplied comparator over the tied ids.
-     *
-     * <p>The three weight levels settle almost every system; the comparator is
+     * <p>The three weight levels settle almost every system; the tie-break is
      * consulted only when two blocs tie on all three, so a caller that resolves
-     * ties by system geometry pays that cost only on a genuine tie. It must
-     * impose a total order over the ids so the winner never depends on map
-     * iteration order.
+     * ties by system geometry pays that cost only on a genuine tie.
      *
      * @param footprintByFactionId each faction's footprint in the system; an
      *                             empty map means no owned markets
-     * @param tieBreak             consulted only when two blocs tie on all three
-     *                             weight levels; the id it orders first wins
-     * @param candidacy            which ids may win the system; the rest are
-     *                             ranked only where no candidate is present
+     * @param rankingRules         who may win the system, and who wins a dead
+     *                             heat
      * @return the dominant faction's id, or {@code null} when the map is empty
      *         (an uninhabited system has no holder)
      */
     public static String resolveDominantFactionId(
             Map<String, MarketFootprint> footprintByFactionId,
-            Comparator<String> tieBreak,
-            Predicate<String> candidacy) {
+            HolderRankingRules rankingRules) {
 
-        var dominantId = resolveLeaderAmong(footprintByFactionId, tieBreak, candidacy);
+        var dominantId = resolveLeaderAmong(footprintByFactionId, rankingRules);
 
         // Nobody in the running means nobody to keep out: the contest reopens to every footprint,
         // so a system whose only presence is barred keeps exactly the holder it has always had.
         return dominantId != null
             ? dominantId
-            : resolveLeaderAmong(footprintByFactionId, tieBreak, BlocCandidacy.NONE_BARRED);
+            : resolveLeaderAmong(footprintByFactionId, rankingRules.reopenToEveryBloc());
     }
 
-    // The top of one pass over the footprints, counting only the ids the candidacy admits. Answers
-    // null where it admitted none, which is what the reopened second pass is taken on.
+    // The top of one pass over the footprints, counting only the ids the rules admit. Answers null
+    // where they admitted none, which is what the reopened second pass is taken on.
     private static String resolveLeaderAmong(
             Map<String, MarketFootprint> footprintByFactionId,
-            Comparator<String> tieBreak,
-            Predicate<String> candidacy) {
+            HolderRankingRules rankingRules) {
 
         String dominantId = null;
         MarketFootprint dominant = null;
@@ -112,13 +84,18 @@ public final class SystemDominance {
         for (var entry : footprintByFactionId.entrySet()) {
             var factionId = entry.getKey();
 
-            if (!candidacy.test(factionId)) {
+            if (!rankingRules.candidacy().test(factionId)) {
                 continue;
             }
             var footprint = entry.getValue();
 
             if (dominantId == null
-                    || isMoreDominant(footprint, factionId, dominant, dominantId, tieBreak)) {
+                    || isMoreDominant(
+                        footprint,
+                        factionId,
+                        dominant,
+                        dominantId,
+                        rankingRules.tieBreak())) {
                 dominantId = factionId;
                 dominant = footprint;
             }
