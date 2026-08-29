@@ -27,9 +27,12 @@ import java.util.Optional;
  * the decree and the band states the contest beneath it. A claimant that scored nothing therefore
  * takes its place among the standings like anyone else, which on a decreed system is the foot.
  *
- * <p>Allied factions fold into one place, since a bloc is what the cell was painted for and two
- * allies' colonies are one bloc's presence. The fold keeps the better-placed ally's position, a
- * bloc having no business standing behind where its strongest member stood.
+ * <p>Two factions take one place exactly where the pass's grouping already folds them into one
+ * bloc, which is the alliances layer: a bloc is what the cell was painted for, and its members'
+ * colonies are that bloc's presence. The fold keeps the better-placed member's position, a bloc
+ * having no business standing behind where its strongest member stood. Where the grouping is
+ * identity - the claims layer - nothing folds: allies stand at their own places in their own
+ * colours, and all their standing together reaches is the length the runs are laid at.
  *
  * <p>A bloc the contest never listed - one present only through colonies the mechanic's walk did
  * not reach - is not ranked here at all, and draws behind the ranked blocs in id order. Inventing

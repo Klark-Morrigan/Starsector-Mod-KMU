@@ -32,9 +32,11 @@ The grammar it lays down:
 - The band's last run is left open, so a divider never ends a band.
 
 `RibbonSegmentLengths` pairs the two proportions the grammar is stated in, and `RibbonPlanRules`
-pairs those with the shortening below. `RibbonPlanInputs` carries the rules, the palette port and the
-`HolderPass` the bake was handed, so a planner is handed one object rather than four loose knobs -
-and so both mechanics of a composed planner count off a single walk of each system.
+pairs those with the shortening below. `RibbonPlanInputs` carries the rules, the palette port, the
+`BlocAffiliation` the contest is judged against and the `HolderPass` the bake was handed, so a
+planner is handed one object rather than a handful of loose knobs - and so both mechanics of a
+composed planner count off a single walk of each system and judge their contests against one
+alliance set.
 
 Lengths are counts of widths, never world sizes: how large a width is in the world is the render
 side's question, which is what lets this whole package be exercised on literals.

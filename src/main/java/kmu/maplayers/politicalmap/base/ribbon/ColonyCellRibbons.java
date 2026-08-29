@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colony;
 
-import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 import java.util.ArrayList;
@@ -71,7 +70,7 @@ public final class ColonyCellRibbons {
      * @param rankedBlocIds  the order the painting mechanic ranked its blocs in, best placed first;
      *                       a bloc absent from it draws behind those that are, ordered by id
      * @param inputs         the pass the colonies are read from, where a bloc's shades come from,
-     *                       and how far its runs go
+     *                       who among them stands together, and how far its runs go
      * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where nothing the rule
      *         counts is present in the cell
      */
@@ -90,10 +89,7 @@ public final class ColonyCellRibbons {
                         inputs.grouping()),
                     rankedBlocIds),
                 inputs.palettes()),
-            // TODO: carry the bake's affiliation on the inputs and hand it over here. Until then
-            // every layer judges its contest as an install with nothing grouping factions does,
-            // which is what the bands already say.
-            BlocAffiliation.NONE,
+            inputs.affiliation(),
             inputs.rules());
     }
 

@@ -6,7 +6,9 @@ import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
+import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
@@ -26,10 +28,12 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.SHORTENED_UNCONTESTED_RULES;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAllianceOf;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsFor;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
 
@@ -44,6 +48,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * otherwise fall into. A rival outscoring the claimant leads the band, since the ranking is the
  * contest's rather than the fill's; a decreed claimant is not hoisted to the head of a contest no
  * score settled; and two allies take one place rather than two, at the better-placed of them.
+ *
+ * <p>Two further cases state that the bake's alliance set reaches the shared rule through this
+ * entry point at all: a cell the claimant shares with an ally alone falls to the shortened runs,
+ * and an outsider beside them puts it back on the authored ones. What the rule then does with an
+ * affiliation is its own suite's; what these pin is that the claim side hands one over rather than
+ * judging every cell as an install with nothing grouping factions.
  *
  * <p>Each case states its system's colonies as well as its standings, since the runs a ranking is
  * read back off are counted from the system rather than from the contest.
@@ -161,6 +171,54 @@ final class ClaimCellRibbonsTest {
                     new RibbonSegment(HEGEMONY_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
+
+        @Test
+        void shortensTheRunsWhereTheOnlyOtherBlocStandsWithTheClaimant() {
+            // The bake's alliance set has to reach the shared rule through this entry point, or a
+            // claimed system two allies share bands as though they fought over it. The fill is per
+            // faction here, as it is on the claims layer, so the two keep their own runs and their
+            // own places - all their standing together reaches is the length.
+            var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY, TRITACHYON);
+
+            var contest = buildContest(
+                NO_DECREE,
+                HEGEMONY,
+                buildStanding(HEGEMONY, LEADING_SCORE),
+                buildStanding(TRITACHYON, TRAILING_SCORE));
+
+            var plan = planThrough(HEGEMONY, contest, sector, buildAlliedInputsOver(sector));
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 1));
+        }
+
+        @Test
+        void keepsTheAuthoredRunLengthWhereARivalStandsBesideTheClaimantAndItsAlly() {
+            // The same alliance set with the Diktat outside it. An ally stops being a rival itself
+            // and settles nothing about the rest, so the cell is the contest it looks like and
+            // keeps the authored lengths under the same shortening.
+            var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY, TRITACHYON, DIKTAT);
+
+            var contest = buildContest(
+                NO_DECREE,
+                HEGEMONY,
+                buildStanding(HEGEMONY, LEADING_SCORE),
+                buildStanding(TRITACHYON, TRAILING_SCORE),
+                buildStanding(DIKTAT, TRAILING_SCORE));
+
+            var plan = planThrough(HEGEMONY, contest, sector, buildAlliedInputsOver(sector));
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                    new RibbonSegment(TRITACHYON_DARK, 1),
+                    new RibbonSegment(DIKTAT_BRIGHT, 3));
+        }
     }
 
     // The one call every case but the alliance one makes: the faction view and the fog where the
@@ -188,6 +246,18 @@ final class ClaimCellRibbonsTest {
             buildOnlySystem(sector),
             contest,
             inputs);
+    }
+
+    // Inputs painting per faction, as the claims layer does, judged against an alliance set
+    // standing the Hegemony and Tri-Tachyon together and laid with the uncontested shortening on.
+    // Built off the shared alliance shape rather than stated here, a hand-rolled grouping being the
+    // one way this suite could come to mean something the affiliation's own suite does not.
+    private static RibbonPlanInputs buildAlliedInputsOver(SectorAPI sector) {
+
+        return buildInputsFor(
+            HolderPass.over(sector, BASE_FOG, NO_ALLIANCES),
+            new BlocAffiliation(buildAllianceOf(HEGEMONY, TRITACHYON)),
+            SHORTENED_UNCONTESTED_RULES);
     }
 
     // A finished contest, stated as the mechanic's reader would build it: the decree if any, who

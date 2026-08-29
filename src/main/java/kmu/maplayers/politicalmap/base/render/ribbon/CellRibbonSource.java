@@ -6,6 +6,7 @@ import kmlib.math.geometry.RingPath;
 import kmlib.starsector.systems.SectorStarSystems;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
@@ -158,6 +159,10 @@ public final class CellRibbonSource {
         // and lay their cells by one rule.
         var inputs = RibbonPlanInputs.createForPass(
             pass,
+            // TODO: sample the live alliance set here, once per bake, and hand it over in place of
+            // this. Until then every layer judges its contest as an install with nothing grouping
+            // factions does, which is what the bands already say.
+            BlocAffiliation.NONE,
             new RibbonPlanRules(
                 style.lengths(),
                 UncontestedRibbonRuns.readFromLunaSettings()));

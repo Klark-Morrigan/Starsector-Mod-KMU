@@ -13,6 +13,7 @@ import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -112,6 +113,9 @@ final class FactionsViewTest {
                     new RibbonPlanInputs(
                         holding,
                         blocId -> null,
+                        // Nothing stands together, the case being about which planner the view
+                        // assembles rather than about how any cell of it is judged.
+                        BlocAffiliation.NONE,
                         new RibbonPlanRules(
                             new RibbonSegmentLengths(3, 1),
                             new UncontestedRibbonRuns(false))));

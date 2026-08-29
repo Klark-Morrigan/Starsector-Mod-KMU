@@ -18,6 +18,7 @@ import kmu.maplayers.base.visibility.RevelationGate;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
+import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.ClaimStats;
@@ -128,6 +129,10 @@ final class ClaimsViewTest {
                         BASE_FOG,
                         HolderGrouping.identity()),
                     blocId -> null,
+                    // Nothing stands together, which is what the claims layer's own binding hands
+                    // over on an install without alliances - and the planner it resolves does not
+                    // read this either way.
+                    BlocAffiliation.NONE,
                     new RibbonPlanRules(
                         new RibbonSegmentLengths(3, 1),
                         new UncontestedRibbonRuns(false))));

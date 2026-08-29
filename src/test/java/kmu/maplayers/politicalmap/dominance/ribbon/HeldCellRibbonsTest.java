@@ -2,9 +2,12 @@ package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
+import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 
 import org.junit.jupiter.api.Nested;
@@ -24,9 +27,12 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.SHORTENED_UNCONTESTED_RULES;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAllianceOf;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsFor;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
 
@@ -46,6 +52,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * widened count now puts in a band that has no rank for it. Each poses its footprints in an order
  * the assertion does not expect back, since an ordering rule is invisible against inputs already in
  * the order it would produce.
+ *
+ * <p>Two further cases state that the bake's alliance set reaches the shared rule through this
+ * entry point at all: a cell the painter shares with an ally alone falls to the shortened runs, and
+ * an outsider beside them puts it back on the authored ones. What the rule then does with an
+ * affiliation is its own suite's; what these pin is that the held side hands one over rather than
+ * judging every cell as an install with nothing grouping factions.
  */
 final class HeldCellRibbonsTest {
 
@@ -155,20 +167,99 @@ final class HeldCellRibbonsTest {
                     new RibbonSegment(PERSEAN_DARK, 1),
                     new RibbonSegment(TRITACHYON_BRIGHT, 3));
         }
+
+        @Test
+        void shortensTheRunsWhereTheOnlyOtherBlocStandsWithThePainter() {
+            // The bake's alliance set has to reach the shared rule through this entry point, or a
+            // held cell two allies share bands as though they fought over it. They keep their own
+            // runs in their own colours - what standing together reaches is the length alone.
+            var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY, TRITACHYON);
+
+            var footprints = new LinkedHashMap<String, MarketFootprint>();
+            footprints.put(HEGEMONY, buildFootprint(LEADING_WEIGHT));
+            footprints.put(TRITACHYON, buildFootprint(TRAILING_WEIGHT));
+
+            var plan = planThrough(
+                HEGEMONY,
+                footprints,
+                sector,
+                buildAlliedInputsOver(sector));
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 1),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 1));
+        }
+
+        @Test
+        void keepsTheAuthoredRunLengthWhereARivalStandsBesideThePainterAndItsAlly() {
+            // The same alliance set with the Persean League outside it. An ally stops being a rival
+            // itself and settles nothing about the rest, so the cell is the contest it looks like
+            // and keeps the authored lengths under the same shortening.
+            var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY, TRITACHYON, PERSEAN);
+
+            var footprints = new LinkedHashMap<String, MarketFootprint>();
+            footprints.put(HEGEMONY, buildFootprint(LEADING_WEIGHT));
+            footprints.put(TRITACHYON, buildFootprint(MIDDLE_WEIGHT));
+            footprints.put(PERSEAN, buildFootprint(TRAILING_WEIGHT));
+
+            var plan = planThrough(
+                HEGEMONY,
+                footprints,
+                sector,
+                buildAlliedInputsOver(sector));
+
+            assertThat(plan.segments())
+                .containsExactly(
+                    new RibbonSegment(HEGEMONY_BRIGHT, 3),
+                    new RibbonSegment(HEGEMONY_DARK, 1),
+                    new RibbonSegment(TRITACHYON_BRIGHT, 3),
+                    new RibbonSegment(TRITACHYON_DARK, 1),
+                    new RibbonSegment(PERSEAN_BRIGHT, 3));
+        }
     }
 
-    // The one call every case makes: the faction view, the shared palettes, and the design's own
-    // segment lengths, leaving a case to state the footprints and the system.
+    // The one call the ordering cases make: the faction view, the shared palettes, and the design's
+    // own segment lengths, leaving a case to state the footprints and the system.
     private static RibbonPlan planFor(
             String paintingBlocId,
             Map<String, MarketFootprint> footprintByBlocId,
             SectorAPI sector) {
 
+        return planThrough(
+            paintingBlocId,
+            footprintByBlocId,
+            sector,
+            buildInputsOver(sector, HolderGrouping.identity(), BASE_FOG));
+    }
+
+    // The same call under inputs the case states, which is what the contest cases take: the
+    // alliance set is only visible against the shortening, the run lengths being the one place the
+    // reading a cell fell under can be read back.
+    private static RibbonPlan planThrough(
+            String paintingBlocId,
+            Map<String, MarketFootprint> footprintByBlocId,
+            SectorAPI sector,
+            RibbonPlanInputs inputs) {
+
         return HeldCellRibbons.planHeldCellRibbon(
             paintingBlocId,
             buildOnlySystem(sector),
             footprintByBlocId,
-            buildInputsOver(sector, HolderGrouping.identity(), BASE_FOG));
+            inputs);
+    }
+
+    // Inputs painting per faction, as the held layer does, judged against an alliance set standing
+    // the Hegemony and Tri-Tachyon together and laid with the uncontested shortening on. Built off
+    // the shared alliance shape rather than stated here, a hand-rolled grouping being the one way
+    // this suite could come to mean something the affiliation's own suite does not.
+    private static RibbonPlanInputs buildAlliedInputsOver(SectorAPI sector) {
+
+        return buildInputsFor(
+            HolderPass.over(sector, BASE_FOG, HolderGrouping.identity()),
+            new BlocAffiliation(buildAllianceOf(HEGEMONY, TRITACHYON)),
+            SHORTENED_UNCONTESTED_RULES);
     }
 
     // One bloc's footprint as the dominance pass banked it, stated by the combined weight the

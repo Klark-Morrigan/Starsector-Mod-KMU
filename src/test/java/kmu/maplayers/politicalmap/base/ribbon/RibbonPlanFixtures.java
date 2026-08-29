@@ -7,6 +7,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.visibility.ColonyVisibility;
+import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 
@@ -210,9 +211,27 @@ public final class RibbonPlanFixtures {
      *
      * @param pass  the bake's reading of the sector
      * @param rules how a band is laid
-     * @return the inputs a planner is posed with
+     * @return the inputs a planner is posed with, with nobody standing with anybody
      */
     public static RibbonPlanInputs buildInputsFor(HolderPass pass, RibbonPlanRules rules) {
-        return new RibbonPlanInputs(pass, PALETTES, rules);
+        return buildInputsFor(pass, BlocAffiliation.NONE, rules);
+    }
+
+    /**
+     * The same inputs judged against an alliance set - what a case about who counts as a rival
+     * takes, every other case being posed under {@link BlocAffiliation#NONE} and so stating that
+     * an install with nothing grouping factions bands as it always has.
+     *
+     * @param pass        the bake's reading of the sector
+     * @param affiliation who among the blocs present stands together
+     * @param rules       how a band is laid
+     * @return the inputs a planner is posed with
+     */
+    public static RibbonPlanInputs buildInputsFor(
+            HolderPass pass,
+            BlocAffiliation affiliation,
+            RibbonPlanRules rules) {
+
+        return new RibbonPlanInputs(pass, PALETTES, affiliation, rules);
     }
 }
