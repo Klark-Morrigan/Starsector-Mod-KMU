@@ -16,12 +16,14 @@ import kmu.starsector.rat.RandomAssortmentOfThingsSettings;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import org.mockito.verification.VerificationMode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 
 /**
  * Pins what the entry point itself is answerable for: being the plugin the engine constructs, and
@@ -94,8 +96,8 @@ class KMU_ModPluginTest {
 
                 KMU_ModPlugin.installMapLayers(sectorMock);
 
-                installers.verifyStoodUpFor(sectorMock);
-                installers.verifyNothingTakenBackFor(sectorMock);
+                installers.verifyEveryStandUpFor(sectorMock, times(1));
+                installers.verifyEveryTakeBackFor(sectorMock, never());
             }
         }
     }
@@ -114,8 +116,8 @@ class KMU_ModPluginTest {
 
                 KMU_ModPlugin.uninstallMapLayers(sectorMock);
 
-                installers.verifyTakenBackFor(sectorMock);
-                installers.verifyNothingStoodUpFor(sectorMock);
+                installers.verifyEveryTakeBackFor(sectorMock, times(1));
+                installers.verifyEveryStandUpFor(sectorMock, never());
             }
         }
     }
@@ -136,42 +138,28 @@ class KMU_ModPluginTest {
         private final MockedStatic<MapHoverInstaller> hoverMock =
             mockStatic(MapHoverInstaller.class);
 
-        private void verifyStoodUpFor(SectorAPI sector) {
-
-            installationsMock.verify(() -> MapLayerInstallations.installMachineryOn(sector));
-            politicalMapMock.verify(() -> PoliticalMapInstaller.installAll(sector));
-            surfaceMock.verify(() -> MapSurfaceInstaller.installAll(sector));
-            sidebarMock.verify(() -> SidebarInstaller.installAll(sector));
-            hoverMock.verify(() -> MapHoverInstaller.installAll(sector));
-        }
-
-        private void verifyTakenBackFor(SectorAPI sector) {
-
-            installationsMock.verify(() -> MapLayerInstallations.uninstallMachineryFrom(sector));
-            politicalMapMock.verify(() -> PoliticalMapInstaller.uninstallAll(sector));
-            surfaceMock.verify(() -> MapSurfaceInstaller.uninstallAll(sector));
-            sidebarMock.verify(() -> SidebarInstaller.uninstallAll(sector));
-            hoverMock.verify(() -> MapHoverInstaller.uninstallAll(sector));
-        }
-
-        private void verifyNothingStoodUpFor(SectorAPI sector) {
+        // Each half of the composition is listed once, with how often it was expected handed in.
+        // A second copy of either list per expectation is how an entry comes to be asserted on in
+        // one direction and forgotten in the other - which is the half that catches a stand-up
+        // reached by a take-back.
+        private void verifyEveryStandUpFor(SectorAPI sector, VerificationMode howOften) {
 
             installationsMock.verify(
-                () -> MapLayerInstallations.installMachineryOn(sector), never());
-            politicalMapMock.verify(() -> PoliticalMapInstaller.installAll(sector), never());
-            surfaceMock.verify(() -> MapSurfaceInstaller.installAll(sector), never());
-            sidebarMock.verify(() -> SidebarInstaller.installAll(sector), never());
-            hoverMock.verify(() -> MapHoverInstaller.installAll(sector), never());
+                () -> MapLayerInstallations.installMachineryOn(sector), howOften);
+            politicalMapMock.verify(() -> PoliticalMapInstaller.installAll(sector), howOften);
+            surfaceMock.verify(() -> MapSurfaceInstaller.installAll(sector), howOften);
+            sidebarMock.verify(() -> SidebarInstaller.installAll(sector), howOften);
+            hoverMock.verify(() -> MapHoverInstaller.installAll(sector), howOften);
         }
 
-        private void verifyNothingTakenBackFor(SectorAPI sector) {
+        private void verifyEveryTakeBackFor(SectorAPI sector, VerificationMode howOften) {
 
             installationsMock.verify(
-                () -> MapLayerInstallations.uninstallMachineryFrom(sector), never());
-            politicalMapMock.verify(() -> PoliticalMapInstaller.uninstallAll(sector), never());
-            surfaceMock.verify(() -> MapSurfaceInstaller.uninstallAll(sector), never());
-            sidebarMock.verify(() -> SidebarInstaller.uninstallAll(sector), never());
-            hoverMock.verify(() -> MapHoverInstaller.uninstallAll(sector), never());
+                () -> MapLayerInstallations.uninstallMachineryFrom(sector), howOften);
+            politicalMapMock.verify(() -> PoliticalMapInstaller.uninstallAll(sector), howOften);
+            surfaceMock.verify(() -> MapSurfaceInstaller.uninstallAll(sector), howOften);
+            sidebarMock.verify(() -> SidebarInstaller.uninstallAll(sector), howOften);
+            hoverMock.verify(() -> MapHoverInstaller.uninstallAll(sector), howOften);
         }
 
         @Override
