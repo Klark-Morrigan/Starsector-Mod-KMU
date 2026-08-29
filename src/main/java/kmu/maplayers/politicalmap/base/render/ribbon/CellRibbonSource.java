@@ -37,9 +37,8 @@ import java.util.Set;
  *
  * <p>That alliance reading is where the bands are bound to whatever supplies alliances, and the only
  * place they name it. The gate behind the binding answers with the identity grouping wherever the
- * mod is absent, so no planner, rule or view carries a branch for an install without it: every band
- * there judges its contest as one where nothing groups factions, which is what the bands already
- * said before the axis existed.
+ * mod is absent, so no planner, rule or view carries a branch for an install without it: a band
+ * there judges its contest as one in which no two blocs stand together.
  *
  * <p>The reading of the sector the counts are made off arrives rather than being opened here,
  * because how current it has to be is the caller's question and not this one's: a bake in the same
@@ -104,9 +103,10 @@ public final class CellRibbonSource {
     }
 
     /**
-     * Samples everything one pass's bands are settled from, or nothing at all where the player has
-     * the bands switched off - in which case every cell is answered "no band" without a count, a
-     * size read, or a ring traced.
+     * The bake's band source, bound to the live alliance set and stated over everything else one
+     * pass's bands are settled from - or over nothing at all where the player has the bands switched
+     * off, in which case every cell is answered "no band" without a count, a size read, or a ring
+     * traced.
      *
      * @param pass               the reading of the sector the counts are made off - its walk of
      *                           each system, under one sampling of the colony rule, folded by the
@@ -202,8 +202,8 @@ public final class CellRibbonSource {
     }
 
     // The same pass over an alliance set the caller names, so a case can pose factions standing
-    // together without a running game behind them. The bound factory above is the one the map bakes
-    // through.
+    // together without a running game behind them. Everything the map bakes goes through the bound
+    // factory instead.
     static CellRibbonSource createForPass(
             HolderPass pass,
             PoliticalMapView view,

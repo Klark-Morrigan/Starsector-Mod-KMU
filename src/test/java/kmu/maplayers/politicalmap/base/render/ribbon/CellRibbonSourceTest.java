@@ -18,6 +18,7 @@ import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.ribbon.UncontestedRibbonRuns;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.KmuPoliticalMapSettings;
+import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,6 +73,9 @@ import static org.mockito.Mockito.when;
  * contest against is read once, before the first cell is counted, so two cells in one bake can never
  * be banded against two readings of who stands with whom. The switched-off pass is held to the same
  * bar it is held to everywhere else here - it reads nothing, an alliance set no more than a size.
+ * One case among them names no alliance set of its own, being the only one that reaches the binding:
+ * bound to anything fixed, every band in play would be laid as though nothing grouped factions, and
+ * nothing else here would fail.
  *
  * <p>The diagnostic trace is pinned against the same gate rather than against its own, because
  * what makes the overlay worth looking at is that it answers for exactly the cells the band pass
@@ -218,25 +222,6 @@ final class CellRibbonSourceTest {
         }
 
         @Test
-        void handsThePlayersUncontestedAnswerToTheMechanicTheViewCountsBy() {
-            // The one place the uncontested knob reaches the counting: it is sampled by the pass
-            // and carried in the inputs every planner is built from. Read anywhere else, or not
-            // read at all, it would show only as a setting a player moves to no effect. Answered
-            // off rather than on, which is not the shipped default, so an answer that ignored the
-            // setting could not pass.
-            settingsMock
-                .when(KmuPoliticalMapSettings::shouldShortenPoliticalMapUncontestedRibbonRuns)
-                .thenReturn(false);
-
-            var viewMock = buildViewMock(system -> ANY_PLAN);
-
-            buildThrough(viewMock, new CellRingPathCache(), HolderGrouping::identity);
-
-            assertThat(captureInputsHandedTo(viewMock).rules().uncontestedRuns())
-                .isEqualTo(new UncontestedRibbonRuns(false));
-        }
-
-        @Test
         void asksNoPlannerAboutASettledCellWhileTheBandsAreSwitchedOff() {
             // The half of the switch that is invisible either way: with the bands off, a rebuild
             // must not still be counting every settled system's colonies for a readout nothing
@@ -354,18 +339,30 @@ final class CellRibbonSourceTest {
     class CreateForPass {
 
         @Test
+        void handsThePlayersUncontestedAnswerToTheMechanicTheViewCountsBy() {
+            // The one place the uncontested knob reaches the counting: it is sampled by the pass
+            // and carried in the inputs every planner is built from. Read anywhere else, or not
+            // read at all, it would show only as a setting a player moves to no effect. Answered
+            // off rather than on, which is not the shipped default, so an answer that ignored the
+            // setting could not pass.
+            settingsMock
+                .when(KmuPoliticalMapSettings::shouldShortenPoliticalMapUncontestedRibbonRuns)
+                .thenReturn(false);
+
+            assertThat(captureInputsJudgedAgainst(HolderGrouping::identity)
+                    .rules()
+                    .uncontestedRuns())
+                .isEqualTo(new UncontestedRibbonRuns(false));
+        }
+
+        @Test
         void handsTheLiveAllianceSetToTheMechanicTheViewCountsBy() {
             // The one place the alliance set reaches a band. Read anywhere else, or not read at
             // all, two allies sharing a system would band against each other at full contested
             // length while the box over the cell files them as standing together.
-            var viewMock = buildViewMock(system -> ANY_PLAN);
-
-            buildThrough(
-                viewMock,
-                new CellRingPathCache(),
-                () -> HolderGroupingFixture.buildAllianceOf(HEGEMONY, ASTRAL_ARMADA));
-
-            assertThat(captureInputsHandedTo(viewMock).affiliation()
+            assertThat(captureInputsJudgedAgainst(
+                        () -> HolderGroupingFixture.buildAllianceOf(HEGEMONY, ASTRAL_ARMADA))
+                    .affiliation()
                     .areBlocsAllied(HEGEMONY, ASTRAL_ARMADA))
                 .isTrue();
         }
@@ -373,15 +370,34 @@ final class CellRibbonSourceTest {
         @Test
         void alliesNobodyWhereNothingGroupsFactions() {
             // The install without the mod that supplies alliances, which the gate answers with the
-            // identity grouping: every band judges its contest as it did before the axis existed,
-            // and no layer needs a branch to get there.
-            var viewMock = buildViewMock(system -> ANY_PLAN);
-
-            buildThrough(viewMock, new CellRingPathCache(), HolderGrouping::identity);
-
-            assertThat(captureInputsHandedTo(viewMock).affiliation()
+            // identity grouping: a band there judges its contest as one in which no two blocs
+            // stand together, and no layer needs a branch to get there.
+            assertThat(captureInputsJudgedAgainst(HolderGrouping::identity)
+                    .affiliation()
                     .areBlocsAllied(HEGEMONY, ASTRAL_ARMADA))
                 .isFalse();
+        }
+
+        @Test
+        void bindsTheBandsToTheAllianceSetTheGameSupplies() {
+            // The binding itself, which no other case here reaches: every one of them names its own
+            // alliance set, and the seam they name it through is exactly what the map does not use.
+            // Bound to anything fixed instead, the whole axis would go quiet in play - every band
+            // laid as though nothing grouped factions - with nothing else in this suite to say so.
+            try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
+                alliancesMock
+                    .when(NexerelinAlliances::resolveGrouping)
+                    .thenReturn(HolderGroupingFixture.buildAllianceOf(HEGEMONY, ASTRAL_ARMADA));
+
+                var viewMock = buildViewMock(system -> ANY_PLAN);
+
+                buildThroughTheBoundSource(viewMock);
+
+                assertThat(captureInputsHandedTo(viewMock)
+                        .affiliation()
+                        .areBlocsAllied(HEGEMONY, ASTRAL_ARMADA))
+                    .isTrue();
+            }
         }
 
         @Test
@@ -394,10 +410,7 @@ final class CellRibbonSourceTest {
             when(allianceSourceMock.resolveGrouping())
                 .thenReturn(HolderGrouping.identity());
 
-            var ribbonSource = buildThrough(
-                buildViewMock(system -> ANY_PLAN),
-                new CellRingPathCache(),
-                allianceSourceMock);
+            var ribbonSource = buildJudgingAgainst(allianceSourceMock);
 
             ribbonSource.buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passTimings);
             ribbonSource.buildCellRibbon(OTHER_CELL, INHABITED_SYSTEM, SQUARE_CELL, passTimings);
@@ -415,10 +428,7 @@ final class CellRibbonSourceTest {
 
             var allianceSourceMock = mock(HolderGroupingSource.class);
 
-            buildThrough(
-                buildViewMock(system -> ANY_PLAN),
-                new CellRingPathCache(),
-                allianceSourceMock);
+            buildJudgingAgainst(allianceSourceMock);
 
             verifyNoInteractions(allianceSourceMock);
         }
@@ -439,22 +449,40 @@ final class CellRibbonSourceTest {
             .thenReturn(false);
     }
 
-    // A pass over two settled systems - one placed, one with no site recorded - and one system
-    // nobody lives in, counted through the given planner and keeping its traced rings to itself.
+    // The standing pass counted through the given planner, keeping its traced rings to itself.
     private static CellRibbonSource buildWith(SystemRibbonPlanner planner) {
         return buildCachingInto(planner, new CellRingPathCache());
     }
 
     // The same pass writing its traced rings into a store the case holds, for the cases about
-    // which cells are walked at all.
+    // which cells are walked at all. Nothing groups factions in those, what a band reports a
+    // contest as being settled elsewhere.
     private static CellRibbonSource buildCachingInto(
             SystemRibbonPlanner planner,
             CellRingPathCache ringPathCache) {
 
-        // Nothing groups factions in the cases about which cells are walked at all: what a band
-        // reports a contest as is settled elsewhere, and posing an alliance here would only add a
-        // fold no case reads back.
         return buildThrough(buildViewMock(planner), ringPathCache, HolderGrouping::identity);
+    }
+
+    // A pass judging its contest against the given alliance set, for the cases about what one bake
+    // reads and how often rather than about any cell it goes on to bake.
+    private static CellRibbonSource buildJudgingAgainst(HolderGroupingSource allianceSource) {
+
+        return buildThrough(
+            buildViewMock(system -> ANY_PLAN),
+            new CellRingPathCache(),
+            allianceSource);
+    }
+
+    // The same pass, read back for what it handed its planner - the shape of every case about what
+    // one bake samples once.
+    private static RibbonPlanInputs captureInputsJudgedAgainst(HolderGroupingSource allianceSource) {
+
+        var viewMock = buildViewMock(system -> ANY_PLAN);
+
+        buildThrough(viewMock, new CellRingPathCache(), allianceSource);
+
+        return captureInputsHandedTo(viewMock);
     }
 
     // The inputs the pass built its planner from, which is where everything sampled once per bake
@@ -486,6 +514,26 @@ final class CellRibbonSourceTest {
             CellRingPathCache ringPathCache,
             HolderGroupingSource allianceSource) {
 
+        return CellRibbonSource.createForPass(
+            buildPassOverTheStandingSystems(),
+            viewMock,
+            buildSurfaceKeeping(ringPathCache),
+            allianceSource);
+    }
+
+    // The same pass opened through the factory the map itself bakes through, which names its own
+    // alliance set rather than being handed one.
+    private static CellRibbonSource buildThroughTheBoundSource(PoliticalMapView viewMock) {
+
+        return CellRibbonSource.createForPass(
+            buildPassOverTheStandingSystems(),
+            viewMock,
+            buildSurfaceKeeping(new CellRingPathCache()));
+    }
+
+    // Two settled systems - one placed, one with no site recorded - and one system nobody lives in.
+    private static HolderPass buildPassOverTheStandingSystems() {
+
         // The systems are built before the stubbing rather than inside it: each is itself a mock,
         // and building one while another stubbing is open reads to Mockito as an unfinished stub.
         var systems = List.of(
@@ -498,19 +546,20 @@ final class CellRibbonSourceTest {
         when(sectorMock.getStarSystems())
             .thenReturn(systems);
 
-        return CellRibbonSource.createForPass(
-            HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, HolderGrouping.identity()),
-            viewMock,
-            new RibbonBakeSurface(
-                Set.of(INHABITED_SYSTEM, SITELESS_SYSTEM),
-                // Only the placed system has a site; the other settled one is what a band with
-                // nowhere to start is posed on.
-                Map.of(INHABITED_SYSTEM, new double[] {2000.0, 2000.0}),
-                // No names anywhere near these cells: where a name falls is pinned by the builder
-                // that lays a band inside one cell, not by which cells are offered a band at all.
-                List.of(),
-                ringPathCache),
-            allianceSource);
+        return HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, HolderGrouping.identity());
+    }
+
+    private static RibbonBakeSurface buildSurfaceKeeping(CellRingPathCache ringPathCache) {
+
+        return new RibbonBakeSurface(
+            Set.of(INHABITED_SYSTEM, SITELESS_SYSTEM),
+            // Only the placed system has a site; the other settled one is what a band with nowhere
+            // to start is posed on.
+            Map.of(INHABITED_SYSTEM, new double[] {2000.0, 2000.0}),
+            // No names anywhere near these cells: where a name falls is pinned by the builder that
+            // lays a band inside one cell, not by which cells are offered a band at all.
+            List.of(),
+            ringPathCache);
     }
 
     private static StarSystemAPI buildSystem(String systemId) {
