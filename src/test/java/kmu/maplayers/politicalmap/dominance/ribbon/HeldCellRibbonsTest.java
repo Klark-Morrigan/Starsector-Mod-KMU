@@ -2,9 +2,7 @@ package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
@@ -27,12 +25,10 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN_DARK;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.SHORTENED_UNCONTESTED_RULES;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAllianceOf;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsFor;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAlliedInputsOver;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
 
@@ -248,18 +244,6 @@ final class HeldCellRibbonsTest {
             buildOnlySystem(sector),
             footprintByBlocId,
             inputs);
-    }
-
-    // Inputs painting per faction, as the held layer does, judged against an alliance set standing
-    // the Hegemony and Tri-Tachyon together and laid with the uncontested shortening on. Built off
-    // the shared alliance shape rather than stated here, a hand-rolled grouping being the one way
-    // this suite could come to mean something the affiliation's own suite does not.
-    private static RibbonPlanInputs buildAlliedInputsOver(SectorAPI sector) {
-
-        return buildInputsFor(
-            HolderPass.over(sector, BASE_FOG, HolderGrouping.identity()),
-            new BlocAffiliation(buildAllianceOf(HEGEMONY, TRITACHYON)),
-            SHORTENED_UNCONTESTED_RULES);
     }
 
     // One bloc's footprint as the dominance pass banked it, stated by the combined weight the

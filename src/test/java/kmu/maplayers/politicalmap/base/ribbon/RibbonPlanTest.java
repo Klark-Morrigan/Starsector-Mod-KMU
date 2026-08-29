@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.ALLIED_HEGEMONY_AND_TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.DIKTAT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.DIKTAT_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.DIKTAT_DARK;
@@ -22,7 +23,6 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.NO_PAINT
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAllianceOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -75,13 +75,6 @@ final class RibbonPlanTest {
     // cell falls to the tally of single widths while a contested one keeps the authored run.
     private static final RibbonPlanRules RULES_SHORTENING_UNCONTESTED_RUNS =
         new RibbonPlanRules(STANDARD_LENGTHS, new UncontestedRibbonRuns(true));
-
-    // An alliance set standing the Hegemony and Tri-Tachyon together, with the Diktat left outside
-    // it, so one value poses the ally, the rival and the painter's own bloc at once. Built off the
-    // shared alliance shape rather than stated here, a hand-rolled grouping being the one way this
-    // suite could come to mean something the affiliation's own suite does not.
-    private static final BlocAffiliation ALLIED_HEGEMONY_AND_TRITACHYON =
-        new BlocAffiliation(buildAllianceOf(HEGEMONY, TRITACHYON));
 
     @Nested
     class PlanCellRibbon {

@@ -6,9 +6,7 @@ import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
-import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
@@ -28,12 +26,11 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.SHORTENED_UNCONTESTED_RULES;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAllianceOf;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsFor;
+import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAlliedInputsOver;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
 
@@ -246,18 +243,6 @@ final class ClaimCellRibbonsTest {
             buildOnlySystem(sector),
             contest,
             inputs);
-    }
-
-    // Inputs painting per faction, as the claims layer does, judged against an alliance set
-    // standing the Hegemony and Tri-Tachyon together and laid with the uncontested shortening on.
-    // Built off the shared alliance shape rather than stated here, a hand-rolled grouping being the
-    // one way this suite could come to mean something the affiliation's own suite does not.
-    private static RibbonPlanInputs buildAlliedInputsOver(SectorAPI sector) {
-
-        return buildInputsFor(
-            HolderPass.over(sector, BASE_FOG, NO_ALLIANCES),
-            new BlocAffiliation(buildAllianceOf(HEGEMONY, TRITACHYON)),
-            SHORTENED_UNCONTESTED_RULES);
     }
 
     // A finished contest, stated as the mechanic's reader would build it: the decree if any, who

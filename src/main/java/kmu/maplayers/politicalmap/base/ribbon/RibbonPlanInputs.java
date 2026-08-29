@@ -26,12 +26,11 @@ import java.util.List;
  * counted under a different fog or a different fold from the fill it sits inside, and no counter
  * needs a settings read of its own to find out which.
  *
- * <p>The affiliation joins that trio because it is a second reading of the same sector, and
- * deliberately not the pass's: the counts fold under the grouping the fills were painted with,
- * which the faction and claims layers pin to identity so every faction keeps its own run in its own
- * colours, while whether a cell is a contest at all is judged against the live alliance set. Widen
- * the pass's grouping to settle the contest instead and two allies' runs merge into one bloc's, and
- * leave it out and the two of them band as though they fought over the system.
+ * <p>The affiliation rides beside it as a second reading of the same sector, deliberately not the
+ * pass's: the counts fold under the grouping the fills were painted with, while whether the cell is
+ * a contest at all is judged against the live alliance set. Carried here so both readings are the
+ * bake's one sampling, a planner having no way to count under this bake's fold and judge against an
+ * alliance set from another.
  *
  * @param pass        the bake's reading of the sector: which sector, the grouping, the colony
  *                    rule, and the one walk of each system every count is folded from
@@ -77,8 +76,10 @@ public record RibbonPlanInputs(
     }
 
     /**
-     * The grouping every count is folded under, so two allies' colonies come out as one bloc's run
-     * exactly as they come out as one bloc's fill.
+     * The grouping every count is folded under, which is the one the fills were painted with: a
+     * bloc's colonies come out as that bloc's run exactly as they come out as its fill. Whether two
+     * blocs stand together is {@link #affiliation}'s and never this - a fold merges runs, and
+     * standing together must not.
      *
      * @return the bake's grouping
      */

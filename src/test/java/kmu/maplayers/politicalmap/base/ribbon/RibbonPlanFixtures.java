@@ -121,6 +121,18 @@ public final class RibbonPlanFixtures {
             new UncontestedRibbonRuns(true));
 
     /**
+     * The alliance set every case about who counts as a rival is judged against: the Hegemony and
+     * Tri-Tachyon standing together, with every other bloc below outside it, so one value poses the
+     * ally, the rival and the painter's own bloc at once.
+     *
+     * <p>Read as an alliance set rather than as the paint fold the same grouping makes elsewhere in
+     * these fixtures, which is the distinction the type exists for: a case handing this to a pass
+     * would merge the two into one run instead of leaving them their own.
+     */
+    public static final BlocAffiliation ALLIED_HEGEMONY_AND_TRITACHYON =
+        new BlocAffiliation(buildAllianceOf(HEGEMONY, TRITACHYON));
+
+    /**
      * A cell no bloc's fill covers, which is what an unclaimed populated system draws as. There is
      * no painter for a bloc to be a rival of, so what makes such a cell contested is how many blocs
      * are in it.
@@ -218,16 +230,30 @@ public final class RibbonPlanFixtures {
     }
 
     /**
-     * The same inputs judged against an alliance set - what a case about who counts as a rival
-     * takes, every other case being posed under {@link BlocAffiliation#NONE} and so stating that
-     * an install with nothing grouping factions bands as it always has.
+     * The inputs a case about who counts as a rival takes: blocs painted per faction, as the
+     * faction and claims layers paint them, judged against {@link #ALLIED_HEGEMONY_AND_TRITACHYON}
+     * and laid with the shortening on - which is the one place the reading a cell fell under can be
+     * read back.
      *
-     * @param pass        the bake's reading of the sector
-     * @param affiliation who among the blocs present stands together
-     * @param rules       how a band is laid
+     * <p>The fog is the plain one because no such case turns on it. A suite posing what the player
+     * has found states its own inputs.
+     *
+     * @param sector the stubbed sector the colonies are read from
      * @return the inputs a planner is posed with
      */
-    public static RibbonPlanInputs buildInputsFor(
+    public static RibbonPlanInputs buildAlliedInputsOver(SectorAPI sector) {
+
+        return buildInputsFor(
+            HolderPass.over(sector, ColonyVisibility.BASE_FOG, HolderGrouping.identity()),
+            ALLIED_HEGEMONY_AND_TRITACHYON,
+            SHORTENED_UNCONTESTED_RULES);
+    }
+
+    // The inputs under an alliance set the caller states. Held private because a case wanting one
+    // wants the shape above: an affiliation is only visible against the shortening, and a suite
+    // free to pair the two differently could pose a cell whose reading nothing can be read back
+    // from.
+    private static RibbonPlanInputs buildInputsFor(
             HolderPass pass,
             BlocAffiliation affiliation,
             RibbonPlanRules rules) {
