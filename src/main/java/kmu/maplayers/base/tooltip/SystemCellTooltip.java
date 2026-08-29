@@ -265,6 +265,11 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // How dense the box is set is read live rather than fixed here: a box lists as much as the hovered
     // system holds, so what reads comfortably on a two-colony system and what fits on screen for a
     // twelve-colony one are not the same setting, and which of the two matters is the player's call.
+    //
+    // The two solid marks the box draws among its glyphs - the rule from a label across to its value, and
+    // the blocks a withheld name stands as - take the player's weights for the same reason the leader
+    // line does: how heavy a solid run looks beside text is a judgement made on screen, at whatever scale
+    // the game is run at.
     private static CursorTooltipStyle buildStyle() {
         return CursorTooltipStyle.createStyle(
             TooltipStyle
@@ -280,7 +285,8 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
             BORDER_WIDTH,
             StarsectorUiColour.BLACK.resolve(),
             StarsectorUiColour.VANILLA_PLAYER_BASE.resolve())
-            .ruledBy(buildLeaderLineStyle());
+            .ruledBy(buildLeaderLineStyle())
+            .redactedAt(KmuMapLayerSettings.getMapTooltipRedactionDarkeningStrength());
     }
 
     // How heavily the line from a label across to its value draws. Layered over KMLib's own weights

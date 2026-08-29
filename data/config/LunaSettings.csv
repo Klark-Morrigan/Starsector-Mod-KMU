@@ -41,6 +41,9 @@ kmu_map_visuals_tooltips_leader_header,,,,Hover tooltip - connecting lines,,Head
 kmu_map_visuals_tooltips_leader_thickness,,,,Thickness,,Double,1,,,,"How thick the line running from a label across to its value in a hover tooltip is, in pixels. The value column sits at the box's right edge however short the label is, so the line is what carries the eye across the gap between them. 0 draws no lines at all. Below 1 the line no longer covers a whole pixel row, so it strengthens and fades as the box follows the cursor - to make it lighter, use the opacity below instead. Default: 1.",,,0,4,Map - Visuals
 kmu_map_visuals_tooltips_leader_opacity,,,,Opacity,,Double,0.65,,,,"How strongly that line draws, as a fraction of the tooltip's own opacity. A solid line reads heavier than text of the same shade, because letters spend much of their edge half-transparent where a line does not - so a value below 1 is what sets the line level with the greyed-out text either side of it rather than above it. 0 draws no lines at all. Default: 0.65.",,,0,1,Map - Visuals
 ,,,,,,,,,,,,,,,,
+kmu_map_visuals_tooltips_redacted_header,,,,Hover tooltip - redacted text,,Header,Hover tooltip - redacted text,,,,,,,,,Map - Visuals
+kmu_map_visuals_tooltips_redacted_darkeningStrength,,,,Darkening strength,,Double,0.2,,,,"How much of a line's colour is taken off the blocks a withheld name draws as, where a hover tooltip states that something is there without naming it. A solid block reads heavier than text of the same shade, because letters spend much of their edge half-transparent where a block does not - so a value above 0 is what sets the blocks level with the words either side of them rather than above them. 0 fills them in the line's own colour; 1 fills them black. Default: 0.2.",,,0,1,Map - Visuals
+,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 kmu_map_politics_visuals_faction_header,,,,Faction systems,,Header,Faction systems,,,,,,,,,Map - Politics - Visuals

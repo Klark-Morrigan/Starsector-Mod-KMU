@@ -168,6 +168,14 @@ public final class KmuMapLayerSettings {
     private static final String TOOLTIP_LEADER_OPACITY_FIELD =
         "kmu_map_visuals_tooltips_leader_opacity";
 
+    // How far a withheld name's blocks are sunk from the colour of the line they stand in (Map - Visuals
+    // tab). The same judgement the leader weights above are the player's for, over the other solid mark a
+    // hover box draws among its glyphs: a block covers its whole band where a glyph spends much of its
+    // footprint at partial alpha, and how far that overshoots depends on the face and the scale the game
+    // is run at.
+    private static final String TOOLTIP_REDACTION_DARKENING_STRENGTH_FIELD =
+        "kmu_map_visuals_tooltips_redacted_darkeningStrength";
+
     // How loudly the sidebar answers the cursor reaching something (Map - Sound tab), one level per kind
     // of thing there is to reach. Each scales the level the engine already holds for the sample, so 1 is
     // vanilla's own mouseover and anything below it is the panel answering more quietly than the chrome
@@ -417,6 +425,13 @@ public final class KmuMapLayerSettings {
     private static final float DEFAULT_TOOLTIP_LEADER_THICKNESS = 1f;
     private static final float DEFAULT_TOOLTIP_LEADER_OPACITY = 0.65f;
 
+    // The redaction's shipped weight: a fifth of the line's colour taken off its blocks, which is KMLib's
+    // own reading of the same balance the leader weights above settle. Restated as a literal rather than
+    // read off the library constant because every fallback here mirrors the CSV defaultValue column, and
+    // a fallback tracking a library that the CSV does not would put the shipped value and the fallback
+    // silently out of step. Mirror the CSV defaultValue column like every fallback here.
+    private static final float DEFAULT_TOOLTIP_REDACTION_DARKENING_STRENGTH = 0.2f;
+
     // The shipped balance: vanilla's own mouseover level halved for anything the player aims at, and
     // halved again for the items a sweep crosses several of on its way there. The gap between the two
     // numbers is the whole of what stops a column of listed rows reading as chatter, so they are only
@@ -618,6 +633,17 @@ public final class KmuMapLayerSettings {
         return KmuLunaSettings.readFloat(
             TOOLTIP_LEADER_OPACITY_FIELD,
             DEFAULT_TOOLTIP_LEADER_OPACITY);
+    }
+
+    /**
+     * @return how much of a line's colour is taken off the blocks a withheld name draws as, 0..1; 0.2 by
+     *         default, which sets a block level with the words either side of it rather than above them,
+     *         and 0 to fill it in the line's own colour
+     */
+    public static float getMapTooltipRedactionDarkeningStrength() {
+        return KmuLunaSettings.readFloat(
+            TOOLTIP_REDACTION_DARKENING_STRENGTH_FIELD,
+            DEFAULT_TOOLTIP_REDACTION_DARKENING_STRENGTH);
     }
 
     /**
