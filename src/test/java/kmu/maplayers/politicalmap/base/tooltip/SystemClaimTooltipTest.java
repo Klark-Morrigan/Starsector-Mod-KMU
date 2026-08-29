@@ -479,11 +479,12 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsLeavesOutARivalWeighedOnAColonyThePlayerHasNotFound() {
-            // The projection reaches the scored kind too. The mechanic weighs colonies nobody has
-            // reached, so a faction can carry a real score on a market this box may not name - and
-            // listing it would state the very presence the fog is keeping back, over an account
-            // with nothing in it.
+        void buildBodySectionsListsARivalWeighedOnAColonyThePlayerHasNotFound() {
+            // The scored kind survives the projection. The mechanic weighs colonies nobody has
+            // reached and can hand one of them the system, so a rival dropped for the fog would
+            // leave the contest reported as something other than what decided it - the account
+            // beneath the name is what carries the withholding, redacting the colony rather than
+            // the faction standing on it.
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 HEGEMONY,
@@ -496,15 +497,16 @@ final class SystemClaimTooltipTest {
                         IS_UNDISCOVERED_BY_PLAYER))));
 
             assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
-                .containsExactly("Claim:", "The Hegemony");
+                .containsExactly("Claim:", "The Hegemony", "Contested by:", "Tri-Tachyon");
         }
 
         @Test
-        void buildBodySectionsStatesTheClaimOfAHolderWeighedOnAColonyThePlayerHasNotFound() {
-            // The claimant is named although the projection dropped its standing: vanilla settles a
-            // claim unfogged and the map paints it, so a box declining the line would keep back
-            // what the player can already see. What the fog takes is the account - the colony that
-            // won the system stays unnamed, leaving the claim stated and unexplained.
+        void buildBodySectionsStatesTheScoreOfAHolderWeighedOnAColonyThePlayerHasNotFound() {
+            // The claim line carries the number its standing reports, the standing now being listed.
+            // What the blank value column means is the point: it says the claimant holds nothing the
+            // contest weighed, which is the shape of a decree over a colony-less faction - so a
+            // holder dropped for the fog would wear that shape while a colony of its own won the
+            // system.
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 HEGEMONY,
@@ -514,12 +516,12 @@ final class SystemClaimTooltipTest {
                     IS_TERRITORIAL,
                     IS_UNDISCOVERED_BY_PLAYER))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
 
-            assertThat(readLabelTexts(sections))
-                .containsExactly("Claim:", "The Hegemony");
-            assertThat(sections.get(CLAIM_SECTION).readRowsInOrder())
-                .hasSize(HEADED_ONE_ENTRY_ROW_COUNT);
+            assertThat(readLabelRun(claimRow, MARKED_LABEL_RUN))
+                .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
+            assertThat(claimRow.labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.Text(new TextSpan("1,200", HIGHLIGHT)));
         }
 
         @Test

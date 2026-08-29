@@ -6,7 +6,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
-import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
@@ -310,13 +309,14 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                 CellTooltipRows.NO_SCORE));
         }
         // The claimant's own standing, or none at all when it holds nothing the box may list. Two
-        // states arrive here: a core imposed on a system its faction has no colony in, claimed
-        // without ever having been scored for it; and a claimant whose every colony the player has
-        // yet to find, which the projection above dropped. The claim is stated either way - vanilla
-        // settles it unfogged and the map paints it, so withholding the line would keep back what
-        // the player can already see - while the number and the account are both read off the one
-        // standing rather than looked up apart, which is what stops a line showing one faction's
-        // score over another's colonies.
+        // states arrive here, both of them decreed, a claim won by score always resting on a market
+        // the listing keeps: a core imposed on a system its faction has no colony in, claimed
+        // without ever having been scored for it; and one whose every colony there is concealed or
+        // unlisted and unseen, which the listing above dropped. The claim is stated either way -
+        // vanilla settles it unfogged and the map paints it, so withholding the line would keep
+        // back what the player can already see - while the number and the account are both read off
+        // the one standing rather than looked up apart, which is what stops a line showing one
+        // faction's score over another's colonies.
         var standing = contest.findStanding(claimantFactionId);
         var claimantLine = standing
             .map(found -> buildStandingLine(sector, found))
@@ -468,16 +468,19 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
          * Selects from a contest the standings the player may be shown, keeping the rule that
          * selected them and the grouping they are placed under.
          *
-         * <p>The known projection over the contest - the same fog the market lines beneath a faction
-         * are drawn through - applied to the listing rather than line by line, since a faction whose
-         * every colony is withheld would otherwise be named over an account with nothing in it,
-         * which is precisely the reading that tells the player what the fog is keeping back.
+         * <p>The listing rule the market lines beneath a faction are drawn through, asked of the
+         * standing as a whole rather than line by line: a faction is kept where the box may draw a
+         * row for at least one of its colonies. A faction whose every colony the rule withholds
+         * would otherwise be named over an account with nothing in it, which is precisely the
+         * reading that tells the player what the fog is keeping back.
          *
-         * <p>No kind of standing is spared it. The mechanic scores colonies nobody has discovered,
-         * so a faction can be weighed on a market this box may not name, and a weighed standing
-         * whose every colony is unknown to the player is dropped exactly as a presence-only one is.
-         * One known colony is enough to keep either: the faction is then on the map in its own
-         * colours, and naming it tells the player nothing they cannot already see.
+         * <p>A weighed standing therefore keeps its place however little of the system the player
+         * has explored. The mechanic scores colonies nobody has discovered and can hand one of them
+         * the system, so the box explaining the mechanic states the faction and redacts the row
+         * beneath it - what the fog takes is the colony's identity, not the fact that somebody is
+         * there. A presence-only standing whose every colony is unknown is still dropped: the
+         * contest never weighed it, so no number on screen is short of it and there is nothing but
+         * a name to state.
          */
         static ListedClaimContest selectFrom(
                 SystemClaimBreakdown breakdown,
@@ -492,7 +495,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                 breakdown
                     .scores()
                     .stream()
-                    .filter(standing -> isListingUndiscoveredMarkets || hasFoundColony(standing))
+                    .filter(standing -> hasListedColony(standing, isListingUndiscoveredMarkets))
                     .toList(),
                 holderGrouping);
         }
@@ -504,8 +507,8 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
         /**
          * One faction's place in the contest as the box may state it, or none where the faction
-         * holds nothing the projection lists - a decree over a system its holder has no colony in,
-         * or one whose every colony there the player has yet to find.
+         * holds nothing the listing keeps - a decree over a system its holder has no colony in, or
+         * one whose every colony there is concealed or unlisted and unseen.
          */
         Optional<FactionClaimStanding> findStanding(String factionId) {
             return listedStandings
@@ -591,14 +594,20 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                 && blocId.equals(holderGrouping.resolveBlocId(standing.factionId()));
         }
 
-        // Whether the player has found any of the colonies a faction's standing rests on - one
-        // found colony being enough, since the faction is then present on the map in its own
-        // colours and the box is telling the player nothing they cannot already see.
-        private static boolean hasFoundColony(FactionClaimStanding standing) {
+        // Whether any colony a faction's standing rests on is one the box may draw a row for. Asked
+        // through the market rule itself rather than restated here, the box stating outcomes over
+        // the very colonies it decides: a second copy of the rule beside this one would be free to
+        // disagree, and a faction listed over rows all withheld - or dropped over rows it could
+        // have drawn - is exactly what that disagreement would look like.
+        private static boolean hasListedColony(
+                FactionClaimStanding standing,
+                boolean isListingUndiscoveredMarkets) {
+
             return standing
                 .readHeldMarkets()
                 .stream()
-                .anyMatch(MarketClaimBreakdown::isKnownToPlayer);
+                .anyMatch(market ->
+                    ListedClaimMarkets.isListedMarket(market, isListingUndiscoveredMarkets));
         }
     }
 }

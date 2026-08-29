@@ -570,15 +570,26 @@ all the same, so its neighbours bound what it scored to within a point or two: t
 *state* a number for a place the player has not found, and does not go on to pretend the contest ran
 in some other order.
 
-The same projection reaches the listing above the markets: a standing whose every colony is withheld
-is left off the box entirely (`ListedClaimContest.selectFrom` again), since naming a faction over an
+That same listing rule decides the factions above the markets, asked of a standing as a whole rather
+than line by line: a faction is kept where the box may draw a row for at least one of its colonies,
+and left off entirely where every one of them is withheld (`ListedClaimContest.selectFrom`, calling
+`ListedClaimMarkets` rather than restating it - the box states outcomes over the very colonies it
+decides, so a second copy of the rule beside it would be free to disagree). Naming a faction over an
 account with nothing in it would tell the player exactly what the fog is keeping back - and `F1` is
 offered only where a standing survives that filter (`hasListedStanding`), so the key is never
 advertised over a box the fog has emptied. Both boxes ask that through one read of the contest
 (`SystemClaimContestTooltip.readListedContest`): the hint offers an account of exactly the factions
-the body lists, so answering the two apart would let a box advertise a key that does nothing. A
-weighed standing is not spared that filter: the mechanic weighs what vanilla weighs, and vanilla
-weighs colonies the player has never reached.
+the body lists, so answering the two apart would let a box advertise a key that does nothing.
+
+A weighed standing therefore always survives, however little of the system has been explored: the
+market carrying it is scored on its own account, so it has a row - redacted where nobody has found
+the colony - and dropping the faction would report the contest as something other than what decided
+it. The disclosure that follows is deliberate. A rival scored on a colony nobody has found is named,
+placed in the economy's listing and given its score, so a player hovering an unexplored system can
+read that somebody holds something in it; what the fog takes is the colony's identity, not the fact
+that a faction is there. What the filter still removes is the faction present through concealed or
+unlisted colonies alone, none of which anybody has seen: the contest never weighed it, so no number
+on screen is short of it and there is nothing but a name to state.
 
 Closing the list is the presence term, which is the faction's rather than any one market's, since
 the mechanic gives every market of a faction the same point per other market it holds there: stated
