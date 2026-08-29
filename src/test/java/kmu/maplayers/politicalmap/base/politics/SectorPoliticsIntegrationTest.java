@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -91,6 +92,40 @@ class SectorPoliticsIntegrationTest {
                 .containsEntry(
                     "frontier-system",
                     new DominantHolder("independent", NEUTRAL_BASE, buildDarkTheme(NEUTRAL_BASE)));
+        }
+
+        @Test
+        void resolveDominantHolderNamesTheFactionSharingASystemWithAHeavierNeutralMarket() {
+            // Neutral is where nobody is rather than a faction with interests, so it takes no part
+            // in the contest for a system - it outweighs the colony here and still loses it.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var neutral = buildFaction(Factions.NEUTRAL, NEUTRAL_BASE);
+            var sector = buildSectorWith(
+                "salvage-system",
+                List.of(neutral, hegemony),
+                buildVisibleMarket(neutral, 6),
+                buildVisibleMarket(hegemony, 3));
+
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+                .containsEntry(
+                    "salvage-system",
+                    new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
+        }
+
+        @Test
+        void resolveDominantHolderStillNamesNeutralWhereItStandsAlone() {
+            // Barred from the contest, not from the map: a bloc kept out of the ranking still holds
+            // what nobody contests, so a system only neutral is present in paints exactly as before.
+            var neutral = buildFaction(Factions.NEUTRAL, NEUTRAL_BASE);
+            var sector = buildSectorWith(
+                "derelict-system",
+                List.of(neutral),
+                buildVisibleMarket(neutral, 4));
+
+            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+                .containsEntry(
+                    "derelict-system",
+                    new DominantHolder(Factions.NEUTRAL, NEUTRAL_BASE, buildDarkTheme(NEUTRAL_BASE)));
         }
 
         @Test

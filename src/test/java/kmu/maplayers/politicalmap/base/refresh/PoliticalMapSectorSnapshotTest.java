@@ -120,6 +120,22 @@ class PoliticalMapSectorSnapshotTest {
         }
 
         @Test
+        void ownerMapNamesTheFactionSharingASystemWithAHeavierNeutralMarket() {
+            // The holder recorded here is barred under the same candidacy the fills are resolved
+            // under, though this walk only fingerprints them. Read without the bar, this system
+            // would answer neutral both before and after the colony beside it was founded - so the
+            // fill would move to the faction while the fingerprint sat still, and the map would go
+            // on showing whatever it last built here.
+            var snapshot = scanUnderStabilityWeighting(
+                buildSectorWith(buildSystem("a"),
+                buildOwnedMarket(Factions.NEUTRAL, 6),
+                buildOwnedMarket("hegemony", 3)));
+
+            assertThat(snapshot.ownerBySystemId())
+                .containsExactly(entry("a", "hegemony"));
+        }
+
+        @Test
         void visibilityFingerprintCountsASystemSettledOnlyByAColonyTheEconomyDoesNotList() {
             // Galatia Academy's shape, and the case that parts inhabitation from the footprint
             // read: nothing is weighed for an unregistered colony, so a scan deriving

@@ -98,7 +98,8 @@ public final class SectorPolitics {
         var footprintByBlocId = pass.readBlocFootprints(system);
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
             footprintByBlocId,
-            pass.tieBreakFor(system));
+            pass.tieBreakFor(system),
+            pass.resolveBlocCandidacy());
 
         if (dominantBlocId == null) {
             return null;

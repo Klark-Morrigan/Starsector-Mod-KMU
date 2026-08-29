@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.dominance;
 
 import java.util.Comparator;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * Picks the faction that dominates a star system from its market footprint.
@@ -25,6 +26,13 @@ import java.util.Map;
  *       instead breaks the tie by system geometry.</li>
  * </ol>
  *
+ * <p>Who is ranked at all is the caller's to say, through a candidacy predicate
+ * over the ids ({@link BlocCandidacy}). Only candidates compete; where no
+ * footprint is one, the whole map is ranked instead, so a holder barred from the
+ * contest still holds what nobody contests. The bar is on the id and never on
+ * the weight, so every score this rule compares is the one the weighting
+ * produced.
+ *
  * <p>Weights arrive as exact integers (the fixed-point grid the footprint read
  * rounds onto), so every comparison here is exact and the tie-break is only
  * reached on a genuine tie - no epsilon math inside the rule. Confining the
@@ -44,12 +52,18 @@ public final class SystemDominance {
      *
      * @param footprintByFactionId each faction's footprint in the system; an
      *                             empty map means no owned markets
+     * @param candidacy            which ids may win the system; the rest are
+     *                             ranked only where no candidate is present
      * @return the dominant faction's id, or {@code null} when the map is empty
      *         (an uninhabited system has no holder)
      */
     public static String resolveDominantFactionId(
-            Map<String, MarketFootprint> footprintByFactionId) {
-        return resolveDominantFactionId(footprintByFactionId, Comparator.naturalOrder());
+            Map<String, MarketFootprint> footprintByFactionId,
+            Predicate<String> candidacy) {
+        return resolveDominantFactionId(
+            footprintByFactionId,
+            Comparator.naturalOrder(),
+            candidacy);
     }
 
     /**
@@ -66,18 +80,41 @@ public final class SystemDominance {
      *                             empty map means no owned markets
      * @param tieBreak             consulted only when two blocs tie on all three
      *                             weight levels; the id it orders first wins
+     * @param candidacy            which ids may win the system; the rest are
+     *                             ranked only where no candidate is present
      * @return the dominant faction's id, or {@code null} when the map is empty
      *         (an uninhabited system has no holder)
      */
     public static String resolveDominantFactionId(
             Map<String, MarketFootprint> footprintByFactionId,
-            Comparator<String> tieBreak) {
+            Comparator<String> tieBreak,
+            Predicate<String> candidacy) {
+
+        var dominantId = resolveLeaderAmong(footprintByFactionId, tieBreak, candidacy);
+
+        // Nobody in the running means nobody to keep out: the contest reopens to every footprint,
+        // so a system whose only presence is barred keeps exactly the holder it has always had.
+        return dominantId != null
+            ? dominantId
+            : resolveLeaderAmong(footprintByFactionId, tieBreak, BlocCandidacy.NONE_BARRED);
+    }
+
+    // The top of one pass over the footprints, counting only the ids the candidacy admits. Answers
+    // null where it admitted none, which is what the reopened second pass is taken on.
+    private static String resolveLeaderAmong(
+            Map<String, MarketFootprint> footprintByFactionId,
+            Comparator<String> tieBreak,
+            Predicate<String> candidacy) {
 
         String dominantId = null;
         MarketFootprint dominant = null;
 
         for (var entry : footprintByFactionId.entrySet()) {
             var factionId = entry.getKey();
+
+            if (!candidacy.test(factionId)) {
+                continue;
+            }
             var footprint = entry.getValue();
 
             if (dominantId == null

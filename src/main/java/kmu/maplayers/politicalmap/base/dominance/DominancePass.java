@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * One dominance pass over the sector: a rebuild's reading of it, plus the weighting rule that
@@ -297,6 +298,22 @@ public record DominancePass(
             readFootprintsByFaction(system),
             MarketFootprint.EMPTY,
             MarketFootprint::merge);
+    }
+
+    /**
+     * Which blocs may win a system under this pass's grouping - everyone but the bloc painting in
+     * the neutral placeholder faction.
+     *
+     * <p>Beside {@link #tieBreakFor} for the same reason that one is here: both are knobs the
+     * ranking is taken under rather than parts of the ranking itself, and both have to be the very
+     * ones the fills were resolved with or a reader would rank a system the map painted under
+     * another rule. Grouping-wide rather than per-system, the answer turning on who a bloc is and
+     * not on where it stands.
+     *
+     * @return the candidacy a ranking over this pass's bloc ids is taken under
+     */
+    public Predicate<String> resolveBlocCandidacy() {
+        return BlocCandidacy.createForGrouping(grouping());
     }
 
     /**

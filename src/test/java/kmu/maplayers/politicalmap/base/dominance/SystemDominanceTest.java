@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 
 import static kmu.maplayers.politicalmap.base.dominance.MarketFootprintFixtures.buildWeightedFootprint;
 import static kmu.maplayers.politicalmap.base.dominance.MarketFootprintFixtures.listOrderedFootprints;
@@ -18,15 +20,28 @@ import static org.assertj.core.api.Assertions.assertThat;
  * tie on every earlier level so it isolates exactly one tie-break, and lists
  * the higher faction id first so the winner is shown to come from the rule, not
  * from map iteration order.
+ *
+ * <p>Also pins who is ranked at all: a candidacy bars an id from winning
+ * whatever it scored, and lifts where no footprint is a candidate. The barred
+ * ids here are hand-named rather than taken from the live rule, so the pure
+ * comparison stays free of what any one faction happens to be.
  */
 class SystemDominanceTest {
+
+    private static final String PLACEHOLDER = "placeholder";
+    private static final String SECOND_PLACEHOLDER = "placeholder-second";
+
+    // Both placeholder ids sort below the scoring factions below, so a case a bar decides cannot
+    // be passing on the natural id order instead.
+    private static final Predicate<String> BARS_PLACEHOLDERS =
+        factionId -> !Set.of(PLACEHOLDER, SECOND_PLACEHOLDER).contains(factionId);
 
     @Nested
     class ResolveDominantFactionId {
 
         @Test
         void returnsNullForNoOwnedMarkets() {
-            assertThat(SystemDominance.resolveDominantFactionId(Map.of()))
+            assertThat(SystemDominance.resolveDominantFactionId(Map.of(), BlocCandidacy.NONE_BARRED))
                 .isNull();
         }
 
@@ -37,7 +52,7 @@ class SystemDominanceTest {
                 "hegemony",
                 buildWeightedFootprint(7, 5, 5));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints))
+            assertThat(SystemDominance.resolveDominantFactionId(footprints, BlocCandidacy.NONE_BARRED))
                 .isEqualTo("hegemony");
         }
 
@@ -52,7 +67,7 @@ class SystemDominanceTest {
                 "hegemony",
                 buildWeightedFootprint(8, 4, 0));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints))
+            assertThat(SystemDominance.resolveDominantFactionId(footprints, BlocCandidacy.NONE_BARRED))
                 .isEqualTo("hegemony");
         }
 
@@ -65,7 +80,7 @@ class SystemDominanceTest {
                 "hegemony",
                 buildWeightedFootprint(9, 6, 0));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints))
+            assertThat(SystemDominance.resolveDominantFactionId(footprints, BlocCandidacy.NONE_BARRED))
                 .isEqualTo("hegemony");
         }
 
@@ -79,7 +94,7 @@ class SystemDominanceTest {
                 "hegemony",
                 buildWeightedFootprint(9, 5, 7));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints))
+            assertThat(SystemDominance.resolveDominantFactionId(footprints, BlocCandidacy.NONE_BARRED))
                 .isEqualTo("hegemony");
         }
 
@@ -93,7 +108,7 @@ class SystemDominanceTest {
                 "hegemony",
                 buildWeightedFootprint(9, 5, 5));
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints))
+            assertThat(SystemDominance.resolveDominantFactionId(footprints, BlocCandidacy.NONE_BARRED))
                 .isEqualTo("hegemony");
         }
 
@@ -110,7 +125,8 @@ class SystemDominanceTest {
 
             assertThat(SystemDominance.resolveDominantFactionId(
                     footprints,
-                    Comparator.<String>reverseOrder()))
+                    Comparator.<String>reverseOrder(),
+                    BlocCandidacy.NONE_BARRED))
                 .isEqualTo("tritachyon");
         }
 
@@ -129,8 +145,65 @@ class SystemDominanceTest {
                 throw new AssertionError("tie-break consulted without a full tie");
             };
 
-            assertThat(SystemDominance.resolveDominantFactionId(footprints, throwingTieBreak))
+            assertThat(SystemDominance.resolveDominantFactionId(
+                    footprints,
+                    throwingTieBreak,
+                    BlocCandidacy.NONE_BARRED))
                 .isEqualTo("hegemony");
+        }
+
+        @Test
+        void leavesTheSystemToACandidateOutscoredByABarredHolder() {
+            // The bar is on the id and never on the weight, so a barred holder outscoring
+            // everything present still loses the system to whoever may actually win it.
+            var footprints = listOrderedFootprints(
+                PLACEHOLDER,
+                buildWeightedFootprint(9, 5, 5),
+                "tritachyon",
+                buildWeightedFootprint(1, 1, 0));
+
+            assertThat(SystemDominance.resolveDominantFactionId(footprints, BARS_PLACEHOLDERS))
+                .isEqualTo("tritachyon");
+        }
+
+        @Test
+        void leavesTheSystemToACandidateTiedWithABarredHolderAtNought() {
+            // Nought against nought, with the barred id both listed first and sorting lower, so
+            // it would take the system on either reading were it in the running at all.
+            var footprints = listOrderedFootprints(
+                PLACEHOLDER,
+                buildWeightedFootprint(0, 0, 0),
+                "tritachyon",
+                buildWeightedFootprint(0, 0, 0));
+
+            assertThat(SystemDominance.resolveDominantFactionId(footprints, BARS_PLACEHOLDERS))
+                .isEqualTo("tritachyon");
+        }
+
+        @Test
+        void picksABarredHolderWhereItIsTheOnlyFootprint() {
+            // A holder barred from the contest still holds what nobody contests, so a system it
+            // stands alone in keeps exactly the holder it had before any bar existed.
+            var footprints = listOrderedFootprints(
+                PLACEHOLDER,
+                buildWeightedFootprint(4, 4, 0));
+
+            assertThat(SystemDominance.resolveDominantFactionId(footprints, BARS_PLACEHOLDERS))
+                .isEqualTo(PLACEHOLDER);
+        }
+
+        @Test
+        void ranksBarredHoldersAgainstEachOtherWhereNoneIsACandidate() {
+            // The reopened ranking is the same four-level rule rather than a fall back to the first
+            // entry: the heavier of two barred holders wins, though it is listed second.
+            var footprints = listOrderedFootprints(
+                SECOND_PLACEHOLDER,
+                buildWeightedFootprint(3, 2, 1),
+                PLACEHOLDER,
+                buildWeightedFootprint(9, 5, 5));
+
+            assertThat(SystemDominance.resolveDominantFactionId(footprints, BARS_PLACEHOLDERS))
+                .isEqualTo(PLACEHOLDER);
         }
     }
 

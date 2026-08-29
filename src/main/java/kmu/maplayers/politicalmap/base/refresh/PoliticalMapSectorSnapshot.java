@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.refresh;
 
 import kmu.maplayers.base.visibility.MapVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityPass;
+import kmu.maplayers.politicalmap.base.dominance.BlocCandidacy;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -131,8 +132,14 @@ public record PoliticalMapSectorSnapshot(
             // A decivilised-only system is drawn yet unowned, so it counts toward
             // visibility but is left out of the holder map - a system gaining or
             // losing an holder then reads as a diff against that absence.
-            var dominantFactionId =
-                SystemDominance.resolveDominantFactionId(footprintByFactionId);
+            //
+            // Barred under the same candidacy the fills are resolved under, though this walk only
+            // fingerprints them: a colony founded under a heavier neutral station moves the fill to
+            // that faction, and a holder read here without the bar would still say neutral both
+            // before and after, leaving the map showing whatever it last built there.
+            var dominantFactionId = SystemDominance.resolveDominantFactionId(
+                footprintByFactionId,
+                BlocCandidacy::isCandidateFaction);
 
             if (dominantFactionId != null) {
                 ownerBySystemId.put(systemId, dominantFactionId);

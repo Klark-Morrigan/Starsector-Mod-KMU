@@ -80,11 +80,13 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
             return Optional.empty();
         }
 
-        // The winner resolved exactly as the fill's was, tie-break included, so the bloc the band
-        // opens on is the bloc the cell is painted for even where the weights alone do not say so.
+        // The winner resolved exactly as the fill's was, tie-break and candidacy included, so the
+        // bloc the band opens on is the bloc the cell is painted for even where the weights alone
+        // do not say so.
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
             footprintByBlocId,
-            pass.tieBreakFor(system));
+            pass.tieBreakFor(system),
+            pass.resolveBlocCandidacy());
 
         return Optional.of(HeldCellRibbons.planHeldCellRibbon(
             dominantBlocId,

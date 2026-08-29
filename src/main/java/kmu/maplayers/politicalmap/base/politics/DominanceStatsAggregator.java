@@ -73,10 +73,12 @@ public final class DominanceStatsAggregator {
         // territory that actually paints.
         var footprintByBlocId = pass.readBlocFootprints(system);
 
-        // The one winner among the blocs the contest weighed; null when it weighed nothing here.
+        // The one winner among the blocs the contest weighed and admits as candidates; null when it
+        // weighed nothing here.
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
             footprintByBlocId,
-            pass.tieBreakFor(system));
+            pass.tieBreakFor(system),
+            pass.resolveBlocCandidacy());
 
         // Presence is habitation rather than the weights, so a bloc living here on a colony the
         // economy does not list is listed at the size it lives on and a score of nought, as the

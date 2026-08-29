@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.politics;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmu.maplayers.politicalmap.base.dominance.BlocCandidacy;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -14,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Resolves who paints each star system while the filter spotlights one bloc, keeping the
@@ -96,8 +98,8 @@ public final class FilteredPolitics {
      * comparison dominates; a present bloc that does not - outranked, or holding nothing anybody
      * weighed - is present but dominated; a bloc absent from the presence set is absent. The
      * comparison uses the same {@link SystemDominance} rule the normal pass does, breaking a tie by
-     * lowest id, so "does the selected bloc dominate" is judged against honest competition under the
-     * active grouping.
+     * lowest id and barring the same non-candidates, so "does the selected bloc dominate" is judged
+     * against honest competition under the active grouping.
      *
      * <p>Presence is living in the system rather than merely being nameable in it, which is what
      * keeps a spared cell and a painted cell the same cell: a bloc whose only market here is a
@@ -115,11 +117,15 @@ public final class FilteredPolitics {
             Map<String, MarketFootprint> footprintByBlocId,
             Set<String> presentBlocIds,
             String selectedBlocId) {
+
+        // Bloc ids read as faction ids, which is what the identity grouping makes them, so this
+        // shorter entry judges candidacy by the same rule a grouped one does.
         return classifySelectedBlocPresence(
             footprintByBlocId,
             presentBlocIds,
             selectedBlocId,
-            Comparator.naturalOrder());
+            Comparator.naturalOrder(),
+            BlocCandidacy::isCandidateFaction);
     }
 
     /**
@@ -135,18 +141,24 @@ public final class FilteredPolitics {
      * @param selectedBlocId    the spotlighted bloc's id (a faction id, or an alliance id)
      * @param tieBreak          consulted only when the selected bloc ties a rival on every
      *                          weight level; the id it orders first dominates the system
+     * @param candidacy         which blocs may hold the system, so the spotlight's "dominates"
+     *                          is judged against the same field the fills were
      * @return where the selected bloc stands in this system
      */
     public static SelectedBlocPresence classifySelectedBlocPresence(
             Map<String, MarketFootprint> footprintByBlocId,
             Set<String> presentBlocIds,
             String selectedBlocId,
-            Comparator<String> tieBreak) {
+            Comparator<String> tieBreak,
+            Predicate<String> candidacy) {
 
         if (!presentBlocIds.contains(selectedBlocId)) {
             return SelectedBlocPresence.ABSENT;
         }
-        var dominantBlocId = SystemDominance.resolveDominantFactionId(footprintByBlocId, tieBreak);
+        var dominantBlocId = SystemDominance.resolveDominantFactionId(
+            footprintByBlocId,
+            tieBreak,
+            candidacy);
         return selectedBlocId.equals(dominantBlocId)
             ? SelectedBlocPresence.DOMINATES
             : SelectedBlocPresence.PRESENT_BUT_DOMINATED;
@@ -349,16 +361,22 @@ public final class FilteredPolitics {
         // dominate" call and the receded real-holder fallback settle a tie the same way the base
         // layers do; lazy, so it reads no geometry unless this system actually ties.
         var tieBreak = pass.tieBreakFor(system);
+
+        // The pass's own candidacy, for the same reason the tie-break is the pass's: a spotlight
+        // must never move a fill, and judging "dominates" against a field the fills were not
+        // resolved over would do exactly that.
+        var candidacy = pass.resolveBlocCandidacy();
         var sector = pass.sector();
         var grouping = pass.grouping();
         var presence = classifySelectedBlocPresence(
             footprintByBlocId,
             presentBlocIds,
             selectedBlocId,
-            tieBreak);
+            tieBreak,
+            candidacy);
 
         if (presence == SelectedBlocPresence.ABSENT) {
-            return resolveRealHolder(sector, grouping, footprintByBlocId, tieBreak);
+            return resolveRealHolder(sector, grouping, footprintByBlocId, tieBreak, candidacy);
         }
         var spotlit = resolveSpotlitHolder(sector, grouping, selectedBlocId);
 
@@ -367,7 +385,7 @@ public final class FilteredPolitics {
         // holder) rather than dropping off the map - and a system that fell back is not spotlit,
         // so it is not recorded contested.
         if (spotlit == null) {
-            return resolveRealHolder(sector, grouping, footprintByBlocId, tieBreak);
+            return resolveRealHolder(sector, grouping, footprintByBlocId, tieBreak, candidacy);
         }
         if (presence == SelectedBlocPresence.PRESENT_BUT_DOMINATED) {
             contestedSystemIds.add(system.getId());
@@ -377,15 +395,19 @@ public final class FilteredPolitics {
 
     // The system's real dominant holder, unchanged from the normal pass, for a system the
     // selected bloc is absent from. Its real key (rejected by isSpotlitBloc) is how the caller
-    // knows to recede it. Takes the same proximity tie-break the normal pass uses so a tied
-    // receded system draws the same holder it would off filter.
+    // knows to recede it. Takes the same proximity tie-break and candidacy the normal pass uses so
+    // a receded system draws the holder it would off filter, tie or no tie.
     private static DominantHolder resolveRealHolder(
             SectorAPI sector,
             HolderGrouping grouping,
             Map<String, MarketFootprint> footprintByBlocId,
-            Comparator<String> tieBreak) {
+            Comparator<String> tieBreak,
+            Predicate<String> candidacy) {
 
-        var dominantBlocId = SystemDominance.resolveDominantFactionId(footprintByBlocId, tieBreak);
+        var dominantBlocId = SystemDominance.resolveDominantFactionId(
+            footprintByBlocId,
+            tieBreak,
+            candidacy);
         if (dominantBlocId == null) {
             return null;
         }
