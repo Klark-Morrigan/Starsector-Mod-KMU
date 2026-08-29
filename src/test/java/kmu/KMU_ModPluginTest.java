@@ -4,6 +4,7 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.MapLayers;
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
@@ -104,9 +105,9 @@ class KMU_ModPluginTest {
 
         @Test
         void takesEveryOneOfThemBack() {
-            // Switching the overlay off has to reach all four and not only the surfaces. Across a
-            // load the listeners and scripts would be gone by themselves, being transient - but a
-            // player who switched it off and went on playing is still running every one of them.
+            // Switching the overlay off has to reach every one of them and not only the surfaces.
+            // Across a load the listeners and scripts would be gone by themselves, being transient
+            // - but a player who switched it off and went on playing is still running every one.
             var sectorMock = mock(SectorAPI.class);
 
             try (var installers = new MapLayerInstallerMocks()) {
@@ -119,11 +120,13 @@ class KMU_ModPluginTest {
         }
     }
 
-    // The four installers the overlay is composed of, mocked together because every case here is
-    // about which of them were called and which were not - a case holding only the ones it asserts
-    // on would let an unmocked installer reach a real sector mock and answer for itself.
+    // Everything the overlay is composed of, mocked together because every case here is about which
+    // of them were called and which were not - a case holding only the ones it asserts on would let
+    // an unmocked installer reach a real sector mock and answer for itself.
     private static final class MapLayerInstallerMocks implements AutoCloseable {
 
+        private final MockedStatic<MapLayerInstallations> installationsMock =
+            mockStatic(MapLayerInstallations.class);
         private final MockedStatic<PoliticalMapInstaller> politicalMapMock =
             mockStatic(PoliticalMapInstaller.class);
         private final MockedStatic<MapSurfaceInstaller> surfaceMock =
@@ -135,6 +138,7 @@ class KMU_ModPluginTest {
 
         private void verifyStoodUpFor(SectorAPI sector) {
 
+            installationsMock.verify(() -> MapLayerInstallations.installMachineryOn(sector));
             politicalMapMock.verify(() -> PoliticalMapInstaller.installAll(sector));
             surfaceMock.verify(() -> MapSurfaceInstaller.installAll(sector));
             sidebarMock.verify(() -> SidebarInstaller.installAll(sector));
@@ -143,6 +147,7 @@ class KMU_ModPluginTest {
 
         private void verifyTakenBackFor(SectorAPI sector) {
 
+            installationsMock.verify(() -> MapLayerInstallations.uninstallMachineryFrom(sector));
             politicalMapMock.verify(() -> PoliticalMapInstaller.uninstallAll(sector));
             surfaceMock.verify(() -> MapSurfaceInstaller.uninstallAll(sector));
             sidebarMock.verify(() -> SidebarInstaller.uninstallAll(sector));
@@ -151,6 +156,8 @@ class KMU_ModPluginTest {
 
         private void verifyNothingStoodUpFor(SectorAPI sector) {
 
+            installationsMock.verify(
+                () -> MapLayerInstallations.installMachineryOn(sector), never());
             politicalMapMock.verify(() -> PoliticalMapInstaller.installAll(sector), never());
             surfaceMock.verify(() -> MapSurfaceInstaller.installAll(sector), never());
             sidebarMock.verify(() -> SidebarInstaller.installAll(sector), never());
@@ -159,6 +166,8 @@ class KMU_ModPluginTest {
 
         private void verifyNothingTakenBackFor(SectorAPI sector) {
 
+            installationsMock.verify(
+                () -> MapLayerInstallations.uninstallMachineryFrom(sector), never());
             politicalMapMock.verify(() -> PoliticalMapInstaller.uninstallAll(sector), never());
             surfaceMock.verify(() -> MapSurfaceInstaller.uninstallAll(sector), never());
             sidebarMock.verify(() -> SidebarInstaller.uninstallAll(sector), never());
@@ -172,6 +181,7 @@ class KMU_ModPluginTest {
             sidebarMock.close();
             surfaceMock.close();
             politicalMapMock.close();
+            installationsMock.close();
         }
     }
 }

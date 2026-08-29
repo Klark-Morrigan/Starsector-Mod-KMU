@@ -136,6 +136,16 @@ about what the overlay means.
 
 - **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, default
   shortcut), `MapLayerRegistry` (roster, both screens' picks, save migrations), `NoLayer`.
+- **`base/installation`** - one sector's installed map machinery as a thing a caller can hold.
+  Everything the layers draw is derived from one sector, so every holder behind that drawing is a
+  fact about a sector rather than about the process. `MapLayerInstallation` is that holder;
+  `MapLayerInstallations` indexes one per sector, replaces a sector's when the layers are installed
+  on it again, releases it when they are removed, and discards every one on load - the load being
+  the only point at which a previous save's drawing can be stopped from outliving it, since nothing
+  else is told that a sector went away. A seam vanilla hands no sector - the terrain hook above all
+  - resolves the live sector's there, which is where the one global read standing in for a sector
+  nobody passed down belongs. A sector with nothing installed resolves to a detached installation
+  rather than to null, the overlay being behind a switch a player can leave off.
 - **[The render surface](base/render/README.md)** - `MapLayerRenderer`, the seam a layer draws
   through - its overlay and the hover box over one cell of it - and the terrain that owns the map's
   render pass. It asks the active layer for a renderer and hands it the frame, so it names no layer;

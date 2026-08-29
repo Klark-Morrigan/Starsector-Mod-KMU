@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.MapLayers;
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
@@ -122,6 +123,15 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // colony unobserved again when they are switched back on.
         ColonySightingInstaller.installAll(sector);
 
+        // Everything the map layers had installed on the sector this load replaced, discarded
+        // before anything is installed on the loaded one. No other seam is told that a sector went
+        // away, so this is the one point at which a previous save's drawing can be stopped from
+        // outliving it. Ahead of the switch rather than inside it, since a load that finds the
+        // overlay switched off has just as much of the previous sector's to discard.
+        KmuWiringSteps.runGuardedStep(
+            MapLayerInstallations::disposeEveryInstallation,
+            "Failed to discard KMU map layer machinery from the previous save");
+
         mapLayers.applyTo(sector);
         randomAssortmentOfThingsCompatibility.applyTo(sector);
     }
@@ -139,6 +149,10 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
     // What the map layers need of a sector while they are on, in the order they need it in.
     static void installMapLayers(SectorAPI sector) {
+
+        // First, because it is what the rest is installed into: everything below derives its state
+        // from this sector, and this is the thing that sector's share of it is held in.
+        MapLayerInstallations.installMachineryOn(sector);
 
         // Before the render surfaces, because its save heal repairs what the terrain then reads.
         PoliticalMapInstaller.installAll(sector);
@@ -159,5 +173,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
         SidebarInstaller.uninstallAll(sector);
         MapSurfaceInstaller.uninstallAll(sector);
         PoliticalMapInstaller.uninstallAll(sector);
+
+        // Last, mirroring the install: the four above are taken back through the state this holds,
+        // so releasing it first would leave them undoing their work against nothing.
+        MapLayerInstallations.uninstallMachineryFrom(sector);
     }
 }
