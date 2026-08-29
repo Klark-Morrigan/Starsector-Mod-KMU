@@ -111,6 +111,7 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(
             KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_SYSTEM_HOLDER,
             "Allied with the system holder:");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_POLITICAL, "Non-political:");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_STABILITY, "Stability");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE, "Size");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS, "Patrols");

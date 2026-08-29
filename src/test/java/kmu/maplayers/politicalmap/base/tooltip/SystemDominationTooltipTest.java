@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
@@ -60,11 +61,16 @@ import static org.mockito.Mockito.when;
  * asserted here is that it stays the default - a group made up of nothing reads as one flat line, and
  * one carrying members reads over them indented, exactly as the resolver handed it over.
  *
- * <p>The ranking, the status line, the headings and the three blocks belong to the shape every
- * standings box shares and are pinned with it ({@link SystemStandingsTooltipTest}); the decree heading the box
- * belongs to every one of the layer's boxes and is pinned with the heading itself
- * ({@link PoliticalMapCellTooltipTest}). What the counterpart goes on to say is
+ * <p>The ranking, the status line, the headings and which of them a group falls under belong to the
+ * shape every standings box shares and are pinned with it ({@link SystemStandingsTooltipTest}); the
+ * decree heading the box belongs to every one of the layer's boxes and is pinned with the heading
+ * itself ({@link PoliticalMapCellTooltipTest}). What the counterpart goes on to say is
  * {@link ExpandedSystemDominationTooltipTest}'s.
+ *
+ * <p>The non-political block is the exception and is pinned here, because it is the one block whose
+ * routing turns on which faction a bloc actually is: the shape suite poses its groups as bloc ids
+ * that stand for nobody in particular, which is right for every block placed by rank or by alliance
+ * and cannot state this one at all.
  */
 final class SystemDominationTooltipTest {
 
@@ -90,6 +96,7 @@ final class SystemDominationTooltipTest {
     // as - what the box does with them is carry them into the value column.
     private static final String BLOC_SCORE = "1,200";
     private static final String ALLY_SCORE = "800";
+    private static final String PLACEHOLDER_SCORE = "50";
 
     // What a stood-up group is weighed at, forwarded to the (stood-in) naming: the case using it is
     // about which block a group falls in, which is read off its bloc alone.
@@ -201,6 +208,26 @@ final class SystemDominationTooltipTest {
             assertThat(readTableRow(rows, SECOND_MEMBER_ROW).labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(new TextSpan(OTHER_MEMBER_SCORE, TEXT)));
         }
+
+        @Test
+        void buildBodySectionsListsThePlaceholderOwnerApartFromWhoHoldsTheSystem() {
+            // Vanilla hands every abandoned station and collapsed colony to the neutral placeholder,
+            // which takes a footprint like anybody else. Left among the contenders it would head the
+            // box over a system a real faction runs, so it is set aside before a holder is picked -
+            // listed with whatever it scored, and never named as holding the place.
+            StandingsTooltipSeamsFake.stubRankedGroups(
+                List.of(
+                    new GroupStanding(CORE_FACTION, ANY_SCORE, List.of()),
+                    new GroupStanding(Factions.NEUTRAL, ANY_SCORE, List.of())),
+                List.of(createLoneGroupEntry(), createPlaceholderGroupEntry()));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Dominated by:",
+                    "Rebel Pact",
+                    "Non-political:",
+                    "Neutral");
+        }
     }
 
     @Nested
@@ -292,6 +319,13 @@ final class SystemDominationTooltipTest {
     private static CellTooltipEntry createAlliedGroupEntry() {
         return CellTooltipEntry.createEntry(
             CellTooltipEntryLine.createLine(MEMBER_MARK, "Tri-Tachyon", ALLY_SCORE));
+    }
+
+    // The placeholder owner as the resolver hands it over, named and scored apart from the leader so
+    // the case about the block it lands in cannot pass by reading the leader's line twice.
+    private static CellTooltipEntry createPlaceholderGroupEntry() {
+        return CellTooltipEntry.createEntry(
+            CellTooltipEntryLine.createLine(MEMBER_MARK, "Neutral", PLACEHOLDER_SCORE));
     }
 
     private static List<String> readLabelTexts(List<TooltipSection> sections) {

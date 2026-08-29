@@ -252,8 +252,8 @@ The domination box has a second, fuller version - `ExpandedSystemDominationToolt
 it offers the framework's detail mode - which lists every faction holding the system over the
 colonies its score was summed from and each colony over the factors behind its weight, down to a
 colony's patrol tiers. Both sit on `SystemStandingsTooltip`, which settles everything but that
-nesting - one pass read from the active view, the ranking, the status line, the three headings and
-which of them a group falls under, the lines naming the blocs and the member factions inside them -
+nesting - one pass read from the active view, the ranking, the status line, the headings and which
+of them a group falls under, the lines naming the blocs and the member factions inside them -
 because two boxes over one system have to be two amounts of detail about the same contest rather
 than two contests. What a box adds is one
 answer: what to hang beneath a faction as the account of its score (`FactionAccountResolver`), asked
@@ -261,15 +261,29 @@ for once per paint and applied by `StandingRowResolver` where the standing and t
 it are both in hand, so no box can list one faction's colonies under another's name. Hanging nothing
 is the shared default, so the ordinary box overrides nothing at all.
 
-Below the leader the ranked groups split in two: `Allied with the system holder:` takes everyone
-standing in the leader's own alliance and `Contested by:` everyone else. The split is `ContestSides`
-- the one placement every surface reporting a contest routes its blocks through, over the
-`BlocAffiliation` the bands judge their contest by (`HolderGroupingSource`, bound by
+Where each ranked group is listed is `StandingBlockRouting`'s one answer, taken per hover over the
+closed set of blocks in `StandingBlock` - which also carries each block's heading, so the order they
+read in is that declaration order rather than a sequence of calls that could drift from it. The
+blocks nest as a chain of axes rather than as four tests of equal standing.
+
+The outermost is whether a bloc is in the running at all (`BlocCandidacy`, off the pass's own
+grouping so the box bars exactly who the fills bar). Everyone barred goes to `Non-political:` before
+a holder is picked, which is why the placeholder owner of every abandoned station and collapsed
+colony is never headed `Dominated by:` however far it outranked the rest. This is the one place the
+box and the fill part company: a system whose only presence is `neutral` is still painted, bordered
+and labelled for it, while the box drops the `Dominated by:` heading entirely and lists it below.
+Naming the placeholder as holding the system is the statement the block exists to stop making, and
+saying nothing about who holds a system nobody political holds is the truer answer.
+
+The strongest of those left holds it, and the rest split in two: `Allied with the system holder:`
+takes everyone standing in the holder's own alliance and `Contested by:` everyone else. That split
+is `ContestSides` - the one placement every surface reporting a contest routes its blocks through,
+over the `BlocAffiliation` the bands judge their contest by (`HolderGroupingSource`, bound by
 `SystemDominationTooltip` and sampled per hover) - so no two surfaces over one system can put a bloc
 on different sides of it, and a box cannot disagree with the band beneath it about who is a rival. The headline stays on the group the map painted the cell for rather than on
 its alliance, which is what keeps the box an explanation of the cell beneath it - what is taken from
 the alliances layer is the shape and never its grouping, which would merge allied runs, fills and
-rows. Only the leader's allies are lifted out; two rivals allied with each other stay contested,
+rows. Only the holder's allies are lifted out; two rivals allied with each other stay contested,
 the block stating relations to the group that holds the system. It is naturally empty on the
 alliances layer, where members are already one bloc, and on an install with nothing grouping
 factions - dropped there by the same rule that drops any other block standing over no entries.

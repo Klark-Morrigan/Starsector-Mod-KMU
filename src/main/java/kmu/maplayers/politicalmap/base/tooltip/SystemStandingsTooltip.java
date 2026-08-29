@@ -9,7 +9,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
-import kmu.maplayers.politicalmap.base.dominance.ContestSide;
+import kmu.maplayers.politicalmap.base.dominance.BlocCandidacy;
 import kmu.maplayers.politicalmap.base.dominance.ContestSides;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
@@ -20,22 +20,24 @@ import kmu.util.KmuStrings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 
 /**
  * The shape every box built on a hovered system's standings takes: what the system is, then who
- * dominates it, then who stands with them, then who contests it - ranked under the active view's
- * own grouping and weighting.
+ * dominates it, then who stands with them, then who contests it, then who was never in the running -
+ * ranked under the active view's own grouping and weighting.
  *
  * <p>The ranking reads as a contest rather than as a list: the group the map fills the system in
  * the colour of is named as dominating it and the rest as contesting it, so who holds the system
  * is stated outright instead of being left to be inferred from which line happens to sit at the
  * top.
  *
- * <p>A group standing in the leader's own alliance is not one of those rivals, and is lifted into a
- * block of its own ({@link ContestSides}): filed under the contested heading, two allies jointly
- * holding a system would read as fighting each other over it, which is the map contradicting itself
- * one view over.
+ * <p>Which group that is and where every other one is listed is {@link StandingBlockRouting}'s
+ * answer, taken once per hover. A group taking no part in the contest - the placeholder owner of
+ * every abandoned station - is set aside before a holder is picked, so the box never heads a system
+ * with a bloc that has no interests to hold it with. A group standing in the leader's own alliance
+ * is not one of the rivals either, and is lifted into a block of its own ({@link ContestSides}):
+ * filed under the contested heading, two allies jointly holding a system would read as fighting each
+ * other over it, which is the map contradicting itself one view over.
  *
  * <p>The headline stays on the group the map painted the cell for rather than on its alliance,
  * which is what keeps the box an explanation of the cell beneath it: two allies at 6,000 each under
@@ -65,10 +67,6 @@ import java.util.function.BiConsumer;
  * injects it.
  */
 public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
-
-    // How many of the ranked groups the box names as dominating the system: the one whose colour the
-    // map fills it in. Everything ranked below that either stands with it or contests it.
-    private static final int DOMINATING_GROUP_COUNT = 1;
 
     // Where the alliance set behind the allied block is taken from. A source rather than a grouping,
     // because a box lives for the whole session while alliances form and dissolve inside it - one
@@ -133,17 +131,21 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     }
 
     // The hovered system as this layer reads it: the pass the active view paints under, the groups
-    // that pass ranks the system into, and the alliance set those groups are placed against.
+    // that pass ranks the system into, and the block each of those groups is listed under.
     //
     // One read behind both the body and the key hint at its foot, because the hint offers an account
     // of exactly the standings the body lists. Resolved apart, the two are free to be answered from
     // different readings of one system - and the shape that takes is a box advertising a key that
     // does nothing, or declining to over a system it has just listed somebody in.
     //
-    // The alliance set is sampled here for the same reason and travels with the rest of the read: a
-    // box routing two of its own blocks against two readings of it could file one group as an ally
-    // and the next as a rival out of one hover. Read as an affiliation at the point it is sampled,
-    // which is where a grouping stops being a fold and becomes the one question the blocks ask.
+    // The routing is settled here for the same reason and travels with the rest of the read: it is
+    // taken over the live alliance set, so a box routing its blocks one at a time could file a group
+    // as an ally and the next block's read file it as a rival out of one hover. The alliance set is
+    // read as an affiliation at the point it is sampled, which is where a grouping stops being a
+    // fold and becomes the one question the blocks ask.
+    //
+    // What bars a bloc from the contest comes off the pass's own grouping, the one the map painted
+    // its fills by, so the box and the fills bar the same blocs from holding a system.
     //
     // Empty where no view is painting: there is then no grouping to rank under, and no body being
     // drawn for a hint to sit beneath.
@@ -159,11 +161,15 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         // Ranks the hovered system under the active view's grouping and dominance rule - the same the
         // map paints under - so the tooltip's numbers and its bloc grouping match the fills exactly.
         var pass = DominancePass.readFromLunaSettings(sector, activeView.resolveGrouping());
+        var groupStandings = SystemStandings.rankByDominationScore(system, pass);
 
         return Optional.of(new RankedStandings(
             pass,
-            SystemStandings.rankByDominationScore(system, pass),
-            new BlocAffiliation(holderGroupingSource.resolveGrouping())));
+            groupStandings,
+            StandingBlockRouting.routeRankedStandings(
+                groupStandings,
+                BlocCandidacy.createForGrouping(pass.grouping()),
+                new BlocAffiliation(holderGroupingSource.resolveGrouping()))));
     }
 
     // The body itself, off the one reading: what the system is, then the contest over it.
@@ -203,12 +209,12 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         return sections;
     }
 
-    // The standings as the three blocks they are read in: whoever dominates the system, whoever
-    // stands with them, then whoever else is present to contest it. All three are offered
-    // unconditionally - an uncontested system simply has no groups for the last, an install with
-    // nothing grouping factions none for the middle, and an unheld one none for any - so a heading
-    // that would have stood over nothing is dropped rather than left to be read as a block that
-    // failed to fill.
+    // The standings as the blocks they are read in, laid down in the order those blocks are declared
+    // in rather than in one restated here. Every block is offered unconditionally - an uncontested
+    // system simply has no groups for the contested one, an install with nothing grouping factions
+    // none for the allied one, and a system nobody political is present in none for the holder - so
+    // a heading that would have stood over nothing is dropped rather than left to be read as a block
+    // that failed to fill.
     //
     // Each block is named through the one resolver and under the pass's own grouping, so which
     // block a group falls in is the only thing that varies between them: a group reads the same way
@@ -221,99 +227,36 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
 
         var grouping = ranking.pass().grouping();
 
-        // One way of laying a block down, bound to everything the three share, so a block is stated
-        // as the heading it carries and the groups it takes and nothing else can drift between them.
-        BiConsumer<String, List<GroupStanding>> appendBlock = (headingKey, blockStandings) ->
+        for (var block : StandingBlock.values()) {
             CellTooltipSections.appendSection(
                 sections,
-                KmuStrings.get(headingKey),
+                KmuStrings.get(block.resolveHeadingKey()),
                 StandingRowResolver.resolveRows(
                     sector,
-                    blockStandings,
+                    ranking.routing().selectStandingsIn(block),
                     grouping,
                     accountResolver));
-
-        appendBlock.accept(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED,
-            ranking.selectDominantStandings());
-
-        appendBlock.accept(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_SYSTEM_HOLDER,
-            ranking.selectStandingsOn(ContestSide.ALLIED));
-
-        appendBlock.accept(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED,
-            ranking.selectStandingsOn(ContestSide.RIVAL));
+        }
     }
 
     /**
      * One reading of a hovered system's standings: the pass it was ranked under, the ranking
-     * itself, and the alliance set the ranked groups are placed against.
+     * itself, and where each ranked group is listed.
      *
      * <p>The three travel as one value because the box reads them against each other - the status
      * line and the accounts hanging under the groups come off the pass, the groups themselves off
-     * the ranking, the block each falls in off the affiliation. Passed apart, one read's ranking
-     * could arrive beside another read's pass, and the box would explain one reading of the system
-     * under another's rule - or route two of its blocks against two alliance sets.
+     * the ranking, the block each falls in off the routing. Passed apart, one read's ranking could
+     * arrive beside another read's pass, and the box would explain one reading of the system under
+     * another's rule - or lay its blocks down off a routing taken over a third.
      */
     private record RankedStandings(
         DominancePass pass,
         List<GroupStanding> groupStandings,
-        BlocAffiliation affiliation) {
+        StandingBlockRouting routing) {
 
         /** Whether anybody stands in the system at all, which is what a box has to list. */
         boolean hasStanding() {
             return !groupStandings.isEmpty();
-        }
-
-        /**
-         * The groups listed as dominating the system: the one the map fills it in the colour of.
-         *
-         * <p>The painted group rather than its alliance, so the box goes on explaining the cell
-         * beneath it - a leader whose allies out-score it between them still lost the cell to
-         * whoever painted it.
-         */
-        List<GroupStanding> selectDominantStandings() {
-            return groupStandings
-                .stream()
-                .limit(DOMINATING_GROUP_COUNT)
-                .toList();
-        }
-
-        /**
-         * The groups listed on one side of the contest below the leader: those standing in the
-         * leader's own alliance, or those contesting the system, in the order they ranked.
-         *
-         * <p>Placed by the shared split rather than by comparing blocs here, so this box files a
-         * group by the same rule the claims box and the bands beneath both do.
-         *
-         * @param side the side the block being built is about
-         * @return the groups that side takes, the leader itself on neither
-         */
-        List<GroupStanding> selectStandingsOn(ContestSide side) {
-            return new ContestSides(resolveLeaderBlocId(), affiliation)
-                .selectSide(side, selectRankedRivals(), GroupStanding::blocId);
-        }
-
-        // Everyone the box ranks but the leader itself, which is the pool both blocks below it are
-        // drawn from. Dropped once here rather than per block, so no routing rule added later can
-        // readmit the leader to a block that is by definition about somebody else.
-        private List<GroupStanding> selectRankedRivals() {
-            return groupStandings
-                .stream()
-                .skip(DOMINATING_GROUP_COUNT)
-                .toList();
-        }
-
-        // The bloc every group below the leader is placed against, or none where nobody ranks -
-        // read off the very block that names the leader, so which group that is cannot be settled
-        // one way there and another here.
-        private String resolveLeaderBlocId() {
-            return selectDominantStandings()
-                .stream()
-                .map(GroupStanding::blocId)
-                .findFirst()
-                .orElse(null);
         }
     }
 }

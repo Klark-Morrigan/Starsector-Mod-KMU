@@ -100,6 +100,8 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED = "political_map_tooltip_section_dominated";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_SYSTEM_HOLDER =
         "political_map_tooltip_section_allied_with_system_holder";
+    public static final String POLITICAL_MAP_TOOLTIP_SECTION_NON_POLITICAL =
+        "political_map_tooltip_section_non_political";
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_STABILITY = "political_map_tooltip_factor_stability";
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_SIZE = "political_map_tooltip_factor_size";
     public static final String POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS = "political_map_tooltip_factor_patrols";
