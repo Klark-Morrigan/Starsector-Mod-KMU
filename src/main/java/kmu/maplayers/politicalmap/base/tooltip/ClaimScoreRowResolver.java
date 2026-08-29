@@ -5,11 +5,13 @@ import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.text.KmlibNumbers;
+import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
+import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -62,6 +64,26 @@ import java.util.Optional;
  * not. The term lines beneath a market carry no mark at all: a size or a garrison bonus has nothing on
  * the map to point at. What a mark off the map is for and how it is coloured are
  * {@link kmu.maplayers.base.tooltip.CellTooltipMark#resolveMarkForMapIcon}'s.
+ *
+ * <p>A market the contest weighed on a colony nobody has found is listed with its name blocked out
+ * rather than left off. Its weight is already showing in the numbers on screen - the claim, the
+ * faction's score, the difference between a listed market's total and the terms beneath it - so the
+ * row is what makes those account for themselves, while the name is the one thing the box has no
+ * business stating. What stands in its place is the shape of the name: one block per word, as long as
+ * the word ran. The name itself never reaches the line, only the lengths - a value carrying text
+ * nothing draws is a value some later change will draw.
+ *
+ * <p>Such a line opens on a stand-in glyph instead of the map's own. Every other market line opens on
+ * an image run, so a line opening on its name would be set apart twice over by the one fact about it;
+ * and the map's glyph says what sort of place the colony is, which is the very thing being withheld.
+ *
+ * <p>It carries a number only where it is the market its faction stands on. That number is the one the
+ * faction's own line above already states, so withholding it there would hide nothing while leaving
+ * the block's arithmetic unaccountable; the rest carry no figure. Nothing hangs beneath such a line
+ * either - the size and the garrison are the colony described term by term, which is the account the
+ * row exists not to give. The line is ranked on its real score all the same, so its neighbours bound
+ * what it scored: the box declines to <em>state</em> a number for a place the player has not found,
+ * and does not go on to pretend the contest ran in some other order.
  *
  * <p>Exactly one market in the whole box is called out as the claim holder: the one that actually took
  * the system. Every faction is represented by its strongest, but only one of those won anything, and a
@@ -144,6 +166,16 @@ public final class ClaimScoreRowResolver {
     // of such a faction took it - rather than about this line.
     private static final boolean NOTHING_TOOK_THE_SYSTEM = false;
 
+    // The same for the market a standing rests on: a faction the contest never weighed rests on none,
+    // so no line of such an account is the one its faction's score was taken from.
+    private static final boolean NO_MARKET_CARRIES_THE_STANDING = false;
+
+    // Vanilla's stand-in glyph, which says only that something is there. What a line whose name is
+    // blocked out opens on, the map's own glyph saying what sort of place the colony is - which is
+    // exactly what such a line withholds. Private here because there is one such path and no second
+    // surface reading it to share a home with.
+    private static final String REDACTED_MARKET_SPRITE_PATH = "graphics/fx/question_mark.png";
+
     private ClaimScoreRowResolver() {
     }
 
@@ -207,14 +239,20 @@ public final class ClaimScoreRowResolver {
         var entries = new ArrayList<CellTooltipEntry>();
 
         for (var market : listedMarkets) {
+
+            // The market the faction's own line above states the score of, which settles two separate
+            // questions: whether the call-out for taking the system belongs on this line, and - where
+            // the name is blocked out - whether the score may be stated on it at all.
+            var isCarryingTheStanding = market == standing.standingMarket();
+
             entries.add(resolveMarketEntry(
-                createMarketLine(market, ClaimTieOutcomes.resolveOutcome(
-                    breakdown,
-                    standing,
-                    market)),
+                createMarketLine(
+                    market,
+                    ClaimTieOutcomes.resolveOutcome(breakdown, standing, market),
+                    isCarryingTheStanding),
                 market,
                 colonyReading,
-                isHoldingTheClaim && market == standing.standingMarket()));
+                isHoldingTheClaim && isCarryingTheStanding));
         }
 
         // Stated unless the list carries a market the count never included, which is the one way the
@@ -244,7 +282,10 @@ public final class ClaimScoreRowResolver {
 
         for (var market : listedMarkets) {
             entries.add(resolveMarketEntry(
-                createMarketLine(market, CellTooltipIndexOutcome.UNCONTESTED),
+                createMarketLine(
+                    market,
+                    CellTooltipIndexOutcome.UNCONTESTED,
+                    NO_MARKET_CARRIES_THE_STANDING),
                 market,
                 colonyReading,
                 NOTHING_TOOK_THE_SYSTEM));
@@ -302,48 +343,114 @@ public final class ClaimScoreRowResolver {
         // Described whatever the contest made of the market, because neither what sort of place a
         // colony is nor how current the box's news of it is has anything to do with whether the
         // mechanic weighed it.
+        //
+        // Nothing hangs beneath a line whose name is blocked out, and for a different reason from an
+        // empty breakdown below: the terms were computed and are being withheld. A size and a garrison
+        // are the colony itself described term by term, which is the account such a line exists not to
+        // give - so the withholding is stated here, where the name is, rather than folded in among the
+        // markets no arithmetic was ever done for.
         return CellTooltipEntry
             .createEntry(colonyReading.describeColony(line, market.marketId(), facts))
-            .nesting(resolveTermEntries(market));
+            .nesting(isRedactedMarket(market) ? List.of() : resolveTermEntries(market));
     }
 
-    // The shape every market's own line takes: led by the glyph the map marks its entity with, named,
-    // and carrying what it brought to the contest - for an open market the whole score, presence
-    // included, since that is the number the contest weighed it at.
+    // The shape every market's own line takes, whether or not the box may say what the market is
+    // called: an opening image run, what stands for the name, what the contest made of the market, and
+    // where the economy lists it.
+    //
+    // The name runs on into that listing place, because the place is the whole of the answer to the
+    // one question the scores cannot settle: two markets on the same score are parted by nothing but
+    // which the economy reached first. Stated on every market rather than only on a tied one, so a
+    // reader meets the ordering before they need it and a tie reads as a rule they already understand
+    // rather than as an outcome the box declines to explain.
+    private static CellTooltipEntryLine createMarketLine(
+            MarketClaimBreakdown market,
+            CellTooltipIndexOutcome indexOutcome,
+            boolean isCarryingTheStanding) {
+
+        var line = isRedactedMarket(market)
+            ? createRedactedMarketLine(market, isCarryingTheStanding)
+            : createNamedMarketLine(market);
+
+        // Stated on either shape, since the place identifies the market rather than describing the
+        // colony - and a tie a blocked-out market won or lost is settled by that place alone, which no
+        // other number on screen accounts for.
+        return line.indexedAt(
+            KmuStrings.format(
+                KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_LISTING_POSITION,
+                KmlibNumbers.formatGroupedInteger(market.listingPosition())),
+            indexOutcome);
+    }
+
+    // A market the box may name: the glyph the map marks its entity with, its name, and what it
+    // brought to the contest - for an open market the whole score, presence included, since that is
+    // the number the contest weighed it at.
     //
     // The glyph is read off the breakdown the market arrived in rather than looked up here, so it
     // belongs to the very market whose number sits beside it.
     //
-    // The name runs on into where the economy lists the market, because that number is the whole of
-    // the answer to the one question the scores cannot settle: two markets on the same score are
-    // parted by nothing but which the economy reached first. Stated on every market rather than only
-    // on a tied one, so a reader meets the ordering before they need it and a tie reads as a rule
-    // they already understand rather than as an outcome the box declines to explain.
-    //
     // A market the mechanic never scored says so with its number alone. Why it was passed over -
-    // concealment, or an absence from the economy's listing - is called out after the name rather
-    // than beside the number, those being findings about the place instead of statements about what
-    // the contest made of it.
+    // concealment, or an absence from the economy's listing - is called out after the name rather than
+    // beside the number, those being findings about the place instead of statements about what the
+    // contest made of it.
     //
     // That nought reads quiet, because it is the contest's statement about the market rather than
-    // anything the market scored. In the list's own colour it would read as a score competed with
-    // and lost on, which is the one thing it is not - the market was never weighed at all.
-    private static CellTooltipEntryLine createMarketLine(
-            MarketClaimBreakdown market,
-            CellTooltipIndexOutcome indexOutcome) {
+    // anything the market scored. In the list's own colour it would read as a score competed with and
+    // lost on, which is the one thing it is not - the market was never weighed at all.
+    private static CellTooltipEntryLine createNamedMarketLine(MarketClaimBreakdown market) {
 
-        var line = CellTooltipEntryLine
-            .createLine(
-                CellTooltipMark.resolveMarkForMapIcon(market.marketNameplate().mapIcon()),
-                market.marketNameplate().displayName(),
-                KmlibNumbers.formatGroupedInteger(resolveContestScore(market)))
-            .indexedAt(
-                KmuStrings.format(
-                    KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_LISTING_POSITION,
-                    KmlibNumbers.formatGroupedInteger(market.listingPosition())),
-                indexOutcome);
+        var line = CellTooltipEntryLine.createLine(
+            CellTooltipMark.resolveMarkForMapIcon(market.marketNameplate().mapIcon()),
+            market.marketNameplate().displayName(),
+            KmlibNumbers.formatGroupedInteger(resolveContestScore(market)));
 
         return market.isScoredOnItsOwnAccount() ? line : line.statesUncountedValue();
+    }
+
+    // A market the contest weighed on a colony nobody has found: the stand-in glyph, the shape of the
+    // name in place of the name, and a number only where the faction's own line above already carries
+    // it. Elsewhere the column stands empty - the market is ranked by the score all the same, so the
+    // lines either side of it bound what it came to without the box stating the figure.
+    //
+    // No quiet reading on that number: this is a market the contest weighed, so where the figure is
+    // stated at all it is one the market competed on and is read as loudly as its neighbours'.
+    private static CellTooltipEntryLine createRedactedMarketLine(
+            MarketClaimBreakdown market,
+            boolean isCarryingTheStanding) {
+
+        return CellTooltipEntryLine.createRedactedLine(
+            CellTooltipMark.resolveMarkInLineColour(REDACTED_MARKET_SPRITE_PATH),
+            measureNameWordLengths(market),
+            isCarryingTheStanding
+                ? KmlibNumbers.formatGroupedInteger(resolveContestScore(market))
+                : CellTooltipRows.NO_SCORE);
+    }
+
+    // Whether a market's row stands for its name instead of stating it: one the contest weighed, on a
+    // colony the player has yet to find. Both halves are the row's warrant. What the contest weighed
+    // is already showing in numbers on screen, so the row has to be there for those to add up - and
+    // what the player has not found is not the box's to name.
+    //
+    // Knowledge is the whole of the second half here rather than discovery alone, because the two
+    // agree over exactly these markets: a market the contest weighed is held in the open and on the
+    // economy's books, so no revelation gate stands over it and the composed answer is the entity's
+    // flag.
+    private static boolean isRedactedMarket(MarketClaimBreakdown market) {
+        return market.isScoredOnItsOwnAccount() && !market.isKnownToPlayer();
+    }
+
+    // The shape of a withheld name: how many characters each of its words ran to, in reading order.
+    //
+    // Derived here, off the nameplate, and the name dropped here - so what travels on is a count per
+    // word and nothing a later change could draw. Character counts rather than the name's measured
+    // width because counts are what the row shows: measuring the real name would drag it through the
+    // layout to arrive at a number.
+    private static List<Integer> measureNameWordLengths(MarketClaimBreakdown market) {
+        return KmlibStrings
+            .splitIntoWords(market.marketNameplate().displayName())
+            .stream()
+            .map(String::length)
+            .toList();
     }
 
     // What a market brought to the contest. An open market brings its score; a hidden one brings

@@ -544,6 +544,26 @@ somebody has seen it where it stands. Which is why the listed rows are undiscove
 discovery is the whole of the question - while the rule that leaves one off is asked in the wider
 terms a concealed base needs.
 
+Such a row is drawn with its name blocked out (`ClaimScoreRowResolver.createRedactedMarketLine`, over
+`CellTooltipEntryLine.createRedactedLine`). In the name's place stands one filled block per word, as
+long as the word ran (`RedactedSpan`), so the shape says how many words there were and how long each
+was and nothing about which letters. The name itself never reaches the line - only the lengths,
+derived off the nameplate and dropped there, since a value carrying text nothing draws is a value
+some later change will draw. The line opens on vanilla's `graphics/fx/question_mark.png` rather than
+the map's own glyph: every other market line opens on an image run, so a line opening on its name
+would be set apart twice over by the one fact about it, and the map's glyph says what sort of place
+the colony is - the very thing being withheld. It reads in the line's own colour like any other
+market glyph (`CellTooltipMark.resolveMarkInLineColour`).
+
+What such a row keeps is everything that is not the name: the listing place, the tie outcome that
+place settled, and `undiscovered` after it, off the same walk of the system every other row's words
+come from. What it gives up besides the name is the value column and the breakdown beneath - unless
+it is the market its faction stands on, where the score is stated because the faction's own line
+above already carries it and withholding it there would hide nothing while leaving the block's
+arithmetic unaccountable. It is ranked on its real score all the same, so its neighbours bound what
+it scored to within a point or two: the box declines to *state* a number for a place the player has
+not found, and does not go on to pretend the contest ran in some other order.
+
 The same projection reaches the listing above the markets: a standing whose every colony is withheld
 is left off the box entirely (`ListedClaimContest.selectFrom` again), since naming a faction over an
 account with nothing in it would tell the player exactly what the fog is keeping back - and `F1` is

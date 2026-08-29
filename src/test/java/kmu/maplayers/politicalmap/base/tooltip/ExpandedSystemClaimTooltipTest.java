@@ -97,6 +97,11 @@ final class ExpandedSystemClaimTooltipTest {
     // resolver's and pinned there.
     private static final boolean IS_UNDISCOVERED_BY_PLAYER = false;
 
+    // What such a row reads as out of the labels an account states, its name being stood in for rather
+    // than said. Named rather than asserted as a bare null, so the case pinning the listing says the
+    // row is there and unnamed rather than appearing to have lost one.
+    private static final String NO_NAME_STATED = null;
+
     // What a colony's kind states on a line, and when it was last seen, are the resolver's and
     // pinned there - so every account here is resolved over a reading that says neither, which is
     // what an ordinary colony in plain sight reads as.
@@ -270,9 +275,14 @@ final class ExpandedSystemClaimTooltipTest {
                 buildMarket("Chicomoztoc", TOP_SCORE),
                 List.of(buildUndiscoveredMarket("Culann", LESSER_SCORE)));
 
-            assertThat(readLabelTexts(
-                    tooltip.resolveAccountEntries(contest, standing, SystemColonyReading.NONE)))
-                .containsExactly("Chicomoztoc", "Culann");
+            var entries = tooltip.resolveAccountEntries(contest, standing, SystemColonyReading.NONE);
+
+            // Read as the row being there rather than as the name it states: such a row stands for the
+            // name instead of saying it, which is the resolver's own shape and pinned there.
+            assertThat(readLabelTexts(entries))
+                .containsExactly("Chicomoztoc", NO_NAME_STATED);
+            assertThat(entries.get(1).line().hasRedactedName())
+                .isTrue();
         }
 
         @Test

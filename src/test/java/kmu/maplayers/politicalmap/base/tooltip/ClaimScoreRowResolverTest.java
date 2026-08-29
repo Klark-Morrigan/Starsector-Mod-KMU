@@ -12,6 +12,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
+import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.maplayers.base.visibility.ColonyKindLookup;
@@ -59,6 +60,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * on a market's own line whatever the contest made of it, and on nothing beneath one. When such a
  * remark is due at all is the notes' own question and is pinned by {@link ColonyObservationNotesTest}.
  *
+ * <p>What a row the box may not name looks like is pinned here in full, that being the one shape whose
+ * every part this resolver decides at once: the stand-in glyph it opens on, the blocks standing for the
+ * name, the listing place it keeps, the empty value column, and the terms it declines to break into.
+ * The number it does carry - on the market its faction stands on - is pinned beside the absence, since
+ * the two together are the rule rather than either alone.
+ *
  * <p>What a market's line calls out about the place is pinned here only as far as this resolver
  * decides it: which facts it hands over - the claim it took, the admission the contest met it
  * through, and what the box's walk of the system says about it. Which words those come to, in which
@@ -78,8 +85,17 @@ final class ClaimScoreRowResolverTest {
     private static final String STRONGEST_MARKET = "Chicomoztoc";
     private static final int STRONGEST_MARKET_SIZE = 7;
 
+    // The market the redacted cases are posed on, named in two words of differing length so the blocks
+    // standing in for it pin a shape rather than a single number.
+    private static final String UNDISCOVERED_MARKET = "Kanta's Den";
+
     // What the presence line calls the term, spelled out so a case reads as the words a player sees.
     private static final String PRESENCE_LINE = "Same-faction market bonus";
+
+    // What a row whose name is blocked out reads as, out of the labels a listing states. Named rather
+    // than asserted as a bare null, so a case pinning the order of the list says the row is there and
+    // unnamed rather than appearing to have lost one.
+    private static final String NO_NAME_STATED = null;
 
     // Vanilla's flat garrison bonus. Stated as a literal rather than read from the mechanic, so a case
     // asserting the line shows it cannot pass by restating whatever the reader happened to hand over.
@@ -557,15 +573,94 @@ final class ClaimScoreRowResolverTest {
         @Test
         void resolveMarketRowsListsAMarketTheContestWeighedThoughItsColonyIsUndiscovered() {
             // The market's weight is already in the numbers on screen - the faction's score, and the
-            // presence its siblings were each given - so the row is what makes them accountable.
-            // Whether the row may state the colony's name is settled where the row is built.
-            var rows = resolveContestedRows(buildStanding(
-                buildStrongestMarket(ONE_SIBLING_MARKET),
-                List.of(buildMarket("Culann", 3, ONE_SIBLING_MARKET, SECOND_LISTED,
-                    IS_UNDISCOVERED_BY_PLAYER))));
+            // presence its siblings were each given - so the row is what makes them accountable. It is
+            // the name alone that is kept back, the row standing in its place.
+            var rows = resolveContestedRows(buildStandingOverAnUndiscoveredMarket());
 
             assertThat(readLabelTexts(rows))
-                .containsExactly(STRONGEST_MARKET, "Culann", PRESENCE_LINE);
+                .containsExactly(STRONGEST_MARKET, NO_NAME_STATED, PRESENCE_LINE);
+            assertThat(rows.get(1).line().hasRedactedName())
+                .isTrue();
+        }
+
+        @Test
+        void resolveMarketRowsStandsWordBlocksInForAnUndiscoveredMarketsName() {
+            // What the row shows in the name's place: one block per word, as long as the word ran. The
+            // shape says how many words there were and how long each was and nothing about which
+            // letters - and the name itself never reaches the line, so there is nothing on it a later
+            // change could draw.
+            var rows = resolveContestedRows(buildStandingOverAnUndiscoveredMarket());
+
+            assertThat(rows.get(1).line().redactedWordLengths())
+                .containsExactly(7, 3);
+        }
+
+        @Test
+        void resolveMarketRowsOpensAnUndiscoveredMarketOnTheStandInGlyph() {
+            // Every other market line opens on an image run, so a line opening on its name would be set
+            // apart twice over by the one fact about it. The map's own glyph cannot serve: it says what
+            // sort of place the colony is, which is exactly what the row withholds.
+            var rows = resolveContestedRows(buildStandingOverAnUndiscoveredMarket());
+
+            assertThat(rows.get(1).line().mark().spritePath())
+                .isEqualTo("graphics/fx/question_mark.png");
+            assertThat(rows.get(1).line().mark().isInLineColour())
+                .isTrue();
+        }
+
+        @Test
+        void resolveMarketRowsStatesWhereTheEconomyListsAnUndiscoveredMarket() {
+            // The place identifies the market rather than describing the colony, and a tie such a
+            // market won or lost is settled by it alone - which no other number on screen accounts
+            // for.
+            var rows = resolveContestedRows(buildStandingOverAnUndiscoveredMarket());
+
+            assertThat(rows.get(1).line().indexPlace().text())
+                .isEqualTo("[2]");
+        }
+
+        @Test
+        void resolveMarketRowsStatesNoScoreForAnUndiscoveredMarketBesidesTheStanding() {
+            // The column stands empty rather than carrying the figure. The row is still ranked on the
+            // real score, so the lines either side of it bound what it came to - the box declines to
+            // state the number, and does not go on to pretend the contest ran in some other order.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(TWO_SIBLING_MARKETS),
+                List.of(
+                    buildMarket("Eventide", 5, TWO_SIBLING_MARKETS, SECOND_LISTED),
+                    buildMarket(UNDISCOVERED_MARKET, 4, TWO_SIBLING_MARKETS, THIRD_LISTED,
+                        IS_UNDISCOVERED_BY_PLAYER))));
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly(STRONGEST_MARKET, "Eventide", NO_NAME_STATED, PRESENCE_LINE);
+            assertThat(rows.get(2).line().valueText())
+                .isEqualTo(CellTooltipRows.NO_SCORE);
+        }
+
+        @Test
+        void resolveMarketRowsBreaksAnUndiscoveredMarketDownIntoNothing() {
+            // A size and a garrison are the colony itself described term by term, which is the account
+            // the row exists not to give. Unlike a market the mechanic passed over, the terms were
+            // computed here - they are being withheld rather than absent.
+            var rows = resolveContestedRows(buildStandingOverAnUndiscoveredMarket());
+
+            assertThat(rows.get(1).children())
+                .isEmpty();
+        }
+
+        @Test
+        void resolveMarketRowsStatesTheScoreOfAnUndiscoveredMarketAFactionStandsOn() {
+            // The one figure a blocked-out row carries, because the faction's own line above already
+            // states it: withheld here it would hide nothing, while leaving the block's arithmetic
+            // unaccountable.
+            var rows = resolveContestedRows(buildStanding(
+                buildStrongestMarket(ONE_SIBLING_MARKET, IS_UNDISCOVERED_BY_PLAYER),
+                List.of(buildMarket("Culann", 4, ONE_SIBLING_MARKET, SECOND_LISTED))));
+
+            assertThat(rows.get(0).line().valueText())
+                .isEqualTo("8");
+            assertThat(rows.get(0).line().isValueUncounted())
+                .isFalse();
         }
 
         @Test
@@ -590,17 +685,16 @@ final class ClaimScoreRowResolverTest {
             // The mechanic weighs colonies nobody has reached, so the very market a faction stands on
             // can be one the player has not found - and it is the market the faction's own line states
             // the score of. Left off, that number would head an account with nothing in it that comes
-            // to the number.
+            // to the number. What the row gives up is the name, which is what the block below it is
+            // pinned on.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(ONE_SIBLING_MARKET, IS_UNDISCOVERED_BY_PLAYER),
-                List.of(buildMarket("Kanta's Den", 4, ONE_SIBLING_MARKET, SECOND_LISTED))));
+                List.of(buildMarket("Culann", 4, ONE_SIBLING_MARKET, SECOND_LISTED))));
 
             assertThat(readLabelTexts(rows))
-                .containsExactly(STRONGEST_MARKET, "Kanta's Den", PRESENCE_LINE);
-            assertThat(rows.get(0).line().valueText())
-                .isEqualTo("8");
-            assertThat(readLabelTexts(rows.get(0).children()))
-                .containsExactly("Size");
+                .containsExactly(NO_NAME_STATED, "Culann", PRESENCE_LINE);
+            assertThat(rows.get(0).line().hasRedactedName())
+                .isTrue();
         }
 
         @Test
@@ -1144,6 +1238,15 @@ final class ClaimScoreRowResolverTest {
     // The one market a rival stands on, holding nothing else in the system.
     private static MarketClaimBreakdown buildRivalMarket(int listingPosition, int marketSize) {
         return buildMarket("Eventide", marketSize, NO_SIBLING_MARKETS, listingPosition);
+    }
+
+    // The faction the redacted cases are posed on: its strongest market in plain sight, and a weaker
+    // one the contest weighed on a colony nobody has found - which is the row those cases read.
+    private static WeighedClaimStanding buildStandingOverAnUndiscoveredMarket() {
+        return buildStanding(
+            buildStrongestMarket(ONE_SIBLING_MARKET),
+            List.of(buildMarket(UNDISCOVERED_MARKET, 3, ONE_SIBLING_MARKET, SECOND_LISTED,
+                IS_UNDISCOVERED_BY_PLAYER)));
     }
 
     // The faction most cases here are posed on: its strongest market, and one weaker market listed
