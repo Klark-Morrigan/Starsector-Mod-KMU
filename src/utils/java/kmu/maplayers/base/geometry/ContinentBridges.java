@@ -45,12 +45,15 @@ import java.util.function.BiPredicate;
  * settled bridges reach rim to rim along the line between two cells' centres, which is the
  * same statement made where there is no coastline to sit on yet.
  *
- * <p>Anchored on points the drawn ring already carries, rather than on places computed along
- * a cell's arc. The ring is sampled, so an analytically exact point on the arc would sit off
- * the drawn chord - near the line, not on it - and a span landing between two ring points
- * forces that stretch of coast to be split there, leaving a sliver wherever it lands close to
- * one. The anchor is therefore quantised to the sampling, a fraction of a cell radius, and in
- * exchange no tolerance stands between the drawn line and this.
+ * <p>Anchored on points the traced line already carries, rather than on places computed along
+ * a cell's arc. The line is sampled, so an analytically exact point on the arc would sit off
+ * its chord - near the line, not on it - and a span landing between two of its points forces
+ * that stretch of coast to be split there, leaving a sliver wherever it lands close to one.
+ * The anchor is therefore quantised to the sampling, a fraction of a cell radius, and in
+ * exchange no tolerance stands between the traced line and this. The ROUNDED line the map
+ * draws is not the anchor's home: rounding cuts every corner off the vertices, so it is
+ * presentation, and everything this pass measures - anchors and walls alike - lives on the
+ * traced line the rounding started from.
  *
  * <p><b>The shortest such span, per pair.</b> A cell facing the void more than once offers a
  * frontage per face, so two cells can be joined several ways; the one taken is the shortest,
@@ -114,7 +117,17 @@ public final class ContinentBridges {
 
         // Gathered once. Every candidate pairing is checked against these, and rebuilding
         // them per candidate would be the same answer found tens of thousands of times.
-        var coastWalls = WallCoverage.collectRingWalls(Coastlines.collectCoastRings(traced));
+        //
+        // The TRACED line, not the rounded ring the map draws. Spans anchor on the coast's
+        // vertices, so a span doubling a reach lies at distance zero from the vertex line -
+        // while the rounded ring cuts every corner it hangs from, and sits up to a rounding
+        // radius away right at the span's ends. Judged against the rounded ring, that span
+        // reads as "off the wall" at any slack below the rounding radius, and the slack knob
+        // stops meaning taste and starts compensating for presentation.
+        //
+        // The lake shores are walls of this construction too, so a span is judged against
+        // them the same way.
+        var coastWalls = WallCoverage.collectRingWalls(collectTracedRings(traced));
         var reach = parameters.cellRadius() * rules.reachMultiple();
         var laid = new ArrayList<CellGap>();
 
@@ -150,6 +163,22 @@ public final class ContinentBridges {
             .thenComparingInt(CellGap::toSite));
 
         return List.copyOf(keepSpansWorthLaying(laid, coastWalls, rules));
+    }
+
+    // Every coast of the construction as its traced vertex ring - the line the anchors live
+    // on, and so the one line "along the wall" can be measured against without the rounding
+    // opening a gap between the two.
+    private static List<List<double[]>> collectTracedRings(Coastlines.TracedCoasts traced) {
+
+        var rings = new ArrayList<List<double[]>>();
+
+        for (var coast : traced.coasts()) {
+            rings.add(Coastlines.collectPoints(coast.vertices()));
+        }
+        for (var lake : traced.lakes()) {
+            rings.add(Coastlines.collectPoints(lake.shore().vertices()));
+        }
+        return rings;
     }
 
     /**

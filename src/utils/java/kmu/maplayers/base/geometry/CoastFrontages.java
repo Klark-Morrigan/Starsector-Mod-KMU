@@ -32,7 +32,7 @@ public final class CoastFrontages {
     private CoastFrontages() {
     }
     /**
-     * Every point the drawn coastline passes through on a cell, gathered by the cell.
+     * Every point the traced coastline passes through on a cell, gathered by the cell.
      *
      * <p><b>The whole frontage, not merely its two ends.</b> A span is anchored wherever the
      * coast comes closest to the cell across the gap, and that is generally somewhere along a
@@ -41,18 +41,19 @@ public final class CoastFrontages {
      * leave in a fan - which is a picture of what the anchors allowed rather than of where the
      * void is narrow.
      *
-     * <p><b>Points of the drawn ring, rather than places computed on the cell's arc.</b> Two
-     * reasons, and the second is the one that matters. The ring is sampled, so a point worked
-     * out on the true arc sits off the drawn chord by the sagitta - close, but not ON the line
-     * the pieces are cut against. And a span landing between two ring points forces that
+     * <p><b>Points of the traced line, rather than places computed on the cell's arc.</b> Two
+     * reasons, and the second is the one that matters. The line is sampled, so a point worked
+     * out on the true arc sits off its chord by the sagitta - close, but not ON the line the
+     * pieces are cut against. And a span landing between two of its points forces that
      * stretch of coast to be split there, which where it lands near an existing point leaves a
-     * sliver of coast shorter than anything else on the map. Anchoring on a point the ring
+     * sliver of coast shorter than anything else on the map. Anchoring on a point the line
      * already has costs a little precision - the anchor is quantised to the sampling, a
-     * fraction of a cell radius - and buys exactness against the only line anything downstream
-     * reads.
+     * fraction of a cell radius - and buys exactness against the line every wall of this
+     * construction is measured on. Not the ROUNDED ring the map draws: that is presentation,
+     * and it leaves the vertices wherever it cuts a corner.
      *
      * @param traced the coast
-     * @return each cell's own stretch of the drawn coast, in walk order. A cell the coast never
+     * @return each cell's own stretch of traced coast, in walk order. A cell the coast never
      *         runs along is absent rather than present under an empty list, since it offers
      *         nowhere to anchor at all
      */
