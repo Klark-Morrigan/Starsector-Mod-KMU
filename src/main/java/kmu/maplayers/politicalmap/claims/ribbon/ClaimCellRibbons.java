@@ -53,8 +53,7 @@ public final class ClaimCellRibbons {
      *                       system nobody claims, whose cell no fill of this layer's covers
      * @param system         the system the cell draws as, whose colonies the band counts
      * @param contest        the whole claim contest for the cell's system, standings and all
-     * @param inputs         the pass the colonies are read from, where a bloc's shades come from,
-     *                       and how far its runs go
+     * @param inputs         everything one bake's bands are settled from, sampled once by the bake
      * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where nothing the rule
      *         counts is present in the cell
      */

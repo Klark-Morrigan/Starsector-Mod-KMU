@@ -47,8 +47,8 @@ public final class HeldCellRibbons {
      * @param system            the system the cell draws as, whose colonies the band counts
      * @param footprintByBlocId each bloc's footprint in the cell's system, as the dominance pass
      *                          folded them under the view's grouping
-     * @param inputs            the pass the colonies are read from, where a bloc's shades come
-     *                          from, and how far its runs go
+     * @param inputs            everything one bake's bands are settled from, sampled once by the
+     *                          bake
      * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where nothing the rule
      *         counts is present in the cell
      */

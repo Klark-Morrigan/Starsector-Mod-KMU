@@ -69,8 +69,7 @@ public final class ColonyCellRibbons {
      * @param system         the system the cell draws as, counted through the pass's own walk of it
      * @param rankedBlocIds  the order the painting mechanic ranked its blocs in, best placed first;
      *                       a bloc absent from it draws behind those that are, ordered by id
-     * @param inputs         the pass the colonies are read from, where a bloc's shades come from,
-     *                       who among them stands together, and how far its runs go
+     * @param inputs         everything one bake's bands are settled from, sampled once by the bake
      * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where nothing the rule
      *         counts is present in the cell
      */

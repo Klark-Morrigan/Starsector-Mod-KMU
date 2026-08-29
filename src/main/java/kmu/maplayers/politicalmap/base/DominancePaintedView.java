@@ -44,7 +44,7 @@ public interface DominancePaintedView extends PoliticalMapView {
      * assembly names the dominance planner, and on {@link PoliticalMapView} that name would reach
      * the views the contest does not paint.
      *
-     * @param inputs the bake's pass, palette source and laying rules
+     * @param inputs everything one bake's bands are settled from, sampled once by the bake
      * @return the planner counting each system by the mechanic that painted it
      */
     @Override

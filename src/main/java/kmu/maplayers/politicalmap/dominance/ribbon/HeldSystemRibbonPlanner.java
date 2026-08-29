@@ -31,8 +31,7 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
     /**
      * @param pass   the sector walk, weighting rule, colony rule, and grouping this build resolves
      *               under, sampled once so every band is ranked under the settings the fills were
-     * @param inputs the pass the colonies are counted from, where a bloc's shades come from, and
-     *               how far its runs go
+     * @param inputs everything one bake's bands are settled from, sampled once by the bake
      */
     public HeldSystemRibbonPlanner(DominancePass pass, RibbonPlanInputs inputs) {
         this.pass = pass;
@@ -46,7 +45,7 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
      * <p>Built over the bake's pass rather than opening one, so the ranking here and the counting
      * beneath it share the walk with the claim half beside them.
      *
-     * @param inputs the bake's pass, palette source and laying rules
+     * @param inputs everything one bake's bands are settled from, sampled once by the bake
      * @return the planner ranking held cells under the live weighting rule
      */
     public static HeldSystemRibbonPlanner createForPass(RibbonPlanInputs inputs) {

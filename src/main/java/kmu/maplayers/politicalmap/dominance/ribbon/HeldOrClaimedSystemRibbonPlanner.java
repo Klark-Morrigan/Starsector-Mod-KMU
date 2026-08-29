@@ -51,7 +51,7 @@ public final class HeldOrClaimedSystemRibbonPlanner implements SystemRibbonPlann
      * walk of each system and read a bloc's colours through a single palette source rather than
      * each opening its own.
      *
-     * @param inputs the bake's pass, palette source and laying rules
+     * @param inputs everything one bake's bands are settled from, sampled once by the bake
      * @return the planner counting each system by the mechanic that painted it
      */
     public static HeldOrClaimedSystemRibbonPlanner createForPass(RibbonPlanInputs inputs) {

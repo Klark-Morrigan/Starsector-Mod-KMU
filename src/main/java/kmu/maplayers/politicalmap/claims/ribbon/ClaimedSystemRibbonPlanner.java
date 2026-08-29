@@ -37,8 +37,7 @@ public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
 
     /**
      * @param breakdownReader where the contest behind a claim is read from
-     * @param inputs          the pass the colonies are read from, where a bloc's shades come from,
-     *                        and how far its runs go
+     * @param inputs          everything one bake's bands are settled from, sampled once by the bake
      */
     public ClaimedSystemRibbonPlanner(
             ClaimBreakdownReader breakdownReader,
@@ -52,7 +51,7 @@ public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
      * The planner a view resolves its claimed bands through, reading vanilla's own claim contest
      * over the bake's single walk of each system.
      *
-     * @param inputs the bake's pass, palette source and laying rules
+     * @param inputs everything one bake's bands are settled from, sampled once by the bake
      * @return the planner ranking claimed cells by the vanilla contest
      */
     public static ClaimedSystemRibbonPlanner createForPass(RibbonPlanInputs inputs) {

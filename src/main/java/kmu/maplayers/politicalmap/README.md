@@ -428,12 +428,14 @@ default). That account is handed the whole `ListedClaimContest` rather than the 
 so the colony rule it draws under is the one the listing above it was projected under: read afresh
 per faction, an account would be free to withhold a colony the line above it had just named, and to
 answer two factions of one box under two different rules. The alliance set travels in that same
-value and for the same reason (`HolderGroupingSource`, bound by `SystemClaimTooltip` and sampled
-per hover - a grouping held for the session would file a faction under the alliance it left an hour
-ago).
+value and for the same reason, as the `BlocAffiliation` the blocks are routed against
+(`HolderGroupingSource`, bound by `SystemClaimTooltip` and sampled per hover - a set held for the
+session would file a faction under the alliance it left an hour ago). It is the same axis the bands
+judge a contest by, so a box and the band beneath it cannot disagree about who is a rival.
 
 Two axes place a faction into those blocks, and the relation to the claim holder is the outer one:
-`Allied with the claim holder:` takes everyone in the holder's bloc whatever their eligibility, and
+`Allied with the claim holder:` takes everyone standing with the holder whatever their eligibility,
+and
 the two eligibility blocks divide what is left. Where an alliance leaves the heading unable to say
 which kind a line is, the line says it (`non-territorial`). Why the relation outranks eligibility,
 why an alliance and not a disposition routes, and why an install without Nexerelin needs no branch
