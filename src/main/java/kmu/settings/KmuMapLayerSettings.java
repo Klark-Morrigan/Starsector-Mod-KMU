@@ -425,12 +425,13 @@ public final class KmuMapLayerSettings {
     private static final float DEFAULT_TOOLTIP_LEADER_THICKNESS = 1f;
     private static final float DEFAULT_TOOLTIP_LEADER_OPACITY = 0.65f;
 
-    // The redaction's shipped weight: a fifth of the line's colour taken off its blocks, which is KMLib's
-    // own reading of the same balance the leader weights above settle. Restated as a literal rather than
-    // read off the library constant because every fallback here mirrors the CSV defaultValue column, and
-    // a fallback tracking a library that the CSV does not would put the shipped value and the fallback
-    // silently out of step. Mirror the CSV defaultValue column like every fallback here.
-    private static final float DEFAULT_TOOLTIP_REDACTION_DARKENING_STRENGTH = 0.2f;
+    // The redaction's shipped weight: two fifths of the line's colour taken off its blocks, enough that a
+    // solid block sits level with the words either side of it rather than above them. Restated as a
+    // literal rather than read off the library constant because every fallback here mirrors the CSV
+    // defaultValue column, and a fallback tracking a library that the CSV does not would put the shipped
+    // value and the fallback silently out of step. Mirror the CSV defaultValue column like every fallback
+    // here.
+    private static final float DEFAULT_TOOLTIP_REDACTION_DARKENING_STRENGTH = 0.4f;
 
     // The shipped balance: vanilla's own mouseover level halved for anything the player aims at, and
     // halved again for the items a sweep crosses several of on its way there. The gap between the two
@@ -636,7 +637,7 @@ public final class KmuMapLayerSettings {
     }
 
     /**
-     * @return how much of a line's colour is taken off the blocks a withheld name draws as, 0..1; 0.2 by
+     * @return how much of a line's colour is taken off the blocks a withheld name draws as, 0..1; 0.4 by
      *         default, which sets a block level with the words either side of it rather than above them,
      *         and 0 to fill it in the line's own colour
      */

@@ -550,9 +550,9 @@ public final class KmuPoliticalMapSettings {
 
     // Modest per-tier defaults, tuned so a mid-size military colony adds roughly a
     // colony size point of patrol weight when the factor is enabled; freely tunable.
-    private static final double DEFAULT_PATROL_SMALL_WEIGHT = 0.25;
-    private static final double DEFAULT_PATROL_MEDIUM_WEIGHT = 0.5;
-    private static final double DEFAULT_PATROL_LARGE_WEIGHT = 1.0;
+    private static final double DEFAULT_PATROL_SMALL_WEIGHT = 0.3;
+    private static final double DEFAULT_PATROL_MEDIUM_WEIGHT = 0.6;
+    private static final double DEFAULT_PATROL_LARGE_WEIGHT = 1.2;
 
     // Half collapse by default, like the station bonus: a colony's patrols keep half
     // their weight at zero stability rather than vanishing with its economy.
@@ -1093,7 +1093,7 @@ public final class KmuPoliticalMapSettings {
     /**
      * @return the size points each small (light) patrol a colony fields adds to its
      *         dominance contribution, before the patrol low-stability penalty applies;
-     *         0.25 by default. Unread while patrol weighting is off
+     *         0.3 by default. Unread while patrol weighting is off
      */
     public static double getPatrolSmallWeight() {
         return KmuLunaSettings.readDouble(PATROL_SMALL_WEIGHT_FIELD, DEFAULT_PATROL_SMALL_WEIGHT);
@@ -1101,7 +1101,7 @@ public final class KmuPoliticalMapSettings {
 
     /**
      * @return the size points each medium patrol a colony fields adds to its dominance
-     *         contribution, before the patrol low-stability penalty applies; 0.5 by
+     *         contribution, before the patrol low-stability penalty applies; 0.6 by
      *         default. Unread while patrol weighting is off
      */
     public static double getPatrolMediumWeight() {
@@ -1111,7 +1111,7 @@ public final class KmuPoliticalMapSettings {
     /**
      * @return the size points each large (heavy) patrol a colony fields adds to its
      *         dominance contribution, before the patrol low-stability penalty applies;
-     *         1.0 by default. Unread while patrol weighting is off
+     *         1.2 by default. Unread while patrol weighting is off
      */
     public static double getPatrolLargeWeight() {
         return KmuLunaSettings.readDouble(PATROL_LARGE_WEIGHT_FIELD, DEFAULT_PATROL_LARGE_WEIGHT);
