@@ -217,6 +217,10 @@ public final class Coastlines {
      *                    land the whole way round. Out of the same walk and the same
      *                    smoothing as the coasts above, because a lake shore and an outer
      *                    shore are the same kind of line looked at from opposite sides
+     * @param puddles     the holes the floor judged too small to be lakes. Kept rather than
+     *                    discarded, because being too small for a shore does not stop them
+     *                    being water: what a puddle earns instead is being filled up, the
+     *                    way the settled construction fills the void its bridges capture
      */
     public record TracedCoasts(
         List<Coast> coasts,
@@ -224,7 +228,8 @@ public final class Coastlines {
         List<DiscUnionBoundary.CoastMark> dropped,
         DiscUnion union,
         DiscUnionBoundary.Walls walls,
-        List<Lake> lakes) {
+        List<Lake> lakes,
+        List<Puddle> puddles) {
     }
 
     /**
@@ -265,6 +270,22 @@ public final class Coastlines {
     public record Lake(
         Coast shore,
         List<double[]> waterEdge) {
+    }
+
+    /**
+     * One puddle: a hole the floor judged too small to be a lake.
+     *
+     * <p>No shore. What makes a puddle a puddle is exactly that a smoothed shoreline is more
+     * drawing than its water deserves, so it carries only what filling it up needs: the water
+     * itself, and the cells that ring it - which is what a bridge across it is laid between.
+     *
+     * @param waterEdge the water, as the cells' own arcs around the hole, sampled
+     * @param ringCells the cells whose borders make that edge, in the order the walk met
+     *                  them, each once
+     */
+    public record Puddle(
+        List<double[]> waterEdge,
+        List<Integer> ringCells) {
     }
 
     /**
@@ -421,7 +442,8 @@ public final class Coastlines {
             concatenateDropped(smoothed.dropped(), water.dropped()),
             union,
             walls,
-            water.lakes());
+            water.lakes(),
+            water.puddles());
     }
 
     // The stretches both kinds of coast left out, as the one list the diagnostic draws. A
@@ -458,6 +480,7 @@ public final class Coastlines {
             CoastRules rules) {
 
         var lakes = new ArrayList<Lake>(lakeRuns.size());
+        var puddles = new ArrayList<Puddle>();
         var dropped = new ArrayList<DiscUnionBoundary.CoastMark>();
         var leastWater = rules.minLakeShare() * Math.PI * union.reach() * union.reach();
 
@@ -466,12 +489,13 @@ public final class Coastlines {
             var waterEdge = sampleWaterEdge(union, run, smoothingRules.arcSegments());
 
             // The puddle floor, taken on the water's edge BEFORE any smoothing is paid for:
-            // whether a lake is worth drawing is decided by how much water it holds, and a
-            // lake below the floor skips the smoothing, which is the expensive half. Its
-            // stretches still go to the diagnostic, so where a lake went stays answerable.
+            // whether a hole is a lake is decided by how much water it holds, and a puddle
+            // skips the smoothing - which is the expensive half - because a shore is exactly
+            // what it is too small to deserve. Not dropped: a puddle is still a piece of the
+            // map, kept for the construction that fills it up instead of shoring it.
             if (Math.abs(PolygonRegions.computeSignedArea(waterEdge)) < leastWater) {
 
-                dropped.addAll(run);
+                puddles.add(new Puddle(waterEdge, collectRingCells(run)));
                 continue;
             }
 
@@ -484,21 +508,41 @@ public final class Coastlines {
                     buildCoast(one.outline(), rules.rounding()), waterEdge));
             }
         }
-        return new TracedLakes(List.copyOf(lakes), List.copyOf(dropped));
+        return new TracedLakes(
+            List.copyOf(lakes), List.copyOf(puddles), List.copyOf(dropped));
+    }
+
+    // The cells a run of marks passes over, first appearance order, each once. A mark per
+    // stretch rather than per cell, so a cell facing the water twice would otherwise arrive
+    // twice.
+    private static List<Integer> collectRingCells(List<DiscUnionBoundary.CoastMark> run) {
+
+        var cells = new ArrayList<Integer>();
+
+        for (var mark : run) {
+
+            if (!cells.contains(mark.circle())) {
+                cells.add(mark.circle());
+            }
+        }
+        return List.copyOf(cells);
     }
 
     /**
-     * The lakes a trace found, and what their shores left out on the way.
+     * The water a trace found beyond its outer coasts - the lakes, the puddles, and what the
+     * lake shores left out on the way.
      *
      * <p>The drops travel with them for the reason {@link SmoothedCoasts}' do: a lake that
      * came out wrong looks the same on screen whether a rule dropped too much or the walk
      * never offered the stretch, and those are opposite faults with opposite fixes.
      *
      * @param lakes   the lakes, in the order they were traced
-     * @param dropped every stretch their shores were not drawn through, over all of them
+     * @param puddles the holes the floor judged too small to be lakes, in the same order
+     * @param dropped every stretch the lake shores were not drawn through, over all of them
      */
     private record TracedLakes(
         List<Lake> lakes,
+        List<Puddle> puddles,
         List<DiscUnionBoundary.CoastMark> dropped) {
     }
 

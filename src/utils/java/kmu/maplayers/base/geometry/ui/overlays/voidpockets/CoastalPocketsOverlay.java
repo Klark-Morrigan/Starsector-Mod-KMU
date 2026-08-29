@@ -5,9 +5,11 @@ import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.WalledPocket;
+import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.List;
@@ -157,6 +159,34 @@ public final class CoastalPocketsOverlay {
                 g2,
                 lake.waterEdge(),
                 lake.shore().drawnRing(),
+                fill,
+                settings.voidFillOpacity,
+                edge);
+        }
+    }
+
+    /**
+     * Draws every puddle filled up, beneath the cells: the whole of its water as taken.
+     *
+     * <p>Solid where a lake's fill is a margin, because the two say different things. A
+     * lake's open water is left to the backdrop the way the sector's open void is - the
+     * margin marks what the drawn shore conceded against the cells' true edge. A puddle has
+     * no shore to concede anything, and water drawn as backdrop reads as open void, which is
+     * exactly what a puddle is not.
+     *
+     * @param g2   what to draw with
+     * @param fill what to fill the puddles with
+     * @param edge what to outline them in
+     */
+    public void paintPuddleFills(Graphics2D g2, Color fill, Color edge) {
+
+        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
+
+        for (var puddle : traced.puddles()) {
+
+            MapPainting.paintFilledShape(
+                g2,
+                MapPainting.buildPath(puddle.waterEdge()),
                 fill,
                 settings.voidFillOpacity,
                 edge);

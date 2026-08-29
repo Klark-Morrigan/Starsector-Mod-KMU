@@ -4,6 +4,7 @@ import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.CoastFrontages;
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.ContinentBridges;
+import kmu.maplayers.base.geometry.PuddlePockets;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
@@ -52,6 +53,10 @@ public final class ContinentCoastOverlay {
     // THAT trace and a frame that asked it again could answer about a different one.
     private List<CellGap> bridges = List.of();
 
+    // The spans laid across the puddles, held beside the trace whose puddles claimed them
+    // for the same reason.
+    private List<CellGap> puddleBridges = List.of();
+
     // The stretches of border a bridge may anchor on - exterior coasts, lake shores, or both,
     // as the switches asked - held beside the trace that decided them. One run per stretch
     // rather than one list per cell, because a cell facing the void twice is eligible in two
@@ -78,6 +83,7 @@ public final class ContinentCoastOverlay {
 
         coast.acceptTrace(null);
         bridges = List.of();
+        puddleBridges = List.of();
         frontages = List.of();
 
         // The coasts are traced while any of them is wanted, because each is built on them:
@@ -88,7 +94,9 @@ public final class ContinentCoastOverlay {
         // Under the switch over the whole continent construction, which suppresses this
         // without touching any of its own - so what was showing comes back when it is lifted.
         if (!settings.showContinentVoid
-                || (!settings.showContinentLakeCoastline
+                || (!settings.showContinentPuddleBridges
+                    && !settings.showContinentPuddleFill
+                    && !settings.showContinentLakeCoastline
                     && !settings.showContinentLakeFill
                     && !settings.showContinentLakeFrontages
                     && !settings.showContinentCoastline
@@ -139,6 +147,15 @@ public final class ContinentCoastOverlay {
                 settings.resolveContinentBridgeRules());
         }
 
+        // At the settled bridges' own reach, because they ARE the settled bridges asked
+        // about smaller water - reusing that knob is what keeps the two sets one search.
+        if (settings.showContinentPuddleBridges) {
+
+            puddleBridges = PuddlePockets.findPuddleBridges(
+                coast.getTrace(),
+                settings.parameters,
+                settings.bridgeReachMultiple);
+        }
     }
 
     /**
@@ -168,6 +185,14 @@ public final class ContinentCoastOverlay {
         if (settings.showContinentLakeFill) {
 
             coast.paintLakeFills(
+                g2, settings.continentCoastalVoidColour, settings.continentCoastalVoidEdge);
+        }
+
+        // Same water again, one size down: what a puddle loses against a lake is its shore,
+        // never its colour.
+        if (settings.showContinentPuddleFill) {
+
+            coast.paintPuddleFills(
                 g2, settings.continentCoastalVoidColour, settings.continentCoastalVoidEdge);
         }
     }
@@ -272,7 +297,7 @@ public final class ContinentCoastOverlay {
      */
     private void paintBridges(Graphics2D g2) {
 
-        if (!settings.showContinentBridges) {
+        if (!settings.showContinentBridges && !settings.showContinentPuddleBridges) {
             return;
         }
 
@@ -281,7 +306,13 @@ public final class ContinentCoastOverlay {
             settings.continentBridgeColour,
             MapLook.OPAQUE_ALPHA));
 
+        // The puddle spans in the same stroke and colour, because they are the same kind of
+        // claim - "this much void is held between these cells" - told apart by the water each
+        // sits over. Each list is empty unless its own switch filled it on refresh.
         for (var bridge : bridges) {
+            g2.draw(MapPainting.buildSpanLine(bridge));
+        }
+        for (var bridge : puddleBridges) {
             g2.draw(MapPainting.buildSpanLine(bridge));
         }
     }

@@ -66,6 +66,8 @@ public final class ViewerSettingsPanel {
     private static final String COASTAL_FILL = "showCoastalFill";
     private static final String COASTAL_NAMES = "showCoastalNames";
 
+    private static final String PUDDLE_BRIDGES = "showContinentPuddleBridges";
+    private static final String PUDDLE_FILL = "showContinentPuddleFill";
     private static final String LAKE_COASTLINE = "showContinentLakeCoastline";
     private static final String LAKE_FILL = "showContinentLakeFill";
     private static final String LAKE_FRONTAGES = "showContinentLakeFrontages";
@@ -734,14 +736,15 @@ public final class ViewerSettingsPanel {
         addInletBridgeRows(controls);
     }
 
-    // What there is to see of the continent construction, gathered the way the settled one's
-    // switches are: two symmetric shores - interior and exterior - with the same three
-    // switches each, because the two are the same kind of line seen from opposite sides and
-    // a reader judging one wants the same handles they have on the other.
+    // What there is to see of the continent construction, in the order water gets smaller:
+    // puddle pockets, then the two symmetric shores - interior and exterior, with the same
+    // three switches each, because the two are the same kind of line seen from opposite
+    // sides - then the inlet bridges. A one-child subtree for those on purpose: it earns its
+    // shape the moment inlets get a fill of their own.
     //
     // The flat roll-ups after them cut across the branches on purpose, the way v2's do: they
-    // answer questions about a KIND OF THING rather than about a shore - "every coastline",
-    // "every fill", "every wall" - and a roll-up is what keeps the nested switch and the
+    // answer questions about a KIND OF THING rather than about a branch - "every wall",
+    // "every fill", "every bridge" - and a roll-up is what keeps the nested switch and the
     // global answer synced, since it reads as on, mixed or off over its keys and writes all
     // of them.
     //
@@ -754,9 +757,18 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofRollUp(
                 0,
                 "Continent void",
+                PUDDLE_BRIDGES, PUDDLE_FILL,
                 LAKE_COASTLINE, LAKE_FILL, LAKE_FRONTAGES,
                 CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES,
                 CONTINENT_BRIDGES),
+            ToggleTree.Row.ofRollUp(
+                1, "Puddle pockets", PUDDLE_BRIDGES, PUDDLE_FILL),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                PUDDLE_BRIDGES, "Bridges", false,
+                on -> settings.showContinentPuddleBridges = on)),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                PUDDLE_FILL, "Fill", false,
+                on -> settings.showContinentPuddleFill = on)),
             ToggleTree.Row.ofRollUp(
                 1, "Interior coastlines", LAKE_COASTLINE, LAKE_FILL, LAKE_FRONTAGES),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
@@ -779,14 +791,17 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 CONTINENT_FRONTAGES, "Bridgeable frontage", false,
                 on -> settings.showContinentCoastFrontages = on)),
-            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
-                CONTINENT_BRIDGES, "Inlet bridges", false,
+            ToggleTree.Row.ofRollUp(1, "Inlet bridges", CONTINENT_BRIDGES),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                CONTINENT_BRIDGES, "Bridges", false,
                 on -> settings.showContinentBridges = on)),
-            ToggleTree.Row.ofRollUp(1, "Coastline", LAKE_COASTLINE, CONTINENT_COASTLINE),
-            ToggleTree.Row.ofRollUp(1, "Fill", LAKE_FILL, CONTINENT_FILL),
-            ToggleTree.Row.ofRollUp(1, "Bridgeable frontage", LAKE_FRONTAGES, CONTINENT_FRONTAGES),
             ToggleTree.Row.ofRollUp(
-                1, "Walls", LAKE_COASTLINE, CONTINENT_COASTLINE, CONTINENT_BRIDGES));
+                1, "Walls",
+                LAKE_COASTLINE, CONTINENT_COASTLINE, CONTINENT_BRIDGES, PUDDLE_BRIDGES),
+            ToggleTree.Row.ofRollUp(1, "Coastline", LAKE_COASTLINE, CONTINENT_COASTLINE),
+            ToggleTree.Row.ofRollUp(1, "Bridgeable frontage", LAKE_FRONTAGES, CONTINENT_FRONTAGES),
+            ToggleTree.Row.ofRollUp(1, "Bridges", PUDDLE_BRIDGES, CONTINENT_BRIDGES),
+            ToggleTree.Row.ofRollUp(1, "Fill", LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL));
     }
 
     // What the v3 coastlines are and how they are drawn, which is what everything below is

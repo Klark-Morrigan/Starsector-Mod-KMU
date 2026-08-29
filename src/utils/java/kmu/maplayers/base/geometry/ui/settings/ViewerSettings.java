@@ -183,6 +183,14 @@ public final class ViewerSettings {
     // water the cells closed around, the exterior one the open void beyond them. A reader
     // judging either wants the handles they already know from the other.
 
+    // The puddles: holes the lake floor judged too small for a shoreline, filled up the way
+    // the settled construction fills captured void - bridges across the water, the water
+    // drawn as taken. Also the only reading of the slivers no shore could ever show: a hole
+    // whose every frontage is under the frontage floor smooths to an empty outline, so
+    // before the puddle path it simply vanished from the map.
+    public boolean showContinentPuddleBridges;
+    public boolean showContinentPuddleFill;
+
     // The lake shores: void the continents' cells closed around unaided. The trial of drawing
     // captured void as a shore rather than as v2's bridge-and-fill.
     public boolean showContinentLakeCoastline;
