@@ -40,6 +40,7 @@ public final class BlocAffiliation {
      *                    groups factions, though {@link #NONE} already names that case
      */
     public BlocAffiliation(HolderGrouping allianceSet) {
+
         this.allianceSet = Objects.requireNonNull(allianceSet, "allianceSet");
     }
 

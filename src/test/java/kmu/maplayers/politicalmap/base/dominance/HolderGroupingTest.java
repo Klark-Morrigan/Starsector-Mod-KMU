@@ -24,12 +24,14 @@ class HolderGroupingTest {
 
         @Test
         void mapsEveryFactionToItself() {
+
             assertThat(HolderGrouping.identity().resolveBlocId("hegemony"))
                 .isEqualTo("hegemony");
         }
 
         @Test
         void coloursEveryBlocAsItself() {
+
             assertThat(HolderGrouping.identity().resolveColourFactionId("hegemony"))
                 .isEqualTo("hegemony");
         }
@@ -49,12 +51,14 @@ class HolderGroupingTest {
 
         @Test
         void mapsAnAlliedFactionToItsBloc() {
+
             assertThat(buildAllianceGrouping().resolveBlocId("hegemony"))
                 .isEqualTo("alliance-1");
         }
 
         @Test
         void leavesAnOutsiderAsItsOwnBloc() {
+
             assertThat(buildAllianceGrouping().resolveBlocId("tritachyon"))
                 .isEqualTo("tritachyon");
         }
@@ -94,6 +98,16 @@ class HolderGroupingTest {
             assertThat(buildAllianceGrouping().isAlliance(null))
                 .isFalse();
         }
+
+        @Test
+        void resolveMemberFactionIdsNamesNoMemberForABlocWithNoId() {
+            // The lone-faction fallback must not fire here: a bloc with no id standing in as its own
+            // sole member would hand a rule read over membership a member named nothing at all.
+            assertThat(buildAllianceGrouping().resolveMemberFactionIds(null))
+                .isEmpty();
+            assertThat(HolderGrouping.identity().resolveMemberFactionIds(" "))
+                .isEmpty();
+        }
     }
 
     @Nested
@@ -101,12 +115,14 @@ class HolderGroupingTest {
 
         @Test
         void namesTheAlliancesDominantMember() {
+
             assertThat(buildAllianceGrouping().resolveColourFactionId("alliance-1"))
                 .isEqualTo("hegemony");
         }
 
         @Test
         void coloursAFactionBlocAsItself() {
+
             assertThat(buildAllianceGrouping().resolveColourFactionId("tritachyon"))
                 .isEqualTo("tritachyon");
         }
@@ -117,12 +133,14 @@ class HolderGroupingTest {
 
         @Test
         void carriesTheAllianceName() {
+
             assertThat(buildAllianceGrouping().resolveAllianceName("alliance-1"))
                 .isEqualTo("Allied Powers");
         }
 
         @Test
         void returnsNullForAFactionBloc() {
+
             assertThat(buildAllianceGrouping().resolveAllianceName("tritachyon"))
                 .isNull();
         }
@@ -133,12 +151,14 @@ class HolderGroupingTest {
 
         @Test
         void isTrueForAnAllianceBloc() {
+
             assertThat(buildAllianceGrouping().isAlliance("alliance-1"))
                 .isTrue();
         }
 
         @Test
         void isFalseForAFactionBloc() {
+
             assertThat(buildAllianceGrouping().isAlliance("tritachyon"))
                 .isFalse();
         }
@@ -149,6 +169,7 @@ class HolderGroupingTest {
 
         @Test
         void isTrueWhenTheGroupingHoldsAnAlliance() {
+
             assertThat(buildAllianceGrouping().hasAnyAlliance())
                 .isTrue();
         }
@@ -274,6 +295,7 @@ class HolderGroupingTest {
 
         @Test
         void keepsFactionsInDistinctBlocsSeparate() {
+
             assertThat(HolderGrouping.identity().collectBlocIds(List.of("hegemony", "tritachyon")))
                 .containsExactly("hegemony", "tritachyon");
         }
@@ -297,6 +319,32 @@ class HolderGroupingTest {
             // worth keeping keeps it.
             assertThat(HolderGrouping.identity().collectBlocIds(List.of("z-faction", "a-faction")))
                 .containsExactly("z-faction", "a-faction");
+        }
+    }
+
+    @Nested
+    class ResolveMemberFactionIds {
+
+        @Test
+        void namesEveryFactionFoldedIntoAnAllianceBloc() {
+
+            assertThat(buildAllianceGrouping().resolveMemberFactionIds("alliance-1"))
+                .containsExactlyInAnyOrder("hegemony", "astral_armada");
+        }
+
+        @Test
+        void namesALoneFactionBlocAsItsOwnSoleMember() {
+            // Nothing folds into an outsider's bloc, and its id is that faction's own - the
+            // membership of one every read under no alliance comes back with.
+            assertThat(buildAllianceGrouping().resolveMemberFactionIds("tritachyon"))
+                .containsExactly("tritachyon");
+        }
+
+        @Test
+        void namesEveryBlocAsOneFactionUnderTheIdentityGrouping() {
+
+            assertThat(HolderGrouping.identity().resolveMemberFactionIds("hegemony"))
+                .containsExactly("hegemony");
         }
     }
 

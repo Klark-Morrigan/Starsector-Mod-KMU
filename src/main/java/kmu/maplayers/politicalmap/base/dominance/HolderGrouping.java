@@ -54,6 +54,7 @@ public record HolderGrouping(
      * stable for the whole pass.
      */
     public HolderGrouping {
+
         blocIdByFactionId = Map.copyOf(blocIdByFactionId);
         colourFactionIdByBlocId = Map.copyOf(colourFactionIdByBlocId);
         allianceNameByBlocId = Map.copyOf(allianceNameByBlocId);
@@ -110,7 +111,9 @@ public record HolderGrouping(
             BinaryOperator<T> merge) {
 
         var valueByBlocId = new LinkedHashMap<String, T>();
+
         for (var entry : valueByFactionId.entrySet()) {
+
             var blocId = resolveBlocId(entry.getKey());
 
             // A faction this grouping can name no bloc for is left out, which is the one thing the
@@ -145,7 +148,9 @@ public record HolderGrouping(
     public Set<String> collectBlocIds(Collection<String> factionIds) {
 
         var blocIds = new LinkedHashSet<String>();
+
         for (var factionId : factionIds) {
+
             var blocId = resolveBlocId(factionId);
 
             if (blocId != null) {
@@ -153,6 +158,43 @@ public record HolderGrouping(
             }
         }
         return blocIds;
+    }
+
+    /**
+     * The factions a bloc is made of: every member folded into an alliance, or the bloc itself
+     * where it is a lone faction. The reverse of {@link #resolveBlocId}, off the same fold, so a
+     * rule stated over a bloc's whole membership needs no second source of who is in what - a
+     * second one would be free to disagree with the fold every fill, run and row was built from.
+     *
+     * <p>Membership is the bloc's own and not what is present anywhere: a member holding no colony
+     * in the system a caller is asking about is still a member here. A rule wanting only who stands
+     * in one place narrows this itself, which keeps "who is in this bloc" and "who is present" two
+     * questions rather than one answer serving badly as both.
+     *
+     * @param blocId the bloc to read; a bloc with no id is made of nobody, there being nothing to
+     *               have named it
+     * @return the bloc's member factions, in no meaningful order; empty for a bloc with no id
+     */
+    public Set<String> resolveMemberFactionIds(String blocId) {
+
+        if (!KmlibStrings.hasText(blocId)) {
+            return Set.of();
+        }
+        var memberFactionIds = new LinkedHashSet<String>();
+
+        for (var entry : blocIdByFactionId.entrySet()) {
+
+            if (blocId.equals(entry.getValue())) {
+                memberFactionIds.add(entry.getKey());
+            }
+        }
+
+        // Nothing folds into a bloc that is a lone faction - the sparse map holds an entry only
+        // where a faction is grouped away from itself - and there the bloc id is that faction's own
+        // id, which is the membership of one every identity-grouping read comes back with.
+        return memberFactionIds.isEmpty()
+            ? Set.of(blocId)
+            : memberFactionIds;
     }
 
     /**
