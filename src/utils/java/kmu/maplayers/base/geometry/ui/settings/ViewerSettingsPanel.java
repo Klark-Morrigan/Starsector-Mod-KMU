@@ -913,6 +913,18 @@ public final class ViewerSettingsPanel {
                 slack -> settings.continentBridgeCoastSlack = slack,
                 refreshes::refreshCoastlines,
                 () -> { })));
+
+        // A rule rather than a layer, so it sits with the sliders that decide which spans
+        // exist rather than among the switches that decide what is drawn. Rebuilds, because
+        // what it changes is the set itself.
+        controls.add(buildToggle(
+            "shouldThinSpanFormations",
+            "Thin shared-anchor spans",
+            true,
+            on -> {
+                settings.shouldThinSpanFormations = on;
+                refreshes.refreshCoastlines();
+            }));
     }
 
     // Everything there is to see of the void, under one head.

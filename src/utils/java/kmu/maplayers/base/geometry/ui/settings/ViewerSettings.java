@@ -268,6 +268,14 @@ public final class ViewerSettings {
     // so the reach that finds the right spans there is not the one that finds them here.
     public double continentBridgeReachMultiple = CONTINENT_BRIDGE_REACH_DEFAULT;
 
+    // Whether spans sharing an anchor point are thinned once the laying is settled: chains
+    // down to their end walls, fans down to one span, and nothing dropped that holds void in.
+    //
+    // On by default, because the thinned set is what the proposal is - the switch is here to
+    // see what the pass did, which cannot be read off the map otherwise since a dropped span
+    // is gone rather than marked.
+    public boolean shouldThinSpanFormations = true;
+
     // How far off a wall already down a span may run and still count as running along it,
     // in map units. A real judgement rather than rounding: a span shadowing the coast at a
     // distance is redundant or not depending on how far a reader will accept two lines being
@@ -421,7 +429,8 @@ public final class ViewerSettings {
     public ContinentBridges.BridgeRules resolveContinentBridgeRules() {
         return new ContinentBridges.BridgeRules(
             continentBridgeReachMultiple,
-            continentBridgeCoastSlack);
+            continentBridgeCoastSlack,
+            shouldThinSpanFormations);
     }
 
     // How the v3 coast is traced. Its own method rather than the settled coast's, because a

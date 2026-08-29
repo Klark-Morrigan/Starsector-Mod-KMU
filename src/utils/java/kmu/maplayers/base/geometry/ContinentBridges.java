@@ -81,13 +81,19 @@ public final class ContinentBridges {
     /**
      * The knobs a set of spans is laid under.
      *
-     * @param reachMultiple how far apart two cells may sit and still be bridged, in cell radii
-     * @param coastSlack    how far off an existing wall a span may run and still count as
-     *                      running along it, in map units
+     * @param reachMultiple      how far apart two cells may sit and still be bridged, in cell
+     *                           radii
+     * @param coastSlack         how far off an existing wall a span may run and still count as
+     *                           running along it, in map units
+     * @param shouldThinFormations whether spans sharing an anchor are thinned once the laying
+     *                           is settled. A rule rather than a display switch: what it
+     *                           changes is which spans exist, so a report and a drawing that
+     *                           disagreed about it would describe different maps
      */
     public record BridgeRules(
         double reachMultiple,
-        double coastSlack) {
+        double coastSlack,
+        boolean shouldThinFormations) {
     }
 
     /**
@@ -162,7 +168,16 @@ public final class ContinentBridges {
             .thenComparingInt(CellGap::fromSite)
             .thenComparingInt(CellGap::toSite));
 
-        return List.copyOf(keepSpansWorthLaying(laid, coastWalls, rules));
+        var kept = keepSpansWorthLaying(laid, coastWalls, rules);
+
+        // Thinned as the last act, so every reader of this method's answer sees the same
+        // resolved set: a formation left for a consumer to tidy is a formation two consumers
+        // tidy differently. Switched off, what comes back is the laying as it stands - which
+        // is the only way to see what the thinning is doing, since the spans it drops are
+        // gone rather than marked.
+        return List.copyOf(rules.shouldThinFormations()
+            ? SpanFormations.resolveSharedAnchors(kept, traced, parameters)
+            : kept);
     }
 
     // Every coast of the construction as its traced vertex ring - the line the anchors live
@@ -359,7 +374,8 @@ public final class ContinentBridges {
      * since two cells in different directions are faced from different points. What still
      * produces it is a frontage the drawn coast crosses in a single point: everything leaving
      * that cell has only the one place to leave from. Kept for that case rather than for the
-     * fan it was written against.
+     * fan it was written against - and the fans and chains it lets through are
+     * {@link SpanFormations}' business, thinned after the laying is settled.
      *
      * @param span the span being offered
      * @param kept the spans already laid
