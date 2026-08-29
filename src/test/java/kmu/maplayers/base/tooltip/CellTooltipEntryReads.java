@@ -12,6 +12,14 @@ import java.util.List;
  */
 public final class CellTooltipEntryReads {
 
+    /**
+     * What a line whose name is withheld reads as out of {@link #readLabelTexts}. Named rather than
+     * asserted as a bare null, so a case pinning the order of a listing says the line is there and
+     * unnamed rather than appearing to have lost one - and named here, beside the read that produces
+     * the absence, so every suite meeting one spells it the same way.
+     */
+    public static final String NO_NAME_STATED = null;
+
     private CellTooltipEntryReads() {
     }
 

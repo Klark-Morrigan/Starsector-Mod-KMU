@@ -38,6 +38,7 @@ import java.util.Optional;
 
 import static kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture.buildStandingOnOneMarket;
 
+import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.NO_NAME_STATED;
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_LABEL_RUN;
@@ -96,11 +97,6 @@ final class ExpandedSystemClaimTooltipTest {
     // listed at all. What such a row then states, and which listing ties it marks, are the
     // resolver's and pinned there.
     private static final boolean IS_UNDISCOVERED_BY_PLAYER = false;
-
-    // What such a row reads as out of the labels an account states, its name being stood in for rather
-    // than said. Named rather than asserted as a bare null, so the case pinning the listing says the
-    // row is there and unnamed rather than appearing to have lost one.
-    private static final String NO_NAME_STATED = null;
 
     // What a colony's kind states on a line, and when it was last seen, are the resolver's and
     // pinned there - so every account here is resolved over a reading that says neither, which is

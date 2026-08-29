@@ -29,6 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture.nameMarketId;
+
+import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.NO_NAME_STATED;
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
@@ -60,11 +63,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * on a market's own line whatever the contest made of it, and on nothing beneath one. When such a
  * remark is due at all is the notes' own question and is pinned by {@link ColonyObservationNotesTest}.
  *
- * <p>What a row the box may not name looks like is pinned here in full, that being the one shape whose
- * every part this resolver decides at once: the stand-in glyph it opens on, the blocks standing for the
- * name, the listing place it keeps, the empty value column, and the terms it declines to break into.
- * The number it does carry - on the market its faction stands on - is pinned beside the absence, since
- * the two together are the rule rather than either alone.
+ * <p>What a row the box may not name looks like is {@link RedactedMarketLinesTest}'s. What is pinned
+ * here is what the account does with such a row: which markets get one, the listing place and the tie
+ * outcome it keeps, the empty value column and the one case that fills it, and the terms it declines to
+ * break into. Each of those is posed over a walk of the system that agrees with the contest about the
+ * colony being undiscovered, the two being separate reads that only ever part company in a fixture.
  *
  * <p>What a market's line calls out about the place is pinned here only as far as this resolver
  * decides it: which facts it hands over - the claim it took, the admission the contest met it
@@ -85,17 +88,13 @@ final class ClaimScoreRowResolverTest {
     private static final String STRONGEST_MARKET = "Chicomoztoc";
     private static final int STRONGEST_MARKET_SIZE = 7;
 
-    // The market the redacted cases are posed on, named in two words of differing length so the blocks
-    // standing in for it pin a shape rather than a single number.
-    private static final String UNDISCOVERED_MARKET = "Kanta's Den";
+    // The colony the box may not name, in the cases about a row it draws for one. A name of its own
+    // rather than the stock second market the cases about concealment reach for, so a reader meeting
+    // both in one file is not left to wonder whether the sameness meant anything.
+    private static final String UNDISCOVERED_MARKET = "Fikenhild";
 
     // What the presence line calls the term, spelled out so a case reads as the words a player sees.
     private static final String PRESENCE_LINE = "Same-faction market bonus";
-
-    // What a row whose name is blocked out reads as, out of the labels a listing states. Named rather
-    // than asserted as a bare null, so a case pinning the order of the list says the row is there and
-    // unnamed rather than appearing to have lost one.
-    private static final String NO_NAME_STATED = null;
 
     // Vanilla's flat garrison bonus. Stated as a literal rather than read from the mechanic, so a case
     // asserting the line shows it cannot pass by restating whatever the reader happened to hand over.
@@ -575,7 +574,7 @@ final class ClaimScoreRowResolverTest {
             // The market's weight is already in the numbers on screen - the faction's score, and the
             // presence its siblings were each given - so the row is what makes them accountable. It is
             // the name alone that is kept back, the row standing in its place.
-            var rows = resolveContestedRows(buildStandingOverAnUndiscoveredMarket());
+            var rows = resolveRowsOverAnUndiscoveredMarket();
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, NO_NAME_STATED, PRESENCE_LINE);
@@ -584,56 +583,68 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStandsWordBlocksInForAnUndiscoveredMarketsName() {
-            // What the row shows in the name's place: one block per word, as long as the word ran. The
-            // shape says how many words there were and how long each was and nothing about which
-            // letters - and the name itself never reaches the line, so there is nothing on it a later
-            // change could draw.
-            var rows = resolveContestedRows(buildStandingOverAnUndiscoveredMarket());
+        void resolveMarketRowsStillCallsAMarketItWillNotNameUndiscovered() {
+            // The whole shape of the row at once, which is the only reading that pins the word and the
+            // blocked-out name as one answer: what the fog takes is the colony's identity, not the fact
+            // that the box could not find it - so the finding is stated as loudly as on any other line.
+            var rows = resolveRowsOverAnUndiscoveredMarket();
 
-            assertThat(rows.get(1).line().redactedWordLengths())
-                .containsExactly(7, 3);
-        }
-
-        @Test
-        void resolveMarketRowsOpensAnUndiscoveredMarketOnTheStandInGlyph() {
-            // Every other market line opens on an image run, so a line opening on its name would be set
-            // apart twice over by the one fact about it. The map's own glyph cannot serve: it says what
-            // sort of place the colony is, which is exactly what the row withholds.
-            var rows = resolveContestedRows(buildStandingOverAnUndiscoveredMarket());
-
-            assertThat(rows.get(1).line().mark().spritePath())
-                .isEqualTo("graphics/fx/question_mark.png");
-            assertThat(rows.get(1).line().mark().isInLineColour())
+            assertThat(rows.get(1).line().hasRedactedName())
                 .isTrue();
+            assertThat(rows.get(1).line().qualifierText())
+                .isEqualTo("undiscovered");
         }
 
         @Test
         void resolveMarketRowsStatesWhereTheEconomyListsAnUndiscoveredMarket() {
-            // The place identifies the market rather than describing the colony, and a tie such a
-            // market won or lost is settled by it alone - which no other number on screen accounts
-            // for.
-            var rows = resolveContestedRows(buildStandingOverAnUndiscoveredMarket());
+            // The place identifies the market rather than describing the colony, so it survives the
+            // withholding of the name.
+            var rows = resolveRowsOverAnUndiscoveredMarket();
 
             assertThat(rows.get(1).line().indexPlace().text())
                 .isEqualTo("[2]");
         }
 
         @Test
+        void resolveMarketRowsMarksATieAnUndiscoveredMarketWonOrLost() {
+            // The reason the place has to survive: a tie is settled by the listing alone, and no other
+            // number on screen accounts for it - so a blocked-out row that lost one says so, or the
+            // reader is left with two equal scores and no explanation of which took the system.
+            var rows = resolveContestedRows(
+                buildStanding(
+                    buildStrongestMarket(ONE_SIBLING_MARKET),
+                    List.of(buildMarket(
+                        UNDISCOVERED_MARKET,
+                        STRONGEST_MARKET_SIZE,
+                        ONE_SIBLING_MARKET,
+                        SECOND_LISTED,
+                        IS_UNDISCOVERED_BY_PLAYER))),
+                buildReadingWithUndiscovered(nameMarketId(UNDISCOVERED_MARKET)));
+
+            assertThat(rows.get(0).line().indexPlace().outcome())
+                .isEqualTo(CellTooltipIndexOutcome.WON);
+            assertThat(rows.get(1).line().indexPlace().outcome())
+                .isEqualTo(CellTooltipIndexOutcome.LOST);
+        }
+
+        @Test
         void resolveMarketRowsStatesNoScoreForAnUndiscoveredMarketBesidesTheStanding() {
             // The column stands empty rather than carrying the figure. The row is still ranked on the
-            // real score, so the lines either side of it bound what it came to - the box declines to
-            // state the number, and does not go on to pretend the contest ran in some other order.
-            var rows = resolveContestedRows(buildStanding(
-                buildStrongestMarket(TWO_SIBLING_MARKETS),
-                List.of(
-                    buildMarket("Eventide", 5, TWO_SIBLING_MARKETS, SECOND_LISTED),
-                    buildMarket(UNDISCOVERED_MARKET, 4, TWO_SIBLING_MARKETS, THIRD_LISTED,
-                        IS_UNDISCOVERED_BY_PLAYER))));
+            // real score - between the two markets it falls between here - so the lines either side of
+            // it bound what it came to: the box declines to state the number, and does not go on to
+            // pretend the contest ran in some other order.
+            var rows = resolveContestedRows(
+                buildStanding(
+                    buildStrongestMarket(TWO_SIBLING_MARKETS),
+                    List.of(
+                        buildMarket("Eventide", 3, TWO_SIBLING_MARKETS, SECOND_LISTED),
+                        buildMarket(UNDISCOVERED_MARKET, 5, TWO_SIBLING_MARKETS, THIRD_LISTED,
+                            IS_UNDISCOVERED_BY_PLAYER))),
+                buildReadingWithUndiscovered(nameMarketId(UNDISCOVERED_MARKET)));
 
             assertThat(readLabelTexts(rows))
-                .containsExactly(STRONGEST_MARKET, "Eventide", NO_NAME_STATED, PRESENCE_LINE);
-            assertThat(rows.get(2).line().valueText())
+                .containsExactly(STRONGEST_MARKET, NO_NAME_STATED, "Eventide", PRESENCE_LINE);
+            assertThat(rows.get(1).line().valueText())
                 .isEqualTo(CellTooltipRows.NO_SCORE);
         }
 
@@ -642,7 +653,7 @@ final class ClaimScoreRowResolverTest {
             // A size and a garrison are the colony itself described term by term, which is the account
             // the row exists not to give. Unlike a market the mechanic passed over, the terms were
             // computed here - they are being withheld rather than absent.
-            var rows = resolveContestedRows(buildStandingOverAnUndiscoveredMarket());
+            var rows = resolveRowsOverAnUndiscoveredMarket();
 
             assertThat(rows.get(1).children())
                 .isEmpty();
@@ -653,14 +664,26 @@ final class ClaimScoreRowResolverTest {
             // The one figure a blocked-out row carries, because the faction's own line above already
             // states it: withheld here it would hide nothing, while leaving the block's arithmetic
             // unaccountable.
-            var rows = resolveContestedRows(buildStanding(
-                buildStrongestMarket(ONE_SIBLING_MARKET, IS_UNDISCOVERED_BY_PLAYER),
-                List.of(buildMarket("Culann", 4, ONE_SIBLING_MARKET, SECOND_LISTED))));
+            var rows = resolveRowsOverAnUndiscoveredStandingMarket();
 
             assertThat(rows.get(0).line().valueText())
                 .isEqualTo("8");
             assertThat(rows.get(0).line().isValueUncounted())
                 .isFalse();
+        }
+
+        @Test
+        void resolveMarketRowsCallsOutAnUndiscoveredMarketThatTookTheSystem() {
+            // The two findings a blocked-out row can carry at once, and the shape the fog makes
+            // reachable: a faction can take a system on a colony nobody has found, and the map is
+            // already painting that system in its colours - so the claim is stated on the very line
+            // that declines to name the place, rather than the box dropping one to withhold the other.
+            var rows = resolveRowsOverAnUndiscoveredStandingMarket();
+
+            assertThat(rows.get(0).line().hasRedactedName())
+                .isTrue();
+            assertThat(rows.get(0).line().qualifierText())
+                .isEqualTo("claim holder, undiscovered");
         }
 
         @Test
@@ -1240,13 +1263,31 @@ final class ClaimScoreRowResolverTest {
         return buildMarket("Eventide", marketSize, NO_SIBLING_MARKETS, listingPosition);
     }
 
-    // The faction the redacted cases are posed on: its strongest market in plain sight, and a weaker
-    // one the contest weighed on a colony nobody has found - which is the row those cases read.
-    private static WeighedClaimStanding buildStandingOverAnUndiscoveredMarket() {
-        return buildStanding(
-            buildStrongestMarket(ONE_SIBLING_MARKET),
-            List.of(buildMarket(UNDISCOVERED_MARKET, 3, ONE_SIBLING_MARKET, SECOND_LISTED,
-                IS_UNDISCOVERED_BY_PLAYER)));
+    // The account the cases about a blocked-out row read: the faction's strongest market in plain
+    // sight, and a weaker one the contest weighed on a colony nobody has found.
+    //
+    // The walk of the system is stated to match, and that is the point of naming this rather than
+    // posing it per case. Whether the box may name a market and whether it calls the colony
+    // undiscovered are two separate reads - the contest's own flag against the box's walk - so a
+    // fixture setting one and leaving the other at its resting state poses a world play cannot
+    // produce, and every case built on it would be asserting over that world.
+    private static List<CellTooltipEntry> resolveRowsOverAnUndiscoveredMarket() {
+        return resolveContestedRows(
+            buildStanding(
+                buildStrongestMarket(ONE_SIBLING_MARKET),
+                List.of(buildMarket(UNDISCOVERED_MARKET, 3, ONE_SIBLING_MARKET, SECOND_LISTED,
+                    IS_UNDISCOVERED_BY_PLAYER))),
+            buildReadingWithUndiscovered(nameMarketId(UNDISCOVERED_MARKET)));
+    }
+
+    // The same, with the undiscovered colony as the very market the faction stands on - the shape the
+    // claimant's own account takes when the contest hands it a system on a colony nobody has found.
+    private static List<CellTooltipEntry> resolveRowsOverAnUndiscoveredStandingMarket() {
+        return resolveContestedRows(
+            buildStanding(
+                buildStrongestMarket(ONE_SIBLING_MARKET, IS_UNDISCOVERED_BY_PLAYER),
+                List.of(buildMarket("Culann", 4, ONE_SIBLING_MARKET, SECOND_LISTED))),
+            buildReadingWithUndiscovered(nameMarketId(STRONGEST_MARKET)));
     }
 
     // The faction most cases here are posed on: its strongest market, and one weaker market listed
