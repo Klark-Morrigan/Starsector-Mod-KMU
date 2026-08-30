@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.base.geometry.CellSeedInputs;
-import kmu.maplayers.base.visibility.MapVisibilityRules;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
 /**
  * Everything that decides the shape of a cut of the cells: the revision of the reachable set,

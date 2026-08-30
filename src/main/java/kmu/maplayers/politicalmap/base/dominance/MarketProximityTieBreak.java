@@ -6,7 +6,7 @@ import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.entities.EntityOrbits;
 import kmlib.starsector.systems.StarSystems;
 
-import kmu.maplayers.base.visibility.ColonyKnowledge;
+import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;

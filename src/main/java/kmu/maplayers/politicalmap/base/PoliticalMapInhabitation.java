@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.base.visibility.MapVisibility;
+import kmu.maplayers.base.visibility.systems.MapVisibility;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 
 import java.util.HashSet;

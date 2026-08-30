@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.SelectableBlocFixtures.stubNamedFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;

@@ -12,8 +12,8 @@ import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
-import kmu.maplayers.base.visibility.MapVisibilityPass;
-import kmu.maplayers.base.visibility.MapVisibilityRules;
+import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Integration coverage for the single-walk snapshot: {@link PoliticalMapSectorSnapshot}
- * driving the real visibility rule ({@link kmu.maplayers.base.visibility.MapVisibility})
+ * driving the real visibility rule ({@link kmu.maplayers.base.visibility.systems.MapVisibility})
  * and dominance rule ({@link kmu.maplayers.politicalmap.base.dominance.SystemDominance}) over a
  * stubbed economy. Exercised together because the point of the snapshot is the
  * separation of shapes: one sector walk yields a scalar visibility fingerprint that

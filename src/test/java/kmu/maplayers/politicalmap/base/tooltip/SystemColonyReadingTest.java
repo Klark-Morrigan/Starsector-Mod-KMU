@@ -6,11 +6,11 @@ import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipQualifier;
-import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
-import kmu.maplayers.base.visibility.ColonyKind;
-import kmu.maplayers.base.visibility.ColonyKindLookup;
-import kmu.maplayers.base.visibility.OpenlyKnownColonyFixture;
-import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
+import kmu.maplayers.base.visibility.colonies.ColonyDiscoveryLookup;
+import kmu.maplayers.base.visibility.colonies.ColonyKind;
+import kmu.maplayers.base.visibility.colonies.ColonyKindLookup;
+import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyFixture;
+import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyLookup;
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;

@@ -11,8 +11,8 @@ import com.fs.starfarer.api.impl.campaign.ids.Tags;
 import kmlib.math.geometry.VoronoiCellBuilder;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
-import kmu.maplayers.base.visibility.MapVisibilityPass;
-import kmu.maplayers.base.visibility.MapVisibilityRules;
+import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

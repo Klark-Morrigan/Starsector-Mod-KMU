@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
-import kmu.maplayers.base.visibility.ColonyVisibility;
+import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.BlocFriendliness;
 

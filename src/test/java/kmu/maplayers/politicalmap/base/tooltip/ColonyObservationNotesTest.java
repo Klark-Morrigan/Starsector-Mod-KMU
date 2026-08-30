@@ -11,8 +11,8 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
 
-import kmu.maplayers.base.visibility.ColonyObservation;
-import kmu.maplayers.base.visibility.ColonySightings;
+import kmu.maplayers.base.visibility.colonies.ColonyObservation;
+import kmu.maplayers.base.visibility.colonies.ColonySightings;
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;

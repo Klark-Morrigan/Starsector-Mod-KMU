@@ -166,7 +166,12 @@ about what the overlay means.
   cells and opaque owner ids into borders, fills, and GL-ready runs. The cluster-border trace,
   the smoothing passes, the vertex packing, and the split fill that puts several fills inside one
   border - none of which interprets a key.
-- **`base/visibility`** - which star systems a layer draws at all: `MapVisibility` admits a
+- **`base/visibility`** - two questions, one under each half of it, and the arrow between them runs
+  one way: what may be shown of a colony is settled without reference to what the map draws, while
+  the membership rule is composed out of exactly that. `enforcePackageLayering` holds the direction,
+  which is why each half is a package of its own rather than twenty files sharing a folder - the
+  reverse import is what would make "may this be shown" depend on whether anything is being drawn.
+- **`base/visibility/systems`** - which star systems a layer draws at all: `MapVisibility` admits a
   system on either of two paths (reachable and drawn by the vanilla map, or inhabited) and hashes the
   admitted set into the fingerprint that says it moved; `MapVisibilityPass` is one reading of the
   sector answering that rule, and `DrawnSystemPositions` walks it for each drawn system's live
@@ -179,8 +184,7 @@ about what the overlay means.
   at all. `MapVisibilityRules` pairs the colony rule that judges that with the force override a
   caller may admit a system outright by, so a layer can widen what is drawn without the rule knowing
   why it wanted to.
-
-  The colony framing those answers are composed from lives here too, because it is the map's own
+- **`base/visibility/colonies`** - what may be shown of a colony, which is the map's own framing
   and not the sector's. KMLib states which colonies a place holds; `ColonyKind` says what kind of
   place each one stands for, `ColonyVisibility` and `RevelationGate` say what may be shown of it,
   and `ColonyKnowledge` pairs that rule with the sector's record of what has been observed and

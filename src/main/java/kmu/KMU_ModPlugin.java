@@ -9,7 +9,7 @@ import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
-import kmu.maplayers.base.visibility.ColonySightingInstaller;
+import kmu.maplayers.base.visibility.colonies.ColonySightingInstaller;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
 import kmu.maplayers.politicalmap.base.PoliticalMapInstaller;
 import kmu.settings.KmuFeatureSettings;

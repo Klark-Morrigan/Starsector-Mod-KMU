@@ -17,8 +17,8 @@ import org.mockito.MockedStatic;
 import java.util.List;
 import java.util.Map;
 
-import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.buildKnowledgeUnderTheFog;
-import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.buildKnowledgeUnderTheReveal;
+import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.buildKnowledgeUnderTheFog;
+import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.buildKnowledgeUnderTheReveal;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOrbitingEntity;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStarAt;
 

@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.dominance;
 
 import kmlib.starsector.entities.EntityNameplate;
 
-import kmu.maplayers.base.visibility.ColonyKind;
+import kmu.maplayers.base.visibility.colonies.ColonyKind;
 
 /**
  * A colony an account names but never weighed: which colony it is, what kind of place it is,

@@ -90,7 +90,7 @@ its own, so nothing about the diff lives in the loop.
 The poll is a pass, and is read as one. Each of its passengers - the snapshot, the
 moving-set walk, and the write that records what a system's own inhabitants can see -
 asks every system who lives there, so the poll opens one
-[`MapVisibilityPass`](../../src/main/java/kmu/maplayers/base/visibility/MapVisibilityPass.java)
+[`MapVisibilityPass`](../../src/main/java/kmu/maplayers/base/visibility/systems/MapVisibilityPass.java)
 - a KMLib `SystemColoniesIndex`, a hyperspace scan, and the rules the three are read under - and
 hands it down. That is what keeps the cost at one selection per system per poll: a passenger
 given the sector instead would walk every entity in every system again, and there are three of

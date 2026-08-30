@@ -6,11 +6,11 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.colonies.Colonies;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
-import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
-import kmu.maplayers.base.visibility.ColonyKind;
-import kmu.maplayers.base.visibility.ColonyKindLookup;
-import kmu.maplayers.base.visibility.ColonyKnowledge;
-import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
+import kmu.maplayers.base.visibility.colonies.ColonyDiscoveryLookup;
+import kmu.maplayers.base.visibility.colonies.ColonyKind;
+import kmu.maplayers.base.visibility.colonies.ColonyKindLookup;
+import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
+import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyLookup;
 
 /**
  * What a box knows about one system's colonies beyond what the contest made of them: what kind of
@@ -36,7 +36,7 @@ import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
  * under the box's own rule, so the account names places as the map drew them; discovery is the
  * entity's own flag, which no rule reaches; whether a concealment is public knowledge is an
  * identity the composition root supplies
- * ({@link kmu.maplayers.base.visibility.OpenlyKnownColonyRegistry}); an observation is read under
+ * ({@link kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyRegistry}); an observation is read under
  * the fog alone, a reveal having no business dating a colony the player was never told about
  * ({@link ColonyObservationNotes}).
  *

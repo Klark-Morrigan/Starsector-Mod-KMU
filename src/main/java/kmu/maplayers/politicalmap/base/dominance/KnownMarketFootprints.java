@@ -6,7 +6,7 @@ import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.markets.Markets;
 
-import kmu.maplayers.base.visibility.ColonyKnowledge;
+import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 
 import java.util.ArrayList;

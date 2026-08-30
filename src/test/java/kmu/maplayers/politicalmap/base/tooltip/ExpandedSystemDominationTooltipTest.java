@@ -9,8 +9,8 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.SectorScenarioFixtures;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.base.visibility.ColonyKind;
-import kmu.maplayers.base.visibility.ColonySightings;
+import kmu.maplayers.base.visibility.colonies.ColonyKind;
+import kmu.maplayers.base.visibility.colonies.ColonySightings;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -39,8 +39,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
-import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.VIEW_GROUPING;
 

@@ -7,8 +7,8 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
-import kmu.maplayers.base.visibility.ColonyKnowledge;
-import kmu.maplayers.base.visibility.ColonyVisibility;
+import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
+import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;

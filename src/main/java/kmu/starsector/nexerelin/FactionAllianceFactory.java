@@ -1,6 +1,6 @@
 package kmu.starsector.nexerelin;
 
-import kmu.maplayers.base.visibility.FactionAlliances;
+import kmu.maplayers.base.visibility.colonies.FactionAlliances;
 
 import java.util.HashMap;
 import java.util.List;

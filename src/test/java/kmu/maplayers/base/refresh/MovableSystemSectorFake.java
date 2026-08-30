@@ -7,14 +7,14 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.base.visibility.MapVisibilityPass;
-import kmu.maplayers.base.visibility.MapVisibilityRules;
+import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
 import org.lwjgl.util.vector.Vector2f;
 
 import java.util.List;
 
-import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

@@ -5,8 +5,8 @@ import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.CellTooltipRows;
-import kmu.maplayers.base.visibility.ColonyKind;
-import kmu.maplayers.base.visibility.ColonyKnowledge;
+import kmu.maplayers.base.visibility.colonies.ColonyKind;
+import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.util.KmuStrings;
 
 import java.util.List;

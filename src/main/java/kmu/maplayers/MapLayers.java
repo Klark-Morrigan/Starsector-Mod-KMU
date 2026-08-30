@@ -4,8 +4,8 @@ import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.NoLayer;
-import kmu.maplayers.base.visibility.FactionAllianceRegistry;
-import kmu.maplayers.base.visibility.OpenlyKnownColonyRegistry;
+import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
+import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyRegistry;
 import kmu.maplayers.politicalmap.base.PoliticalMapLayer;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;

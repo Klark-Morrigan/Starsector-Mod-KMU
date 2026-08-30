@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmu.maplayers.base.visibility.ColonyKind;
+import kmu.maplayers.base.visibility.colonies.ColonyKind;
 
 /**
  * What a box has found out about one colony that its own arithmetic does not state: what sort of

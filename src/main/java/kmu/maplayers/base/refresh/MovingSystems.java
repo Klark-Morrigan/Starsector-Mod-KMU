@@ -2,7 +2,7 @@ package kmu.maplayers.base.refresh;
 
 import kmlib.starsector.systems.SystemMotionTracker;
 
-import kmu.maplayers.base.visibility.MapVisibilityPass;
+import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 
 import java.util.Set;
 

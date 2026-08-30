@@ -34,8 +34,8 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Set;
 
-import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.buildKnowledgeUnderTheFog;
-import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.buildKnowledgeUnderTheReveal;
+import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.buildKnowledgeUnderTheFog;
+import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.buildKnowledgeUnderTheReveal;
 import static kmu.maplayers.politicalmap.base.dominance.MarketWeights.DOMINANCE_WEIGHT_SCALE;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HALF_STABILITY;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.NO_STABILITY;

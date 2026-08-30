@@ -9,7 +9,7 @@ import kmlib.starsector.colonies.SystemColonies;
 
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
-import kmu.maplayers.base.visibility.SectorColonySightings;
+import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 
 import org.apache.log4j.Logger;
 

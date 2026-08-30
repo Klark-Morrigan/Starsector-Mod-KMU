@@ -4,7 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 
-import kmu.maplayers.base.visibility.OpenlyKnownColonyRegistry;
+import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyRegistry;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.tooltip.PoliticalMapCellTooltip;
 import kmu.maplayers.politicalmap.claims.ClaimsView;
@@ -18,9 +18,9 @@ import org.mockito.MockedStatic;
 
 import java.util.Optional;
 
-import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.ACADEMY_ENTITY_ID;
-import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.buildEntity;
-import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.clearRegistrations;
+import static kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyFixture.ACADEMY_ENTITY_ID;
+import static kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyFixture.buildEntity;
+import static kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyFixture.clearRegistrations;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
-import kmu.maplayers.base.visibility.ColonyKindLookup;
-import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
+import kmu.maplayers.base.visibility.colonies.ColonyDiscoveryLookup;
+import kmu.maplayers.base.visibility.colonies.ColonyKindLookup;
+import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyLookup;
 
 import java.util.Optional;
 import java.util.Set;

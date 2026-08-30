@@ -6,8 +6,8 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.profiling.Timings;
 
-import kmu.maplayers.base.visibility.DrawnSystemPositions;
-import kmu.maplayers.base.visibility.MapVisibilityPass;
+import kmu.maplayers.base.visibility.systems.DrawnSystemPositions;
+import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 
 import org.apache.log4j.Logger;
 

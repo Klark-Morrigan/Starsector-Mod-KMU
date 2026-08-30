@@ -2,7 +2,7 @@ package kmu.starsector.nexerelin;
 
 import kmlib.mods.nexerelin.NexerelinPresence;
 
-import kmu.maplayers.base.visibility.FactionAlliances;
+import kmu.maplayers.base.visibility.colonies.FactionAlliances;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 /**

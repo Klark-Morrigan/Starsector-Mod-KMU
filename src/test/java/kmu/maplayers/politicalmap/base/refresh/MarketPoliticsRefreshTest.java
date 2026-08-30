@@ -5,8 +5,8 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
-import kmu.maplayers.base.visibility.ColonyObservation;
-import kmu.maplayers.base.visibility.SectorColonySightings;
+import kmu.maplayers.base.visibility.colonies.ColonyObservation;
+import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 
 import org.junit.jupiter.api.Nested;

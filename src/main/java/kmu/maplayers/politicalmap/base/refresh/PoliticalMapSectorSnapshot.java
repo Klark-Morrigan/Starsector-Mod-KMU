@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.refresh;
 
-import kmu.maplayers.base.visibility.MapVisibility;
-import kmu.maplayers.base.visibility.MapVisibilityPass;
+import kmu.maplayers.base.visibility.systems.MapVisibility;
+import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.politicalmap.base.dominance.BlocCandidacy;
 import kmu.maplayers.politicalmap.base.dominance.HolderRankingRules;
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;

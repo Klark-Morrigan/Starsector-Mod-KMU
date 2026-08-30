@@ -10,9 +10,9 @@ import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.visibility.MapVisibilityPass;
-import kmu.maplayers.base.visibility.MapVisibilityRules;
-import kmu.maplayers.base.visibility.SectorColonySightings;
+import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
+import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import org.apache.log4j.Logger;

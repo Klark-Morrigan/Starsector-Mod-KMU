@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipLabelFinding;
 import kmu.maplayers.base.tooltip.CellTooltipQualifier;
-import kmu.maplayers.base.visibility.ColonyKind;
+import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;

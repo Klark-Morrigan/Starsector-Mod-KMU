@@ -1,7 +1,7 @@
 package kmu.maplayers.base.refresh;
 
-import kmu.maplayers.base.visibility.MapVisibilityPass;
-import kmu.maplayers.base.visibility.MapVisibilityRules;
+import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
