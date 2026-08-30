@@ -195,9 +195,8 @@ Three of those deserve their reason stated.
 
 The **alliance signal** is the political map's own rather than the framework's,
 because who is allied with whom is this layer's vocabulary and no other layer would
-mean anything by it. One board per sector all the same, however many layers raise
-signals on it: a layer declares its signals and raises them on the counters of
-whichever sector it was handed, so a second layer's arrival does not split the
+mean anything by it. A layer declares its signals and raises them on the counters of
+the board it was handed all the same, so a second layer's arrival does not split the
 mechanism in two.
 
 The **sidebar toggles** (recede, filter, spotlight, outline, name format) live in

@@ -42,9 +42,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * straight from {@code KmuLunaSettings.getSettingsRevision}, not this class.
  *
  * <p>Counters and a set rather than direct calls because the producers (a listener, a watcher) and
- * the consumer (the engine-instantiated terrain plugin) are created independently, with no shared
- * owner to wire together. Both are concurrent because a producer's event fires on the campaign
- * thread while the plugin reads or drains on the render thread.
+ * the consumer (the engine-instantiated terrain plugin) never hold one another: each is built by a
+ * different seam, and the consumer is reconstructed from the save with nothing to wire it to. Both
+ * are concurrent because a producer's event fires on the campaign thread while the plugin reads or
+ * drains on the render thread.
  */
 public final class MapLayerRefreshBoard {
 

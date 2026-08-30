@@ -24,6 +24,10 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  * does not. Between them they are why the overlay updates live rather than only on reload, which is
  * what makes them one subject rather than a list of unrelated registrations.
  *
+ * <p>Every listener below is built with the sector it is installed on. Each marks a system stale on
+ * that sector's own refresh board, so one reading the running game instead would mark whichever
+ * sector the player has loaded for an event belonging to another.
+ *
  * <p>Installed before the render surfaces, because the save heal has to run before the terrain
  * reads what it repairs.
  *
@@ -128,10 +132,6 @@ public final class PoliticalMapInstaller {
     // Registers the listener that refreshes the political map when the player
     // discovers a map-relevant entity (a market, a jump point, or a gate), so
     // the overlay updates live rather than only on reload.
-    //
-    // Built with the sector it is installed on, as every listener here is: each marks a system
-    // stale on that sector's own refresh board, and one reading the running game instead would mark
-    // whichever sector the player has loaded for an event belonging to another.
     static void installPoliticalMapDiscoveryListener(SectorAPI sector) {
         SectorListeners.installListener(
             sector,

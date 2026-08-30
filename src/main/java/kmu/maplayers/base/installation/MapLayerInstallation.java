@@ -12,10 +12,9 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
  * in both at different positions is not seen to have moved, and each sector keeps the shapes the
  * other cut rather than overwriting them.
  *
- * <p>What this type settles is the lifetime - one installation per sector, made and released by
- * {@link MapLayerInstallations} - so that each holder moving in is a small change against a lifetime
- * that is already right, rather than one change inventing the lifetime and moving a cache into it at
- * once.
+ * <p>What this type settles is the lifetime: one installation per sector, made and released by
+ * {@link MapLayerInstallations}. Every holder it gathers is emptied by that one release, so a holder
+ * needs no discard of its own and no way to be told which sector it is now looking at.
  */
 public final class MapLayerInstallation {
 
