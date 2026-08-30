@@ -11,7 +11,7 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
+import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockEntityWithMarketInSystem;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockUnseatedMarket;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,16 +44,8 @@ final class PoliticalMapDiscoveryListenerTest {
 
         @Test
         void marksSystemStaleWhenDiscoveredEntityHasAMarket() {
-            // Build the market fully before the entity stub: mockMarketInSystem stubs
-            // internally, so nesting it inside when(...).thenReturn(...) would trip
-            // Mockito's unfinished-stubbing guard.
-            var marketMock = mockMarketInSystem("sys");
-            var entityMock = mock(SectorEntityToken.class);
 
-            when(entityMock.getMarket())
-                .thenReturn(marketMock);
-
-            listener.reportEntityDiscovered(entityMock);
+            listener.reportEntityDiscovered(mockEntityWithMarketInSystem("sys"));
 
             assertThat(refreshBoard.drainStaleGroupingSystemIds())
                 .containsExactly("sys");

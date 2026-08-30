@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.refresh;
 
+import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
@@ -8,18 +9,44 @@ import static org.mockito.Mockito.when;
 
 /**
  * Shared market mocks for the tests around {@link MarketPoliticsRefresh} and the listeners that
- * funnel through it: a market seated in a star system, and a market seated in none.
+ * funnel through it: a market seated in a star system, a market seated in none, and the entity a
+ * seated market hangs on.
  *
  * <p>One home for these because the seat is the only thing the refresh reads off a market, so
- * every suite here was stubbing the same two shapes by hand - and an "unseated" market that
+ * every suite here was stubbing the same shapes by hand - and an "unseated" market that
  * drifts between suites would have them pinning two different guards under one name.
  */
 public final class MarketRefreshFixtures {
 
+    private static final String ENTITY_ID = "entity";
     private static final String MARKET_ID = "mkt";
 
     // Fixtures only; never instantiated.
     private MarketRefreshFixtures() {
+    }
+
+    /**
+     * An entity carrying a market seated in the named star system - what a discovery announces,
+     * since that event names the entity rather than the market hanging on it. The entity's own id
+     * is fixed, since it reaches only the log line.
+     *
+     * @param systemId the seated system's id, which is what a mark names
+     * @return an entity mock holding a market with that seat
+     */
+    public static SectorEntityToken mockEntityWithMarketInSystem(String systemId) {
+
+        // The market is built out fully before it is handed to a stub: the call below stubs
+        // internally, so nesting it inside when(...).thenReturn(...) would trip Mockito's
+        // unfinished-stubbing guard.
+        var marketMock = mockMarketInSystem(systemId);
+        var entityMock = mock(SectorEntityToken.class);
+
+        when(entityMock.getId())
+            .thenReturn(ENTITY_ID);
+        when(entityMock.getMarket())
+            .thenReturn(marketMock);
+
+        return entityMock;
     }
 
     /**

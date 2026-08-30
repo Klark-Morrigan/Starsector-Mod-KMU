@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonisationListener;
@@ -13,6 +15,12 @@ import kmu.starsector.listeners.RecordingListenerManager;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+
+import java.util.function.Consumer;
+
+import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures
+    .mockEntityWithMarketInSystem;
+import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -27,6 +35,17 @@ import static org.mockito.Mockito.when;
  * Pins the political map's per-frame watcher as a transient script built fresh per load over a
  * tracker flushed of whatever the previous save left in it, and the taking back of every live
  * repaint when the layers are switched off.
+ *
+ * <p>And, for each listener install, that the listener is built against the sector it is being
+ * installed on. Every one of them reports onto that sector's own refresh board, so an installer
+ * handing over anything else - or nothing - would leave the listener marking whichever sector the
+ * player happens to have loaded. The listener suites cannot see that: each builds its own listener,
+ * so the one thing they never exercise is the argument the installer passes.
+ *
+ * <p>Read by driving the registered listener and looking for the mark on the installed sector's
+ * board, rather than by reaching into the listener for the sector it kept. What the wiring is for
+ * is where the mark lands, and a listener that held the right sector and marked elsewhere would
+ * pass an assertion about the field.
  */
 class PoliticalMapInstallerTest {
 
@@ -103,6 +122,77 @@ class PoliticalMapInstallerTest {
     }
 
     @Nested
+    class InstallPoliticalMapDiscoveryListener {
+
+        @Test
+        void buildsTheListenerAgainstTheSectorItIsInstalledOn() {
+
+            var installed = installListenerOn(
+                PoliticalMapDiscoveryListener.class,
+                PoliticalMapInstaller::installPoliticalMapDiscoveryListener);
+
+            installed.listener().reportEntityDiscovered(mockEntityWithMarketInSystem("sys"));
+
+            assertThat(installed.refreshBoard().drainStaleGroupingSystemIds())
+                .containsExactly("sys");
+        }
+    }
+
+    @Nested
+    class InstallPoliticalMapColonySizeListener {
+
+        @Test
+        void buildsTheListenerAgainstTheSectorItIsInstalledOn() {
+
+            var installed = installListenerOn(
+                PoliticalMapColonySizeListener.class,
+                PoliticalMapInstaller::installPoliticalMapColonySizeListener);
+
+            installed.listener().reportColonySizeChanged(mockMarketInSystem("sys"), 3);
+
+            assertThat(installed.refreshBoard().drainStaleGroupingSystemIds())
+                .containsExactly("sys");
+        }
+    }
+
+    @Nested
+    class InstallPoliticalMapDecivListener {
+
+        @Test
+        void buildsTheListenerAgainstTheSectorItIsInstalledOn() {
+
+            var installed = installListenerOn(
+                PoliticalMapDecivListener.class,
+                PoliticalMapInstaller::installPoliticalMapDecivListener);
+
+            installed.listener().reportColonyDecivilized(mockMarketInSystem("sys"), false);
+
+            assertThat(installed.refreshBoard().drainStaleGroupingSystemIds())
+                .containsExactly("sys");
+        }
+    }
+
+    @Nested
+    class InstallPoliticalMapColonisationListener {
+
+        @Test
+        void buildsTheListenerAgainstTheSectorItIsInstalledOn() {
+
+            var installed = installListenerOn(
+                PoliticalMapColonisationListener.class,
+                PoliticalMapInstaller::installPoliticalMapColonisationListener);
+
+            // Abandonment rather than founding, since it names the market directly: the founding
+            // callback carries a planet the market has to be hung on first, and which of the two
+            // provoked the mark is not what this case is about.
+            installed.listener().reportPlayerAbandonedColony(mockMarketInSystem("sys"));
+
+            assertThat(installed.refreshBoard().drainStaleGroupingSystemIds())
+                .containsExactly("sys");
+        }
+    }
+
+    @Nested
     class UninstallAll {
 
         @Test
@@ -166,5 +256,38 @@ class PoliticalMapInstallerTest {
             assertThatCode(watcherRemovalOnNullSector::run)
                 .doesNotThrowAnyException();
         }
+    }
+
+    // Stands one listener up the way a load does - on a sector that has the map machinery
+    // installed - and hands back the registered listener beside the board it is supposed to report
+    // on.
+    //
+    // The sector itself is deliberately not handed back. What a case reads is whether the mark
+    // found its way to that sector's board, and a case holding the sector could reach the board a
+    // second way and assert against whichever one the production happened to pick.
+    private static <T> InstalledListener<T> installListenerOn(
+            Class<T> listenerClass,
+            Consumer<SectorAPI> installListener) {
+
+        var listenerManager = new RecordingListenerManager();
+        var sectorMock = mock(SectorAPI.class);
+
+        when(sectorMock.getListenerManager())
+            .thenReturn(listenerManager);
+
+        var refreshBoard = MapLayerInstallations
+            .installMachineryOn(sectorMock)
+            .resolveRefreshBoard();
+
+        installListener.accept(sectorMock);
+
+        return new InstalledListener<>(
+            listenerClass.cast(listenerManager.getAddedListeners().get(0)),
+            refreshBoard);
+    }
+
+    // One installed listener and the board of the sector it went onto, which is the pair every
+    // case here drives: the event goes into the first and the mark is looked for in the second.
+    private record InstalledListener<T>(T listener, MapLayerRefreshBoard refreshBoard) {
     }
 }

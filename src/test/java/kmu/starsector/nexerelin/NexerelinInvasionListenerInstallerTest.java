@@ -3,17 +3,25 @@ package kmu.starsector.nexerelin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
+import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapMarketTransferListener;
+import kmu.starsector.listeners.RecordingListenerManager;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import java.util.List;
+
 import static kmlib.testfixtures.starsector.settings.StubbedModIds.NEXERELIN;
 
+import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -30,6 +38,11 @@ import static org.mockito.Mockito.when;
  * implements a Nex interface - persisting it would fail to load if Nex were removed.
  * The mod-enabled gate is what makes the Nex dependency optional, so the disabled case
  * is pinned alongside the install.
+ *
+ * <p>And that the listener is built against the sector it is being installed on, as its
+ * vanilla-driven siblings are: it reports a conquest onto that sector's own refresh board, so an
+ * installer handing over anything else would leave it marking whichever sector the player happens
+ * to have loaded.
  */
 final class NexerelinInvasionListenerInstallerTest {
 
@@ -53,6 +66,42 @@ final class NexerelinInvasionListenerInstallerTest {
                 verify(listenerManagerMock)
                         .addListener(any(PoliticalMapMarketTransferListener.class), eq(true));
             }
+        }
+
+        @Test
+        void buildsTheListenerAgainstTheSectorItIsInstalledOn() {
+            // Read by driving the registered listener and looking for the mark on the installed
+            // sector's board: what the wiring is for is where a conquest lands, and a listener
+            // holding the right sector while marking elsewhere would pass a check on the field.
+            //
+            // The machinery is installed and the listener driven outside the Global block, since
+            // both touch classes whose static logger would come back null if it were resolved
+            // while Global is mocked.
+            var listenerManager = new RecordingListenerManager();
+            var sectorMock = buildSectorWith(listenerManager);
+
+            var refreshBoard = MapLayerInstallations
+                .installMachineryOn(sectorMock)
+                .resolveRefreshBoard();
+
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                stubModEnabled(globalMock, true);
+
+                NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
+            }
+
+            ((PoliticalMapMarketTransferListener) listenerManager.getAddedListeners().get(0))
+                .reportMarketTransfered(
+                    mockMarketInSystem("sys"),
+                    mock(FactionAPI.class),
+                    mock(FactionAPI.class),
+                    true,
+                    true,
+                    List.of(),
+                    1.0f);
+
+            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+                .containsExactly("sys");
         }
 
         @Test
