@@ -223,18 +223,30 @@ public final class ContinentCoastOverlay {
         var water = settings.continentCoastalVoidColour;
         var edge = settings.continentCoastalVoidEdge;
 
+        // The solid fills as ONE sheet rather than one layer over another. The coast and the
+        // spans both hold the bays where a reach runs into water a span closed, and a wall
+        // cannot be laid flush to keep them apart - it stands both its sides half a channel off
+        // its own line, which would leave a strip along every reach that nothing draws. So the
+        // overlap is kept and made free: filled once over the union, water two of them hold
+        // reads exactly as water one of them holds.
+        var sheet = new ArrayList<List<double[]>>();
+
         if (settings.showContinentCoastFill) {
-            coast.paintPocketFills(g2, water, edge);
+            sheet.addAll(coast.collectPocketRings());
         }
         if (settings.showContinentInletFill) {
-            MapPainting.paintRingFills(
-                g2, inletPockets, water, settings.voidFillOpacity, edge);
-        }
-        if (settings.showContinentLakeFill) {
-            coast.paintLakeFills(g2, water, edge);
+            sheet.addAll(inletPockets);
         }
         if (settings.showContinentPuddleFill) {
-            coast.paintPuddleFills(g2, water, edge);
+            sheet.addAll(coast.collectPuddleRings());
+        }
+        MapPainting.paintMergedRingFills(g2, sheet, water, settings.voidFillOpacity, edge);
+
+        // The lake margins stay their own pass: a margin is an even-odd shape - the water
+        // between the drawn shore and the cells' arcs, with the shore's inside left bare - and
+        // that ring cannot join a sheet wound to make overlaps count.
+        if (settings.showContinentLakeFill) {
+            coast.paintLakeFills(g2, water, edge);
         }
     }
 

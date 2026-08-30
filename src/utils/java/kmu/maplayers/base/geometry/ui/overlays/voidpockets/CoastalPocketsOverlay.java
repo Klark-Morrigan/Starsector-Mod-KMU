@@ -125,6 +125,26 @@ public final class CoastalPocketsOverlay {
     }
 
     /**
+     * The void behind the coast as bare rings, for a construction that fills it together with
+     * water of its own rather than on its own.
+     *
+     * @return one ring per outline, empty until {@link #findPockets} has been asked for
+     */
+    public List<List<double[]>> collectPocketRings() {
+        return MapPainting.collectPocketOutlines(pockets);
+    }
+
+    /**
+     * Every puddle's water edge, for the same reason.
+     *
+     * @return one ring per puddle
+     */
+    public List<List<double[]>> collectPuddleRings() {
+
+        return traced.puddles().stream().map(Coastlines.Puddle::waterEdge).toList();
+    }
+
+    /**
      * Draws each coast, over the top of everything.
      *
      * @param g2     what to draw with
@@ -179,11 +199,7 @@ public final class CoastalPocketsOverlay {
     public void paintPuddleFills(Graphics2D g2, Color fill, Color edge) {
 
         MapPainting.paintRingFills(
-            g2,
-            traced.puddles().stream().map(Coastlines.Puddle::waterEdge).toList(),
-            fill,
-            settings.voidFillOpacity,
-            edge);
+            g2, collectPuddleRings(), fill, settings.voidFillOpacity, edge);
     }
 
     /**

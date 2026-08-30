@@ -120,6 +120,57 @@ public final class MapPainting {
     }
 
     /**
+     * The same rings drawn as one sheet: one translucent body over all of them together, with
+     * every ring's edge still on top.
+     *
+     * <p>For a construction whose fills are the same water in the same colour. Filled ring by
+     * ring, two that overlap lay one translucent body over another and the shared part comes
+     * out darker - so water two constructions both hold reads as a third kind of thing, and the
+     * darker patch moves whenever either is switched off. Filled once over the union, the
+     * overlap costs nothing and the switches become what they claim to be.
+     *
+     * <p>Wound non-zero, which is what makes the union a union: the rings all wind the same way,
+     * so a point inside two of them counts twice and is inside either way. Even-odd would punch
+     * the overlap back out - the rule {@link #paintBetweenRings} wants and this one must not
+     * have.
+     *
+     * <p>The edges stay per ring. They say where each piece of void begins and ends, which is
+     * what a reader judging the construction is looking at; only the bodies had to merge.
+     *
+     * @param g2    what to draw with
+     * @param rings the closed outlines to fill as one
+     * @param fill  what to fill them with
+     * @param alpha how solid the sheet is
+     * @param edge  what to outline each ring in
+     */
+    public static void paintMergedRingFills(
+            Graphics2D g2,
+            List<List<double[]>> rings,
+            Color fill,
+            int alpha,
+            Color edge) {
+
+        if (rings.isEmpty()) {
+            return;
+        }
+
+        var sheet = new Path2D.Double(Path2D.WIND_NON_ZERO);
+
+        for (var ring : rings) {
+            sheet.append(buildPath(ring), false);
+        }
+
+        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
+        g2.setColor(applyAlpha(fill, alpha));
+        g2.fill(sheet);
+        g2.setColor(applyAlpha(edge, MapLook.OPAQUE_ALPHA));
+
+        for (var ring : rings) {
+            g2.draw(buildPath(ring));
+        }
+    }
+
+    /**
      * The same fill for pockets, which carry their outlines rather than being one.
      *
      * @param g2      what to draw with
@@ -138,9 +189,17 @@ public final class MapPainting {
         paintRingFills(g2, collectPocketOutlines(pockets), fill, alpha, edge);
     }
 
-    // Every outline of every pocket, flattened - which is what filling them asks for, a
-    // pocket's grouping of its own outlines mattering to what made them rather than to paint.
-    private static List<List<double[]>> collectPocketOutlines(List<WalledPocket> pockets) {
+    /**
+     * Every outline of every pocket, flattened.
+     *
+     * <p>What filling them asks for: a pocket's grouping of its own outlines matters to what
+     * made them rather than to paint. Shared because a construction gathering several kinds of
+     * fill into one sheet needs its pockets in the same form as its other rings.
+     *
+     * @param pockets the pockets
+     * @return their outlines, in the order the pockets were given
+     */
+    public static List<List<double[]>> collectPocketOutlines(List<WalledPocket> pockets) {
 
         var outlines = new ArrayList<List<double[]>>(pockets.size());
 
