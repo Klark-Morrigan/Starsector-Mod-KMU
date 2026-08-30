@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.List;
@@ -50,17 +49,7 @@ class MapPaintingTest {
             // translucent bodies and comes out darker, so water two constructions both hold
             // reads as a third kind of thing - and the patch moves whenever either is switched
             // off. Filled once over the union, the overlap costs nothing.
-            var canvas = new BufferedImage(CANVAS, CANVAS, BufferedImage.TYPE_INT_RGB);
-            var g2 = openCanvas(canvas);
-
-            MapPainting.paintMergedRingFills(
-                g2,
-                List.of(LOWER_SQUARE, UPPER_SQUARE),
-                Color.RED,
-                TRANSLUCENT,
-                Color.RED);
-
-            g2.dispose();
+            var canvas = paintAsOneSheet(List.of(LOWER_SQUARE, UPPER_SQUARE));
 
             assertThat(readPixel(canvas, IN_BOTH))
                 .as("the shared part is not the shade of a single body")
@@ -73,13 +62,7 @@ class MapPaintingTest {
 
             // Guards the assertion above from passing on an empty canvas: three equal pixels
             // prove nothing if all three are the colour that was there to begin with.
-            var canvas = new BufferedImage(CANVAS, CANVAS, BufferedImage.TYPE_INT_RGB);
-            var g2 = openCanvas(canvas);
-
-            MapPainting.paintMergedRingFills(
-                g2, List.of(LOWER_SQUARE), Color.RED, TRANSLUCENT, Color.RED);
-
-            g2.dispose();
+            var canvas = paintAsOneSheet(List.of(LOWER_SQUARE));
 
             assertThat(readPixel(canvas, IN_LOWER_ONLY))
                 .as("a filled ring is still the backdrop colour")
@@ -87,10 +70,12 @@ class MapPaintingTest {
         }
     }
 
-    // A canvas with a known backdrop and no antialiasing, so a pixel reads as exactly the
+    // The rings painted as one sheet on a fresh canvas, which is the whole of what both tests
+    // set up. The backdrop is known and antialiasing is off, so a pixel reads as exactly the
     // colour that was laid on it rather than as a blend with its neighbours.
-    private static Graphics2D openCanvas(BufferedImage canvas) {
+    private static BufferedImage paintAsOneSheet(List<List<double[]>> rings) {
 
+        var canvas = new BufferedImage(CANVAS, CANVAS, BufferedImage.TYPE_INT_RGB);
         var g2 = canvas.createGraphics();
 
         g2.setRenderingHint(
@@ -98,7 +83,12 @@ class MapPaintingTest {
         g2.setColor(Color.WHITE);
         g2.fillRect(0, 0, CANVAS, CANVAS);
 
-        return g2;
+        MapPainting.paintMergedRingFills(
+            g2, rings, FillLook.paintedIn(Color.RED, TRANSLUCENT));
+
+        g2.dispose();
+
+        return canvas;
     }
 
     private static int readPixel(BufferedImage canvas, int[] at) {

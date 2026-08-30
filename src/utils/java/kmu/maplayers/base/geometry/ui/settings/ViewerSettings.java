@@ -222,9 +222,12 @@ public final class ViewerSettings {
     // rather than another view of this one - and it is only meaningful with the coasts traced,
     // since the coastlines are what decides which bridges survive.
     //
-    // The fill is the water those spans shut in against the coast, which is a fill of the same
-    // water the exterior shores' is: the two come out of one walk and are split by the wall
-    // each piece closed on, so nothing is drawn twice and nothing between them is left blank.
+    // The fill is the water those spans shut in, found with the spans as the only walls. It
+    // covers the exterior shores' own fill where the two meet - a bay a reach runs into is
+    // water a span closed as well - and that overlap is deliberate: the coast cannot be laid
+    // as a wall to divide them without holding a strip open along every reach that nothing
+    // would draw. Both are painted as one sheet instead, so water two of them hold reads
+    // exactly as water one of them holds.
     public boolean showContinentBridges;
     public boolean showContinentInletFill;
 

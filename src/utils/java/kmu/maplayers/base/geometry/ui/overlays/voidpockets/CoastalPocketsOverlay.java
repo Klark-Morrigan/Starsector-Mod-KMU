@@ -5,6 +5,7 @@ import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.WalledPocket;
+import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 
@@ -121,7 +122,7 @@ public final class CoastalPocketsOverlay {
      */
     public void paintPocketFills(Graphics2D g2, Color fill, Color edge) {
 
-        MapPainting.paintPocketFills(g2, pockets, fill, settings.voidFillOpacity, edge);
+        MapPainting.paintPocketFills(g2, pockets, resolveWaterLook(fill, edge));
     }
 
     /**
@@ -135,7 +136,13 @@ public final class CoastalPocketsOverlay {
     }
 
     /**
-     * Every puddle's water edge, for the same reason.
+     * Every puddle's whole water, as the ring that bounds it.
+     *
+     * <p>The whole of it, where a lake gives up its own {@link #paintLakeFills margin}, because
+     * the two say different things. A lake's open water is left to the backdrop the way the
+     * sector's open void is - the margin marks what the drawn shore conceded against the cells'
+     * true edge. A puddle has no shore to concede anything, and water drawn as backdrop reads
+     * as open void, which is exactly what a puddle is not.
      *
      * @return one ring per puddle
      */
@@ -177,29 +184,8 @@ public final class CoastalPocketsOverlay {
                 g2,
                 lake.waterEdge(),
                 lake.shore().drawnRing(),
-                fill,
-                settings.voidFillOpacity,
-                edge);
+                resolveWaterLook(fill, edge));
         }
-    }
-
-    /**
-     * Draws every puddle filled up, beneath the cells: the whole of its water as taken.
-     *
-     * <p>Solid where a lake's fill is a margin, because the two say different things. A
-     * lake's open water is left to the backdrop the way the sector's open void is - the
-     * margin marks what the drawn shore conceded against the cells' true edge. A puddle has
-     * no shore to concede anything, and water drawn as backdrop reads as open void, which is
-     * exactly what a puddle is not.
-     *
-     * @param g2   what to draw with
-     * @param fill what to fill the puddles with
-     * @param edge what to outline them in
-     */
-    public void paintPuddleFills(Graphics2D g2, Color fill, Color edge) {
-
-        MapPainting.paintRingFills(
-            g2, collectPuddleRings(), fill, settings.voidFillOpacity, edge);
     }
 
     /**
@@ -230,6 +216,13 @@ public final class CoastalPocketsOverlay {
      *
      * @param g2 what to draw with
      */
+    // A construction's own colours at the map's own fill opacity. The colours are per
+    // construction and the opacity is one slider over every fill there is, so the pair is only
+    // assembled where both are known - which is here, and not in either construction.
+    private FillLook resolveWaterLook(Color fill, Color edge) {
+        return new FillLook(fill, settings.voidFillOpacity, edge);
+    }
+
     public void paintDroppedStretches(Graphics2D g2) {
 
         if (!settings.showDroppedStretches) {

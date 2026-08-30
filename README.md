@@ -39,7 +39,7 @@ offers and how the overlay is drawn.
 | Klark Morrigan's Library (KMLib) | Klark Morrigan | Required | Shared library; version pinned in `mod_info.json` |
 | [LunaLib](https://fractalsoftworks.com/forum/index.php?topic=25658) | Lukas04 | Required | Settings framework backing KMU's configuration tabs |
 | [LazyLib](https://fractalsoftworks.com/forum/index.php?topic=5444) | LazyWizard | Required | Utility library |
-| [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | LazyWizard | Optional | Enables `kmu_` developer commands (e.g. `kmu_mcm_open`); the map-layer sidebar and the map's hover feedback both stand down while its overlay is up |
+| [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | LazyWizard | Optional | Enables `kmu_` developer commands (e.g. `kmu_mcm_open`, which opens the unfinished Market Condition Manager and only once that feature is switched on); the map-layer sidebar and the map's hover feedback both stand down while its overlay is up |
 | [Nexerelin](https://fractalsoftworks.com/forum/index.php?topic=9175) | Histidine | Optional | Adds the alliances view to the political map |
 | [Random Assortment of Things](https://fractalsoftworks.com/forum/index.php?topic=26260) | Lukas04 & SnazzyPantsMcGee | Optional | Detected, with its own mini-map setting, by the compatibility mode on the `Map - Compatibility` tab |
 

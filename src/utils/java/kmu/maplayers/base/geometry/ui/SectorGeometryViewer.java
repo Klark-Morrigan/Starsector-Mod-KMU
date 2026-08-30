@@ -15,6 +15,7 @@ import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.UnboundedCells;
 import kmu.maplayers.base.geometry.VoidBridgeCache;
 import kmu.maplayers.base.geometry.output.SectorSvgWriter;
+import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.ui.overlays.NamedRegions;
@@ -745,9 +746,10 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
                 MapPainting.paintFilledShape(
                     g2,
                     MapPainting.buildPath(cell),
-                    settings.unboundedCellColour,
-                    settings.unboundedCellOpacity,
-                    settings.unboundedCellEdge);
+                    new FillLook(
+                        settings.unboundedCellColour,
+                        settings.unboundedCellOpacity,
+                        settings.unboundedCellEdge));
             }
 
             voidBridges.paintFills(g2);
@@ -791,13 +793,14 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
                 MapPainting.paintFilledShape(
                     g2,
                     MapPainting.buildPath(entry.getValue().fillPolygon()),
-                    settings.jitterUnowned
-                        ? MapPainting.jitterBrightness(settings.unownedCellColour,
-                            entry.getKey().hashCode(),
-                            settings.jitterStrength)
-                        : settings.unownedCellColour,
-                    settings.unownedCellOpacity,
-                    settings.unownedCellEdge);
+                    new FillLook(
+                        settings.jitterUnowned
+                            ? MapPainting.jitterBrightness(settings.unownedCellColour,
+                                entry.getKey().hashCode(),
+                                settings.jitterStrength)
+                            : settings.unownedCellColour,
+                        settings.unownedCellOpacity,
+                        settings.unownedCellEdge));
             }
         }
 
@@ -817,9 +820,10 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
                 MapPainting.paintFilledShape(
                     g2,
                     cluster,
-                    settings.resolveOwnedColour(entry.getKey()),
-                    settings.ownedCellOpacity,
-                    settings.ownedCellEdge);
+                    new FillLook(
+                        settings.resolveOwnedColour(entry.getKey()),
+                        settings.ownedCellOpacity,
+                        settings.ownedCellEdge));
             }
         }
 

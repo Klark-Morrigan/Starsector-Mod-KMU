@@ -4,6 +4,7 @@ import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidBridgeCache;
 import kmu.maplayers.base.geometry.VoidBridgePockets;
+import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
@@ -90,9 +91,10 @@ public final class VoidBridgesOverlay {
         MapPainting.paintRingFills(
             g2,
             captured,
-            settings.inlandVoidColour,
-            settings.voidFillOpacity,
-            settings.inlandVoidEdge);
+            new FillLook(
+                settings.inlandVoidColour,
+                settings.voidFillOpacity,
+                settings.inlandVoidEdge));
     }
 
     /**

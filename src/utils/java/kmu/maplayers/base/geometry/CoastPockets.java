@@ -25,10 +25,10 @@ import java.util.List;
  * hands back is already inset from the reach that closed it. Nothing is cut, and
  * {@link CoastPocketFaults} measures rather than corrects.
  *
- * <p>Which holes are the coast's is read off {@link VoidHole#walledBy}. Bridges and coast
- * reaches are walls of one kind and the trace closes both in one walk, so the wall a hole
- * closes on is the only thing that distinguishes what shut it in.
- *
+ * <p>Which holes are the coast's is read off {@link VoidHole#walledBy}, through
+ * {@link WalledVoid}. Bridges and coast reaches are walls of one kind and the trace closes both
+ * in one walk, so the wall a hole closes on is the only thing that distinguishes what shut it
+ * in.
  */
 public final class CoastPockets {
 

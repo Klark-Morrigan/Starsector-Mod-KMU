@@ -76,16 +76,11 @@ public final class MapPainting {
     // Shared rather than repeated per layer so an owner's cell, an unowned cell and the
     // partition underneath read as the same kind of thing in different colours - which is the
     // only reason it is possible to tell at a glance which of them a shape belongs to.
-    public static void paintFilledShape(
-            Graphics2D g2,
-            Path2D shape,
-            Color fill,
-            int fillAlpha,
-            Color edge) {
+    public static void paintFilledShape(Graphics2D g2, Path2D shape, FillLook look) {
 
-        g2.setColor(applyAlpha(fill, fillAlpha));
+        g2.setColor(applyAlpha(look.fill(), look.alpha()));
         g2.fill(shape);
-        g2.setColor(applyAlpha(edge, MapLook.OPAQUE_ALPHA));
+        g2.setColor(applyAlpha(look.edge(), MapLook.OPAQUE_ALPHA));
         g2.draw(shape);
     }
 
@@ -101,21 +96,17 @@ public final class MapPainting {
      *
      * @param g2    what to draw with
      * @param rings the closed outlines to fill
-     * @param fill  what to fill them with
-     * @param alpha how solid the body is
-     * @param edge  what to outline them in
+     * @param look  how to paint each of them
      */
     public static void paintRingFills(
             Graphics2D g2,
             List<List<double[]>> rings,
-            Color fill,
-            int alpha,
-            Color edge) {
+            FillLook look) {
 
         g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
 
         for (var ring : rings) {
-            paintFilledShape(g2, buildPath(ring), fill, alpha, edge);
+            paintFilledShape(g2, buildPath(ring), look);
         }
     }
 
@@ -139,34 +130,38 @@ public final class MapPainting {
      *
      * @param g2    what to draw with
      * @param rings the closed outlines to fill as one
-     * @param fill  what to fill them with
-     * @param alpha how solid the sheet is
-     * @param edge  what to outline each ring in
+     * @param look  how to paint the sheet, whose edge colour outlines every ring
      */
     public static void paintMergedRingFills(
             Graphics2D g2,
             List<List<double[]>> rings,
-            Color fill,
-            int alpha,
-            Color edge) {
+            FillLook look) {
 
         if (rings.isEmpty()) {
             return;
         }
 
+        // Each ring built once and used twice - appended to the sheet, then stroked. Built
+        // again for the outlines, the two passes would flatten the same points a second time
+        // for a path that has to be identical to the first or the edge misses the body.
+        var paths = new ArrayList<Path2D>(rings.size());
         var sheet = new Path2D.Double(Path2D.WIND_NON_ZERO);
 
         for (var ring : rings) {
-            sheet.append(buildPath(ring), false);
+
+            var path = buildPath(ring);
+
+            paths.add(path);
+            sheet.append(path, false);
         }
 
         g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
-        g2.setColor(applyAlpha(fill, alpha));
+        g2.setColor(applyAlpha(look.fill(), look.alpha()));
         g2.fill(sheet);
-        g2.setColor(applyAlpha(edge, MapLook.OPAQUE_ALPHA));
+        g2.setColor(applyAlpha(look.edge(), MapLook.OPAQUE_ALPHA));
 
-        for (var ring : rings) {
-            g2.draw(buildPath(ring));
+        for (var path : paths) {
+            g2.draw(path);
         }
     }
 
@@ -175,18 +170,14 @@ public final class MapPainting {
      *
      * @param g2      what to draw with
      * @param pockets the pockets, each of which may carry more than one outline
-     * @param fill    what to fill them with
-     * @param alpha   how solid the body is
-     * @param edge    what to outline them in
+     * @param look    how to paint each of them
      */
     public static void paintPocketFills(
             Graphics2D g2,
             List<WalledPocket> pockets,
-            Color fill,
-            int alpha,
-            Color edge) {
+            FillLook look) {
 
-        paintRingFills(g2, collectPocketOutlines(pockets), fill, alpha, edge);
+        paintRingFills(g2, collectPocketOutlines(pockets), look);
     }
 
     /**
@@ -223,17 +214,13 @@ public final class MapPainting {
      * @param g2    what to draw with
      * @param outer the ring the fill runs out to
      * @param inner the ring the fill stops at, its inside left bare
-     * @param fill  what to fill the margin with
-     * @param alpha how solid the body is
-     * @param edge  what to outline it in
+     * @param look  how to paint the margin
      */
     public static void paintBetweenRings(
             Graphics2D g2,
             List<double[]> outer,
             List<double[]> inner,
-            Color fill,
-            int alpha,
-            Color edge) {
+            FillLook look) {
 
         var margin = new Path2D.Double(Path2D.WIND_EVEN_ODD);
 
@@ -241,7 +228,7 @@ public final class MapPainting {
         margin.append(buildPath(inner), false);
 
         g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
-        paintFilledShape(g2, margin, fill, alpha, edge);
+        paintFilledShape(g2, margin, look);
     }
 
     // The one way a proposed line is drawn here: closed rings stroked at span weight in one

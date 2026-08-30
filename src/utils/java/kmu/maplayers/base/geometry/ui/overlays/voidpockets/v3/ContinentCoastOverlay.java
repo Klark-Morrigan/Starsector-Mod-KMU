@@ -8,6 +8,7 @@ import kmu.maplayers.base.geometry.PuddlePockets;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidBridgeCache;
 import kmu.maplayers.base.geometry.VoidBridgePockets;
+import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.ui.overlays.voidpockets.CoastalPocketsOverlay;
@@ -60,9 +61,9 @@ public final class ContinentCoastOverlay {
     // against rather than found while painting, since which ones survive is a question about
     // THAT trace and a frame that asked it again could answer about a different one.
     //
-    // Found whenever anything needs them rather than only when they are drawn, because they
-    // are a wall before they are a mark: the void behind the coast is worked out with them
-    // laid, so a walk without them runs a coast pocket through water a span is holding.
+    // Found while either half of them is wanted, because the spans and the water they hold are
+    // one construction seen twice - a span is a line saying "this much is held between these
+    // cells", and the fill is what a run of them closes around.
     private List<CellGap> inletSpans = List.of();
 
     // The spans laid across the puddles, held beside the trace whose puddles claimed them
@@ -133,35 +134,7 @@ public final class ContinentCoastOverlay {
             settings.parameters,
             settings.resolveContinentCoastRules()));
 
-        // Filtered against the coasts they were offered to, so which spans survive is a
-        // question about THIS trace rather than about the cells alone. Found while either half
-        // of them is wanted: the spans and the water they hold are one construction seen
-        // twice, exactly as the settled bridges and their fill are.
-        if (settings.showContinentBridges || settings.showContinentInletFill) {
-
-            inletSpans = ContinentBridges.findAnchoredBridges(
-                coast.getTrace(),
-                settings.parameters,
-                settings.resolveContinentBridgeRules());
-        }
-
-        // What those spans close around, from the construction the settled bridges' fill comes
-        // from. The spans are the only walls in that walk, so what comes back is the water a
-        // run of them holds, whole - and it lies over the coast's own fill where the two meet,
-        // which is how the settled map composes its two fills as well.
-        //
-        // Only what a span actually walled. The walk finds the water the cells closed unaided
-        // as well, and here that water is a lake or a puddle with a layer of its own - drawn
-        // from this list too it would be painted twice, and go on being painted with its own
-        // switch off.
-        if (settings.showContinentInletFill && !inletSpans.isEmpty()) {
-
-            inletPockets = VoidBridgePockets.findBridgeWalledPockets(
-                fixture.getSites(),
-                inletSpans,
-                settings.parameters,
-                settings.resolvePocketShaping());
-        }
+        findInletWater(fixture);
 
         // The void behind the coast, worked out by the same construction the settled coast's
         // fill comes from. Not a second way of arriving at the same thing: a coast reach is a
@@ -171,21 +144,7 @@ public final class ContinentCoastOverlay {
             coast.findPockets(fixture);
         }
 
-        // Read off the same trace the bridges are anchored on rather than worked out again,
-        // so what is drawn as eligible is what the search was actually offered. The two
-        // shores' frontages gather into one list under their own switches: they are drawn
-        // identically, and which shore a stretch belongs to is told by the line it sits on.
-        var eligible = new ArrayList<List<double[]>>();
-
-        if (settings.showContinentCoastFrontages) {
-            eligible.addAll(flattenFrontages(
-                CoastFrontages.collectBridgeFrontages(coast.getTrace())));
-        }
-        if (settings.showContinentLakeFrontages) {
-            eligible.addAll(flattenFrontages(
-                CoastFrontages.collectLakeFrontages(coast.getTrace())));
-        }
-        frontages = List.copyOf(eligible);
+        frontages = gatherEligibleFrontages();
 
         // Claimed from the settled search rather than searched for again: these ARE the
         // settled bridges asked about smaller water, at the settled reach, so the cache hands
@@ -240,7 +199,8 @@ public final class ContinentCoastOverlay {
         if (settings.showContinentPuddleFill) {
             sheet.addAll(coast.collectPuddleRings());
         }
-        MapPainting.paintMergedRingFills(g2, sheet, water, settings.voidFillOpacity, edge);
+        MapPainting.paintMergedRingFills(
+            g2, sheet, new FillLook(water, settings.voidFillOpacity, edge));
 
         // The lake margins stay their own pass: a margin is an even-odd shape - the water
         // between the drawn shore and the cells' arcs, with the shore's inside left bare - and
@@ -327,6 +287,61 @@ public final class ContinentCoastOverlay {
                     frontage.get(0), MapLook.FRONTAGE_DOT_RADIUS));
             }
         }
+    }
+
+    // The spans this construction lays over the water its coasts leave, and what they close
+    // around.
+    //
+    // Filtered against the coasts they were offered to, so which spans survive is a question
+    // about THIS trace rather than about the cells alone.
+    //
+    // What they close around comes from the construction the settled bridges' fill comes from,
+    // with the spans as the only walls - so what comes back is the water a run of them holds,
+    // whole. Only what a span actually walled, though: that walk finds the water the cells
+    // closed unaided as well, and here that water is a lake or a puddle with a layer of its
+    // own, which drawn from this list too would be painted twice and go on being painted with
+    // its own switch off.
+    private void findInletWater(SectorFixture fixture) {
+
+        if (!settings.showContinentBridges && !settings.showContinentInletFill) {
+            return;
+        }
+
+        inletSpans = ContinentBridges.findAnchoredBridges(
+            coast.getTrace(),
+            settings.parameters,
+            settings.resolveContinentBridgeRules());
+
+        if (!settings.showContinentInletFill || inletSpans.isEmpty()) {
+            return;
+        }
+
+        inletPockets = VoidBridgePockets.findBridgeWalledPockets(
+            fixture.getSites(),
+            inletSpans,
+            settings.parameters,
+            settings.resolvePocketShaping());
+    }
+
+    // The stretches a span was allowed to anchor on, read off the same trace the spans are
+    // anchored on rather than worked out again - so what is drawn as eligible is what the
+    // search was actually offered.
+    //
+    // The two shores' gather into one list under their own switches: they are drawn
+    // identically, and which shore a stretch belongs to is told by the line it sits on.
+    private List<List<double[]>> gatherEligibleFrontages() {
+
+        var eligible = new ArrayList<List<double[]>>();
+
+        if (settings.showContinentCoastFrontages) {
+            eligible.addAll(flattenFrontages(
+                CoastFrontages.collectBridgeFrontages(coast.getTrace())));
+        }
+        if (settings.showContinentLakeFrontages) {
+            eligible.addAll(flattenFrontages(
+                CoastFrontages.collectLakeFrontages(coast.getTrace())));
+        }
+        return List.copyOf(eligible);
     }
 
     // Both shores' eligible stretches as the flat list the drawing walks - by-cell grouping
