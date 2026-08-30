@@ -2,7 +2,6 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
-import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
@@ -34,8 +33,8 @@ import java.util.List;
  * which is also the way out of a clash with a screen's own bindings.
  *
  * <p>Whether the sidebar is live at all is settled here too, since only half of that answer differs between
- * screens: a host says whether its own screen is up, and standing down for a console that has taken the
- * keyboard is the same rule wherever the panel draws.
+ * screens: a host says whether its own screen is up, and standing down for whatever else has claimed the
+ * screen is the same rule wherever the panel draws.
  *
  * <p>The controller is replaced on each load rather than mutated, because the two folds a panel can open at
  * are exactly the two constructors the widget already offers, so no reach into the collapse animation is
@@ -54,9 +53,9 @@ public abstract class BaseSidebarHost implements SidebarHost {
     // untouched.
     private final ActiveLayerSelection layerSelection;
 
-    // Whether a console has taken the keyboard this frame. Handed in rather than read from the console mod
-    // here, so a host depends on the question and not on an optional mod.
-    private final ConsoleCommandsOverlay consoleOverlay;
+    // Whether anything else has claimed the screen this frame. Handed in rather than composed here, so a
+    // host depends on the one question and not on which things can answer it - among them an optional mod.
+    private final ScreenClaim screenClaim;
 
     // The panel's scroll and collapse state. Seeded from the fold selection at construction so the panel is
     // safe to draw before any save is loaded, then replaced per load by restoreFoldFromSave.
@@ -65,11 +64,11 @@ public abstract class BaseSidebarHost implements SidebarHost {
     protected BaseSidebarHost(
             SidebarFoldSelection foldSelection,
             ActiveLayerSelection layerSelection,
-            ConsoleCommandsOverlay consoleOverlay) {
+            ScreenClaim screenClaim) {
 
         this.foldSelection = foldSelection;
         this.layerSelection = layerSelection;
-        this.consoleOverlay = consoleOverlay;
+        this.screenClaim = screenClaim;
         // The seed takes the library's own balance rather than the player's, being the one controller
         // nothing can be heard through: a host is a process-lifetime singleton built before any sector
         // exists, so no panel is on screen for a pointer to reach until the load below replaces it. What
@@ -120,28 +119,24 @@ public abstract class BaseSidebarHost implements SidebarHost {
     }
 
     /**
-     * Whether the sidebar is live on this host's screen this frame: its screen is showing and no console
-     * overlay has the keyboard.
+     * Whether the sidebar is live on this host's screen this frame: its screen is showing and nothing else
+     * has claimed the screen. What can claim it, and why any of it stands the whole panel down, is
+     * {@link ScreenClaim}'s.
      *
      * <p>Composed here rather than left to each host because this one answer gates the draw, the input
-     * routing and the hit-test alike - three readings that would each have to remember the console for
+     * routing and the hit-test alike - three readings that would each have to remember the claim for
      * themselves, and a further screen a further chance to forget it. What differs per screen is only
      * {@link #isHostScreenShowing()}.
-     *
-     * <p>A console stands the whole panel down, which is what frees the layer shortcut keys to type rather
-     * than switch tabs, and takes the panel off a console overlay it would otherwise cover: the sidebar
-     * composites after the entire core UI, so nothing drawn by a panel inside it can reach over the
-     * sidebar. Hiding is also the better look of the two, a console dimming its own backdrop.
      *
      * @return whether the sidebar draws and routes on this host's screen this frame
      */
     @Override
     public final boolean isOverlayShowing() {
-        // Cheapest first rather than likeliest first: a console read is a settled flag over a static
-        // holder, while a screen read walks live widgets, so this order can only ever skip the dearer of
-        // the two. The likelier order would be the reverse - the panel's screens are off far more often
-        // than a console is up - but it would save a field read to spend a tree walk.
-        return !consoleOverlay.isOpen() && isHostScreenShowing();
+        // The claim is asked first because it is the cheaper of the two on the frames that matter: it
+        // settles the console with a field read, while every screen read here walks live widgets. The
+        // likelier order would be the reverse - the panel's screens are off far more often than anything
+        // claims them - but it would spend a walk to save a read.
+        return !screenClaim.isScreenClaimed() && isHostScreenShowing();
     }
 
     /**

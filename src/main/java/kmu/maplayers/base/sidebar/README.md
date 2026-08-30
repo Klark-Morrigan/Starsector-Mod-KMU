@@ -56,26 +56,27 @@ and the tag filter uses `Q` and `Ctrl+S`. The defaults (`N`, `P`) avoid all of t
 LunaLib Keycode fields are the way out of any clash a mod's intel item introduces.
 
 Only the *screen* half of that gate is per-host. `BaseSidebarHost.isOverlayShowing()` is final and
-composed - `!consoleOverlay.isOpen() && isHostScreenShowing()` - because the one answer gates the
-draw, the input routing and the hit-test alike, and ANDing the console read at each of the three
-would be three chances to forget it. The console is asked first, so a screen read that walks live
-widgets is skipped while the panel is standing down anyway.
+composed - `!screenClaim.isScreenClaimed() && isHostScreenShowing()` - because the one answer gates
+the draw, the input routing and the hit-test alike, and ANDing the claim at each of the three would
+be three chances to forget it. The claim is asked first, so a screen read that walks live widgets is
+skipped while the panel is standing down anyway.
 
-A text-entry console stands the sidebar down entirely rather than being ordered above it: the panel
-draws after the whole core UI (see below), so nothing a console overlay draws can reach over it, and
-the pre-core input listener would swallow the very keystrokes the console was opened to receive.
-Hiding is also the better look, a console dimming and blurring its own backdrop. Because the whole
-gate goes false, the renderer's early return zeroes the frame clock and drops the input motions and
-the input listener cancels a dangling drag, so a console opened mid-drag leaves nothing stale behind.
+Two things claim the screen, and `ScreenClaim` holds both: a text-entry console, and a modal a core
+screen has raised in front of itself (a confirmation prompt, a picker). Either stands the sidebar
+down entirely rather than being ordered above it, and for one reason - the panel draws after the
+whole core UI (see below), so nothing either of them draws can reach over it, while the pre-core
+input listener goes on taking the very input they were opened to receive. Hiding is also the better
+look, each dimming its own backdrop. Because the whole gate goes false, the renderer's early return
+zeroes the frame clock and drops the input motions and the input listener cancels a dangling drag, so
+either one arriving mid-drag leaves nothing stale behind.
 
-What answers "is a console up" is `kmlib.mods.consolecommands.ConsoleCommandsOverlay`, injected into
-each host rather than reached for statically, so what a host does while a console is up is settleable
-without one running (each `INSTANCE` names the one live `ConsoleCommandsOverlay.INSTANCE`; a suite
-hands in a gate over a stood-in `ConsoleOverlayPresence`). That read fails open - mod
-absent, class gone, accessor moved, read throwing - to "no console open", leaving the sidebar exactly
-as it behaves without the seam, and warns once per session naming the hop that broke. One shared
-reader rather than one per caller, so the settled enablement, the resolved presence and the spent
-warning are held once however many passes ask.
+Both reads are injected rather than reached for statically, so what a host does under a claim is
+settleable without a game running - each host's `INSTANCE` names the one live `ScreenClaim.INSTANCE`,
+and a suite hands in a claim it states. `kmlib.mods.consolecommands.ConsoleCommandsOverlay` answers
+the console half and `kmlib.starsector.ui.coreui.CoreUiDialogView` the modal half; both fail open,
+each documenting what it costs, so a claim that cannot be established leaves the sidebar exactly as it
+behaves without the seam. They are held as a disjunction for that reason: composed with an AND, an
+install without the console mod - or a build whose core UI cannot be walked - would silence the other.
 
 Hiding the panel is only half of what a console owes the map, and the other half is not this
 package's: with the sidebar down, its cover over the map goes down with it, so the map's own hover

@@ -7,13 +7,10 @@ import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
-import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
 import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
-import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
-import kmlib.testfixtures.starsector.settings.ModStateScopes;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
@@ -29,8 +26,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static kmlib.testfixtures.starsector.settings.StubbedModIds.CONSOLE_COMMANDS;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.mock;
@@ -42,8 +37,8 @@ import static org.mockito.Mockito.when;
  * Pins the intel overlay's gate, the frame edges it strokes, and the fold it opens at. The gate is the map
  * visor's rectangle rather than the tab-open read, so the sidebar stays off the sub-tabs that share the
  * intel tab, and it is the whole of this host's half, so the visor's Starscape filter moves it either way -
- * beside it stands the console seam this host was handed, so a console up over the visor takes the panel
- * with it.
+ * beside it stands the screen-claim seam this host was handed, so anything raised over the visor takes the
+ * panel with it.
  * The edges drop the borders shared with the visor - the left always (flush against the visor's
  * left edge) and the bottom only when the box reaches the visor's bottom - and keep the top and right,
  * which sit inside the visor. The frozen fold key is pinned as a literal, since renaming it silently
@@ -85,7 +80,7 @@ final class IntelSidebarHostTest {
             intelScreenFake.setMapVisorRect(MAP_VISOR);
             intelScreenFake.setMapStarscapeModeOn(false);
 
-            assertThat(createHostWithNoConsole(intelScreenFake).isOverlayShowing())
+            assertThat(createHostOnAnUnclaimedScreen(intelScreenFake).isOverlayShowing())
                 .isTrue();
         }
 
@@ -99,7 +94,7 @@ final class IntelSidebarHostTest {
             intelScreenFake.setIntelTabOpen(true);
             intelScreenFake.setMapVisorRect(null);
 
-            assertThat(createHostWithNoConsole(intelScreenFake).isOverlayShowing())
+            assertThat(createHostOnAnUnclaimedScreen(intelScreenFake).isOverlayShowing())
                 .isFalse();
         }
 
@@ -113,7 +108,7 @@ final class IntelSidebarHostTest {
             intelScreenFake.setMapVisorRect(MAP_VISOR);
             intelScreenFake.setMapStarscapeModeOn(true);
 
-            assertThat(createHostWithNoConsole(intelScreenFake).isOverlayShowing())
+            assertThat(createHostOnAnUnclaimedScreen(intelScreenFake).isOverlayShowing())
                 .isTrue();
         }
 
@@ -123,27 +118,25 @@ final class IntelSidebarHostTest {
             var intelScreenFake = new IntelScreenViewFake();
             intelScreenFake.setIntelTabOpen(false);
 
-            assertThat(createHostWithNoConsole(intelScreenFake).isOverlayShowing())
+            assertThat(createHostOnAnUnclaimedScreen(intelScreenFake).isOverlayShowing())
                 .isFalse();
         }
 
         @Test
-        void isOverlayShowingIsFalseWhileAConsoleIsUpOverALitVisor() {
-            // The console the host was handed has to be the one its gate reads: a host that dropped the
-            // seam and answered on the visor alone would leave the panel drawn over the console overlay,
-            // eating the keystrokes the console was opened to receive, with every case above still green.
+        void isOverlayShowingIsFalseWhileALitVisorsScreenIsClaimed() {
+            // The claim the host was handed has to be the one its gate reads: a host that dropped the seam
+            // and answered on the visor alone would leave the panel drawn over whatever claimed the screen,
+            // taking the input that thing was raised to receive, with every case above still green. A lit
+            // visor is exactly where this was first seen - a prompt raised by an intel item, with the panel
+            // over it.
             var intelScreenFake = new IntelScreenViewFake();
-            var consolePresenceFake = new ConsoleOverlayPresenceFake();
-            var consoleOverlay = new ConsoleCommandsOverlay(consolePresenceFake);
 
             intelScreenFake.setIntelTabOpen(true);
             intelScreenFake.setMapVisorRect(MAP_VISOR);
 
-            consolePresenceFake.openConsole();
-
-            ModStateScopes.runWithModEnabled(CONSOLE_COMMANDS, true, () ->
-                assertThat(new IntelSidebarHost(intelScreenFake, consoleOverlay).isOverlayShowing())
-                    .isFalse());
+            assertThat(new IntelSidebarHost(intelScreenFake, ScreenClaims.createScreenClaimedByAModal())
+                .isOverlayShowing())
+                .isFalse();
         }
     }
 
@@ -210,7 +203,7 @@ final class IntelSidebarHostTest {
             // The panel's frame abuts the visor's own, and the chrome around it is framed in the dark
             // member of the set it is built from - so this panel frames itself at that step rather than
             // at the base the on-map panel takes.
-            var boxColours = createHostWithNoConsole(new IntelScreenViewFake())
+            var boxColours = createHostOnAnUnclaimedScreen(new IntelScreenViewFake())
                 .resolveWidgetStyle()
                 .boxColours();
 
@@ -231,7 +224,7 @@ final class IntelSidebarHostTest {
         // The tab style this screen's look carries, which is the value both its layout and its paint
         // pass read.
         private static TabStyle buildTabStyle() {
-            return createHostWithNoConsole(new IntelScreenViewFake()).resolveWidgetStyle().tabStyle();
+            return createHostOnAnUnclaimedScreen(new IntelScreenViewFake()).resolveWidgetStyle().tabStyle();
         }
     }
 
@@ -366,7 +359,7 @@ final class IntelSidebarHostTest {
                     .when(() -> KmuMapLayerSettings.getMapLayerShortcut(SHORTCUT_SETTING_KEY, SHORTCUT_KEYCODE))
                     .thenReturn(SHORTCUT_KEYCODE);
 
-                createHostWithNoConsole(new IntelScreenViewFake()).handleKeyPress(eventMock);
+                createHostOnAnUnclaimedScreen(new IntelScreenViewFake()).handleKeyPress(eventMock);
 
                 verify(memoryMock)
                     .set(INTEL_ACTIVE_LAYER_KEY, "political_map");
@@ -406,7 +399,7 @@ final class IntelSidebarHostTest {
                 when(memoryMock.contains(DOCKED_KEY))
                     .thenReturn(false);
 
-                var host = createHostWithNoConsole(new IntelScreenViewFake());
+                var host = createHostOnAnUnclaimedScreen(new IntelScreenViewFake());
                 host.restoreFoldFromSave();
 
                 assertThat(host.getController().getCollapseFraction())
@@ -428,7 +421,7 @@ final class IntelSidebarHostTest {
                 when(memoryMock.getBoolean(DOCKED_KEY))
                     .thenReturn(false);
 
-                var host = createHostWithNoConsole(new IntelScreenViewFake());
+                var host = createHostOnAnUnclaimedScreen(new IntelScreenViewFake());
                 host.restoreFoldFromSave();
 
                 assertThat(host.getController().getCollapseFraction())
@@ -452,7 +445,7 @@ final class IntelSidebarHostTest {
                 when(memoryMock.getBoolean(DOCKED_KEY))
                     .thenReturn(true);
 
-                var host = createHostWithNoConsole(new IntelScreenViewFake());
+                var host = createHostOnAnUnclaimedScreen(new IntelScreenViewFake());
                 host.restoreFoldFromSave();
 
                 assertThat(host.getController().getCollapseFraction())
@@ -476,7 +469,7 @@ final class IntelSidebarHostTest {
                 when(memoryMock.getBoolean(DOCKED_KEY))
                     .thenReturn(false);
 
-                var host = createHostWithNoConsole(new IntelScreenViewFake());
+                var host = createHostOnAnUnclaimedScreen(new IntelScreenViewFake());
                 host.restoreFoldFromSave();
 
                 assertThat(host.getController().isFullyExpanded())
@@ -493,10 +486,10 @@ final class IntelSidebarHostTest {
         }
     }
 
-    // The host with no console up, which is the state every case but the console's own asks about. A host
-    // of its own rather than the live singleton, so the gate is read against a console this test states
-    // rather than against Console Commands, which no test JVM has running.
-    private static IntelSidebarHost createHostWithNoConsole(IntelScreenView intelScreen) {
-        return new IntelSidebarHost(intelScreen, new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake()));
+    // The host on a screen nothing has claimed, which is the state every case but the claim's own asks
+    // about. A host of its own rather than the live singleton, so the gate is read against a claim this
+    // test states rather than against the running game, which no test JVM has.
+    private static IntelSidebarHost createHostOnAnUnclaimedScreen(IntelScreenView intelScreen) {
+        return new IntelSidebarHost(intelScreen, ScreenClaims.createUnclaimedScreen());
     }
 }

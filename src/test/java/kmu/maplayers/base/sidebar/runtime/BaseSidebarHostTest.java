@@ -45,8 +45,10 @@ import static org.mockito.Mockito.when;
  * pick, so a press on one screen leaves the other screen's tab where it was; and it consumes only a press
  * it acted on, so every other key reaches the screen underneath.
  *
- * <p>Pins the shared "is the sidebar live" gate with it: a console taking the keyboard stands every host
- * down, which is what frees the shortcut keys above to type rather than switch tabs.
+ * <p>Pins the shared "is the sidebar live" gate with it: a claim on the screen stands every host down,
+ * which is what frees the shortcut keys above to type rather than switch tabs. Which things can claim it
+ * is {@link ScreenClaim}'s to pin; what is pinned here is that a claim reaches the gate at all, and that
+ * it settles the gate without the screen being read.
  */
 final class BaseSidebarHostTest {
 
@@ -250,7 +252,8 @@ final class BaseSidebarHostTest {
             // it did not stand down for would be drawn under it while its shortcut keys ate the keystrokes
             // the console was opened to receive.
             var consolePresenceFake = new ConsoleOverlayPresenceFake();
-            var host = createHostOnAShowingScreen(new ConsoleCommandsOverlay(consolePresenceFake));
+            var host = createHostOnAShowingScreen(
+                ScreenClaims.createClaimOverConsole(new ConsoleCommandsOverlay(consolePresenceFake)));
 
             consolePresenceFake.openConsole();
 
@@ -260,11 +263,21 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsTrueOnAShowingScreenWithNoConsoleUp() {
-            // The console read is the only thing added to the screen read, so a closed console has to leave
-            // the panel exactly where it was - a gate stuck shut would take the sidebar off every screen.
-            var host = createHostOnAShowingScreen(
-                new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake()));
+        void isOverlayShowingIsFalseWhileAModalStandsOverTheHostsOwnScreen() {
+            // The claimant the panel used to draw straight over: a modal is raised inside the core UI, and
+            // the panel is painted after all of it, so an ungated panel covers the prompt while its own
+            // hit-testing goes on taking the pointer the prompt was raised to ask for.
+            var host = createHostOnAShowingScreen(ScreenClaims.createScreenClaimedByAModal());
+
+            assertThat(host.isOverlayShowing())
+                .isFalse();
+        }
+
+        @Test
+        void isOverlayShowingIsTrueOnAShowingScreenNothingHasClaimed() {
+            // The claim is the only thing added to the screen read, so an unclaimed screen has to leave the
+            // panel exactly where it was - a gate stuck shut would take the sidebar off every screen.
+            var host = createHostOnAShowingScreen(ScreenClaims.createUnclaimedScreen());
 
             assertThat(host.isOverlayShowing())
                 .isTrue();
@@ -284,7 +297,8 @@ final class BaseSidebarHostTest {
             // A screen read walks live widgets, so the cheaper answer is asked first and the walk skipped
             // while the panel is standing down anyway.
             var consolePresenceFake = new ConsoleOverlayPresenceFake();
-            var host = createHostOnAShowingScreen(new ConsoleCommandsOverlay(consolePresenceFake));
+            var host = createHostOnAShowingScreen(
+                ScreenClaims.createClaimOverConsole(new ConsoleCommandsOverlay(consolePresenceFake)));
 
             consolePresenceFake.openConsole();
 
@@ -298,20 +312,17 @@ final class BaseSidebarHostTest {
     // A host carrying nothing but the plumbing under test: the shared key handling is the base's, so the
     // per-screen answers are stubbed out rather than bound to either live screen.
     private static SidebarHostFake createHost(ActiveLayerSelection layerSelection) {
-        return createHost(
-            layerSelection,
-            new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake()),
-            false);
+        return createHost(layerSelection, ScreenClaims.createUnclaimedScreen(), false);
     }
 
-    // A host whose own screen is up, so what the gate then answers is down to the console alone.
-    private static SidebarHostFake createHostOnAShowingScreen(ConsoleCommandsOverlay consoleOverlay) {
-        return createHost(mock(ActiveLayerSelection.class), consoleOverlay, true);
+    // A host whose own screen is up, so what the gate then answers is down to the claim alone.
+    private static SidebarHostFake createHostOnAShowingScreen(ScreenClaim screenClaim) {
+        return createHost(mock(ActiveLayerSelection.class), screenClaim, true);
     }
 
     private static SidebarHostFake createHost(
             ActiveLayerSelection layerSelection,
-            ConsoleCommandsOverlay consoleOverlay,
+            ScreenClaim screenClaim,
             boolean isHostScreenShowing) {
 
         var foldSelectionMock = mock(SidebarFoldSelection.class);
@@ -322,7 +333,7 @@ final class BaseSidebarHostTest {
         return new SidebarHostFake(
             foldSelectionMock,
             layerSelection,
-            consoleOverlay,
+            screenClaim,
             isHostScreenShowing);
     }
 
@@ -399,10 +410,10 @@ final class BaseSidebarHostTest {
         private SidebarHostFake(
                 SidebarFoldSelection foldSelection,
                 ActiveLayerSelection layerSelection,
-                ConsoleCommandsOverlay consoleOverlay,
+                ScreenClaim screenClaim,
                 boolean isHostScreenShowing) {
 
-            super(foldSelection, layerSelection, consoleOverlay);
+            super(foldSelection, layerSelection, screenClaim);
             this.isHostScreenShowing = isHostScreenShowing;
         }
 

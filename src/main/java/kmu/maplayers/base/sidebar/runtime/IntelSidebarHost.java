@@ -2,7 +2,6 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
-import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
 import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
@@ -37,8 +36,8 @@ import java.util.Set;
  * Because it sits flush against the visor's edges, it omits the
  * border edges it shares with the visor - the left always, and the bottom when the box reaches the visor's
  * bottom - so its frame reads as part of the visor rather than a second box drawn over it. Its half of the
- * "is the sidebar live" gate - the screen half, the console half being every host's alike - is "is there a
- * live canvas under it":
+ * "is the sidebar live" gate - the screen half, the claimed-screen half being every host's alike - is "is
+ * there a live canvas under it":
  * {@link IntelScreenView#getMapVisorRect()} returns the visor rectangle while it is lit and
  * {@code null} when the intel tab is not showing, one of the sub-tabs that share it (Planets, Factions) is up
  * instead, or a large-description item has blanked the preview, so a non-null rectangle is both the gate and
@@ -55,12 +54,12 @@ public final class IntelSidebarHost extends BaseSidebarHost {
 
     /**
      * The one intel-screen host; the render and input listeners registered for the intel screen reference it.
-     * This is where the live intel-screen and console bindings are chosen, the host itself naming only the
-     * roles.
+     * This is where the live intel-screen and screen-claim bindings are chosen, the host itself naming only
+     * the roles.
      */
     public static final IntelSidebarHost INSTANCE = new IntelSidebarHost(
         new VanillaIntelScreenView(),
-        ConsoleCommandsOverlay.INSTANCE);
+        ScreenClaim.INSTANCE);
 
     // How tall this screen's tab band stands: this sidebar overlays the visor under the vanilla map
     // toggles and reads tighter than the on-map one, so it crowds the preview less. Eighteen against the
@@ -88,7 +87,7 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     // which binding backs it; INSTANCE is where the live one is named.
     private final IntelScreenView intelScreen;
 
-    IntelSidebarHost(IntelScreenView intelScreen, ConsoleCommandsOverlay consoleOverlay) {
+    IntelSidebarHost(IntelScreenView intelScreen, ScreenClaim screenClaim) {
         // Opens folded to the rail on a save that has never moved it, so the panel never covers the visor
         // uninvited - the player expands it by the collapse handle when they want the controls. The intel
         // screen's own pick goes with it: a switch on the map screen leaves it where it was, and reopening
@@ -96,7 +95,7 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         super(
             new PersistedSidebarFold(INTEL_SIDEBAR_DOCKED_KEY, true),
             MapLayerRegistry.getIntelSelection(),
-            consoleOverlay);
+            screenClaim);
         this.intelScreen = intelScreen;
     }
 
