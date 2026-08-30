@@ -146,7 +146,9 @@ public final class VoidBridgePockets {
 
         var outlines = new ArrayList<List<double[]>>();
 
-        for (var hole : traceBridgedHoles(sites, bridges, parameters, shaping)) {
+        for (var hole : WalledVoid.traceVoidAcrossWalls(
+                sites, buildBridgeWalls(bridges, parameters), parameters, shaping)) {
+
             outlines.add(hole.boundary());
         }
         return outlines;
@@ -178,11 +180,14 @@ public final class VoidBridgePockets {
             SectorGeometryParameters parameters,
             VoidPockets.PocketShaping shaping) {
 
+        // The same chord instances the walk was handed, so a hole's walls are asked about by
+        // the walls themselves rather than by a set built to look like them.
+        var walls = buildBridgeWalls(bridges, parameters);
         var outlines = new ArrayList<List<double[]>>();
 
-        for (var hole : traceBridgedHoles(sites, bridges, parameters, shaping)) {
+        for (var hole : WalledVoid.traceVoidAcrossWalls(sites, walls, parameters, shaping)) {
 
-            if (!hole.walledBy().isEmpty()) {
+            if (!WalledVoid.findClosingWalls(hole, walls.chords()).isEmpty()) {
                 outlines.add(hole.boundary());
             }
         }
@@ -308,21 +313,6 @@ public final class VoidBridgePockets {
 
         return new DiscUnionBoundary.Walls(
             DiscUnionBoundary.buildChordsFrom(bridges), parameters.borderInset());
-    }
-
-    // Every hole the bridges' walk finds, so both readings of it come out of one walk. Traced
-    // twice, the two could lay the same chords in a different order and have a different one
-    // crowded out of a mouth - and then one answer would be about a map the other never saw.
-    private static List<VoidHole> traceBridgedHoles(
-            List<double[]> sites,
-            List<CellGap> bridges,
-            SectorGeometryParameters parameters,
-            VoidPockets.PocketShaping shaping) {
-
-        return DiscUnionBoundary.traceHolesAcrossWalls(
-            VoidPockets.buildUnionFor(sites, parameters, shaping),
-            buildBridgeWalls(bridges, parameters),
-            parameters.boundSegments());
     }
 
     // How far a point sits from the nearest vertex of any outline. What a bridge's drawn end

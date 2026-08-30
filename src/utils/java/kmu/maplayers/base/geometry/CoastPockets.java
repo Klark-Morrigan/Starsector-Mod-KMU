@@ -78,11 +78,6 @@ public final class CoastPockets {
         // that produced the coast had bridges to lay.
         var walls = layCoastWalls(traced, reaches, parameters.borderInset());
 
-        // A coast pocket gives up the channel against the cells by being WALKED a channel
-        // outside them, so at its true extent the discs move rather than the outline: walked
-        // at the cell radius, the pocket runs up to the border itself.
-        var union = VoidPockets.buildUnionFor(sites, parameters, rules.shaping());
-
         // ONE trace, and what it hands back is what gets drawn - the same thing
         // VoidBridgePockets does with its own walls. A pocket found among the cells can
         // afford to be traced twice and the two matched up by containment, because a bridge
@@ -91,10 +86,12 @@ public final class CoastPockets {
         // do not correspond, and the match silently drops the ones that fail.
         var pockets = new ArrayList<WalledPocket>();
 
-        for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
-                union, walls, parameters.boundSegments())) {
+        for (var hole : WalledVoid.traceVoidAcrossWalls(
+                sites, walls, parameters, rules.shaping())) {
 
-            var walling = findWallingReaches(hole, reaches);
+            // Only what the coast's own reaches closed. A hole a bridge holds is the other
+            // construction's to report, and one the cells closed unaided is neither's.
+            var walling = WalledVoid.findClosingWalls(hole, reaches);
 
             if (walling.isEmpty()) {
                 continue;
@@ -167,19 +164,6 @@ public final class CoastPockets {
         laid.addAll(reaches);
 
         return new DiscUnionBoundary.Walls(laid, channel);
-    }
-
-    // Which of the coast's reaches shut one hole in, which is none for a hole the cells
-    // closed unaided or a bridge holds - both of those are the other construction's to
-    // report, and drawing them here too would paint the same emptiness twice over.
-    private static List<DiscUnionBoundary.Chord> findWallingReaches(
-            VoidHole hole,
-            List<DiscUnionBoundary.Chord> reaches) {
-
-        var walling = new ArrayList<>(hole.walledBy());
-        walling.retainAll(reaches);
-
-        return List.copyOf(walling);
     }
 
     /**
