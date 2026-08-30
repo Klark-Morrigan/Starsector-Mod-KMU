@@ -137,7 +137,8 @@ about what the overlay means.
 - **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, default
   shortcut), `MapLayerRegistry` (roster, both screens' picks, save migrations), `NoLayer`.
 - **`base/installation`** - one sector's map machinery as a thing a caller can hold, since
-  everything the layers draw is derived from one sector. `MapLayerInstallation` is that holder;
+  everything the layers draw is derived from one sector. `MapLayerInstallation` is that holder - its
+  `MapLayerRefreshBoard` is what went stale in that sector, and nothing another sector rebuilds for;
   `MapLayerInstallations` indexes one per sector, replaces a sector's on a second install, releases
   it on removal, and discards every one on load - the load being the only point at which a previous
   save's can be stopped from outliving it, nothing else being told a sector went away. A seam
@@ -452,7 +453,10 @@ about what the overlay means.
   alone and asks a `MapLayerStalenessSource` what moved since it last asked, so which changes
   count, and which signal each one raises, stay the layer's answer - a signal being a
   `MapLayerRefreshSignal`, declared by the framework or by the layer that alone means anything by
-  it. The signals themselves, who declares which, and the four rebuild paths they drive are
+  it. `MapLayerRefreshBoard` is what a signal is raised on, one per sector held by that sector's
+  installation, since the stale set names systems by bare id; `MapLayerRefresh` resolves the running
+  sector's for the seams vanilla hands no sector. The signals themselves, who declares which, and
+  the four rebuild paths they drive are
   [the caching notes](../../../../../docs/dev/caching.md).
 - **[The sidebar](base/sidebar/README.md)** - the control box: the per-screen hosts, placement,
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.

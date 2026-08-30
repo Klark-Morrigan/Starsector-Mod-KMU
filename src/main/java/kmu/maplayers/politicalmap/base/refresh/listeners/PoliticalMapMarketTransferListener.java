@@ -4,10 +4,11 @@ import com.fs.starfarer.api.campaign.CampaignFleetAPI;
 import com.fs.starfarer.api.campaign.CargoAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
+import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.rulecmd.salvage.Nex_MarketCMD;
 
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.refresh.MarketPoliticsRefresh;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 
@@ -27,7 +28,7 @@ import exerelin.utilities.InvasionListener;
  * decivilises it, and reveals nothing. Nexerelin is the only source of such
  * transfers and it does report them through {@link InvasionListener}, so this
  * translates that single Nex event into the same targeted refresh
- * ({@link MapLayerRefresh#markSystemGroupingStale}) the holding-axis siblings
+ * ({@link MapLayerRefreshBoard#markSystemGroupingStale}) the holding-axis siblings
  * use: only the transferred colony's system and its neighbours are re-derived,
  * reading the post-transfer holder.
  *
@@ -39,8 +40,21 @@ import exerelin.utilities.InvasionListener;
  * the other invasion callbacks (loot, per-round strength, invasion finished) do
  * not change holder and are left as no-ops. Reachability changes remain
  * {@link PoliticalMapStalenessSource}'s axis.
+ *
+ * <p>Holds the sector it was installed on, so a conquest is reported against that sector's overlay
+ * rather than against whichever sector is currently loaded.
  */
 public class PoliticalMapMarketTransferListener implements InvasionListener {
+
+    private final SectorAPI sector;
+
+    /**
+     * @param sector the sector this listener is installed on, whose overlay a transfer here
+     *               repaints
+     */
+    public PoliticalMapMarketTransferListener(SectorAPI sector) {
+        this.sector = sector;
+    }
 
     // Named to match Nexerelin's interface, which misspells "transferred" with a
     // single r; the override must reproduce that exact signature.
@@ -65,6 +79,7 @@ public class PoliticalMapMarketTransferListener implements InvasionListener {
         // That base keeps the sighting it already had, and is dated afresh by
         // whatever observes it next. That is the resolution, not a gap.
         MarketPoliticsRefresh.reportMarketChange(
+            sector,
             market,
             "market transferred", // Event.
             "from=" + resolveFactionId(oldHolder)

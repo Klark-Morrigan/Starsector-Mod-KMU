@@ -1,122 +1,71 @@
 package kmu.maplayers.base.refresh;
 
-import com.fs.starfarer.api.Global;
+import kmu.maplayers.base.installation.MapLayerInstallations;
 
-import org.apache.log4j.Logger;
-
-import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * The refresh signals a map layer's overlay watches to know what part of its
- * cache has gone stale, so it rebuilds only what actually changed.
+ * The running sector's {@link MapLayerRefreshBoard}, reached without holding a sector.
  *
- * <p>A coarse change is one counter, held under the {@link MapLayerRefreshSignal} its producer and its
- * consumer both name: the producer raises the signal, and the consumer folds the current count
- * into the token it compares each frame, so the per-frame path stays an int compare. Keyed on the
- * open signal type rather than on a fixed set of accessors, so a layer watching something only it
- * can raise declares that signal beside itself and still reaches this one board for it - which is
- * what keeps a second layer's arrival from splitting the mechanism in two. The counters
- * materialise on first use, since a board that cannot enumerate the layers cannot pre-seed their
- * signals; an unraised signal reads zero, so a consumer folding one no producer ever bumps folds
- * a constant. A counter is never cleared, so composing several cannot clear one out from under a
- * second reader.
+ * <p>A board is one sector's, since every signal on it is a fact about one sector - but a producer
+ * driven by a settings change, and a consumer driven by vanilla's map hook, are handed no sector to
+ * ask for. Each such caller resolves the live sector's installation, which is the one place a global
+ * read stands in for a sector nobody passed down; a caller that does hold a sector reaches its board
+ * through the installation directly rather than through here, so an event in one sector cannot mark
+ * another's cache stale.
  *
- * <p>A change to what a system groups by - the opaque key {@code CellGrouping} resolves a
- * cell's cluster from, whose meaning belongs to the layer and not to this board - is finer than
- * any counter can express: rather than rescanning every system, the producers name exactly which
- * ones went stale, so the plugin re-derives and re-shapes only those and their neighbours. A set
- * because several systems can go stale in one tick, and identity is all that matters (a system is
- * stale or not, once per refresh). Several producers can feed the same set - a per-event signal
- * and a periodic diff, say - so a system one already marked and another re-discovers collapses to
- * a single reshape. The whole-map restyle a settings change needs is a separate signal the plugin
- * reads straight from {@code KmuLunaSettings.getSettingsRevision}, not this class.
- *
- * <p>Counters and a set rather than direct calls because the producers (a
- * listener, a watcher) and the consumer (the engine-instantiated terrain plugin)
- * are created independently, with no shared owner to wire together. Both are
- * concurrent because a producer's event fires on the campaign thread while the
- * plugin reads or drains on the render thread.
+ * <p>Final class with a private constructor: a resolution, no instances.
  */
 public final class MapLayerRefresh {
-    private static final Logger LOG = Global.getLogger(MapLayerRefresh.class);
-
-    private static final Map<MapLayerRefreshSignal, AtomicInteger> revisionsBySignal =
-            new ConcurrentHashMap<>();
-    private static final Set<String> groupingStaleSystemIds = ConcurrentHashMap.newKeySet();
 
     private MapLayerRefresh() {
+        // resolution onto the live sector's board, no instances.
     }
 
     /**
      * @param signal the coarse change to read
-     * @return how many times {@code signal} has been raised, which advances only when it is
-     *         raised and never when another signal is
+     * @return how many times {@code signal} has been raised on the live sector's board
      */
     public static int getRevision(MapLayerRefreshSignal signal) {
-        return resolveCounter(signal).get();
+        return resolveLiveBoard().getRevision(signal);
     }
 
     /**
-     * Raises {@code signal}: whatever it names went stale, so every consumer folding it in
-     * rebuilds. A consumer that does not fold this signal in is left alone, which is what lets a
-     * layer ignore a change it does not render.
+     * Raises {@code signal} on the live sector's board: whatever it names went stale, so every
+     * consumer of that sector folding it in rebuilds.
      *
      * @param signal the coarse change that occurred
      */
     public static void requestRefresh(MapLayerRefreshSignal signal) {
-        // The one seam every coarse change funnels through. Logged with the signal and the
-        // resulting counter so an overlay that failed to repaint - a stale cluster, a toggle that
-        // did nothing - can be traced to whether the request was even issued.
-        var revision = resolveCounter(signal).incrementAndGet();
-        LOG.debug("Map layer refresh requested; signal="
-            + signal.getId()
-            + " revision=" + revision);
+        resolveLiveBoard().requestRefresh(signal);
     }
 
     /**
-     * Marks one system's owner stale so the overlay re-derives just it (and
-     * its neighbours) rather than rescanning every system - used when a producer can
-     * name the one system whose key may have moved.
+     * Marks one of the live sector's systems grouping-stale, so the overlay re-derives just it and
+     * its neighbours rather than rescanning every system.
      *
-     * @param systemId the system whose owner may have changed; null is
-     *                 ignored
+     * @param systemId the system whose owner may have changed; null is ignored
      */
     public static void markSystemGroupingStale(String systemId) {
-        if (systemId == null) {
-            return;
-        }
-        groupingStaleSystemIds.add(systemId);
-        LOG.debug("Map layer system grouping marked stale; systemId="
-            + systemId);
+        resolveLiveBoard().markSystemGroupingStale(systemId);
     }
 
     /**
-     * Removes and returns the systems marked grouping-stale since the last drain,
-     * so the plugin processes each staleness once. A full rebuild (a settings
-     * change or a geometry change) drains and discards them, since it already
-     * re-derives every system.
+     * Removes and returns the live sector's systems marked grouping-stale since the last drain, so
+     * the plugin processes each staleness once.
      *
      * @return the drained stale system ids; empty when none are pending
      */
     public static Set<String> drainStaleGroupingSystemIds() {
-        if (groupingStaleSystemIds.isEmpty()) {
-            return Set.of();
-        }
-        // Snapshot then remove exactly what was snapshotted, so an id added by the
-        // campaign thread between the copy and the removal survives to the next
-        // drain rather than being silently dropped.
-        var drained = new LinkedHashSet<>(groupingStaleSystemIds);
-        groupingStaleSystemIds.removeAll(drained);
-        return drained;
+        return resolveLiveBoard().drainStaleGroupingSystemIds();
     }
 
-    // The single point a signal's counter is reached through, so a read of a never-raised signal
-    // answers zero by the same path a raise starts from rather than by a null check of its own.
-    private static AtomicInteger resolveCounter(MapLayerRefreshSignal signal) {
-        return revisionsBySignal.computeIfAbsent(signal, key -> new AtomicInteger());
+    // The live sector's board, or the detached installation's where no sector has the machinery
+    // installed - the overlay being behind a switch a player can leave off, which is an ordinary
+    // state rather than a fault to branch on here.
+    private static MapLayerRefreshBoard resolveLiveBoard() {
+        return MapLayerInstallations
+            .resolveInstallationForLiveSector()
+            .resolveRefreshBoard();
     }
 }

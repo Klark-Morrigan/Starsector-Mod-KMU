@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
  * drifts between suites would have them pinning two different guards under one name.
  */
 public final class MarketRefreshFixtures {
+
     private static final String MARKET_ID = "mkt";
 
     // Fixtures only; never instantiated.
@@ -29,11 +30,19 @@ public final class MarketRefreshFixtures {
      * @return a market mock reporting that seat
      */
     public static MarketAPI mockMarketInSystem(String systemId) {
+
         var systemMock = mock(StarSystemAPI.class);
-        when(systemMock.getId()).thenReturn(systemId);
+
+        when(systemMock.getId())
+            .thenReturn(systemId);
+
         var marketMock = mock(MarketAPI.class);
-        when(marketMock.getId()).thenReturn(MARKET_ID);
-        when(marketMock.getStarSystem()).thenReturn(systemMock);
+
+        when(marketMock.getId())
+            .thenReturn(MARKET_ID);
+        when(marketMock.getStarSystem())
+            .thenReturn(systemMock);
+
         return marketMock;
     }
 
@@ -44,9 +53,14 @@ public final class MarketRefreshFixtures {
      * @return a market mock reporting no star system
      */
     public static MarketAPI mockUnseatedMarket() {
+
         var marketMock = mock(MarketAPI.class);
-        when(marketMock.getId()).thenReturn(MARKET_ID);
-        when(marketMock.getStarSystem()).thenReturn(null);
+
+        when(marketMock.getId())
+            .thenReturn(MARKET_ID);
+        when(marketMock.getStarSystem())
+            .thenReturn(null);
+
         return marketMock;
     }
 }

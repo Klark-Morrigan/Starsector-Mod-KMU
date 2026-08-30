@@ -1,10 +1,11 @@
 package kmu.maplayers.politicalmap.base.refresh.listeners;
 
 import com.fs.starfarer.api.campaign.PlanetAPI;
+import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -19,16 +20,20 @@ import static org.mockito.Mockito.when;
  * Pins {@link PoliticalMapColonisationListener}: founding a colony marks the new
  * colony's star system politics-stale and abandoning one marks the dropped
  * colony's system, while a planet or market with no star system (a deep-hyperspace
- * station) marks nothing. The stale set is drained to read it, and drained before
- * each case, since the board it lives on is process-wide.
+ * station) marks nothing.
+ *
+ * <p>Read off the board of the sector the listener was installed on, which is where it reports and
+ * is made fresh with the installation for each case.
  */
 final class PoliticalMapColonisationListenerTest {
-    private final PoliticalMapColonisationListener listener = new PoliticalMapColonisationListener();
 
-    @BeforeEach
-    void drainAnyPendingStaleSystems() {
-        MapLayerRefresh.drainStaleGroupingSystemIds();
-    }
+    private final SectorAPI sectorMock = mock(SectorAPI.class);
+
+    private final MapLayerRefreshBoard refreshBoard =
+        MapLayerInstallations.installMachineryOn(sectorMock).resolveRefreshBoard();
+
+    private final PoliticalMapColonisationListener listener =
+        new PoliticalMapColonisationListener(sectorMock);
 
     @Nested
     class ReportPlayerColonizedPlanet {
@@ -40,30 +45,62 @@ final class PoliticalMapColonisationListenerTest {
             // Mockito's unfinished-stubbing guard.
             var marketMock = mockMarketInSystem("sys");
             var planetMock = mock(PlanetAPI.class);
-            when(planetMock.getId()).thenReturn("planet");
-            when(planetMock.getMarket()).thenReturn(marketMock);
+
+            when(planetMock.getId())
+                .thenReturn("planet");
+            when(planetMock.getMarket())
+                .thenReturn(marketMock);
 
             listener.reportPlayerColonizedPlanet(planetMock);
 
-            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
+            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+                .containsExactly("sys");
         }
 
         @Test
         void marksNothingForPlanetWithoutMarket() {
+
             var planetMock = mock(PlanetAPI.class);
-            when(planetMock.getId()).thenReturn("planet");
-            when(planetMock.getMarket()).thenReturn(null);
+
+            when(planetMock.getId())
+                .thenReturn("planet");
+            when(planetMock.getMarket())
+                .thenReturn(null);
 
             listener.reportPlayerColonizedPlanet(planetMock);
 
-            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
+            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+                .isEmpty();
         }
 
         @Test
         void marksNothingForNullPlanet() {
+
             listener.reportPlayerColonizedPlanet(null);
 
-            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
+            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+                .isEmpty();
+        }
+
+        @Test
+        void marksOnlyTheSectorTheListenerWasInstalledOn() {
+            // A listener reading the running game instead of the sector it was built against would
+            // mark whichever sector the player has loaded for a founding belonging to another.
+            var marketMock = mockMarketInSystem("sys");
+            var planetMock = mock(PlanetAPI.class);
+
+            when(planetMock.getId())
+                .thenReturn("planet");
+            when(planetMock.getMarket())
+                .thenReturn(marketMock);
+
+            var otherSectorMock = mock(SectorAPI.class);
+            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
+
+            listener.reportPlayerColonizedPlanet(planetMock);
+
+            assertThat(otherInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
+                .isEmpty();
         }
     }
 
@@ -72,23 +109,29 @@ final class PoliticalMapColonisationListenerTest {
 
         @Test
         void marksTheAbandonedColonysSystemStale() {
+
             listener.reportPlayerAbandonedColony(mockMarketInSystem("sys"));
 
-            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
+            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+                .containsExactly("sys");
         }
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
+
             listener.reportPlayerAbandonedColony(mockUnseatedMarket());
 
-            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
+            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+                .isEmpty();
         }
 
         @Test
         void marksNothingForNullMarket() {
+
             listener.reportPlayerAbandonedColony(null);
 
-            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
+            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+                .isEmpty();
         }
     }
 }

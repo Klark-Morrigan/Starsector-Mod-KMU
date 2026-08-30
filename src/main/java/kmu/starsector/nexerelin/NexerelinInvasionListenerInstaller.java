@@ -82,8 +82,12 @@ public final class NexerelinInvasionListenerInstaller {
             // can only carry one if some build registered it persistently, which is exactly the
             // mistake the flag above exists to prevent - and the one shape that survives having
             // made it is this one.
+            //
+            // Built with the sector it is installed on, as its vanilla-driven siblings are: a
+            // transfer marks that sector's own refresh board, and one reading the running game
+            // instead would mark whichever sector the player has loaded for a conquest in another.
             listenerManager.removeListenerOfClass(PoliticalMapMarketTransferListener.class);
-            listenerManager.addListener(new PoliticalMapMarketTransferListener(), true);
+            listenerManager.addListener(new PoliticalMapMarketTransferListener(sector), true);
         }
 
         private static void uninstall(SectorAPI sector) {

@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
  * poll. What the source then marks stale is its own test's subject.
  */
 final class MapLayerSectorWatcherTest {
+
     // Comfortably past the 4-5s poll interval, so each advance elapses it and drives
     // exactly one poll.
     private static final float ADVANCE_PAST_POLL_INTERVAL = 10f;
@@ -38,10 +39,12 @@ final class MapLayerSectorWatcherTest {
             // The engine drops a script that reports done, and nothing reinstalls one before
             // the next load - so this answering true would silently stop live refresh for the
             // rest of the save, with no crash to point at it.
-            try (MockedStatic<Global> globalMock = stubGlobalLogger()) {
+            try (var globalMock = stubGlobalLogger()) {
+
                 var watcher = new MapLayerSectorWatcher(mock(MapLayerStalenessSource.class));
 
-                assertThat(watcher.isDone()).isFalse();
+                assertThat(watcher.isDone())
+                    .isFalse();
             }
         }
     }
@@ -53,10 +56,12 @@ final class MapLayerSectorWatcherTest {
         void doesNotPollWhileTheGameIsPaused() {
             // Nothing the poll watches for can happen while the game is paused, so polling
             // then would only spend a sector walk on the campaign thread to find no change.
-            try (MockedStatic<Global> globalMock = stubGlobalLogger()) {
+            try (var globalMock = stubGlobalLogger()) {
+
                 var watcher = new MapLayerSectorWatcher(mock(MapLayerStalenessSource.class));
 
-                assertThat(watcher.runWhilePaused()).isFalse();
+                assertThat(watcher.runWhilePaused())
+                    .isFalse();
             }
         }
     }
@@ -66,23 +71,28 @@ final class MapLayerSectorWatcherTest {
 
         @Test
         void pollsTheSourceOnceTheIntervalElapses() {
-            try (MockedStatic<Global> globalMock = stubGlobalLogger()) {
+
+            try (var globalMock = stubGlobalLogger()) {
+
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
 
                 new MapLayerSectorWatcher(stalenessSourceMock)
-                        .advance(ADVANCE_PAST_POLL_INTERVAL);
+                    .advance(ADVANCE_PAST_POLL_INTERVAL);
 
-                verify(stalenessSourceMock).markChangesSinceLastPoll();
+                verify(stalenessSourceMock)
+                    .markChangesSinceLastPoll();
             }
         }
 
         @Test
         void doesNotPollBeforeTheIntervalElapses() {
-            try (MockedStatic<Global> globalMock = stubGlobalLogger()) {
+
+            try (var globalMock = stubGlobalLogger()) {
+
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
 
                 new MapLayerSectorWatcher(stalenessSourceMock)
-                        .advance(ADVANCE_WITHIN_POLL_INTERVAL);
+                    .advance(ADVANCE_WITHIN_POLL_INTERVAL);
 
                 verifyNoInteractions(stalenessSourceMock);
             }
@@ -90,14 +100,17 @@ final class MapLayerSectorWatcherTest {
 
         @Test
         void pollsOncePerElapsedInterval() {
-            try (MockedStatic<Global> globalMock = stubGlobalLogger()) {
+
+            try (var globalMock = stubGlobalLogger()) {
+
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
                 var watcher = new MapLayerSectorWatcher(stalenessSourceMock);
 
                 watcher.advance(ADVANCE_PAST_POLL_INTERVAL);
                 watcher.advance(ADVANCE_PAST_POLL_INTERVAL);
 
-                verify(stalenessSourceMock, times(2)).markChangesSinceLastPoll();
+                verify(stalenessSourceMock, times(2))
+                    .markChangesSinceLastPoll();
             }
         }
 
@@ -105,14 +118,18 @@ final class MapLayerSectorWatcherTest {
         void swallowsAFaultingSourceRatherThanThrowingIntoTheEngine() {
             // This runs on the campaign thread every few seconds, so a fault escaping here
             // would surface as an engine-level crash rather than a missed refresh.
-            try (MockedStatic<Global> globalMock = stubGlobalLogger()) {
+            try (var globalMock = stubGlobalLogger()) {
+
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
+
                 doThrow(new IllegalStateException("malformed system"))
-                        .when(stalenessSourceMock).markChangesSinceLastPoll();
+                    .when(stalenessSourceMock)
+                    .markChangesSinceLastPoll();
+
                 var watcher = new MapLayerSectorWatcher(stalenessSourceMock);
 
                 assertThatCode(() -> watcher.advance(ADVANCE_PAST_POLL_INTERVAL))
-                        .doesNotThrowAnyException();
+                    .doesNotThrowAnyException();
             }
         }
 
@@ -120,16 +137,21 @@ final class MapLayerSectorWatcherTest {
         void keepsPollingAfterTheSourceFaults() {
             // A transient fault (a half-built system mid-generation) must not silently
             // retire the watcher for the rest of the save.
-            try (MockedStatic<Global> globalMock = stubGlobalLogger()) {
+            try (var globalMock = stubGlobalLogger()) {
+
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
+
                 doThrow(new IllegalStateException("malformed system"))
-                        .when(stalenessSourceMock).markChangesSinceLastPoll();
+                    .when(stalenessSourceMock)
+                    .markChangesSinceLastPoll();
+
                 var watcher = new MapLayerSectorWatcher(stalenessSourceMock);
 
                 watcher.advance(ADVANCE_PAST_POLL_INTERVAL);
                 watcher.advance(ADVANCE_PAST_POLL_INTERVAL);
 
-                verify(stalenessSourceMock, times(2)).markChangesSinceLastPoll();
+                verify(stalenessSourceMock, times(2))
+                    .markChangesSinceLastPoll();
             }
         }
     }
@@ -137,9 +159,12 @@ final class MapLayerSectorWatcherTest {
     // The watcher's logger is resolved through Global at class init, so every test opens
     // the static mock before touching the class and hands back a no-op logger.
     private static MockedStatic<Global> stubGlobalLogger() {
-        MockedStatic<Global> globalMock = mockStatic(Global.class);
-        globalMock.when(() -> Global.getLogger(any(Class.class)))
-                .thenReturn(mock(Logger.class));
+
+        var globalMock = mockStatic(Global.class);
+        globalMock
+            .when(() -> Global.getLogger(any(Class.class)))
+            .thenReturn(mock(Logger.class));
+
         return globalMock;
     }
 }

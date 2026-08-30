@@ -1,5 +1,7 @@
 package kmu.maplayers.base.installation;
 
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
+
 /**
  * One sector's installed map machinery: what the map layers derive from that sector and remember
  * between frames, made when the layers are installed on it and released when they are removed.
@@ -10,10 +12,10 @@ package kmu.maplayers.base.installation;
  * in both at different positions is not seen to have moved, and each sector keeps the shapes the
  * other cut rather than overwriting them.
  *
- * <p>Holds nothing yet. What this type settles is the lifetime - one installation per sector, made
- * and released by {@link MapLayerInstallations} - so that each holder moving in afterwards is a
- * small change against a lifetime that is already right, rather than one change inventing the
- * lifetime and moving a cache into it at once.
+ * <p>What this type settles is the lifetime - one installation per sector, made and released by
+ * {@link MapLayerInstallations} - so that each holder moving in is a small change against a lifetime
+ * that is already right, rather than one change inventing the lifetime and moving a cache into it at
+ * once.
  */
 public final class MapLayerInstallation {
 
@@ -21,6 +23,11 @@ public final class MapLayerInstallation {
     // holder, because a caller can still be holding a reference the index has already let go of: a
     // resolution taken at the top of a frame outlives a removal that happens during it.
     private boolean isDisposed;
+
+    // What went stale in this sector since each consumer last looked. Made with the installation
+    // and released with it, which is what leaves a sector's staleness starting from nothing rather
+    // than from whatever the sector before it left marked.
+    private final MapLayerRefreshBoard refreshBoard = new MapLayerRefreshBoard();
 
     /**
      * Releases what this installation holds, after which it answers {@link #isDisposed}.
@@ -39,5 +46,13 @@ public final class MapLayerInstallation {
      */
     public boolean isDisposed() {
         return isDisposed;
+    }
+
+    /**
+     * @return the board this sector's producers raise refresh signals on and its overlays read them
+     *         from, so a change in one sector cannot mark another sector's cache stale
+     */
+    public MapLayerRefreshBoard resolveRefreshBoard() {
+        return refreshBoard;
     }
 }

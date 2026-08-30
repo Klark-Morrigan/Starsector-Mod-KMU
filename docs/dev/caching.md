@@ -161,7 +161,7 @@ Every producer above writes into one of these; every cache below reads them. Non
 of them is a boolean - a counter composes and cannot be cleared out from under a
 second reader.
 
-[`MapLayerRefresh`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefresh.java)
+[`MapLayerRefreshBoard`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefreshBoard.java)
 holds one counter per
 [`MapLayerRefreshSignal`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefreshSignal.java)
 raised on it, keyed on the open signal type rather than on a fixed set of accessors.
@@ -171,10 +171,19 @@ a layer declares its own beside itself
 ([`PoliticalMapRefreshSignal`](../../src/main/java/kmu/maplayers/politicalmap/base/refresh/PoliticalMapRefreshSignal.java))
 and reaches the same board for them.
 
+One board per sector, held by that sector's
+[`MapLayerInstallation`](../../src/main/java/kmu/maplayers/base/installation/MapLayerInstallation.java):
+every signal on it is a fact about one sector, and the stale set names that sector's
+systems by bare id. A producer holding a sector raises on that sector's board; one
+driven by a seam vanilla hands no sector - a settings change, the map render hook -
+goes through
+[`MapLayerRefresh`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefresh.java),
+which resolves the running sector's.
+
 | Signal | Home | Raised by | Read by |
 | --- | --- | --- | --- |
 | `MapLayerCommonRefreshSignal.GEOMETRY` | `MapLayerCommonRefreshSignal` | the drawn-system set or moving-system set changing | the geometry cache |
-| `groupingStaleSystemIds` | `MapLayerRefresh` | colony events + the watcher's owner diff | the incremental politics refresh |
+| `groupingStaleSystemIds` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental politics refresh |
 | `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance-set fingerprint moving | the alliances view only |
 | `MapLayerCommonRefreshSignal.RECEDE_STYLE` | `MapLayerCommonRefreshSignal` | the Mute / Desaturate sidebar toggles | the pipeline, under any view (the receded blocs and decivilised ground), plus the alliances view for its own non-allied recede |
 | `MapLayerCommonRefreshSignal.FILTER` | `MapLayerCommonRefreshSignal` | picking or clearing the spotlight bloc | the pipeline, under any view |
@@ -186,9 +195,10 @@ Three of those deserve their reason stated.
 
 The **alliance signal** is the political map's own rather than the framework's,
 because who is allied with whom is this layer's vocabulary and no other layer would
-mean anything by it. The board stays one board all the same: a layer declares its
-signals and raises them on the shared counters, so a second layer's arrival does not
-split the mechanism in two.
+mean anything by it. One board per sector all the same, however many layers raise
+signals on it: a layer declares its signals and raises them on the counters of
+whichever sector it was handed, so a second layer's arrival does not split the
+mechanism in two.
 
 The **sidebar toggles** (recede, filter, spotlight, outline, name format) live in
 sector memory rather than as LunaLib fields, so flipping one does *not* bump

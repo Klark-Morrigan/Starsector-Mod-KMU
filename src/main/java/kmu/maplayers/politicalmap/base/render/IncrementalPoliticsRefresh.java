@@ -59,8 +59,8 @@ final class IncrementalPoliticsRefresh {
 
     // Drains the systems a colony resize marked stale and folds their changes into the standing
     // territories, the placements, and the name labels. The stale drain runs first, so a frame
-    // with nothing marked returns before touching the sector or gathering anything - the cheap
-    // per-frame path, which is nearly every frame.
+    // with nothing marked returns before opening a pass over the sector or gathering anything -
+    // the cheap per-frame path, which is nearly every frame.
     //
     // The four halves of the standing map are taken loose here and bundled below, because this is
     // the boundary the plugin's cache hands them over at: the placement and label lists are its own

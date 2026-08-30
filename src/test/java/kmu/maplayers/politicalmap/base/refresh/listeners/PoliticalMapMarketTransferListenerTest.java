@@ -2,10 +2,11 @@ package kmu.maplayers.politicalmap.base.refresh.listeners;
 
 import com.fs.starfarer.api.campaign.CampaignFleetAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
+import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -22,18 +23,20 @@ import static org.mockito.Mockito.when;
  * Pins {@link PoliticalMapMarketTransferListener}: a Nexerelin market transfer
  * marks the transferred colony's star system politics-stale, while a transfer of
  * a market with no star system marks nothing. An invasion finishing is a no-op,
- * since the transfer - not the invasion outcome - is what changes the holder. The
- * stale set is drained to read it, and drained before each case, since the board
- * it lives on is process-wide.
+ * since the transfer - not the invasion outcome - is what changes the holder.
+ *
+ * <p>Read off the board of the sector the listener was installed on, which is where it reports and
+ * is made fresh with the installation for each case.
  */
 final class PoliticalMapMarketTransferListenerTest {
-    private final PoliticalMapMarketTransferListener listener =
-            new PoliticalMapMarketTransferListener();
 
-    @BeforeEach
-    void drainAnyPendingStaleSystems() {
-        MapLayerRefresh.drainStaleGroupingSystemIds();
-    }
+    private final SectorAPI sectorMock = mock(SectorAPI.class);
+
+    private final MapLayerRefreshBoard refreshBoard =
+        MapLayerInstallations.installMachineryOn(sectorMock).resolveRefreshBoard();
+
+    private final PoliticalMapMarketTransferListener listener =
+        new PoliticalMapMarketTransferListener(sectorMock);
 
     // Named to match Nexerelin's interface, which misspells "transferred" with a
     // single r.
@@ -42,26 +45,70 @@ final class PoliticalMapMarketTransferListenerTest {
 
         @Test
         void marksTheTransferredColonysSystemStale() {
-            listener.reportMarketTransfered(mockMarketInSystem("sys"), mockFaction("attacker"),
-                    mockFaction("defender"), true, true, List.of(), 1.0f);
 
-            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).containsExactly("sys");
+            listener.reportMarketTransfered(
+                mockMarketInSystem("sys"),
+                mockFaction("attacker"),
+                mockFaction("defender"),
+                true,
+                true,
+                List.of(),
+                1.0f);
+
+            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+                .containsExactly("sys");
         }
 
         @Test
         void marksNothingForMarketWithoutStarSystem() {
-            listener.reportMarketTransfered(mockUnseatedMarket(), mockFaction("attacker"),
-                    mockFaction("defender"), true, true, List.of(), 1.0f);
 
-            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
+            listener.reportMarketTransfered(
+                mockUnseatedMarket(),
+                mockFaction("attacker"),
+                mockFaction("defender"),
+                true,
+                true,
+                List.of(),
+                1.0f);
+
+            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+                .isEmpty();
         }
 
         @Test
         void marksNothingForNullMarket() {
-            listener.reportMarketTransfered(null, mockFaction("attacker"),
-                    mockFaction("defender"), true, true, List.of(), 1.0f);
 
-            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
+            listener.reportMarketTransfered(
+                null,
+                mockFaction("attacker"),
+                mockFaction("defender"),
+                true,
+                true,
+                List.of(),
+                1.0f);
+
+            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+                .isEmpty();
+        }
+
+        @Test
+        void marksOnlyTheSectorTheListenerWasInstalledOn() {
+            // A listener reading the running game instead of the sector it was built against would
+            // mark whichever sector the player has loaded for a conquest belonging to another.
+            var otherSectorMock = mock(SectorAPI.class);
+            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
+
+            listener.reportMarketTransfered(
+                mockMarketInSystem("sys"),
+                mockFaction("attacker"),
+                mockFaction("defender"),
+                true,
+                true,
+                List.of(),
+                1.0f);
+
+            assertThat(otherInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
+                .isEmpty();
         }
     }
 
@@ -72,16 +119,25 @@ final class PoliticalMapMarketTransferListenerTest {
         void marksNothingSinceTransferReportsTheHolderChange() {
             // An invasion finishing does not itself transfer holding; the refresh
             // keys off reportMarketTransferred, so this callback marks nothing.
-            listener.reportInvasionFinished(mock(CampaignFleetAPI.class), mockFaction("attacker"),
-                    mockMarketInSystem("sys"), 3.0f, true);
+            listener.reportInvasionFinished(
+                mock(CampaignFleetAPI.class),
+                mockFaction("attacker"),
+                mockMarketInSystem("sys"),
+                3.0f,
+                true);
 
-            assertThat(MapLayerRefresh.drainStaleGroupingSystemIds()).isEmpty();
+            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+                .isEmpty();
         }
     }
 
     private static FactionAPI mockFaction(String factionId) {
+
         var factionMock = mock(FactionAPI.class);
-        when(factionMock.getId()).thenReturn(factionId);
+
+        when(factionMock.getId())
+            .thenReturn(factionId);
+
         return factionMock;
     }
 }

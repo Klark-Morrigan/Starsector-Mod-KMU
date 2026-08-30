@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.refresh.listeners;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.ColonySizeChangeListener;
 
@@ -24,8 +25,20 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
  * dominance in its own system alone. Reachability changes (a colony appearing or
  * vanishing from the map) are a separate axis left to
  * {@link PoliticalMapStalenessSource}.
+ *
+ * <p>Holds the sector it was installed on, so a resize is reported against that sector's overlay
+ * rather than against whichever sector is currently loaded.
  */
 public class PoliticalMapColonySizeListener implements ColonySizeChangeListener {
+
+    private final SectorAPI sector;
+
+    /**
+     * @param sector the sector this listener is installed on, whose overlay a resize here repaints
+     */
+    public PoliticalMapColonySizeListener(SectorAPI sector) {
+        this.sector = sector;
+    }
 
     @Override
     public void reportColonySizeChanged(MarketAPI market, int prevSize) {
@@ -33,6 +46,7 @@ public class PoliticalMapColonySizeListener implements ColonySizeChangeListener 
         // The previous size rides along in the log so a colony that does (or does
         // not) repaint on growth can be traced to this resize.
         MarketPoliticsRefresh.reportMarketChange(
+            sector,
             market,
             "colony resize", // Event.
             "prevSize=" + prevSize); // Context.

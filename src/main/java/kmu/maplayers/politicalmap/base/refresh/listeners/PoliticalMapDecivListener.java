@@ -1,9 +1,10 @@
 package kmu.maplayers.politicalmap.base.refresh.listeners;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.ColonyDecivListener;
 
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.refresh.MarketPoliticsRefresh;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 
@@ -16,7 +17,7 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
  * neutral and removes it from the economy - so the system's dominant holder
  * vanishes, the same per-system holder change a colony resize or a discovery
  * makes. It therefore routes through the same targeted refresh
- * ({@link MapLayerRefresh#markSystemGroupingStale}): only that system and its
+ * ({@link MapLayerRefreshBoard#markSystemGroupingStale}): only that system and its
  * neighbours are re-derived and re-shaped, the re-derivation reading the now
  * ownerless economy and dropping the faction fill.
  *
@@ -36,8 +37,22 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
  * the market neutral and pulled it from the economy) so the re-derivation reads
  * the post-deciv state; the {@code aboutToBe} phase would still see the colony
  * faction-owned, so it is a no-op here.
+ *
+ * <p>Holds the sector it was installed on, so a decivilisation is reported against that sector's
+ * overlay and recorded in that sector's register rather than against whichever sector is currently
+ * loaded.
  */
 public class PoliticalMapDecivListener implements ColonyDecivListener {
+
+    private final SectorAPI sector;
+
+    /**
+     * @param sector the sector this listener is installed on, whose overlay a decivilisation here
+     *               repaints and whose memory holds the sighting register it writes
+     */
+    public PoliticalMapDecivListener(SectorAPI sector) {
+        this.sector = sector;
+    }
 
     // The colony is still faction-owned at this point, so re-deriving now would
     // read the pre-deciv holder. The stale mark is deferred to the completed
@@ -53,7 +68,7 @@ public class PoliticalMapDecivListener implements ColonyDecivListener {
     public void reportColonyAboutToBeDecivilized(MarketAPI market, boolean fullyDestroyed) {
 
         if (market != null) {
-            MarketPoliticsRefresh.recordObservationsIn(market.getStarSystem());
+            MarketPoliticsRefresh.recordObservationsIn(sector, market.getStarSystem());
         }
     }
 
@@ -65,6 +80,7 @@ public class PoliticalMapDecivListener implements ColonyDecivListener {
         // is preserved. The full-destroy flag rides along in the log so a cell that
         // does (or does not) repaint neutral on death can be traced to this event.
         MarketPoliticsRefresh.reportMarketChange(
+            sector,
             market,
             "decivilised colony", // Event.
             "fullyDestroyed=" + fullyDestroyed); // Context.

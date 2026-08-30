@@ -128,11 +128,15 @@ public final class PoliticalMapInstaller {
     // Registers the listener that refreshes the political map when the player
     // discovers a map-relevant entity (a market, a jump point, or a gate), so
     // the overlay updates live rather than only on reload.
+    //
+    // Built with the sector it is installed on, as every listener here is: each marks a system
+    // stale on that sector's own refresh board, and one reading the running game instead would mark
+    // whichever sector the player has loaded for an event belonging to another.
     static void installPoliticalMapDiscoveryListener(SectorAPI sector) {
         SectorListeners.installListener(
             sector,
             PoliticalMapDiscoveryListener.class,
-            PoliticalMapDiscoveryListener::new);
+            () -> new PoliticalMapDiscoveryListener(sector));
     }
 
     // Registers the listener that marks a system's political-map ownership stale
@@ -142,7 +146,7 @@ public final class PoliticalMapInstaller {
         SectorListeners.installListener(
             sector,
             PoliticalMapColonySizeListener.class,
-            PoliticalMapColonySizeListener::new);
+            () -> new PoliticalMapColonySizeListener(sector));
     }
 
     // Registers the listener that marks a system's political-map ownership stale
@@ -152,7 +156,7 @@ public final class PoliticalMapInstaller {
         SectorListeners.installListener(
             sector,
             PoliticalMapDecivListener.class,
-            PoliticalMapDecivListener::new);
+            () -> new PoliticalMapDecivListener(sector));
     }
 
     // Registers the listener that marks a system's political-map ownership stale
@@ -162,7 +166,7 @@ public final class PoliticalMapInstaller {
         SectorListeners.installListener(
             sector,
             PoliticalMapColonisationListener.class,
-            PoliticalMapColonisationListener::new);
+            () -> new PoliticalMapColonisationListener(sector));
     }
 
     // Registers the per-frame watcher that refreshes the political map when a

@@ -1,10 +1,11 @@
 package kmu.maplayers.politicalmap.base.refresh.listeners;
 
 import com.fs.starfarer.api.campaign.PlanetAPI;
+import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.PlayerColonizationListener;
 
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.refresh.MarketPoliticsRefresh;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 
@@ -20,7 +21,7 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
  * (the colony is created at its starting size, not grown into it) and abandoning
  * is not a decivilisation (the market is pulled from the economy without turning
  * neutral first). So this routes both through the same targeted refresh
- * ({@link MapLayerRefresh#markSystemGroupingStale}), re-deriving only the
+ * ({@link MapLayerRefreshBoard#markSystemGroupingStale}), re-deriving only the
  * affected system and its neighbours; whether the change flips the dominant holder
  * is decided later, when the plugin re-derives that one system.
  *
@@ -30,8 +31,21 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
  * {@link PoliticalMapStalenessSource}. Mirrors {@link PoliticalMapDecivListener} on
  * the holding axis; this covers only player colonisation, since the engine
  * fires no listener for an NPC faction founding a colony.
+ *
+ * <p>Holds the sector it was installed on, so a colony founded or abandoned here is reported
+ * against that sector's overlay rather than against whichever sector is currently loaded.
  */
 public class PoliticalMapColonisationListener implements PlayerColonizationListener {
+
+    private final SectorAPI sector;
+
+    /**
+     * @param sector the sector this listener is installed on, whose overlay a colony founded or
+     *               abandoned here repaints
+     */
+    public PoliticalMapColonisationListener(SectorAPI sector) {
+        this.sector = sector;
+    }
 
     @Override
     public void reportPlayerColonizedPlanet(PlanetAPI planet) {
@@ -44,6 +58,7 @@ public class PoliticalMapColonisationListener implements PlayerColonizationListe
         MarketAPI market = planet == null ? null : planet.getMarket();
         String planetId = planet == null ? "null" : planet.getId();
         MarketPoliticsRefresh.reportMarketChange(
+            sector,
             market,
             "colony founded", // Event.
             "planet=" + planetId); // Context.
@@ -63,6 +78,7 @@ public class PoliticalMapColonisationListener implements PlayerColonizationListe
         // afresh whenever something else observes it. That is the whole of the
         // resolution, not a gap left to be filled in.
         MarketPoliticsRefresh.reportMarketChange(
+            sector,
             market,
             "colony abandoned", // Event.
             ""); // Context.

@@ -71,6 +71,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -254,13 +255,16 @@ final class IncrementalPoliticsRefreshTest {
         void applyStalePoliticsUpdatesReadsNoSectorWhenNothingIsStale() {
             // The per-frame path: this runs every frame, and on almost all of them the
             // stale set is empty, so it must cost nothing before it returns.
+            //
+            // Read as "nothing was asked of the sector" rather than "the sector was never named":
+            // the drain resolves the running sector to reach its board, which is a field read and
+            // a lookup. What the empty batch must not cost is the pass over that sector and the
+            // walk behind it, and neither leaves the sector untouched.
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
             applyTo(territories);
 
-            globalMock.verify(
-                Global::getSector,
-                never());
+            verifyNoInteractions(sectorMock);
             assertThat(territories.getStyledCellByCellId())
                 .isEmpty();
         }
