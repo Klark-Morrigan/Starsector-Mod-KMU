@@ -10,16 +10,16 @@ import org.lwjgl.input.Keyboard;
 import java.util.List;
 
 /**
- * Claims the key that flips how much detail hover boxes state, as a campaign input listener in the
- * pre-core pass - the pass that runs before the screen's own widgets each frame, where consuming an
- * event still stops it reaching the screen underneath.
+ * Claims the key that advances how much detail hover boxes state, as a campaign input listener in
+ * the pre-core pass - the pass that runs before the screen's own widgets each frame, where consuming
+ * an event still stops it reaching the screen underneath.
  *
  * <p>It is a listener of its own rather than part of the box's render pass because a render pass is
  * handed no events and so can consume none: reading the toggle and drawing the result are two passes,
- * which is why the mode they agree on lives in {@link HoverTooltipDetailModeState} rather than in
+ * which is why the level they agree on lives in {@link HoverTooltipDetailModeState} rather than in
  * either of them.
  *
- * <p>One instance covers the whole campaign UI rather than one per screen, because the mode is one
+ * <p>One instance covers the whole campaign UI rather than one per screen, because the level is one
  * global fact and the gate below is already host-blind - the box itself draws on the sector map and
  * on the intel screen's map visor alike.
  *
@@ -29,16 +29,16 @@ import java.util.List;
  * everywhere else.
  *
  * <p>Behind that gate the press is claimed only where it would do something the player can see - the
- * box under the cursor has a second amount of detail to state ({@link HoveredBox}). A mode that flipped
- * over anything at all would be the more forgiving rule if the mode were per hover, but it is not: it
- * is one shared fact that holds across hovers and layer switches, so a press swallowed over a system
- * with nothing to expand would silently decide how the next system that <em>does</em> differ opens.
- * The player would meet a box in a state they never chose, having pressed the key somewhere it
- * appeared to do nothing.
+ * box under the cursor has a second amount of detail to state ({@link HoveredBox}). A level that
+ * advanced over anything at all would be the more forgiving rule if the level were per hover, but it
+ * is not: it is one shared fact that holds across hovers and layer switches, so a press swallowed
+ * over a system with nothing to expand would silently decide how the next system that <em>does</em>
+ * differ opens. The player would meet a box at a level they never chose, having pressed the key
+ * somewhere it appeared to do nothing.
  */
 public final class HoverTooltipDetailModeInput implements CampaignInputListener {
 
-    // The key the mode is flipped with. Named once here rather than at each use, since the box that
+    // The key the level is advanced with. Named once here rather than at each use, since the box that
     // tells the player about it has to name the key that is actually claimed - a second literal is
     // one edit away from advertising a key this listener no longer takes.
     private static final int TOGGLE_KEY = Keyboard.KEY_F1;
@@ -84,8 +84,8 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
             return;
         }
         for (var event : events) {
-            // Something with the first claim already acted on this one; taking it again would flip
-            // the mode on a press that was meant for a sidebar tab.
+            // Something with the first claim already acted on this one; taking it again would advance
+            // the level on a press that was meant for a sidebar tab.
             if (event.isConsumed()) {
                 continue;
             }
@@ -93,14 +93,14 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
                 continue;
             }
             // Nothing under the cursor has a second amount of detail to state, so there is nothing
-            // for the key to switch. Left alone rather than flipped invisibly: the mode is shared and
-            // holds across hovers, so a press swallowed here would open the next system that does
-            // differ in a state the player never chose - the one place a press with no visible result
+            // for the key to switch. Left alone rather than advanced invisibly: the level is shared
+            // and holds across hovers, so a press swallowed here would open the next system that does
+            // differ at a level the player never chose - the one place a press with no visible result
             // is not harmless.
             if (!isAnyBoxOfferingExpansion()) {
                 continue;
             }
-            HoverTooltipDetailModeState.getInstance().toggleMode();
+            HoverTooltipDetailModeState.getInstance().advanceLevel();
             // Consumed only where it acted, so nothing else claims the key while the map is open
             // and the rest of the game keeps it.
             event.consume();
@@ -119,13 +119,13 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
     }
 
     // Whether this event is the toggle being pressed. Key-down only: the matching key-up arrives as
-    // its own event, and acting on both would flip the mode twice per press and leave it where it
-    // started.
+    // its own event, and acting on both would advance the level twice per press - the player would
+    // skip a depth they never saw.
     static boolean isDetailModeToggleKey(InputEventAPI event) {
         return event.isKeyDownEvent() && event.getEventValue() == TOGGLE_KEY;
     }
 
-    // Whether the box under the cursor would show the player anything more under the other mode.
+    // Whether the box under the cursor would show the player anything more at another level.
     // Asked of the same chain the drawing pass resolves its box through, so the key is claimed on
     // exactly the frames a box would answer it - and of the box itself, since only the layer knows
     // whether its counterpart has anything to add for the system being hovered.

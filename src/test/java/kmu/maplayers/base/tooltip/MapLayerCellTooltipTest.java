@@ -103,9 +103,9 @@ final class MapLayerCellTooltipTest {
         }
 
         @AfterEach
-        void dropTheDetailModeBackToNormal() {
-            // The mode holder is a process-wide singleton for the same reason the hover is, so a
-            // flip left standing would reach the next test as a detail level it never asked for.
+        void dropTheDetailLevelBackToFactions() {
+            // The level holder is a process-wide singleton for the same reason the hover is, so an
+            // advance left standing would reach the next test as a detail level it never asked for.
             HoverTooltipDetailModeState.getInstance().discardModeFromPreviousSave();
         }
 
@@ -184,13 +184,13 @@ final class MapLayerCellTooltipTest {
         }
 
         @Test
-        void drawsTheCounterpartTheDetailModeCallsFor() {
-            // The dispatcher's one read of the shared mode. Selection itself is pure and knows no
-            // holder, so nothing else pins that the box drawn is the box the last toggle selected -
-            // a dispatcher that resolved the mode and then drew the base anyway would pass every
-            // other case here. The mode is set on the shared holder rather than injected, since the
-            // holder is what the live toggle writes and the dispatcher reads it the same way it
-            // reads the hover.
+        void drawsTheCounterpartTheDetailLevelCallsFor() {
+            // The dispatcher's one read of the shared level. Selection itself is pure and knows no
+            // holder, so nothing else pins that the box drawn is the box the last press selected -
+            // a dispatcher that resolved the level and then drew the base anyway would pass every
+            // other case here. The level is set on the shared holder rather than injected, since the
+            // holder is what the live key writes and the dispatcher reads it the same way it reads
+            // the hover.
             var vanillaMapTooltipProbeMock = mock(VanillaMapTooltipProbe.class);
             var sectorMock = mock(SectorAPI.class);
             var systemMock = mock(StarSystemAPI.class);
@@ -203,7 +203,7 @@ final class MapLayerCellTooltipTest {
             when(tooltipMock.resolveExpandedVariant())
                 .thenReturn(Optional.of(expandedTooltipMock));
 
-            HoverTooltipDetailModeState.getInstance().toggleMode();
+            HoverTooltipDetailModeState.getInstance().advanceLevel();
 
             runWithHoverTooltipSwitchOn(() -> {
                 try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
@@ -234,45 +234,62 @@ final class MapLayerCellTooltipTest {
     class SelectVariantFor {
 
         @Test
-        void selectVariantForAnswersTheBaseUnderTheNormalMode() {
-            // Over a tooltip that does define a richer box: the mode is what decides, so defining a
+        void selectVariantForAnswersTheBaseAtTheFactionsLevel() {
+            // Over a tooltip that does define a richer box: the level is what decides, so defining a
             // counterpart must not be enough to draw it.
             var expandedVariantFake = new MapHoverTooltipFake();
             var baseFake = new ExpandedVariantMapHoverTooltipFake(expandedVariantFake);
 
-            assertThat(MapLayerCellTooltip.selectVariantFor(baseFake, HoverTooltipDetailMode.NORMAL))
+            assertThat(MapLayerCellTooltip.selectVariantFor(
+                    baseFake, HoverTooltipDetailLevel.FACTIONS))
                 .isSameAs(baseFake);
         }
 
         @Test
-        void selectVariantForAnswersTheBaseUnderTheNormalModeWithoutACounterpart() {
-            // The ordinary box in the ordinary mode - the path every layer takes today, which the
+        void selectVariantForAnswersTheBaseAtTheFactionsLevelWithoutACounterpart() {
+            // The ordinary box at the shallowest level - the path every layer takes today, which the
             // seam must leave exactly where it was.
             var baseFake = new MapHoverTooltipFake();
 
-            assertThat(MapLayerCellTooltip.selectVariantFor(baseFake, HoverTooltipDetailMode.NORMAL))
+            assertThat(MapLayerCellTooltip.selectVariantFor(
+                    baseFake, HoverTooltipDetailLevel.FACTIONS))
                 .isSameAs(baseFake);
         }
 
         @Test
-        void selectVariantForAnswersTheCounterpartUnderTheExpandedMode() {
-            // The one case the toggle exists for. Asserted on the instance rather than the type,
+        void selectVariantForAnswersTheCounterpartPastTheFactionsLevel() {
+            // The one case the cycle key exists for. Asserted on the instance rather than the type,
             // since a tooltip may well offer a counterpart of the same shape as itself.
             var expandedVariantFake = new MapHoverTooltipFake();
             var baseFake = new ExpandedVariantMapHoverTooltipFake(expandedVariantFake);
 
-            assertThat(MapLayerCellTooltip.selectVariantFor(baseFake, HoverTooltipDetailMode.EXPANDED))
+            assertThat(MapLayerCellTooltip.selectVariantFor(
+                    baseFake, HoverTooltipDetailLevel.SYSTEM_COMPOSITION))
                 .isSameAs(expandedVariantFake);
         }
 
         @Test
-        void selectVariantForAnswersTheBaseUnderTheExpandedModeWithoutACounterpart() {
-            // The graceful-undefined path: the mode is on, and this tooltip has nothing richer to
-            // say, so the player keeps the normal box rather than losing it. The stand-in inherits
-            // the interface's own empty answer, so this pins the default an implementation gets.
+        void selectVariantForAnswersTheCounterpartAtTheDeepestLevel() {
+            // The counterpart seam knows only two bodies, so every level past the shallowest must
+            // resolve to the one richer box rather than only the level right after it.
+            var expandedVariantFake = new MapHoverTooltipFake();
+            var baseFake = new ExpandedVariantMapHoverTooltipFake(expandedVariantFake);
+
+            assertThat(MapLayerCellTooltip.selectVariantFor(
+                    baseFake, HoverTooltipDetailLevel.PATROL_DETAILS))
+                .isSameAs(expandedVariantFake);
+        }
+
+        @Test
+        void selectVariantForAnswersTheBasePastTheFactionsLevelWithoutACounterpart() {
+            // The graceful-undefined path: a deeper level is asked for, and this tooltip has nothing
+            // richer to say, so the player keeps the normal box rather than losing it. The stand-in
+            // inherits the interface's own empty answer, so this pins the default an implementation
+            // gets.
             var baseFake = new MapHoverTooltipFake();
 
-            assertThat(MapLayerCellTooltip.selectVariantFor(baseFake, HoverTooltipDetailMode.EXPANDED))
+            assertThat(MapLayerCellTooltip.selectVariantFor(
+                    baseFake, HoverTooltipDetailLevel.SYSTEM_COMPOSITION))
                 .isSameAs(baseFake);
         }
     }

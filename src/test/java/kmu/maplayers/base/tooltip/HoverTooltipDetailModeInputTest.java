@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
  * is the whole of what this level can say.
  *
  * <p>Behind those gates the press is claimed only where the box under the cursor has a second amount
- * of detail to state, which is the other half of the same honesty: the mode is one shared fact that
+ * of detail to state, which is the other half of the same honesty: the level is one shared fact that
  * holds across hovers, so a press swallowed over a system with nothing to expand would decide how the
  * next system that does differ opens. What the cursor is over is a live chain through the hover state,
  * the layer registry and the sector, so it arrives here stood in for - offering or not offering is the
@@ -63,12 +63,12 @@ final class HoverTooltipDetailModeInputTest {
     }
 
     @AfterEach
-    void dropTheDetailModeBackToNormal() {
+    void dropTheDetailLevelBackToFactions() {
 
         hoveredBoxMock.close();
 
-        // The mode holder is a process-wide singleton, so a flip left standing would reach the next
-        // test as a detail level it never asked for.
+        // The level holder is a process-wide singleton, so an advance left standing would reach the
+        // next test as a detail level it never asked for.
         HoverTooltipDetailModeState.getInstance().discardModeFromPreviousSave();
     }
 
@@ -89,14 +89,14 @@ final class HoverTooltipDetailModeInputTest {
     class ProcessCampaignInputPreCore {
 
         @Test
-        void processCampaignInputPreCoreFlipsTheModeOnTheTogglePress() {
+        void processCampaignInputPreCoreAdvancesTheLevelOnTheTogglePress() {
 
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
 
             runWithHoverTooltipSwitchOn(() -> input.processCampaignInputPreCore(List.of(eventMock)));
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.EXPANDED);
+            assertThat(HoverTooltipDetailModeState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
 
             // Claimed where it acted, so nothing else answers the same press while the map is open.
             verify(eventMock)
@@ -104,16 +104,16 @@ final class HoverTooltipDetailModeInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreFlipsTheModeBackOnASecondPress() {
-            // The toggle is its own inverse, which is what makes one key both the way in and the way
-            // out rather than a mode the player cannot leave.
+        void processCampaignInputPreCoreAdvancesFurtherOnASecondPress() {
+            // One press is one step of the cycle, not a toggle: a second press must reach the next
+            // depth rather than undo the first.
             runWithHoverTooltipSwitchOn(() -> {
                 input.processCampaignInputPreCore(List.of(mockKeyDown(Keyboard.KEY_F1)));
                 input.processCampaignInputPreCore(List.of(mockKeyDown(Keyboard.KEY_F1)));
             });
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.NORMAL);
+            assertThat(HoverTooltipDetailModeState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
         }
 
         @Test
@@ -124,8 +124,8 @@ final class HoverTooltipDetailModeInputTest {
 
             runWithHoverTooltipSwitchOff(() -> input.processCampaignInputPreCore(List.of(eventMock)));
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.NORMAL);
+            assertThat(HoverTooltipDetailModeState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
 
             verify(eventMock, never())
                 .consume();
@@ -142,8 +142,8 @@ final class HoverTooltipDetailModeInputTest {
             runWithHoverTooltipSwitchOn(
                 () -> inputWithNoMapShowing.processCampaignInputPreCore(List.of(eventMock)));
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.NORMAL);
+            assertThat(HoverTooltipDetailModeState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
 
             verify(eventMock, never())
                 .consume();
@@ -151,8 +151,8 @@ final class HoverTooltipDetailModeInputTest {
 
         @Test
         void processCampaignInputPreCoreSkipsAnEventAlreadyClaimedUpstream() {
-            // A sidebar tab bound to the same key acts first; taking the press again would flip the
-            // mode on a press that was meant for the tab.
+            // A sidebar tab bound to the same key acts first; taking the press again would advance
+            // the level on a press that was meant for the tab.
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
 
             when(eventMock.isConsumed())
@@ -160,20 +160,20 @@ final class HoverTooltipDetailModeInputTest {
 
             runWithHoverTooltipSwitchOn(() -> input.processCampaignInputPreCore(List.of(eventMock)));
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.NORMAL);
+            assertThat(HoverTooltipDetailModeState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
         }
 
         @Test
         void processCampaignInputPreCoreLeavesEveryOtherKeyAlone() {
             // The gate is open and a key is down, so only the keycode test stands between this press
-            // and the mode - which is every other binding the player has on the map.
+            // and the level - which is every other binding the player has on the map.
             var eventMock = mockKeyDown(Keyboard.KEY_P);
 
             runWithHoverTooltipSwitchOn(() -> input.processCampaignInputPreCore(List.of(eventMock)));
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.NORMAL);
+            assertThat(HoverTooltipDetailModeState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
 
             verify(eventMock, never())
                 .consume();
@@ -189,8 +189,8 @@ final class HoverTooltipDetailModeInputTest {
             runWithHoverTooltipSwitchOn(() ->
                 input.processCampaignInputPreCore(List.of(unrelatedEventMock, toggleEventMock)));
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.EXPANDED);
+            assertThat(HoverTooltipDetailModeState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
 
             verify(toggleEventMock)
                 .consume();
@@ -208,8 +208,8 @@ final class HoverTooltipDetailModeInputTest {
             runWithHoverTooltipSwitchOn(
                 () -> input.processCampaignInputPreFleetControl(List.of(eventMock)));
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.NORMAL);
+            assertThat(HoverTooltipDetailModeState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
 
             verify(eventMock, never())
                 .consume();
@@ -227,8 +227,8 @@ final class HoverTooltipDetailModeInputTest {
 
             runWithHoverTooltipSwitchOn(() -> input.processCampaignInputPostCore(List.of(eventMock)));
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.NORMAL);
+            assertThat(HoverTooltipDetailModeState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
 
             verify(eventMock, never())
                 .consume();
@@ -240,17 +240,17 @@ final class HoverTooltipDetailModeInputTest {
 
         @Test
         void processCampaignInputPreCoreLeavesTheTogglePressAloneOverABoxOfferingNothing() {
-            // The whole point of asking: the mode is shared and holds across hovers, so flipping it
-            // here would decide how the next system that does differ opens - a state the player never
-            // chose, from a press that appeared to do nothing.
+            // The whole point of asking: the level is shared and holds across hovers, so advancing
+            // it here would decide how the next system that does differ opens - a depth the player
+            // never chose, from a press that appeared to do nothing.
             stubHoveredBoxOffering(false);
 
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
 
             runWithHoverTooltipSwitchOn(() -> input.processCampaignInputPreCore(List.of(eventMock)));
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.NORMAL);
+            assertThat(HoverTooltipDetailModeState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
 
             verify(eventMock, never())
                 .consume();
@@ -268,26 +268,28 @@ final class HoverTooltipDetailModeInputTest {
 
             runWithHoverTooltipSwitchOn(() -> input.processCampaignInputPreCore(List.of(eventMock)));
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.NORMAL);
+            assertThat(HoverTooltipDetailModeState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
 
             verify(eventMock, never())
                 .consume();
         }
 
         @Test
-        void processCampaignInputPreCoreStillClosesTheDetailedBoxItOpened() {
-            // The offer is symmetric: a box that could be expanded can be collapsed again, so the key
-            // has to keep working once the richer box is the one on screen. Were it read as "can this
-            // grow", the player would open a box they could not close.
-            HoverTooltipDetailModeState.getInstance().toggleMode();
+        void processCampaignInputPreCoreStillCollapsesTheDeepestBoxItOpened() {
+            // The offer is symmetric: a box that could be deepened can be collapsed again, so the key
+            // has to keep working once the deepest box is the one on screen. Were it read as "can
+            // this grow", the player would open a box they could not close.
+            HoverTooltipDetailModeState.getInstance().advanceLevel();
+            HoverTooltipDetailModeState.getInstance().advanceLevel();
+            HoverTooltipDetailModeState.getInstance().advanceLevel();
 
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
 
             runWithHoverTooltipSwitchOn(() -> input.processCampaignInputPreCore(List.of(eventMock)));
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.NORMAL);
+            assertThat(HoverTooltipDetailModeState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
         }
     }
 
@@ -312,14 +314,15 @@ final class HoverTooltipDetailModeInputTest {
 
         @Test
         void isDetailModeToggleKeyIsTrueForTheTogglePressedDown() {
+
             assertThat(HoverTooltipDetailModeInput.isDetailModeToggleKey(mockKeyDown(Keyboard.KEY_F1)))
                 .isTrue();
         }
 
         @Test
         void isDetailModeToggleKeyIsFalseForTheToggleReleased() {
-            // The release arrives as its own event, so acting on both halves of one press would flip
-            // the mode twice and leave it exactly where it started.
+            // The release arrives as its own event, so acting on both halves of one press would
+            // advance the level twice and skip a depth the player never saw.
             var eventMock = mock(InputEventAPI.class);
 
             when(eventMock.getEventValue())

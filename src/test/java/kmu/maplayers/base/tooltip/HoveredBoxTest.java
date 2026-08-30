@@ -43,6 +43,11 @@ final class HoveredBoxTest {
 
     private static final String SYSTEM_ID = "system";
 
+    // The machinery of the sector the box would describe. One for the class, since every case here
+    // is about one sector's box: which sector it is turns nothing, and a fresh one per assertion
+    // would suggest it did.
+    private final MapLayerInstallation installation = new MapLayerInstallation();
+
     private final MapHoverTooltip tooltipMock = mock(MapHoverTooltip.class);
     private final MapLayer tooltipLayerMock = mock(MapLayer.class);
     private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
@@ -74,6 +79,7 @@ final class HoveredBoxTest {
 
     @AfterEach
     void restoreTheSharedState() {
+
         MapLayerRosters.restoreNonEmptyRoster();
         MapHoverState.resolveLiveSectorHoverState().clearHover();
     }
@@ -210,6 +216,7 @@ final class HoveredBoxTest {
 
         @Test
         void resolveActiveTooltipAnswersTheActiveLayersInjectedTooltip() {
+
             try (var globalMock = mockStatic(Global.class)) {
 
                 // No sector means no stored pick, so the registry resolves to the registered default.
@@ -217,7 +224,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(new MapLayerInstallation()))
+                assertThat(HoveredBox.resolveActiveTooltip(installation))
                     .contains(tooltipMock);
             }
         }
@@ -234,7 +241,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(new MapLayerInstallation()))
+                assertThat(HoveredBox.resolveActiveTooltip(installation))
                     .isEmpty();
             }
         }
@@ -266,7 +273,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(new MapLayerInstallation()))
+                assertThat(HoveredBox.resolveActiveTooltip(installation))
                     .contains(tooltipMock);
             }
         }
@@ -288,7 +295,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(new MapLayerInstallation()))
+                assertThat(HoveredBox.resolveActiveTooltip(installation))
                     .isEmpty();
             }
         }
@@ -305,7 +312,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(new MapLayerInstallation()))
+                assertThat(HoveredBox.resolveActiveTooltip(installation))
                     .isEmpty();
             }
         }
@@ -332,6 +339,7 @@ final class HoveredBoxTest {
 
     // Puts the cursor over the registered system, which the chain resolves the hovered id against.
     private void hoverTheSystem() {
+
         MapHoverState
             .resolveLiveSectorHoverState()
             .publishHover(new MapHover(SYSTEM_ID, List.of(SYSTEM_ID)));

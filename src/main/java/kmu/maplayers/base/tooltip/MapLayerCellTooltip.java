@@ -31,9 +31,9 @@ import kmu.maplayers.base.hover.MapHoverPermission;
  *
  * <p>How much detail the drawn box states is settled here too, and by one shared fact rather than
  * per layer: the dispatcher reads {@link HoverTooltipDetailModeState} and draws the counterpart the
- * injected tooltip offers for that mode, or the tooltip itself when it offers none. So the choice
- * holds across hovers and layer switches, and a tooltip that states one amount of detail needs no
- * case of its own.
+ * injected tooltip offers past the shallowest level, or the tooltip itself when it offers none. So
+ * the choice holds across hovers and layer switches, and a tooltip that states one amount of detail
+ * needs no case of its own.
  */
 public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 
@@ -99,25 +99,26 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         if (hoveredBox.isEmpty()) {
             return;
         }
-        // Which of an injected tooltip's boxes to draw is the shared detail mode's call rather than
-        // the layer's: one mode selects for whatever is hovered, so it holds across hovers and layer
+        // Which of an injected tooltip's boxes to draw is the shared detail level's call rather than
+        // the layer's: one level selects for whatever is hovered, so it holds across hovers and layer
         // switches instead of each layer having to remember a choice made over another one's cell.
         selectVariantFor(
                 hoveredBox.get().tooltip(),
-                HoverTooltipDetailModeState.getInstance().getMode())
+                HoverTooltipDetailModeState.getInstance().getLevel())
             .renderFor(
                 hoveredBox.get().sector(),
                 hoveredBox.get().system());
     }
 
-    // The box the current detail mode calls for: the tooltip's richer counterpart while the mode asks
-    // for one and the tooltip defines one, and the tooltip itself in every other case - so a tooltip
-    // that defines no counterpart draws the same box under either mode rather than nothing at all.
-    // Descends exactly one level: a counterpart is never asked for a counterpart of its own, so the
-    // model cannot recurse however deeply a layer nests its variants.
-    static MapHoverTooltip selectVariantFor(MapHoverTooltip base, HoverTooltipDetailMode mode) {
+    // The box the current detail level calls for: the tooltip's richer counterpart at any level past
+    // the shallowest, and the tooltip itself at the factions level or where no counterpart is
+    // defined - so a tooltip that defines no counterpart draws the same box at every level rather
+    // than nothing at all. The counterpart seam knows only two bodies, so all the deeper levels
+    // resolve to the one richer box. Descends exactly one step: a counterpart is never asked for a
+    // counterpart of its own, so the model cannot recurse however deeply a layer nests its variants.
+    static MapHoverTooltip selectVariantFor(MapHoverTooltip base, HoverTooltipDetailLevel level) {
 
-        if (mode != HoverTooltipDetailMode.EXPANDED) {
+        if (level == HoverTooltipDetailLevel.FACTIONS) {
             return base;
         }
         return base.resolveExpandedVariant().orElse(base);

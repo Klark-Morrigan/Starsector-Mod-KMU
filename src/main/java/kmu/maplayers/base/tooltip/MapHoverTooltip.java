@@ -30,18 +30,18 @@ public interface MapHoverTooltip {
     void renderFor(SectorAPI sector, StarSystemAPI system);
 
     /**
-     * This box's richer counterpart - the one drawn in its place while the shared detail mode reads
-     * {@link HoverTooltipDetailMode#EXPANDED} - or empty when this tooltip states one amount of
-     * detail only.
+     * This box's richer counterpart - the one drawn in its place while the shared detail level sits
+     * past {@link HoverTooltipDetailLevel#FACTIONS} - or empty when this tooltip states one amount
+     * of detail only.
      *
-     * <p>The counterpart is a second {@code MapHoverTooltip} rather than a mode argument on
-     * {@link #renderFor}, so a tooltip opts into the richer mode by supplying a second body, exactly
+     * <p>The counterpart is a second {@code MapHoverTooltip} rather than a level argument on
+     * {@link #renderFor}, so a tooltip opts into richer detail by supplying a second body, exactly
      * as a layer opts into having a tooltip at all by injecting one - and an implementation with
-     * nothing richer to say carries no branch for a mode it does not support. Empty being the
+     * nothing richer to say carries no branch for a depth it does not support. Empty being the
      * default is what makes the fallback graceful: the dispatcher draws the normal box, so the
-     * toggle simply shows nothing new over a tooltip that defines no counterpart.
+     * cycle key simply shows nothing new over a tooltip that defines no counterpart.
      *
-     * @return the box to draw instead of this one while the expanded mode holds, or empty when this
+     * @return the box to draw instead of this one past the shallowest level, or empty when this
      *         tooltip defines no richer counterpart
      */
     default Optional<MapHoverTooltip> resolveExpandedVariant() {
@@ -49,15 +49,15 @@ public interface MapHoverTooltip {
     }
 
     /**
-     * Whether switching detail modes over {@code system} would show the player anything this box does
+     * Whether switching detail levels over {@code system} would show the player anything this box does
      * not - the question the pass claiming the toggle key asks before acting on a press.
      *
      * <p>Asked of the box rather than inferred from {@link #resolveExpandedVariant} because a
      * counterpart existing is not the same as it having something to say: a box may define a richer
      * variant that, for this particular system, states exactly what this one already does. Pressing the
-     * key there would flip a mode the player sees no result from, and - since the mode is shared and
-     * holds across hovers - would leave the next system that <em>does</em> differ opening in a state they
-     * did not choose.
+     * key there would advance a level the player sees no result from, and - since the level is shared
+     * and holds across hovers - would leave the next system that <em>does</em> differ opening at a depth
+     * they did not choose.
      *
      * <p>Asked per system for the same reason the counterpart's own subject is
      * ({@code SystemCellTooltip.resolveExpandedDetailName}): whether there is anything more to show is a

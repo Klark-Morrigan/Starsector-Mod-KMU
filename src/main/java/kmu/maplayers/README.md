@@ -334,12 +334,16 @@ about what the overlay means.
   show nothing for the same reason. The step-aside is rooted at whichever surface owns the frame,
   `ShownMapSurface` in `kmu.starsector.ui` - a tab-rooted walk cannot reach a docked map's tooltip,
   those being up on exactly the frames no tab is. How much detail the drawn box states is one shared fact rather
-  than a per-layer one: `HoverTooltipDetailModeState` carries the mode, and the dispatcher draws the
-  richer counterpart the injected tooltip offers for it (`MapHoverTooltip.resolveExpandedVariant`) or
-  that tooltip itself when it offers none - so the choice holds across hovers and layer switches, and
-  a tooltip stating one amount of detail needs no case of its own. What writes that mode is
-  `HoverTooltipDetailModeInput`, a campaign input listener claiming F1 pre-core: a render pass is
-  handed no events and so can consume none, which is why reading the toggle and drawing its result
+  than a per-layer one: `HoverTooltipDetailModeState` carries the ordered `HoverTooltipDetailLevel` -
+  four depths of the same account, from factions alone down to the patrol split - and the dispatcher
+  draws the richer counterpart the injected tooltip offers past the shallowest level
+  (`MapHoverTooltip.resolveExpandedVariant`) or that tooltip itself when it offers none - so the
+  choice holds across hovers and layer switches, and a tooltip stating one amount of detail needs no
+  case of its own. What writes that level is
+  `HoverTooltipDetailModeInput`, a campaign input listener claiming F1 pre-core: each press advances
+  one level, wrapping from the deepest back to the first, so the key that leads into detail also
+  leads out of it. A render pass is
+  handed no events and so can consume none, which is why reading the key and drawing its result
   are two passes agreeing through the holder. Both read one gate seam, `HoverTooltipGates` - the
   settings tiers above any layer, and a map on screen - rather than a copy each, so the key is
   claimed when and only when a box could be drawn and a condition added later reaches both passes.
@@ -347,7 +351,7 @@ about what the overlay means.
   under the cursor answers `MapHoverTooltip.isOfferingExpansionFor` for the hovered system, and a
   system with nothing more to state leaves the key alone. Asked per system rather than per box
   because that is where the answer lives - an unpopulated system has no colonies for a counterpart
-  to account for. Left unclaimed rather than flipped invisibly because the mode is one shared fact:
+  to account for. Left unclaimed rather than advanced invisibly because the level is one shared fact:
   a press swallowed over a system with nothing to expand would silently decide how the next system
   that *does* differ opens. What the cursor is over is resolved once, by `HoveredBox`, and read by
   both passes - a chain spelled out twice is one edit away from the key acting on a frame the box
