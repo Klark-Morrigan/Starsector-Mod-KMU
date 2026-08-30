@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.text.KmlibNumbers;
+import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
@@ -51,7 +52,9 @@ import java.util.List;
  * as one, with the bloc stated after its name instead: the alliance is still named on every row it lost, so
  * a reader is never left inferring a grouping from what is missing. Which factions those are is the
  * routing's answer; naming and cresting the bloc they came out of is this resolver's, off the same grouping
- * that names a bloc listed whole.
+ * that names a bloc listed whole. Where the alliance is named after the faction on the row - the common
+ * shape of an alliance called after the faction leading it - the name is stood in for by its initials and
+ * closed with what kind of thing they are, so one line never says one name twice.
  *
  * <p>How loudly a score is drawn is settled here too, on the standing's own kind: a faction or a bloc
  * the pass weighed nothing for carries its nought in the quiet shade. The distinction is the
@@ -65,6 +68,10 @@ import java.util.List;
  * same index and risk listing one faction's colonies under another's name.
  */
 public final class StandingRowResolver {
+
+    // How many words a name has to run to before its initials stand in for it. One word abbreviates
+    // to one letter, which is a poorer name than the word it replaced.
+    private static final int SHORTEST_ABBREVIATED_NAME_WORDS = 1;
 
     private StandingRowResolver() {
     }
@@ -153,8 +160,8 @@ public final class StandingRowResolver {
     //
     // Read off the grouping here rather than carried along from the routing, so the alliance is
     // named and crested by the very fold the ranking was taken under. The name is what the box has
-    // worked out about the row and reads as a finding; the word introducing it and the crest are
-    // the sentence around it and stay quiet.
+    // worked out about the row and reads as a finding; the words around it and the crest are the
+    // sentence it sits in and stay quiet.
     private static CellTooltipEntryLine attributeToAlliance(
             CellTooltipEntryLine line,
             RoutedStanding routedStanding,
@@ -165,13 +172,52 @@ public final class StandingRowResolver {
             return line;
         }
         var allianceBlocId = routedStanding.allianceBlocId();
+        var allianceName = grouping.resolveAllianceName(allianceBlocId);
 
+        var allianceMark = CellTooltipMark.resolveMarkAsAuthored(FactionPresentation
+            .resolvePresentation(sector, grouping.resolveColourFactionId(allianceBlocId))
+            .crestSpritePath());
+
+        // An alliance named after the faction on the row says the name a second time in the space of
+        // one line - which is where an alliance is commonly named after the faction leading it, and
+        // where it carries that faction's crest besides. There the name is stood in for by its
+        // initials and closed with what kind of thing they name, so the line states the bloc without
+        // repeating itself and the reader can still tell the two apart.
+        if (isNamedAfter(line, allianceName)) {
+
+            return line.callsOut(CellTooltipQualifier.encloseFinding(
+                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_OF_THE_ALLIANCE),
+                allianceMark,
+                abbreviateAllianceName(allianceName),
+                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_ALLIANCE)));
+        }
         return line.callsOut(CellTooltipQualifier.introduceFinding(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_OF_ALLIANCE),
-            CellTooltipMark.resolveMarkAsAuthored(FactionPresentation
-                .resolvePresentation(sector, grouping.resolveColourFactionId(allianceBlocId))
-                .crestSpritePath()),
-            grouping.resolveAllianceName(allianceBlocId)));
+            allianceMark,
+            allianceName));
+    }
+
+    // Whether the alliance is called what the line is already called. Ignoring case, because what is
+    // being asked is whether a reader would meet the same name twice, and two spellings differing
+    // only in case read as one name.
+    //
+    // A line withholding its name is named nothing a bloc could repeat, so it takes the ordinary
+    // form - the shape of a name says nothing about which name it stands for.
+    private static boolean isNamedAfter(CellTooltipEntryLine line, String allianceName) {
+
+        return line.labelText() != null
+            && line.labelText().equalsIgnoreCase(allianceName);
+    }
+
+    // The alliance's name stood in for by its initials, and left whole where standing it in would
+    // gain nothing: a one-word name abbreviates to a single letter, which says less than the word it
+    // replaced and is no shorter than a reader would call worth the trade. That case still takes the
+    // closing word, so "of the Hegemony alliance" reads as the sentence it is.
+    private static String abbreviateAllianceName(String allianceName) {
+
+        return KmlibStrings.splitIntoWords(allianceName).size() > SHORTEST_ABBREVIATED_NAME_WORDS
+            ? KmlibStrings.abbreviateToInitials(allianceName)
+            : allianceName;
     }
 
     // One group's line, whichever kind of group it is: whatever names it, over the score its members

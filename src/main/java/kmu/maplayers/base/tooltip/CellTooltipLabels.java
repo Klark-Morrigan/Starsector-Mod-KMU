@@ -228,13 +228,14 @@ final class CellTooltipLabels {
     // Runs the label on into whatever the line calls out - and leaves a line calling nothing out as
     // the runs it already had, rather than ending on one that draws nothing.
     //
-    // A status introduced by a word and marked by a picture of what it names reads as three runs in
-    // the order a player meets it: the box's own connective, the picture, then the finding itself.
-    // Only the last is gold, on the one rule that gilds what the box has worked out and nothing
-    // else - so the plainest status there is comes to the single gold run it has always been.
+    // A status introduced by a word, marked by a picture of what it names and closed by what kind of
+    // thing that is reads as four runs in the order a player meets them: the box's own connective,
+    // the picture, the finding itself, then the kind. Only the finding is gold, on the one rule that
+    // gilds what the box has worked out and nothing else - so the plainest status there is comes to
+    // the single gold run it has always been.
     //
-    // The word takes the quiet shade a place and a remark take, being the box's own joining word
-    // rather than anything it found; the mark keeps whatever colouring it was composed with, a
+    // The two words take the quiet shade a place and a remark take, being the box's own joining
+    // words rather than anything it found; the mark keeps whatever colouring it was composed with, a
     // picture of a thing in its own right having its colours in its own pixels.
     private static void appendQualifierRuns(
             List<LabelRun> labelRuns,
@@ -247,14 +248,24 @@ final class CellTooltipLabels {
             return;
         }
         if (qualifier.hasLeadingWord()) {
-            labelRuns.add(new TextSpan(
-                qualifier.leadingWordText(),
-                StarsectorUiColour.VANILLA_GRAY.resolve()));
+            labelRuns.add(buildQuietSpan(qualifier.leadingWordText()));
         }
         if (qualifier.hasMark()) {
             labelRuns.add(resolveMarkSpan(qualifier.mark(), lineColour));
         }
         labelRuns.add(buildFindingSpan(qualifier.findingText()));
+
+        if (qualifier.hasTrailingWord()) {
+            labelRuns.add(buildQuietSpan(qualifier.trailingWordText()));
+        }
+    }
+
+    // A run the box speaks in its own quiet voice: the words it joins a finding to the line with,
+    // which are not findings and must not read as any. One place decides that shade, so the words
+    // either side of a finding cannot part on it.
+    private static TextSpan buildQuietSpan(String text) {
+
+        return new TextSpan(text, StarsectorUiColour.VANILLA_GRAY.resolve());
     }
 
     // Runs the label on into whatever it remarks about the thing on the line. Laid last, after the

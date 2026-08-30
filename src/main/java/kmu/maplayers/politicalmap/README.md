@@ -299,7 +299,11 @@ blocs under an alliance set no fill was resolved with.
 A bloc its members do not agree about is not listed whole under either heading. It is broken up
 instead: each member present takes a row of its own in the block its own disposition puts it in,
 carrying the bloc it came out of (`RoutedStanding`), which `StandingRowResolver` states after the
-faction's name as `of <crest> <alliance name>`. The alliance is therefore named on every row it lost,
+faction's name as `of <crest> <alliance name>` - or, where the alliance is named after the faction on
+that very row, as `of the <crest> C.O.G.R. alliance`, the initials standing in for a name the line
+has already said and the closing word saying what they name (`KmlibStrings.abbreviateToInitials`; a
+one-word name is left whole, an initial being a poorer name than the word it replaced). The alliance
+is therefore named on every row it lost,
 where a majority or a lead-member reading would put a heading over factions it is false of - the
 fault the block exists to fix, one level in. `HOLDER` and `ALLIED` never break up, being placed by
 membership rather than by relation, and under the identity grouping every bloc is a singleton, so

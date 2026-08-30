@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
@@ -240,6 +241,64 @@ final class StandingRowResolverTest {
                         "of",
                         CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
                         "Allied Powers"))));
+        }
+
+        @Test
+        void resolveRowsStandsInForABlocNameTheRowHasAlreadySaid() {
+            // The shape an alliance called after the faction leading it takes - which also carries
+            // that faction's crest, so the line would otherwise say one name twice under one picture
+            // twice. The initials stand in for the name, and the closing word says what they are.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "luddic_church", "Church of Galactic Redemption", "graphics/lc.png");
+
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                List.of(RoutedStanding.dissolveFrom(
+                    new WeighedFactionStanding("luddic_church", 1200),
+                    "alliance-1")),
+                buildNamesakeAllianceGrouping(),
+                NO_ACCOUNT);
+
+            assertThat(entries)
+                .containsExactly(CellTooltipEntry.createEntry(CellTooltipEntryLine
+                    .createLine(
+                        CellTooltipMark.resolveMarkAsAuthored("graphics/lc.png"),
+                        "Church of Galactic Redemption",
+                        "1,200")
+                    .callsOut(CellTooltipQualifier.encloseFinding(
+                        "of the",
+                        CellTooltipMark.resolveMarkAsAuthored("graphics/lc.png"),
+                        "C.O.G.R.",
+                        "alliance"))));
+        }
+
+        @Test
+        void resolveRowsLeavesAOneWordBlocNameWholeWhereTheRowHasAlreadySaidIt() {
+            // Standing a one-word name in for its initial says less than the word it replaced, so
+            // the name is left whole - and the closing word makes the repetition read as the
+            // sentence it is rather than as the name stuttered.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "hegemony", "Hegemony", "graphics/heg.png");
+
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                List.of(RoutedStanding.dissolveFrom(
+                    new WeighedFactionStanding("hegemony", 8),
+                    "alliance-1")),
+                new HolderGrouping(
+                    Map.of("hegemony", "alliance-1"),
+                    Map.of("alliance-1", "hegemony"),
+                    Map.of("alliance-1", "Hegemony")),
+                NO_ACCOUNT);
+
+            assertThat(entries.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.encloseFinding(
+                    "of the",
+                    CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
+                    "Hegemony",
+                    "alliance"));
         }
 
         @Test
@@ -544,6 +603,17 @@ final class StandingRowResolverTest {
     // than at each case, since every case about the alliance poses the same two.
     private static HolderGrouping buildAllianceGrouping() {
         return buildAllianceOf("hegemony", "astral_armada");
+    }
+
+    // An alliance called exactly what its lead member is called, which is the shape a bloc named
+    // after the faction leading it takes - and the one case a row would otherwise say one name twice.
+    // Built here rather than through the shared fixture, whose alliance is deliberately named after
+    // nobody.
+    private static HolderGrouping buildNamesakeAllianceGrouping() {
+        return new HolderGrouping(
+            Map.of("luddic_church", "alliance-1"),
+            Map.of("alliance-1", "luddic_church"),
+            Map.of("alliance-1", "Church of Galactic Redemption"));
     }
 
     // The groups as a block that listed every one of them whole hands them over - what every block

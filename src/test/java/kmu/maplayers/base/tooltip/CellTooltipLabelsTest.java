@@ -346,6 +346,28 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
+        void resolveLabelRunsClosesAnEnclosedStatusOnTheWordSayingWhatItNames() {
+            // The fullest status the vocabulary builds, for a finding that cannot say for itself
+            // what kind of thing it is: the closing word takes the same quiet shade the opening one
+            // does, both being the box's own words rather than anything it found.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine
+                        .createLine(NO_MARK, "Church of Galactic Redemption", "1,200")
+                        .callsOut(CellTooltipQualifier.encloseFinding(
+                            "of the",
+                            CREST_MARK,
+                            "C.O.G.R.",
+                            "alliance")),
+                    PLAYER_BRIGHT))
+                .containsExactly(
+                    new TextSpan("Church of Galactic Redemption", PLAYER_BRIGHT),
+                    new TextSpan("of the", GRAY),
+                    new ImageSpan(CREST),
+                    new TextSpan("C.O.G.R.", HIGHLIGHT),
+                    new TextSpan("alliance", GRAY));
+        }
+
+        @Test
         void resolveLabelRunsAddsNoRunForWhateverTheLineLeavesUnsaid() {
             // The three absences together, and the reason they matter: a run drawing nothing would
             // still be a run the box measures and parts from its neighbour, so a plain line has to

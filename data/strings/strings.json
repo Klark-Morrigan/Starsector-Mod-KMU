@@ -67,6 +67,8 @@
     "political_map_tooltip_qualifier_unlisted": "unlisted",
     "political_map_tooltip_qualifier_non_territorial": "non-territorial",
     "political_map_tooltip_qualifier_of_alliance": "of",
+    "political_map_tooltip_qualifier_of_the_alliance": "of the",
+    "political_map_tooltip_qualifier_alliance": "alliance",
 
     "political_map_tooltip_last_seen": "last seen %s (%s)",
     "political_map_tooltip_last_seen_today": "today",

@@ -86,6 +86,10 @@ public final class KmuStrings {
         "political_map_tooltip_qualifier_non_territorial";
     public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_OF_ALLIANCE =
         "political_map_tooltip_qualifier_of_alliance";
+    public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_OF_THE_ALLIANCE =
+        "political_map_tooltip_qualifier_of_the_alliance";
+    public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_ALLIANCE =
+        "political_map_tooltip_qualifier_alliance";
     public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN = "political_map_tooltip_last_seen";
     public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN_TODAY =
         "political_map_tooltip_last_seen_today";

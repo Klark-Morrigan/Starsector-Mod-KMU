@@ -392,11 +392,13 @@ about what the overlay means.
   would break a status away from the name it qualifies.
   A status is itself a small value (`CellTooltipQualifier`): the finding it always states, plus - for
   a line calling out the thing it *belongs to* rather than something about it - a word introducing
-  that finding and a mark of what the finding names, read as `of <crest> <alliance name>`. One value
-  rather than three parts layered on separately, since applied apart they leave a line free to end on
-  a connective introducing nothing or on a picture of something it never names. Only the finding is
-  gold, so the plain status nearly every line carries (`qualifiedWith`) stays the single gold run it
-  has always been.
+  that finding, a mark of what the finding names, and a word closing it with what kind of thing that
+  is, read as `of <crest> <alliance name>` or `of the <crest> C.O.G.R. alliance`. One value rather
+  than parts layered on separately, since applied apart they leave a line free to end on a connective
+  introducing nothing or on a picture of something it never names. Only the finding is gold - the
+  words either side are the box's own, and the closing one is a category rather than a name - so the
+  plain status nearly every line carries (`qualifiedWith`) stays the single gold run it has always
+  been.
   A finding may also sit inside the line's own name (`callsOutInLabel`), as a
   `CellTooltipLabelFinding` - the stretch of the label that says it, held as character positions
   since the name is the only copy of the name. It is drawn in the qualifier's gold where it stands,

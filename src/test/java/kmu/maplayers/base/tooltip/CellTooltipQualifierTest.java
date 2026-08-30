@@ -61,6 +61,16 @@ final class CellTooltipQualifierTest {
         }
 
         @Test
+        void introduceFindingClosesTheStatusOnTheFinding() {
+            // A name says for itself what kind of thing it is, so nothing follows it - which is what
+            // keeps the closing word to the one case that needs it.
+            assertThat(CellTooltipQualifier
+                    .introduceFinding("of", CREST_MARK, "Allied Powers")
+                    .hasTrailingWord())
+                .isFalse();
+        }
+
+        @Test
         void introduceFindingStatesNoMarkWhereTheGameSuppliedNoTexture() {
             // A subject the game gives no crest for still states which one it is, on the same absence
             // rule every marked line holds to: the picture is dropped rather than drawn as an image
@@ -69,6 +79,28 @@ final class CellTooltipQualifierTest {
                     .introduceFinding("of", CellTooltipMark.NO_MARK, "Allied Powers")
                     .hasMark())
                 .isFalse();
+        }
+    }
+
+    @Nested
+    class EncloseFinding {
+
+        @Test
+        void encloseFindingCarriesAWordEitherSideOfTheFinding() {
+            // What a finding that cannot say for itself what it names needs: initials say nothing
+            // about what kind of thing they stand for, so the box says it after them.
+            var qualifier = CellTooltipQualifier.encloseFinding(
+                "of the",
+                CREST_MARK,
+                "C.O.G.R.",
+                "alliance");
+
+            assertThat(qualifier.leadingWordText())
+                .isEqualTo("of the");
+            assertThat(qualifier.findingText())
+                .isEqualTo("C.O.G.R.");
+            assertThat(qualifier.trailingWordText())
+                .isEqualTo("alliance");
         }
     }
 }
