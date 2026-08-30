@@ -77,6 +77,7 @@
 
     "political_map_tooltip_section_claim": "Claim:",
     "political_map_tooltip_section_allied_with_holder": "Allied with the claim holder:",
+    "political_map_tooltip_section_friendly_with_claim_holder": "Friendly with the claim holder:",
     "political_map_tooltip_section_contested": "Contested by:",
     "political_map_tooltip_section_non_territorial": "Non-territorial:",
     "political_map_tooltip_section_dominated": "Dominated by:",

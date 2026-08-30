@@ -1,7 +1,9 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import com.fs.starfarer.api.campaign.RepLevel;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.ImageSpan;
@@ -21,6 +23,7 @@ import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
+import kmu.maplayers.politicalmap.base.dominance.BlocFriendliness;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 import org.junit.jupiter.api.AfterEach;
@@ -52,6 +55,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
+import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubDispositionToward;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,10 +66,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the shape a claim contest is read in: the claim is always stated, the claim holder's allies are
- * taken out of the contest into a block of their own, the rivals who could have taken the system and
- * the ones who never could are told apart into two more, and a system held by decree says so on the
- * claim line without losing the market standings behind it.
+ * Pins the shape a claim contest is read in: the claim is always stated, the claim holder's allies and
+ * the factions merely on good terms with it are taken out of the contest into two blocks of their own,
+ * the rivals who could have taken the system and the ones who never could are told apart into two
+ * more, and a system held by decree says so on the claim line without losing the market standings
+ * behind it.
  *
  * <p>The banner heading a decreed box is the layer's rather than this box's, so it is pinned with the
  * heading itself ({@link PoliticalMapCellTooltipTest}); the marker asserted here is what the banner
@@ -118,6 +123,12 @@ final class SystemClaimTooltipTest {
     private static final boolean IS_TERRITORIAL = true;
     private static final boolean IS_NON_TERRITORIAL = false;
 
+    // Nobody above neutral with anybody, which leaves the friendly block empty - the state the two
+    // account cases below are posed under, neither being about a disposition. Every case about the
+    // blocks themselves goes through the box's own live read of the sector instead.
+    private static final BlocFriendliness INDIFFERENT_FACTIONS =
+        new BlocFriendliness((factionId, otherFactionId) -> false);
+
     // Whether the player knows of the colony a standing rests on - the flag the box's projection
     // reads. Independent of what the mechanic made of that colony: a market held in the open is
     // weighed whether or not anybody has reached it, so a scored standing can rest on an
@@ -164,6 +175,7 @@ final class SystemClaimTooltipTest {
         stubFaction(sectorMock, HEGEMONY, "The Hegemony", HEGEMONY_CREST);
         stubFaction(sectorMock, TRITACHYON, "Tri-Tachyon", null);
         stubFaction(sectorMock, PIRATES, "Pirates", null);
+        stubFaction(sectorMock, Factions.NEUTRAL, "Neutral", null);
     }
 
     @AfterEach
@@ -416,11 +428,145 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsCallsEveryTerritorialFactionARivalWhereNobodyHoldsTheSystem() {
-            // There is nobody to be allied with, so a block whose heading names a holder never draws
-            // over a system without one - even where the two factions present are allied to each
-            // other, which is the pair the comparison would otherwise have matched on.
+        void buildBodySectionsRoutesAFactionOnGoodTermsWithTheClaimHolderOutOfTheContestedBlock() {
+            // The fault the fourth block fixes, a step down the scale from the third: a faction the
+            // sector puts on good terms with the claim holder has no quarrel with it over the system,
+            // and `Contested by:` says it has. The score it lost by is untouched - the heading was the
+            // error, not the number.
+            var friendlyEntryRow = 3;
+
+            stubDispositionToward(sectorMock, TRITACHYON, HEGEMONY, RepLevel.FAVORABLE);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
+
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Friendly with the claim holder:",
+                    "Tri-Tachyon");
+            assertThat(readTableRow(sections, friendlyEntryRow).labelledRow().trailingRowSlot())
+                .isEqualTo(new RowSlot.Text(new TextSpan("8", HIGHLIGHT)));
+        }
+
+        @Test
+        void buildBodySectionsLeavesAFactionIndifferentTowardTheClaimHolderContesting() {
+            // Where the block stops. `NEUTRAL` is the base game's own word for indifference and the
+            // last level it declines to call goodwill, so a faction sitting exactly on it is a rival
+            // like any other - which is what makes the threshold one the player can read off a
+            // faction screen rather than a cut this box invented.
+            stubDispositionToward(sectorMock, TRITACHYON, HEGEMONY, RepLevel.NEUTRAL);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Contested by:",
+                    "Tri-Tachyon");
+        }
+
+        @Test
+        void buildBodySectionsKeepsTheClaimHoldersAllyAlliedHoweverWarmlyItIsDisposed() {
+            // Alliance is the outer axis and disposition never re-sorts what it took, so an ally on
+            // excellent terms with the holder gains nothing by it - the two blocks would otherwise
+            // both be true of one faction, and which of them it drew in would be down to the order
+            // they happen to be tested in.
             holderGrouping = buildAllianceOf(HEGEMONY, TRITACHYON);
+
+            stubDispositionToward(sectorMock, TRITACHYON, HEGEMONY, RepLevel.FAVORABLE);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Allied with the claim holder:",
+                    "Tri-Tachyon");
+        }
+
+        @Test
+        void buildBodySectionsQualifiesAFriendlyFactionThatCouldNeverHaveTakenTheSystem() {
+            // The friendly heading names an eligibility no more than the allied one does, so the rule
+            // that puts the word on an ineligible ally's line puts it on an ineligible friend's -
+            // stated once over the pair rather than per block.
+            var friendlyEntryRow = 3;
+
+            stubDispositionToward(sectorMock, PIRATES, HEGEMONY, RepLevel.FAVORABLE);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_NON_TERRITORIAL))));
+
+            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Friendly with the claim holder:",
+                    "Pirates");
+            assertThat(readLabelRun(readTableRow(sections, friendlyEntryRow), QUALIFIER_RUN))
+                .isEqualTo(new TextSpan("non-territorial", HIGHLIGHT));
+        }
+
+        @Test
+        void buildBodySectionsLeavesThePlaceholderOwnerUnderNonTerritorial() {
+            // Why this box needs no block of its own for the placeholder owner every abandoned station
+            // is handed to, where the standings box grew one. The claim mechanic never admits it, so
+            // it arrives ineligible and the heading that says so is already the true statement about
+            // it - and it is indifferent toward everyone, so the friendly block does not take it
+            // either.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(
+                        Factions.NEUTRAL,
+                        OUTSIDER_SCORE,
+                        IS_NON_TERRITORIAL))));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Non-territorial:",
+                    "Neutral");
+        }
+
+        @Test
+        void buildBodySectionsCallsEveryTerritorialFactionARivalWhereNobodyHoldsTheSystem() {
+            // There is nobody to be allied or friendly with, so neither block whose heading names a
+            // holder draws over a system without one - even where the two factions present are allied
+            // to each other and on excellent terms besides, which is the pair either comparison would
+            // otherwise have matched on.
+            holderGrouping = buildAllianceOf(HEGEMONY, TRITACHYON);
+
+            stubDispositionToward(sectorMock, HEGEMONY, TRITACHYON, RepLevel.FAVORABLE);
+            stubDispositionToward(sectorMock, TRITACHYON, HEGEMONY, RepLevel.FAVORABLE);
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -876,7 +1022,8 @@ final class SystemClaimTooltipTest {
                     SystemClaimContestTooltip.ListedClaimContest.selectFrom(
                         new SystemClaimBreakdown(null, HEGEMONY, List.of()),
                         ColonyVisibility.BASE_FOG,
-                        BlocAffiliation.NONE),
+                        BlocAffiliation.NONE,
+                        INDIFFERENT_FACTIONS),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     SystemColonyReading.NONE))
                 .isEmpty();
@@ -896,7 +1043,8 @@ final class SystemClaimTooltipTest {
                     SystemClaimContestTooltip.ListedClaimContest.selectFrom(
                         new SystemClaimBreakdown(null, HEGEMONY, List.of()),
                         ColonyVisibility.BASE_FOG,
-                        BlocAffiliation.NONE),
+                        BlocAffiliation.NONE,
+                        INDIFFERENT_FACTIONS),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     new SystemColonyReading(
                         ColonyKindLookup.NONE,

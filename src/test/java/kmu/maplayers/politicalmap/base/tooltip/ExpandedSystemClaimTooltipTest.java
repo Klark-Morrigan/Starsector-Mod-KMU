@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import com.fs.starfarer.api.campaign.RepLevel;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
@@ -24,6 +25,7 @@ import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
+import kmu.maplayers.politicalmap.base.dominance.BlocFriendliness;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -49,6 +51,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
+import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubDispositionToward;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,7 +68,7 @@ import static org.mockito.Mockito.when;
  * <p>The one fact this box alone decides is that a faction is accounted for by the colonies its own
  * standing was read from - the thing the line above it cannot say, since a standing is one colony's
  * score and the faction may hold several. Where those colonies then hang, and which of them leads, is
- * the resolver's ({@link ClaimScoreRowResolverTest}); the claimant, the decree, the four headings and
+ * the resolver's ({@link ClaimScoreRowResolverTest}); the claimant, the decree, the five headings and
  * the lines naming the factions belong to the shape both claim boxes share, and are pinned through the
  * ordinary one ({@link SystemClaimTooltipTest}).
  */
@@ -106,6 +109,12 @@ final class ExpandedSystemClaimTooltipTest {
 
     private static final boolean IS_TERRITORIAL = true;
 
+    // Nobody above neutral with anybody, which leaves the friendly block empty over every system - the
+    // indifference vanilla starts most faction pairs at, and the state every account here is posed
+    // under, no case below being about a disposition.
+    private static final BlocFriendliness INDIFFERENT_FACTIONS =
+        new BlocFriendliness((factionId, otherFactionId) -> false);
+
     // A system the contest itself settled - no decree over it - which is the state an account is
     // ordinarily resolved under and the one in which the strongest market is called out.
     private static final SystemClaimBreakdown CONTESTED_SYSTEM =
@@ -120,7 +129,8 @@ final class ExpandedSystemClaimTooltipTest {
         SystemClaimContestTooltip.ListedClaimContest.selectFrom(
             CONTESTED_SYSTEM,
             ColonyVisibility.BASE_FOG,
-            BlocAffiliation.NONE);
+            BlocAffiliation.NONE,
+            INDIFFERENT_FACTIONS);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
 
@@ -265,7 +275,8 @@ final class ExpandedSystemClaimTooltipTest {
             var contest = SystemClaimContestTooltip.ListedClaimContest.selectFrom(
                 CONTESTED_SYSTEM,
                 UNDER_THE_REVEAL,
-                BlocAffiliation.NONE);
+                BlocAffiliation.NONE,
+                INDIFFERENT_FACTIONS);
 
             var standing = new WeighedClaimStanding(
                 HEGEMONY,
@@ -291,7 +302,8 @@ final class ExpandedSystemClaimTooltipTest {
                 SystemClaimContestTooltip.ListedClaimContest.selectFrom(
                     new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()),
                     ColonyVisibility.BASE_FOG,
-                    BlocAffiliation.NONE),
+                    BlocAffiliation.NONE,
+                    INDIFFERENT_FACTIONS),
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                 SystemColonyReading.NONE);
 
@@ -347,6 +359,32 @@ final class ExpandedSystemClaimTooltipTest {
                     "Standing Colony",
                     "Size",
                     "Allied with the claim holder:",
+                    "Tri-Tachyon",
+                    "Standing Colony",
+                    "Size");
+        }
+
+        @Test
+        void buildBodySectionsHangsAFriendlyFactionsColoniesBeneathItsLineInTheFriendlyBlock() {
+            // The other relation block on the same terms: the detail follows a faction wherever the
+            // relation put it, so a faction merely on good terms with the claim holder is accounted
+            // for under the block it was drawn in rather than under `Contested by:`.
+            stubDispositionToward(sectorMock, TRITACHYON, HEGEMONY, RepLevel.FAVORABLE);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
+
+            assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Standing Colony",
+                    "Size",
+                    "Friendly with the claim holder:",
                     "Tri-Tachyon",
                     "Standing Colony",
                     "Size");

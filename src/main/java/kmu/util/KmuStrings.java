@@ -100,6 +100,8 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_CLAIM = "political_map_tooltip_section_claim";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER =
         "political_map_tooltip_section_allied_with_holder";
+    public static final String POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER =
+        "political_map_tooltip_section_friendly_with_claim_holder";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED = "political_map_tooltip_section_contested";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL =
         "political_map_tooltip_section_non_territorial";

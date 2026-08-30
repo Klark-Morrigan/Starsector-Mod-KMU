@@ -471,26 +471,33 @@ answers with the account's own concealment fact), no row of either box carrying 
 The claims box has a counterpart of its own on the same terms - `ExpandedSystemClaimTooltip`, which
 opens every faction the contest names into the markets it holds the system with and each market
 into the terms its claim score is built from. Both claim boxes sit on `SystemClaimContestTooltip`,
-which settles the one read behind them, the claimant, the decree marker, and the four blocks, and
+which settles the one read behind them, the claimant, the decree marker, and the five blocks, and
 leaves open only what hangs beneath a faction (`resolveAccountEntries`, hanging nothing by
 default). That account is handed the whole `ListedClaimContest` rather than the scored read alone,
 so the colony rule it draws under is the one the listing above it was projected under: read afresh
 per faction, an account would be free to withhold a colony the line above it had just named, and to
-answer two factions of one box under two different rules. The alliance set travels in that same
-value and for the same reason, as the `BlocAffiliation` the blocks are routed against
+answer two factions of one box under two different rules. Both relations to the claim holder travel
+in that same value and for the same reason - the `BlocAffiliation` the blocks are routed against
 (`HolderGroupingSource`, bound by `SystemClaimTooltip` and sampled per hover - a set held for the
 session would file a faction under the alliance it left an hour ago), placed by the same
-`ContestSides` split the domination box routes its own blocks through.
+`ContestSides` split the domination box routes its own blocks through, and the `BlocFriendliness`
+bound to the hovered sector's own relations.
 
-Two axes place a faction into those blocks, and the relation to the claim holder is the outer one:
-`Allied with the claim holder:` takes everyone standing with the holder whatever their eligibility,
-and
-the two eligibility blocks divide what is left. Where an alliance leaves the heading unable to say
-which kind a line is, the line says it (`non-territorial`). Why the relation outranks eligibility,
-why an alliance and not a disposition routes, and why an install without Nexerelin needs no branch
-are all `SystemClaimContestTooltip`'s to state. It is also where the layer's heading is declined for
-both of them: the claim line names the decreed holder and marks the hold, so these are the two boxes
-that state the decree themselves.
+Two axes place a faction into those blocks, and how it stands to the claim holder is the outer one:
+`Allied with the claim holder:` takes everyone standing with the holder by alliance and
+`Friendly with the claim holder:` everyone else above `RepLevel.NEUTRAL` with it, both whatever
+their eligibility, and the two eligibility blocks divide what neither took. Alliance stays outside
+disposition, so an ally is never re-sorted by how warmly it is disposed. Where a relation heading
+leaves the box unable to say which kind a line is, the line says it (`non-territorial`) - one rule
+over both blocks rather than one per block. The claims layer pins the identity grouping, so a
+standing here is always a lone faction and the bloc-level friendliness rule degenerates to the single
+pair it is composed of: nothing dissolves on this layer, where the domination box breaks up a bloc
+its members disagree about. Nor does the placeholder owner need a block of its own here - it is never
+admitted to the claim mechanic, so `Non-territorial:` is already the true statement about it. Why the
+relations outrank eligibility, why disposition sorts inside alliance, and why an install without
+Nexerelin needs no branch are all `SystemClaimContestTooltip`'s to state. It is also where the
+layer's heading is declined for both of them: the claim line names the decreed holder and marks the
+hold, so these are the two boxes that state the decree themselves.
 
 `ClaimScoreRowResolver` decides those lines: the faction's markets in the order the mechanic itself
 would settle them - strongest first, a tie falling to the earlier place in the economy's listing -
