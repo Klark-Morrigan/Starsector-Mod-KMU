@@ -23,7 +23,9 @@ import static org.mockito.Mockito.mock;
  * deep-hyperspace station) mark nothing.
  *
  * <p>Read off the board of the sector the listener was installed on, which is where it reports and
- * is made fresh with the installation for each case.
+ * is made fresh with the installation for each case. That board is also what says the listener
+ * reports against the sector it holds rather than against the running game: a mark aimed anywhere
+ * else lands on the installation that sector has not got, and never reaches here.
  *
  * <p>The pre-deciv phase does write one thing, and it is the reason that phase is listened to at
  * all: what the dying colony still vouches for is recorded while it can still be read. That case
@@ -79,19 +81,6 @@ final class PoliticalMapDecivListenerTest {
             listener.reportColonyDecivilized(null, false);
 
             assertThat(refreshBoard.drainStaleGroupingSystemIds())
-                .isEmpty();
-        }
-
-        @Test
-        void marksOnlyTheSectorTheListenerWasInstalledOn() {
-            // A listener reading the running game instead of the sector it was built against would
-            // mark whichever sector the player has loaded for a death belonging to another.
-            var otherSectorMock = mock(SectorAPI.class);
-            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
-
-            listener.reportColonyDecivilized(mockMarketInSystem("sys"), false);
-
-            assertThat(otherInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .isEmpty();
         }
     }

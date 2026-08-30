@@ -3,6 +3,7 @@ package kmu.maplayers.base.refresh;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,9 @@ import static org.mockito.Mockito.mockStatic;
  * rather than through a second facade call, so a resolution answering consistently off the wrong
  * sector could not pass.
  *
+ * <p>Two sectors are installed on for every case, one of them running, since a resolution that
+ * simply took the only installation there was would satisfy a suite that installed one.
+ *
  * <p>The index is process-wide, so every case starts from a cleared one.
  */
 class MapLayerRefreshTest {
@@ -32,9 +36,16 @@ class MapLayerRefreshTest {
     private final SectorAPI liveSectorMock = mock(SectorAPI.class);
     private final SectorAPI otherSectorMock = mock(SectorAPI.class);
 
+    private MapLayerInstallation liveInstallation;
+    private MapLayerInstallation otherInstallation;
+
     @BeforeEach
-    void clearEveryInstallation() {
+    void installMachineryOnBothSectors() {
+
         MapLayerInstallations.disposeEveryInstallation();
+
+        liveInstallation = MapLayerInstallations.installMachineryOn(liveSectorMock);
+        otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
     }
 
     @Nested
@@ -42,9 +53,6 @@ class MapLayerRefreshTest {
 
         @Test
         void getRevisionReadsTheRunningSectorsBoard() {
-
-            var liveInstallation = MapLayerInstallations.installMachineryOn(liveSectorMock);
-            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
 
             liveInstallation
                 .resolveRefreshBoard()
@@ -70,9 +78,6 @@ class MapLayerRefreshTest {
             // The producers that land here are settings changes and sidebar toggles, which name no
             // sector - so a raise reaching a sector the player is not in would rebuild an overlay
             // nothing is drawing while leaving the one on screen stale.
-            var liveInstallation = MapLayerInstallations.installMachineryOn(liveSectorMock);
-            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
-
             raiseThroughLiveSector(() ->
                 MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY));
 
@@ -94,9 +99,6 @@ class MapLayerRefreshTest {
         @Test
         void markSystemGroupingStaleQueuesTheSystemOnTheRunningSectorsBoardAlone() {
 
-            var liveInstallation = MapLayerInstallations.installMachineryOn(liveSectorMock);
-            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
-
             raiseThroughLiveSector(() -> MapLayerRefresh.markSystemGroupingStale("sys"));
 
             assertThat(liveInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
@@ -111,23 +113,18 @@ class MapLayerRefreshTest {
             // reachable with no game at all - so a caller arriving here without a sector has to
             // find a board rather than a fault.
             //
-            // Drained first: the detached board is nobody's sector and is therefore never replaced,
-            // so any other suite driving a seam with no game loaded has been raising signals on
-            // this same one.
+            // Reached through a sector nothing was installed on, and drained first: the detached
+            // board is nobody's sector and is therefore never replaced, so any other suite driving
+            // a seam with no game loaded has been raising signals on this same one.
+            var uninstalledSectorMock = mock(SectorAPI.class);
+
             var detachedBoard = MapLayerInstallations
-                .resolveInstallationFor(liveSectorMock)
+                .resolveInstallationFor(uninstalledSectorMock)
                 .resolveRefreshBoard();
 
             detachedBoard.drainStaleGroupingSystemIds();
 
-            try (var globalMock = mockStatic(Global.class)) {
-
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
-
-                MapLayerRefresh.markSystemGroupingStale("sys");
-            }
+            raiseWithNoGameLoaded(() -> MapLayerRefresh.markSystemGroupingStale("sys"));
 
             assertThat(detachedBoard.drainStaleGroupingSystemIds())
                 .containsExactly("sys");
@@ -139,9 +136,6 @@ class MapLayerRefreshTest {
 
         @Test
         void drainStaleGroupingSystemIdsTakesTheRunningSectorsQueue() {
-
-            var liveInstallation = MapLayerInstallations.installMachineryOn(liveSectorMock);
-            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
 
             liveInstallation.resolveRefreshBoard().markSystemGroupingStale("live");
             otherInstallation.resolveRefreshBoard().markSystemGroupingStale("other");
@@ -158,26 +152,39 @@ class MapLayerRefreshTest {
     // name.
     private <T> T readThroughLiveSector(Supplier<T> readThroughFacade) {
 
-        try (var globalMock = mockStatic(Global.class)) {
-
-            globalMock
-                .when(Global::getSector)
-                .thenReturn(liveSectorMock);
-
-            return readThroughFacade.get();
-        }
+        return readWithLoadedSector(liveSectorMock, readThroughFacade);
     }
 
     // The same, for the calls that answer nothing and are read back off the board instead.
     private void raiseThroughLiveSector(Runnable callThroughFacade) {
 
+        readWithLoadedSector(liveSectorMock, () -> {
+            callThroughFacade.run();
+            return null;
+        });
+    }
+
+    // A raise made with no game at all, which is what a settings toggle outside a campaign is.
+    private void raiseWithNoGameLoaded(Runnable callThroughFacade) {
+
+        readWithLoadedSector(null, () -> {
+            callThroughFacade.run();
+            return null;
+        });
+    }
+
+    // The one place the running sector is stood up, so no case can differ in how it poses one.
+    private static <T> T readWithLoadedSector(
+            SectorAPI loadedSector,
+            Supplier<T> readThroughFacade) {
+
         try (var globalMock = mockStatic(Global.class)) {
 
             globalMock
                 .when(Global::getSector)
-                .thenReturn(liveSectorMock);
+                .thenReturn(loadedSector);
 
-            callThroughFacade.run();
+            return readThroughFacade.get();
         }
     }
 }

@@ -26,7 +26,9 @@ import static org.mockito.Mockito.when;
  * since the transfer - not the invasion outcome - is what changes the holder.
  *
  * <p>Read off the board of the sector the listener was installed on, which is where it reports and
- * is made fresh with the installation for each case.
+ * is made fresh with the installation for each case. That board is also what says the listener
+ * reports against the sector it holds rather than against the running game: a mark aimed anywhere
+ * else lands on the installation that sector has not got, and never reaches here.
  */
 final class PoliticalMapMarketTransferListenerTest {
 
@@ -88,26 +90,6 @@ final class PoliticalMapMarketTransferListenerTest {
                 1.0f);
 
             assertThat(refreshBoard.drainStaleGroupingSystemIds())
-                .isEmpty();
-        }
-
-        @Test
-        void marksOnlyTheSectorTheListenerWasInstalledOn() {
-            // A listener reading the running game instead of the sector it was built against would
-            // mark whichever sector the player has loaded for a conquest belonging to another.
-            var otherSectorMock = mock(SectorAPI.class);
-            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
-
-            listener.reportMarketTransfered(
-                mockMarketInSystem("sys"),
-                mockFaction("attacker"),
-                mockFaction("defender"),
-                true,
-                true,
-                List.of(),
-                1.0f);
-
-            assertThat(otherInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .isEmpty();
         }
     }

@@ -25,7 +25,9 @@ import static org.mockito.Mockito.when;
  * nothing - accessibility is the sector watcher's job, not the listener's.
  *
  * <p>Read off the board of the sector the listener was installed on, which is where it reports and
- * is made fresh with the installation for each case.
+ * is made fresh with the installation for each case. That board is also what says the listener
+ * reports against the sector it holds rather than against the running game: a mark aimed anywhere
+ * else lands on the installation that sector has not got, and never reaches here.
  */
 final class PoliticalMapDiscoveryListenerTest {
 
@@ -81,25 +83,6 @@ final class PoliticalMapDiscoveryListenerTest {
             listener.reportEntityDiscovered(entityMock);
 
             assertThat(refreshBoard.drainStaleGroupingSystemIds())
-                .isEmpty();
-        }
-
-        @Test
-        void marksOnlyTheSectorTheListenerWasInstalledOn() {
-            // A listener reading the running game instead of the sector it was built against would
-            // mark whichever sector the player has loaded for a discovery belonging to another.
-            var marketMock = mockMarketInSystem("sys");
-            var entityMock = mock(SectorEntityToken.class);
-
-            when(entityMock.getMarket())
-                .thenReturn(marketMock);
-
-            var otherSectorMock = mock(SectorAPI.class);
-            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
-
-            listener.reportEntityDiscovered(entityMock);
-
-            assertThat(otherInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .isEmpty();
         }
     }
