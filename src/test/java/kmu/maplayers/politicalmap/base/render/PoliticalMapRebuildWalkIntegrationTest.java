@@ -7,12 +7,15 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.markets.DecivilisedMarkets;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.visibility.ColonyVisibility;
+import kmu.maplayers.base.visibility.MapVisibilityPass;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
@@ -97,9 +100,19 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         new ColonyVisibility(true, DecivilisedMarkets.DEFAULT_SURVEY_LEVEL, Set.of()),
         false);
 
+    // Comfortably past the motion tracker's one-unit noise floor, so a staged drift is unambiguous
+    // motion rather than something that could read as float jitter.
+    private static final float CLEAR_OF_THE_NOISE_FLOOR = 500f;
+
     // Closed in reverse on the way out, so a seam opened over another is never left standing when
     // the inner one is already gone.
     private final List<MockedStatic<?>> openStaticSeams = new ArrayList<>();
+
+    // The machinery the cache under test is built against, and a second sector's beside it. Two
+    // rather than one because the movers a cut leaves out are the whole of what the cache reads
+    // from an installation, and a claim about whose movers those are needs somebody else's.
+    private final MapLayerInstallation installation = new MapLayerInstallation();
+    private final MapLayerInstallation otherInstallation = new MapLayerInstallation();
 
     private MockedStatic<Global> globalMock;
     private MockedStatic<MapVisibilityRules> visibilityRulesMock;
@@ -195,7 +208,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             // every system into every frame of an idle map, which is worse than the three walks the
             // step set out to remove.
             var sector = buildContestedSectorWithAnEmptyNeighbour();
-            var cache = new PoliticalMapCache();
+            var cache = new PoliticalMapCache(installation);
 
             cache.refresh(FactionsView.INSTANCE);
             cache.refresh(FactionsView.INSTANCE);
@@ -223,7 +236,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             // index kept between rebuilds would draw the second off the sector the first saw,
             // which is precisely the change a rebuild exists to show.
             var sector = buildContestedSectorWithAnEmptyNeighbour();
-            var cache = new PoliticalMapCache();
+            var cache = new PoliticalMapCache(installation);
 
             cache.refresh(FactionsView.INSTANCE);
             settleTheEmptyNeighbour(sector);
@@ -241,7 +254,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             // contested. So the second rebuild's cut, fills and bands each have to move, and a
             // stage sampling the rules for itself would be the one that did not.
             buildUndiscoveredSectorWithAnEmptyNeighbour();
-            var cache = new PoliticalMapCache();
+            var cache = new PoliticalMapCache(installation);
 
             cache.refresh(FactionsView.INSTANCE);
             visibilityRulesMock
@@ -262,12 +275,66 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             assertThat(territories.getRibbonByCellId().get(ALPHA_ID).isEmpty())
                 .isFalse();
         }
+
+        @Test
+        void refreshLeavesOutTheSystemsItsOwnInstallationSawMoving() {
+            // The cut consults the movers so a system drifting across hyperspace seeds no cell and
+            // clips no neighbour, its borders having nowhere stable to sit. Posed here rather than
+            // in a unit because the moving set is published by a real tracker off real observations
+            // and read by a real cut - neither end of which a stand-in could stage.
+            var sector = buildContestedSectorWithASettledNeighbour();
+
+            observeSystemMovingInto(installation.resolveMovingSystems(), sector, ALPHA_ID);
+            var cache = new PoliticalMapCache(installation);
+
+            cache.refresh(FactionsView.INSTANCE);
+
+            assertThat(cache.getTerritories().getStyledCellByCellId())
+                .containsKey(BETA_ID)
+                .doesNotContainKey(ALPHA_ID);
+        }
+
+        @Test
+        void refreshCutsASystemAnotherInstallationSawMoving() {
+            // The half a cache holding its own installation is for. A tracker is keyed by bare
+            // system id and nothing forbids two sectors from generating a system under the same
+            // one, so a cache reading the running game's movers would drop this sector's system
+            // for a drift the other sector's made.
+            var sector = buildContestedSectorWithASettledNeighbour();
+
+            observeSystemMovingInto(otherInstallation.resolveMovingSystems(), sector, ALPHA_ID);
+            var cache = new PoliticalMapCache(installation);
+
+            cache.refresh(FactionsView.INSTANCE);
+
+            assertThat(cache.getTerritories().getStyledCellByCellId())
+                .containsKeys(ALPHA_ID, BETA_ID);
+        }
     }
 
     // One rebuild of the real cache over whatever sector the global lookup was staged with - what
     // a case asserting on what the rebuild read, rather than on what it drew, wants.
-    private static void runOneRebuild() {
-        new PoliticalMapCache().refresh(FactionsView.INSTANCE);
+    private void runOneRebuild() {
+        new PoliticalMapCache(installation).refresh(FactionsView.INSTANCE);
+    }
+
+    // Drifts one system far enough for two observations either side of the move to read it as
+    // moving, and stages those observations into the given tracker - which is the state the cut
+    // consults when it decides what to leave out of the partition.
+    //
+    // Staged through real observations rather than by writing a set, since the moving set is
+    // published by the tracker and there is no other way in.
+    private static void observeSystemMovingInto(
+            MovingSystems movingSystems,
+            SectorAPI sector,
+            String systemId) {
+
+        movingSystems.updateMovingSystems(MapVisibilityPass.over(sector, MapVisibilityRules.BASE));
+
+        SectorPoliticsFixtures.findSystemIn(sector, systemId).getLocation().x
+            += CLEAR_OF_THE_NOISE_FLOOR;
+
+        movingSystems.updateMovingSystems(MapVisibilityPass.over(sector, MapVisibilityRules.BASE));
     }
 
     // Marks the shared geometry signal so the next refresh finds both halves stale and rebuilds
@@ -281,6 +348,16 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // gives the bake a band to lay, and the empty neighbour is what a later rebuild can settle.
     private SectorAPI buildContestedSectorWithAnEmptyNeighbour() {
         return buildContestedSectorStagedBy(SectorPoliticsFixtures::buildVisibleMarket);
+    }
+
+    // The same two systems with the neighbour settled from the start, so both are drawn and a case
+    // about one of them dropping out has the other left standing to say so against.
+    private SectorAPI buildContestedSectorWithASettledNeighbour() {
+
+        var sector = buildContestedSectorWithAnEmptyNeighbour();
+        settleTheEmptyNeighbour(sector);
+
+        return sector;
     }
 
     // The same shape with neither colony discovered, so the shipped rule leaves the system

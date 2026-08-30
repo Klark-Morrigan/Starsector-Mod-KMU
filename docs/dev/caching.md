@@ -217,7 +217,8 @@ that samples nothing live folds no sources and never forces a rebuild on its own
 ### The overlay cache
 
 [`PoliticalMapCache`](../../src/main/java/kmu/maplayers/politicalmap/base/render/PoliticalMapCache.java)
-is the owner: the political map's painter holds one and asks it to `refresh` each
+is the owner: the political map's painter holds one - one per sector, the painter itself
+belonging to that sector's installed machinery - and asks it to `refresh` each
 frame the map is open. It holds both halves (geometry and built draw lists) plus what each
 half was built against, and rebuilds only the stale half. The geometry's revision is not a
 field beside the cells but rides with them, for the same reason the placements ride with
@@ -478,17 +479,21 @@ band bake takes its caller's rather than opening one.
 
 Everything described here is derived from the sector and holds record types
 XStream cannot serialise. None of it can reach a save: the cache hangs off the
-political map's layer renderer, which is reached through the registered layer and
-so is never serialised - no transient marking required.
+political map's layer renderer, which the sector's installed map machinery holds
+and no terrain entity carries - no transient marking required.
 
-That lifetime is longer than a sector's, though, since a player can load a second
-save without restarting. Nothing else would notice the change of sector: the
-geometry cache reconciles by diffing system *ids*, so a system present in both
-saves at a different position reads as unchanged. So the cache is discarded whole on load
-rather than reconciled - `discardStateFromPreviousSave`, called from `onGameLoad`
-beside the sidebar folds, which are process-lifetime singletons for the same
-reason. Every revision then starts at a rebuild-forcing seed, so the first frame
-against the new sector rebuilds both halves from scratch.
+That lifetime is exactly a sector's, and it has to be. Nothing else would notice a
+change of sector: the geometry cache reconciles by diffing system *ids*, so a
+system present in both saves at a different position reads as unchanged. So a
+cache serves one sector and one only - it is made when the layers are installed on
+that sector and released when they are removed, which a load does for every
+standing installation before installing the loaded one. Every revision starts at a
+rebuild-forcing seed, so the first frame after an install rebuilds both halves from
+scratch, and there is nothing of a previous sector's for it to be told about.
+
+Release is not merely dropping. The cached faction names each own a GL buffer, so
+they are freed at the moment the installation goes rather than left to LazyLib's
+finalizer sweep - which is what a sector removed mid-session would otherwise leak.
 
 What *is* persisted is only the player's choices that feed it - the active layer,
 the sidebar fold, the spotlight selection, the shared toggles - and those live in

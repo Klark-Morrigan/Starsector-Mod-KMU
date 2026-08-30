@@ -8,6 +8,7 @@ import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverState;
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
@@ -53,7 +54,7 @@ final class HoveredBoxTest {
 
         when(tooltipLayerMock.getId())
             .thenReturn("tooltip_layer");
-        when(tooltipLayerMock.getMapRenderer())
+        when(tooltipLayerMock.resolveRenderer(any()))
             .thenReturn(layerRendererMock);
 
         when(layerRendererMock.resolveHoverTooltip())
@@ -216,7 +217,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip())
+                assertThat(HoveredBox.resolveActiveTooltip(new MapLayerInstallation()))
                     .contains(tooltipMock);
             }
         }
@@ -233,7 +234,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip())
+                assertThat(HoveredBox.resolveActiveTooltip(new MapLayerInstallation()))
                     .isEmpty();
             }
         }
@@ -249,7 +250,7 @@ final class HoveredBoxTest {
 
             when(silencedLayerMock.getId())
                 .thenReturn("silenced_layer");
-            when(silencedLayerMock.getMapRenderer())
+            when(silencedLayerMock.resolveRenderer(any()))
                 .thenReturn(silencedRendererMock);
 
             when(silencedRendererMock.resolveHoverTooltip())
@@ -265,7 +266,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip())
+                assertThat(HoveredBox.resolveActiveTooltip(new MapLayerInstallation()))
                     .contains(tooltipMock);
             }
         }
@@ -287,7 +288,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip())
+                assertThat(HoveredBox.resolveActiveTooltip(new MapLayerInstallation()))
                     .isEmpty();
             }
         }
@@ -304,7 +305,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip())
+                assertThat(HoveredBox.resolveActiveTooltip(new MapLayerInstallation()))
                     .isEmpty();
             }
         }

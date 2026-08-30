@@ -6,6 +6,9 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.render.MapLayerRenderer;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -126,6 +129,55 @@ final class MapLayerRegistryTest {
                 globalMock.when(Global::getSector).thenReturn(null);
 
                 assertThat(MapLayerRegistry.getActiveLayer()).isNull();
+            }
+        }
+    }
+
+    @Nested
+    class ResolveActiveMapRenderer {
+
+        @Test
+        void resolveActiveMapRendererAsksTheActiveLayerAboutTheInstallationItWasHanded() {
+            // The roster is the process's while a renderer is one sector's, so the registry must
+            // pass the installation through rather than resolve one of its own - a registry that
+            // picked the running sector's would hand every surface the same renderer however many
+            // sectors were being drawn.
+            var installation = new MapLayerInstallation();
+            var layerRendererMock = mock(MapLayerRenderer.class);
+
+            when(secondLayerMock.resolveRenderer(installation))
+                .thenReturn(layerRendererMock);
+
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                globalMock.when(Global::getSector).thenReturn(null);
+
+                assertThat(MapLayerRegistry.resolveActiveMapRenderer(installation))
+                    .isSameAs(layerRendererMock);
+            }
+        }
+
+        @Test
+        void resolveActiveMapRendererIsNullWhenTheActivePickDrawsNothing() {
+            // The switch-only tab, whose whole expression is a null renderer - and the pre-
+            // registration frame below it, answered the same way so no pass driven by the active
+            // pick needs a case for either.
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                globalMock.when(Global::getSector).thenReturn(null);
+
+                assertThat(MapLayerRegistry.resolveActiveMapRenderer(new MapLayerInstallation()))
+                    .isNull();
+            }
+        }
+
+        @Test
+        void resolveActiveMapRendererIsNullBeforeAnyLayerIsRegistered() {
+            MapLayerRegistry.registerLayers(List.of(), null);
+
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                globalMock.when(Global::getSector).thenReturn(null);
+
+                assertThat(MapLayerRegistry.resolveActiveMapRenderer(new MapLayerInstallation()))
+                    .isNull();
             }
         }
     }

@@ -5,6 +5,7 @@ import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCover;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -34,8 +35,8 @@ import static org.mockito.Mockito.when;
  * Pins what this renderer decides for itself before any drawing happens: that a deselected view
  * costs a frame nothing whichever of its passes is running, that the hover box it answers the
  * framework with is the active view's and only while this layer's own tooltip switch is on, that a
- * covered cursor parks the hover rather than leaving it standing, and that a game load leaves
- * nothing of the previous sector behind. What the discard actually empties is
+ * covered cursor parks the hover rather than leaving it standing, and that releasing the machinery
+ * behind it leaves nothing of its sector. What the release actually empties is
  * {@link PoliticalMapCacheTest}'s; the cache refresh and the GL emission run only in-engine and are
  * covered by their own collaborators.
  *
@@ -80,7 +81,7 @@ final class PoliticalMapLayerRendererTest {
                     .when(PoliticalMapViewRegistry::getActiveView)
                     .thenReturn(null);
 
-                PoliticalMapLayerRenderer.INSTANCE.prepareFrame(FACTOR);
+                buildRenderer(NOT_COVERING_THE_MAP).prepareFrame(FACTOR);
 
                 frameworkSettingsMock
                     .verifyNoInteractions();
@@ -148,7 +149,7 @@ final class PoliticalMapLayerRendererTest {
                     .when(PoliticalMapViewRegistry::getActiveView)
                     .thenReturn(null);
 
-                PoliticalMapLayerRenderer.INSTANCE.renderOnMap(FACTOR, ALPHA_MULT, band);
+                buildRenderer(NOT_COVERING_THE_MAP).renderOnMap(FACTOR, ALPHA_MULT, band);
 
                 frameworkSettingsMock
                     .verifyNoInteractions();
@@ -181,7 +182,7 @@ final class PoliticalMapLayerRendererTest {
                     .when(PoliticalMapViewRegistry::getActiveView)
                     .thenReturn(viewMock);
 
-                assertThat(PoliticalMapLayerRenderer.INSTANCE.resolveHoverTooltip())
+                assertThat(buildRenderer(NOT_COVERING_THE_MAP).resolveHoverTooltip())
                     .contains(tooltipMock);
             }
         }
@@ -202,7 +203,7 @@ final class PoliticalMapLayerRendererTest {
                     .when(PoliticalMapViewRegistry::getActiveView)
                     .thenReturn(viewMock);
 
-                assertThat(PoliticalMapLayerRenderer.INSTANCE.resolveHoverTooltip())
+                assertThat(buildRenderer(NOT_COVERING_THE_MAP).resolveHoverTooltip())
                     .isEmpty();
 
                 // The switch answers before the view is consulted, so a view that would have built a
@@ -225,7 +226,7 @@ final class PoliticalMapLayerRendererTest {
                     .when(PoliticalMapViewRegistry::getActiveView)
                     .thenReturn(null);
 
-                assertThat(PoliticalMapLayerRenderer.INSTANCE.resolveHoverTooltip())
+                assertThat(buildRenderer(NOT_COVERING_THE_MAP).resolveHoverTooltip())
                     .isEmpty();
             }
         }
@@ -360,23 +361,26 @@ final class PoliticalMapLayerRendererTest {
     }
 
     @Nested
-    class DiscardStateFromPreviousSave {
+    class DisposeMachinery {
 
         @Test
-        void discardStateFromPreviousSaveRunsBeforeAnySectorHasBeenDrawn() {
-            // Called on every load including the session's first, when there is nothing built to drop
-            // and no hover to park.
-            assertThatCode(PoliticalMapLayerRenderer.INSTANCE::discardStateFromPreviousSave)
+        void disposeMachineryRunsBeforeAnySectorHasBeenDrawn() {
+            // Reached for a sector installed on with the map never opened, when there is nothing
+            // built to release.
+            assertThatCode(buildRenderer(NOT_COVERING_THE_MAP)::disposeMachinery)
                 .doesNotThrowAnyException();
         }
     }
 
     // The renderer under test, over one stated cover and a read it hands out rather than builds.
     // Both are the seams a running game supplies, and stating them here is what lets a frame be
-    // driven at all without a map on screen.
+    // driven at all without a map on screen. The cache is made against an installation of its own,
+    // which is how a renderer is reached in play - one sector's, and never shared.
     private PoliticalMapLayerRenderer buildRenderer(MapCover cover) {
         return new PoliticalMapLayerRenderer(
-            new MapCoverReader(List.of(cover)), () -> hoverPublisherMock);
+            new PoliticalMapCache(new MapLayerInstallation()),
+            new MapCoverReader(List.of(cover)),
+            () -> hoverPublisherMock);
     }
 
     // A view the player has picked, so the frame work gated behind one is reached. Which view it is

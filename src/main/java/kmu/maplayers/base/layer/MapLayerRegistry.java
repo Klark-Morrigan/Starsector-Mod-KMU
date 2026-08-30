@@ -2,6 +2,7 @@ package kmu.maplayers.base.layer;
 
 import kmlib.starsector.ui.intel.IntelScreenView;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.render.MapLayerRenderer;
 
 import java.util.List;
@@ -119,18 +120,25 @@ public final class MapLayerRegistry {
     }
 
     /**
-     * @return what draws for the screen showing this frame, or null when nothing does - either because
-     *         no layer is picked yet (before a composition root has registered any) or because the
-     *         active one draws nothing. The two are one answer on purpose: every pass driven by the
-     *         active pick treats them alike, so a switch-only tab needs no case of its own in any of
-     *         them
+     * What draws for the screen showing this frame, over {@code installation}'s sector, or null when
+     * nothing does - either because no layer is picked yet (before a composition root has registered
+     * any) or because the active one draws nothing. The two are one answer on purpose: every pass
+     * driven by the active pick treats them alike, so a switch-only tab needs no case of its own in
+     * any of them.
+     *
+     * <p>The installation is passed rather than resolved here because which sector is being drawn is
+     * the caller's to know: the roster this registry holds is the process's, while the renderer it
+     * hands back is one sector's.
+     *
+     * @param installation the machinery installed on the sector being drawn
+     * @return that sector's renderer for the active pick, or null when nothing draws
      */
-    public static MapLayerRenderer resolveActiveMapRenderer() {
+    public static MapLayerRenderer resolveActiveMapRenderer(MapLayerInstallation installation) {
         var activeLayer = getActiveLayer();
         if (activeLayer == null) {
             return null;
         }
-        return activeLayer.getMapRenderer();
+        return activeLayer.resolveRenderer(installation);
     }
 
     /**

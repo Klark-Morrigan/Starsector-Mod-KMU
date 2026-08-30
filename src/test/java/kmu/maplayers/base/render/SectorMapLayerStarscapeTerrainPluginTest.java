@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -55,7 +56,7 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
             try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
 
                 layerRegistryMock
-                    .when(MapLayerRegistry::resolveActiveMapRenderer)
+                    .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
                     .thenReturn(layerRendererMock);
 
                 new SectorMapLayerStarscapeTerrainPlugin(() -> true).renderOnMap(FACTOR, ALPHA_MULT);
@@ -74,7 +75,7 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
             try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
 
                 layerRegistryMock
-                    .when(MapLayerRegistry::resolveActiveMapRenderer)
+                    .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
                     .thenReturn(layerRendererMock);
 
                 new SectorMapLayerStarscapeTerrainPlugin(() -> true).renderOnMap(FACTOR, ALPHA_MULT);
@@ -94,7 +95,7 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
             try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
 
                 layerRegistryMock
-                    .when(MapLayerRegistry::resolveActiveMapRenderer)
+                    .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
                     .thenReturn(layerRendererMock);
 
                 new SectorMapLayerStarscapeTerrainPlugin(() -> true).renderOnMap(FACTOR, ALPHA_MULT);
@@ -114,7 +115,7 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
             try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
 
                 layerRegistryMock
-                    .when(MapLayerRegistry::resolveActiveMapRenderer)
+                    .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
                     .thenReturn(layerRendererMock);
 
                 new SectorMapLayerStarscapeTerrainPlugin(() -> true).renderOnMap(FACTOR, ALPHA_MULT);

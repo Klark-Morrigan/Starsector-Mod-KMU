@@ -1,5 +1,6 @@
 package kmu.maplayers.base.render;
 
+import kmu.maplayers.base.installation.InstalledMachinery;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 
 import java.util.Optional;
@@ -16,11 +17,24 @@ import java.util.Optional;
  * switch-only tab exist at all - it simply has no renderer, and both passes treat that as nothing to
  * draw.
  *
- * <p>Implementations are reached through a registered layer, so they live for the session and never
- * enter a save. They may therefore hold derived caches and render state directly, with none of the
- * transient marking and lazy rebuilding a save-serialised holder would need.
+ * <p>A renderer belongs to one sector's installed map machinery: everything it draws is derived from
+ * that sector, so it is made when the layers are installed on one and released with them. It may
+ * therefore hold derived caches and render state directly, with none of the transient marking and
+ * lazy rebuilding a save-serialised holder would need - it never enters a save, the surfaces that
+ * drive it resolving one per frame rather than carrying one.
  */
-public interface MapLayerRenderer {
+public interface MapLayerRenderer extends InstalledMachinery {
+
+    /**
+     * Releases what this renderer holds for its sector, when the installation holding it goes.
+     *
+     * <p>Defaulting to nothing makes "nothing to release" the base case: a layer that emits fixed
+     * geometry holds no cache and no GL resource. A layer whose draw lists own GL buffers overrides
+     * this, or a sector removed mid-session leaks every buffer it had built.
+     */
+    @Override
+    default void disposeMachinery() {
+    }
 
     /**
      * Brings whatever this layer draws from up to date for the frame about to be painted, and

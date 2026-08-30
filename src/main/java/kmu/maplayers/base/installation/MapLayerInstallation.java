@@ -4,6 +4,10 @@ import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MovingSystems;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+
 /**
  * One sector's installed map machinery: what the map layers derive from that sector and remember
  * between frames, made when the layers are installed on it and released when they are removed.
@@ -15,9 +19,13 @@ import kmu.maplayers.base.refresh.MovingSystems;
  * other cut rather than overwriting them.
  *
  * <p>What this type settles is the lifetime: one installation per sector, made and released by
- * {@link MapLayerInstallations}. Every holder below is made with the installation and goes with it,
- * so each needs no discard of its own and no way to be told which sector it is now looking at - and
- * a sector begins from nothing rather than from what the sector before it left.
+ * {@link MapLayerInstallations}. Every holder below goes with the installation, so each needs no
+ * discard of its own and no way to be told which sector it is now looking at - and a sector begins
+ * from nothing rather than from what the sector before it left.
+ *
+ * <p>The holders it names are the framework's own. What a layer derives from the sector is held
+ * through {@link #resolveMachinery} instead, which is what lets an installation own the lifetime of
+ * a renderer and its caches without this package naming the layers those live in.
  */
 public final class MapLayerInstallation {
 
@@ -37,6 +45,15 @@ public final class MapLayerInstallation {
     // What went stale in this sector since each consumer last looked.
     private final MapLayerRefreshBoard refreshBoard = new MapLayerRefreshBoard();
 
+    // What the layers derive from this sector, made on first ask and released with this
+    // installation. Keyed by the class of the thing held, so one sector has exactly one of each and
+    // a resolution hands back what it asks for without a cast of its own.
+    //
+    // Concurrent for the reason the index above it is: the campaign thread installs and removes
+    // while a frame on the render thread resolves what it is about to draw through.
+    private final Map<Class<? extends InstalledMachinery>, InstalledMachinery> machineryByType =
+        new ConcurrentHashMap<>();
+
     /**
      * Releases what this installation holds, after which it answers {@link #isDisposed}.
      *
@@ -45,6 +62,9 @@ public final class MapLayerInstallation {
      * hand back - a GL buffer, a registered script - from being left to the collector.
      */
     public void disposeMachinery() {
+
+        machineryByType.values().forEach(InstalledMachinery::disposeMachinery);
+        machineryByType.clear();
         isDisposed = true;
     }
 
@@ -63,6 +83,33 @@ public final class MapLayerInstallation {
      */
     public MapHoverState resolveHoverState() {
         return hoverState;
+    }
+
+    /**
+     * This sector's machinery of one kind, made on the first ask and held until this installation
+     * is disposed - which is what makes a layer's renderer, and the caches behind it, one sector's
+     * rather than the process's.
+     *
+     * <p>Keyed by the class asked for rather than by a name, so the caller gets back the type it
+     * asked about and one sector cannot come to hold two of a kind. The installation never names
+     * what it is holding: whoever wants a piece of machinery supplies the way to make one, which is
+     * what keeps this package clear of the layers that live downstream of it.
+     *
+     * <p>Resolved fresh from {@link MapLayerInstallations} by every caller that needs one, so a
+     * disposed installation is not the one asked; what it made after disposal would answer for a
+     * sector nothing draws and would never be released.
+     *
+     * @param machineryType   the kind being asked for, and the key it is held under
+     * @param createMachinery makes this sector's, called only where it has none yet
+     * @param <T>             the kind being asked for, so the caller needs no cast
+     * @return this sector's machinery of that kind
+     */
+    public <T extends InstalledMachinery> T resolveMachinery(
+            Class<T> machineryType,
+            Supplier<T> createMachinery) {
+
+        return machineryType.cast(
+            machineryByType.computeIfAbsent(machineryType, key -> createMachinery.get()));
     }
 
     /**

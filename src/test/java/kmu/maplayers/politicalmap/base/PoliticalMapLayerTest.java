@@ -9,6 +9,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
@@ -62,14 +63,41 @@ final class PoliticalMapLayerTest {
     private final PoliticalMapView viewWithoutControlsMock = mock(PoliticalMapView.class);
 
     @Nested
-    class GetMapRenderer {
+    class ResolveRenderer {
 
         @Test
-        void getMapRendererReturnsThePoliticalMapsOwnRenderer() {
+        void resolveRendererYieldsTheOneRendererThatInstallationKeeps() {
             // The counterpart to No Layer's null: this tab is the one that draws, and it hands the map
-            // surface one view-neutral renderer rather than branching on the view roster.
-            assertThat(PoliticalMapLayer.INSTANCE.getMapRenderer())
-                .isSameAs(PoliticalMapLayerRenderer.INSTANCE);
+            // surface one view-neutral renderer rather than branching on the view roster. Twice for
+            // one sector is once, since the surface resolves it every frame and the hover box again
+            // in the pass after.
+            var installation = new MapLayerInstallation();
+
+            assertThat(PoliticalMapLayer.INSTANCE.resolveRenderer(installation))
+                .isInstanceOf(PoliticalMapLayerRenderer.class)
+                .isSameAs(PoliticalMapLayer.INSTANCE.resolveRenderer(installation));
+        }
+
+        @Test
+        void resolveRendererYieldsARendererPerInstallationSoOneSectorsDrawingIsNotAnothers() {
+            // This tab is registered once for the process while everything behind its renderer - the
+            // cut cells, the territories, the fitted names - is one sector's, so the same tab has to
+            // answer for two sectors with two renderers.
+            assertThat(PoliticalMapLayer.INSTANCE.resolveRenderer(new MapLayerInstallation()))
+                .isNotSameAs(PoliticalMapLayer.INSTANCE.resolveRenderer(new MapLayerInstallation()));
+        }
+
+        @Test
+        void resolveRendererLeavesNothingBehindOnTheInstallationItWasReleasedWith() {
+            // The renderer goes with the sector's machinery, so the sector installed on after it
+            // draws through one of its own rather than through the previous sector's cached cells.
+            var installation = new MapLayerInstallation();
+            var renderer = PoliticalMapLayer.INSTANCE.resolveRenderer(installation);
+
+            installation.disposeMachinery();
+
+            assertThat(PoliticalMapLayer.INSTANCE.resolveRenderer(installation))
+                .isNotSameAs(renderer);
         }
     }
 

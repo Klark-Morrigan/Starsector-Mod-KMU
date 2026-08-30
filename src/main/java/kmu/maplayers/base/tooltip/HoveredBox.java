@@ -7,6 +7,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.SectorStarSystems;
 
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 
@@ -54,15 +55,16 @@ record HoveredBox(
         if (sector == null) {
             return Optional.empty();
         }
-        var hover = MapLayerInstallations
-            .resolveInstallationFor(sector)
-            .resolveHoverState()
-            .getHover();
+        // One resolution for both reads below: the hover this sector published, and the renderer
+        // that would say something about what it names. Two resolutions could only ever agree, and
+        // the pair is what the box is - a cell of one sector's map, described by that sector's map.
+        var installation = MapLayerInstallations.resolveInstallationFor(sector);
+        var hover = installation.resolveHoverState().getHover();
 
         if (!shouldDrawTooltipFor(hover)) {
             return Optional.empty();
         }
-        var tooltip = resolveActiveTooltip();
+        var tooltip = resolveActiveTooltip(installation);
         if (tooltip.isEmpty()) {
             return Optional.empty();
         }
@@ -91,10 +93,12 @@ record HoveredBox(
      * the map surface paints through. Nothing drawing at all resolves the same as an injected empty:
      * nothing to show, so a switch-only tab and a pre-registration frame need no case of their own.
      *
+     * @param installation the machinery installed on the sector the box would describe, whose
+     *                     renderer is the one holding the draw lists the hover was resolved against
      * @return the active layer's injected box, or empty when it injects none
      */
-    static Optional<MapHoverTooltip> resolveActiveTooltip() {
-        var layerRenderer = MapLayerRegistry.resolveActiveMapRenderer();
+    static Optional<MapHoverTooltip> resolveActiveTooltip(MapLayerInstallation installation) {
+        var layerRenderer = MapLayerRegistry.resolveActiveMapRenderer(installation);
         if (layerRenderer == null) {
             return Optional.empty();
         }

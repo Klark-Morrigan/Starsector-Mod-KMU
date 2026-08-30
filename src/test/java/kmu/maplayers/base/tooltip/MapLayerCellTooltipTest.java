@@ -28,6 +28,7 @@ import java.util.Optional;
 import static kmu.maplayers.base.hover.HoverSwitchScopes.runWithHoverTooltipSwitchOn;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -64,7 +65,7 @@ final class MapLayerCellTooltipTest {
 
         when(tooltipLayerMock.getId())
             .thenReturn("tooltip_layer");
-        when(tooltipLayerMock.getMapRenderer())
+        when(tooltipLayerMock.resolveRenderer(any()))
             .thenReturn(layerRendererMock);
 
         when(layerRendererMock.resolveHoverTooltip())

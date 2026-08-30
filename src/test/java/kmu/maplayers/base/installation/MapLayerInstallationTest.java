@@ -17,7 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins what an installation holds: a refresh board, a motion tracker and a hover holder of its own,
  * so that what went stale in one sector is not what any other sector rebuilds for, that a system's
  * drift is judged against where its own sector last saw it, and that a cursor read over one sector's
- * map is not reported over another's.
+ * map is not reported over another's. Beside those sits what a layer hands it to hold - one per
+ * kind per sector, released when the installation is.
  *
  * <p>Built here rather than resolved through {@link MapLayerInstallations}, since the claim is
  * about the holder itself and not about the index that hands one out.
@@ -57,6 +58,34 @@ class MapLayerInstallationTest {
                 .isSameAs(MapHover.NONE);
             assertThat(installation.resolveHoverState().getHover().hoveredSystemId())
                 .isEqualTo(SHARED_SYSTEM_ID);
+        }
+    }
+
+    @Nested
+    class ResolveMachinery {
+
+        @Test
+        void resolveMachineryYieldsTheOneThisInstallationKeepsOfThatKind() {
+            // The surface resolves what draws every frame and the hover box resolves it again in
+            // the pass after, so two resolutions handing back two would have the box describing
+            // draw lists the map never painted - and would double every cache behind them.
+            var machineryFake = installation.resolveMachinery(
+                CountingMachineryFake.class, CountingMachineryFake::new);
+
+            assertThat(installation.resolveMachinery(
+                    CountingMachineryFake.class, CountingMachineryFake::new))
+                .isSameAs(machineryFake);
+        }
+
+        @Test
+        void resolveMachineryYieldsOneOfItsOwnSoOneSectorsDrawingIsNotAnothers() {
+            // The whole of why a renderer stopped being the layer's: the caches behind it reconcile
+            // by system id, so two sectors through one would keep each other's cells rather than
+            // overwrite them.
+            assertThat(installation.resolveMachinery(
+                    CountingMachineryFake.class, CountingMachineryFake::new))
+                .isNotSameAs(otherInstallation.resolveMachinery(
+                    CountingMachineryFake.class, CountingMachineryFake::new));
         }
     }
 
@@ -137,6 +166,68 @@ class MapLayerInstallationTest {
                     .resolveRefreshBoard()
                     .getRevision(MapLayerCommonRefreshSignal.GEOMETRY))
                 .isEqualTo(1);
+        }
+    }
+
+    @Nested
+    class DisposeMachinery {
+
+        @Test
+        void disposeMachineryReleasesWhatALayerHandedItToHold() {
+            // What the release contract is for: the political map's draw lists own a GL buffer per
+            // cached name, so a sector removed mid-session leaks every one it built unless disposal
+            // reaches through to them.
+            var machineryFake = installation.resolveMachinery(
+                CountingMachineryFake.class, CountingMachineryFake::new);
+
+            installation.disposeMachinery();
+
+            assertThat(machineryFake.getDisposeCount())
+                .isEqualTo(1);
+        }
+
+        @Test
+        void disposeMachineryReleasesOnlyItsOwn() {
+            // Removing one sector's layers leaves the other sector drawing, so its renderer - and
+            // every GL resource behind it - has to survive the release beside it.
+            var machineryFake = installation.resolveMachinery(
+                CountingMachineryFake.class, CountingMachineryFake::new);
+            var otherMachineryFake = otherInstallation.resolveMachinery(
+                CountingMachineryFake.class, CountingMachineryFake::new);
+
+            installation.disposeMachinery();
+
+            assertThat(machineryFake.getDisposeCount())
+                .isEqualTo(1);
+            assertThat(otherMachineryFake.getDisposeCount())
+                .isZero();
+        }
+
+        @Test
+        void disposeMachineryIsSafeWithNothingHandedToIt() {
+            // A sector installed on with the map never opened, and the detached installation every
+            // sector-less caller shares: both reach disposal holding nothing.
+            installation.disposeMachinery();
+
+            assertThat(installation.isDisposed())
+                .isTrue();
+        }
+    }
+
+    // A layer's machinery, stated as the plainest thing that can be held and released: what an
+    // installation owes one is a lifetime, and a real renderer would drag a cache and a live screen
+    // read in to say the same thing.
+    private static final class CountingMachineryFake implements InstalledMachinery {
+
+        private int disposeCount;
+
+        @Override
+        public void disposeMachinery() {
+            disposeCount++;
+        }
+
+        int getDisposeCount() {
+            return disposeCount;
         }
     }
 }

@@ -9,16 +9,14 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonisatio
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
-import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.starsector.listeners.SectorListeners;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 
 /**
- * Standing the political map up against a loaded save: healing what the save spells the old way,
- * dropping what the previous one left in a process-lifetime singleton, and registering everything
- * that repaints the overlay while the campaign runs.
+ * Standing the political map up against a loaded save: healing what the save spells the old way, and
+ * registering everything that repaints the overlay while the campaign runs.
  *
  * <p>The listeners cover the changes the engine fires an event for; the watcher covers the ones it
  * does not. Between them they are why the overlay updates live rather than only on reload, which is
@@ -40,8 +38,12 @@ public final class PoliticalMapInstaller {
     }
 
     /**
-     * Heals the loaded save, discards the previous one's overlay state and registers every live
-     * repaint, each step behind its own failure boundary.
+     * Heals the loaded save and registers every live repaint, each step behind its own failure
+     * boundary.
+     *
+     * <p>Nothing of the previous save is dropped here. The overlay's derived state belongs to the
+     * sector it was built from and goes when that sector's machinery does, so this sector's is new
+     * by the time anything below runs.
      *
      * @param sector the loaded sector; null leaves the listeners unregistered rather than throwing
      */
@@ -54,12 +56,6 @@ public final class PoliticalMapInstaller {
         runGuardedStep(
             FilterSelectionHeal::healStaleSelectionAgainstActiveView,
             "Failed to heal KMU political map spotlight selection");
-
-        // The layer renderer is a process-lifetime singleton, so without this the sector just left
-        // keeps painting over the one being loaded.
-        runGuardedStep(
-            PoliticalMapLayerRenderer.INSTANCE::discardStateFromPreviousSave,
-            "Failed to discard KMU political map state from the previous save");
 
         runGuardedStep(
             () -> installPoliticalMapDiscoveryListener(sector),
@@ -91,9 +87,9 @@ public final class PoliticalMapInstaller {
     /**
      * Clears every live repaint this registers, for a player switching the map layers off.
      *
-     * <p>The save heal and the singleton discard have nothing to take back - one repairs the save
-     * and the other drops derived state - so what is left is the listeners and the watcher, each of
-     * which would otherwise go on marking an overlay stale that nothing is drawing.
+     * <p>The save heal has nothing to take back, repairing the save rather than standing anything
+     * up, so what is left is the listeners and the watcher - each of which would otherwise go on
+     * marking an overlay stale that nothing is drawing.
      *
      * @param sector the loaded sector; null is a no-op
      */

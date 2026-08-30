@@ -135,7 +135,10 @@ about what the overlay means.
 ## Where each part lives
 
 - **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, default
-  shortcut), `MapLayerRegistry` (roster, both screens' picks, save migrations), `NoLayer`.
+  shortcut), `MapLayerRegistry` (roster, both screens' picks, save migrations), `NoLayer`. A layer is
+  registered once for the process while what it draws with is one sector's, so it holds no renderer:
+  it is asked for the one belonging to the installation being drawn, and the registry passes that
+  installation through rather than resolving one of its own.
 - **`base/installation`** - one sector's map machinery as a thing a caller can hold, since
   everything the layers draw is derived from one sector. `MapLayerInstallation` is that holder - its
   `MapLayerRefreshBoard` is what went stale in that sector, and nothing another sector rebuilds
@@ -145,7 +148,11 @@ about what the overlay means.
   save's can be stopped from outliving it, nothing else being told a sector went away. A seam
   vanilla hands no sector resolves the live sector's, which is where the global read standing in for
   a sector nobody passed down belongs. An uninstalled sector resolves to a detached installation
-  rather than to null, the overlay being behind a switch a player can leave off.
+  rather than to null, the overlay being behind a switch a player can leave off. What a *layer*
+  derives from the sector - its renderer and the caches behind it - is held through
+  `InstalledMachinery` instead of named here, so an installation owns those lifetimes without this
+  package pointing at the layers downstream of it; releasing one releases them, which is what frees
+  the GL buffers a cached label holds.
 - **[The render surface](base/render/README.md)** - `MapLayerRenderer`, the seam a layer draws
   through - its overlay and the hover box over one cell of it - and the terrain that owns the map's
   render pass. It asks the active layer for a renderer and hands it the frame, so it names no layer;

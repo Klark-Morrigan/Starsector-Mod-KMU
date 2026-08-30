@@ -11,7 +11,7 @@ import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellSeedInputs;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
@@ -38,7 +38,6 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * Keeps the political map's derived draw lists fresh with the least work per frame, and hands
@@ -56,12 +55,13 @@ import java.util.Set;
  * switching a colour or dragging an opacity slider takes effect live, and the per-frame path is
  * otherwise a couple of int compares, never a per-frame economy scan.
  *
- * <p>Everything held here is derived from one sector, and nothing here enters a save: the holder is
- * reached through a registered map layer and lives for the session, so no field needs transient
- * marking. That lifetime is longer than a sector's, though - a player can load a second save without
- * restarting - so a cache is discarded and rebuilt whole per load rather than reconciled. Every
- * revision starts at its rebuild-forcing seed, so the first frame against a new sector rebuilds both
- * halves from scratch.
+ * <p>Everything held here is derived from one sector, and nothing here enters a save: the holder
+ * belongs to that sector's installed map machinery and goes with it, so no field needs transient
+ * marking and nothing needs emptying when a sector changes. One cache serves exactly one sector, and
+ * the reason is the reconcile below it: {@link CellGeometryCache} diffs by system <em>id</em>, so
+ * two sectors through one cache would not overwrite each other's cells, they would keep each
+ * other's. Every revision starts at its rebuild-forcing seed, so the first frame after a sector is
+ * installed on builds both halves from scratch.
  */
 final class PoliticalMapCache {
     private static final Logger LOG = Global.getLogger(PoliticalMapCache.class);
@@ -128,6 +128,16 @@ final class PoliticalMapCache {
     // rebuild failure would flood the log. The first is recorded at ERROR, the rest silenced.
     private boolean hasLoggedRebuildError;
 
+    // The machinery installed on the sector this cache draws. Held rather than resolved per rebuild
+    // so the movers a cut leaves out come from the same sector the cut is made from: a cache that
+    // asked the running game would read another sector's drift the moment it belonged to a sector
+    // that is not the one loaded.
+    private final MapLayerInstallation installation;
+
+    PoliticalMapCache(MapLayerInstallation installation) {
+        this.installation = installation;
+    }
+
     /** @return the built production draw lists, or null while the debug overlay has replaced them */
     public PoliticalMapTerritories getTerritories() {
         return territories;
@@ -155,38 +165,25 @@ final class PoliticalMapCache {
     }
 
     /**
-     * Empties every cached half and returns each revision to its rebuild-forcing seed, so the next
-     * {@link #refresh} builds the whole map from scratch rather than diffing against draw lists that
-     * describe a different sector. Call once per game load.
+     * Releases everything built for this cache's sector, when the machinery holding it goes.
      *
      * <p>The labels' GL buffers are released as part of it: they are freed at the moment the lists
-     * are dropped rather than left to LazyLib's finalizer sweep.
+     * are dropped rather than left to LazyLib's finalizer sweep. Nothing is rewound for a rebuild,
+     * because nothing rebuilds through a released cache - the sector after this one is drawn by a
+     * cache of its own, which begins at its seeds.
      */
-    public void discardCachedState() {
+    public void disposeCachedState() {
 
         LabelsBuilder.disposeAll(factionLabels);
         factionLabels.clear();
 
         // The placements go with the record of what they were fitted under: a statement of the
-        // rules the previous sector's labels were made under must not outlive the labels.
+        // rules this sector's labels were made under must not outlive the labels.
         standingAnchors.discardAnchors();
         territories = null;
         borderStageOverlay = null;
 
-        // Emptying the cells is itself a cut, so it takes its own number rather than rewinding to
-        // a seed: a placement fitted against the previous sector's cells must not be able to
-        // match the number these emptied ones now answer for.
         cellGeometry.cells().clearCachedCells();
-        cellGeometry = cellGeometry.copyWithRevision(cellGeometry.revision() + 1);
-        lastContentRevision = UNBUILT_REVISION;
-
-        // Forgotten rather than zeroed, since every reading the record can hold is one the player
-        // can be under - this is what forces the next refresh to cut against the new sector.
-        lastCellCut = null;
-
-        // Per-system staleness names systems of the sector being left, so it is dropped rather than
-        // replayed against the next one - the rebuild this discard forces re-derives every system.
-        MapLayerRefresh.drainStaleGroupingSystemIds();
     }
 
     /**
@@ -475,16 +472,6 @@ final class PoliticalMapCache {
             MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE));
     }
 
-    // The systems the running sector's poll has seen drifting. Resolved off the live sector
-    // because this cache is reached through a layer renderer that outlives any one sector and so
-    // holds no installation to ask - the same stand-in every seam vanilla hands no sector makes.
-    private static Set<String> resolveLiveMovingSystemIds() {
-        return MapLayerInstallations
-            .resolveInstallationForLiveSector()
-            .resolveMovingSystems()
-            .getMovingSystemIds();
-    }
-
     // Brings the geometry cache in line with the reachable systems, rebuilding only the cells
     // affected by an access change or a system starting or stopping moving - or every cell, when
     // the frontier resolution or the cell radius changed, since either reseeds them all. Feeds the
@@ -495,7 +482,9 @@ final class PoliticalMapCache {
             MapVisibilityPass pass,
             CellSeedInputs seedInputs) {
 
-        var movingSystemIds = resolveLiveMovingSystemIds();
+        // Taken from this cache's own installation, so the systems left out of the partition are the
+        // ones this sector's poll saw drifting rather than whichever sector the game is running.
+        var movingSystemIds = installation.resolveMovingSystems().getMovingSystemIds();
         KmuProfiling
             .getProfiler()
             .measure(

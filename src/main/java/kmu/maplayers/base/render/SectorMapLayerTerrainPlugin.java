@@ -8,6 +8,7 @@ import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMapHostTrace;
 
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.settings.KmuMapLayerSettings;
 
@@ -114,10 +115,15 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
                 && !MAP_PRESENCE.isAnyMapShowing()) {
             return;
         }
-        // Draws through the pick of whichever screen is showing this frame, so switching a tab
-        // switches what paints with no per-layer branch here. Null when nothing draws at all - no
-        // registered pick yet, or a pick that paints nothing.
-        var layerRenderer = MapLayerRegistry.resolveActiveMapRenderer();
+        // Draws through the pick of whichever screen is showing this frame, over the machinery
+        // installed on the sector being drawn, so switching a tab switches what paints with no
+        // per-layer branch here. Null when nothing draws at all - no registered pick yet, or a pick
+        // that paints nothing.
+        //
+        // The sector is resolved off the running game because this hook names none: it is handed a
+        // fade factor and nothing else, so somebody has to say which sector the frame is for.
+        var layerRenderer = MapLayerRegistry.resolveActiveMapRenderer(
+            MapLayerInstallations.resolveInstallationForLiveSector());
         if (layerRenderer == null) {
             return;
         }

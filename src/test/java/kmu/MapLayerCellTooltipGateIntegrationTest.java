@@ -85,7 +85,7 @@ class MapLayerCellTooltipGateIntegrationTest {
 
         when(tooltipLayerMock.getId())
             .thenReturn("tooltip_layer");
-        when(tooltipLayerMock.getMapRenderer())
+        when(tooltipLayerMock.resolveRenderer(any()))
             .thenReturn(layerRendererMock);
 
         when(layerRendererMock.resolveHoverTooltip())

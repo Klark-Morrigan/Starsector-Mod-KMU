@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.render;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuPoliticalMapSettings;
@@ -14,7 +15,7 @@ import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins the cache's two guarantees that hold outside a running game: a rebuild that throws leaves
- * something safe to draw, and a discard returns the whole cache to its rebuild-forcing seed. The
+ * something safe to draw, and releasing the cache drops everything it built for its sector. The
  * incremental rebuild paths need a live sector and are covered by the integration tests.
  */
 final class PoliticalMapCacheTest {
@@ -27,7 +28,7 @@ final class PoliticalMapCacheTest {
         void refreshInstallsAnEmptyPlaceholderWhenTheRebuildThrows() {
             // No sector, so the rebuild throws part way through. The renderer must still find a draw
             // list rather than dereference a null one, and the next frame retries.
-            var cache = new PoliticalMapCache();
+            var cache = new PoliticalMapCache(new MapLayerInstallation());
 
             // Both settings classes the refresh reads are stubbed inert: the revision counter is the
             // framework's, the seed inputs and the debug gate are this layer's.
@@ -43,14 +44,14 @@ final class PoliticalMapCacheTest {
     }
 
     @Nested
-    class DiscardCachedState {
+    class DisposeCachedState {
 
         @Test
-        void discardCachedStateDropsTheDrawListsBuiltForTheSectorBeingLeft() {
-            // The regression this guards: the holder outlives a save, so draw lists carried into a
-            // second load would paint the previous sector with nothing to mark them stale - the
-            // revision counters are process-wide and do not move on load.
-            var cache = new PoliticalMapCache();
+        void disposeCachedStateDropsTheDrawListsBuiltForItsSector() {
+            // What a sector removed mid-session leaves behind if this does nothing: the cached names
+            // each own a GL buffer, so the drop is what frees them rather than leaving them to
+            // LazyLib's finalizer sweep.
+            var cache = new PoliticalMapCache(new MapLayerInstallation());
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
                     MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
                         mockStatic(KmuPoliticalMapSettings.class)) {
@@ -58,7 +59,7 @@ final class PoliticalMapCacheTest {
             }
             assertThat(cache.getTerritories()).isNotNull();
 
-            cache.discardCachedState();
+            cache.disposeCachedState();
 
             assertThat(cache.getTerritories()).isNull();
             assertThat(cache.getBorderStageOverlay()).isNull();
@@ -67,12 +68,12 @@ final class PoliticalMapCacheTest {
         }
 
         @Test
-        void discardCachedStateIsSafeBeforeAnythingHasBeenBuilt() {
-            // Reached on the first load of a session, when there are no draw lists and no GL
-            // resources to release yet.
-            var cache = new PoliticalMapCache();
+        void disposeCachedStateIsSafeBeforeAnythingHasBeenBuilt() {
+            // Reached for a sector installed on with the map never opened, when there are no draw
+            // lists and no GL resources to release yet.
+            var cache = new PoliticalMapCache(new MapLayerInstallation());
 
-            cache.discardCachedState();
+            cache.disposeCachedState();
 
             assertThat(cache.getTerritories()).isNull();
             assertThat(cache.getFactionLabels()).isEmpty();

@@ -1,5 +1,7 @@
 package kmu.maplayers.base.layer;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -22,11 +24,13 @@ final class NoLayerTest {
     }
 
     @Nested
-    class GetMapRenderer {
+    class ResolveRenderer {
 
         @Test
-        void getMapRendererIsNullBecauseThisLayerDrawsNothing() {
-            assertThat(NoLayer.INSTANCE.getMapRenderer()).isNull();
+        void resolveRendererIsNullBecauseThisLayerDrawsNothing() {
+            // Whichever sector is asked about: there is nothing here for a sector to differ in, so
+            // the installation goes unread and every sector gets the same answer.
+            assertThat(NoLayer.INSTANCE.resolveRenderer(new MapLayerInstallation())).isNull();
         }
     }
 }

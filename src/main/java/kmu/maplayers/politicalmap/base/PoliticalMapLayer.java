@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.ColumnSelectionBinder;
@@ -114,9 +115,15 @@ public final class PoliticalMapLayer implements MapLayer {
     }
 
     @Override
-    public MapLayerRenderer getMapRenderer() {
+    public MapLayerRenderer resolveRenderer(MapLayerInstallation installation) {
         // View-neutral here as everywhere else on this tab: the renderer resolves which view is up,
         // so the tab hands over one renderer rather than branching on the view roster.
-        return PoliticalMapLayerRenderer.INSTANCE;
+        //
+        // Held by the installation rather than by this tab, because everything behind the renderer -
+        // the cut cells, the territories, the fitted labels - is one sector's. This tab is
+        // registered once for the process and would otherwise be where two sectors met.
+        return installation.resolveMachinery(
+            PoliticalMapLayerRenderer.class,
+            () -> PoliticalMapLayerRenderer.createForLiveScreen(installation));
     }
 }

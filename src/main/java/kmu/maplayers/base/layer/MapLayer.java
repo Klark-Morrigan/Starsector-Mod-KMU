@@ -2,6 +2,7 @@ package kmu.maplayers.base.layer;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.render.MapLayerRenderer;
 
 import java.util.List;
@@ -16,8 +17,12 @@ import java.util.List;
  * registering it: the bar draws its tab, the input listener hit-tests it, and its hotkey
  * switches to it, all with no change to the UI code.
  * A layer here is a descriptor - id, tab label, body controls, hotkey - not a renderer; drawing is
- * a separate role a layer may fill, supplied through {@link #getMapRenderer()} and driven by the
+ * a separate role a layer may fill, supplied through {@link #resolveRenderer} and driven by the
  * terrain surface that owns the map's render pass.
+ *
+ * <p>A layer is registered once for the process, while what it draws with is one sector's - so a
+ * layer holds no renderer and is asked for the one belonging to the sector being drawn. That is what
+ * keeps the roster a mod-load fact while the caches behind the paint begin and end with a sector.
  */
 public interface MapLayer {
 
@@ -49,11 +54,17 @@ public interface MapLayer {
     String getShortcutSettingKey();
 
     /**
-     * @return what draws this layer's overlay while it is the active pick, or null for a layer that
-     *         draws nothing - a switch-only tab, which the map surface reads as nothing to draw.
-     *         Declared here rather than defaulted to null so every layer answers the question
-     *         deliberately; a new view that forgets to draw fails to compile rather than coming up
-     *         blank
+     * What draws this layer's overlay for one sector while it is the active pick, or null for a
+     * layer that draws nothing - a switch-only tab, which the map surface reads as nothing to draw.
+     * Declared here rather than defaulted to null so every layer answers the question deliberately;
+     * a new view that forgets to draw fails to compile rather than coming up blank.
+     *
+     * <p>An implementation that draws holds its renderer in the installation rather than in itself,
+     * so the same registered layer answers for two sectors with two renderers - each over the draw
+     * lists cut from its own sector, and each released when that sector's machinery is.
+     *
+     * @param installation the machinery installed on the sector being drawn
+     * @return that sector's renderer for this layer, or null for a layer that draws nothing
      */
-    MapLayerRenderer getMapRenderer();
+    MapLayerRenderer resolveRenderer(MapLayerInstallation installation);
 }

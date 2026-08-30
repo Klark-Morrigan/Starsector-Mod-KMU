@@ -29,10 +29,14 @@ hotkey): folding drawing into the descriptor would merge two roles in one type, 
 switches would be left with methods it has no answer for.
 
 `SectorMapLayerTerrainPlugin` is the terrain the engine actually calls. It reads the active layer,
-asks it for a renderer, and draws through it. A layer that supplies none - No Layer, or any future
-switch-only tab - reads as nothing to draw, which is the same answer the surface gives when no
-layer is active at all. `base.tooltip`'s dispatcher resolves its box the same way, off the same two
-reads, so neither pass names a layer.
+asks it for the renderer belonging to the sector being drawn, and draws through it. A layer that
+supplies none - No Layer, or any future switch-only tab - reads as nothing to draw, which is the
+same answer the surface gives when no layer is active at all. `base.tooltip`'s dispatcher resolves
+its box the same way, off the same two reads, so neither pass names a layer.
+
+Which sector that is has to be resolved rather than passed: this hook is handed a fade factor and
+nothing else. The surface resolves the live sector's installation for it, which is the one place a
+global read stands in for a sector nobody passed down.
 
 `renderOnMap` is the sector map's hook by contract, and everything downstream rests on that - the
 cursor read inverts whichever transform the running pass bound and divides by the `factor` it
@@ -174,18 +178,19 @@ the panel, which is the next location change or the next load.
 
 ## Three terrains, one draw
 
-Because a renderer is reached through a registered layer, it is a session-scoped singleton created
-at load: nothing it holds enters a save, so it needs no `transient` marking, no lazy re-creation,
-and no save-restore path. The terrain plugin, which *is* serialised with its terrain entity, holds
-none of it.
+A renderer belongs to one sector's installed map machinery, made on the first frame that asks for it
+and released with that machinery: nothing it holds enters a save, so it needs no `transient`
+marking, no lazy re-creation, and no save-restore path. The terrain plugin, which *is* serialised
+with its terrain entity, holds none of it - it resolves the installation each frame rather than
+carrying one.
 
 `SectorMapLayerStarscapeTerrainPlugin` and `SectorMapLayerAboveStarscapeNebulaeTerrainPlugin` reach
 the same draw while the map's Starscape filter is on - that filter hard-suppresses custom terrain,
 so the overlay needs a terrain the filter admits. Each rides its own
 `SectorMapLayerStarscapeTerrain`, one entity class parameterised by the row id it resolves its
 plugin from, since reporting the whitelisted type is the whole of what that class does. All three
-surfaces dispatch to the same renderer over one set of draw lists, so nothing is built or held
-twice.
+surfaces dispatch to the same renderer over one set of draw lists - one sector resolves one
+installation, which holds one of each - so nothing is built or held twice.
 
 Two entities rather than one because the map draws its nebulae between the terrain icons it holds:
 a band above them needs an icon of its own, which needs an entity of its own. The plugins form a

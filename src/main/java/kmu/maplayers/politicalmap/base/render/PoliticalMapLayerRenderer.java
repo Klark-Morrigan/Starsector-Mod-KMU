@@ -12,6 +12,7 @@ import kmu.maplayers.base.hover.MapHoverPermission;
 import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -59,27 +60,13 @@ import java.util.function.Supplier;
  */
 public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
-    // Above INSTANCE, and load-bearing there. Static initialisers run in the order they are written,
-    // and constructing INSTANCE runs this class's field initialisers - two of which take this logger
-    // and hold it. Declared below, they would each capture null, and the first line either tried to
-    // write would take the frame down rather than say anything.
     private static final Logger LOG = Global.getLogger(PoliticalMapLayerRenderer.class);
 
-    /**
-     * The one shared instance; the political-map layer hands it to the map surface as its renderer.
-     * This is where the live covers and the live cursor read are chosen, the renderer itself naming
-     * only the reader and the source.
-     */
-    public static final PoliticalMapLayerRenderer INSTANCE = new PoliticalMapLayerRenderer(
-        MapCoverReader.createForLiveScreen(),
-        PoliticalMapLayerRenderer::buildLiveHoverPublisher);
-
     // The freshness cache and the overlay compositor this renderer delegates to. Plain final fields:
-    // a layer renderer is reached through a registered layer, so it lives for the session and never
-    // enters a save, and neither collaborator needs the transient marking or lazy rebuild a
-    // save-serialised holder would. The cache holds one sector's derived state and is emptied per
-    // load rather than replaced; see discardStateFromPreviousSave.
-    private final PoliticalMapCache cache = new PoliticalMapCache();
+    // a renderer belongs to one sector's installed machinery and never enters a save, so neither
+    // collaborator needs the transient marking or lazy rebuild a save-serialised holder would. The
+    // cache is made for the same installation this renderer was, so the two draw one sector.
+    private final PoliticalMapCache cache;
     private final PoliticalMapOverlayRenderer overlayRenderer = new PoliticalMapOverlayRenderer();
 
     // Whether anything is drawn over the map where the cursor rests. Handed in rather than composed
@@ -125,27 +112,41 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     private boolean isHoverWantedThisFrame;
 
     PoliticalMapLayerRenderer(
+            PoliticalMapCache cache,
             MapCoverReader mapCoverReader,
             Supplier<MapHoverPublisher> hoverPublisherSource) {
 
+        this.cache = cache;
         this.mapCoverReader = mapCoverReader;
         this.hoverPublisherSource = hoverPublisherSource;
     }
 
     /**
-     * Drops everything derived from the sector being left, so the next frame rebuilds against the
-     * sector just loaded. Call once per game load.
+     * The renderer one sector's map machinery holds, reading the covers and the cursor of the screen
+     * the game is showing. Which sector it draws is the installation's; where the reads come from is
+     * settled here, the renderer itself naming only the reader and the source.
      *
-     * <p>This renderer outlives any one save - it is reached through a registered layer, and a player
-     * can load a second save without restarting - while its cache is only meaningful for the sector
-     * it was built from. Nothing else would catch the difference: the geometry cache reconciles by
-     * diffing system <em>ids</em>, so a system present in both saves at a different position is not
-     * seen to have changed and keeps the cell cut around where the previous save had it. Without this
-     * the previous save's territories would paint over the new sector and stay until the player
-     * happened to trip a rebuild.
+     * @param installation the machinery this renderer is being made for, whose sector its cache cuts
+     *                     its cells from and whose movers that cut leaves out
+     * @return a renderer for that installation, its cache empty until the first frame builds it
      */
-    public void discardStateFromPreviousSave() {
-        cache.discardCachedState();
+    public static PoliticalMapLayerRenderer createForLiveScreen(MapLayerInstallation installation) {
+        return new PoliticalMapLayerRenderer(
+            new PoliticalMapCache(installation),
+            MapCoverReader.createForLiveScreen(),
+            PoliticalMapLayerRenderer::buildLiveHoverPublisher);
+    }
+
+    /**
+     * Releases everything derived from this renderer's sector, when the machinery holding it goes.
+     *
+     * <p>The draw lists behind it own GL buffers - one per cached faction name - so they are freed
+     * here rather than left to LazyLib's finalizer sweep. A sector whose layers are removed
+     * mid-session would otherwise leak every label it had built.
+     */
+    @Override
+    public void disposeMachinery() {
+        cache.disposeCachedState();
     }
 
     @Override

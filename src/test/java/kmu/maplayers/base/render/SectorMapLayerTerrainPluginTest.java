@@ -19,6 +19,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -66,7 +67,9 @@ final class SectorMapLayerTerrainPluginTest {
 
         when(drawingLayerMock.getId())
             .thenReturn("drawing");
-        when(drawingLayerMock.getMapRenderer())
+        // Whichever installation the surface resolves for the frame: which sector it draws is the
+        // surface's to settle, and what this pins is that it draws through the answer it gets.
+        when(drawingLayerMock.resolveRenderer(any()))
             .thenReturn(layerRendererMock);
 
         MapLayerRegistry.registerLayers(List.of(drawingLayerMock), drawingLayerMock);
