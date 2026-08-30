@@ -230,8 +230,9 @@ public final class ViewerSettings {
 
     // The same spans laid over the interior coastlines instead - across water the cells closed
     // around unaided rather than across the void between continents. One search over two shores
-    // rather than two searches, so the only difference between the sets is where they were
-    // allowed to anchor.
+    // rather than two searches, so the sets differ only by what the shore decides: where a span
+    // may anchor, which pairs are worth offering - one lake's ring rather than one outline's
+    // cells - and how the reach is read, by the water crossed rather than by the centres.
     //
     // Its own switch and not the lake shore's, because a shoreline and a span across the water
     // it bounds are two proposals: whether to draw a lake at all is one question, and whether

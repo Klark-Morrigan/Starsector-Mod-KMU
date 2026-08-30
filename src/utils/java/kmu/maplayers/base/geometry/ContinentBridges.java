@@ -86,6 +86,11 @@ public final class ContinentBridges {
     private static final BiPredicate<double[], double[]> ACCEPTS_ANY_PAIRING =
         (start, end) -> true;
 
+    // How far a span's width can undershoot its cells' centre distance, in cell radii: its
+    // ends sit on the rims, one radius in from each centre. What the interior offer is
+    // loosened by, so the width gate sees every span it should judge.
+    private static final double OFFER_SLACK_RADII = 2;
+
     private ContinentBridges() {
     }
 
@@ -118,7 +123,7 @@ public final class ContinentBridges {
      * @param shore      which of the two coastlines the spans are anchored on, which is the
      *                   whole of what tells one set from the other
      * @param parameters the knobs the cells are built under
-     * @param rules      the reach to offer bridges at
+     * @param rules      the knobs the spans are laid under
      * @return the spans, shortest first
      */
     public static List<CellGap> findAnchoredBridges(
@@ -159,17 +164,12 @@ public final class ContinentBridges {
         // them the same way.
         var coastWalls = WallCoverage.collectRingWalls(collectTracedRings(traced));
         var reach = parameters.cellRadius() * rules.reachMultiple();
-
-        // The shore's own reading of the reach: centre to centre on the exterior, where the
-        // water is unbounded and the centres are the only measure of separation - and by the
-        // water a span actually crosses on the interior, where two cells across a wide lake
-        // have near shores and far centres, so the centre gate alone never offers them.
-        var offerDistance = shore.resolveOfferDistance(reach, parameters.cellRadius());
+        var offerDistance = resolveOfferDistance(shore, reach, parameters.cellRadius());
         var laid = new ArrayList<CellGap>();
 
-        // Every pair of cells on ONE continent, once. Nothing is refused here for crossing
-        // anything: what the offer is depends only on the cells, and which of the offers
-        // survive is settled afterwards, in one place, against one rule.
+        // Every pair the gate admits, once. Nothing is refused here for crossing anything:
+        // what the offer is depends only on the cells, and which of the offers survive is
+        // settled afterwards, in one place, against one rule.
         for (var from : frontages.keySet()) {
             for (var to : frontages.keySet()) {
 
@@ -188,7 +188,7 @@ public final class ContinentBridges {
                     frontages.get(to),
                     union);
 
-                if (span != null && shore.isSpanWithinReach(span, reach)) {
+                if (span != null && isSpanWithinReach(shore, span, reach)) {
                     laid.add(span);
                 }
             }
@@ -245,6 +245,38 @@ public final class ContinentBridges {
         var continentOf = mapCellsToContinents(traced);
 
         return (from, to) -> isOneContinent(continentOf, from, to);
+    }
+
+    // How far apart two cells' centres may sit before a pair is not worth scanning, as the
+    // shore reads the reach - beside the pair gate rather than on the shore, for its reason:
+    // how a reach is measured is this construction's reading, and the shore only names which
+    // reading applies.
+    //
+    // The exterior reads the reach as the gate itself: its water is unbounded, so how far
+    // apart the cells sit is the only measure of separation there is, and that is the settled
+    // meaning of the knob. The interior loosens the offer by the slack and gates the span
+    // instead, through isSpanWithinReach: its water is bounded and it is the WATER that is
+    // bridged - two cells facing each other across a wide lake have near shores and far
+    // centres, and gated at the centres they are never offered at all.
+    private static double resolveOfferDistance(
+            CoastFrontages.Shore shore,
+            double reach,
+            double cellRadius) {
+
+        return shore == CoastFrontages.Shore.INTERIOR
+            ? reach + OFFER_SLACK_RADII * cellRadius
+            : reach;
+    }
+
+    // The second half of the interior's offer gate: the width the loosened centre distance
+    // exists to let through. Always within reach on the exterior, whose gate was the centre
+    // distance itself.
+    private static boolean isSpanWithinReach(
+            CoastFrontages.Shore shore,
+            CellGap span,
+            double reach) {
+
+        return shore == CoastFrontages.Shore.EXTERIOR || span.width() <= reach;
     }
 
     // Which lakes each cell rings, off the lakes' own rings. A set per cell, because a cell

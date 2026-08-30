@@ -56,16 +56,6 @@ public final class CoastFrontages {
 
                 return collectBridgeFrontages(traced);
             }
-
-            @Override
-            public double resolveOfferDistance(double reach, double cellRadius) {
-                return reach;
-            }
-
-            @Override
-            public boolean isSpanWithinReach(CellGap span, double reach) {
-                return true;
-            }
         },
 
         /** The lake shores, whose spans cross water the cells closed around unaided. */
@@ -76,25 +66,7 @@ public final class CoastFrontages {
 
                 return collectLakeFrontages(traced);
             }
-
-            @Override
-            public double resolveOfferDistance(double reach, double cellRadius) {
-
-                // A span's ends sit on the cells' rims, so its width undershoots the centre
-                // distance by up to a diameter - which is exactly how far the offer has to be
-                // loosened for the width gate below to see every span it should judge.
-                return reach + CELL_DIAMETERS_OF_SLACK * cellRadius;
-            }
-
-            @Override
-            public boolean isSpanWithinReach(CellGap span, double reach) {
-                return span.width() <= reach;
-            }
         };
-
-        // How much a cell's own body adds to the centre distance of a pair whose shores touch:
-        // one radius each side.
-        private static final double CELL_DIAMETERS_OF_SLACK = 2;
 
         /**
          * Every stretch of this shore a wall may be anchored on, by cell.
@@ -105,36 +77,6 @@ public final class CoastFrontages {
          */
         public abstract Map<Integer, List<List<double[]>>> collectFrontages(
                 Coastlines.TracedCoasts traced);
-
-        /**
-         * How far apart two cells may sit, centre to centre, and still have a span offered.
-         *
-         * <p>The exterior shore answers with the reach itself: its water is unbounded, so how
-         * far apart the cells sit is the only measure of separation there is, and that is the
-         * settled meaning of the knob. The interior shore loosens the offer by a cell's
-         * diameter and gates the span itself instead, because its water is bounded and it is
-         * the WATER that is bridged: two cells facing each other across a wide lake have near
-         * shores and far centres, and gated at the centres they are never offered at all.
-         *
-         * @param reach      the reach the knob asks for, in map units
-         * @param cellRadius one cell's radius
-         * @return the centre distance within which a pair is worth offering
-         */
-        public abstract double resolveOfferDistance(double reach, double cellRadius);
-
-        /**
-         * Whether a span found between two offered cells crosses no more water than the reach
-         * allows.
-         *
-         * <p>The second half of the offer gate: where {@link #resolveOfferDistance} loosened
-         * the centre distance, this is what holds the reach's actual meaning - always true on
-         * the exterior shore, whose gate was the centre distance itself.
-         *
-         * @param span  the span, at its chosen anchors
-         * @param reach the reach the knob asks for, in map units
-         * @return whether it is within reach
-         */
-        public abstract boolean isSpanWithinReach(CellGap span, double reach);
     }
 
     /**
