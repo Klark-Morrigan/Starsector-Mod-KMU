@@ -18,6 +18,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.verification.VerificationMode;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -27,8 +31,8 @@ import static org.mockito.Mockito.times;
 
 /**
  * Pins what the entry point itself is answerable for: being the plugin the engine constructs, and
- * the composition it names - which steps a launch is made of, which installers the map layers are
- * made of, and that switching them off reaches every one of them.
+ * the composition it names - which steps a launch is made of, which switches it applies, which
+ * installers the map layers are made of, and that switching them off reaches every one of them.
  *
  * <p>Every step a launch runs names a class this mod owns, which is what makes the list assertable
  * at all: LunaLib is on no test classpath, so a step reaching it directly would fail to initialise
@@ -41,6 +45,10 @@ import static org.mockito.Mockito.times;
  * about the list, not about what the entries do or when they are asked.
  */
 class KMU_ModPluginTest {
+
+    // The field holding the switches both asks walk. Named as text because it is private, and the
+    // lookup fails loudly when it is renamed rather than quietly finding nothing.
+    private static final String APPLIED_SWITCHES_FIELD = "switchedFeatures";
 
     @Nested
     class ModIdentity {
@@ -85,6 +93,24 @@ class KMU_ModPluginTest {
     }
 
     @Nested
+    class SwitchedFeatures {
+
+        @Test
+        void appliesEverySwitchTheEntryPointDeclares() {
+            // A load and a settings change both walk the one list, so a switch declared beside it
+            // and left out of it is a feature the player can flip and see nothing happen until they
+            // reload - and nothing else says so, the field still compiling and the setting still
+            // reading. Gathered by type rather than by name, so a switch added later joins this
+            // case by existing rather than by being remembered here.
+            assertThat(readAppliedSwitches())
+                .as(
+                    "the switches %s applies against the ones it declares",
+                    KMU_ModPlugin.class.getSimpleName())
+                .containsExactlyInAnyOrderElementsOf(readDeclaredSwitches());
+        }
+    }
+
+    @Nested
     class InstallMapLayers {
 
         @Test
@@ -119,6 +145,46 @@ class KMU_ModPluginTest {
                 installers.verifyEveryTakeBackFor(sectorMock, times(1));
                 installers.verifyEveryStandUpFor(sectorMock, never());
             }
+        }
+    }
+
+    // The switches the entry point declares, read off its fields by type. Reflection rather than a
+    // list written out here, which would be a third copy of the same set and could be the one that
+    // is right while the wiring is wrong.
+    private static List<Object> readDeclaredSwitches() {
+        return Arrays
+            .stream(KMU_ModPlugin.class.getDeclaredFields())
+            .filter(field -> field.getType() == KmuToggledFeature.class)
+            .map(KMU_ModPluginTest::readStaticFieldValue)
+            .toList();
+    }
+
+    // The switches it applies, as the field both asks walk holds them. Their identity is what is
+    // compared, so a list holding some other instance of the same feature fails as loudly as one
+    // missing it.
+    @SuppressWarnings("unchecked")
+    private static List<Object> readAppliedSwitches() {
+        return (List<Object>) readStaticFieldValue(findField(APPLIED_SWITCHES_FIELD));
+    }
+
+    private static Field findField(String name) {
+        try {
+            return KMU_ModPlugin.class.getDeclaredField(name);
+        } catch (NoSuchFieldException failure) {
+            // Surfaced rather than swallowed: the field being gone means the walk is looking for a
+            // list that no longer exists, which would otherwise read as a plugin applying nothing.
+            throw new IllegalStateException(
+                "No " + APPLIED_SWITCHES_FIELD + " field on " + KMU_ModPlugin.class.getName(),
+                failure);
+        }
+    }
+
+    private static Object readStaticFieldValue(Field field) {
+        try {
+            field.setAccessible(true);
+            return field.get(null);
+        } catch (IllegalAccessException failure) {
+            throw new IllegalStateException("Could not read " + field.getName(), failure);
         }
     }
 

@@ -10,6 +10,7 @@ import org.lazywizard.console.BaseCommand.CommandResult;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,10 +31,7 @@ class KmuOpenMarketConditionManagerCommandTest {
             var output = new ArrayList<String>();
             var command = new KmuOpenMarketConditionManagerCommand(
                 FEATURE_SWITCHED_OFF,
-                () -> {
-                    opened.set(true);
-                    return KmuConditionEditorOpenResult.opened();
-                },
+                buildRecordingOpener(opened),
                 output::add);
 
             var result = command.runCommand("", CommandContext.CAMPAIGN_MARKET);
@@ -60,10 +58,7 @@ class KmuOpenMarketConditionManagerCommandTest {
             var output = new ArrayList<String>();
             var command = new KmuOpenMarketConditionManagerCommand(
                 FEATURE_SWITCHED_ON,
-                () -> {
-                    opened.set(true);
-                    return KmuConditionEditorOpenResult.opened();
-                },
+                buildRecordingOpener(opened),
                 output::add);
 
             var result = command.runCommand("", CommandContext.COMBAT_MISSION);
@@ -83,10 +78,7 @@ class KmuOpenMarketConditionManagerCommandTest {
             var output = new ArrayList<String>();
             var command = new KmuOpenMarketConditionManagerCommand(
                 FEATURE_SWITCHED_ON,
-                () -> {
-                    opened.set(true);
-                    return KmuConditionEditorOpenResult.opened();
-                },
+                buildRecordingOpener(opened),
                 output::add);
 
             var result = command.runCommand("bogus", CommandContext.CAMPAIGN_MARKET);
@@ -108,10 +100,7 @@ class KmuOpenMarketConditionManagerCommandTest {
             var output = new ArrayList<String>();
             var command = new KmuOpenMarketConditionManagerCommand(
                 FEATURE_SWITCHED_ON,
-                () -> {
-                    opened.set(true);
-                    return KmuConditionEditorOpenResult.opened();
-                },
+                buildRecordingOpener(opened),
                 output::add);
 
             var result = command.runCommand("", CommandContext.CAMPAIGN_MARKET);
@@ -195,5 +184,15 @@ class KmuOpenMarketConditionManagerCommandTest {
             assertThat(output)
                 .containsExactly("Failed to open Market Condition Manager: unexpected failure");
         }
+    }
+
+    // An opener that would succeed, and says whether it was reached. What every case about a guard
+    // asserts on: the guard's own answer says the command declined, and this says the editor was
+    // never opened behind it.
+    private static Supplier<KmuConditionEditorOpenResult> buildRecordingOpener(AtomicBoolean opened) {
+        return () -> {
+            opened.set(true);
+            return KmuConditionEditorOpenResult.opened();
+        };
     }
 }

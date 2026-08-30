@@ -29,7 +29,9 @@ public final class KmuMarketConditionSettings {
     /**
      * @return whether the market-condition picker offers every condition, or only
      *         the planetary ones vanilla treats as hand-placeable; on by default,
-     *         so non-planetary conditions (such as decivilisation) are offered too
+     *         so non-planetary conditions (such as decivilisation) are offered too.
+     *         Unread while the condition manager itself is switched off, the picker
+     *         being what reads it
      */
     public static boolean shouldOfferAllConditions() {
         return KmuLunaSettings.readBoolean(

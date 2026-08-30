@@ -19,6 +19,8 @@ import kmu.starsector.rat.RandomAssortmentOfThingsCompatibilityMode;
 import kmu.starsector.rat.RandomAssortmentOfThingsSettings;
 import kmu.ui.context.MarketUiContextInstaller;
 
+import java.util.List;
+
 /**
  * KMU's entry point: the class the game constructs from the {@code modPlugin} field in
  * {@code mod_info.json}, once per launch, and calls again on every save load.
@@ -74,6 +76,15 @@ public class KMU_ModPlugin extends BaseModPlugin {
             RandomAssortmentOfThingsCompatibilityInstaller::installAll,
             RandomAssortmentOfThingsCompatibilityInstaller::uninstallAll);
 
+    // The switches above as one list, in the order they are applied in, because each of them is
+    // asked twice - once against a freshly loaded sector and again wherever the player flips it -
+    // and naming them per ask would mean two lists to keep the same. A feature in one and not the
+    // other is a feature the player can switch and see nothing happen until they reload.
+    private static final List<KmuToggledFeature> switchedFeatures = List.of(
+        mapLayers,
+        marketConditionManager,
+        randomAssortmentOfThingsCompatibility);
+
     @Override
     public void onApplicationLoad() {
 
@@ -93,8 +104,8 @@ public class KMU_ModPlugin extends BaseModPlugin {
             MapLayers::registerAll,
             "Failed to register KMU map layers");
 
-        // Answer both switches where the player flips them, rather than at the next load. One
-        // registration for the pair: LunaLib announces the settings rather than the setting, so
+        // Answer every switch where the player flips it, rather than at the next load. One
+        // registration for all of them: LunaLib announces the settings rather than the setting, so
         // there is one announcement to react to however many switches read it.
         KmuWiringSteps.runGuardedStep(
             () -> KmuLunaSettings.runOnSettingsChange(KMU_ModPlugin::applySwitchedFeatures),
@@ -140,21 +151,22 @@ public class KMU_ModPlugin extends BaseModPlugin {
             MapLayerInstallations::disposeEveryInstallation,
             "Failed to discard KMU map layer machinery from the previous save");
 
-        mapLayers.applyTo(sector);
-        marketConditionManager.applyTo(sector);
-        randomAssortmentOfThingsCompatibility.applyTo(sector);
+        // Whatever each switch reads as, against a sector carrying nothing of what was applied to
+        // the one it replaced - so there is no previous state worth comparing against here.
+        for (var feature : switchedFeatures) {
+            feature.applyTo(sector);
+        }
     }
 
     // Brings every switch to bear on the sector already wired, each acting only if it was the one
-    // that moved. Every switched feature belongs in this one place: one left out is one the player
-    // can flip and see nothing happen until they reload.
+    // that moved.
     static void applySwitchedFeatures() {
 
         var sector = Global.getSector();
 
-        mapLayers.applyToIfSwitched(sector);
-        marketConditionManager.applyToIfSwitched(sector);
-        randomAssortmentOfThingsCompatibility.applyToIfSwitched(sector);
+        for (var feature : switchedFeatures) {
+            feature.applyToIfSwitched(sector);
+        }
     }
 
     // What the map layers need of a sector while they are on, in the order they need it in.

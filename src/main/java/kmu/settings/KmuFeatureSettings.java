@@ -25,9 +25,6 @@ public final class KmuFeatureSettings {
     private static final String MARKET_CONDITION_MANAGER_FIELD =
         "kmu_features_toggles_isMarketConditionManagerEnabled";
 
-    // Off, because the feature is unfinished. It is also the one toggle whose feature writes to the
-    // campaign rather than drawing over it, so a player switched into it by default would be given
-    // an unfinished editor over their own save.
     private static final boolean DEFAULT_MARKET_CONDITION_MANAGER = false;
 
     private KmuFeatureSettings() {
