@@ -43,14 +43,12 @@ public final class NexerelinAlliances {
 
     /**
      * The grouping for the live alliance set, or {@link HolderGrouping#identity()}
-     * when Nexerelin is absent. Short-circuits on the gate before touching
-     * {@link Holder}, so the Nex-coupled source is never loaded without Nex.
+     * when Nexerelin is absent.
      *
      * @return the alliance grouping when Nex is present, else the faction grouping
      */
     public static HolderGrouping resolveGrouping() {
-        // Short-circuit before referencing Holder so a Nex-free install never loads the
-        // class that names NexAllianceSource, which imports exerelin.*.
+        // Gated before Holder is named, so a Nex-free install never seeks exerelin.*.
         if (!isAvailable()) {
             return HolderGrouping.identity();
         }
@@ -59,8 +57,7 @@ public final class NexerelinAlliances {
 
     /**
      * The alliance memberships for the live alliance set, or {@link FactionAlliances#NONE}
-     * when Nexerelin is absent. Short-circuits on the gate before touching {@link Holder},
-     * so the Nex-coupled source is never loaded without Nex.
+     * when Nexerelin is absent.
      *
      * <p>Read afresh wherever a pass opens rather than snapshotted once: alliances form and
      * dissolve in play, and a visibility rule reading a stale set goes on crediting a
@@ -69,8 +66,7 @@ public final class NexerelinAlliances {
      * @return the memberships when Nex is present, else nobody standing with anybody
      */
     public static FactionAlliances resolveFactionAlliances() {
-        // Short-circuit before referencing Holder so a Nex-free install never loads the
-        // class that names NexAllianceSource, which imports exerelin.*.
+        // Gated before Holder is named, so a Nex-free install never seeks exerelin.*.
         if (!isAvailable()) {
             return FactionAlliances.NONE;
         }
@@ -81,14 +77,12 @@ public final class NexerelinAlliances {
      * A membership token for the live alliance set, used by the sector watcher to detect
      * when alliances form, dissolve, or change members between polls. Returns a fixed
      * value when Nexerelin is absent, so a Nex-free install polls a steady token and never
-     * bumps the alliance revision. Short-circuits on the gate before touching
-     * {@link Holder}, so the Nex-coupled source is never loaded without Nex.
+     * bumps the alliance revision.
      *
      * @return the alliance membership fingerprint when Nex is present, else a fixed value
      */
     public static int computeAllianceFingerprint() {
-        // Short-circuit before referencing Holder so a Nex-free install never loads the
-        // class that names NexAllianceSource, which imports exerelin.*.
+        // Gated before Holder is named, so a Nex-free install never seeks exerelin.*.
         if (!isAvailable()) {
             return NO_NEXERELIN_FINGERPRINT;
         }
@@ -96,9 +90,9 @@ public final class NexerelinAlliances {
     }
 
     // Isolates the only reference to the Nex-coupled source. The classloader resolves
-    // this holder on first call, which the gates in resolveGrouping and
-    // computeAllianceFingerprint defer until Nex is known present, so NexAllianceSource -
-    // and through it exerelin.* - is never sought otherwise.
+    // this holder on first call, which the gate at the head of every read above defers
+    // until Nex is known present, so NexAllianceSource - and through it exerelin.* - is
+    // never sought otherwise.
     private static final class Holder {
 
         private static final AllianceSource SOURCE = new NexAllianceSource();
