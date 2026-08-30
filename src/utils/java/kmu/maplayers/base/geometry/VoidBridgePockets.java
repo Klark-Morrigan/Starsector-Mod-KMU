@@ -146,14 +146,45 @@ public final class VoidBridgePockets {
 
         var outlines = new ArrayList<List<double[]>>();
 
-        var union = VoidPockets.buildUnionFor(sites, parameters, shaping);
-
-        for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
-                union,
-                buildBridgeWalls(bridges, parameters),
-                parameters.boundSegments())) {
-
+        for (var hole : traceBridgedHoles(sites, bridges, parameters, shaping)) {
             outlines.add(hole.boundary());
+        }
+        return outlines;
+    }
+
+    /**
+     * Finds what the bridges close around, leaving out the void they had no part in closing.
+     *
+     * <p>The same walk as {@link #findCapturedPockets}, reported to a caller that draws the
+     * cell-enclosed void elsewhere. That walk hands back every hole it finds, because the
+     * winding is what says whether anything was shut in and a bridge left out of the walk
+     * strings two silhouettes together instead of closing a ring. But a hole the cells closed
+     * unaided is not a bridge's - it is a lake or a puddle - and a construction that draws
+     * those under their own switches would paint the same water twice and go on painting it
+     * with those switches off.
+     *
+     * <p>Read off {@link VoidHole#walledBy}, which is the walk's own answer about what closed
+     * each hole, rather than by matching shapes afterwards.
+     *
+     * @param sites      the sites
+     * @param bridges    the bridges, as {@link VoidBridges} found them
+     * @param parameters the knobs the cells are built under
+     * @param shaping    how much of the channel each pocket takes out of its own outline
+     * @return one outline per pocket a bridge helped close
+     */
+    public static List<List<double[]>> findBridgeWalledPockets(
+            List<double[]> sites,
+            List<CellGap> bridges,
+            SectorGeometryParameters parameters,
+            VoidPockets.PocketShaping shaping) {
+
+        var outlines = new ArrayList<List<double[]>>();
+
+        for (var hole : traceBridgedHoles(sites, bridges, parameters, shaping)) {
+
+            if (!hole.walledBy().isEmpty()) {
+                outlines.add(hole.boundary());
+            }
         }
         return outlines;
     }
@@ -277,6 +308,21 @@ public final class VoidBridgePockets {
 
         return new DiscUnionBoundary.Walls(
             DiscUnionBoundary.buildChordsFrom(bridges), parameters.borderInset());
+    }
+
+    // Every hole the bridges' walk finds, so both readings of it come out of one walk. Traced
+    // twice, the two could lay the same chords in a different order and have a different one
+    // crowded out of a mouth - and then one answer would be about a map the other never saw.
+    private static List<VoidHole> traceBridgedHoles(
+            List<double[]> sites,
+            List<CellGap> bridges,
+            SectorGeometryParameters parameters,
+            VoidPockets.PocketShaping shaping) {
+
+        return DiscUnionBoundary.traceHolesAcrossWalls(
+            VoidPockets.buildUnionFor(sites, parameters, shaping),
+            buildBridgeWalls(bridges, parameters),
+            parameters.boundSegments());
     }
 
     // How far a point sits from the nearest vertex of any outline. What a bridge's drawn end

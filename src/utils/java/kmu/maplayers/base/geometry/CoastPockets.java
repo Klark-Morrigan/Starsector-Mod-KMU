@@ -28,6 +28,7 @@ import java.util.List;
  * <p>Which holes are the coast's is read off {@link VoidHole#walledBy}. Bridges and coast
  * reaches are walls of one kind and the trace closes both in one walk, so the wall a hole
  * closes on is the only thing that distinguishes what shut it in.
+ *
  */
 public final class CoastPockets {
 
@@ -154,6 +155,7 @@ public final class CoastPockets {
      *
      * @param traced  the coast, which carries the bridges it was walled by
      * @param reaches its own straight reaches, as the walls they are offered as
+     * @param channel how far each wall holds its two sides off its own line
      * @return the two sets laid together, at the coast's channel
      */
     static DiscUnionBoundary.Walls layCoastWalls(

@@ -221,7 +221,12 @@ public final class ViewerSettings {
     // Off by default and apart from the shores' own switches, because it is the next proposal
     // rather than another view of this one - and it is only meaningful with the coasts traced,
     // since the coastlines are what decides which bridges survive.
+    //
+    // The fill is the water those spans shut in against the coast, which is a fill of the same
+    // water the exterior shores' is: the two come out of one walk and are split by the wall
+    // each piece closed on, so nothing is drawn twice and nothing between them is left blank.
     public boolean showContinentBridges;
+    public boolean showContinentInletFill;
 
     // Every stretch of frontage the smoothing chose not to pass through, on whichever coasts
     // are being drawn. One switch rather than one per coast: it shows a DECISION rather than a
@@ -362,7 +367,8 @@ public final class ViewerSettings {
                 || showContinentCoastline
                 || showContinentCoastFill
                 || showContinentCoastFrontages
-                || showContinentBridges);
+                || showContinentBridges
+                || showContinentInletFill);
     }
 
     // How the coast is traced, for the same reason. More than one overlay walks the cells with

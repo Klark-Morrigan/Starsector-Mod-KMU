@@ -77,6 +77,7 @@ public final class ViewerSettingsPanel {
     private static final String CONTINENT_FILL = "showContinentCoastFill";
     private static final String CONTINENT_FRONTAGES = "showContinentCoastFrontages";
     private static final String CONTINENT_BRIDGES = "showContinentBridges";
+    private static final String INLET_FILL = "showContinentInletFill";
 
     // What each section remembers its switch and its folded state under. Named for the
     // construction rather than taken from the heading, which is copy and gets reworded.
@@ -741,8 +742,7 @@ public final class ViewerSettingsPanel {
     // What there is to see of the continent construction, in the order water gets smaller:
     // puddle pockets, then the two symmetric shores - interior and exterior, with the same
     // three switches each, because the two are the same kind of line seen from opposite
-    // sides - then the inlet bridges. A one-child subtree for those on purpose: it earns its
-    // shape the moment inlets get a fill of their own.
+    // sides - then the inlet bridges and the water they hold.
     //
     // The flat roll-ups after them cut across the branches on purpose, the way v2's do: they
     // answer questions about a KIND OF THING rather than about a branch - "every wall",
@@ -762,7 +762,7 @@ public final class ViewerSettingsPanel {
             PUDDLE_BRIDGES, PUDDLE_FILL,
             LAKE_COASTLINE, LAKE_FILL, LAKE_FRONTAGES,
             CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES,
-            CONTINENT_BRIDGES));
+            CONTINENT_BRIDGES, INLET_FILL));
 
         rows.addAll(buildContinentBranchRows());
         rows.addAll(buildContinentGlobalRows());
@@ -808,10 +808,14 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 CONTINENT_FRONTAGES, "Bridgeable frontage", false,
                 on -> settings.showContinentCoastFrontages = on)),
-            ToggleTree.Row.ofRollUp(1, "Inlet bridges", CONTINENT_BRIDGES),
+            ToggleTree.Row.ofRollUp(
+                1, "Inlet bridges", CONTINENT_BRIDGES, INLET_FILL),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 CONTINENT_BRIDGES, "Bridges", false,
-                on -> settings.showContinentBridges = on)));
+                on -> settings.showContinentBridges = on)),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                INLET_FILL, "Fill", false,
+                on -> settings.showContinentInletFill = on)));
     }
 
     // The globals: one per KIND of thing, cutting across every branch above. No switches of
@@ -828,7 +832,8 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofRollUp(
                 1, "Bridgeable frontage", LAKE_FRONTAGES, CONTINENT_FRONTAGES),
             ToggleTree.Row.ofRollUp(1, "Bridges", PUDDLE_BRIDGES, CONTINENT_BRIDGES),
-            ToggleTree.Row.ofRollUp(1, "Fill", LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL));
+            ToggleTree.Row.ofRollUp(
+                1, "Fill", LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL, INLET_FILL));
     }
 
     // What the v3 coastlines are and how they are drawn, which is what everything below is

@@ -7,6 +7,7 @@ import kmu.maplayers.base.geometry.ContinentBridges;
 import kmu.maplayers.base.geometry.PuddlePockets;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidBridgeCache;
+import kmu.maplayers.base.geometry.VoidBridgePockets;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.ui.overlays.voidpockets.CoastalPocketsOverlay;
@@ -22,8 +23,8 @@ import java.util.Map;
  * <b>The continent coast (v3), orchestrated.</b> Each touching-connected run of cells traced as
  * its own closed coast, and everything that reading of the sector then produces: the outer
  * shores and the void behind them, the lake shores round the water the cells closed unaided,
- * the puddles too small for a shore, and the spans laid across both the inlets and the
- * puddles.
+ * the puddles too small for a shore, the spans laid across both the inlets and the puddles,
+ * and the water those spans shut in.
  *
  * <p>What makes this one the continent coast is that it traces with NO bridges laid, so a run
  * of cells a bridge would have joined comes back as several shapes rather than one, and under
@@ -55,14 +56,29 @@ public final class ContinentCoastOverlay {
     // without knowing which.
     private final CoastalPocketsOverlay coast;
 
-    // The bridges that survive those coastlines. Held beside the trace they were filtered
+    // The spans that survive those coastlines. Held beside the trace they were filtered
     // against rather than found while painting, since which ones survive is a question about
     // THAT trace and a frame that asked it again could answer about a different one.
-    private List<CellGap> bridges = List.of();
+    //
+    // Found whenever anything needs them rather than only when they are drawn, because they
+    // are a wall before they are a mark: the void behind the coast is worked out with them
+    // laid, so a walk without them runs a coast pocket through water a span is holding.
+    private List<CellGap> inletSpans = List.of();
 
     // The spans laid across the puddles, held beside the trace whose puddles claimed them
     // for the same reason.
     private List<CellGap> puddleBridges = List.of();
+
+    // The void the inlet spans close around, walked with the spans as the only walls - which
+    // is what the settled construction does with its own bridges.
+    //
+    // The coast's reaches are deliberately NOT laid here, and the reason is the channel rather
+    // than the shape: a wall stands both its sides half a channel off its own line, so a reach
+    // laid as a wall holds the water on its seaward side back too. That strip is a whole
+    // channel wide along every reach and nothing draws it, so the fill's edge stands off at
+    // each reach and runs flush along the cell arcs between them - which reads as a notched
+    // coastline rather than a filled sea.
+    private List<List<double[]>> inletPockets = List.of();
 
     // The settled bridge search, shared with the construction that also asks it. Handed in
     // rather than made here: two overlays asking one question of one sector have to be one
@@ -95,7 +111,8 @@ public final class ContinentCoastOverlay {
     public void refresh(SectorFixture fixture) {
 
         coast.acceptTrace(null);
-        bridges = List.of();
+        inletSpans = List.of();
+        inletPockets = List.of();
         puddleBridges = List.of();
         frontages = List.of();
 
@@ -115,6 +132,36 @@ public final class ContinentCoastOverlay {
             fixture.getSites(),
             settings.parameters,
             settings.resolveContinentCoastRules()));
+
+        // Filtered against the coasts they were offered to, so which spans survive is a
+        // question about THIS trace rather than about the cells alone. Found while either half
+        // of them is wanted: the spans and the water they hold are one construction seen
+        // twice, exactly as the settled bridges and their fill are.
+        if (settings.showContinentBridges || settings.showContinentInletFill) {
+
+            inletSpans = ContinentBridges.findAnchoredBridges(
+                coast.getTrace(),
+                settings.parameters,
+                settings.resolveContinentBridgeRules());
+        }
+
+        // What those spans close around, from the construction the settled bridges' fill comes
+        // from. The spans are the only walls in that walk, so what comes back is the water a
+        // run of them holds, whole - and it lies over the coast's own fill where the two meet,
+        // which is how the settled map composes its two fills as well.
+        //
+        // Only what a span actually walled. The walk finds the water the cells closed unaided
+        // as well, and here that water is a lake or a puddle with a layer of its own - drawn
+        // from this list too it would be painted twice, and go on being painted with its own
+        // switch off.
+        if (settings.showContinentInletFill && !inletSpans.isEmpty()) {
+
+            inletPockets = VoidBridgePockets.findBridgeWalledPockets(
+                fixture.getSites(),
+                inletSpans,
+                settings.parameters,
+                settings.resolvePocketShaping());
+        }
 
         // The void behind the coast, worked out by the same construction the settled coast's
         // fill comes from. Not a second way of arriving at the same thing: a coast reach is a
@@ -140,16 +187,6 @@ public final class ContinentCoastOverlay {
         }
         frontages = List.copyOf(eligible);
 
-        // Filtered against the coasts they were offered to, so which spans survive is a
-        // question about THIS trace rather than about the cells alone.
-        if (settings.showContinentBridges) {
-
-            bridges = ContinentBridges.findAnchoredBridges(
-                coast.getTrace(),
-                settings.parameters,
-                settings.resolveContinentBridgeRules());
-        }
-
         // Claimed from the settled search rather than searched for again: these ARE the
         // settled bridges asked about smaller water, at the settled reach, so the cache hands
         // back whatever the inland overlay already found for this same sector.
@@ -165,7 +202,7 @@ public final class ContinentCoastOverlay {
     }
 
     /**
-     * Draws the void each continent coast shut in, beneath the cells.
+     * Draws the void this construction shut in, beneath the cells.
      *
      * <p>At the same weight and in the same way as the settled coast's fill, because the two
      * are on screen to be compared: any difference between them should be the coast, not the
@@ -179,15 +216,19 @@ public final class ContinentCoastOverlay {
             return;
         }
 
-        // One colour for all three, read once. Every one of them is water this construction's
-        // coasts shut in - behind the outer shore, ringed by land, or too small for a shore at
-        // all - and three readings of the pair is how they come to be drawn as three kinds of
-        // thing when they are one.
+        // One colour for all four, read once. Every one of them is water this construction
+        // shut in - behind the outer shore, ringed by land, under a span, or too small for a
+        // shore at all - and four readings of the pair is how they come to be drawn as four
+        // kinds of thing when they are one.
         var water = settings.continentCoastalVoidColour;
         var edge = settings.continentCoastalVoidEdge;
 
         if (settings.showContinentCoastFill) {
             coast.paintPocketFills(g2, water, edge);
+        }
+        if (settings.showContinentInletFill) {
+            MapPainting.paintRingFills(
+                g2, inletPockets, water, settings.voidFillOpacity, edge);
         }
         if (settings.showContinentLakeFill) {
             coast.paintLakeFills(g2, water, edge);
@@ -308,12 +349,22 @@ public final class ContinentCoastOverlay {
 
         // The puddle spans in the same stroke and colour, because they are the same kind of
         // claim - "this much void is held between these cells" - told apart by the water each
-        // sits over. Each list is empty unless its own switch filled it on refresh.
-        for (var bridge : bridges) {
-            g2.draw(MapPainting.buildSpanLine(bridge));
+        // sits over.
+        //
+        // Each list under its own switch rather than on whether it is empty: the inlet spans
+        // are found for the fill as well as for themselves, so a set that exists is not a set
+        // that was asked to be seen.
+        if (settings.showContinentBridges) {
+            for (var span : inletSpans) {
+
+                g2.draw(MapPainting.buildSpanLine(span));
+            }
         }
-        for (var bridge : puddleBridges) {
-            g2.draw(MapPainting.buildSpanLine(bridge));
+        if (settings.showContinentPuddleBridges) {
+            for (var span : puddleBridges) {
+
+                g2.draw(MapPainting.buildSpanLine(span));
+            }
         }
     }
 }
