@@ -3,11 +3,14 @@ package kmu.maplayers.base.installation;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.refresh.MovableSystemSectorFake;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static kmu.maplayers.base.refresh.MovableSystemSectorFake.FORCED_ONTO_MAP;
 
@@ -28,6 +31,10 @@ class MapLayerInstallationsTest {
     // The id the staged drifting system reports, which is what a motion observation is keyed by
     // and so what a discarded installation could leave behind for the next one.
     private static final String DRIFTER_ID = "a";
+
+    // The id a published hover names, a hover being the other thing keyed by bare system id that a
+    // discarded installation could leave lit for the next one.
+    private static final String HOVERED_SYSTEM_ID = "b";
 
     @BeforeEach
     void clearEveryInstallation() {
@@ -193,6 +200,27 @@ class MapLayerInstallationsTest {
             // move it inherited.
             assertThat(sectorFake.observePositionsInto(reinstalledMovingSystems, FORCED_ONTO_MAP))
                 .isFalse();
+        }
+
+        @Test
+        void leavesNoneOfADiscardedSectorsHoverToTheInstallationAfterIt() {
+            // The whole of what a per-load hover park used to be for. The hover names its system by
+            // bare id, so a save reloaded in the same session would otherwise open with a cell lit -
+            // and a box naming it - for whatever the loaded sector happens to hold that id.
+            var sectorMock = mock(SectorAPI.class);
+
+            MapLayerInstallations
+                .installMachineryOn(sectorMock)
+                .resolveHoverState()
+                .publishHover(new MapHover(HOVERED_SYSTEM_ID, List.of(HOVERED_SYSTEM_ID)));
+
+            MapLayerInstallations.disposeEveryInstallation();
+
+            assertThat(MapLayerInstallations
+                    .installMachineryOn(sectorMock)
+                    .resolveHoverState()
+                    .getHover())
+                .isSameAs(MapHover.NONE);
         }
 
         @Test

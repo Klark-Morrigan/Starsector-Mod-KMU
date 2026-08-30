@@ -24,7 +24,7 @@ import java.util.function.BooleanSupplier;
  * <p>What is owned here is the step from a world point to a hover, and the rule that anything less
  * than a trustworthy answer parks: {@link MapCursor} resolves the pixel, {@link CellHitTest} names
  * the cell, and this decides what the frame is told. Framework rather than one layer's, because
- * {@link MapHoverState} already declares the value, the shared holder and the consumers, so the
+ * {@link MapHoverState} already declares the value, the sector's holder and the consumers, so the
  * sequencing between them is the last piece a second layer would otherwise have to work out again
  * - and it would have to get every park right to avoid lighting a cell the cursor is not on.
  *
@@ -188,7 +188,7 @@ public final class MapHoverPublisher {
                 targets.getClusterIndex().findClusterMembersOf(hoveredSystemId));
 
         settledCellReading = new SettledCellReading(hover, cursorRead);
-        MapHoverState.getInstance().publishHover(hover);
+        MapHoverState.resolveLiveSectorHoverState().publishHover(hover);
     }
 
     // Parks the hover for a pass whose inputs never arrived, leaving the last sighting standing.
@@ -199,7 +199,7 @@ public final class MapHoverPublisher {
     // The hover itself is still cleared, since a highlight left standing on an unverified cell is
     // the fault every guard here exists to avoid.
     private void parkHoverWithoutASighting() {
-        MapHoverState.getInstance().clearHover();
+        MapHoverState.resolveLiveSectorHoverState().clearHover();
     }
 
     // Traces each move onto a new cell: which system the cursor resolved to and how large a

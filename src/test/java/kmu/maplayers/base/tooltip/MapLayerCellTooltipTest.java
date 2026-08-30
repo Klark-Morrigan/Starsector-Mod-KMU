@@ -90,7 +90,7 @@ final class MapLayerCellTooltipTest {
             // Every case here is about what the gates do around a live hover, so the hover is the
             // group's fixture rather than each test's opening lines.
             MapHoverState
-                .getInstance()
+                .resolveLiveSectorHoverState()
                 .publishHover(new MapHover("system", List.of("system")));
         }
 
@@ -98,7 +98,7 @@ final class MapLayerCellTooltipTest {
         void clearTheHover() {
             // The hover state is a process-wide singleton, so one left published would reach the
             // next test as a hover it never asked for.
-            MapHoverState.getInstance().clearHover();
+            MapHoverState.resolveLiveSectorHoverState().clearHover();
         }
 
         @AfterEach

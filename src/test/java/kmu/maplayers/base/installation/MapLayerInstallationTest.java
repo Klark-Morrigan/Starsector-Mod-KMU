@@ -1,19 +1,23 @@
 package kmu.maplayers.base.installation;
 
+import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MovableSystemSectorFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static kmu.maplayers.base.refresh.MovableSystemSectorFake.FORCED_ONTO_MAP;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins what an installation holds: a refresh board and a motion tracker of its own, so that what
- * went stale in one sector is not what any other sector rebuilds for, and so that a system's drift
- * is judged against where its own sector last saw it.
+ * Pins what an installation holds: a refresh board, a motion tracker and a hover holder of its own,
+ * so that what went stale in one sector is not what any other sector rebuilds for, that a system's
+ * drift is judged against where its own sector last saw it, and that a cursor read over one sector's
+ * map is not reported over another's.
  *
  * <p>Built here rather than resolved through {@link MapLayerInstallations}, since the claim is
  * about the holder itself and not about the index that hands one out.
@@ -27,6 +31,34 @@ class MapLayerInstallationTest {
 
     private final MapLayerInstallation installation = new MapLayerInstallation();
     private final MapLayerInstallation otherInstallation = new MapLayerInstallation();
+
+    @Nested
+    class ResolveHoverState {
+
+        @Test
+        void yieldsTheOneHolderThisInstallationKeeps() {
+            // The render pass publishes into it and the highlight and the box read it out, each
+            // resolving separately - so two resolutions handing back two holders would leave both
+            // readers reporting a hover nothing ever published.
+            assertThat(installation.resolveHoverState())
+                .isSameAs(installation.resolveHoverState());
+        }
+
+        @Test
+        void yieldsAHolderOfItsOwnSoOneSectorsHoverIsNotAnothers() {
+            // A hover names its system by bare id, so a shared holder would have a cursor read over
+            // one sector's map light the cell of whatever holds that id on the other's - and name
+            // that system in the other's box.
+            installation
+                .resolveHoverState()
+                .publishHover(new MapHover(SHARED_SYSTEM_ID, List.of(SHARED_SYSTEM_ID)));
+
+            assertThat(otherInstallation.resolveHoverState().getHover())
+                .isSameAs(MapHover.NONE);
+            assertThat(installation.resolveHoverState().getHover().hoveredSystemId())
+                .isEqualTo(SHARED_SYSTEM_ID);
+        }
+    }
 
     @Nested
     class ResolveMovingSystems {

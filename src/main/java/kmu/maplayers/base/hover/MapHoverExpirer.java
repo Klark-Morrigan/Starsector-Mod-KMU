@@ -22,13 +22,14 @@ import com.fs.starfarer.api.EveryFrameScript;
  */
 public final class MapHoverExpirer implements EveryFrameScript {
 
-    // The holder whose window this closes. Handed in rather than reached for, so the rule is
-    // exercisable over a holder of the test's own and cannot publish into the shared one.
+    // The holder whose window this closes. Handed in rather than reached for, because this script
+    // is registered on one sector and must go on expiring that sector's hover rather than whichever
+    // sector happens to be running when a frame reaches it.
     private final MapHoverState hoverState;
 
     /**
-     * @param hoverState the holder to expire, which is
-     *                   {@link MapHoverState#getInstance()} for a running game
+     * @param hoverState the holder to expire, which is the hover state of the sector this script is
+     *                   registered on
      */
     public MapHoverExpirer(MapHoverState hoverState) {
         this.hoverState = hoverState;

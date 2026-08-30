@@ -6,7 +6,7 @@ import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 
 import kmu.maplayers.base.hover.MapHoverExpirer;
 import kmu.maplayers.base.hover.MapHoverPermission;
-import kmu.maplayers.base.hover.MapHoverState;
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.starsector.listeners.SectorListeners;
 import kmu.starsector.ui.ShownMapSurface;
 
@@ -119,8 +119,13 @@ public final class MapHoverInstaller {
         }
         removeMapHoverExpirer(sector);
 
-        // The shared holder, since it is the one every pass publishes to and every box reads.
-        sector.addTransientScript(new MapHoverExpirer(MapHoverState.getInstance()));
+        // This sector's own holder, since the script runs on this sector's frames: one kept from an
+        // earlier load would go on expiring the hover of the sector it was built against while the
+        // loaded one's stood forever.
+        sector.addTransientScript(new MapHoverExpirer(
+            MapLayerInstallations
+                .resolveInstallationFor(sector)
+                .resolveHoverState()));
     }
 
     static void removeMapHoverExpirer(SectorAPI sector) {

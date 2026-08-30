@@ -74,7 +74,7 @@ final class HoveredBoxTest {
     @AfterEach
     void restoreTheSharedState() {
         MapLayerRosters.restoreNonEmptyRoster();
-        MapHoverState.getInstance().clearHover();
+        MapHoverState.resolveLiveSectorHoverState().clearHover();
     }
 
     @Nested
@@ -151,7 +151,7 @@ final class HoveredBoxTest {
             // A system dropped between the hover being published and this frame reading it. Tolerated
             // rather than dereferenced, since the hover is a value the map pass left behind.
             MapHoverState
-                .getInstance()
+                .resolveLiveSectorHoverState()
                 .publishHover(new MapHover("gone", List.of("gone")));
 
             try (var globalMock = mockStatic(Global.class)) {
@@ -332,7 +332,7 @@ final class HoveredBoxTest {
     // Puts the cursor over the registered system, which the chain resolves the hovered id against.
     private void hoverTheSystem() {
         MapHoverState
-            .getInstance()
+            .resolveLiveSectorHoverState()
             .publishHover(new MapHover(SYSTEM_ID, List.of(SYSTEM_ID)));
     }
 }

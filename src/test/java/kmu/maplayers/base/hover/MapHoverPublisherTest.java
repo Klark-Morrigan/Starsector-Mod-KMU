@@ -175,7 +175,7 @@ final class MapHoverPublisherTest {
 
         // A standing hover from an earlier frame, so a parking assertion distinguishes "parked"
         // from "left alone": both publish nothing new, only the first clears.
-        hoverState = MapHoverState.getInstance();
+        hoverState = MapHoverState.resolveLiveSectorHoverState();
         hoverState.publishHover(new MapHover("stale", List.of("stale")));
     }
 

@@ -140,7 +140,7 @@ final class PoliticalMapOverlayRenderer {
         hoverHighlightRenderer.renderOnMap(
             new PoliticalMapHoverHighlightSource(cache.getTerritories()),
             cache.getTerritories().getGlobalStyle().hoverHighlight(),
-            MapHoverState.getInstance().getHover(),
+            MapHoverState.resolveLiveSectorHoverState().getHover(),
             factor,
             alphaMult);
     }

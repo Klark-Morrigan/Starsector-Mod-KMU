@@ -109,7 +109,7 @@ class MapLayerCellTooltipGateIntegrationTest {
 
         // Everything below the map gate is open, so what the box does is the gate's answer alone.
         MapHoverState
-            .getInstance()
+            .resolveLiveSectorHoverState()
             .publishHover(new MapHover("system", List.of("system")));
     }
 
@@ -117,7 +117,7 @@ class MapLayerCellTooltipGateIntegrationTest {
     void restoreTheSharedState() {
 
         MapLayerRosters.restoreNonEmptyRoster();
-        MapHoverState.getInstance().clearHover();
+        MapHoverState.resolveLiveSectorHoverState().clearHover();
 
         // The mode holder is a process-wide singleton like the hover, so a flip left standing would
         // reach the next test as a detail level it never asked for.

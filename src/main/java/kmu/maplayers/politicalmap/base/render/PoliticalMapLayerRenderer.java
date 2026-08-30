@@ -138,17 +138,14 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
      *
      * <p>This renderer outlives any one save - it is reached through a registered layer, and a player
      * can load a second save without restarting - while its cache is only meaningful for the sector
-     * it was built from. Nothing else would catch the difference: the staleness counters are
-     * process-wide and do not move across a load, and the geometry cache reconciles by diffing system
-     * <em>ids</em>, so a system present in both saves at a different position is not seen to have
-     * changed. Without this the previous save's territories would paint over the new sector and stay
-     * until the player happened to trip a rebuild.
+     * it was built from. Nothing else would catch the difference: the geometry cache reconciles by
+     * diffing system <em>ids</em>, so a system present in both saves at a different position is not
+     * seen to have changed and keeps the cell cut around where the previous save had it. Without this
+     * the previous save's territories would paint over the new sector and stay until the player
+     * happened to trip a rebuild.
      */
     public void discardStateFromPreviousSave() {
         cache.discardCachedState();
-        // The hover names a system id from the sector being left, so it is parked rather than left
-        // to light a cell - or float a tooltip - that the new sector may not even contain.
-        MapHoverState.getInstance().clearHover();
     }
 
     @Override
@@ -251,7 +248,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             && !mapCoverReader.isMapCoveredAtCursor();
 
         if (!isHoverWantedThisFrame) {
-            MapHoverState.getInstance().clearHover();
+            MapHoverState.resolveLiveSectorHoverState().clearHover();
         }
     }
 

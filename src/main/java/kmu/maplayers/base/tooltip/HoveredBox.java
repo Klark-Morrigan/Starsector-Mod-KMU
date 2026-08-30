@@ -7,7 +7,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.SectorStarSystems;
 
 import kmu.maplayers.base.hover.MapHover;
-import kmu.maplayers.base.hover.MapHoverState;
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 
 import java.util.Optional;
@@ -48,16 +48,22 @@ record HoveredBox(
      */
     static Optional<HoveredBox> resolveHoveredBox() {
 
-        var hover = MapHoverState.getInstance().getHover();
+        // Read first, since the hover is that sector's: the box names a system by bare id, so one
+        // resolved off any other sector would name whatever holds that id here.
+        var sector = Global.getSector();
+        if (sector == null) {
+            return Optional.empty();
+        }
+        var hover = MapLayerInstallations
+            .resolveInstallationFor(sector)
+            .resolveHoverState()
+            .getHover();
+
         if (!shouldDrawTooltipFor(hover)) {
             return Optional.empty();
         }
         var tooltip = resolveActiveTooltip();
         if (tooltip.isEmpty()) {
-            return Optional.empty();
-        }
-        var sector = Global.getSector();
-        if (sector == null) {
             return Optional.empty();
         }
         // The hover carries a system id; resolve it to the live system, tolerating an id that no longer

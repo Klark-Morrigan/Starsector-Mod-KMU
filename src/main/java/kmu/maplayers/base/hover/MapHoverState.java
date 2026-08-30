@@ -1,25 +1,31 @@
 package kmu.maplayers.base.hover;
 
+import kmu.maplayers.base.installation.MapLayerInstallations;
+
 /**
- * The shared seam joining the one pass that can work out what the cursor is over to the passes that
+ * One sector's seam joining the pass that can work out what the cursor is over to the passes that
  * need the answer.
  *
  * <p>Only the map's own render pass can resolve a hover: inverting a cursor pixel back to a world
  * point needs the map widget's GL matrices, which exist for the instant that pass runs and nowhere
  * else. The highlight draws in the same pass, but the tooltip draws later, in the UI pass composited
  * over the map - a separate listener the map render knows nothing about. Neither owns the other, so
- * the frame's answer is published here for whoever needs it: a shared holder standing between a
- * single writer and its unrelated readers, rather than one of them owning the other.
+ * the frame's answer is published here for whoever needs it: a holder standing between a single
+ * writer and its unrelated readers, rather than one of them owning the other.
  *
  * <p>Ordering falls out of the frame: the map's terrain pass runs before the UI passes, so a hover
  * published during the render is already current by the time anything downstream reads it.
  *
  * <p>A published hover lasts exactly as long as the passes keep publishing it, and no longer - see
  * {@link #expireHoverIfNoPassPublished()}, which is what a reader outside those passes relies on.
+ *
+ * <p>One per sector, held by that sector's installed map machinery, because a hover names a system
+ * by bare id and nothing forbids two sectors from generating a system under the same one: a cursor
+ * read on one map would light a cell on the other and name it in the other's box. The hover goes
+ * with the installation when it is released, so a sector begins with nothing hovered rather than
+ * with the cell the sector before it was left resting on.
  */
 public final class MapHoverState {
-    // The one shared holder the render pass writes and the highlight and tooltip read.
-    private static final MapHoverState INSTANCE = new MapHoverState();
 
     // Volatile so a reader on another thread sees a published hover whole rather than half-written;
     // the value itself is immutable, so publishing is the single write of this reference.
@@ -29,17 +35,16 @@ public final class MapHoverState {
     // the pass that sets it and the frame tick that reads it are not the same caller.
     private volatile boolean hasPassPublishedSinceLastFrame;
 
-    // Reached through getInstance(); the holder stands on its own instance, so the constructor is
-    // package-visible rather than sealed to the singleton.
-    MapHoverState() {
-    }
-
     /**
-     * @return the one shared holder the map render publishes to and the highlight and tooltip read,
-     *         since neither owns the other
+     * @return the running sector's hover holder, for the passes vanilla drives without naming a
+     *         sector: the map render hook is handed a fade factor, and the tooltip listener a frame
+     *         - neither is told which sector is being drawn, so neither has an installation to ask.
+     *         Stands in until each of those passes resolves the installation it is drawing for
      */
-    public static MapHoverState getInstance() {
-        return INSTANCE;
+    public static MapHoverState resolveLiveSectorHoverState() {
+        return MapLayerInstallations
+            .resolveInstallationForLiveSector()
+            .resolveHoverState();
     }
 
     /**

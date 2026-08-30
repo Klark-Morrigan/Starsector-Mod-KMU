@@ -243,7 +243,7 @@ final class PoliticalMapLayerRendererTest {
             // Reached with the covers stubbed because the reads a running game answers - the
             // sidebar's laid-out box, the vanilla chrome's widget tree - are the reader's own, and
             // what this pins is that the renderer obeys whichever answer it gets.
-            MapHoverState.getInstance().publishHover(HOVERED_CELL);
+            MapHoverState.resolveLiveSectorHoverState().publishHover(HOVERED_CELL);
 
             try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
@@ -253,7 +253,7 @@ final class PoliticalMapLayerRendererTest {
                 buildRenderer(COVERING_THE_MAP)
                     .decideWhetherTheHoverIsWantedThisFrame();
 
-                assertThat(MapHoverState.getInstance().getHover())
+                assertThat(MapHoverState.resolveLiveSectorHoverState().getHover())
                     .isEqualTo(MapHover.NONE);
             }
         }
@@ -263,7 +263,7 @@ final class PoliticalMapLayerRendererTest {
             // The other park, pinned beside it so the covered one cannot be read as the only way a
             // stale cell is dropped: with both kinds of feedback switched off there is nothing that
             // wants the answer, and the frame's passes read no cursor at all.
-            MapHoverState.getInstance().publishHover(HOVERED_CELL);
+            MapHoverState.resolveLiveSectorHoverState().publishHover(HOVERED_CELL);
 
             try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
@@ -275,7 +275,7 @@ final class PoliticalMapLayerRendererTest {
                 buildRenderer(NOT_COVERING_THE_MAP)
                     .decideWhetherTheHoverIsWantedThisFrame();
 
-                assertThat(MapHoverState.getInstance().getHover())
+                assertThat(MapHoverState.resolveLiveSectorHoverState().getHover())
                     .isEqualTo(MapHover.NONE);
             }
         }

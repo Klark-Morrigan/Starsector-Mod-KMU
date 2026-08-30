@@ -1,5 +1,6 @@
 package kmu.maplayers.base.installation;
 
+import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MovingSystems;
 
@@ -23,6 +24,12 @@ public final class MapLayerInstallation {
     // holder, because a caller can still be holding a reference the index has already let go of: a
     // resolution taken at the top of a frame outlives a removal that happens during it.
     private boolean isDisposed;
+
+    // What the cursor is over on this sector's map, carried from the render pass that can resolve
+    // it to the highlight and the box that report it. Made and released with the installation,
+    // which is what keeps a cursor read on one sector's map from lighting a cell on another's -
+    // the hover names its system by bare id - and leaves a sector starting with nothing hovered.
+    private final MapHoverState hoverState = new MapHoverState();
 
     // Where this sector's systems were last seen, and so which of them are drifting rather than
     // sitting still. Made with the installation and released with it, which is what leaves a
@@ -52,6 +59,15 @@ public final class MapLayerInstallation {
      */
     public boolean isDisposed() {
         return isDisposed;
+    }
+
+    /**
+     * @return the holder this sector's map render publishes the cursor's cell to and its highlight
+     *         and hover box read it from, so a cursor read over one sector's map cannot light a
+     *         cell - or name a system - on another's
+     */
+    public MapHoverState resolveHoverState() {
+        return hoverState;
     }
 
     /**

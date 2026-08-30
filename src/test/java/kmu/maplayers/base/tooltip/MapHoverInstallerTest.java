@@ -1,12 +1,19 @@
 package kmu.maplayers.base.tooltip;
 
+import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverExpirer;
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.starsector.listeners.RecordingListenerManager;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.util.List;
 
 import static kmu.starsector.listeners.SectorListenerFixtures.buildSector;
 
@@ -24,6 +31,19 @@ import static org.mockito.Mockito.when;
  * lets a hover go once no map pass is resolving one.
  */
 class MapHoverInstallerTest {
+
+    // The cell a published hover names, so the tick can be shown letting one go.
+    private static final String HOVERED_SYSTEM_ID = "system";
+
+    // The elapsed time a frame hands a script. Unread by the tick, which counts frames rather than
+    // seconds, so any value states the same thing.
+    private static final float ONE_FRAME = 0.016f;
+
+    @AfterEach
+    void clearEveryInstallation() {
+        // The index is process-wide, so a sector installed on here would outlive its case.
+        MapLayerInstallations.disposeEveryInstallation();
+    }
 
     @Nested
     class InstallMapLayerHoverTooltip {
@@ -112,6 +132,35 @@ class MapHoverInstallerTest {
                 .addTransientScript(any(MapHoverExpirer.class));
             verify(sectorMock, never())
                 .addScript(any());
+        }
+
+        @Test
+        void installsTheExpirerOverTheSectorsOwnHoverState() {
+            // The script ticks on the frames of the sector it is registered on, so the window it
+            // closes has to be that sector's. Built against any other, the sector being played would
+            // keep the last cell any map resolved for the rest of the session - which is the whole
+            // fault the tick exists to prevent, reintroduced through its wiring.
+            var sectorMock = mock(SectorAPI.class);
+            var hoverState = MapLayerInstallations
+                .installMachineryOn(sectorMock)
+                .resolveHoverState();
+
+            MapHoverInstaller.installMapHoverExpirer(sectorMock);
+
+            var scriptCaptor = ArgumentCaptor.forClass(EveryFrameScript.class);
+
+            verify(sectorMock)
+                .addTransientScript(scriptCaptor.capture());
+
+            hoverState.publishHover(new MapHover(HOVERED_SYSTEM_ID, List.of(HOVERED_SYSTEM_ID)));
+
+            // Two ticks: the first closes the window the publish opened, the second finds no pass
+            // republished and lets the hover go.
+            scriptCaptor.getValue().advance(ONE_FRAME);
+            scriptCaptor.getValue().advance(ONE_FRAME);
+
+            assertThat(hoverState.getHover())
+                .isSameAs(MapHover.NONE);
         }
 
         @Test
