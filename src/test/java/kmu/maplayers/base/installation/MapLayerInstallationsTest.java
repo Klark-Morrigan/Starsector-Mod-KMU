@@ -172,24 +172,26 @@ class MapLayerInstallationsTest {
             var sectorFake = new MovableSystemSectorFake(DRIFTER_ID);
             var sector = sectorFake.getSector();
 
-            var installation = MapLayerInstallations.installMachineryOn(sector);
+            var movingSystems = MapLayerInstallations
+                .installMachineryOn(sector)
+                .resolveMovingSystems();
 
-            sectorFake.observePositionsInto(installation.resolveMovingSystems(), FORCED_ONTO_MAP);
+            sectorFake.observePositionsInto(movingSystems, FORCED_ONTO_MAP);
             sectorFake.moveSystemClearOfItsLastPosition();
-            sectorFake.observePositionsInto(installation.resolveMovingSystems(), FORCED_ONTO_MAP);
+            sectorFake.observePositionsInto(movingSystems, FORCED_ONTO_MAP);
 
             MapLayerInstallations.disposeEveryInstallation();
 
-            var reinstallation = MapLayerInstallations.installMachineryOn(sector);
+            var reinstalledMovingSystems = MapLayerInstallations
+                .installMachineryOn(sector)
+                .resolveMovingSystems();
 
-            assertThat(reinstallation.resolveMovingSystems().getMovingSystemIds())
+            assertThat(reinstalledMovingSystems.getMovingSystemIds())
                 .isEmpty();
 
             // And the first observation after the load seeds a baseline rather than reporting the
             // move it inherited.
-            assertThat(sectorFake.observePositionsInto(
-                    reinstallation.resolveMovingSystems(),
-                    FORCED_ONTO_MAP))
+            assertThat(sectorFake.observePositionsInto(reinstalledMovingSystems, FORCED_ONTO_MAP))
                 .isFalse();
         }
 

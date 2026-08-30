@@ -48,22 +48,20 @@ class MapLayerInstallationTest {
             // still.
             var sectorFake = new MovableSystemSectorFake(SHARED_SYSTEM_ID);
             var otherSectorFake = new MovableSystemSectorFake(SHARED_SYSTEM_ID);
+            var movingSystems = installation.resolveMovingSystems();
+            var otherMovingSystems = otherInstallation.resolveMovingSystems();
 
-            sectorFake.observePositionsInto(installation.resolveMovingSystems(), FORCED_ONTO_MAP);
+            sectorFake.observePositionsInto(movingSystems, FORCED_ONTO_MAP);
             sectorFake.moveSystemClearOfItsLastPosition();
-            sectorFake.observePositionsInto(installation.resolveMovingSystems(), FORCED_ONTO_MAP);
+            sectorFake.observePositionsInto(movingSystems, FORCED_ONTO_MAP);
 
             // The other sector's system sits exactly where it started and never moves.
-            otherSectorFake.observePositionsInto(
-                otherInstallation.resolveMovingSystems(),
-                FORCED_ONTO_MAP);
-            otherSectorFake.observePositionsInto(
-                otherInstallation.resolveMovingSystems(),
-                FORCED_ONTO_MAP);
+            otherSectorFake.observePositionsInto(otherMovingSystems, FORCED_ONTO_MAP);
+            otherSectorFake.observePositionsInto(otherMovingSystems, FORCED_ONTO_MAP);
 
-            assertThat(installation.resolveMovingSystems().getMovingSystemIds())
+            assertThat(movingSystems.getMovingSystemIds())
                 .containsExactly(SHARED_SYSTEM_ID);
-            assertThat(otherInstallation.resolveMovingSystems().getMovingSystemIds())
+            assertThat(otherMovingSystems.getMovingSystemIds())
                 .isEmpty();
         }
     }
