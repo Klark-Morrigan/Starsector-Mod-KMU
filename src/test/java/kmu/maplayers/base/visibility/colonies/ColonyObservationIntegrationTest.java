@@ -168,7 +168,8 @@ final class ColonyObservationIntegrationTest {
         SectorColonySightings.recordSightingsByInhabitants(
             fixture.getSector(),
             fixture.getSystem(),
-            SystemColonies.readColoniesIn(fixture.getSector(), fixture.getSystem()));
+            SystemColonies.readColoniesIn(fixture.getSector(), fixture.getSystem()),
+            ColonyKnowledge.observingUnderTheFog());
     }
 
     // A derelict standing in the fixture's system, unregistered as vanilla builds one.

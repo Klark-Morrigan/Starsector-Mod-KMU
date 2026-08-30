@@ -46,6 +46,12 @@ implemented in Common-Java. It reads every source set, not just `src/main` - a s
 across for a real political type is the shortest way to make it compile, and the sector-geometry
 viewer under `src/utils` sits in `base.geometry` itself.
 
+One arrow inside `base` is gated the same way, and for the same reason: `base/visibility` splits
+into what may be shown of a colony (`colonies`) and which systems the map draws (`systems`), the
+second composed out of the first. The reverse import is what would make "may this be shown" depend
+on whether anything is being drawn, so each half is a package of its own - the gate closes a
+package root, and a parent root closes its own children with it.
+
 ## The vocabulary
 
 `base` and a layer deliberately use different words for the same thing, and the translation
@@ -166,11 +172,6 @@ about what the overlay means.
   cells and opaque owner ids into borders, fills, and GL-ready runs. The cluster-border trace,
   the smoothing passes, the vertex packing, and the split fill that puts several fills inside one
   border - none of which interprets a key.
-- **`base/visibility`** - two questions, one under each half of it, and the arrow between them runs
-  one way: what may be shown of a colony is settled without reference to what the map draws, while
-  the membership rule is composed out of exactly that. `enforcePackageLayering` holds the direction,
-  which is why each half is a package of its own rather than twenty files sharing a folder - the
-  reverse import is what would make "may this be shown" depend on whether anything is being drawn.
 - **`base/visibility/systems`** - which star systems a layer draws at all: `MapVisibility` admits a
   system on either of two paths (reachable and drawn by the vanilla map, or inhabited) and hashes the
   admitted set into the fingerprint that says it moved; `MapVisibilityPass` is one reading of the

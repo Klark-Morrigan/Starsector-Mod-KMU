@@ -9,6 +9,7 @@ import kmlib.starsector.colonies.SystemColonies;
 
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
+import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 
 import org.apache.log4j.Logger;
@@ -108,9 +109,12 @@ public final class MarketPoliticsRefresh {
         if (sector == null || system == null) {
             return;
         }
+        // One place, so the reading is opened here: there is no sweep for it to be shared across,
+        // and the caller has none in hand to hand down.
         SectorColonySightings.recordSightingsByInhabitants(
             sector,
             system,
-            SystemColonies.readColoniesIn(sector, system));
+            SystemColonies.readColoniesIn(sector, system),
+            ColonyKnowledge.observingUnderTheFog());
     }
 }

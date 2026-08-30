@@ -10,6 +10,7 @@ import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
+import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -234,7 +235,8 @@ final class PoliticalMapStalenessSourceTest {
                     () -> SectorColonySightings.recordSightingsByInhabitants(
                         any(SectorAPI.class),
                         any(StarSystemAPI.class),
-                        any(Colonies.class)),
+                        any(Colonies.class),
+                        any(ColonyKnowledge.class)),
                     times(2));
             }
         }

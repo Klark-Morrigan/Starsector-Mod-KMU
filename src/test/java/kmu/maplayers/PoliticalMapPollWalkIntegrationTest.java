@@ -7,6 +7,9 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
+import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
+import kmu.maplayers.base.visibility.colonies.FactionAlliances;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -17,7 +20,9 @@ import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
 
@@ -30,8 +35,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins how many times the political map's staleness poll reads the sector: once per system, for
- * the whole poll, however many passengers ride it.
+ * Pins what one poll of the political map's staleness source costs: each system walked once for
+ * the whole poll however many passengers ride it, and each sector-wide fact folded once for the
+ * whole poll however many systems it walks.
  *
  * <p>Three of them ask each system who lives there - the snapshot that fingerprints the drawn
  * set, the motion walk that follows a drifting system, and the observation write that records
@@ -112,6 +118,23 @@ final class PoliticalMapPollWalkIntegrationTest {
                     .readObservation(derelict.getId())
                     .locationId())
                 .isEqualTo(ALPHA_ID);
+        }
+
+        @Test
+        void foldsTheAllianceSetAsOftenForALargeSectorAsForASmallOne() {
+            // Who would keep a colony's secret is a sector-wide fact, folded where a reading of
+            // the sector is opened - so the count follows how many readings the poll opens, and
+            // never how many systems it walks. Asserted as a comparison rather than against a
+            // number, since the poll opening one more reading later is a change to this claim's
+            // arithmetic and not to the claim.
+            var foldsOverTwoSystems = countAllianceFoldsInOnePollOver(
+                buildSettledSectorWithAnEmptyNeighbour());
+
+            var foldsOverFiveSystems = countAllianceFoldsInOnePollOver(
+                buildSettledSectorWithEmptyNeighbours(4));
+
+            assertThat(foldsOverFiveSystems)
+                .isEqualTo(foldsOverTwoSystems);
         }
 
         @Test
@@ -200,6 +223,49 @@ final class PoliticalMapPollWalkIntegrationTest {
             return MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY)
                 - geometryBefore;
         }
+    }
+
+    // How many times one poll asks who stands with whom, counted through the registry the rule
+    // reads alliances from. Registered and taken back around the poll, the registry being process
+    // state that would otherwise answer for whatever suite runs next.
+    private static int countAllianceFoldsInOnePollOver(SectorAPI sector) {
+
+        var foldCount = new AtomicInteger();
+
+        FactionAllianceRegistry.registerAllianceSource(() -> {
+            foldCount.incrementAndGet();
+            return FactionAlliances.NONE;
+        });
+        try {
+            runOnePoll(sector);
+
+        } finally {
+            FactionAllianceRegistry.registerAllianceSource(FactionAllianceSource.NO_ALLIANCES);
+        }
+        return foldCount.get();
+    }
+
+    // The same sector with more empty systems around it, for a case claiming what the poll costs
+    // does not follow how many systems there are.
+    private static SectorAPI buildSettledSectorWithEmptyNeighbours(int neighbourCount) {
+
+        var hegemony = SectorPoliticsFixtures.buildFaction("hegemony");
+        var colony = SectorPoliticsFixtures.buildVisibleMarket(hegemony, COLONY_SIZE);
+
+        var systems = new ArrayList<SectorPoliticsFixtures.SystemMarkets>();
+        systems.add(listSystemMarkets(ALPHA_ID, colony));
+
+        for (var neighbour = 0; neighbour < neighbourCount; neighbour++) {
+            systems.add(listSystemMarkets(BETA_ID + neighbour));
+        }
+        var sector = SectorPoliticsFixtures.buildSectorWithSystems(
+            List.of(hegemony),
+            systems.toArray(new SectorPoliticsFixtures.SystemMarkets[0]));
+
+        for (var system : sector.getStarSystems()) {
+            SectorPoliticsFixtures.placeSystemInHyperspace(system);
+        }
+        return sector;
     }
 
     // Two star systems: one settled by an open colony with a derelict standing beside it, and one

@@ -30,8 +30,9 @@ import java.util.Set;
  * and is driven by the player's own journeys - a fact that only ever changes when they move, so it
  * costs nothing between moves. {@link #recordSightingsByInhabitants} takes what a place's own
  * population can see, and has to be swept for, there being no event to hang it on when a colony
- * arrives among witnesses - so it is written place by place over sets the sweeping caller has
- * already read, rather than sweeping the sector a second time from in here.
+ * arrives among witnesses - so it is written place by place over sets and a knowledge the sweeping
+ * caller has already opened, rather than sweeping the sector a second time from in here or opening
+ * a reading of it per place.
  *
  * <p>That sweep rides the political map's staleness poll, which already walks every system once a
  * tick and holds each system's colonies as it goes. A cadence of its own would be a second reading
@@ -150,27 +151,39 @@ public final class SectorColonySightings {
      * exactly that reason, so a caller that never writes still shows what stands among witnesses
      * now. What the write buys is that the reading survives the witnesses.
      *
-     * @param sector   the sector whose memory holds the register; null is a no-op
-     * @param system   where the colonies stand, and what a sighting names; null is a no-op. A star
-     *                 system alone, a colony outside one reading sighted whatever the register
-     *                 holds
-     * @param colonies the colonies selected for that system, as the caller's own walk read them;
-     *                 null is a no-op
+     * <p>The knowledge is handed in for the same reason the colony set is. A caller sweeping the
+     * sector holds one for the whole sweep - which folds the alliances that decide who would speak
+     * once, rather than once per place, and lets one classification of each colony serve the whole
+     * of it.
+     *
+     * @param sector    the sector whose memory holds the register; null is a no-op
+     * @param system    where the colonies stand, and what a sighting names; null is a no-op. A star
+     *                  system alone, a colony outside one reading sighted whatever the register
+     *                  holds
+     * @param colonies  the colonies selected for that system, as the caller's own walk read them;
+     *                  null is a no-op
+     * @param observing what an observer standing here reads under - the fog alone, whatever rule
+     *                  the caller shows colonies under elsewhere; null opens one for this place,
+     *                  which is right for a caller with a single place to record and wasteful for
+     *                  one sweeping the sector
      */
     public static void recordSightingsByInhabitants(
             SectorAPI sector,
             StarSystemAPI system,
-            Colonies colonies) {
+            Colonies colonies,
+            ColonyKnowledge observing) {
 
         if (system == null || colonies == null) {
             return;
         }
+        var knowledge = observing == null
+            ? ColonyKnowledge.observingUnderTheFog()
+            : observing;
+
         putSightings(
             sector,
             system.getId(),
-            ColonyKnowledge
-                .observingUnderTheFog()
-                .readColoniesObservedByInhabitants(colonies));
+            knowledge.readColoniesObservedByInhabitants(colonies));
     }
 
     /**

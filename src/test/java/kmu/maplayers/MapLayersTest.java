@@ -4,6 +4,9 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 
+import kmu.maplayers.base.visibility.colonies.FactionAllianceFixture;
+import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
+import kmu.maplayers.base.visibility.colonies.FactionAlliances;
 import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyRegistry;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.tooltip.PoliticalMapCellTooltip;
@@ -45,6 +48,11 @@ import static org.mockito.Mockito.when;
 final class MapLayersTest {
 
     private static final String NEXERELIN_MOD_ID = "nexerelin";
+
+    @AfterEach
+    void clearRegisteredAllianceSource() {
+        FactionAllianceFixture.clearRegistrations();
+    }
 
     @AfterEach
     void clearOpenlyKnownColonies() {
@@ -124,6 +132,27 @@ final class MapLayersTest {
                 assertThat(OpenlyKnownColonyRegistry.isOpenlyKnownEntity(
                         buildEntity(ACADEMY_ENTITY_ID)))
                     .isTrue();
+            }
+        }
+
+        @Test
+        void registerAllLeavesNobodyAlliedWhereTheModThatKeepsAlliancesIsAbsent() {
+            // The half of the alliance wiring an install can be held to. Registration sits behind
+            // the mod-enabled gate, so a Nex-free install has to come out of the whole registration
+            // reading the rule exactly as it ships - and a source wired past that gate would fault
+            // on the first read rather than answer.
+            //
+            // Its opposite cannot be asserted here at all: with the mod present the only way to
+            // observe that a source was registered is to read it, and reading it resolves the
+            // holder that names a Nexerelin class the test classpath does not carry. A case
+            // pinning that would be pinning the absence of a dependency.
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                stubNexEnabled(globalMock, false);
+
+                MapLayers.registerAll();
+
+                assertThat(FactionAllianceRegistry.readAlliances())
+                    .isEqualTo(FactionAlliances.NONE);
             }
         }
     }

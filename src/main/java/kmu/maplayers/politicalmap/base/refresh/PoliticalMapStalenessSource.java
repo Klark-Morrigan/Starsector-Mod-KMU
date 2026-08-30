@@ -9,6 +9,7 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
 import kmu.maplayers.base.refresh.MovingSystems;
+import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.starsector.nexerelin.NexerelinAlliances;
@@ -137,6 +138,12 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     // the index: it lives in the colonies package the index reads, so taking one would make a
     // cycle of the layering. Owning the sweep here costs nothing, the cadence having been this
     // poll's decision in the first place.
+    //
+    // One knowledge for the whole sweep, on the same reasoning as the index above it: opening one
+    // folds the sector's alliances, and a sweep opening one per place would refold them for every
+    // system in the sector on every poll. It is the fog-only reading rather than the pass's,
+    // because what a place's inhabitants can see is a fact about the place - a reveal reaching it
+    // would write down observations nobody made.
     private static void recordObservationsByInhabitants(SystemColoniesIndex colonies) {
 
         var sector = colonies.getSector();
@@ -145,11 +152,14 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         if (systems == null) {
             return;
         }
+        var observing = ColonyKnowledge.observingUnderTheFog();
+
         for (var system : systems) {
             SectorColonySightings.recordSightingsByInhabitants(
                 sector,
                 system,
-                colonies.readColoniesIn(system));
+                colonies.readColoniesIn(system),
+                observing);
         }
     }
 

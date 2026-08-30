@@ -617,6 +617,23 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
+            void excludes_a_concealed_colony_its_own_faction_shelters_among_allies() {
+                // The rule the alliance widened, unchanged underneath it: an owner is passed over
+                // for being the owner, not for being allied with itself. Posed with an alliance
+                // standing so a widening that had swallowed the identity test would show here.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var base = fixture.buildFoundConcealedColony("pirates");
+                var ownColony = fixture.buildVisibleColony("pirates");
+
+                fixture.placeColoniesInSystem(base, ownColony);
+
+                assertThat(knowing(fixture, BOTH_GATES_ON, buildAllianceOf("pirates", "hegemony"))
+                        .readKnownColonies(
+                            buildColoniesOf(buildColony(base), buildColony(ownColony))))
+                    .containsExactly(buildColony(ownColony));
+            }
+
+            @Test
             void keeps_a_concealed_colony_a_faction_outside_its_alliance_can_see() {
                 // The other half of the pair: an alliance the base's owner is not in silences
                 // nobody, so the rule answers exactly as it does with no alliances at all.
