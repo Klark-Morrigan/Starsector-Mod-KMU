@@ -51,20 +51,22 @@ final class NexerelinInvasionListenerInstallerTest {
 
         @Test
         void reinstallsFreshTransientListenerWhenNexEnabled() {
+
             var listenerManagerMock = mock(ListenerManagerAPI.class);
             var sectorMock = buildSectorWith(listenerManagerMock);
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                stubModEnabled(globalMock, true);
 
+            try (var globalMock = mockStatic(Global.class)) {
+
+                stubModEnabled(globalMock, true);
                 NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
 
                 // Remove-then-add: clears any copy an older build persisted into the save,
                 // then adds the listener transiently (true) so it never enters the save - it
                 // implements a Nex interface and would fail to load if Nex were removed.
                 verify(listenerManagerMock)
-                        .removeListenerOfClass(PoliticalMapMarketTransferListener.class);
+                    .removeListenerOfClass(PoliticalMapMarketTransferListener.class);
                 verify(listenerManagerMock)
-                        .addListener(any(PoliticalMapMarketTransferListener.class), eq(true));
+                    .addListener(any(PoliticalMapMarketTransferListener.class), eq(true));
             }
         }
 
@@ -79,14 +81,13 @@ final class NexerelinInvasionListenerInstallerTest {
             // while Global is mocked.
             var listenerManager = new RecordingListenerManager();
             var sectorMock = buildSectorWith(listenerManager);
-
             var refreshBoard = MapLayerInstallations
                 .installMachineryOn(sectorMock)
                 .resolveRefreshBoard();
 
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                stubModEnabled(globalMock, true);
+            try (var globalMock = mockStatic(Global.class)) {
 
+                stubModEnabled(globalMock, true);
                 NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
             }
 
@@ -106,42 +107,57 @@ final class NexerelinInvasionListenerInstallerTest {
 
         @Test
         void addsNothingWhenNexDisabled() {
+
             var listenerManagerMock = mock(ListenerManagerAPI.class);
             var sectorMock = buildSectorWith(listenerManagerMock);
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                stubModEnabled(globalMock, false);
 
+            try (var globalMock = mockStatic(Global.class)) {
+
+                stubModEnabled(globalMock, false);
                 NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
 
-                verify(listenerManagerMock, never()).addListener(any(), anyBoolean());
                 verify(listenerManagerMock, never())
-                        .removeListenerOfClass(PoliticalMapMarketTransferListener.class);
+                    .addListener(any(), anyBoolean());
+                verify(listenerManagerMock, never())
+                    .removeListenerOfClass(PoliticalMapMarketTransferListener.class);
             }
         }
 
         @Test
         void ignoresNullSectorWithoutConsultingModState() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+
+            try (var globalMock = mockStatic(Global.class)) {
+
                 // Null short-circuits before the mod-enabled check, so Global is
                 // never consulted.
                 NexerelinInvasionListenerInstaller.installIfPresent(null);
-
                 globalMock.verifyNoInteractions();
             }
         }
     }
 
     private static SectorAPI buildSectorWith(ListenerManagerAPI listenerManager) {
+
         var sectorMock = mock(SectorAPI.class);
-        when(sectorMock.getListenerManager()).thenReturn(listenerManager);
+
+        when(sectorMock.getListenerManager())
+            .thenReturn(listenerManager);
+
         return sectorMock;
     }
 
     private static void stubModEnabled(MockedStatic<Global> globalMock, boolean isEnabled) {
+
         var settingsMock = mock(SettingsAPI.class);
         var modManagerMock = mock(ModManagerAPI.class);
-        globalMock.when(Global::getSettings).thenReturn(settingsMock);
-        when(settingsMock.getModManager()).thenReturn(modManagerMock);
-        when(modManagerMock.isModEnabled(NEXERELIN)).thenReturn(isEnabled);
+
+        globalMock
+            .when(Global::getSettings)
+            .thenReturn(settingsMock);
+
+        when(settingsMock.getModManager())
+            .thenReturn(modManagerMock);
+        when(modManagerMock.isModEnabled(NEXERELIN))
+            .thenReturn(isEnabled);
     }
 }

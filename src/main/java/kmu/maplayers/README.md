@@ -192,7 +192,13 @@ about what the overlay means.
   whether a concealed colony is one the sector openly points at, off the entity ids and tag
   `OpenlyKnownColonyRegistry` is seeded with at start-up. That one excuses a word a hover box would
   otherwise say and reaches no gate: a landmark is concealed to every rule here, exactly as the base
-  beside it is. The register behind the observations is `ColonySightings` over
+  beside it is. Who would speak about what stands beside them is owner-aware and then some:
+  `FactionAlliances` says which factions stand together, read through the `FactionAllianceSource`
+  port a composition root registers with `FactionAllianceRegistry`, so a partner keeps a concealed
+  base quiet exactly as its own faction does. It is a world fact rather than a rule, so it is folded
+  per pass beside the observations rather than carried on `ColonyVisibility` - and read through a
+  port so the rule never names the mod that maintains an alliance, nor changes with which map layer
+  the player is looking at. The register behind the observations is `ColonySightings` over
   `SectorColonySightings`, written by `ColonySightingRecorder` as the player travels and by the
   political map's staleness poll for what a place's own inhabitants can see; `ColonySightingInstaller`
   stands both up on load.
@@ -479,6 +485,8 @@ about what the overlay means.
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.
 - **[Political map](politicalmap/README.md)** - the one layer that paints, its three views, and the
   draw pipeline behind them.
-- **`MapLayers`** - the composition root, the single place every concrete layer, political-map view
-  and specially treated entity is named and registered, so the framework below stays ignorant of
-  which ones exist.
+- **`MapLayers`** - the composition root, the single place every concrete layer, political-map view,
+  specially treated entity and mod-supplied world fact is named and registered, so the framework
+  below stays ignorant of which ones exist. The live alliance set is one such fact: it is wired past
+  the same mod-enabled gate the alliances view is chosen behind, so an install without that mod
+  reads a rule with nothing registered.

@@ -2,12 +2,14 @@ package kmu.starsector.nexerelin;
 
 import kmlib.mods.nexerelin.NexerelinPresence;
 
+import kmu.maplayers.base.visibility.FactionAlliances;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 /**
- * The soft-dependency gate for the political map's alliance grouping: it answers
- * whether Nexerelin is present and, when it is, builds an {@link HolderGrouping}
- * from the live alliance set. The sole reference to the Nex-coupled
+ * The soft-dependency gate for the live alliance set: it answers whether Nexerelin is
+ * present and, when it is, folds that set into whichever shape a reader asks for - an
+ * {@link HolderGrouping} for the political map, or {@link FactionAlliances} for the
+ * rule that decides who would keep a partner's secret. The sole reference to the Nex-coupled
  * {@link NexAllianceSource} lives in the nested {@link Holder}, which the classloader
  * does not resolve until the mod-enabled gate has passed, so a Nex-free install never
  * seeks an {@code exerelin.*} class - the same isolation
@@ -56,6 +58,26 @@ public final class NexerelinAlliances {
     }
 
     /**
+     * The alliance memberships for the live alliance set, or {@link FactionAlliances#NONE}
+     * when Nexerelin is absent. Short-circuits on the gate before touching {@link Holder},
+     * so the Nex-coupled source is never loaded without Nex.
+     *
+     * <p>Read afresh wherever a pass opens rather than snapshotted once: alliances form and
+     * dissolve in play, and a visibility rule reading a stale set goes on crediting a
+     * partnership that ended cycles ago.
+     *
+     * @return the memberships when Nex is present, else nobody standing with anybody
+     */
+    public static FactionAlliances resolveFactionAlliances() {
+        // Short-circuit before referencing Holder so a Nex-free install never loads the
+        // class that names NexAllianceSource, which imports exerelin.*.
+        if (!isAvailable()) {
+            return FactionAlliances.NONE;
+        }
+        return Holder.resolveFactionAlliances();
+    }
+
+    /**
      * A membership token for the live alliance set, used by the sector watcher to detect
      * when alliances form, dissolve, or change members between polls. Returns a fixed
      * value when Nexerelin is absent, so a Nex-free install polls a steady token and never
@@ -83,6 +105,10 @@ public final class NexerelinAlliances {
 
         private static HolderGrouping resolveGrouping() {
             return AllianceGroupingFactory.buildFrom(SOURCE.readAlliances());
+        }
+
+        private static FactionAlliances resolveFactionAlliances() {
+            return FactionAllianceFactory.buildFrom(SOURCE.readAlliances());
         }
 
         private static int computeFingerprint() {

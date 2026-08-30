@@ -93,9 +93,9 @@ Notes on each:
   colours - so a faction that claims nothing still shows where it is while showing that it claims
   none of it. Nothing hatches: a system has exactly one
   claimant, so no claim can be contested the way a held system can. Hovering a system explains its
-  claim: who holds it, who stands in the holder's alliance, who
-  contests it, who is present but can never claim it, and whether the hold was won on market
-  strength or imposed by decree.
+  claim: who holds it, who stands in the holder's alliance, who is on good terms with it without
+  standing in that alliance, who contests it, who is present but can never claim it, and whether
+  the hold was won on market strength or imposed by decree.
 
 ## Claim extensions
 
@@ -231,11 +231,12 @@ either kind of feedback still needs the cursor read.
 What this layer says about the hovered system, each view injecting the explanation of the mechanic
 its own fills were painted by into the framework's hover box: `SystemDominationTooltip` - the ranked
 standings behind a faction or alliance fill - and `SystemClaimTooltip` - the scored claim contest
-behind a claims fill, its claimant over the factions standing in its own alliance, the rivals who
-could have taken the system and the factions present that never could. Both are written from
-`FactionTooltipLine` (a faction as something a block lists) and `FactionTooltipBanner` (a faction as
-a verdict over the whole system), `StandingRowResolver` (the ranked groups as entries), and the
-core-territory heading (`CoreTerritoryHeading`) and status lines.
+behind a claims fill, its claimant over the factions standing in its own alliance, those on good
+terms with it outside that alliance, the rivals who could have taken the system and the factions
+present that never could. Both are written from `FactionTooltipLine` (a faction as something a block
+lists) and `FactionTooltipBanner` (a faction as a verdict over the whole system),
+`StandingRowResolver` (the ranked groups as entries), and the core-territory heading
+(`CoreTerritoryHeading`) and status lines.
 
 All of them sit on `PoliticalMapCellTooltip`, which binds the claim read for the whole layer and
 heads its boxes with the decree holding the system: any box may have to say a system is held by

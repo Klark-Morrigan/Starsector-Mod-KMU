@@ -34,6 +34,11 @@ import java.util.function.Predicate;
  * without the other answers nothing: a gate with no observations behind it holds back everything it
  * covers for good, and observations with no rule to read them decide nothing.
  *
+ * <p>The alliances beside them are the second sector-scoped fact of the same shape, folded once
+ * where the register is opened and spent on the same question: who standing in a place would speak
+ * about whatever else is there. Held here rather than on the rule, since who stands with whom is
+ * what the sector is doing rather than what the player has asked to be shown.
+ *
  * <p>A class rather than a record because it remembers as well as carries. Each colony's kind is
  * resolved on the first ask and kept for the rest of the pass, which is what makes the map's own
  * classification affordable over a set that no longer stores it - and what keeps two readers of one
@@ -57,9 +62,10 @@ public final class ColonyKnowledge implements KnownColonyReader {
 
     private final ColonyVisibility rule;
     private final ColonySightings sightings;
+    private final FactionAlliances alliances;
 
     /**
-     * Pairs a rule with the register it is read against.
+     * Pairs a rule with the register it is read against, among factions standing alone.
      *
      * @param rule      what the player may be shown; null reads as {@link ColonyVisibility#BASE_FOG}
      * @param sightings what has been observed and where; null reads as
@@ -67,38 +73,74 @@ public final class ColonyKnowledge implements KnownColonyReader {
      *                  leaking one
      */
     public ColonyKnowledge(ColonyVisibility rule, ColonySightings sightings) {
-        this.rule = rule == null ? ColonyVisibility.BASE_FOG : rule;
-        this.sightings = sightings == null ? ColonySightings.NONE : sightings;
+        this(rule, sightings, FactionAlliances.NONE);
     }
 
     /**
-     * Opens the knowledge one pass reads under: its rule, against the sector's own register.
+     * Pairs a rule with the register it is read against and the alliances standing while it is
+     * read.
+     *
+     * @param rule      what the player may be shown; null reads as {@link ColonyVisibility#BASE_FOG}
+     * @param sightings what has been observed and where; null reads as
+     *                  {@link ColonySightings#NONE}, which withholds a gated colony rather than
+     *                  leaking one
+     * @param alliances who stands with whom; null reads as {@link FactionAlliances#NONE}, which
+     *                  credits every other faction present with speaking
+     */
+    public ColonyKnowledge(
+            ColonyVisibility rule,
+            ColonySightings sightings,
+            FactionAlliances alliances) {
+
+        this.rule = rule == null ? ColonyVisibility.BASE_FOG : rule;
+        this.sightings = sightings == null ? ColonySightings.NONE : sightings;
+        this.alliances = alliances == null ? FactionAlliances.NONE : alliances;
+    }
+
+    /**
+     * Opens the knowledge one pass reads under: its rule, against the sector's own register, among
+     * the alliances standing at that moment.
      *
      * <p>The one place the register is opened for a pass, because the sector is in hand here and
      * nowhere below - a colony carries no route back to it, so a projection asked later would have
-     * nowhere to read what has been observed from.
+     * nowhere to read what has been observed from. The alliances are folded here for the same
+     * reason and with the same effect: every projection of one pass answers under one set of them.
      *
      * @param sector the sector whose register is read; null reads as nothing observed
      * @param rule   what the player may be shown of a colony
      * @return the knowledge that pass answers under
      */
     public static ColonyKnowledge over(SectorAPI sector, ColonyVisibility rule) {
-        return new ColonyKnowledge(rule, SectorColonySightings.readSightings(sector));
+
+        return new ColonyKnowledge(
+            rule,
+            SectorColonySightings.readSightings(sector),
+            FactionAllianceRegistry.readAlliances());
     }
 
     /**
-     * The knowledge an observer standing in a place reads under: the fog alone, and no register.
+     * The knowledge an observer standing in a place reads under: the fog alone, no register, and
+     * the alliances standing at this moment.
      *
      * <p>What the sighting register itself writes through. An observation is made by being
      * somewhere, so no reveal and no gate has anything to say about it - and letting a rule reach
      * that write would put observations nobody made permanently into a save, where turning the
      * reveal off again could not take them out.
      *
+     * <p>The alliances do reach it, because they say who made the observation rather than what may
+     * be done with one. An ally that would not speak has not observed anything on the player's
+     * behalf, so recording one here would write down the very announcement the rule declines to
+     * credit.
+     *
      * @return knowledge classifying colonies and answering the gates, under the fog and nothing
      *         else
      */
     public static ColonyKnowledge observingUnderTheFog() {
-        return new ColonyKnowledge(ColonyVisibility.BASE_FOG, ColonySightings.NONE);
+
+        return new ColonyKnowledge(
+            ColonyVisibility.BASE_FOG,
+            ColonySightings.NONE,
+            FactionAllianceRegistry.readAlliances());
     }
 
     /**
@@ -241,7 +283,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
      *
      * <p>Owner-aware through the same test the rule uses: the people keeping a secret are exactly
      * the ones a faction-blind reading would credit with telling it. So a faction's open colony
-     * observes a rival's concealed base beside it and never its own.
+     * observes a rival's concealed base beside it, and never its own or an ally's.
      *
      * <p>Read under the fog alone, whatever rule this knowledge carries. A reveal changes what may
      * be shown and never what was seen, so letting one reach here would write down observations
@@ -466,7 +508,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
     }
 
     // Whether somebody living in this place would speak about this colony: a shown, open colony
-    // of some owner other than its own stands here.
+    // stands here whose owner is on the other side from its own.
     //
     // Owner-aware rather than a bare "anybody lives here", because the people keeping a secret
     // are exactly the ones a faction-blind test credits with telling it. A pirate base in a
@@ -474,17 +516,27 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // which is the one case the route was never arguing for - a rival's colony in the same place
     // does talk, and that is what the route is for.
     //
+    // The exception is read at the size the world keeps it, an ally being no likelier to hand
+    // over a partner's concealed base than the partner is: an alliance is a standing arrangement
+    // to act as one, and selling out a partner is the thing it forbids. So a member of the same
+    // alliance is passed over exactly as the owner itself is, and the base falls back to the only
+    // witness the route should ever have credited it to - the player's own sighting.
+    //
     // A derelict is held by nobody in particular, and one other shape falls to that same nobody:
     // a station no faction holds that the economy lists anyway, which is read as kept and so
     // settles its place. That pair is the only arrangement in which this comparison reaches a
     // derelict, and it withholds - a hulk on the books is no witness to the hulk beside it.
-    private static boolean isObservedByInhabitants(Colony colony, Set<String> settlingOwnerIds) {
+    // Nobody joins no alliance, so the widened test leaves a derelict answering exactly as the
+    // bare owner comparison did.
+    private boolean isObservedByInhabitants(Colony colony, Set<String> settlingOwnerIds) {
 
         var ownerId = colony.readOwnerId();
 
         for (var settlingOwnerId : settlingOwnerIds) {
 
-            if (!Objects.equals(settlingOwnerId, ownerId)) {
+            if (!Objects.equals(settlingOwnerId, ownerId)
+                    && !alliances.areFactionsAllied(settlingOwnerId, ownerId)) {
+
                 return true;
             }
         }

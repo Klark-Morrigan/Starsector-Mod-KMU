@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static kmu.maplayers.base.visibility.FactionAllianceFixture.buildAllianceOf;
+import static kmu.maplayers.base.visibility.FactionAllianceFixture.registerAllianceOf;
 import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.ACADEMY_ENTITY_ID;
 import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.clearRegistrations;
 import static kmu.maplayers.base.visibility.OpenlyKnownColonyFixture.registerTheAcademy;
@@ -30,8 +32,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the projections {@link ColonyKnowledge} states over a colony set - the known listing and the
- * habitation reading, each beside the emptiness question asked of it - and the two observation
- * reads the register is written from.
+ * habitation reading, each beside the emptiness question asked of it - the two observation
+ * reads the register is written from, and the sector-scoped facts a pass folds when it opens.
  * Each method's cases live in a {@link Nested} group so the suite reports as a per-method tree;
  * the world they are posed against is {@link ColonyKnowledgeFixture}.
  * The known projection's group is sub-grouped once more, by the arm of the rule each case
@@ -107,6 +109,11 @@ final class ColonyKnowledgeTest {
     @AfterEach
     void clearOpenlyKnownColonies() {
         clearRegistrations();
+    }
+
+    @AfterEach
+    void clearRegisteredAlliances() {
+        FactionAllianceFixture.clearRegistrations();
     }
 
     @Nested
@@ -589,6 +596,98 @@ final class ColonyKnowledgeTest {
                 assertThat(knowing(fixture, BOTH_GATES_ON).readKnownColonies(buildColoniesOf( buildColony(base), buildColony(ownColony), buildColony(rivalColony))))
                     .containsExactly(
                         buildColony(base), buildColony(ownColony), buildColony(rivalColony));
+            }
+
+            @Test
+            void excludes_a_concealed_colony_only_an_allied_faction_could_vouch_for() {
+                // The same silence as the base's own faction, for the same reason: an alliance is a
+                // standing arrangement to act as one, and handing a partner's concealed base to a
+                // third party is the thing it forbids. Posed on the pair that talks with no
+                // alliance registered, so the membership is the only thing that has moved.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var base = fixture.buildFoundConcealedColony("pirates");
+                var partnerColony = fixture.buildVisibleColony("hegemony");
+
+                fixture.placeColoniesInSystem(base, partnerColony);
+
+                assertThat(knowing(fixture, BOTH_GATES_ON, buildAllianceOf("pirates", "hegemony"))
+                        .readKnownColonies(
+                            buildColoniesOf(buildColony(base), buildColony(partnerColony))))
+                    .containsExactly(buildColony(partnerColony));
+            }
+
+            @Test
+            void keeps_a_concealed_colony_a_faction_outside_its_alliance_can_see() {
+                // The other half of the pair: an alliance the base's owner is not in silences
+                // nobody, so the rule answers exactly as it does with no alliances at all.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var base = fixture.buildFoundConcealedColony("pirates");
+                var rivalColony = fixture.buildVisibleColony("hegemony");
+
+                fixture.placeColoniesInSystem(base, rivalColony);
+
+                assertThat(knowing(
+                        fixture,
+                        BOTH_GATES_ON,
+                        buildAllianceOf("hegemony", "persean_league"))
+                        .readKnownColonies(
+                            buildColoniesOf(buildColony(base), buildColony(rivalColony))))
+                    .containsExactly(buildColony(base), buildColony(rivalColony));
+            }
+
+            @Test
+            void keeps_a_concealed_colony_one_unallied_settler_can_see_among_its_partners() {
+                // Asked of the whole set rather than of whichever colony was reached first: one
+                // faction outside the alliance is enough, however many partners stand around it.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var base = fixture.buildFoundConcealedColony("pirates");
+                var partnerColony = fixture.buildVisibleColony("hegemony");
+                var rivalColony = fixture.buildVisibleColony("tritachyon");
+
+                fixture.placeColoniesInSystem(base, partnerColony, rivalColony);
+
+                assertThat(knowing(fixture, BOTH_GATES_ON, buildAllianceOf("pirates", "hegemony"))
+                        .readKnownColonies(buildColoniesOf(
+                            buildColony(base),
+                            buildColony(partnerColony),
+                            buildColony(rivalColony))))
+                    .containsExactly(
+                        buildColony(base), buildColony(partnerColony), buildColony(rivalColony));
+            }
+
+            @Test
+            void keeps_a_concealed_colony_the_player_has_seen_whatever_the_alliance_says() {
+                // An alliance says who would speak, and nothing about what the player has been to
+                // look at. So the sighting route is untouched by it, which is what keeps a partner's
+                // silence from taking back knowledge the player earned.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var base = fixture.buildFoundConcealedColony("pirates");
+                var partnerColony = fixture.buildVisibleColony("hegemony");
+
+                fixture.placeColoniesInSystem(base, partnerColony);
+                fixture.markColoniesAsSighted(base);
+
+                assertThat(knowing(fixture, BOTH_GATES_ON, buildAllianceOf("pirates", "hegemony"))
+                        .readKnownColonies(
+                            buildColoniesOf(buildColony(base), buildColony(partnerColony))))
+                    .containsExactly(buildColony(base), buildColony(partnerColony));
+            }
+
+            @Test
+            void keeps_a_derelict_whichever_alliance_settles_the_system_around_it() {
+                // Nobody holds a hulk and nobody joins an alliance, so the widened comparison
+                // reaches a derelict exactly as the bare owner one did - it is vouched for by
+                // whoever is there, allied or not.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var derelict = fixture.buildDerelictStation();
+                var alliedColony = fixture.buildVisibleColony("hegemony");
+
+                fixture.placeColoniesInSystem(derelict, alliedColony);
+
+                assertThat(knowing(fixture, BOTH_GATES_ON, buildAllianceOf("hegemony", "pirates"))
+                        .readKnownColonies(
+                            buildColoniesOf(buildDerelict(derelict), buildColony(alliedColony))))
+                    .containsExactly(buildDerelict(derelict), buildColony(alliedColony));
             }
 
             @Test
@@ -1199,6 +1298,41 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
+        void yields_nothing_for_a_concealed_base_an_allied_faction_would_not_announce() {
+            // The rule's own silence, carried into the write: an observation an ally alone would
+            // have made is one the rule declines to credit, so recording it would put an
+            // announcement nobody made permanently into a save.
+            registerAllianceOf("pirates", "hegemony");
+
+            var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+            var base = fixture.buildFoundConcealedColony("pirates");
+            var partnerColony = fixture.buildVisibleColony("hegemony");
+
+            fixture.placeColoniesInSystem(base, partnerColony);
+
+            assertThat(observing().readColoniesObservedByInhabitants(
+                    buildColoniesOf(buildColony(base), buildColony(partnerColony))))
+                .isEmpty();
+        }
+
+        @Test
+        void yields_a_concealed_base_a_faction_outside_its_alliance_announces() {
+            // The other half of that pair, on the same shape: an alliance the base's owner is not
+            // in silences nobody, so the observation is recorded as it always was.
+            registerAllianceOf("hegemony", "persean_league");
+
+            var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+            var base = fixture.buildFoundConcealedColony("pirates");
+            var rivalColony = fixture.buildVisibleColony("hegemony");
+
+            fixture.placeColoniesInSystem(base, rivalColony);
+
+            assertThat(observing().readColoniesObservedByInhabitants(
+                    buildColoniesOf(buildColony(base), buildColony(rivalColony))))
+                .containsExactly(buildColony(base));
+        }
+
+        @Test
         void yields_nothing_where_the_only_settler_is_a_colony_the_player_has_not_found() {
             // The fog is read here as it is read by the rule, and no reveal can reach it: a
             // written observation outlives the setting that let it be made, so one made under a
@@ -1211,6 +1345,48 @@ final class ColonyKnowledgeTest {
 
             assertThat(observing().readColoniesObservedByInhabitants(buildColoniesOf(buildDerelict(derelict), buildColony(undiscoveredNeighbour))))
                 .isEmpty();
+        }
+    }
+
+    @Nested
+    class Over {
+
+        @Test
+        void reads_the_alliances_standing_when_each_pass_opens() {
+            // Alliances form and dissolve while a campaign runs, and a pass folds them where it
+            // opens the register - so a partnership that ends between two passes stops silencing
+            // its witness at the second, rather than at whatever point a snapshot was taken.
+            registerAllianceOf("pirates", "hegemony");
+
+            var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+            var base = fixture.buildFoundConcealedColony("pirates");
+            var neighbourColony = fixture.buildVisibleColony("hegemony");
+            var colonies = buildColoniesOf(buildColony(base), buildColony(neighbourColony));
+
+            fixture.placeColoniesInSystem(base, neighbourColony);
+
+            assertThat(ColonyKnowledge.over(null, BOTH_GATES_ON).readKnownColonies(colonies))
+                .containsExactly(buildColony(neighbourColony));
+
+            registerAllianceOf("hegemony", "persean_league");
+
+            assertThat(ColonyKnowledge.over(null, BOTH_GATES_ON).readKnownColonies(colonies))
+                .containsExactly(buildColony(base), buildColony(neighbourColony));
+        }
+
+        @Test
+        void reads_nobody_as_allied_where_nothing_is_registered() {
+            // What an install without the mod that keeps alliances answers: every other faction
+            // present speaks, which is the rule exactly as it stood before alliances were read.
+            var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+            var base = fixture.buildFoundConcealedColony("pirates");
+            var neighbourColony = fixture.buildVisibleColony("hegemony");
+
+            fixture.placeColoniesInSystem(base, neighbourColony);
+
+            assertThat(ColonyKnowledge.over(null, BOTH_GATES_ON).readKnownColonies(
+                    buildColoniesOf(buildColony(base), buildColony(neighbourColony))))
+                .containsExactly(buildColony(base), buildColony(neighbourColony));
         }
     }
 
@@ -1248,6 +1424,16 @@ final class ColonyKnowledgeTest {
             ColonyVisibility rule) {
 
         return new ColonyKnowledge(rule, fixture.getSightings());
+    }
+
+    // The same, among factions that stand together. Stated only where an alliance is what the case
+    // is about, so every other case poses the sector's ordinary shape - nobody allied with anybody.
+    private static ColonyKnowledge knowing(
+            ColonyKnowledgeFixture fixture,
+            ColonyVisibility rule,
+            FactionAlliances alliances) {
+
+        return new ColonyKnowledge(rule, fixture.getSightings(), alliances);
     }
 
     // The knowledge the observation reads are taken under - the fog alone, and no register. Being
