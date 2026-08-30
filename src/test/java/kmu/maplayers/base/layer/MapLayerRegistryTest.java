@@ -38,6 +38,11 @@ final class MapLayerRegistryTest {
     private static final String MAP_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_map";
     private static final String INTEL_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_intel";
 
+    // The machinery of the sector being drawn, which the registry passes through rather than
+    // resolves. One for the class, so a case asserting it reached the layer is comparing against
+    // the very object it handed in.
+    private final MapLayerInstallation installation = new MapLayerInstallation();
+
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);
     private final IntelScreenViewFake intelScreenFake = new IntelScreenViewFake();
@@ -141,8 +146,8 @@ final class MapLayerRegistryTest {
             // The roster is the process's while a renderer is one sector's, so the registry must
             // pass the installation through rather than resolve one of its own - a registry that
             // picked the running sector's would hand every surface the same renderer however many
-            // sectors were being drawn.
-            var installation = new MapLayerInstallation();
+            // sectors were being drawn. Pinned by stubbing that one installation and no other, so a
+            // registry substituting its own would find nothing stubbed for it.
             var layerRendererMock = mock(MapLayerRenderer.class);
 
             when(secondLayerMock.resolveRenderer(installation))
@@ -160,11 +165,15 @@ final class MapLayerRegistryTest {
         void resolveActiveMapRendererIsNullWhenTheActivePickDrawsNothing() {
             // The switch-only tab, whose whole expression is a null renderer - and the pre-
             // registration frame below it, answered the same way so no pass driven by the active
-            // pick needs a case for either.
+            // pick needs a case for either. Stated rather than left to the stub's own default, or
+            // the case would pass on a layer that was never asked at all.
+            when(secondLayerMock.resolveRenderer(installation))
+                .thenReturn(null);
+
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 globalMock.when(Global::getSector).thenReturn(null);
 
-                assertThat(MapLayerRegistry.resolveActiveMapRenderer(new MapLayerInstallation()))
+                assertThat(MapLayerRegistry.resolveActiveMapRenderer(installation))
                     .isNull();
             }
         }
@@ -176,7 +185,7 @@ final class MapLayerRegistryTest {
             try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
                 globalMock.when(Global::getSector).thenReturn(null);
 
-                assertThat(MapLayerRegistry.resolveActiveMapRenderer(new MapLayerInstallation()))
+                assertThat(MapLayerRegistry.resolveActiveMapRenderer(installation))
                     .isNull();
             }
         }

@@ -32,7 +32,12 @@ public final class MapLayerInstallation {
     // Whether this installation has been released. Kept rather than inferred from an emptied
     // holder, because a caller can still be holding a reference the index has already let go of: a
     // resolution taken at the top of a frame outlives a removal that happens during it.
-    private boolean isDisposed;
+    //
+    // Volatile because that is precisely a cross-thread read: the release is written on the
+    // campaign thread and the holder that outlived it is read on the render thread, so a
+    // non-volatile flag could go on answering "not released" for as long as the frame keeps
+    // drawing through it - which is the one question this field exists to answer.
+    private volatile boolean isDisposed;
 
     // What the cursor is over on this sector's map, carried from the render pass that can resolve
     // it to the highlight and the box that report it.

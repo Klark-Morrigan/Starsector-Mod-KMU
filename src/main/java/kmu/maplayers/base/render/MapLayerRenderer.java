@@ -26,17 +26,6 @@ import java.util.Optional;
 public interface MapLayerRenderer extends InstalledMachinery {
 
     /**
-     * Releases what this renderer holds for its sector, when the installation holding it goes.
-     *
-     * <p>Defaulting to nothing makes "nothing to release" the base case: a layer that emits fixed
-     * geometry holds no cache and no GL resource. A layer whose draw lists own GL buffers overrides
-     * this, or a sector removed mid-session leaks every buffer it had built.
-     */
-    @Override
-    default void disposeMachinery() {
-    }
-
-    /**
      * Brings whatever this layer draws from up to date for the frame about to be painted, and
      * answers anything the frame owes once rather than per pass. Called once per frame, before the
      * first band is drawn.
@@ -109,5 +98,18 @@ public interface MapLayerRenderer extends InstalledMachinery {
      */
     default Optional<MapHoverTooltip> resolveHoverTooltip() {
         return Optional.empty();
+    }
+
+    /**
+     * Releases what this renderer holds for its sector, when the installation holding it goes. Last
+     * here because it is the last thing asked of a renderer: everything above is a frame, and this
+     * is the end of every frame there will be.
+     *
+     * <p>Defaulting to nothing makes "nothing to release" the base case: a layer that emits fixed
+     * geometry holds no cache and no GL resource. A layer whose draw lists own GL buffers overrides
+     * this, or a sector removed mid-session leaks every buffer it had built.
+     */
+    @Override
+    default void disposeMachinery() {
     }
 }

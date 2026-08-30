@@ -41,9 +41,9 @@ import java.util.Objects;
 
 /**
  * Keeps the political map's derived draw lists fresh with the least work per frame, and hands
- * the current ones to the renderer. The terrain plugin holds one of these behind a transient
- * field and asks it to {@link #refresh} each frame the map is open; everything the map draws is
- * cached here and rebuilt only when its inputs change.
+ * the current ones to the renderer. The layer renderer holds one of these and asks it to
+ * {@link #refresh} each frame the map is open; everything the map draws is cached here and rebuilt
+ * only when its inputs change.
  *
  * <p>System positions in hyperspace are fixed for the life of a save, so the raw cells are built
  * once and cached; they are reseeded only when the reachable-system set changes, the
@@ -67,18 +67,24 @@ final class PoliticalMapCache {
     private static final Logger LOG = Global.getLogger(PoliticalMapCache.class);
 
     // The content revision's seed, below any revision the settings fold can report on a built
-    // map, so the first refresh of a session finds the draw lists stale and builds them.
+    // map, so this cache's first refresh finds the draw lists stale and builds them.
     private static final int UNBUILT_REVISION = -1;
 
-    // The cut number the first cut of a session takes. Counts up from here and never repeats
-    // within a cache, so no two cuts of these cells can be mistaken for each other.
+    // The cut number this cache's first cut takes. Counts up from here and never repeats within a
+    // cache, so no two cuts of these cells can be mistaken for each other.
     private static final int FIRST_CUT_NUMBER = 0;
+
+    // The machinery installed on the sector this cache draws. Held rather than resolved per rebuild
+    // so the movers a cut leaves out come from the same sector the cut is made from: a cache that
+    // asked the running game would read another sector's drift the moment it belonged to a sector
+    // that is not the one loaded.
+    private final MapLayerInstallation installation;
 
     // Raw cell geometry keyed by system id, updated incrementally as systems gain or lose
     // access, paired with the number of the cut it currently holds. The cells themselves are the
-    // same object for the life of the cache - it is recreated per session, so they are never
-    // null once the cache exists - and only the number beside them moves, which is why the pair
-    // is replaced rather than the cells.
+    // same object for the life of the cache - one cache is made per installed sector, so they are
+    // never null once the cache exists - and only the number beside them moves, which is why the
+    // pair is replaced rather than the cells.
     //
     // That number counts cuts rather than echoing the reachable-set revision, because the two
     // are not the same fact: a seed-input or dev-toggle change recuts every cell while that
@@ -90,7 +96,7 @@ final class PoliticalMapCache {
         new RevisedCellGeometry(new CellGeometryCache(), FIRST_CUT_NUMBER);
 
     // The built draw lists plus the holding and style inputs an incremental re-shape needs.
-    // Null until the first build this session; exactly one of this and borderStageOverlay is
+    // Null until this cache's first build; exactly one of this and borderStageOverlay is
     // non-null after a build.
     private PoliticalMapTerritories territories;
 
@@ -120,19 +126,13 @@ final class PoliticalMapCache {
     // inputs and the dev toggles side by side, because each of the three recuts every cell and
     // the question asked of them is the single one they answer together: would the cells be cut
     // differently now. Null (not a zero reading) is the never-cut state, since every reading the
-    // record can hold is one the player can actually be under - and it is what makes the first
-    // refresh of a session cut, whatever the signal happens to say.
+    // record can hold is one the player can actually be under - and it is what makes this cache's
+    // first refresh cut, whatever the signal happens to say.
     private CellCutInputs lastCellCut;
 
     // One-shot guard for rebuild faults: refresh runs every frame the map is open, so a recurring
     // rebuild failure would flood the log. The first is recorded at ERROR, the rest silenced.
     private boolean hasLoggedRebuildError;
-
-    // The machinery installed on the sector this cache draws. Held rather than resolved per rebuild
-    // so the movers a cut leaves out come from the same sector the cut is made from: a cache that
-    // asked the running game would read another sector's drift the moment it belonged to a sector
-    // that is not the one loaded.
-    private final MapLayerInstallation installation;
 
     PoliticalMapCache(MapLayerInstallation installation) {
         this.installation = installation;
@@ -240,9 +240,9 @@ final class PoliticalMapCache {
         // its affected-cell set and drive a targeted reshape from it, the geometry-side analogue of
         // applyStalePoliticsUpdates.
 
-        // Both views null means neither has been built this session, so the first frame forces the
-        // build even if the content revision happens to match its unbuilt seed. Asked ahead of the
-        // cut rather than after it because the reading of the sector below is opened for whichever
+        // Both views null means neither has been built for this sector, so the first frame forces
+        // the build even if the content revision happens to match its unbuilt seed. Asked ahead of
+        // the cut rather than after it because the reading of the sector below is opened for whichever
         // stages will run, and a frame where none will must not open one at all - which is nearly
         // every frame.
         var contentRevision = computeContentRevision(view);

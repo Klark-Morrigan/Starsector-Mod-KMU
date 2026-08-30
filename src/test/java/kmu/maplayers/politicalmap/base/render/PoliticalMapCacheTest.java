@@ -19,6 +19,11 @@ import static org.mockito.Mockito.mockStatic;
  * incremental rebuild paths need a live sector and are covered by the integration tests.
  */
 final class PoliticalMapCacheTest {
+
+    // The machinery the cache under test belongs to. Nothing here turns on which sector that is -
+    // what a cache reads from it is the movers, and neither case gets as far as a cut.
+    private final MapLayerInstallation installation = new MapLayerInstallation();
+
     private final PoliticalMapView viewMock = mock(PoliticalMapView.class);
 
     @Nested
@@ -28,7 +33,7 @@ final class PoliticalMapCacheTest {
         void refreshInstallsAnEmptyPlaceholderWhenTheRebuildThrows() {
             // No sector, so the rebuild throws part way through. The renderer must still find a draw
             // list rather than dereference a null one, and the next frame retries.
-            var cache = new PoliticalMapCache(new MapLayerInstallation());
+            var cache = new PoliticalMapCache(installation);
 
             // Both settings classes the refresh reads are stubbed inert: the revision counter is the
             // framework's, the seed inputs and the debug gate are this layer's.
@@ -51,7 +56,7 @@ final class PoliticalMapCacheTest {
             // What a sector removed mid-session leaves behind if this does nothing: the cached names
             // each own a GL buffer, so the drop is what frees them rather than leaving them to
             // LazyLib's finalizer sweep.
-            var cache = new PoliticalMapCache(new MapLayerInstallation());
+            var cache = new PoliticalMapCache(installation);
             try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
                     MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
                         mockStatic(KmuPoliticalMapSettings.class)) {
@@ -71,7 +76,7 @@ final class PoliticalMapCacheTest {
         void disposeCachedStateIsSafeBeforeAnythingHasBeenBuilt() {
             // Reached for a sector installed on with the map never opened, when there are no draw
             // lists and no GL resources to release yet.
-            var cache = new PoliticalMapCache(new MapLayerInstallation());
+            var cache = new PoliticalMapCache(installation);
 
             cache.disposeCachedState();
 

@@ -65,27 +65,21 @@ class MapLayerInstallationTest {
     class ResolveMachinery {
 
         @Test
-        void resolveMachineryYieldsTheOneThisInstallationKeepsOfThatKind() {
+        void yieldsTheOneOfThatKindThisInstallationKeeps() {
             // The surface resolves what draws every frame and the hover box resolves it again in
             // the pass after, so two resolutions handing back two would have the box describing
             // draw lists the map never painted - and would double every cache behind them.
-            var machineryFake = installation.resolveMachinery(
-                CountingMachineryFake.class, CountingMachineryFake::new);
-
-            assertThat(installation.resolveMachinery(
-                    CountingMachineryFake.class, CountingMachineryFake::new))
-                .isSameAs(machineryFake);
+            assertThat(resolveCountingMachineryIn(installation))
+                .isSameAs(resolveCountingMachineryIn(installation));
         }
 
         @Test
-        void resolveMachineryYieldsOneOfItsOwnSoOneSectorsDrawingIsNotAnothers() {
+        void yieldsOneOfItsOwnSoOneSectorsDrawingIsNotAnothers() {
             // The whole of why a renderer stopped being the layer's: the caches behind it reconcile
             // by system id, so two sectors through one would keep each other's cells rather than
             // overwrite them.
-            assertThat(installation.resolveMachinery(
-                    CountingMachineryFake.class, CountingMachineryFake::new))
-                .isNotSameAs(otherInstallation.resolveMachinery(
-                    CountingMachineryFake.class, CountingMachineryFake::new));
+            assertThat(resolveCountingMachineryIn(installation))
+                .isNotSameAs(resolveCountingMachineryIn(otherInstallation));
         }
     }
 
@@ -173,12 +167,11 @@ class MapLayerInstallationTest {
     class DisposeMachinery {
 
         @Test
-        void disposeMachineryReleasesWhatALayerHandedItToHold() {
+        void releasesWhatALayerHandedItToHold() {
             // What the release contract is for: the political map's draw lists own a GL buffer per
             // cached name, so a sector removed mid-session leaks every one it built unless disposal
             // reaches through to them.
-            var machineryFake = installation.resolveMachinery(
-                CountingMachineryFake.class, CountingMachineryFake::new);
+            var machineryFake = resolveCountingMachineryIn(installation);
 
             installation.disposeMachinery();
 
@@ -187,13 +180,11 @@ class MapLayerInstallationTest {
         }
 
         @Test
-        void disposeMachineryReleasesOnlyItsOwn() {
+        void releasesOnlyItsOwn() {
             // Removing one sector's layers leaves the other sector drawing, so its renderer - and
             // every GL resource behind it - has to survive the release beside it.
-            var machineryFake = installation.resolveMachinery(
-                CountingMachineryFake.class, CountingMachineryFake::new);
-            var otherMachineryFake = otherInstallation.resolveMachinery(
-                CountingMachineryFake.class, CountingMachineryFake::new);
+            var machineryFake = resolveCountingMachineryIn(installation);
+            var otherMachineryFake = resolveCountingMachineryIn(otherInstallation);
 
             installation.disposeMachinery();
 
@@ -204,7 +195,7 @@ class MapLayerInstallationTest {
         }
 
         @Test
-        void disposeMachineryIsSafeWithNothingHandedToIt() {
+        void isSafeWithNothingHandedToIt() {
             // A sector installed on with the map never opened, and the detached installation every
             // sector-less caller shares: both reach disposal holding nothing.
             installation.disposeMachinery();
@@ -212,6 +203,17 @@ class MapLayerInstallationTest {
             assertThat(installation.isDisposed())
                 .isTrue();
         }
+    }
+
+    // The one kind of machinery these cases stage, asked for the way a layer asks: by its class,
+    // with the way to make one. Named rather than repeated at each call so a case reads as which
+    // installation it is asking rather than as the pair of arguments it is asking with.
+    private static CountingMachineryFake resolveCountingMachineryIn(
+            MapLayerInstallation installation) {
+
+        return installation.resolveMachinery(
+            CountingMachineryFake.class,
+            CountingMachineryFake::new);
     }
 
     // A layer's machinery, stated as the plainest thing that can be held and released: what an

@@ -59,6 +59,12 @@ final class PoliticalMapLayerTest {
     private static final ControlSpec VIEW_MARKER = buildMarker("view");
     private static final ControlSpec PICKER_MARKER = buildMarker("picker");
 
+    // Two sectors' installed machinery, since what this tab now answers turns on which of them it
+    // is asked about. The body cases below use neither: a tab's controls are the same wherever it
+    // is drawn.
+    private final MapLayerInstallation installation = new MapLayerInstallation();
+    private final MapLayerInstallation otherInstallation = new MapLayerInstallation();
+
     private final PoliticalMapView viewWithControlsMock = mock(PoliticalMapView.class);
     private final PoliticalMapView viewWithoutControlsMock = mock(PoliticalMapView.class);
 
@@ -71,8 +77,6 @@ final class PoliticalMapLayerTest {
             // surface one view-neutral renderer rather than branching on the view roster. Twice for
             // one sector is once, since the surface resolves it every frame and the hover box again
             // in the pass after.
-            var installation = new MapLayerInstallation();
-
             assertThat(PoliticalMapLayer.INSTANCE.resolveRenderer(installation))
                 .isInstanceOf(PoliticalMapLayerRenderer.class)
                 .isSameAs(PoliticalMapLayer.INSTANCE.resolveRenderer(installation));
@@ -83,15 +87,14 @@ final class PoliticalMapLayerTest {
             // This tab is registered once for the process while everything behind its renderer - the
             // cut cells, the territories, the fitted names - is one sector's, so the same tab has to
             // answer for two sectors with two renderers.
-            assertThat(PoliticalMapLayer.INSTANCE.resolveRenderer(new MapLayerInstallation()))
-                .isNotSameAs(PoliticalMapLayer.INSTANCE.resolveRenderer(new MapLayerInstallation()));
+            assertThat(PoliticalMapLayer.INSTANCE.resolveRenderer(installation))
+                .isNotSameAs(PoliticalMapLayer.INSTANCE.resolveRenderer(otherInstallation));
         }
 
         @Test
         void resolveRendererLeavesNothingBehindOnTheInstallationItWasReleasedWith() {
             // The renderer goes with the sector's machinery, so the sector installed on after it
             // draws through one of its own rather than through the previous sector's cached cells.
-            var installation = new MapLayerInstallation();
             var renderer = PoliticalMapLayer.INSTANCE.resolveRenderer(installation);
 
             installation.disposeMachinery();
