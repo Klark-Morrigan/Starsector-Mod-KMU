@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 
 import kmlib.starsector.systems.SystemColoniesIndex;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
@@ -61,9 +62,18 @@ import java.util.Map;
  * <p>A poll is a pass, and is read as one: every passenger is handed the same reading of the
  * sector rather than a sector it could walk again for itself. What that buys is stated where
  * the reading is opened.
+ *
+ * <p>Built against the machinery installed on the sector it watches, since the motion
+ * observations it stages are kept there. A poll observing into another sector's would measure
+ * this sector's systems against the positions that one last saw under the same ids.
  */
 public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     private static final Logger LOG = Global.getLogger(PoliticalMapStalenessSource.class);
+
+    // The installed machinery of the sector being polled. Held from construction rather than
+    // resolved per poll because a source is built per load, against the sector it was installed
+    // on - which is the sector its baselines are diffs of.
+    private final MapLayerInstallation installation;
 
     // Last poll's state; 0 and an empty map are also the empty-sector values, so a
     // boolean guards the very first poll establishing every baseline.
@@ -71,6 +81,14 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     private int lastVisibilityFingerprint;
     private int lastAllianceFingerprint;
     private Map<String, String> lastHolderBySystemId = Map.of();
+
+    /**
+     * @param installation the machinery installed on the sector this polls, which holds the
+     *                     motion observations each poll stages
+     */
+    public PoliticalMapStalenessSource(MapLayerInstallation installation) {
+        this.installation = installation;
+    }
 
     // Re-reads the snapshot and stages on-map positions, then hands each axis its own
     // routing: a visibility move or an accepted system move rebuilds geometry, an holder-map
@@ -96,7 +114,9 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         // taken out of, or returned to, the partition. Only a change to the moving set
         // stales the geometry; a system that keeps moving is already excluded, so it
         // reports no change and never churns the map.
-        var hasMovingSetChanged = MovingSystems.getInstance().updateMovingSystems(pass);
+        var hasMovingSetChanged = installation
+            .resolveMovingSystems()
+            .updateMovingSystems(pass);
 
         recordObservationsByInhabitants(pass.colonies());
 

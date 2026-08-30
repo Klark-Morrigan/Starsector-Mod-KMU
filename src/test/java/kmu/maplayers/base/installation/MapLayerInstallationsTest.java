@@ -3,23 +3,31 @@ package kmu.maplayers.base.installation;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.refresh.MovableSystemSectorFake;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import static kmu.maplayers.base.refresh.MovableSystemSectorFake.FORCED_ONTO_MAP;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the lifetime, which is the whole of what an installation settles while it holds nothing:
- * that two sectors get two of them, that installing again on one replaces rather than accumulates,
- * that removal and a load release what they drop, and that a sector with nothing installed resolves
- * to something rather than to null.
+ * Pins the lifetime: that two sectors get two installations, that installing again on one replaces
+ * rather than accumulates, that removal and a load release what they drop and leave none of a
+ * released sector's state to the installation after it, and that a sector with nothing installed
+ * resolves to something rather than to null.
  *
  * <p>The index is process-wide, so every case starts from a cleared one.
  */
 class MapLayerInstallationsTest {
+
+    // The id the staged drifting system reports, which is what a motion observation is keyed by
+    // and so what a discarded installation could leave behind for the next one.
+    private static final String DRIFTER_ID = "a";
 
     @BeforeEach
     void clearEveryInstallation() {
@@ -153,6 +161,36 @@ class MapLayerInstallationsTest {
                 .isNotSameAs(installation);
             assertThat(MapLayerInstallations.resolveInstallationFor(otherSectorMock))
                 .isNotSameAs(otherInstallation);
+        }
+
+        @Test
+        void leavesNoneOfADiscardedSectorsMotionObservationsToTheInstallationAfterIt() {
+            // The whole of what a per-load flush of the motion tracker used to be for. An
+            // observation is keyed by system id, so a save reloaded in the same session would
+            // otherwise have its systems measured against the positions the previous save last
+            // saw them at, and a system that never moved would read as having teleported.
+            var sectorFake = new MovableSystemSectorFake(DRIFTER_ID);
+            var sector = sectorFake.getSector();
+
+            var installation = MapLayerInstallations.installMachineryOn(sector);
+
+            sectorFake.observePositionsInto(installation.resolveMovingSystems(), FORCED_ONTO_MAP);
+            sectorFake.moveSystemClearOfItsLastPosition();
+            sectorFake.observePositionsInto(installation.resolveMovingSystems(), FORCED_ONTO_MAP);
+
+            MapLayerInstallations.disposeEveryInstallation();
+
+            var reinstallation = MapLayerInstallations.installMachineryOn(sector);
+
+            assertThat(reinstallation.resolveMovingSystems().getMovingSystemIds())
+                .isEmpty();
+
+            // And the first observation after the load seeds a baseline rather than reporting the
+            // move it inherited.
+            assertThat(sectorFake.observePositionsInto(
+                    reinstallation.resolveMovingSystems(),
+                    FORCED_ONTO_MAP))
+                .isFalse();
         }
 
         @Test

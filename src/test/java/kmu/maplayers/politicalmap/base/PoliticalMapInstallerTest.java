@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
-import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonisationListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
@@ -26,15 +25,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the political map's per-frame watcher as a transient script built fresh per load over a
- * tracker flushed of whatever the previous save left in it, and the taking back of every live
- * repaint when the layers are switched off.
+ * Pins the political map's per-frame watcher as a transient script built fresh per load, and the
+ * taking back of every live repaint when the layers are switched off.
  *
  * <p>And, for each listener install, that the listener is built against the sector it is being
  * installed on. Every one of them reports onto that sector's own refresh board, so an installer
@@ -88,26 +85,6 @@ class PoliticalMapInstallerTest {
 
             assertThat(secondWatcher.getValue())
                 .isNotSameAs(firstWatcher.getValue());
-        }
-
-        @Test
-        void flushesTheSharedMovingTrackerBeforeInstalling() {
-            // The tracker is a process-lifetime singleton, so without this flush a system id
-            // reused by the next save is measured against the previous save's last-seen
-            // position and reads as having teleported.
-            try (var movingStaticMock = mockStatic(MovingSystems.class)) {
-
-                var movingSystemsMock = mock(MovingSystems.class);
-
-                movingStaticMock
-                    .when(MovingSystems::getInstance)
-                    .thenReturn(movingSystemsMock);
-
-                PoliticalMapInstaller.installMapLayerSectorWatcher(mock(SectorAPI.class));
-
-                verify(movingSystemsMock)
-                    .reset();
-            }
         }
 
         @Test

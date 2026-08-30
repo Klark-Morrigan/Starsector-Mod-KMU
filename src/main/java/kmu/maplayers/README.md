@@ -138,7 +138,9 @@ about what the overlay means.
   shortcut), `MapLayerRegistry` (roster, both screens' picks, save migrations), `NoLayer`.
 - **`base/installation`** - one sector's map machinery as a thing a caller can hold, since
   everything the layers draw is derived from one sector. `MapLayerInstallation` is that holder - its
-  `MapLayerRefreshBoard` is what went stale in that sector, and nothing another sector rebuilds for;
+  `MapLayerRefreshBoard` is what went stale in that sector, and nothing another sector rebuilds for,
+  and its `MovingSystems` is where that sector's systems were last seen, so a drift is judged
+  against that sector rather than against another's system of the same id;
   `MapLayerInstallations` indexes one per sector, replaces a sector's on a second install, releases
   it on removal, and discards every one on load - the load being the only point at which a previous
   save's can be stopped from outliving it, nothing else being told a sector went away. A seam

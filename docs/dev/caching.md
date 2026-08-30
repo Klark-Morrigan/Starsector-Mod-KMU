@@ -47,7 +47,8 @@ Three properties make that safe:
 - **System positions are fixed for the life of a save.** So the cell partition is
   built once and only reconciled when the *set* of drawn systems changes. Systems
   that move are the exception, and are excluded from the partition rather than
-  chased (see `MovingSystems`).
+  chased (see `MovingSystems`, one tracker per sector held by that sector's
+  installation, since an observation is keyed by system id).
 - **Ownership changes are local.** Dominance is decided per system from the
   colonies seated in it, so a colony event can only shift its own system - which
   makes a targeted re-shape of that system and its neighbours possible instead of
@@ -482,9 +483,8 @@ so is never serialised - no transient marking required.
 
 That lifetime is longer than a sector's, though, since a player can load a second
 save without restarting. Nothing else would notice the change of sector: the
-revision counters are process-wide and do not move across a load, and the geometry
-cache reconciles by diffing system *ids*, so a system present in both saves at a
-different position reads as unchanged. So the cache is discarded whole on load
+geometry cache reconciles by diffing system *ids*, so a system present in both
+saves at a different position reads as unchanged. So the cache is discarded whole on load
 rather than reconciled - `discardStateFromPreviousSave`, called from `onGameLoad`
 beside the sidebar folds, which are process-lifetime singletons for the same
 reason. Every revision then starts at a rebuild-forcing seed, so the first frame

@@ -11,13 +11,13 @@ import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellSeedInputs;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
-import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.MapVisibilityPass;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
@@ -38,6 +38,7 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Keeps the political map's derived draw lists fresh with the least work per frame, and hands
@@ -474,6 +475,16 @@ final class PoliticalMapCache {
             MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE));
     }
 
+    // The systems the running sector's poll has seen drifting. Resolved off the live sector
+    // because this cache is reached through a layer renderer that outlives any one sector and so
+    // holds no installation to ask - the same stand-in every seam vanilla hands no sector makes.
+    private static Set<String> resolveLiveMovingSystemIds() {
+        return MapLayerInstallations
+            .resolveInstallationForLiveSector()
+            .resolveMovingSystems()
+            .getMovingSystemIds();
+    }
+
     // Brings the geometry cache in line with the reachable systems, rebuilding only the cells
     // affected by an access change or a system starting or stopping moving - or every cell, when
     // the frontier resolution or the cell radius changed, since either reseeds them all. Feeds the
@@ -484,7 +495,7 @@ final class PoliticalMapCache {
             MapVisibilityPass pass,
             CellSeedInputs seedInputs) {
 
-        var movingSystemIds = MovingSystems.getInstance().getMovingSystemIds();
+        var movingSystemIds = resolveLiveMovingSystemIds();
         KmuProfiling
             .getProfiler()
             .measure(

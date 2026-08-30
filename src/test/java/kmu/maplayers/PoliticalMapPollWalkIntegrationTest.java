@@ -4,9 +4,9 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
-import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.base.visibility.SectorColonySightings;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -14,8 +14,6 @@ import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 
 import org.apache.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -80,19 +78,6 @@ final class PoliticalMapPollWalkIntegrationTest {
     private static final int TWO_POLLS = 2;
 
     private static final int ONE_POLL = 1;
-
-    @BeforeEach
-    void clearInheritedMotionObservations() {
-        // The tracker is one instance for the process, so a suite driving it for real inherits
-        // whatever ran before it and leaves its own behind. reset() is what a save load calls
-        // for the same reason.
-        MovingSystems.getInstance().reset();
-    }
-
-    @AfterEach
-    void clearMotionObservationsLeftBehind() {
-        MovingSystems.getInstance().reset();
-    }
 
     @Nested
     class MarkChangesSinceLastPoll {
@@ -166,7 +151,9 @@ final class PoliticalMapPollWalkIntegrationTest {
 
     // Drives the real poll pollCount times and reports how far the geometry revision moved.
     // MapLayerRefresh is left real, so the revision is read as a delta and the stale set drained
-    // either side, isolating the run from whatever else marked the shared counters.
+    // either side, isolating the run from whatever else marked the shared counters. The poll is
+    // built against an installation of its own, which is what leaves each run's motion
+    // observations to itself rather than to whatever ran before it.
     //
     // The interlude runs after the first poll, which is where a case moves the sector under a
     // poll that has already read it.
@@ -197,7 +184,8 @@ final class PoliticalMapPollWalkIntegrationTest {
             MapLayerRefresh.drainStaleGroupingSystemIds();
 
             var geometryBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY);
-            var stalenessSource = new PoliticalMapStalenessSource();
+            var stalenessSource =
+                new PoliticalMapStalenessSource(new MapLayerInstallation());
 
             for (var poll = 0; poll < pollCount; poll++) {
 

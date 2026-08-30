@@ -7,8 +7,7 @@ import kmu.maplayers.base.visibility.MapVisibilityPass;
 import java.util.Set;
 
 /**
- * The shared seam that couples the map's motion tracking to its two threads, and the
- * reason a moving system is left out of an overlay.
+ * One sector's motion tracking, and the reason a moving system is left out of an overlay.
  *
  * <p>The cell partition assumes a system's hyperspace position is fixed.
  * Some mods break that: a system can be a mobile entity that rewrites its own
@@ -23,34 +22,22 @@ import java.util.Set;
  *
  * <p>Detection is delegated to {@link SystemMotionTracker}, fed the shared drawn-set rule
  * ({@link MapVisibilityPass#isDrawn}) so the motion walk sees exactly
- * the systems the geometry draws - including any a reveal override put on the map. What
- * stays here is the coupling the map needs: a single shared instance joins the
- * campaign-thread writer (the poll) to the render-thread reader (the geometry cache, which
- * skips the movers) with no owner between them, the same seam {@link MapLayerRefresh}
- * provides for its counters.
+ * the systems the geometry draws - including any a reveal override put on the map.
+ *
+ * <p>What stays here is the coupling the map needs: one tracker joins a sector's
+ * campaign-thread writer (the poll) to its render-thread reader (the geometry cache, which
+ * skips the movers) with no owner between them. One per sector, held by that sector's
+ * installed map machinery, because an observation is keyed by system id: two sectors sharing
+ * a tracker would measure one sector's system against the last-seen position of the system
+ * holding that id in the other, and report a drift neither made. The observations go with the
+ * installation when it is released, so a sector's tracking begins from nothing rather than
+ * from whatever the sector before it last saw.
  */
 public final class MovingSystems {
-
-    // The one shared tracker the watcher writes and the geometry cache reads.
-    private static final MovingSystems INSTANCE = new MovingSystems();
 
     // Detects motion generically; this class supplies the drawn-set rule and the
     // cross-thread seam. The tracker's published set is read lock-free.
     private final SystemMotionTracker systemMotionTracker = new SystemMotionTracker();
-
-    // The shared tracker is reached through getInstance(); the motion detection stands
-    // on its own instance, so the constructor is package-visible rather than sealed to
-    // the singleton.
-    MovingSystems() {
-    }
-
-    /**
-     * @return the one shared tracker both the poll and the geometry cache reach, since
-     *         neither owns the other
-     */
-    public static MovingSystems getInstance() {
-        return INSTANCE;
-    }
 
     /**
      * @return the ids of systems currently moving - the ones the geometry cache leaves
@@ -59,15 +46,6 @@ public final class MovingSystems {
      */
     public Set<String> getMovingSystemIds() {
         return systemMotionTracker.getMovingSystemIds();
-    }
-
-    /**
-     * Clears all observations. Called when a save loads so a system id shared with a
-     * previous save in the same app session starts fresh rather than comparing against
-     * the earlier save's last-seen position.
-     */
-    public void reset() {
-        systemMotionTracker.clearObservations();
     }
 
     /**

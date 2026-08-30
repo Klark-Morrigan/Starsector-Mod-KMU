@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
-import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonisationListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
@@ -182,15 +182,14 @@ public final class PoliticalMapInstaller {
         if (sector == null) {
             return;
         }
-        // Clear observed positions from any earlier save this app session: the shared
-        // tracker outlives a single save, so a system id reused across saves would
-        // otherwise be compared against the previous save's last-seen position until
-        // the first poll re-seeds it.
-        MovingSystems.getInstance().reset();
-
         // A fresh source per load, so the baselines it diffs against start empty rather
-        // than carrying the previous save's last read into this one.
+        // than carrying the previous save's last read into this one. Built against this
+        // sector's installed machinery, where the positions it observes are kept: a source
+        // staging into another sector's would judge these systems against the positions that
+        // one last saw under the same ids.
         sector.addTransientScript(
-            new MapLayerSectorWatcher(new PoliticalMapStalenessSource()));
+            new MapLayerSectorWatcher(
+                new PoliticalMapStalenessSource(
+                    MapLayerInstallations.resolveInstallationFor(sector))));
     }
 }

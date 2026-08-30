@@ -9,7 +9,6 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
-import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -106,7 +105,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     private MockedStatic<MapVisibilityRules> visibilityRulesMock;
 
     @BeforeEach
-    void openSeamsAndClearInheritedMotionObservations() {
+    void openSeams() {
 
         globalMock = openSeam(Global.class);
         globalMock
@@ -157,20 +156,13 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             .when(NameFormatPreference::getSelectedNameFormat)
             .thenReturn(FactionNameFormatChoice.NONE);
 
-        // The tracker is one instance for the process, so a suite driving it for real inherits
-        // whatever ran before it and leaves its own behind. reset() is what a save load calls for
-        // the same reason.
-        MovingSystems.getInstance().reset();
-
         // The stale set is static and shared, so a residue from another suite would read here as a
         // system this one never marked.
         MapLayerRefresh.drainStaleGroupingSystemIds();
     }
 
     @AfterEach
-    void closeSeamsAndClearMotionObservationsLeftBehind() {
-
-        MovingSystems.getInstance().reset();
+    void closeSeams() {
 
         for (var index = openStaticSeams.size() - 1; index >= 0; index--) {
             openStaticSeams.get(index).close();

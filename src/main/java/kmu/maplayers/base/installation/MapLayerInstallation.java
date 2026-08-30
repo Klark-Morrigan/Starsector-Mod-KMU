@@ -1,6 +1,7 @@
 package kmu.maplayers.base.installation;
 
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
+import kmu.maplayers.base.refresh.MovingSystems;
 
 /**
  * One sector's installed map machinery: what the map layers derive from that sector and remember
@@ -22,6 +23,12 @@ public final class MapLayerInstallation {
     // holder, because a caller can still be holding a reference the index has already let go of: a
     // resolution taken at the top of a frame outlives a removal that happens during it.
     private boolean isDisposed;
+
+    // Which of this sector's systems are drifting rather than sitting still, so the geometry can
+    // leave them out of the partition. Made and released with the installation, which is what
+    // keeps a system id this sector reuses from being measured against the position the sector
+    // before it last saw that id at.
+    private final MovingSystems movingSystems = new MovingSystems();
 
     // What went stale in this sector since each consumer last looked. Made with the installation
     // and released with it, which is what leaves a sector's staleness starting from nothing rather
@@ -45,6 +52,15 @@ public final class MapLayerInstallation {
      */
     public boolean isDisposed() {
         return isDisposed;
+    }
+
+    /**
+     * @return the tracker this sector's poll observes hyperspace positions into and its geometry
+     *         reads the movers out of, so a system's drift is judged against where this sector
+     *         last saw it rather than against another sector's system of the same id
+     */
+    public MovingSystems resolveMovingSystems() {
+        return movingSystems;
     }
 
     /**

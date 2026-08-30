@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.colonies.Colonies;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
@@ -275,9 +276,10 @@ final class PoliticalMapStalenessSourceTest {
     // so its counters and stale set record the requests. The stale set is drained first to
     // isolate this run from earlier tests' marks.
     //
-    // The shared moving tracker is always stubbed to a mock instance rather than driven with
-    // real positions, so every run reports its moving set explicitly and none of them depends
-    // on the motion-detection math.
+    // The motion tracker is always stubbed to a mock rather than driven with real positions, so
+    // every run reports its moving set explicitly and none of them depends on the motion-detection
+    // math. It is reached through the installation the source is built against, which is the one
+    // collaborator this suite hands the source.
     private static RefreshOutcome pollThenReadRefreshOutcome(PollInputs inputs, int pollCount) {
 
         // Wired before the static stubbing opens, so Mockito sees no stubbing nested inside
@@ -287,8 +289,7 @@ final class PoliticalMapStalenessSourceTest {
         try (var globalMock = mockStatic(Global.class);
                 var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
                 var snapshotMock = mockStatic(PoliticalMapSectorSnapshot.class);
-                var alliancesMock = mockStatic(NexerelinAlliances.class);
-                var movingStaticMock = mockStatic(MovingSystems.class)) {
+                var alliancesMock = mockStatic(NexerelinAlliances.class)) {
 
             globalMock
                 .when(Global::getSector)
@@ -318,11 +319,12 @@ final class PoliticalMapStalenessSourceTest {
             when(movingSystemsMock.updateMovingSystems(any(MapVisibilityPass.class)))
                 .thenReturn(false, inputs.hasMovingSetChangedOnSecondPoll());
 
-            movingStaticMock
-                .when(MovingSystems::getInstance)
+            var installationMock = mock(MapLayerInstallation.class);
+
+            when(installationMock.resolveMovingSystems())
                 .thenReturn(movingSystemsMock);
 
-            return runPollsAndReadOutcome(pollCount);
+            return runPollsAndReadOutcome(installationMock, pollCount);
         }
     }
 
@@ -331,13 +333,15 @@ final class PoliticalMapStalenessSourceTest {
     // marked politics-stale. Split from the stubbing so the try-with-resources block above
     // reads as configuration alone; the counters are read as deltas so a run is isolated from
     // earlier tests' bumps.
-    private static RefreshOutcome runPollsAndReadOutcome(int pollCount) {
+    private static RefreshOutcome runPollsAndReadOutcome(
+            MapLayerInstallation installation,
+            int pollCount) {
 
         MapLayerRefresh.drainStaleGroupingSystemIds();
 
         var geometryBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY);
         var allianceBefore = MapLayerRefresh.getRevision(PoliticalMapRefreshSignal.ALLIANCES);
-        var stalenessSource = new PoliticalMapStalenessSource();
+        var stalenessSource = new PoliticalMapStalenessSource(installation);
 
         for (var poll = 0; poll < pollCount; poll++) {
             stalenessSource.markChangesSinceLastPoll();
