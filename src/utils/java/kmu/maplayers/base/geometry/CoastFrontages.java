@@ -31,6 +31,112 @@ public final class CoastFrontages {
 
     private CoastFrontages() {
     }
+
+    /**
+     * Which of a construction's two coastlines a frontage is read off.
+     *
+     * <p>The same line seen from opposite sides: an exterior shore has the void outside it and
+     * the cells within, an interior one has the water within and the cells around. So the same
+     * question is asked of both - where may a wall be anchored - and both answer it the same
+     * way, which is why one walk serves them and the difference is only which rings it is
+     * offered.
+     *
+     * <p>Named rather than left as a choice of method, because what is anchored on which shore
+     * is a decision a caller makes and then has to keep: a search handed one construction's
+     * frontages and another's coast would compile and describe a map nobody drew. Asking the
+     * shore for them off a trace makes the pair impossible to get wrong.
+     */
+    public enum Shore {
+
+        /** The outer coastlines, whose spans cross the void between and around continents. */
+        EXTERIOR {
+            @Override
+            public Map<Integer, List<List<double[]>>> collectFrontages(
+                    Coastlines.TracedCoasts traced) {
+
+                return collectBridgeFrontages(traced);
+            }
+
+            @Override
+            public double resolveOfferDistance(double reach, double cellRadius) {
+                return reach;
+            }
+
+            @Override
+            public boolean isSpanWithinReach(CellGap span, double reach) {
+                return true;
+            }
+        },
+
+        /** The lake shores, whose spans cross water the cells closed around unaided. */
+        INTERIOR {
+            @Override
+            public Map<Integer, List<List<double[]>>> collectFrontages(
+                    Coastlines.TracedCoasts traced) {
+
+                return collectLakeFrontages(traced);
+            }
+
+            @Override
+            public double resolveOfferDistance(double reach, double cellRadius) {
+
+                // A span's ends sit on the cells' rims, so its width undershoots the centre
+                // distance by up to a diameter - which is exactly how far the offer has to be
+                // loosened for the width gate below to see every span it should judge.
+                return reach + CELL_DIAMETERS_OF_SLACK * cellRadius;
+            }
+
+            @Override
+            public boolean isSpanWithinReach(CellGap span, double reach) {
+                return span.width() <= reach;
+            }
+        };
+
+        // How much a cell's own body adds to the centre distance of a pair whose shores touch:
+        // one radius each side.
+        private static final double CELL_DIAMETERS_OF_SLACK = 2;
+
+        /**
+         * Every stretch of this shore a wall may be anchored on, by cell.
+         *
+         * @param traced the coast to read them off
+         * @return each cell's own stretches, in walk order; a cell no line of this shore runs
+         *         along is absent
+         */
+        public abstract Map<Integer, List<List<double[]>>> collectFrontages(
+                Coastlines.TracedCoasts traced);
+
+        /**
+         * How far apart two cells may sit, centre to centre, and still have a span offered.
+         *
+         * <p>The exterior shore answers with the reach itself: its water is unbounded, so how
+         * far apart the cells sit is the only measure of separation there is, and that is the
+         * settled meaning of the knob. The interior shore loosens the offer by a cell's
+         * diameter and gates the span itself instead, because its water is bounded and it is
+         * the WATER that is bridged: two cells facing each other across a wide lake have near
+         * shores and far centres, and gated at the centres they are never offered at all.
+         *
+         * @param reach      the reach the knob asks for, in map units
+         * @param cellRadius one cell's radius
+         * @return the centre distance within which a pair is worth offering
+         */
+        public abstract double resolveOfferDistance(double reach, double cellRadius);
+
+        /**
+         * Whether a span found between two offered cells crosses no more water than the reach
+         * allows.
+         *
+         * <p>The second half of the offer gate: where {@link #resolveOfferDistance} loosened
+         * the centre distance, this is what holds the reach's actual meaning - always true on
+         * the exterior shore, whose gate was the centre distance itself.
+         *
+         * @param span  the span, at its chosen anchors
+         * @param reach the reach the knob asks for, in map units
+         * @return whether it is within reach
+         */
+        public abstract boolean isSpanWithinReach(CellGap span, double reach);
+    }
+
     /**
      * Every point the traced coastline passes through on a cell, gathered by the cell.
      *
@@ -66,10 +172,6 @@ public final class CoastFrontages {
     /**
      * The same question asked of the lake shores: every point an interior coastline passes
      * through on a cell, gathered by the cell.
-     *
-     * <p>Eligibility only, for now. The bridge search still anchors on exterior coasts alone,
-     * so what these frontages say is where a span COULD start once lakes learn bridges - and
-     * drawing that is how whether they should is decided.
      *
      * @param traced the coast
      * @return each cell's own stretch of drawn lake shore, in walk order; a cell no shore

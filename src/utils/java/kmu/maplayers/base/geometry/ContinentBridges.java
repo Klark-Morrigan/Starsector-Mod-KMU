@@ -6,8 +6,10 @@ import kmlib.math.geometry.Segments;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiPredicate;
 
 /**
@@ -19,6 +21,15 @@ import java.util.function.BiPredicate;
  * behind, so wherever the outline turns inward it must follow. This pass captures those turns:
  * a span laid across the mouth of an inlet takes the inlet's water inside the continent, and
  * the shape rounds up again.
+ *
+ * <p><b>Which is a statement about a coastline, not about the outside of one.</b> The lake
+ * shores are coastlines of this construction as much as the outer ones are - the same line seen
+ * from the water's side - and water reaching into a continent is water reaching into it whether
+ * the line around it closes outward or inward. So the same pass lays both sets, and what tells
+ * them apart is which shore they were anchored on and the two questions that follow from it:
+ * which pairs are worth offering - one outline's cells outside, one lake's ring inside - and
+ * how the reach is measured. The judging after the offer is blind to the difference, since
+ * both shores are walls a span is weighed against either way.
  *
  * <p><b>So a span joins two cells of ONE continent.</b> Its two ends are corners of the same
  * outline, and the water it closes off is water that outline currently reaches into. A span
@@ -81,8 +92,11 @@ public final class ContinentBridges {
     /**
      * The knobs a set of spans is laid under.
      *
-     * @param reachMultiple      how far apart two cells may sit and still be bridged, in cell
-     *                           radii
+     * @param reachMultiple      how much water a span may cross and still be laid, in cell
+     *                           radii. On the exterior shore it is read as how far apart the
+     *                           two cells may sit, which across open void is the same claim
+     *                           made of the centres; on the interior it caps the span itself,
+     *                           since a lake's shores can face each other from far centres
      * @param coastSlack         how far off an existing wall a span may run and still count as
      *                           running along it, in map units
      * @param shouldThinFormations whether spans sharing an anchor are thinned once the laying
@@ -97,27 +111,37 @@ public final class ContinentBridges {
     }
 
     /**
-     * Lays a span between every pair of cells near enough to hold void between them, anchored
-     * at the corners where their coastlines stop hugging them.
+     * Lays a span between every pair of cells near enough to hold water between them, anchored
+     * where the named shore runs along each.
      *
      * @param traced     the continent coasts, as they were traced without bridges
+     * @param shore      which of the two coastlines the spans are anchored on, which is the
+     *                   whole of what tells one set from the other
      * @param parameters the knobs the cells are built under
      * @param rules      the reach to offer bridges at
      * @return the spans, shortest first
      */
     public static List<CellGap> findAnchoredBridges(
             Coastlines.TracedCoasts traced,
+            CoastFrontages.Shore shore,
             SectorGeometryParameters parameters,
             BridgeRules rules) {
 
-        var frontages = CoastFrontages.gatherFrontagePoints(
-            CoastFrontages.collectBridgeFrontages(traced));
+        var frontages = CoastFrontages.gatherFrontagePoints(shore.collectFrontages(traced));
 
         if (frontages.size() < 2) {
             return List.of();
         }
 
-        var continentOf = mapCellsToContinents(traced);
+        // Which pairs may be bridged at all is the shore's question, answered before the loop
+        // so the loop asks it of a settled rule. The exterior asks "one outline?" - a span
+        // tidies one continent's shape, and the silhouettes name that continent's cells. The
+        // interior asks "one water?" - a lake bridge crosses one lake, and the lake's own ring
+        // names its cells. The silhouettes CANNOT answer for the interior: they name only the
+        // cells the outer walk touched, and a cell can ring a lake without ever touching the
+        // outer coast - so on the silhouettes such a cell is on no continent at all, and every
+        // span it could host is refused before anything else looks at it.
+        var isPairBridgeable = resolvePairGate(shore, traced);
         var union = traced.union();
         var sites = union.sites();
 
@@ -135,6 +159,12 @@ public final class ContinentBridges {
         // them the same way.
         var coastWalls = WallCoverage.collectRingWalls(collectTracedRings(traced));
         var reach = parameters.cellRadius() * rules.reachMultiple();
+
+        // The shore's own reading of the reach: centre to centre on the exterior, where the
+        // water is unbounded and the centres are the only measure of separation - and by the
+        // water a span actually crosses on the interior, where two cells across a wide lake
+        // have near shores and far centres, so the centre gate alone never offers them.
+        var offerDistance = shore.resolveOfferDistance(reach, parameters.cellRadius());
         var laid = new ArrayList<CellGap>();
 
         // Every pair of cells on ONE continent, once. Nothing is refused here for crossing
@@ -144,8 +174,9 @@ public final class ContinentBridges {
             for (var to : frontages.keySet()) {
 
                 if (from >= to
-                        || !isOneContinent(continentOf, from, to)
-                        || Points.computeDistance(sites.get(from), sites.get(to)) > reach) {
+                        || !isPairBridgeable.test(from, to)
+                        || Points.computeDistance(sites.get(from), sites.get(to))
+                            > offerDistance) {
 
                     continue;
                 }
@@ -157,7 +188,7 @@ public final class ContinentBridges {
                     frontages.get(to),
                     union);
 
-                if (span != null) {
+                if (span != null && shore.isSpanWithinReach(span, reach)) {
                     laid.add(span);
                 }
             }
@@ -196,6 +227,64 @@ public final class ContinentBridges {
         return rings;
     }
 
+    // The shore's own answer to which pairs are worth offering a span, built once so the offer
+    // loop asks a settled rule. Chosen here rather than put on the shore itself, because what a
+    // continent is and what a lake's ring is are this construction's readings of the trace -
+    // the shore only names which of the two questions applies.
+    private static BiPredicate<Integer, Integer> resolvePairGate(
+            CoastFrontages.Shore shore,
+            Coastlines.TracedCoasts traced) {
+
+        if (shore == CoastFrontages.Shore.INTERIOR) {
+
+            var lakesOf = mapCellsToLakes(traced);
+
+            return (from, to) -> isSharingALake(lakesOf, from, to);
+        }
+
+        var continentOf = mapCellsToContinents(traced);
+
+        return (from, to) -> isOneContinent(continentOf, from, to);
+    }
+
+    // Which lakes each cell rings, off the lakes' own rings. A set per cell, because a cell
+    // between two lakes rings both and may be bridged over either.
+    private static Map<Integer, Set<Integer>> mapCellsToLakes(Coastlines.TracedCoasts traced) {
+
+        var lakesOf = new LinkedHashMap<Integer, Set<Integer>>();
+
+        for (var lake = 0; lake < traced.lakes().size(); lake++) {
+            for (var cell : traced.lakes().get(lake).ringCells()) {
+
+                lakesOf.computeIfAbsent(cell, key -> new LinkedHashSet<>()).add(lake);
+            }
+        }
+        return lakesOf;
+    }
+
+    // Whether two cells ring one lake, which is what makes a span between them a bridge over
+    // that lake rather than a line across whatever land or foreign water lies between.
+    private static boolean isSharingALake(
+            Map<Integer, Set<Integer>> lakesOf,
+            int from,
+            int to) {
+
+        var one = lakesOf.get(from);
+        var other = lakesOf.get(to);
+
+        if (one == null || other == null) {
+            return false;
+        }
+
+        for (var lake : one) {
+
+            if (other.contains(lake)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Which continent each cell belongs to.
      *
@@ -205,9 +294,9 @@ public final class ContinentBridges {
      * second answer, and the two constructions on screen would stop describing one map.
      *
      * @param traced the coast
-     * @return the continent each cell sits on, by cell. A cell facing no void is absent rather
-     *         than present under some sentinel, since "on no continent" and "on continent
-     *         number x" are not answers to one question and a caller has to tell them apart
+     * @return the continent each cell sits on, by cell. A cell the outer walk never touched is
+     *         absent rather than present under some sentinel - which includes every cell that
+     *         faces only a lake, and is why the interior shore never asks this question
      */
     private static Map<Integer, Integer> mapCellsToContinents(Coastlines.TracedCoasts traced) {
 
@@ -332,6 +421,12 @@ public final class ContinentBridges {
      * already kept leaves the tighter claim standing and costs one loss per crossing. What
      * that leaves is a tree - at most one route between any two places - which is what the
      * settled bridges do.
+     *
+     * <p>Refused on both shores alike. Letting them cross over water the cells already ring
+     * looks like it should buy subdivision, since every span across such water closes a loop -
+     * but the boundary walk gives a cell's mouth to one wall only, so the extra spans crowd
+     * each other out of their anchors and fewer of them are attached than before. Measured on
+     * both fixtures it costs pockets rather than winning them.
      *
      * @param spans      the spans, already sorted shortest first
      * @param coastWalls the coastline, which is walled before any span is laid

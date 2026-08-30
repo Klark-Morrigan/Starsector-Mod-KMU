@@ -66,6 +66,12 @@ public final class ContinentCoastOverlay {
     // cells", and the fill is what a run of them closes around.
     private List<CellGap> inletSpans = List.of();
 
+    // The same search anchored on the interior coastlines instead, so these cross water the
+    // cells closed around unaided. Held apart from the inlet spans rather than gathered with
+    // them because each is drawn under its own switch, and which shore a span was anchored on
+    // is the whole of what tells the two sets apart.
+    private List<CellGap> lakeSpans = List.of();
+
     // The spans laid across the puddles, held beside the trace whose puddles claimed them
     // for the same reason.
     private List<CellGap> puddleBridges = List.of();
@@ -114,6 +120,7 @@ public final class ContinentCoastOverlay {
         coast.acceptTrace(null);
         inletSpans = List.of();
         inletPockets = List.of();
+        lakeSpans = List.of();
         puddleBridges = List.of();
         frontages = List.of();
 
@@ -135,6 +142,19 @@ public final class ContinentCoastOverlay {
             settings.resolveContinentCoastRules()));
 
         findInletWater(fixture);
+
+        // The same search over the other shore. Its own call rather than a second set gathered
+        // by the one above, because the two are laid independently: a formation is thinned
+        // among the spans it shares an anchor with, and a span across a lake shares no anchor
+        // with one across the void outside the continent.
+        if (settings.showContinentLakeBridges) {
+
+            lakeSpans = ContinentBridges.findAnchoredBridges(
+                coast.getTrace(),
+                CoastFrontages.Shore.INTERIOR,
+                settings.parameters,
+                settings.resolveContinentBridgeRules());
+        }
 
         // The void behind the coast, worked out by the same construction the settled coast's
         // fill comes from. Not a second way of arriving at the same thing: a coast reach is a
@@ -309,6 +329,7 @@ public final class ContinentCoastOverlay {
 
         inletSpans = ContinentBridges.findAnchoredBridges(
             coast.getTrace(),
+            CoastFrontages.Shore.EXTERIOR,
             settings.parameters,
             settings.resolveContinentBridgeRules());
 
@@ -335,11 +356,11 @@ public final class ContinentCoastOverlay {
 
         if (settings.showContinentCoastFrontages) {
             eligible.addAll(flattenFrontages(
-                CoastFrontages.collectBridgeFrontages(coast.getTrace())));
+                CoastFrontages.Shore.EXTERIOR.collectFrontages(coast.getTrace())));
         }
         if (settings.showContinentLakeFrontages) {
             eligible.addAll(flattenFrontages(
-                CoastFrontages.collectLakeFrontages(coast.getTrace())));
+                CoastFrontages.Shore.INTERIOR.collectFrontages(coast.getTrace())));
         }
         return List.copyOf(eligible);
     }
@@ -365,7 +386,10 @@ public final class ContinentCoastOverlay {
      */
     private void paintBridges(Graphics2D g2) {
 
-        if (!settings.showContinentBridges && !settings.showContinentPuddleBridges) {
+        if (!settings.showContinentBridges
+                && !settings.showContinentLakeBridges
+                && !settings.showContinentPuddleBridges) {
+
             return;
         }
 
@@ -374,24 +398,30 @@ public final class ContinentCoastOverlay {
             settings.continentBridgeColour,
             MapLook.OPAQUE_ALPHA));
 
-        // The puddle spans in the same stroke and colour, because they are the same kind of
-        // claim - "this much void is held between these cells" - told apart by the water each
-        // sits over.
+        // All three sets in the same stroke and colour, because they are the same kind of
+        // claim - "this much water is held between these cells" - told apart by the water each
+        // sits over rather than by how it is drawn.
         //
         // Each list under its own switch rather than on whether it is empty: the inlet spans
         // are found for the fill as well as for themselves, so a set that exists is not a set
         // that was asked to be seen.
         if (settings.showContinentBridges) {
-            for (var span : inletSpans) {
-
-                g2.draw(MapPainting.buildSpanLine(span));
-            }
+            paintSpans(g2, inletSpans);
+        }
+        if (settings.showContinentLakeBridges) {
+            paintSpans(g2, lakeSpans);
         }
         if (settings.showContinentPuddleBridges) {
-            for (var span : puddleBridges) {
+            paintSpans(g2, puddleBridges);
+        }
+    }
 
-                g2.draw(MapPainting.buildSpanLine(span));
-            }
+    // One set of spans at whatever stroke and colour are already set, so the three read as one
+    // kind of mark - which they are.
+    private static void paintSpans(Graphics2D g2, List<CellGap> spans) {
+
+        for (var span : spans) {
+            g2.draw(MapPainting.buildSpanLine(span));
         }
     }
 }

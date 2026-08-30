@@ -266,10 +266,15 @@ public final class Coastlines {
      *                  What the fill runs against - the lake's margin is the water between
      *                  the drawn shore and this edge, and the open water inside the shore is
      *                  left to the backdrop the way the open void outside the sector is
+     * @param ringCells the cells whose borders close the water in, as a puddle carries its
+     *                  own. What anything laid ACROSS the lake is laid between - and the one
+     *                  honest source for it, since a cell can ring a lake without ever
+     *                  touching the outer coast, and such a cell appears nowhere else at all
      */
     public record Lake(
         Coast shore,
-        List<double[]> waterEdge) {
+        List<double[]> waterEdge,
+        Set<Integer> ringCells) {
     }
 
     /**
@@ -507,7 +512,9 @@ public final class Coastlines {
 
             if (!one.outline().isEmpty()) {
                 lakes.add(new Lake(
-                    buildCoast(one.outline(), rules.rounding()), waterEdge));
+                    buildCoast(one.outline(), rules.rounding()),
+                    waterEdge,
+                    collectRingCells(run)));
             }
         }
         return new TracedLakes(

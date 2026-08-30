@@ -78,6 +78,7 @@ public final class ViewerSettingsPanel {
     private static final String CONTINENT_FRONTAGES = "showContinentCoastFrontages";
     private static final String CONTINENT_BRIDGES = "showContinentBridges";
     private static final String INLET_FILL = "showContinentInletFill";
+    private static final String LAKE_BRIDGES = "showContinentLakeBridges";
 
     // What each section remembers its switch and its folded state under. Named for the
     // construction rather than taken from the heading, which is copy and gets reworded.
@@ -742,7 +743,7 @@ public final class ViewerSettingsPanel {
     // What there is to see of the continent construction, in the order water gets smaller:
     // puddle pockets, then the two symmetric shores - interior and exterior, with the same
     // three switches each, because the two are the same kind of line seen from opposite
-    // sides - then the inlet bridges and the water they hold.
+    // sides - then the spans laid over each of those shores, in the same order.
     //
     // The flat roll-ups after them cut across the branches on purpose, the way v2's do: they
     // answer questions about a KIND OF THING rather than about a branch - "every wall",
@@ -762,6 +763,7 @@ public final class ViewerSettingsPanel {
             PUDDLE_BRIDGES, PUDDLE_FILL,
             LAKE_COASTLINE, LAKE_FILL, LAKE_FRONTAGES,
             CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES,
+            LAKE_BRIDGES,
             CONTINENT_BRIDGES, INLET_FILL));
 
         rows.addAll(buildContinentBranchRows());
@@ -808,6 +810,10 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 CONTINENT_FRONTAGES, "Bridgeable frontage", false,
                 on -> settings.showContinentCoastFrontages = on)),
+            ToggleTree.Row.ofRollUp(1, "Lake bridges", LAKE_BRIDGES),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                LAKE_BRIDGES, "Bridges", false,
+                on -> settings.showContinentLakeBridges = on)),
             ToggleTree.Row.ofRollUp(
                 1, "Inlet bridges", CONTINENT_BRIDGES, INLET_FILL),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
@@ -827,11 +833,13 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofRollUp(
                 1,
                 "Walls",
-                LAKE_COASTLINE, CONTINENT_COASTLINE, CONTINENT_BRIDGES, PUDDLE_BRIDGES),
+                LAKE_COASTLINE, CONTINENT_COASTLINE,
+                LAKE_BRIDGES, CONTINENT_BRIDGES, PUDDLE_BRIDGES),
             ToggleTree.Row.ofRollUp(1, "Coastline", LAKE_COASTLINE, CONTINENT_COASTLINE),
             ToggleTree.Row.ofRollUp(
                 1, "Bridgeable frontage", LAKE_FRONTAGES, CONTINENT_FRONTAGES),
-            ToggleTree.Row.ofRollUp(1, "Bridges", PUDDLE_BRIDGES, CONTINENT_BRIDGES),
+            ToggleTree.Row.ofRollUp(
+                1, "Bridges", PUDDLE_BRIDGES, LAKE_BRIDGES, CONTINENT_BRIDGES),
             ToggleTree.Row.ofRollUp(
                 1, "Fill", LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL, INLET_FILL));
     }

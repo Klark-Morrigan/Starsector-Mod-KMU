@@ -210,9 +210,6 @@ public final class ViewerSettings {
     // actually runs along, so one that looks as though it ignored a nearer cell has usually
     // been offered nowhere nearer to anchor - which is invisible until the eligible stretches
     // are on screen beside the spans that used them.
-    //
-    // The lake shores' are eligibility alone for now: the bridge search anchors on the outer
-    // shores only, so what they show is where a span could start once lakes learn bridges.
 
     // The bridges v3 would lay once its coastlines are down - the same search the settled map
     // uses, offered the same cells, so the only difference between the two sets is which spans
@@ -230,6 +227,16 @@ public final class ViewerSettings {
     // exactly as water one of them holds.
     public boolean showContinentBridges;
     public boolean showContinentInletFill;
+
+    // The same spans laid over the interior coastlines instead - across water the cells closed
+    // around unaided rather than across the void between continents. One search over two shores
+    // rather than two searches, so the only difference between the sets is where they were
+    // allowed to anchor.
+    //
+    // Its own switch and not the lake shore's, because a shoreline and a span across the water
+    // it bounds are two proposals: whether to draw a lake at all is one question, and whether
+    // to take its water back into the continent is another.
+    public boolean showContinentLakeBridges;
 
     // Every stretch of frontage the smoothing chose not to pass through, on whichever coasts
     // are being drawn. One switch rather than one per coast: it shows a DECISION rather than a
@@ -371,7 +378,8 @@ public final class ViewerSettings {
                 || showContinentCoastFill
                 || showContinentCoastFrontages
                 || showContinentBridges
-                || showContinentInletFill);
+                || showContinentInletFill
+                || showContinentLakeBridges);
     }
 
     // How the coast is traced, for the same reason. More than one overlay walks the cells with
