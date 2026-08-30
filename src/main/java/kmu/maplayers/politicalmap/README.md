@@ -486,18 +486,19 @@ bound to the hovered sector's own relations.
 Two axes place a faction into those blocks, and how it stands to the claim holder is the outer one:
 `Allied with the claim holder:` takes everyone standing with the holder by alliance and
 `Friendly with the claim holder:` everyone else above `RepLevel.NEUTRAL` with it, both whatever
-their eligibility, and the two eligibility blocks divide what neither took. Alliance stays outside
-disposition, so an ally is never re-sorted by how warmly it is disposed. Where a relation heading
+their eligibility, and the two eligibility blocks divide what neither took. Where a relation heading
 leaves the box unable to say which kind a line is, the line says it (`non-territorial`) - one rule
-over both blocks rather than one per block. The claims layer pins the identity grouping, so a
-standing here is always a lone faction and the bloc-level friendliness rule degenerates to the single
-pair it is composed of: nothing dissolves on this layer, where the domination box breaks up a bloc
-its members disagree about. Nor does the placeholder owner need a block of its own here - it is never
-admitted to the claim mechanic, so `Non-territorial:` is already the true statement about it. Why the
-relations outrank eligibility, why disposition sorts inside alliance, and why an install without
-Nexerelin needs no branch are all `SystemClaimContestTooltip`'s to state. It is also where the
-layer's heading is declined for both of them: the claim line names the decreed holder and marks the
-hold, so these are the two boxes that state the decree themselves.
+over both blocks rather than one per block. Why the relations outrank eligibility, why disposition
+sorts inside alliance, and why an install without Nexerelin needs no branch are all
+`SystemClaimContestTooltip`'s to state. It is also where the layer's heading is declined for both of
+them: the claim line names the decreed holder and marks the hold, so these are the two boxes that
+state the decree themselves.
+
+Two blocks the domination box has do not appear here, and both absences are the claims layer pinning
+the identity grouping. A standing is always a lone faction, so no bloc can be of two minds and
+nothing dissolves into its members. And the placeholder owner is never admitted to the claim
+mechanic, so it arrives ineligible and `Non-territorial:` is already the true statement about it -
+where the fills, resolved per bloc and per candidate, needed `Non-political:` to say as much.
 
 `ClaimScoreRowResolver` decides those lines: the faction's markets in the order the mechanic itself
 would settle them - strongest first, a tie falling to the earlier place in the economy's listing -

@@ -188,10 +188,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         return new StandingBlockRules(
             BlocCandidacy.createForGrouping(paintingGrouping),
             new BlocAffiliation(holderGroupingSource.resolveGrouping()),
-            new BlocFriendliness((factionId, otherFactionId) ->
-                StarsectorFactionRelations.isDispositionAboveNeutral(
-                    sector.getFaction(factionId),
-                    otherFactionId)),
+            new BlocFriendliness(StarsectorFactionRelations.createDispositionReader(sector)),
             paintingGrouping::resolveMemberFactionIds);
     }
 

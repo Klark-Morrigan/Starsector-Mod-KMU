@@ -300,10 +300,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             claimBreakdownReader.readBreakdown(system),
             readColonyVisibility(),
             new BlocAffiliation(holderGroupingSource.resolveGrouping()),
-            new BlocFriendliness((factionId, otherFactionId) ->
-                StarsectorFactionRelations.isDispositionAboveNeutral(
-                    sector.getFaction(factionId),
-                    otherFactionId)));
+            new BlocFriendliness(StarsectorFactionRelations.createDispositionReader(sector)));
     }
 
     // What the claim block lists: the one line naming whoever holds the system, and nothing at all
@@ -563,7 +560,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
          * The standings shown under the allied block: everyone present who stands with the claim
          * holder, of either eligibility.
          *
-         * <p>Both kinds, because the heading states a relation and the relation is true of an
+         * <p>Both kinds, because the heading states an alliance and the alliance is true of an
          * ineligible ally exactly as it is of a rival that nearly took the system. Which of the two
          * a line is stays sayable on the line itself, so nothing is lost by not splitting them.
          */

@@ -89,6 +89,10 @@ final class SystemClaimTooltipTest {
     private static final String TRITACHYON = "tritachyon";
     private static final String PIRATES = "pirates";
 
+    // A fifth faction, stubbed only by the case that needs all five blocks filled at once - every
+    // other case here poses two of them and the three above cover it.
+    private static final String LUDDIC_CHURCH = "luddic_church";
+
     private static final String HEGEMONY_CREST = "graphics/hegemony_crest.png";
 
     // What a remarked line would run on into, spelled out so the case reads as the words a player
@@ -530,6 +534,45 @@ final class SystemClaimTooltipTest {
                     "Pirates");
             assertThat(readLabelRun(readTableRow(sections, friendlyEntryRow), QUALIFIER_RUN))
                 .isEqualTo(new TextSpan("non-territorial", HIGHLIGHT));
+        }
+
+        @Test
+        void buildBodySectionsLaysTheFiveBlocksDownFromTheClaimOutward() {
+            // The whole chain in one system, in the order a reader meets it: who holds the place, who
+            // stands with it by alliance, who stands with it in disposition, who stands against it,
+            // and who could never have taken it. Every other case here poses one block at a time, so
+            // a routing that drew the friendly block after the contested one - or filed a faction two
+            // blocks from where it belongs - would pass all of them and fail this.
+            holderGrouping = buildAllianceOf(HEGEMONY, TRITACHYON);
+
+            stubFaction(sectorMock, LUDDIC_CHURCH, "The Luddic Church", null);
+            stubDispositionToward(sectorMock, LUDDIC_CHURCH, HEGEMONY, RepLevel.FAVORABLE);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(LUDDIC_CHURCH, RIVAL_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(
+                        Factions.NEUTRAL,
+                        OUTSIDER_SCORE,
+                        IS_NON_TERRITORIAL))));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Allied with the claim holder:",
+                    "Tri-Tachyon",
+                    "Friendly with the claim holder:",
+                    "The Luddic Church",
+                    "Contested by:",
+                    "Pirates",
+                    "Non-territorial:",
+                    "Neutral");
         }
 
         @Test
