@@ -212,7 +212,7 @@ public final class MapHoverPublisher {
     // that pixel was mapped through, and those are only diagnosable together with what came out.
     //
     // Described from the reading the announced cell came from, not from a fresh one, and not from
-    // whatever the shared holder happens to say. A second read can capture a different transform -
+    // whatever the sector's holder happens to say. A second read can capture a different transform -
     // it is taken live, and a frame can hold more than one map pass - so a line built that way would
     // account for a hover that never happened, and would do it most convincingly on exactly the
     // frames worth diagnosing.

@@ -15,8 +15,9 @@ import kmu.maplayers.base.refresh.MovingSystems;
  * other cut rather than overwriting them.
  *
  * <p>What this type settles is the lifetime: one installation per sector, made and released by
- * {@link MapLayerInstallations}. Every holder it gathers is emptied by that one release, so a holder
- * needs no discard of its own and no way to be told which sector it is now looking at.
+ * {@link MapLayerInstallations}. Every holder below is made with the installation and goes with it,
+ * so each needs no discard of its own and no way to be told which sector it is now looking at - and
+ * a sector begins from nothing rather than from what the sector before it left.
  */
 public final class MapLayerInstallation {
 
@@ -26,20 +27,14 @@ public final class MapLayerInstallation {
     private boolean isDisposed;
 
     // What the cursor is over on this sector's map, carried from the render pass that can resolve
-    // it to the highlight and the box that report it. Made and released with the installation,
-    // which is what keeps a cursor read on one sector's map from lighting a cell on another's -
-    // the hover names its system by bare id - and leaves a sector starting with nothing hovered.
+    // it to the highlight and the box that report it.
     private final MapHoverState hoverState = new MapHoverState();
 
     // Where this sector's systems were last seen, and so which of them are drifting rather than
-    // sitting still. Made with the installation and released with it, which is what leaves a
-    // sector's tracking starting from nothing rather than from the positions the sector before it
-    // saw.
+    // sitting still.
     private final MovingSystems movingSystems = new MovingSystems();
 
-    // What went stale in this sector since each consumer last looked. Made with the installation
-    // and released with it, which is what leaves a sector's staleness starting from nothing rather
-    // than from whatever the sector before it left marked.
+    // What went stale in this sector since each consumer last looked.
     private final MapLayerRefreshBoard refreshBoard = new MapLayerRefreshBoard();
 
     /**

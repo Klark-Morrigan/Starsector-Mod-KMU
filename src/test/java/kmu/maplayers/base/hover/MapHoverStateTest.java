@@ -25,8 +25,9 @@ import static org.mockito.Mockito.mockStatic;
  * frame that resolved one keeps it, and a frame with no map pass at all - the state every other
  * park is unreachable in, no pass being run to write one - lets it go.
  *
- * <p>Each case builds its own holder rather than resolving one through an installation, so a
- * published hover cannot reach another case.
+ * <p>Every case about the holder itself builds one, so a published hover cannot reach another case.
+ * Only the case about the live-sector resolution installs anything, and it takes that installation
+ * back.
  */
 final class MapHoverStateTest {
 
