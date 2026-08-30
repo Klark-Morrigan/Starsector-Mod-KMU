@@ -24,10 +24,10 @@ public final class MapLayerInstallation {
     // resolution taken at the top of a frame outlives a removal that happens during it.
     private boolean isDisposed;
 
-    // Which of this sector's systems are drifting rather than sitting still, so the geometry can
-    // leave them out of the partition. Made and released with the installation, which is what
-    // keeps a system id this sector reuses from being measured against the position the sector
-    // before it last saw that id at.
+    // Where this sector's systems were last seen, and so which of them are drifting rather than
+    // sitting still. Made with the installation and released with it, which is what leaves a
+    // sector's tracking starting from nothing rather than from the positions the sector before it
+    // saw.
     private final MovingSystems movingSystems = new MovingSystems();
 
     // What went stale in this sector since each consumer last looked. Made with the installation
@@ -56,8 +56,8 @@ public final class MapLayerInstallation {
 
     /**
      * @return the tracker this sector's poll observes hyperspace positions into and its geometry
-     *         reads the movers out of, so a system's drift is judged against where this sector
-     *         last saw it rather than against another sector's system of the same id
+     *         reads the movers out of, so a system in one sector cannot be judged to have drifted
+     *         by what another sector saw
      */
     public MovingSystems resolveMovingSystems() {
         return movingSystems;

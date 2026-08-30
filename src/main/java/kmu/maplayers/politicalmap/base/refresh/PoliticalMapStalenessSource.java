@@ -62,17 +62,13 @@ import java.util.Map;
  * <p>A poll is a pass, and is read as one: every passenger is handed the same reading of the
  * sector rather than a sector it could walk again for itself. What that buys is stated where
  * the reading is opened.
- *
- * <p>Built against the machinery installed on the sector it watches, since the motion
- * observations it stages are kept there. A poll observing into another sector's would measure
- * this sector's systems against the positions that one last saw under the same ids.
  */
 public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     private static final Logger LOG = Global.getLogger(PoliticalMapStalenessSource.class);
 
-    // The installed machinery of the sector being polled. Held from construction rather than
-    // resolved per poll because a source is built per load, against the sector it was installed
-    // on - which is the sector its baselines are diffs of.
+    // The installed machinery of the sector being polled, which holds the motion observations this
+    // stages. Held from construction rather than resolved per poll because a source is built per
+    // load, against the sector it was installed on - the sector its baselines are diffs of.
     private final MapLayerInstallation installation;
 
     // Last poll's state; 0 and an empty map are also the empty-sector values, so a
@@ -83,8 +79,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     private Map<String, String> lastHolderBySystemId = Map.of();
 
     /**
-     * @param installation the machinery installed on the sector this polls, which holds the
-     *                     motion observations each poll stages
+     * @param installation the machinery installed on the sector this polls
      */
     public PoliticalMapStalenessSource(MapLayerInstallation installation) {
         this.installation = installation;

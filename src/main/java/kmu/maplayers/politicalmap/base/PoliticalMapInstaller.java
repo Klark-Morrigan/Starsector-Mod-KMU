@@ -184,9 +184,8 @@ public final class PoliticalMapInstaller {
         }
         // A fresh source per load, so the baselines it diffs against start empty rather
         // than carrying the previous save's last read into this one. Built against this
-        // sector's installed machinery, where the positions it observes are kept: a source
-        // staging into another sector's would judge these systems against the positions that
-        // one last saw under the same ids.
+        // sector's installed machinery, for the same reason every listener above is built
+        // against this sector: what it stages there is this sector's alone.
         sector.addTransientScript(
             new MapLayerSectorWatcher(
                 new PoliticalMapStalenessSource(
