@@ -22,8 +22,10 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
+import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
+import kmu.maplayers.politicalmap.base.politics.DominanceStatsRead;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
@@ -304,7 +306,7 @@ final class FactionsViewTest {
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(Map.of("hegemony", ANY_STATS));
+                    .thenReturn(buildReadOf(Map.of("hegemony", ANY_STATS)));
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
                         .items())
@@ -329,7 +331,7 @@ final class FactionsViewTest {
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(Map.of("luddic_path", ANY_STATS));
+                    .thenReturn(buildReadOf(Map.of("luddic_path", ANY_STATS)));
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
                         .items())
@@ -357,7 +359,7 @@ final class FactionsViewTest {
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(statsByBlocId);
+                    .thenReturn(buildReadOf(statsByBlocId));
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
                         .items())
@@ -377,7 +379,7 @@ final class FactionsViewTest {
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(Map.of());
+                    .thenReturn(DominanceStatsRead.EMPTY);
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
                         .items())
@@ -395,12 +397,19 @@ final class FactionsViewTest {
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(Map.of());
+                    .thenReturn(DominanceStatsRead.EMPTY);
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
                         .sortModes())
                     .isEqualTo(DominanceSortMode.MODES);
             }
         }
+    }
+
+    // A stubbed aggregation posing blocs and nowhere in particular. The picker is assembled from
+    // the stats half alone, so the presence index beside them is left empty rather than stubbed to
+    // systems no case here asks about.
+    private static DominanceStatsRead buildReadOf(Map<String, DominanceStats> statsByBlocId) {
+        return new DominanceStatsRead(statsByBlocId, BlocPresenceIndex.EMPTY);
     }
 }

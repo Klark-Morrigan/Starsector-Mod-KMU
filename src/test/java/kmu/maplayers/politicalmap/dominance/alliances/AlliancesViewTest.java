@@ -22,8 +22,10 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
+import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
+import kmu.maplayers.politicalmap.base.politics.DominanceStatsRead;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.settings.KmuPoliticalMapSettings;
@@ -395,7 +397,9 @@ final class AlliancesViewTest {
 
                 aggregatorMock
                     .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY));
+                    .thenReturn(new DominanceStatsRead(
+                        Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY),
+                        BlocPresenceIndex.EMPTY));
 
                 assertThat(view.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG).items())
                     .containsExactly(new RankedBloc<>(
@@ -423,7 +427,7 @@ final class AlliancesViewTest {
 
                 aggregatorMock
                     .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(Map.of());
+                    .thenReturn(DominanceStatsRead.EMPTY);
 
                 assertThat(view.resolveBlocPicker(mock(SectorAPI.class), ANY_RULES, BASE_FOG)
                         .sortModes())

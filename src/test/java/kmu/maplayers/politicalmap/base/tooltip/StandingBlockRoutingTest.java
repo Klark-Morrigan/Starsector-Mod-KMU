@@ -224,6 +224,32 @@ class StandingBlockRoutingTest {
         }
 
         @Test
+        void routeRankedStandingsLiftsABlocOnGoodTermsWithEveryMemberOfAnAllianceHolder() {
+            // The alliances view's own shape, which no other case here poses: the holder is the
+            // alliance bloc the fills were painted for, so the membership the rival is measured
+            // against is read out of the fold rather than being the holder's own id.
+            var routing = StandingBlockRouting.routeRankedStandings(
+                List.of(
+                    new GroupStanding(
+                        HolderGroupingFixture.ALLIANCE_BLOC_ID,
+                        ANY_SCORE,
+                        List.of(new WeighedFactionStanding(WARM_MEMBER, ANY_SCORE))),
+                    createGroupStanding(RIVAL_BLOC)),
+                buildRules(
+                    HolderGroupingFixture.buildAllianceOf(WARM_MEMBER, ABSENT_MEMBER),
+                    HolderGroupingFixture.buildAllianceOf(WARM_MEMBER, ABSENT_MEMBER),
+                    List.of(
+                        RIVAL_BLOC + ":" + WARM_MEMBER,
+                        RIVAL_BLOC + ":" + ABSENT_MEMBER)));
+
+            assertThat(routing.selectStandingsIn(StandingBlock.FRIENDLY))
+                .containsExactly(routeWhole(RIVAL_BLOC));
+
+            assertThat(routing.selectStandingsIn(StandingBlock.CONTESTED))
+                .isEmpty();
+        }
+
+        @Test
         void routeRankedStandingsContestsABlocWhoseSourMemberHoldsNothingInTheSystem() {
             // Why the test is over the whole membership rather than over who happens to stand here:
             // read against the present member alone the bloc would come out friendly, and the same

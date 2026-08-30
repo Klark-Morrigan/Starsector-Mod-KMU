@@ -48,6 +48,11 @@ import static org.mockito.Mockito.mockStatic;
  * together because the value is the wiring - one walk yielding dominations, presences, summed
  * weight, and summed raw size - which mocking either collaborator would hide.
  *
+ * <p>The index cases ask the same walk where, rather than how much. They are here beside the totals
+ * and not in a suite of their own because the fact worth pinning is that the two came off one entry:
+ * a bloc's named systems and its presence count are the same reading, and the case posing both
+ * blocs at different counts is what would catch them parting.
+ *
  * <p>The middle cases ask what makes an entry at all, which is the sector's habitation rather than
  * its economy: a bloc living somewhere is listed whether or not the economy lists what it lives on,
  * a bloc whose only holding is a hulk nobody lives on is not, and neither answer may move a
@@ -86,7 +91,7 @@ class DominanceStatsAggregatorIntegrationTest {
 
             // At full stability each size point is worth DOMINANCE_WEIGHT_SCALE (1000), so score sums
             // to (5 + 3) * 1000 and market size to the raw 5 + 3.
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
                 .containsExactly(entry("hegemony", new DominanceStats(2, 2, 8000, 8)));
         }
 
@@ -101,7 +106,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 buildVisibleMarket(hegemony, 5),
                 buildVisibleMarket(tritachyon, 3));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
                 .containsExactly(
                     entry("hegemony", new DominanceStats(1, 1, 5000, 5)),
                     entry("tritachyon", new DominanceStats(0, 1, 3000, 3)));
@@ -120,7 +125,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 buildVisibleMarket(neutral, 6),
                 buildVisibleMarket(hegemony, 3));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
                 .contains(
                     entry(Factions.NEUTRAL, new DominanceStats(0, 1, 6000, 6)),
                     entry("hegemony", new DominanceStats(1, 1, 3000, 3)));
@@ -144,8 +149,85 @@ class DominanceStatsAggregatorIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(
-                    DominancePass.over(sector, STABILITY_WEIGHTED, BASE_FOG, grouping)))
+                    DominancePass.over(sector, STABILITY_WEIGHTED, BASE_FOG, grouping))
+                .statsByBlocId())
                 .containsExactly(entry("alliance-1", new DominanceStats(2, 2, 5000, 5)));
+        }
+
+        @Test
+        void aggregateDominanceStatsIndexesEverySystemABlocLivesIn() {
+            // The other half of a presence count: which systems it was taken in. A bloc spread over
+            // three systems names all three, in the order the sector walk surfaced them, so a
+            // surface lighting a picker row's systems lights every one the row counted.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var sector = buildSectorWithSystems(
+                List.of(hegemony),
+                listSystemMarkets("system-a", buildVisibleMarket(hegemony, 5)),
+                listSystemMarkets("system-b", buildVisibleMarket(hegemony, 3)),
+                listSystemMarkets("system-c", buildVisibleMarket(hegemony, 1)));
+
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector))
+                    .presenceIndex()
+                    .readPresentSystemIds("hegemony"))
+                .containsExactly("system-a", "system-b", "system-c");
+        }
+
+        @Test
+        void aggregateDominanceStatsIndexesASystemABlocLivesInWithoutWinningIt() {
+            // Presence and not domination, which is the whole point of a separate index: the
+            // outweighed bloc lives in both systems and wins neither, and both are still its to be
+            // lit. Indexing what a bloc dominates instead would light the fills it already paints.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var sector = buildSectorWithSystems(
+                List.of(hegemony, tritachyon),
+                listSystemMarkets(
+                    "system-a",
+                    buildVisibleMarket(hegemony, 5),
+                    buildVisibleMarket(tritachyon, 1)),
+                listSystemMarkets(
+                    "system-b",
+                    buildVisibleMarket(hegemony, 4),
+                    buildVisibleMarket(tritachyon, 2)));
+
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector))
+                    .presenceIndex()
+                    .readPresentSystemIds("tritachyon"))
+                .containsExactly("system-a", "system-b");
+        }
+
+        @Test
+        void aggregateDominanceStatsIndexesAsManySystemsAsItCountsPresences() {
+            // The invariant the index is built for, over a sector where the two blocs differ: three
+            // presences against three named systems, two against two. Counting and naming come off
+            // the one habitation entry, so a reading where they disagree is a reading where the
+            // spotlight and the row beneath the pointer stopped meaning the same thing.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var sector = buildSectorWithSystems(
+                List.of(hegemony, tritachyon),
+                listSystemMarkets("system-a", buildVisibleMarket(hegemony, 5)),
+                listSystemMarkets(
+                    "system-b",
+                    buildVisibleMarket(hegemony, 4),
+                    buildVisibleMarket(tritachyon, 6)),
+                listSystemMarkets(
+                    "system-c",
+                    buildVisibleMarket(hegemony, 1),
+                    buildVisibleMarket(tritachyon, 2)));
+
+            var read = DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector));
+
+            assertThat(read.statsByBlocId())
+                .containsExactly(
+                    entry("hegemony", new DominanceStats(2, 3, 10000, 10)),
+                    entry("tritachyon", new DominanceStats(1, 2, 8000, 8)));
+
+            assertThat(read.presenceIndex().readPresentSystemIds("hegemony"))
+                .containsExactly("system-a", "system-b", "system-c");
+
+            assertThat(read.presenceIndex().readPresentSystemIds("tritachyon"))
+                .containsExactly("system-b", "system-c");
         }
 
         @Test
@@ -159,7 +241,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 List.of(hegemony),
                 listSystemMarkets("weightless-system", buildVisibleMarket(hegemony, 0)));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
                 .containsExactly(entry("hegemony", new DominanceStats(1, 1, 0, 0)));
         }
 
@@ -172,7 +254,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 List.of(hegemony),
                 listSystemMarkets("bare-system", buildConditionOnlyMarket(hegemony, 6)));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
                 .isEmpty();
         }
 
@@ -191,7 +273,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 findSystemIn(sector, "unregistered-system"),
                 buildVisibleMarket(hegemony, 4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
                 .containsExactly(entry("hegemony", new DominanceStats(0, 1, 0, 4)));
         }
 
@@ -209,7 +291,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 findSystemIn(sector, "shared-system"),
                 buildVisibleMarket(tritachyon, 4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
                 .containsExactly(
                     entry("hegemony", new DominanceStats(1, 1, 5000, 5)),
                     entry("tritachyon", new DominanceStats(0, 1, 0, 4)));
@@ -232,7 +314,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 buildVisibleMarket(hegemony, 5),
                 buildVisibleMarket(tritachyon, 4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
                 .containsExactly(
                     entry("hegemony", new DominanceStats(0, 1, 0, 5)),
                     entry("tritachyon", new DominanceStats(0, 1, 0, 4)));
@@ -255,7 +337,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 listedColony,
                 buildVisibleMarket(hegemony, 4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
                 .containsExactly(entry("hegemony", new DominanceStats(1, 1, 5000, 9)));
         }
 
@@ -272,7 +354,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 findSystemIn(sector, "derelict-system"),
                 buildAbandonedStationMarket(4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
                 .isEmpty();
         }
 
@@ -285,13 +367,13 @@ class DominanceStatsAggregatorIntegrationTest {
             var sector = buildEconomylessSectorWithSystem("system-a");
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
-                .isEmpty();
+                .isEqualTo(DominanceStatsRead.EMPTY);
         }
 
         @Test
         void aggregateDominanceStatsIsEmptyForNullSector() {
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(null)))
-                .isEmpty();
+                .isEqualTo(DominanceStatsRead.EMPTY);
         }
 
         @Test
@@ -351,6 +433,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 HolderGrouping.identity()),
             STABILITY_WEIGHTED);
 
-        return List.copyOf(DominanceStatsAggregator.aggregateDominanceStats(pass).keySet());
+        return List.copyOf(
+            DominanceStatsAggregator.aggregateDominanceStats(pass).statsByBlocId().keySet());
     }
 }

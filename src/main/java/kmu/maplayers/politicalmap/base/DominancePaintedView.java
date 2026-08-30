@@ -109,7 +109,7 @@ public interface DominancePaintedView extends PoliticalMapView {
             buildSelectableBlocs(
                 sector,
                 grouping,
-                DominanceStatsAggregator.aggregateDominanceStats(pass),
+                DominanceStatsAggregator.aggregateDominanceStats(pass).statsByBlocId(),
                 resolveSelectableBlocGate(grouping)),
             DominanceSortMode.MODES);
     }

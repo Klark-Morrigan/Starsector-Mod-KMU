@@ -7,11 +7,13 @@ import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * Aggregates the whole-sector {@link DominanceStats} the filter picker sorts and labels its options by,
- * from one grouped per-system dominance pass.
+ * Aggregates the whole-sector {@link DominanceStatsRead} the filter picker sorts and labels its
+ * options by, from one grouped per-system dominance pass.
  *
  * <p>The picker half of the holder pipeline, kept apart from {@link SectorPolitics}'s per-system
  * holder resolution: where that produces one render holder per system, this walks the same sector to
@@ -23,6 +25,11 @@ import java.util.Map;
  * the band both take, so a bloc the player can see living somewhere is offered to be spotlighted
  * there. Reading presence off the weights instead would drop every bloc whose colonies the economy
  * does not list, leaving the picker denying what the map beneath it is drawing.
+ *
+ * <p>The same habitation read also names the systems behind each presence count, which the walk
+ * records into a {@link BlocPresenceIndex} as it goes. Counting and naming in one place is what lets
+ * a surface light the systems a picker row stands for without a second reading of the sector to work
+ * out which ones those were.
  */
 public final class DominanceStatsAggregator {
 
@@ -40,31 +47,38 @@ public final class DominanceStatsAggregator {
      * domination count. The order follows the sector walk, which each view then maps into its own
      * picker options.
      *
+     * <p>That entry also names the system it was taken in, which is the {@link BlocPresenceIndex}
+     * beside the stats: the same walk, so the systems a row stands for cost nothing beyond the count
+     * already being kept.
+     *
      * @param pass the sector walk, weighting rule, colony rule, and grouping this read resolves
      *             under, sampled once by the caller so the whole read resolves under one set of
      *             knobs; a pass over no sector (or one whose sector has no economy) yields an
-     *             empty map
-     * @return each present bloc's stats, keyed by bloc id in walk order; empty when nobody lives
-     *         anywhere the player can see
+     *             empty read
+     * @return each present bloc's stats and the systems it lives in, keyed by bloc id in walk
+     *         order; empty when nobody lives anywhere the player can see
      */
-    public static Map<String, DominanceStats> aggregateDominanceStats(DominancePass pass) {
-        var statsByBlocId = new LinkedHashMap<String, DominanceStats>();
-
+    public static DominanceStatsRead aggregateDominanceStats(DominancePass pass) {
         if (!pass.canReadEconomy()) {
-            return statsByBlocId;
+            return DominanceStatsRead.EMPTY;
         }
+        var statsByBlocId = new LinkedHashMap<String, DominanceStats>();
+        var systemIdsByBlocId = new LinkedHashMap<String, Set<String>>();
+
         for (var system : pass.readSystems()) {
-            accumulateSystemStats(statsByBlocId, system, pass);
+            accumulateSystemStats(statsByBlocId, systemIdsByBlocId, system, pass);
         }
-        return statsByBlocId;
+        return new DominanceStatsRead(statsByBlocId, new BlocPresenceIndex(systemIdsByBlocId));
     }
 
-    // Folds one system into the running per-bloc stats: resolves the one dominant bloc from the
-    // weighed footprints, then adds a present-system entry to every bloc living here - the dominant
-    // one also taking a domination count. A bloc living in several systems accumulates rather than
-    // overwrites, and under an alliance grouping the members fold into the alliance's one bloc.
+    // Folds one system into the running per-bloc stats and presence sets: resolves the one dominant
+    // bloc from the weighed footprints, then adds a present-system entry to every bloc living here -
+    // the dominant one also taking a domination count. A bloc living in several systems accumulates
+    // rather than overwrites, and under an alliance grouping the members fold into the alliance's
+    // one bloc.
     private static void accumulateSystemStats(
             Map<String, DominanceStats> statsByBlocId,
+            Map<String, Set<String>> systemIdsByBlocId,
             StarSystemAPI system,
             DominancePass pass) {
 
@@ -96,6 +110,13 @@ public final class DominanceStatsAggregator {
                         blocId.equals(dominantBlocId),
                         footprint.totalWeight(),
                         entry.getValue()));
+
+            // The system behind the presence just counted, named in the same step that counts it -
+            // so the set and the count cannot disagree about where a bloc lives, whatever later
+            // decides how a spotlight keys or clusters those cells.
+            systemIdsByBlocId
+                .computeIfAbsent(blocId, presentBlocId -> new LinkedHashSet<>())
+                .add(system.getId());
         }
     }
 }

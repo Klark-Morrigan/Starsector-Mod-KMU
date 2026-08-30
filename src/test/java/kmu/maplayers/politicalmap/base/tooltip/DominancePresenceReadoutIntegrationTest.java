@@ -182,7 +182,8 @@ final class DominancePresenceReadoutIntegrationTest {
                     new RibbonSegment(TRITACHYON_BRIGHT, COLONY_RUN));
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(
-                    DominancePass.over(holding, buildStabilityWeightedRules())))
+                    DominancePass.over(holding, buildStabilityWeightedRules()))
+                .statsByBlocId())
                 .containsOnlyKeys(HEGEMONY, TRITACHYON);
         }
     }
