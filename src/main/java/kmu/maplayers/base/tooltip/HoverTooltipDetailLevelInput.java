@@ -15,8 +15,8 @@ import java.util.List;
  * an event still stops it reaching the screen underneath.
  *
  * <p>It is a listener of its own rather than part of the box's render pass because a render pass is
- * handed no events and so can consume none: reading the toggle and drawing the result are two passes,
- * which is why the level they agree on lives in {@link HoverTooltipDetailModeState} rather than in
+ * handed no events and so can consume none: reading the key and drawing the result are two passes,
+ * which is why the level they agree on lives in {@link HoverTooltipDetailLevelState} rather than in
  * either of them.
  *
  * <p>One instance covers the whole campaign UI rather than one per screen, because the level is one
@@ -36,23 +36,23 @@ import java.util.List;
  * differ opens. The player would meet a box at a level they never chose, having pressed the key
  * somewhere it appeared to do nothing.
  */
-public final class HoverTooltipDetailModeInput implements CampaignInputListener {
+public final class HoverTooltipDetailLevelInput implements CampaignInputListener {
 
     // The key the level is advanced with. Named once here rather than at each use, since the box that
     // tells the player about it has to name the key that is actually claimed - a second literal is
     // one edit away from advertising a key this listener no longer takes.
-    private static final int TOGGLE_KEY = Keyboard.KEY_F1;
+    private static final int CYCLE_KEY = Keyboard.KEY_F1;
 
     // Ahead of the core screen, but below the sidebar's own listener, so a sidebar tab hotkey keeps
     // the first claim on any key it is bound to and this only ever sees what the sidebar left.
     private static final int INPUT_PRIORITY = 900;
 
     /**
-     * The toggle's key as it is printed on the player's keyboard, for a box stating what pressing it
+     * The cycle key as it is printed on the player's keyboard, for a box stating what pressing it
      * would do. Read off the key this listener claims rather than spelled beside it, so the two cannot
      * come to name different keys.
      */
-    public static final String TOGGLE_KEY_NAME = Keyboard.getKeyName(TOGGLE_KEY);
+    public static final String CYCLE_KEY_NAME = Keyboard.getKeyName(CYCLE_KEY);
 
     // Which frames the cursor can be located against. Held as the shared type rather than as a
     // boolean, for the reason the dispatcher holds it that way: the key must be claimed on exactly
@@ -66,7 +66,7 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
      *                        this listener is called for the whole campaign UI and is never told
      *                        which screen is up
      */
-    public HoverTooltipDetailModeInput(MapHoverPermission hoverPermission) {
+    public HoverTooltipDetailLevelInput(MapHoverPermission hoverPermission) {
         this.hoverPermission = hoverPermission;
     }
 
@@ -89,7 +89,7 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
             if (event.isConsumed()) {
                 continue;
             }
-            if (!isDetailModeToggleKey(event)) {
+            if (!isDetailLevelCycleKey(event)) {
                 continue;
             }
             // Nothing under the cursor has a second amount of detail to state, so there is nothing
@@ -100,7 +100,7 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
             if (!isAnyBoxOfferingExpansion()) {
                 continue;
             }
-            HoverTooltipDetailModeState.getInstance().advanceLevel();
+            HoverTooltipDetailLevelState.getInstance().advanceLevel();
             // Consumed only where it acted, so nothing else claims the key while the map is open
             // and the rest of the game keeps it.
             event.consume();
@@ -109,20 +109,20 @@ public final class HoverTooltipDetailModeInput implements CampaignInputListener 
 
     @Override
     public void processCampaignInputPreFleetControl(List<InputEventAPI> events) {
-        // The detail mode takes no part in fleet control.
+        // The detail level takes no part in fleet control.
     }
 
     @Override
     public void processCampaignInputPostCore(List<InputEventAPI> events) {
-        // Nothing runs after the core screen for the toggle; its key is claimed pre-core, which is
+        // Nothing runs after the core screen for the cycle key; it is claimed pre-core, which is
         // where consuming still stops the screen underneath from seeing it.
     }
 
-    // Whether this event is the toggle being pressed. Key-down only: the matching key-up arrives as
+    // Whether this event is the cycle key being pressed. Key-down only: the matching key-up arrives as
     // its own event, and acting on both would advance the level twice per press - the player would
     // skip a depth they never saw.
-    static boolean isDetailModeToggleKey(InputEventAPI event) {
-        return event.isKeyDownEvent() && event.getEventValue() == TOGGLE_KEY;
+    static boolean isDetailLevelCycleKey(InputEventAPI event) {
+        return event.isKeyDownEvent() && event.getEventValue() == CYCLE_KEY;
     }
 
     // Whether the box under the cursor would show the player anything more at another level.

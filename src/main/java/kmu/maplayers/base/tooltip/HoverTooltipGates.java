@@ -27,7 +27,7 @@ import kmu.maplayers.base.hover.MapHoverPermission;
  *
  * <p>Only what the two passes share belongs here. What the render pass waits on beyond it - a
  * hovered cell, the vanilla map drawing its own tooltip, a layer having injected a box at all - is
- * that pass's alone, because the mode the key sets persists across all three: it is a standing
+ * that pass's alone, because the level the key sets persists across all three: it is a standing
  * choice about the next box to draw, not an answer about the cell the player happens to be over.
  */
 public final class HoverTooltipGates {

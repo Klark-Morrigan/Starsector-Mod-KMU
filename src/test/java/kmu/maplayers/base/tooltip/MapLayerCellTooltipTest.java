@@ -44,8 +44,8 @@ import static org.mockito.Mockito.when;
  * is the composition root's business and the dispatcher must not know - a layer with no renderer and
  * no registered pick at all resolve alike to nothing to draw.
  *
- * <p>Which of an injected tooltip's boxes the detail mode calls for is pinned the same way, over
- * stand-in tooltips: the decision is a pure read of the mode against what a tooltip offers, so it is
+ * <p>Which of an injected tooltip's boxes the detail level calls for is pinned the same way, over
+ * stand-in tooltips: the decision is a pure read of the level against what a tooltip offers, so it is
  * checkable without an engine even though drawing the chosen box is not.
  *
  * <p>The frame gate is pinned over permissions posed against fixed screen reads, open and closed,
@@ -106,7 +106,7 @@ final class MapLayerCellTooltipTest {
         void dropTheDetailLevelBackToFactions() {
             // The level holder is a process-wide singleton for the same reason the hover is, so an
             // advance left standing would reach the next test as a detail level it never asked for.
-            HoverTooltipDetailModeState.getInstance().discardModeFromPreviousSave();
+            HoverTooltipDetailLevelState.getInstance().discardLevelFromPreviousSave();
         }
 
         @Test
@@ -203,7 +203,7 @@ final class MapLayerCellTooltipTest {
             when(tooltipMock.resolveExpandedVariant())
                 .thenReturn(Optional.of(expandedTooltipMock));
 
-            HoverTooltipDetailModeState.getInstance().advanceLevel();
+            HoverTooltipDetailLevelState.getInstance().advanceLevel();
 
             runWithHoverTooltipSwitchOn(() -> {
                 try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {

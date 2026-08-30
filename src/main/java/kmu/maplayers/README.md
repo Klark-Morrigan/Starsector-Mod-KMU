@@ -334,13 +334,13 @@ about what the overlay means.
   show nothing for the same reason. The step-aside is rooted at whichever surface owns the frame,
   `ShownMapSurface` in `kmu.starsector.ui` - a tab-rooted walk cannot reach a docked map's tooltip,
   those being up on exactly the frames no tab is. How much detail the drawn box states is one shared fact rather
-  than a per-layer one: `HoverTooltipDetailModeState` carries the ordered `HoverTooltipDetailLevel` -
+  than a per-layer one: `HoverTooltipDetailLevelState` carries the ordered `HoverTooltipDetailLevel` -
   four depths of the same account, from factions alone down to the patrol split - and the dispatcher
   draws the richer counterpart the injected tooltip offers past the shallowest level
   (`MapHoverTooltip.resolveExpandedVariant`) or that tooltip itself when it offers none - so the
   choice holds across hovers and layer switches, and a tooltip stating one amount of detail needs no
   case of its own. What writes that level is
-  `HoverTooltipDetailModeInput`, a campaign input listener claiming F1 pre-core: each press advances
+  `HoverTooltipDetailLevelInput`, a campaign input listener claiming F1 pre-core: each press advances
   one level, wrapping from the deepest back to the first, so the key that leads into detail also
   leads out of it. A render pass is
   handed no events and so can consume none, which is why reading the key and drawing its result
@@ -368,14 +368,14 @@ about what the overlay means.
   reads as part of the interface rather than as text laid over it. The box opens with a heading block
   - the system name and any title lines read on from it - and the layer's own blocks follow beneath,
   so a verdict that settles the whole system heads the box while a status or an entry sits in it. A
-  box taking part in the detail toggle ends on one more block: the key and what pressing it would do,
+  box taking part in the detail cycle ends on one more block: the key and what pressing it would do,
   drawn the way the game draws its own key hints - the key picked out in the shade vanilla highlights
   a shortcut with, the words about it in vanilla's grey, in vanilla's own smaller condensed face. What
   the counterpart adds is named by the layer (`resolveExpandedDetailName`), since only the layer knows
   what is in it; which way the offer reads is asked of nobody and follows from whether the box being
   drawn still has a counterpart to switch to - the plain box has one and offers to show it, the
   counterpart the dispatcher selected has none and so offers to hide itself again. Read that way the
-  hint cannot contradict the box it sits under, which reading the shared mode a second time would
+  hint cannot contradict the box it sits under, which reading the shared level a second time would
   allow. It is not content: a box with nothing to say about the system stays undrawn rather than
   appearing as a lone offer to expand into nothing. How
   far apart those blocks stand is never a line's own request: KMLib parts one block from the next by

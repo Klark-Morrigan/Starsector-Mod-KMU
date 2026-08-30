@@ -50,7 +50,7 @@ public interface MapHoverTooltip {
 
     /**
      * Whether switching detail levels over {@code system} would show the player anything this box does
-     * not - the question the pass claiming the toggle key asks before acting on a press.
+     * not - the question the pass claiming the cycle key asks before acting on a press.
      *
      * <p>Asked of the box rather than inferred from {@link #resolveExpandedVariant} because a
      * counterpart existing is not the same as it having something to say: a box may define a richer
@@ -65,7 +65,7 @@ public interface MapHoverTooltip {
      *
      * @param sector the live sector, whose economy the answer may read
      * @param system the star system under the cursor
-     * @return true when the toggle would change what the player sees for this system
+     * @return true when the key would change what the player sees for this system
      */
     default boolean isOfferingExpansionFor(SectorAPI sector, StarSystemAPI system) {
         return false;

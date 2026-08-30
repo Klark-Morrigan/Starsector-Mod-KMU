@@ -19,9 +19,9 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.render.MapLayerRenderer;
-import kmu.maplayers.base.tooltip.HoverTooltipDetailMode;
-import kmu.maplayers.base.tooltip.HoverTooltipDetailModeInput;
-import kmu.maplayers.base.tooltip.HoverTooltipDetailModeState;
+import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
+import kmu.maplayers.base.tooltip.HoverTooltipDetailLevelInput;
+import kmu.maplayers.base.tooltip.HoverTooltipDetailLevelState;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.MapLayerCellTooltip;
@@ -56,7 +56,7 @@ import static org.mockito.Mockito.when;
  * locatability read, and not the bare presence read nor one of the look-aware ones. Which read is
  * wired in is a choice made at the install site alone - both listeners take it as a supplier and so
  * can say nothing about which screens open it, and each read answers only for itself - so a gate
- * narrowed to the schematic read, which is false in exactly the mode this feature exists to reach,
+ * narrowed to the schematic read, which is false in exactly the look this feature exists to reach,
  * or to the presence read, which is false wherever a mod's docked map surface is the only map on
  * screen, would otherwise pass every other test in the suite.
  *
@@ -119,9 +119,9 @@ class MapLayerCellTooltipGateIntegrationTest {
         MapLayerRosters.restoreNonEmptyRoster();
         MapHoverState.resolveLiveSectorHoverState().clearHover();
 
-        // The mode holder is a process-wide singleton like the hover, so a flip left standing would
-        // reach the next test as a detail level it never asked for.
-        HoverTooltipDetailModeState.getInstance().discardModeFromPreviousSave();
+        // The level holder is a process-wide singleton like the hover, so an advance left standing
+        // would reach the next test as a detail level it never asked for.
+        HoverTooltipDetailLevelState.getInstance().discardLevelFromPreviousSave();
     }
 
     @Nested
@@ -129,7 +129,7 @@ class MapLayerCellTooltipGateIntegrationTest {
 
         @Test
         void drawsWhileTheSectorMapIsInStarscapeMode() {
-            // The mode the whole feature exists to reach, and the one the schematic read answers
+            // The look the whole feature exists to reach, and the one the schematic read answers
             // false in by design. A gate narrowed to that read would hide the box exactly where the
             // Starscape terrain half is painting the layers it belongs to.
             renderInstalledDispatcher(SectorMapState.SHOWING_IN_STARSCAPE_MODE);
@@ -182,54 +182,54 @@ class MapLayerCellTooltipGateIntegrationTest {
     }
 
     @Nested
-    class InstalledDetailModeToggleGate {
+    class InstalledDetailLevelCycleGate {
 
         @Test
-        void claimsTheTogglePressWhileTheSectorMapIsInStarscapeMode() {
+        void claimsTheCycleKeyPressWhileTheSectorMapIsInStarscapeMode() {
             // The same mode the box is drawn in above, and the one a gate copied from the older
             // sector-map-only read would answer false in - leaving F1 dead in exactly the look the
             // box it switches is live in, with every unit test still passing.
-            var eventMock = pressToggleOnInstalledInput(SectorMapState.SHOWING_IN_STARSCAPE_MODE);
+            var eventMock = pressCycleKeyOnInstalledInput(SectorMapState.SHOWING_IN_STARSCAPE_MODE);
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.EXPANDED);
-
-            verify(eventMock)
-                .consume();
-        }
-
-        @Test
-        void claimsTheTogglePressWhileTheSectorMapIsShowingTheOrdinarySchematic() {
-
-            var eventMock = pressToggleOnInstalledInput(SectorMapState.SHOWING_WITH_STARSCAPE_OFF);
-
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.EXPANDED);
+            assertThat(HoverTooltipDetailLevelState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
 
             verify(eventMock)
                 .consume();
         }
 
         @Test
-        void leavesTheTogglePressAloneOverABoxWithNothingToExpand() {
+        void claimsTheCycleKeyPressWhileTheSectorMapIsShowingTheOrdinarySchematic() {
+
+            var eventMock = pressCycleKeyOnInstalledInput(SectorMapState.SHOWING_WITH_STARSCAPE_OFF);
+
+            assertThat(HoverTooltipDetailLevelState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
+
+            verify(eventMock)
+                .consume();
+        }
+
+        @Test
+        void leavesTheCycleKeyPressAloneOverABoxWithNothingToExpand() {
             // Past every gate, on the map, over a hovered cell whose box has no second amount of
-            // detail to state. The mode is shared and holds across hovers, so swallowing the press
+            // detail to state. The level is shared and holds across hovers, so swallowing the press
             // here would decide how the next system that does differ opens - which is why the offer
             // is asked of the box rather than assumed from the map being up.
             when(tooltipMock.isOfferingExpansionFor(any(), any()))
                 .thenReturn(false);
 
-            var eventMock = pressToggleOnInstalledInput(SectorMapState.SHOWING_WITH_STARSCAPE_OFF);
+            var eventMock = pressCycleKeyOnInstalledInput(SectorMapState.SHOWING_WITH_STARSCAPE_OFF);
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.NORMAL);
+            assertThat(HoverTooltipDetailLevelState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
 
             verify(eventMock, never())
                 .consume();
         }
 
         @Test
-        void claimsTheTogglePressInGameSpaceWithThatPermissionGranted() {
+        void claimsTheCycleKeyPressInGameSpaceWithThatPermissionGranted() {
             // The key has to reach wherever the box does, or the player gets a box in front of them
             // they cannot switch. Same permission, same seam, asserted on the other listener - which
             // is what would catch one of the two being wired to a different read.
@@ -240,27 +240,27 @@ class MapLayerCellTooltipGateIntegrationTest {
             when(eventMock.getEventValue())
                 .thenReturn(Keyboard.KEY_F1);
 
-            var toggleInput = installListener(HoverTooltipDetailModeInput.class);
+            var cycleKeyInput = installListener(HoverTooltipDetailLevelInput.class);
 
             runWithHoverTooltipSwitchOnInGameSpace(() -> runInGameSpace(
-                () -> toggleInput.processCampaignInputPreCore(List.of(eventMock))));
+                () -> cycleKeyInput.processCampaignInputPreCore(List.of(eventMock))));
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.EXPANDED);
+            assertThat(HoverTooltipDetailLevelState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
 
             verify(eventMock)
                 .consume();
         }
 
         @Test
-        void leavesTheTogglePressAloneWhileNeitherHostShowsAMap() {
+        void leavesTheCycleKeyPressAloneWhileNeitherHostShowsAMap() {
             // The half that keeps the key honest the other way: this listener is called for the
             // whole campaign UI, so a gate wired permanently open would swallow F1 on every screen
             // the player is on, where no box could be showing to switch.
-            var eventMock = pressToggleOnInstalledInput(SectorMapState.NOT_SHOWING);
+            var eventMock = pressCycleKeyOnInstalledInput(SectorMapState.NOT_SHOWING);
 
-            assertThat(HoverTooltipDetailModeState.getInstance().getMode())
-                .isEqualTo(HoverTooltipDetailMode.NORMAL);
+            assertThat(HoverTooltipDetailLevelState.getInstance().getLevel())
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
 
             verifyNoInteractions(eventMock);
         }
@@ -280,10 +280,10 @@ class MapLayerCellTooltipGateIntegrationTest {
         return installListener(MapLayerCellTooltip.class);
     }
 
-    // Installs the toggle listener the way the game does and feeds it one press of its key.
-    private InputEventAPI pressToggleOnInstalledInput(SectorMapState sectorMapState) {
+    // Installs the cycle-key listener the way the game does and feeds it one press of its key.
+    private InputEventAPI pressCycleKeyOnInstalledInput(SectorMapState sectorMapState) {
 
-        var toggleInput = installListener(HoverTooltipDetailModeInput.class);
+        var cycleKeyInput = installListener(HoverTooltipDetailLevelInput.class);
 
         var eventMock = mock(InputEventAPI.class);
 
@@ -293,7 +293,7 @@ class MapLayerCellTooltipGateIntegrationTest {
             .thenReturn(Keyboard.KEY_F1);
 
         runWithHoverTooltipSwitchOn(() -> runWithSectorMapState(sectorMapState,
-            () -> toggleInput.processCampaignInputPreCore(List.of(eventMock))));
+            () -> cycleKeyInput.processCampaignInputPreCore(List.of(eventMock))));
 
         return eventMock;
     }

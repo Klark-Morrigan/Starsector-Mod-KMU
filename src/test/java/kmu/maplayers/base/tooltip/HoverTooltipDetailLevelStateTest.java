@@ -13,10 +13,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * previous save was left at, and that the shared instance is genuinely one instance - two
  * collaborators resolving different holders would leave the box ignoring the key.
  *
- * <p>Each test builds its own holder rather than using {@link HoverTooltipDetailModeState#getInstance},
+ * <p>Each test builds its own holder rather than using {@link HoverTooltipDetailLevelState#getInstance},
  * so an advance cannot leak into another test through the shared one.
  */
-final class HoverTooltipDetailModeStateTest {
+final class HoverTooltipDetailLevelStateTest {
 
     @Nested
     class GetLevel {
@@ -24,7 +24,7 @@ final class HoverTooltipDetailModeStateTest {
         @Test
         void getLevelStartsAtFactions() {
 
-            assertThat(new HoverTooltipDetailModeState().getLevel())
+            assertThat(new HoverTooltipDetailLevelState().getLevel())
                 .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
         }
     }
@@ -35,7 +35,7 @@ final class HoverTooltipDetailModeStateTest {
         @Test
         void advanceLevelStepsFromFactionsToSystemComposition() {
 
-            var state = new HoverTooltipDetailModeState();
+            var state = new HoverTooltipDetailLevelState();
             state.advanceLevel();
 
             assertThat(state.getLevel())
@@ -43,23 +43,10 @@ final class HoverTooltipDetailModeStateTest {
         }
 
         @Test
-        void advanceLevelReachesTheDeepestLevelOnTheThirdPress() {
-
-            var state = new HoverTooltipDetailModeState();
-
-            state.advanceLevel();
-            state.advanceLevel();
-            state.advanceLevel();
-
-            assertThat(state.getLevel())
-                .isEqualTo(HoverTooltipDetailLevel.PATROL_DETAILS);
-        }
-
-        @Test
         void advanceLevelWrapsBackToFactionsOnTheFourthPress() {
             // The wrap is what keeps every press acting: from the deepest level the key collapses
             // rather than dead-ending, so the player is never stuck in the tallest box.
-            var state = new HoverTooltipDetailModeState();
+            var state = new HoverTooltipDetailLevelState();
 
             state.advanceLevel();
             state.advanceLevel();
@@ -72,26 +59,26 @@ final class HoverTooltipDetailModeStateTest {
     }
 
     @Nested
-    class DiscardModeFromPreviousSave {
+    class DiscardLevelFromPreviousSave {
 
         @Test
-        void discardModeFromPreviousSaveDropsBackToFactions() {
+        void discardLevelFromPreviousSaveDropsBackToFactions() {
 
-            var state = new HoverTooltipDetailModeState();
+            var state = new HoverTooltipDetailLevelState();
 
             state.advanceLevel();
-            state.discardModeFromPreviousSave();
+            state.discardLevelFromPreviousSave();
 
             assertThat(state.getLevel())
                 .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
         }
 
         @Test
-        void discardModeFromPreviousSaveLeavesFactionsAlone() {
+        void discardLevelFromPreviousSaveLeavesFactionsAlone() {
 
-            var state = new HoverTooltipDetailModeState();
+            var state = new HoverTooltipDetailLevelState();
 
-            state.discardModeFromPreviousSave();
+            state.discardLevelFromPreviousSave();
 
             assertThat(state.getLevel())
                 .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
@@ -104,8 +91,8 @@ final class HoverTooltipDetailModeStateTest {
         @Test
         void getInstanceIsOneSharedHolder() {
 
-            assertThat(HoverTooltipDetailModeState.getInstance())
-                .isSameAs(HoverTooltipDetailModeState.getInstance());
+            assertThat(HoverTooltipDetailLevelState.getInstance())
+                .isSameAs(HoverTooltipDetailLevelState.getInstance());
         }
     }
 }

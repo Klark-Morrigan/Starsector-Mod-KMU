@@ -11,13 +11,13 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
  *
  * <p>It leaves {@link MapHoverTooltip#resolveExpandedVariant} and
  * {@link MapHoverTooltip#isOfferingExpansionFor} unoverridden on purpose: inheriting the interface's
- * own answers is what makes this the tooltip that takes no part in the detail toggle, so a test using
+ * own answers is what makes this the tooltip that takes no part in the detail cycle, so a test using
  * it pins the defaults every implementation gets rather than a stand-in's imitation of them.
  */
 class MapHoverTooltipFake implements MapHoverTooltip {
 
     @Override
     public void renderFor(SectorAPI sector, StarSystemAPI system) {
-        // Drawing needs a GL context, and says nothing about which box the mode picked.
+        // Drawing needs a GL context, and says nothing about which box the level picked.
     }
 }

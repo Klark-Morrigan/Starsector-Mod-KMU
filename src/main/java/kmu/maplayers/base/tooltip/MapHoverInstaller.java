@@ -32,27 +32,27 @@ public final class MapHoverInstaller {
     }
 
     /**
-     * Registers the hover box's render and input halves and drops the previous save's detail mode,
+     * Registers the hover box's render and input halves and drops the previous save's detail level,
      * each step behind its own failure boundary.
      *
      * @param sector the loaded sector; null leaves the box uninstalled rather than throwing
      */
     public static void installAll(SectorAPI sector) {
 
-        // The holder is a process-lifetime singleton, so a save left showing the expanded box would
-        // otherwise open the next one on it. The mode is a live view preference and enters no save,
+        // The holder is a process-lifetime singleton, so a save left at a deeper detail level would
+        // otherwise open the next one on it. The level is a live view preference and enters no save,
         // so load is the only point it can be dropped.
         runGuardedStep(
-            HoverTooltipDetailModeState.getInstance()::discardModeFromPreviousSave,
-            "Failed to discard KMU hover tooltip detail mode from the previous save");
+            HoverTooltipDetailLevelState.getInstance()::discardLevelFromPreviousSave,
+            "Failed to discard KMU hover tooltip detail level from the previous save");
 
         runGuardedStep(
             () -> installMapLayerHoverTooltip(sector),
             "Failed to install KMU map layer hover tooltip");
 
         runGuardedStep(
-            () -> installHoverTooltipDetailModeInput(sector),
-            "Failed to install KMU hover tooltip detail mode input");
+            () -> installHoverTooltipDetailLevelInput(sector),
+            "Failed to install KMU hover tooltip detail level input");
 
         runGuardedStep(
             () -> installMapHoverExpirer(sector),
@@ -62,7 +62,7 @@ public final class MapHoverInstaller {
     /**
      * Clears both halves of the hover box, for a player switching the map layers off.
      *
-     * <p>The detail mode itself is left alone: it is a live view preference held in a
+     * <p>The detail level itself is left alone: it is a live view preference held in a
      * process-lifetime singleton, so there is nothing registered to take back and nothing in a save
      * to tidy.
      *
@@ -73,7 +73,7 @@ public final class MapHoverInstaller {
         runGuardedStep(
             () -> {
                 SectorListeners.removeListener(sector, MapLayerCellTooltip.class);
-                SectorListeners.removeListener(sector, HoverTooltipDetailModeInput.class);
+                SectorListeners.removeListener(sector, HoverTooltipDetailLevelInput.class);
             },
             "Failed to remove KMU map layer hover tooltip");
 
@@ -136,18 +136,18 @@ public final class MapHoverInstaller {
         sector.removeTransientScriptsOfClass(MapHoverExpirer.class);
     }
 
-    // Registers the input listener that reads the hover box's detail-mode toggle key. Transient,
+    // Registers the input listener that reads the hover box's detail-level cycle key. Transient,
     // remove-then-add, for the dispatcher's reasons: it holds no save-relevant state, and a second
-    // registration alongside the first would flip the mode twice per press - leaving it where it
-    // started, so the key would look dead.
-    static void installHoverTooltipDetailModeInput(SectorAPI sector) {
+    // registration alongside the first would advance the level twice per press - every press would
+    // skip a depth the player never saw.
+    static void installHoverTooltipDetailLevelInput(SectorAPI sector) {
         // Handed the same permission the dispatcher is, so the key is claimed on exactly the screens
-        // and looks the box it switches can draw on - which is the whole of what makes the toggle
+        // and looks the box it switches can draw on - which is the whole of what makes the key
         // honest. A permission each rather than one shared instance: it holds no state, both are
         // built from the same factory, and a listener reaching for another's field would outlive it.
         SectorListeners.installListener(
             sector,
-            HoverTooltipDetailModeInput.class,
-            () -> new HoverTooltipDetailModeInput(MapHoverPermission.createForLiveScreen()));
+            HoverTooltipDetailLevelInput.class,
+            () -> new HoverTooltipDetailLevelInput(MapHoverPermission.createForLiveScreen()));
     }
 }

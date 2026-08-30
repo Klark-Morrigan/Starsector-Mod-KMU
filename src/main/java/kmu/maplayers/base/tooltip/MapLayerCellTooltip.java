@@ -21,7 +21,7 @@ import kmu.maplayers.base.hover.MapHoverPermission;
  *
  * <p>The dispatcher owns only the gates every hover tooltip shares - the conditions under which any
  * box could draw at all ({@link HoverTooltipGates}), which it shares with the pass claiming the
- * detail-mode key, plus its own two: a hovered cell, and stepping aside while the map surface on
+ * detail-level key, plus its own two: a hovered cell, and stepping aside while the map surface on
  * screen draws its own tooltip. It then resolves the hovered system and hands it to the injected
  * tooltip. A
  * layer's own tooltip switch stays with the layer, which withholds its box by injecting none. The
@@ -30,7 +30,7 @@ import kmu.maplayers.base.hover.MapHoverPermission;
  * precondition.
  *
  * <p>How much detail the drawn box states is settled here too, and by one shared fact rather than
- * per layer: the dispatcher reads {@link HoverTooltipDetailModeState} and draws the counterpart the
+ * per layer: the dispatcher reads {@link HoverTooltipDetailLevelState} and draws the counterpart the
  * injected tooltip offers past the shallowest level, or the tooltip itself when it offers none. So
  * the choice holds across hovers and layer switches, and a tooltip that states one amount of detail
  * needs no case of its own.
@@ -76,7 +76,7 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 
     @Override
     public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
-        // The conditions shared with the pass that claims the detail-mode key, asked of the one seam
+        // The conditions shared with the pass that claims the detail-level key, asked of the one seam
         // both read so the key cannot come to be claimed on a frame this draws nothing in: the hover
         // switches answering for every layer, and a frame the cursor can be located against - the
         // same answer the hover under it was resolved from. The layer's own tooltip switch is not
@@ -93,7 +93,7 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
             return;
         }
         // What the cursor is over and the box the active layer injected for it, resolved through the
-        // one chain the pass claiming the toggle key reads too - so the key cannot come to act on a
+        // one chain the pass claiming the cycle key reads too - so the key cannot come to act on a
         // frame this draws nothing in.
         var hoveredBox = HoveredBox.resolveHoveredBox();
         if (hoveredBox.isEmpty()) {
@@ -104,7 +104,7 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         // switches instead of each layer having to remember a choice made over another one's cell.
         selectVariantFor(
                 hoveredBox.get().tooltip(),
-                HoverTooltipDetailModeState.getInstance().getLevel())
+                HoverTooltipDetailLevelState.getInstance().getLevel())
             .renderFor(
                 hoveredBox.get().sector(),
                 hoveredBox.get().system());

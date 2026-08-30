@@ -178,7 +178,7 @@ final class HoveredBoxTest {
 
         @Test
         void isOfferingExpansionAsksTheBoxAboutTheSystemItWouldDrawFor() {
-            // Asked of the box rather than of the mode, and about this system rather than in general -
+            // Asked of the box rather than of the level, and about this system rather than in general -
             // which is what lets a box offer an expansion on one cell and none on the next.
             when(tooltipMock.isOfferingExpansionFor(sectorMock, systemMock))
                 .thenReturn(true);
@@ -198,7 +198,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void isOfferingExpansionIsFalseForABoxTakingNoPartInTheToggle() {
+        void isOfferingExpansionIsFalseForABoxTakingNoPartInTheDetailCycle() {
             // The pair of interface defaults read together: a tooltip that defines no richer
             // counterpart offers no expansion either. Pinned on the stand-in that overrides neither,
             // so what is asserted is the answer an implementation inherits rather than a stub's

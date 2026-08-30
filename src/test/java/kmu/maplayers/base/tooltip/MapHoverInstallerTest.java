@@ -79,23 +79,23 @@ class MapHoverInstallerTest {
     }
 
     @Nested
-    class InstallHoverTooltipDetailModeInput {
+    class InstallHoverTooltipDetailLevelInput {
 
         @Test
-        void reinstallsTheDetailModeInputListenerFreshAsTransient() {
-            // Remove-then-add, transient: the toggle is a live view preference that enters no save,
-            // and a second registration alongside the first would flip the mode twice per press -
-            // leaving it exactly where it started, so the key would look dead.
+        void reinstallsTheDetailLevelInputListenerFreshAsTransient() {
+            // Remove-then-add, transient: the level is a live view preference that enters no save,
+            // and a second registration alongside the first would advance the level twice per press -
+            // every press would skip a depth the player never saw.
             var listenerManager = new RecordingListenerManager();
 
-            MapHoverInstaller.installHoverTooltipDetailModeInput(buildSector(listenerManager));
+            MapHoverInstaller.installHoverTooltipDetailLevelInput(buildSector(listenerManager));
 
             assertThat(listenerManager.getRemovedListenerClasses())
-                .containsExactly(HoverTooltipDetailModeInput.class);
+                .containsExactly(HoverTooltipDetailLevelInput.class);
 
             assertThat(listenerManager.getAddedListeners())
                 .singleElement()
-                .isInstanceOf(HoverTooltipDetailModeInput.class);
+                .isInstanceOf(HoverTooltipDetailLevelInput.class);
 
             assertThat(listenerManager.getAddedTransientFlags())
                 .containsExactly(true);
@@ -105,7 +105,7 @@ class MapHoverInstallerTest {
         void toleratesAMissingListenerManager() {
 
             var detailModeInputInstallOnNullManager = (Runnable) () ->
-                MapHoverInstaller.installHoverTooltipDetailModeInput(buildSector(null));
+                MapHoverInstaller.installHoverTooltipDetailLevelInput(buildSector(null));
 
             assertThatCode(detailModeInputInstallOnNullManager::run)
                 .doesNotThrowAnyException();
@@ -206,7 +206,7 @@ class MapHoverInstallerTest {
         @Test
         void clearsEveryHalfOfTheBoxAndRegistersNothingBack() {
             // All three, because they are separate registrations: leaving the input half behind
-            // would keep swallowing the toggle key for a box that is no longer drawn, and leaving
+            // would keep swallowing the cycle key for a box that is no longer drawn, and leaving
             // the tick behind would go on closing a window nothing publishes into.
             var listenerManager = new RecordingListenerManager();
             var sectorMock = mock(SectorAPI.class);
@@ -216,7 +216,7 @@ class MapHoverInstallerTest {
             MapHoverInstaller.uninstallAll(sectorMock);
 
             assertThat(listenerManager.getRemovedListenerClasses())
-                .containsExactly(MapLayerCellTooltip.class, HoverTooltipDetailModeInput.class);
+                .containsExactly(MapLayerCellTooltip.class, HoverTooltipDetailLevelInput.class);
 
             verify(sectorMock)
                 .removeTransientScriptsOfClass(MapHoverExpirer.class);

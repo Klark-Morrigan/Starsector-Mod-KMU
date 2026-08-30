@@ -12,15 +12,15 @@ package kmu.maplayers.base.tooltip;
  * <p>It is a live view preference rather than save state - the same transience as the hover itself -
  * so it is a plain singleton never registered with the save, and nothing serialises it. Being a
  * singleton it outlives the save that set it, which is what
- * {@link #discardModeFromPreviousSave()} answers for on load.
+ * {@link #discardLevelFromPreviousSave()} answers for on load.
  *
  * <p>It sits beside the tooltips rather than beside the hover state because it says nothing about
  * what is under the cursor: it states how deep a tooltip's box reads, which is a tooltip fact.
  */
-public final class HoverTooltipDetailModeState {
+public final class HoverTooltipDetailLevelState {
 
     // The one shared holder the input pass advances and the tooltip dispatcher reads.
-    private static final HoverTooltipDetailModeState INSTANCE = new HoverTooltipDetailModeState();
+    private static final HoverTooltipDetailLevelState INSTANCE = new HoverTooltipDetailLevelState();
 
     // Volatile so a reader on another thread sees the level the last press set rather than a stale
     // one; the advance itself is safe unsynchronised because only the input pass ever writes it.
@@ -28,14 +28,14 @@ public final class HoverTooltipDetailModeState {
 
     // Reached through getInstance(); the holder stands on its own instance, so the constructor is
     // package-visible rather than sealed to the singleton.
-    HoverTooltipDetailModeState() {
+    HoverTooltipDetailLevelState() {
     }
 
     /**
      * @return the one shared holder the cycle key writes and the tooltip dispatcher reads, since
      *         neither pass owns the other
      */
-    public static HoverTooltipDetailModeState getInstance() {
+    public static HoverTooltipDetailLevelState getInstance() {
         return INSTANCE;
     }
 
@@ -54,7 +54,7 @@ public final class HoverTooltipDetailModeState {
      * the process alive from one save straight into the next - so without this the level would carry
      * over silently, the one piece of this feature a player could not account for.
      */
-    public void discardModeFromPreviousSave() {
+    public void discardLevelFromPreviousSave() {
         level = HoverTooltipDetailLevel.FACTIONS;
     }
 

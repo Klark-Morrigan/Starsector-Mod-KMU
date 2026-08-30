@@ -149,7 +149,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     /**
      * Names what this box's {@linkplain #resolveExpandedVariant richer counterpart} states beyond it, in
      * the player's words - "score contributions" for a box whose counterpart accounts for the numbers it
-     * shows. Supplied by a box taking part in the detail toggle, and empty for one that does not, which
+     * shows. Supplied by a box taking part in the detail cycle, and empty for one that does not, which
      * is the ordinary case.
      *
      * <p>What it buys is the line at the foot of the box naming the key and what pressing it would do.
@@ -174,15 +174,15 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         return Optional.empty();
     }
 
-    // The line the box ends on, or none at all: the toggle key and what pressing it would do to this
+    // The line the box ends on, or none at all: the cycle key and what pressing it would do to this
     // box. Its own block, so the shared parting sets it off from the content the way any two blocks are
     // set off - a hint about the box reading as the last line of a list would be read as part of that
     // list.
     //
-    // Which way the toggle reads is taken from whether this box still has a counterpart to switch to:
+    // Which way the hint reads is taken from whether this box still has a counterpart to switch to:
     // the plain box offers one and so offers to show it, and the counterpart the framework selects
     // offers none and so offers to hide itself again. Read off the box being drawn rather than off the
-    // shared mode, which is the only way the two cannot disagree - a mode read here could say "hide"
+    // shared level, which is the only way the two cannot disagree - a level read here could say "hide"
     // over a box that never expanded.
     private Optional<TooltipSection> buildFooterSection(SectorAPI sector, StarSystemAPI system) {
         return resolveExpandedDetailName(sector, system).map(detailName -> TooltipSection.createSection(
@@ -239,7 +239,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     private static TooltipRow buildFooterRow(String phrase) {
         return TooltipRow
             .createRow(new TextSpan(
-                HoverTooltipDetailModeInput.TOGGLE_KEY_NAME,
+                HoverTooltipDetailLevelInput.CYCLE_KEY_NAME,
                 StarsectorUiColour.VANILLA_BUTTON_SHORTCUT.resolve()))
             .clearsCrestColumn()
             .continuesWith(new TextSpan(

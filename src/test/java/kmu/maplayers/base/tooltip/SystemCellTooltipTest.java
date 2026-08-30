@@ -32,7 +32,7 @@ import java.util.Optional;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.BUTTON_SHORTCUT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
-import static kmu.maplayers.base.tooltip.HoverTooltipDetailModeInput.TOGGLE_KEY_NAME;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevelInput.CYCLE_KEY_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -57,7 +57,7 @@ import static org.mockito.Mockito.when;
  */
 final class SystemCellTooltipTest {
 
-    // What a box taking part in the detail toggle offers the player, in that box's own words. Stated as
+    // What a box taking part in the detail cycle offers the player, in that box's own words. Stated as
     // something no layer says, since what a counterpart holds is the layer's to name and the shape under
     // test only puts it in a sentence.
     private static final String DETAIL_NAME = "the full breakdown";
@@ -486,7 +486,7 @@ final class SystemCellTooltipTest {
 
             assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).labelRuns())
                 .containsExactly(
-                    new TextSpan(TOGGLE_KEY_NAME, BUTTON_SHORTCUT),
+                    new TextSpan(CYCLE_KEY_NAME, BUTTON_SHORTCUT),
                     new TextSpan("show the full breakdown", GRAY));
         }
 
@@ -502,7 +502,7 @@ final class SystemCellTooltipTest {
 
             assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).labelRuns())
                 .containsExactly(
-                    new TextSpan(TOGGLE_KEY_NAME, BUTTON_SHORTCUT),
+                    new TextSpan(CYCLE_KEY_NAME, BUTTON_SHORTCUT),
                     new TextSpan("hide the full breakdown", GRAY));
         }
 
@@ -557,7 +557,7 @@ final class SystemCellTooltipTest {
 
         @Test
         void renderForEndsABoxOfferingNoDetailWithItsContent() {
-            // The ordinary box takes no part in the toggle, so it ends where its content does rather
+            // The ordinary box takes no part in the detail cycle, so it ends where its content does rather
             // than on a line offering a counterpart that does not exist.
             var sections = captureDrawnBox(buildTooltipSayingSomething()).sections();
 
@@ -755,7 +755,7 @@ final class SystemCellTooltipTest {
             return Optional.ofNullable(expandedVariant);
         }
 
-        // Puts this box in the detail toggle: what it offers, and the counterpart holding it - null for
+        // Puts this box in the detail cycle: what it offers, and the counterpart holding it - null for
         // the box that is itself the counterpart, which has nothing further to offer.
         private SystemCellTooltipFake offering(String detailName, MapHoverTooltip expandedVariant) {
             this.detailName = detailName;
