@@ -24,8 +24,6 @@ import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.visibility.ColonyKnowledge;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
-import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
-import kmu.maplayers.politicalmap.base.dominance.BlocFriendliness;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -51,6 +49,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
+import static kmu.maplayers.politicalmap.base.tooltip.ListedClaimContestFixture.buildUnroutedContest;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubDispositionToward;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 
@@ -109,12 +108,6 @@ final class ExpandedSystemClaimTooltipTest {
 
     private static final boolean IS_TERRITORIAL = true;
 
-    // Nobody above neutral with anybody, which leaves the friendly block empty over every system - the
-    // indifference vanilla starts most faction pairs at, and the state every account here is posed
-    // under, no case below being about a disposition.
-    private static final BlocFriendliness INDIFFERENT_FACTIONS =
-        new BlocFriendliness((factionId, otherFactionId) -> false);
-
     // A system the contest itself settled - no decree over it - which is the state an account is
     // ordinarily resolved under and the one in which the strongest market is called out.
     private static final SystemClaimBreakdown CONTESTED_SYSTEM =
@@ -125,12 +118,8 @@ final class ExpandedSystemClaimTooltipTest {
     // case states the rule its account is resolved under here rather than through a settings seam -
     // which is the point of the pairing, an account reading the rule for itself being free to
     // withhold what the listing above it named.
-    private static final SystemClaimContestTooltip.ListedClaimContest CONTESTED_CONTEST =
-        SystemClaimContestTooltip.ListedClaimContest.selectFrom(
-            CONTESTED_SYSTEM,
-            ColonyVisibility.BASE_FOG,
-            BlocAffiliation.NONE,
-            INDIFFERENT_FACTIONS);
+    private static final ListedClaimContest CONTESTED_CONTEST =
+        buildUnroutedContest(CONTESTED_SYSTEM, ColonyVisibility.BASE_FOG);
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
 
@@ -272,11 +261,7 @@ final class ExpandedSystemClaimTooltipTest {
             // the live settings seam answers with it off. The undiscovered market has to be listed - read
             // afresh here, the account would withhold the very colony the listing named, and would
             // be free to answer two factions of one box differently besides.
-            var contest = SystemClaimContestTooltip.ListedClaimContest.selectFrom(
-                CONTESTED_SYSTEM,
-                UNDER_THE_REVEAL,
-                BlocAffiliation.NONE,
-                INDIFFERENT_FACTIONS);
+            var contest = buildUnroutedContest(CONTESTED_SYSTEM, UNDER_THE_REVEAL);
 
             var standing = new WeighedClaimStanding(
                 HEGEMONY,
@@ -299,11 +284,9 @@ final class ExpandedSystemClaimTooltipTest {
             // A decree took the system before any market was weighed, so no market's score decided
             // anything and none is called out for it - the claimant's least of all.
             var entries = tooltip.resolveAccountEntries(
-                SystemClaimContestTooltip.ListedClaimContest.selectFrom(
+                buildUnroutedContest(
                     new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()),
-                    ColonyVisibility.BASE_FOG,
-                    BlocAffiliation.NONE,
-                    INDIFFERENT_FACTIONS),
+                    ColonyVisibility.BASE_FOG),
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                 SystemColonyReading.NONE);
 

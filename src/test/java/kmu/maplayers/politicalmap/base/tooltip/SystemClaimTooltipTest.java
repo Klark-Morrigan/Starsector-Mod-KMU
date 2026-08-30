@@ -22,8 +22,6 @@ import kmu.maplayers.base.visibility.ColonyKindLookup;
 import kmu.maplayers.base.visibility.ColonyVisibility;
 import kmu.maplayers.base.visibility.MapVisibilityRules;
 import kmu.maplayers.base.visibility.OpenlyKnownColonyLookup;
-import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
-import kmu.maplayers.politicalmap.base.dominance.BlocFriendliness;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 import org.junit.jupiter.api.AfterEach;
@@ -55,6 +53,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.base.visibility.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
+import static kmu.maplayers.politicalmap.base.tooltip.ListedClaimContestFixture.buildUnroutedContest;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubDispositionToward;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 
@@ -126,12 +125,6 @@ final class SystemClaimTooltipTest {
     // already placed, and inside the allied block it is said on the line instead of by a heading.
     private static final boolean IS_TERRITORIAL = true;
     private static final boolean IS_NON_TERRITORIAL = false;
-
-    // Nobody above neutral with anybody, which leaves the friendly block empty - the state the two
-    // account cases below are posed under, neither being about a disposition. Every case about the
-    // blocks themselves goes through the box's own live read of the sector instead.
-    private static final BlocFriendliness INDIFFERENT_FACTIONS =
-        new BlocFriendliness((factionId, otherFactionId) -> false);
 
     // Whether the player knows of the colony a standing rests on - the flag the box's projection
     // reads. Independent of what the mechanic made of that colony: a market held in the open is
@@ -1062,11 +1055,9 @@ final class SystemClaimTooltipTest {
             // alone, so every faction it lists reads as its line alone. The markets behind those
             // scores are the counterpart's, an F1 away.
             assertThat(tooltip.resolveAccountEntries(
-                    SystemClaimContestTooltip.ListedClaimContest.selectFrom(
+                    buildUnroutedContest(
                         new SystemClaimBreakdown(null, HEGEMONY, List.of()),
-                        ColonyVisibility.BASE_FOG,
-                        BlocAffiliation.NONE,
-                        INDIFFERENT_FACTIONS),
+                        ColonyVisibility.BASE_FOG),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     SystemColonyReading.NONE))
                 .isEmpty();
@@ -1083,11 +1074,9 @@ final class SystemClaimTooltipTest {
                 .thenReturn(Optional.of(LAST_SEEN));
 
             assertThat(tooltip.resolveAccountEntries(
-                    SystemClaimContestTooltip.ListedClaimContest.selectFrom(
+                    buildUnroutedContest(
                         new SystemClaimBreakdown(null, HEGEMONY, List.of()),
-                        ColonyVisibility.BASE_FOG,
-                        BlocAffiliation.NONE,
-                        INDIFFERENT_FACTIONS),
+                        ColonyVisibility.BASE_FOG),
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     new SystemColonyReading(
                         ColonyKindLookup.NONE,
