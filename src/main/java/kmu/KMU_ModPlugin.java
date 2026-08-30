@@ -41,13 +41,23 @@ import kmu.ui.context.MarketUiContextInstaller;
  */
 public class KMU_ModPlugin extends BaseModPlugin {
 
-    // The two switches this mod answers, each holding what it was last applied as so a settings
-    // change can tell which of them moved. Listed here because deciding what runs is the entry
-    // point's whole subject; what each half does is its installers'.
+    // The switches this mod answers, each holding what it was last applied as so a settings change
+    // can tell which of them moved. Listed here because deciding what runs is the entry point's
+    // whole subject; what each half does is its installers'.
     private static final KmuToggledFeature mapLayers = new KmuToggledFeature(
         KmuFeatureSettings::areMapLayersEnabled,
         KMU_ModPlugin::installMapLayers,
         KMU_ModPlugin::uninstallMapLayers);
+
+    // The condition editor, switched apart from the map because it is a separate feature and,
+    // being unfinished, the one that ships off. Its whole per-save wiring is the tracker that
+    // remembers which market a UI is open on, which nothing else reads - so a player who has not
+    // asked for the editor runs none of it. The console command that opens the editor is registered
+    // by data file rather than from here and so cannot be withheld; it reads the same switch itself.
+    private static final KmuToggledFeature marketConditionManager = new KmuToggledFeature(
+        KmuFeatureSettings::isMarketConditionManagerEnabled,
+        MarketUiContextInstaller::installAll,
+        MarketUiContextInstaller::uninstallAll);
 
     // Adapting to another mod, and so switched on its own: none of what it does is about anything
     // this mod paints, and a player who turned the overlay off has not thereby asked for a minimap
@@ -116,8 +126,6 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // two of them.
         var sector = Global.getSector();
 
-        MarketUiContextInstaller.installAll(sector);
-
         // Kept current whether or not the map is drawing, since it is the map that would lose by a
         // gap in it: a register left unwritten while the layers are off would have every gated
         // colony unobserved again when they are switched back on.
@@ -133,10 +141,11 @@ public class KMU_ModPlugin extends BaseModPlugin {
             "Failed to discard KMU map layer machinery from the previous save");
 
         mapLayers.applyTo(sector);
+        marketConditionManager.applyTo(sector);
         randomAssortmentOfThingsCompatibility.applyTo(sector);
     }
 
-    // Brings both switches to bear on the sector already wired, each acting only if it was the one
+    // Brings every switch to bear on the sector already wired, each acting only if it was the one
     // that moved. Every switched feature belongs in this one place: one left out is one the player
     // can flip and see nothing happen until they reload.
     static void applySwitchedFeatures() {
@@ -144,6 +153,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         var sector = Global.getSector();
 
         mapLayers.applyToIfSwitched(sector);
+        marketConditionManager.applyToIfSwitched(sector);
         randomAssortmentOfThingsCompatibility.applyToIfSwitched(sector);
     }
 

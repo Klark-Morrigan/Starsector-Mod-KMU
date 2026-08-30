@@ -8,8 +8,10 @@ package kmu.settings;
  * feature cannot be asked whether it exists. A toggle here decides whether a feature's start-up
  * wiring runs; everything the feature then does is tuned by its own class.
  *
- * <p>Every toggle here defaults on. A player who has never opened the settings has the mod they
- * installed, and switching one off is a deliberate act.
+ * <p>A finished feature's toggle defaults on: a player who has never opened the settings has the
+ * mod they installed, and switching one off is a deliberate act. A feature still being built
+ * defaults off by the same reasoning read the other way - what ships on is what the mod claims to
+ * do, and one that is not ready makes no such claim until it is.
  */
 public final class KmuFeatureSettings {
 
@@ -19,6 +21,14 @@ public final class KmuFeatureSettings {
     private static final String MAP_LAYERS_FIELD = "kmu_features_toggles_areMapLayersEnabled";
 
     private static final boolean DEFAULT_MAP_LAYERS = true;
+
+    private static final String MARKET_CONDITION_MANAGER_FIELD =
+        "kmu_features_toggles_isMarketConditionManagerEnabled";
+
+    // Off, because the feature is unfinished. It is also the one toggle whose feature writes to the
+    // campaign rather than drawing over it, so a player switched into it by default would be given
+    // an unfinished editor over their own save.
+    private static final boolean DEFAULT_MARKET_CONDITION_MANAGER = false;
 
     private KmuFeatureSettings() {
     }
@@ -30,5 +40,17 @@ public final class KmuFeatureSettings {
      */
     public static boolean areMapLayersEnabled() {
         return KmuLunaSettings.readBoolean(MAP_LAYERS_FIELD, DEFAULT_MAP_LAYERS);
+    }
+
+    /**
+     * @return whether the market condition manager is wired - the tracker that remembers which
+     *         market a UI is open on, and the console command that opens the editor on it; off by
+     *         default while the feature is unfinished, and switched on it is neither supported nor
+     *         safe on a campaign the player cares about
+     */
+    public static boolean isMarketConditionManagerEnabled() {
+        return KmuLunaSettings.readBoolean(
+            MARKET_CONDITION_MANAGER_FIELD,
+            DEFAULT_MARKET_CONDITION_MANAGER);
     }
 }

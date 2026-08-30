@@ -56,7 +56,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>A Boolean row's default column is held the same way where the value is a decision rather than a
  * taste: the hover tiers ship on so that switching them is the player's move and not the file's, the
  * visibility overrides ship off so that a fresh player is shown what the ordinary rules admit and
- * nothing beyond it, and
+ * nothing beyond it, the unfinished feature ships off so that nothing the mod does not yet stand
+ * behind runs unasked, and
  * the Java fallback beside each getter cannot stand in for that - it answers only while LunaLib has
  * no stored value, so it is this column a fresh player is actually given. Which way a switch ships is
  * that one table's business; that the two spellings of it agree is every Boolean row's, so the
@@ -124,6 +125,15 @@ final class LunaSettingsCsvIntegrationTest {
         "kmu_map_visibility_overrides_shouldShowUnseenHiddenMarkets",
         "kmu_map_visibility_overrides_shouldShowUndiscoveredMarkets",
         "kmu_map_visibility_overrides_shouldShowHiddenSystems");
+
+    // The feature toggle of the one feature that is not finished, held to shipping off. Its own
+    // check rather than a row in the walk above, because what it pins is not a value agreeing with
+    // a constant but a decision: a feature the mod does not yet stand behind is not switched on for
+    // a player who never asked for it, and this one writes to the campaign rather than drawing over
+    // it. The row leaves this table when the feature is finished, along with the wording that says
+    // so on the settings screen.
+    private static final String UNFINISHED_FEATURE_FIELD_ID =
+        "kmu_features_toggles_isMarketConditionManagerEnabled";
 
     // The tabs the settings screen is laid out into. LunaLib creates a tab by being asked for one,
     // so a mistyped tab name is not an error there - it silently opens a tab of its own holding
@@ -384,6 +394,22 @@ final class LunaSettingsCsvIntegrationTest {
                         + " is shown of the sector is what the ordinary rules admit and nothing"
                         + " beyond it",
                     fieldId,
+                    SETTINGS_CSV)
+                .isEqualTo(BOOLEAN_OFF_VALUE);
+        }
+    }
+
+    @Nested
+    class UnfinishedFeatureDefaults {
+
+        @Test
+        void theUnfinishedFeatureRowShipsSwitchedOff() {
+
+            assertThat(readColumn(UNFINISHED_FEATURE_FIELD_ID, DEFAULT_VALUE_COLUMN, BOOLEAN_FIELD_TYPE))
+                .as(
+                    "default of %s in %s: the feature is unfinished and changes campaign state, so"
+                        + " it ships off and a player runs it only by asking for it",
+                    UNFINISHED_FEATURE_FIELD_ID,
                     SETTINGS_CSV)
                 .isEqualTo(BOOLEAN_OFF_VALUE);
         }

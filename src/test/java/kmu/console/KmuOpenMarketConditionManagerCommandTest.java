@@ -9,123 +9,191 @@ import org.lazywizard.console.BaseCommand.CommandResult;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class KmuOpenMarketConditionManagerCommandTest {
 
+    // The feature switch each case runs under. Every case but one holds it on, the switch being a
+    // guard ahead of the behaviour they are about: read off, the command answers nothing else.
+    private static final BooleanSupplier FEATURE_SWITCHED_ON = () -> true;
+    private static final BooleanSupplier FEATURE_SWITCHED_OFF = () -> false;
+
     @Nested
     class RunCommand {
 
         @Test
-        void rejectsNonCampaignContextWithoutOpeningEditor() {
+        void refusesToOpenTheEditorWhileTheFeatureIsSwitchedOff() {
+
             var opened = new AtomicBoolean(false);
             var output = new ArrayList<String>();
             var command = new KmuOpenMarketConditionManagerCommand(
-                    () -> {
-                        opened.set(true);
-                        return KmuConditionEditorOpenResult.opened();
-                    },
-                    output::add);
+                FEATURE_SWITCHED_OFF,
+                () -> {
+                    opened.set(true);
+                    return KmuConditionEditorOpenResult.opened();
+                },
+                output::add);
+
+            var result = command.runCommand("", CommandContext.CAMPAIGN_MARKET);
+
+            assertThat(result)
+                .isEqualTo(CommandResult.ERROR);
+
+            // In a context that would otherwise have opened it, so the refusal is the switch's and
+            // not the context's.
+            assertThat(opened)
+                .isFalse();
+
+            assertThat(output)
+                .containsExactly(
+                    "The Market Condition Manager is unfinished and switched off."
+                        + " Switch it on under LunaLib's mod settings, on KMU's Features tab,"
+                        + " to try it anyway.");
+        }
+
+        @Test
+        void rejectsNonCampaignContextWithoutOpeningEditor() {
+
+            var opened = new AtomicBoolean(false);
+            var output = new ArrayList<String>();
+            var command = new KmuOpenMarketConditionManagerCommand(
+                FEATURE_SWITCHED_ON,
+                () -> {
+                    opened.set(true);
+                    return KmuConditionEditorOpenResult.opened();
+                },
+                output::add);
 
             var result = command.runCommand("", CommandContext.COMBAT_MISSION);
 
-            assertThat(result).isEqualTo(CommandResult.WRONG_CONTEXT);
-            assertThat(opened).isFalse();
-            assertThat(output).containsExactly("This command can only run in a campaign.");
+            assertThat(result)
+                .isEqualTo(CommandResult.WRONG_CONTEXT);
+            assertThat(opened)
+                .isFalse();
+            assertThat(output)
+                .containsExactly("This command can only run in a campaign.");
         }
 
         @Test
         void rejectsAStrayArgumentAsBadSyntaxWithoutOpeningEditor() {
+
             var opened = new AtomicBoolean(false);
             var output = new ArrayList<String>();
             var command = new KmuOpenMarketConditionManagerCommand(
-                    () -> {
-                        opened.set(true);
-                        return KmuConditionEditorOpenResult.opened();
-                    },
-                    output::add);
+                FEATURE_SWITCHED_ON,
+                () -> {
+                    opened.set(true);
+                    return KmuConditionEditorOpenResult.opened();
+                },
+                output::add);
 
             var result = command.runCommand("bogus", CommandContext.CAMPAIGN_MARKET);
 
-            assertThat(result).isEqualTo(CommandResult.BAD_SYNTAX);
+            assertThat(result)
+                .isEqualTo(CommandResult.BAD_SYNTAX);
+
             // A malformed invocation must not reach the editor entry point.
-            assertThat(opened).isFalse();
-            assertThat(output).anyMatch(message -> message.contains("Too many arguments"));
+            assertThat(opened)
+                .isFalse();
+            assertThat(output)
+                .anyMatch(message -> message.contains("Too many arguments"));
         }
 
         @Test
         void opensEditorInCampaignContext() {
+
             var opened = new AtomicBoolean(false);
             var output = new ArrayList<String>();
             var command = new KmuOpenMarketConditionManagerCommand(
-                    () -> {
-                        opened.set(true);
-                        return KmuConditionEditorOpenResult.opened();
-                    },
-                    output::add);
+                FEATURE_SWITCHED_ON,
+                () -> {
+                    opened.set(true);
+                    return KmuConditionEditorOpenResult.opened();
+                },
+                output::add);
 
             var result = command.runCommand("", CommandContext.CAMPAIGN_MARKET);
 
-            assertThat(result).isEqualTo(CommandResult.SUCCESS);
-            assertThat(opened).isTrue();
-            assertThat(output).containsExactly("Opened Market Condition Manager.");
+            assertThat(result)
+                .isEqualTo(CommandResult.SUCCESS);
+            assertThat(opened)
+                .isTrue();
+            assertThat(output)
+                .containsExactly("Opened Market Condition Manager.");
         }
 
         @Test
         void surfacesNoMarketContextAsWrongContext() {
+
             var output = new ArrayList<String>();
             var command = new KmuOpenMarketConditionManagerCommand(
-                    KmuConditionEditorOpenResult::noMarketContext,
-                    output::add);
+                FEATURE_SWITCHED_ON,
+                KmuConditionEditorOpenResult::noMarketContext,
+                output::add);
 
             var result = command.runCommand("", CommandContext.CAMPAIGN_MAP);
 
-            assertThat(result).isEqualTo(CommandResult.WRONG_CONTEXT);
-            assertThat(output).containsExactly("No active context supports market condition editing.");
+            assertThat(result)
+                .isEqualTo(CommandResult.WRONG_CONTEXT);
+            assertThat(output)
+                .containsExactly("No active context supports market condition editing.");
         }
 
         @Test
         void surfacesUnsupportedTargetAsWrongContext() {
+
             var output = new ArrayList<String>();
             var command = new KmuOpenMarketConditionManagerCommand(
-                    () -> KmuConditionEditorOpenResult.unsupportedTarget("Unsupported target."),
-                    output::add);
+                FEATURE_SWITCHED_ON,
+                () -> KmuConditionEditorOpenResult.unsupportedTarget("Unsupported target."),
+                output::add);
 
             var result = command.runCommand("", CommandContext.CAMPAIGN_MARKET);
 
-            assertThat(result).isEqualTo(CommandResult.WRONG_CONTEXT);
-            assertThat(output).containsExactly("Unsupported target.");
+            assertThat(result)
+                .isEqualTo(CommandResult.WRONG_CONTEXT);
+            assertThat(output)
+                .containsExactly("Unsupported target.");
         }
 
         @Test
         void surfacesEntryPointFailureAsError() {
+
             var output = new ArrayList<String>();
             var command = new KmuOpenMarketConditionManagerCommand(
-                    () -> KmuConditionEditorOpenResult.failed(
-                            "Failed to open Market Condition Manager.",
-                            new IllegalStateException("dialog unavailable")),
-                    output::add);
+                FEATURE_SWITCHED_ON,
+                () -> KmuConditionEditorOpenResult.failed(
+                    "Failed to open Market Condition Manager.",
+                    new IllegalStateException("dialog unavailable")),
+                output::add);
 
             var result = command.runCommand("", CommandContext.CAMPAIGN_MARKET);
 
-            assertThat(result).isEqualTo(CommandResult.ERROR);
-            assertThat(output).containsExactly("Failed to open Market Condition Manager: dialog unavailable");
+            assertThat(result)
+                .isEqualTo(CommandResult.ERROR);
+            assertThat(output)
+                .containsExactly("Failed to open Market Condition Manager: dialog unavailable");
         }
 
         @Test
         void catchesUnexpectedEntryPointException() {
+
             var output = new ArrayList<String>();
             var command = new KmuOpenMarketConditionManagerCommand(
-                    () -> {
-                        throw new IllegalStateException("unexpected failure");
-                    },
-                    output::add);
+                FEATURE_SWITCHED_ON,
+                () -> {
+                    throw new IllegalStateException("unexpected failure");
+                },
+                output::add);
 
             var result = command.runCommand("", CommandContext.CAMPAIGN_MARKET);
 
-            assertThat(result).isEqualTo(CommandResult.ERROR);
-            assertThat(output).containsExactly("Failed to open Market Condition Manager: unexpected failure");
+            assertThat(result)
+                .isEqualTo(CommandResult.ERROR);
+            assertThat(output)
+                .containsExactly("Failed to open Market Condition Manager: unexpected failure");
         }
     }
 }
