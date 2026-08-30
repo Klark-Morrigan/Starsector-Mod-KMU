@@ -36,7 +36,7 @@ import java.util.Objects;
  * @param noteText            a remark about the thing on the line that is not a finding about it -
  *                            how current what the box says about it is, say - run on at the end of the
  *                            line, or null where the line makes none
- * @param qualifierText       the status called out after the line's name, or null when it states none
+ * @param qualifier           the status called out after the line's name, or null when it states none
  * @param valueText           what the block counts this line in, or {@link CellTooltipRows#NO_SCORE}
  *                            for a line carrying no number
  * @param valueWorkingText    the arithmetic the number came out of, stated before it, or null where
@@ -57,7 +57,7 @@ public record CellTooltipEntryLine(
     CellTooltipLabelFinding labelFinding,
     CellTooltipIndexPlace indexPlace,
     String noteText,
-    String qualifierText,
+    CellTooltipQualifier qualifier,
     String valueText,
     String valueWorkingText,
     boolean isAside,
@@ -73,7 +73,7 @@ public record CellTooltipEntryLine(
     private static final CellTooltipLabelFinding NO_LABEL_FINDING = null;
     private static final CellTooltipIndexPlace NO_PLACE = null;
     private static final String NO_NOTE = null;
-    private static final String NO_QUALIFIER = null;
+    private static final CellTooltipQualifier NO_QUALIFIER = null;
     private static final String NO_WORKING = null;
 
     // What an ordinary line is: one of the things the block lists rather than a note about them, and
@@ -204,17 +204,32 @@ public record CellTooltipEntryLine(
     }
 
     /**
-     * Returns a copy of this line calling {@code qualifierText} out after its name - a status stated on
-     * the line it is about rather than on a line of its own, such as why this line outranks a
+     * Returns a copy of this line calling one finding out after its name - a status stated on the
+     * line it is about rather than on a line of its own, such as why this line outranks a
      * higher-scoring one beneath it.
      *
-     * @param qualifierText the status called out after the line's name, unspaced - the line parts it
-     *                      from its label when it is laid out
+     * <p>The plainest of the statuses {@link CellTooltipQualifier} composes, and the one nearly every
+     * caller wants, so it is stated as the words it says rather than as a value a caller has to build
+     * first.
+     *
+     * @param findingText the status called out after the line's name, unspaced - the line parts it
+     *                    from its label when it is laid out
      * @return an otherwise-identical line ending on that status
      */
-    public CellTooltipEntryLine qualifiedWith(String qualifierText) {
+    public CellTooltipEntryLine qualifiedWith(String findingText) {
+        return callsOut(CellTooltipQualifier.stateFinding(findingText));
+    }
+
+    /**
+     * Returns a copy of this line calling {@code qualifier} out after its name - the same status, for
+     * a caller whose finding is introduced by a word or marked by a picture of what it names.
+     *
+     * @param qualifier the status called out after the line's name
+     * @return an otherwise-identical line ending on that status
+     */
+    public CellTooltipEntryLine callsOut(CellTooltipQualifier qualifier) {
         var parts = new LineParts(this);
-        parts.qualifierText = qualifierText;
+        parts.qualifier = qualifier;
         return parts.buildLine();
     }
 
@@ -382,7 +397,7 @@ public record CellTooltipEntryLine(
         private CellTooltipLabelFinding labelFinding;
         private CellTooltipIndexPlace indexPlace;
         private String noteText;
-        private String qualifierText;
+        private CellTooltipQualifier qualifier;
         private String valueText;
         private String valueWorkingText;
         private boolean isAside;
@@ -395,7 +410,7 @@ public record CellTooltipEntryLine(
             labelFinding = line.labelFinding();
             indexPlace = line.indexPlace();
             noteText = line.noteText();
-            qualifierText = line.qualifierText();
+            qualifier = line.qualifier();
             valueText = line.valueText();
             valueWorkingText = line.valueWorkingText();
             isAside = line.isAside();
@@ -410,7 +425,7 @@ public record CellTooltipEntryLine(
                 labelFinding,
                 indexPlace,
                 noteText,
-                qualifierText,
+                qualifier,
                 valueText,
                 valueWorkingText,
                 isAside,

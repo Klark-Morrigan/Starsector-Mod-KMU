@@ -295,12 +295,16 @@ public final class StandingsTooltipSeamsFake {
 
     // The entries naming exactly the groups a block was handed, in the order it handed them over -
     // which is what the real resolver answers with, one entry per group and no reordering of its own.
+    //
+    // Read through the standing a block listed, so a group is named by the entry stood up for it
+    // whether it was listed whole or apart from the bloc it belongs to.
     private static List<CellTooltipEntry> selectEntriesFor(
-            List<GroupStanding> blockStandings,
+            List<RoutedStanding> blockStandings,
             Map<GroupStanding, CellTooltipEntry> entriesByStanding) {
 
         return blockStandings
             .stream()
+            .map(RoutedStanding::standing)
             .map(entriesByStanding::get)
             .toList();
     }

@@ -66,6 +66,7 @@
     "political_map_tooltip_qualifier_hidden": "hidden",
     "political_map_tooltip_qualifier_unlisted": "unlisted",
     "political_map_tooltip_qualifier_non_territorial": "non-territorial",
+    "political_map_tooltip_qualifier_of_alliance": "of",
 
     "political_map_tooltip_last_seen": "last seen %s (%s)",
     "political_map_tooltip_last_seen_today": "today",
@@ -78,6 +79,7 @@
     "political_map_tooltip_section_non_territorial": "Non-territorial:",
     "political_map_tooltip_section_dominated": "Dominated by:",
     "political_map_tooltip_section_allied_with_system_holder": "Allied with the system holder:",
+    "political_map_tooltip_section_friendly_with_system_holder": "Friendly with the system holder:",
     "political_map_tooltip_section_non_political": "Non-political:",
 
     "political_map_tooltip_factor_stability": "Stability",

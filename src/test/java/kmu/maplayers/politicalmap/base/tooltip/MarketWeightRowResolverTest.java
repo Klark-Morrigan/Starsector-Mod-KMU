@@ -5,6 +5,7 @@ import kmlib.starsector.entities.EntityNameplate;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
@@ -256,8 +257,8 @@ final class MarketWeightRowResolverTest {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(rows.get(0).line().qualifierText())
-                .isEqualTo("hidden");
+            assertThat(rows.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("hidden"));
         }
 
         @Test
@@ -271,7 +272,7 @@ final class MarketWeightRowResolverTest {
                 buildRules(),
                 buildReadingWithOpenlyKnown(nameColonyId("Selkie Station")));
 
-            assertThat(rows.get(0).line().qualifierText())
+            assertThat(rows.get(0).line().qualifier())
                 .isNull();
         }
 
@@ -285,8 +286,8 @@ final class MarketWeightRowResolverTest {
                 buildRules(),
                 buildReadingWithUndiscovered("jangala"));
 
-            assertThat(rows.get(0).line().qualifierText())
-                .isEqualTo("undiscovered");
+            assertThat(rows.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
         }
 
         @Test
@@ -298,7 +299,7 @@ final class MarketWeightRowResolverTest {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(readSizeLine(rows).qualifierText())
+            assertThat(readSizeLine(rows).qualifier())
                 .isNull();
         }
 
@@ -445,7 +446,7 @@ final class MarketWeightRowResolverTest {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(readStationLine(rows).qualifierText())
+            assertThat(readStationLine(rows).qualifier())
                 .isNull();
         }
 
@@ -583,8 +584,8 @@ final class MarketWeightRowResolverTest {
                 List.of(buildUnweighedColonyOfKind("Galatia Academy", ColonyKind.COLONY)),
                 buildRules());
 
-            assertThat(rows.get(0).line().qualifierText())
-                .isEqualTo("unlisted");
+            assertThat(rows.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("unlisted"));
         }
 
         @Test
@@ -597,8 +598,8 @@ final class MarketWeightRowResolverTest {
                 List.of(buildConcealedUnweighedColony("Daybreak")),
                 buildRules());
 
-            assertThat(rows.get(0).line().qualifierText())
-                .isEqualTo("hidden");
+            assertThat(rows.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("hidden"));
         }
 
         @Test
@@ -614,10 +615,10 @@ final class MarketWeightRowResolverTest {
                     buildUnweighedColony("Sentinel Gantries")),
                 buildRules());
 
-            assertThat(rows.get(0).line().qualifierText())
-                .isEqualTo("abandoned");
-            assertThat(rows.get(1).line().qualifierText())
-                .isEqualTo("decivilised");
+            assertThat(rows.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("abandoned"));
+            assertThat(rows.get(1).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("decivilised"));
         }
 
         @Test

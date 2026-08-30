@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
+import com.fs.starfarer.api.campaign.RepLevel;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
@@ -39,6 +40,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
+import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubDispositionToward;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.ANY_PASS;
 
@@ -71,6 +73,11 @@ final class SystemDominationTooltipTest {
     private static final String SYSTEM_ID = "askonia";
     private static final String CORE_FACTION = "hegemony";
     private static final String ALLY_FACTION = "tritachyon";
+
+    // The two the chain's remaining relation blocks are posed with: one the sector puts on good terms
+    // with the holder, and one it says nothing about, which is indifference and so a rival.
+    private static final String FRIENDLY_FACTION = "luddic_church";
+    private static final String RIVAL_FACTION = "persean_league";
 
     private static final String BLOC_CREST = "graphics/rebel_pact_crest.png";
     private static final CellTooltipMark BLOC_MARK =
@@ -211,6 +218,46 @@ final class SystemDominationTooltipTest {
                     "Non-political:",
                     "Neutral");
         }
+
+        @Test
+        void buildBodySectionsLaysTheFiveBlocksDownFromTheHolderOutward() {
+            // The whole chain in one system, in the order a reader meets it: who holds the place,
+            // who stands with it by alliance, who stands with it in disposition, who stands against
+            // it, and who was never in the running. Posed here rather than with the shared shape
+            // because two of the five turn on which faction a bloc actually is - the placeholder
+            // owner, and a bloc the sector's own relations put on good terms with the holder.
+            allianceSet = buildAllianceOf(CORE_FACTION, ALLY_FACTION);
+
+            stubFaction(sectorMock, FRIENDLY_FACTION, "The Luddic Church", MEMBER_CREST);
+            stubDispositionToward(sectorMock, FRIENDLY_FACTION, CORE_FACTION, RepLevel.FAVORABLE);
+
+            StandingsTooltipSeamsFake.stubRankedGroups(
+                List.of(
+                    new GroupStanding(CORE_FACTION, ANY_SCORE, List.of()),
+                    new GroupStanding(ALLY_FACTION, ANY_SCORE, List.of()),
+                    new GroupStanding(FRIENDLY_FACTION, ANY_SCORE, List.of()),
+                    new GroupStanding(RIVAL_FACTION, ANY_SCORE, List.of()),
+                    new GroupStanding(Factions.NEUTRAL, ANY_SCORE, List.of())),
+                List.of(
+                    createLoneGroupEntry(),
+                    createAlliedGroupEntry(),
+                    createNamedGroupEntry("The Luddic Church"),
+                    createNamedGroupEntry("Persean League"),
+                    createPlaceholderGroupEntry()));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+                .containsExactly(
+                    "Dominated by:",
+                    "Rebel Pact",
+                    "Allied with the system holder:",
+                    "Tri-Tachyon",
+                    "Friendly with the system holder:",
+                    "The Luddic Church",
+                    "Contested by:",
+                    "Persean League",
+                    "Non-political:",
+                    "Neutral");
+        }
     }
 
     @Nested
@@ -302,6 +349,13 @@ final class SystemDominationTooltipTest {
     private static CellTooltipEntry createAlliedGroupEntry() {
         return CellTooltipEntry.createEntry(
             CellTooltipEntryLine.createLine(MEMBER_MARK, "Tri-Tachyon", ALLY_SCORE));
+    }
+
+    // Any further group, named apart from the rest so a case reading the box top to bottom tells the
+    // blocks apart by the one line each of them holds.
+    private static CellTooltipEntry createNamedGroupEntry(String name) {
+        return CellTooltipEntry.createEntry(
+            CellTooltipEntryLine.createLine(MEMBER_MARK, name, ALLY_SCORE));
     }
 
     // The placeholder owner as the resolver hands it over, named and scored apart from the leader so

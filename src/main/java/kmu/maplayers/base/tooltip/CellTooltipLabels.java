@@ -30,8 +30,9 @@ import java.util.List;
  *
  * <p>The order is what a reader meets in turn: which one this is, what the box has found about it,
  * and last, how far its account of it can be trusted. Only the findings read gold
- * ({@link #buildFindingSpan}); the place identifying the line and the remark about the box's own
- * account are quiet, so a reader scanning for findings passes over both.
+ * ({@link #buildFindingSpan}); the place identifying the line, any word a status is introduced by,
+ * and the remark about the box's own account are quiet, so a reader scanning for findings passes
+ * over all three.
  *
  * <p>Runs rather than a built row, so nothing here holds an opinion about the shape the label ends up
  * on. A banner and a listed line compose their words differently and lay them out differently, and a
@@ -73,7 +74,7 @@ final class CellTooltipLabels {
         }
         appendNameRuns(labelRuns, line, lineColour);
         appendIndexRun(labelRuns, line);
-        appendQualifierRun(labelRuns, line);
+        appendQualifierRuns(labelRuns, line, lineColour);
         appendNoteRun(labelRuns, line);
 
         return labelRuns;
@@ -226,12 +227,34 @@ final class CellTooltipLabels {
 
     // Runs the label on into whatever the line calls out - and leaves a line calling nothing out as
     // the runs it already had, rather than ending on one that draws nothing.
-    private static void appendQualifierRun(List<LabelRun> labelRuns, CellTooltipEntryLine line) {
+    //
+    // A status introduced by a word and marked by a picture of what it names reads as three runs in
+    // the order a player meets it: the box's own connective, the picture, then the finding itself.
+    // Only the last is gold, on the one rule that gilds what the box has worked out and nothing
+    // else - so the plainest status there is comes to the single gold run it has always been.
+    //
+    // The word takes the quiet shade a place and a remark take, being the box's own joining word
+    // rather than anything it found; the mark keeps whatever colouring it was composed with, a
+    // picture of a thing in its own right having its colours in its own pixels.
+    private static void appendQualifierRuns(
+            List<LabelRun> labelRuns,
+            CellTooltipEntryLine line,
+            Color lineColour) {
 
-        if (!KmlibStrings.hasText(line.qualifierText())) {
+        var qualifier = line.qualifier();
+
+        if (qualifier == null) {
             return;
         }
-        labelRuns.add(buildFindingSpan(line.qualifierText()));
+        if (qualifier.hasLeadingWord()) {
+            labelRuns.add(new TextSpan(
+                qualifier.leadingWordText(),
+                StarsectorUiColour.VANILLA_GRAY.resolve()));
+        }
+        if (qualifier.hasMark()) {
+            labelRuns.add(resolveMarkSpan(qualifier.mark(), lineColour));
+        }
+        labelRuns.add(buildFindingSpan(qualifier.findingText()));
     }
 
     // Runs the label on into whatever it remarks about the thing on the line. Laid last, after the

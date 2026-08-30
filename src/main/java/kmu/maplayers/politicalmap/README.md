@@ -285,6 +285,26 @@ contested, the block stating relations to the group that holds the system. It is
 the alliances layer, where members are already one bloc, and on an install with nothing grouping
 factions - dropped there by the same rule that drops any other block standing over no entries.
 
+Inside that split, disposition sorts what alliance left standing against the holder.
+`BlocFriendliness` answers whether two blocs are on good terms - every faction of the one above
+`RepLevel.NEUTRAL` toward every faction of the other, read over both whole memberships
+(`HolderGrouping.resolveMemberFactionIds`) rather than over who happens to stand in the hovered
+system, so the same two blocs cannot come out friendly over one system and contesting over the next.
+The threshold is the base game's own step from indifference to goodwill
+(`StarsectorFactionRelations`, KMLib), which is what makes the block explicable: a cut taken anywhere
+else in the scale is one the player is never shown. What the four rules are is `StandingBlockRules`,
+bundled because a friendliness read over one grouping beside an affiliation off another would place
+blocs under an alliance set no fill was resolved with.
+
+A bloc its members do not agree about is not listed whole under either heading. It is broken up
+instead: each member present takes a row of its own in the block its own disposition puts it in,
+carrying the bloc it came out of (`RoutedStanding`), which `StandingRowResolver` states after the
+faction's name as `of <crest> <alliance name>`. The alliance is therefore named on every row it lost,
+where a majority or a lead-member reading would put a heading over factions it is false of - the
+fault the block exists to fix, one level in. `HOLDER` and `ALLIED` never break up, being placed by
+membership rather than by relation, and under the identity grouping every bloc is a singleton, so
+nothing breaks up there at all.
+
 What that pair offers the player is named there too, once for both: "score contributions", which the
 framework puts at the foot of whichever of the two is drawn, beside the key that switches between
 them. Named here rather than by the framework because only this layer knows what its counterpart

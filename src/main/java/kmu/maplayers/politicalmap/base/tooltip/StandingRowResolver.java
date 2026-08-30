@@ -8,10 +8,12 @@ import kmlib.text.KmlibNumbers;
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
+import kmu.maplayers.base.tooltip.CellTooltipQualifier;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
+import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +47,12 @@ import java.util.List;
  * crest resolves to a null path the render layer draws around, so a group or member with no authored
  * crest still shows its name and score.
  *
+ * <p>A faction a block listed apart from the bloc it belongs to is one of those lone factions and presents
+ * as one, with the bloc stated after its name instead: the alliance is still named on every row it lost, so
+ * a reader is never left inferring a grouping from what is missing. Which factions those are is the
+ * routing's answer; naming and cresting the bloc they came out of is this resolver's, off the same grouping
+ * that names a bloc listed whole.
+ *
  * <p>How loudly a score is drawn is settled here too, on the standing's own kind: a faction or a bloc
  * the pass weighed nothing for carries its nought in the quiet shade. The distinction is the
  * standing's rather than the resolver's - what it adds is that the same distinction is drawn at both
@@ -66,7 +74,7 @@ public final class StandingRowResolver {
      * group's members gathered beneath it as its peers and each member over the account asked for it.
      *
      * @param sector          the sector whose {@link FactionAPI} names and crests are read
-     * @param standings       the two-tier standings ranked by {@code SystemStandings}, in draw order
+     * @param standings       the two-tier standings as the block lists them, in draw order
      * @param grouping        the active view's grouping, supplying an alliance's name and colour
      *                        faction; the identity grouping makes every group a lone faction
      * @param accountResolver what the listing box hangs beneath each faction as the account of its
@@ -77,7 +85,7 @@ public final class StandingRowResolver {
      */
     public static List<CellTooltipEntry> resolveRows(
             SectorAPI sector,
-            List<GroupStanding> standings,
+            List<RoutedStanding> standings,
             HolderGrouping grouping,
             FactionAccountResolver accountResolver) {
 
@@ -93,10 +101,11 @@ public final class StandingRowResolver {
     // singleton from ever drifting from the member it wraps.
     private static CellTooltipEntry resolveGroupEntry(
             SectorAPI sector,
-            GroupStanding standing,
+            RoutedStanding routedStanding,
             HolderGrouping grouping,
             FactionAccountResolver accountResolver) {
 
+        var standing = routedStanding.standing();
         var memberEntries = resolveMemberEntries(sector, standing.members(), accountResolver);
         var blocId = standing.blocId();
 
@@ -109,10 +118,14 @@ public final class StandingRowResolver {
             var groupMemberEntry = memberEntries.get(0);
 
             return CellTooltipEntry
-                .createEntry(buildGroupLine(
-                    groupMemberEntry.line().mark(),
-                    groupMemberEntry.line().labelText(),
-                    standing))
+                .createEntry(attributeToAlliance(
+                    buildGroupLine(
+                        groupMemberEntry.line().mark(),
+                        groupMemberEntry.line().labelText(),
+                        standing),
+                    routedStanding,
+                    sector,
+                    grouping))
                 .nesting(groupMemberEntry.children());
         }
         // An alliance carries the alliance's own name and its lead (colour) member's crest - the same
@@ -132,6 +145,33 @@ public final class StandingRowResolver {
         return CellTooltipEntry
             .createEntry(allianceLine)
             .grouping(memberEntries);
+    }
+
+    // The bloc a line's faction belongs to, stated after its name where the routing listed that
+    // faction apart from it - and left alone on every line that ranked whole, which is every line
+    // the identity grouping ever produces.
+    //
+    // Read off the grouping here rather than carried along from the routing, so the alliance is
+    // named and crested by the very fold the ranking was taken under. The name is what the box has
+    // worked out about the row and reads as a finding; the word introducing it and the crest are
+    // the sentence around it and stay quiet.
+    private static CellTooltipEntryLine attributeToAlliance(
+            CellTooltipEntryLine line,
+            RoutedStanding routedStanding,
+            SectorAPI sector,
+            HolderGrouping grouping) {
+
+        if (!routedStanding.isDissolvedFromAlliance()) {
+            return line;
+        }
+        var allianceBlocId = routedStanding.allianceBlocId();
+
+        return line.callsOut(CellTooltipQualifier.introduceFinding(
+            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_OF_ALLIANCE),
+            CellTooltipMark.resolveMarkAsAuthored(FactionPresentation
+                .resolvePresentation(sector, grouping.resolveColourFactionId(allianceBlocId))
+                .crestSpritePath()),
+            grouping.resolveAllianceName(allianceBlocId)));
     }
 
     // One group's line, whichever kind of group it is: whatever names it, over the score its members

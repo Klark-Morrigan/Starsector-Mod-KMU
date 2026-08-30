@@ -4,7 +4,8 @@ import kmu.util.KmuStrings;
 
 /**
  * The blocks a hovered system's standings are listed under, in the order a box lays them down: who
- * holds the system, who stands with them, who contests it, and who was never in the running at all.
+ * holds the system, who stands with them by alliance, who stands with them in disposition, who
+ * contests it, and who was never in the running at all.
  *
  * <p>A closed set rather than a heading string handed around, so which block a group falls in is an
  * answer the compiler checks: a block stated here is a block the box lays down, and a routing that
@@ -25,6 +26,13 @@ public enum StandingBlock {
 
     /** The blocs the alliance set folds into the holder's own, which are not contesting it. */
     ALLIED(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_SYSTEM_HOLDER),
+
+    /**
+     * The blocs on good terms with the holder without standing in its alliance. Inside the allied
+     * block rather than beside it: an ally who is merely favourable is still an ally, so disposition
+     * sorts only what alliance left standing against the holder.
+     */
+    FRIENDLY(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_SYSTEM_HOLDER),
 
     /** The blocs standing against the holder. */
     CONTESTED(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),

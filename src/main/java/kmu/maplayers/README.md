@@ -388,6 +388,13 @@ about what the overlay means.
   the numbers on the line rather than against the line's standing. It closes the line, past the
   qualifier, being the only run that is not about the thing on the line: set ahead of the gold, it
   would break a status away from the name it qualifies.
+  A status is itself a small value (`CellTooltipQualifier`): the finding it always states, plus - for
+  a line calling out the thing it *belongs to* rather than something about it - a word introducing
+  that finding and a mark of what the finding names, read as `of <crest> <alliance name>`. One value
+  rather than three parts layered on separately, since applied apart they leave a line free to end on
+  a connective introducing nothing or on a picture of something it never names. Only the finding is
+  gold, so the plain status nearly every line carries (`qualifiedWith`) stays the single gold run it
+  has always been.
   A finding may also sit inside the line's own name (`callsOutInLabel`), as a
   `CellTooltipLabelFinding` - the stretch of the label that says it, held as character positions
   since the name is the only copy of the name. It is drawn in the qualifier's gold where it stands,
@@ -428,9 +435,9 @@ about what the overlay means.
   column, and nothing else. The label is handed the tier's colour rather than choosing one, and hands
   back runs rather than a row, so nothing about what a line says commits it to the shape it says it on.
   Only the findings read gold (`CellTooltipLabels.buildFindingSpan`, which the banner's public
-  `buildQualifierSpan` is the outward face of); a place identifies the line and a remark is the box
-  talking about its own account, so both stay quiet and a reader scanning for findings passes over
-  them.
+  `buildQualifierSpan` is the outward face of); a place identifies the line, a word introducing a
+  status is the box's own connective, and a remark is the box talking about its own account, so all
+  three stay quiet and a reader scanning for findings passes over them.
   A mark travels as a run at the head of the line carrying it
   on every shape, never in a leading column, so every line opens at the box's content edge and the
   indent alone says how deep a line sits: a column is one gutter shared down a flat stack, and a

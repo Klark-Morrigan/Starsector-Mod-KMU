@@ -12,6 +12,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
+import kmu.maplayers.base.tooltip.CellTooltipQualifier;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKind;
@@ -179,8 +180,8 @@ final class ClaimScoreRowResolverTest {
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Culann", PRESENCE_LINE);
-            assertThat(rows.get(0).line().qualifierText())
-                .isEqualTo("claim holder");
+            assertThat(rows.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("claim holder"));
         }
 
         @Test
@@ -591,8 +592,8 @@ final class ClaimScoreRowResolverTest {
             // And says why it was passed over, as loudly as any other line says it. The word is the
             // one thing separating this row from the weighed kind's, both being blocked out - so a row
             // that lost it would read as a market the contest weighed and declined to explain.
-            assertThat(rows.get(2).line().qualifierText())
-                .isEqualTo("hidden");
+            assertThat(rows.get(2).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("hidden"));
         }
 
         @Test
@@ -613,8 +614,8 @@ final class ClaimScoreRowResolverTest {
 
             assertThat(rows.get(1).line().hasRedactedName())
                 .isTrue();
-            assertThat(rows.get(1).line().qualifierText())
-                .isEqualTo("undiscovered");
+            assertThat(rows.get(1).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
         }
 
         @Test
@@ -655,8 +656,8 @@ final class ClaimScoreRowResolverTest {
 
             assertThat(rows.get(1).line().hasRedactedName())
                 .isTrue();
-            assertThat(rows.get(1).line().qualifierText())
-                .isEqualTo("undiscovered");
+            assertThat(rows.get(1).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
         }
 
         @Test
@@ -746,8 +747,8 @@ final class ClaimScoreRowResolverTest {
 
             assertThat(rows.get(0).line().hasRedactedName())
                 .isTrue();
-            assertThat(rows.get(0).line().qualifierText())
-                .isEqualTo("claim holder, undiscovered");
+            assertThat(rows.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("claim holder, undiscovered"));
         }
 
         @Test
@@ -826,8 +827,8 @@ final class ClaimScoreRowResolverTest {
                 buildReadingWithUndiscovered("kanta's_den"),
                 WITHHOLDING_UNDISCOVERED_MARKETS);
 
-            assertThat(rows.get(1).line().qualifierText())
-                .isEqualTo("undiscovered");
+            assertThat(rows.get(1).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
         }
 
         @Test
@@ -836,7 +837,7 @@ final class ClaimScoreRowResolverTest {
             // contest cannot produce.
             var rows = resolveContestedRows(buildStandingOverOneSibling());
 
-            assertThat(rows.get(1).line().qualifierText())
+            assertThat(rows.get(1).line().qualifier())
                 .isNull();
         }
 
@@ -854,8 +855,8 @@ final class ClaimScoreRowResolverTest {
                         SECOND_LISTED))),
                 TIBICENA_IS_A_DEAD_WORLD);
 
-            assertThat(rows.get(1).line().qualifierText())
-                .isEqualTo("decivilised");
+            assertThat(rows.get(1).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("decivilised"));
         }
 
         @Test
@@ -869,8 +870,8 @@ final class ClaimScoreRowResolverTest {
                     STRONGEST_MARKET_SIZE,
                     SECOND_LISTED))));
 
-            assertThat(rows.get(1).line().qualifierText())
-                .isEqualTo("unlisted");
+            assertThat(rows.get(1).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("unlisted"));
         }
 
         @Test
@@ -886,7 +887,7 @@ final class ClaimScoreRowResolverTest {
                 NOTHING_BEYOND_THE_SCORE,
                 WITHHOLDING_UNDISCOVERED_MARKETS);
 
-            assertThat(rows.get(0).line().qualifierText())
+            assertThat(rows.get(0).line().qualifier())
                 .isNull();
         }
 
@@ -902,7 +903,7 @@ final class ClaimScoreRowResolverTest {
                 NOTHING_BEYOND_THE_SCORE,
                 WITHHOLDING_UNDISCOVERED_MARKETS);
 
-            assertThat(rows.get(0).line().qualifierText())
+            assertThat(rows.get(0).line().qualifier())
                 .isNull();
         }
 
@@ -1070,8 +1071,8 @@ final class ClaimScoreRowResolverTest {
             var rows = resolvePresenceOnlyRows(
                 buildFoundHiddenMarket("Kanta's Den", 6, NO_SIBLING_MARKETS, SECOND_LISTED));
 
-            assertThat(rows.get(0).line().qualifierText())
-                .isEqualTo("hidden");
+            assertThat(rows.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("hidden"));
         }
 
         @Test
@@ -1084,8 +1085,8 @@ final class ClaimScoreRowResolverTest {
                 buildReadingWithOpenlyKnown(ClaimMarketFixture.nameMarketId("Galatia Academy")),
                 buildFoundHiddenOffEconomyMarket("Galatia Academy"));
 
-            assertThat(rows.get(0).line().qualifierText())
-                .isEqualTo("unlisted");
+            assertThat(rows.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("unlisted"));
         }
 
         @Test
@@ -1096,8 +1097,8 @@ final class ClaimScoreRowResolverTest {
             var rows = resolvePresenceOnlyRows(
                 buildFoundHiddenOffEconomyMarket("Daybreak"));
 
-            assertThat(rows.get(0).line().qualifierText())
-                .isEqualTo("hidden");
+            assertThat(rows.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("hidden"));
         }
 
         @Test

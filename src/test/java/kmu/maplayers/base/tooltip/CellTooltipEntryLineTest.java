@@ -247,7 +247,7 @@ final class CellTooltipEntryLineTest {
                         NO_LABEL_FINDING,
                         NO_PLACE,
                         NO_NOTE,
-                        "(core)",
+                        CellTooltipQualifier.stateFinding("(core)"),
                         "1,200",
                         null,
                         IS_LISTED_IN_ITS_OWN_RIGHT,
@@ -275,7 +275,7 @@ final class CellTooltipEntryLineTest {
             var plainLine = CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200");
             plainLine.qualifiedWith("(core)");
 
-            assertThat(plainLine.qualifierText())
+            assertThat(plainLine.qualifier())
                 .isNull();
         }
     }
@@ -315,8 +315,8 @@ final class CellTooltipEntryLineTest {
                 .qualifiedWith("undiscovered")
                 .callsOutInLabel(0, 9);
 
-            assertThat(line.qualifierText())
-                .isEqualTo("undiscovered");
+            assertThat(line.qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
             assertThat(line.labelFinding())
                 .isEqualTo(new CellTooltipLabelFinding(0, 9));
         }
@@ -391,8 +391,8 @@ final class CellTooltipEntryLineTest {
                 .qualifiedWith("(core)")
                 .notedWith("last seen 34 days ago (c206.05.12)");
 
-            assertThat(line.qualifierText())
-                .isEqualTo("(core)");
+            assertThat(line.qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("(core)"));
         }
 
         @Test
@@ -442,8 +442,8 @@ final class CellTooltipEntryLineTest {
                 .qualifiedWith("(core)")
                 .indexedAt("[2]", CellTooltipIndexOutcome.WON);
 
-            assertThat(line.qualifierText())
-                .isEqualTo("(core)");
+            assertThat(line.qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("(core)"));
             assertThat(line.indexPlace().text())
                 .isEqualTo("[2]");
         }
@@ -569,8 +569,8 @@ final class CellTooltipEntryLineTest {
                 .qualifiedWith("hidden")
                 .derivesValueFrom("5 ::");
 
-            assertThat(line.qualifierText())
-                .isEqualTo("hidden");
+            assertThat(line.qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("hidden"));
         }
 
         @Test

@@ -325,6 +325,27 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
+        void resolveLabelRunsReadsAnIntroducedStatusAsItsWordItsMarkThenItsFinding() {
+            // A status naming the thing the line belongs to comes to three runs in the order a reader
+            // meets them, and only the last is gold: the box's joining word and the picture beside it
+            // are the sentence around the finding rather than findings themselves, so a reader
+            // scanning for what the box worked out lands on the name alone.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine
+                        .createLine(NO_MARK, "Astral Armada", "3")
+                        .callsOut(CellTooltipQualifier.introduceFinding(
+                            "of",
+                            CREST_MARK,
+                            "Allied Powers")),
+                    PLAYER_BRIGHT))
+                .containsExactly(
+                    new TextSpan("Astral Armada", PLAYER_BRIGHT),
+                    new TextSpan("of", GRAY),
+                    new ImageSpan(CREST),
+                    new TextSpan("Allied Powers", HIGHLIGHT));
+        }
+
+        @Test
         void resolveLabelRunsAddsNoRunForWhateverTheLineLeavesUnsaid() {
             // The three absences together, and the reason they matter: a run drawing nothing would
             // still be a run the box measures and parts from its neighbour, so a plain line has to

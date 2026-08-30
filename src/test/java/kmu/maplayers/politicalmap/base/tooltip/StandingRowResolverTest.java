@@ -3,14 +3,19 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
+import kmu.maplayers.base.tooltip.CellTooltipQualifier;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.PresenceOnlyFactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
+import kmu.starsector.StarsectorSettingsFake;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
@@ -49,6 +54,19 @@ final class StandingRowResolverTest {
         CellTooltipEntry.createEntry(
             CellTooltipEntryLine.createLine(null, standing.factionId() + " colony", "1")));
 
+    // The player's own wording, which the one line stating the bloc a faction was listed apart from
+    // reads through. Every other case names nothing the player reads, so the install is inert for
+    // them.
+    @BeforeEach
+    void installWording() {
+        StarsectorSettingsFake.installSettings();
+    }
+
+    @AfterEach
+    void clearWording() {
+        StarsectorSettingsFake.clearSettings();
+    }
+
     @Nested
     class ResolveRows {
 
@@ -59,7 +77,7 @@ final class StandingRowResolverTest {
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/hegemony_crest.png");
 
-            var standings = List.of(
+            var standings = routeWhole(
                 new GroupStanding("hegemony", 7, List.of(new WeighedFactionStanding("hegemony", 7))));
 
             var entries = StandingRowResolver.resolveRows(
@@ -85,7 +103,7 @@ final class StandingRowResolverTest {
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
 
-            var standings = List.of(new GroupStanding(
+            var standings = routeWhole(new GroupStanding(
                 "hegemony",
                 1200,
                 List.of(new WeighedFactionStanding("hegemony", 1200))));
@@ -108,7 +126,7 @@ final class StandingRowResolverTest {
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "");
 
-            var standings = List.of(
+            var standings = routeWhole(
                 new GroupStanding("hegemony", 7, List.of(new WeighedFactionStanding("hegemony", 7))));
 
             var entries = StandingRowResolver.resolveRows(
@@ -130,7 +148,7 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
-            var standings = List.of(new GroupStanding("alliance-1", 11, List.of(
+            var standings = routeWhole(new GroupStanding("alliance-1", 11, List.of(
                 new WeighedFactionStanding("hegemony", 8),
                 new WeighedFactionStanding("astral_armada", 3))));
 
@@ -169,7 +187,7 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "hegemony", "The Hegemony", "");
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
-            var standings = List.of(new GroupStanding("alliance-1", 11, List.of(
+            var standings = routeWhole(new GroupStanding("alliance-1", 11, List.of(
                 new WeighedFactionStanding("hegemony", 8),
                 new WeighedFactionStanding("astral_armada", 3))));
 
@@ -192,6 +210,39 @@ final class StandingRowResolverTest {
         }
 
         @Test
+        void resolveRowsNamesTheBlocAMemberListedApartFromItCameOutOf() {
+            // A bloc its members disagree about is listed a member at a time, so the member reads as
+            // the lone faction it now stands as - and the alliance is stated after its name, so the
+            // grouping the map paints that territory by is never left to be inferred from a row that
+            // simply went missing.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
+            stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
+
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                List.of(RoutedStanding.dissolveFrom(
+                    new WeighedFactionStanding("astral_armada", 3),
+                    "alliance-1")),
+                buildAllianceGrouping(),
+                NO_ACCOUNT);
+
+            // The name is what the box worked out about the row and reads as a finding; the word
+            // before it and the bloc's own crest are the sentence around it.
+            assertThat(entries)
+                .containsExactly(CellTooltipEntry.createEntry(CellTooltipEntryLine
+                    .createLine(
+                        CellTooltipMark.resolveMarkAsAuthored("graphics/aa.png"),
+                        "Astral Armada",
+                        "3")
+                    .callsOut(CellTooltipQualifier.introduceFinding(
+                        "of",
+                        CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
+                        "Allied Powers"))));
+        }
+
+        @Test
         void resolveRowsIsEmptyForEmptyStandings() {
             // An uninhabited system ranks no groups, so the tooltip has nothing to list.
             assertThat(StandingRowResolver.resolveRows(
@@ -211,7 +262,7 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
             stubFaction(sectorMock, "tritachyon", "Tri-Tachyon", "graphics/tt.png");
 
-            var standings = List.of(
+            var standings = routeWhole(
                 new GroupStanding("hegemony", 9, List.of(new WeighedFactionStanding("hegemony", 9))),
                 new GroupStanding(
                     "tritachyon",
@@ -235,7 +286,7 @@ final class StandingRowResolverTest {
             // rather than a nameless line - a tooltip draws one faction per line and cannot fall back
             // to the stand-in band the picker uses for a null name. Its crest resolves absent.
             var sectorMock = buildEmptySector();
-            var standings = List.of(
+            var standings = routeWhole(
                 new GroupStanding("ghost", 5, List.of(new WeighedFactionStanding("ghost", 5))));
 
             var entries = StandingRowResolver.resolveRows(
@@ -258,7 +309,7 @@ final class StandingRowResolverTest {
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
 
-            var standings = List.of(new GroupStanding(
+            var standings = routeWhole(new GroupStanding(
                 "alliance-1",
                 8,
                 List.of(new WeighedFactionStanding("hegemony", 8))));
@@ -291,7 +342,7 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
-            var standings = List.of(new GroupStanding("alliance-1", 11, List.of(
+            var standings = routeWhole(new GroupStanding("alliance-1", 11, List.of(
                 new WeighedFactionStanding("hegemony", 8),
                 new WeighedFactionStanding("astral_armada", 3))));
 
@@ -317,7 +368,7 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
-            var standings = List.of(new GroupStanding("alliance-1", 11, List.of(
+            var standings = routeWhole(new GroupStanding("alliance-1", 11, List.of(
                 new WeighedFactionStanding("hegemony", 8),
                 new WeighedFactionStanding("astral_armada", 3))));
 
@@ -341,7 +392,7 @@ final class StandingRowResolverTest {
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
 
-            var standings = List.of(new GroupStanding(
+            var standings = routeWhole(new GroupStanding(
                 "alliance-1",
                 8,
                 List.of(new WeighedFactionStanding("hegemony", 8))));
@@ -365,7 +416,7 @@ final class StandingRowResolverTest {
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
 
-            var standings = List.of(
+            var standings = routeWhole(
                 new GroupStanding("hegemony", 7, List.of(new WeighedFactionStanding("hegemony", 7))));
 
             var entries = StandingRowResolver.resolveRows(
@@ -393,7 +444,7 @@ final class StandingRowResolverTest {
 
             stubFaction(sectorMock, "tritachyon", "Tri-Tachyon", "graphics/tt.png");
 
-            var standings = List.of(new GroupStanding(
+            var standings = routeWhole(new GroupStanding(
                 "tritachyon",
                 0,
                 List.of(new PresenceOnlyFactionStanding("tritachyon"))));
@@ -421,7 +472,7 @@ final class StandingRowResolverTest {
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
 
-            var standings = List.of(
+            var standings = routeWhole(
                 new GroupStanding("hegemony", 0, List.of(new WeighedFactionStanding("hegemony", 0))));
 
             var entries = StandingRowResolver.resolveRows(
@@ -444,7 +495,7 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
-            var standings = List.of(new GroupStanding("alliance-1", 0, List.of(
+            var standings = routeWhole(new GroupStanding("alliance-1", 0, List.of(
                 new PresenceOnlyFactionStanding("hegemony"),
                 new PresenceOnlyFactionStanding("astral_armada"))));
 
@@ -470,7 +521,7 @@ final class StandingRowResolverTest {
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
-            var standings = List.of(new GroupStanding("alliance-1", 8, List.of(
+            var standings = routeWhole(new GroupStanding("alliance-1", 8, List.of(
                 new WeighedFactionStanding("hegemony", 8),
                 new PresenceOnlyFactionStanding("astral_armada"))));
 
@@ -493,5 +544,15 @@ final class StandingRowResolverTest {
     // than at each case, since every case about the alliance poses the same two.
     private static HolderGrouping buildAllianceGrouping() {
         return buildAllianceOf("hegemony", "astral_armada");
+    }
+
+    // The groups as a block that listed every one of them whole hands them over - what every block
+    // placed by membership does, and what the two placed by disposition do with a bloc its members
+    // agree about. The state every case but the one about a bloc listed apart is posed in.
+    private static List<RoutedStanding> routeWhole(GroupStanding... standings) {
+        return Arrays
+            .stream(standings)
+            .map(RoutedStanding::routeWhole)
+            .toList();
     }
 }

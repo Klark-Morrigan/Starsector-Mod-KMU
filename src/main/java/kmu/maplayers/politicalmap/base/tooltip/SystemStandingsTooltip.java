@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.relation.StarsectorFactionRelations;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
@@ -10,8 +11,10 @@ import kmu.maplayers.base.tooltip.CellTooltipSections;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.BlocCandidacy;
+import kmu.maplayers.politicalmap.base.dominance.BlocFriendliness;
 import kmu.maplayers.politicalmap.base.dominance.ContestSides;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
 import kmu.util.KmuStrings;
@@ -22,8 +25,9 @@ import java.util.Optional;
 
 /**
  * The shape every box built on a hovered system's standings takes: what the system is, then who
- * dominates it, then who stands with them, then who contests it, then who was never in the running -
- * ranked under the active view's own grouping and weighting.
+ * dominates it, then who stands with them by alliance, then who stands with them in disposition,
+ * then who contests it, then who was never in the running - ranked under the active view's own
+ * grouping and weighting.
  *
  * <p>The ranking reads as a contest rather than as a list: the group the map fills the system in
  * the colour of is named as dominating it and the rest as contesting it, so who holds the system
@@ -36,7 +40,10 @@ import java.util.Optional;
  * with a bloc that has no interests to hold it with. A group standing in the holder's own alliance
  * is not one of the rivals either, and is lifted into a block of its own ({@link ContestSides}):
  * filed under the contested heading, two allies jointly holding a system would read as fighting each
- * other over it, which is the map contradicting itself one view over.
+ * other over it, which is the map contradicting itself one view over. Nor is a group on good terms
+ * with the holder without standing in its alliance, that being the same fault a relation short of an
+ * alliance produces - a bloc drawn beside the holder in friendly colours on no view at all, and
+ * nonetheless reported as fighting it.
  *
  * <p>The headline stays on the group the map painted the cell for rather than on its alliance,
  * which is what keeps the box an explanation of the cell beneath it: two allies at 6,000 each under
@@ -138,13 +145,10 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     // does nothing, or declining to over a system it has just listed somebody in.
     //
     // The routing is settled here for the same reason and travels with the rest of the read: it is
-    // taken over the live alliance set, so a box routing its blocks one at a time could file a group
-    // as an ally and the next block's read file it as a rival out of one hover. The alliance set is
-    // read as an affiliation at the point it is sampled, which is where a grouping stops being a
-    // fold and becomes the one question the blocks ask.
-    //
-    // What bars a bloc from the contest comes off the pass's own grouping, the one the map painted
-    // its fills by, so the box and the fills bar the same blocs from holding a system.
+    // taken over the live alliance set and the sector's live relations, so a box routing its blocks
+    // one at a time could file a group as an ally and the next block's read file it as a rival out
+    // of one hover. The alliance set is read as an affiliation at the point it is sampled, which is
+    // where a grouping stops being a fold and becomes the one question the blocks ask.
     //
     // Empty where no view is painting: there is then no grouping to rank under, and no body being
     // drawn for a hint to sit beneath.
@@ -165,8 +169,30 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             pass,
             StandingBlockRouting.routeRankedStandings(
                 SystemStandings.rankByDominationScore(system, pass),
-                BlocCandidacy.createForGrouping(pass.grouping()),
-                new BlocAffiliation(holderGroupingSource.resolveGrouping()))));
+                buildBlockRules(sector, pass.grouping()))));
+    }
+
+    // What the blocks are placed by, bound to this hover's sector and to the grouping the map painted
+    // its fills by.
+    //
+    // The bar and the membership both come off that painting grouping: the ranking names its groups
+    // by its bloc ids, so a membership read off any other fold would answer about blocs the box never
+    // listed. The alliance set is the one rule that does not - it is sampled live, being the axis the
+    // bands judge their contest by, and the faction and claims layers deliberately paint under a
+    // grouping that is not it.
+    //
+    // Disposition is read against this sector rather than through the game's own current one, so a
+    // box drawn over a second sector reports that sector's relations.
+    private StandingBlockRules buildBlockRules(SectorAPI sector, HolderGrouping paintingGrouping) {
+
+        return new StandingBlockRules(
+            BlocCandidacy.createForGrouping(paintingGrouping),
+            new BlocAffiliation(holderGroupingSource.resolveGrouping()),
+            new BlocFriendliness((factionId, otherFactionId) ->
+                StarsectorFactionRelations.isDispositionAboveNeutral(
+                    sector.getFaction(factionId),
+                    otherFactionId)),
+            paintingGrouping::resolveMemberFactionIds);
     }
 
     // The body itself, off the one reading: what the system is, then the contest over it.

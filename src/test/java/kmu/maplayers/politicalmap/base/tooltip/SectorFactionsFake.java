@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
+import com.fs.starfarer.api.campaign.RepLevel;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import static org.mockito.Mockito.mock;
@@ -17,7 +18,8 @@ import static org.mockito.Mockito.when;
  *
  * <p>A faction is stubbed onto a sector rather than handed back with one, so a suite needing two of them
  * states each in a line against the same sector - and a faction never stubbed at all is exactly the
- * unknown-id case, which every such suite has a bearing on.
+ * unknown-id case, which every such suite has a bearing on. How a stubbed faction stands toward another
+ * is layered on afterwards, for the suites whose subject reads a disposition as well as a name.
  */
 public final class SectorFactionsFake {
 
@@ -59,5 +61,31 @@ public final class SectorFactionsFake {
 
         when(sectorMock.getFaction(factionId))
             .thenReturn(factionMock);
+    }
+
+    /**
+     * Stubs how one faction already on {@code sectorMock} stands toward another, for a suite whose
+     * case turns on a disposition rather than on a name.
+     *
+     * <p>Layered onto the faction the sector already answers with rather than standing a second one
+     * up, so a faction's name, its crest and its standings are the one faction the box reads - two
+     * mocks under one id would leave whichever was stubbed last answering all three.
+     *
+     * <p>A faction never asked about answers no standing at all, which is the indifferent case every
+     * suite gets without saying anything.
+     *
+     * @param sectorMock      the sector the faction was stubbed onto
+     * @param factionId       the faction whose disposition is being stated
+     * @param otherFactionId  the faction it is disposed toward
+     * @param standing        how it stands toward them
+     */
+    public static void stubDispositionToward(
+            SectorAPI sectorMock,
+            String factionId,
+            String otherFactionId,
+            RepLevel standing) {
+
+        when(sectorMock.getFaction(factionId).getRelationshipLevel(otherFactionId))
+            .thenReturn(standing);
     }
 }

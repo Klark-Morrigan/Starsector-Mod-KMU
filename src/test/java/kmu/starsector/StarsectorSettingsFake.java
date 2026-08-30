@@ -111,6 +111,7 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_HIDDEN, "hidden");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_UNLISTED, "unlisted");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_NON_TERRITORIAL, "non-territorial");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_OF_ALLIANCE, "of");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_MILITARY, "Military");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_BONUS, "+%s");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM, "Claim:");
@@ -123,6 +124,9 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(
             KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_SYSTEM_HOLDER,
             "Allied with the system holder:");
+        stringsByKey.put(
+            KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_SYSTEM_HOLDER,
+            "Friendly with the system holder:");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_POLITICAL, "Non-political:");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_STABILITY, "Stability");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE, "Size");

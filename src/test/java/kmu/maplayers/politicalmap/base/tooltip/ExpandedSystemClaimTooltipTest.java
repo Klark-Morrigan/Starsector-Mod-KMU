@@ -17,6 +17,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
+import kmu.maplayers.base.tooltip.CellTooltipQualifier;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.visibility.ColonyKnowledge;
@@ -217,8 +218,8 @@ final class ExpandedSystemClaimTooltipTest {
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                 SystemColonyReading.NONE);
 
-            assertThat(entries.get(0).line().qualifierText())
-                .isEqualTo("claim holder");
+            assertThat(entries.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("claim holder"));
         }
 
         @Test
@@ -230,7 +231,7 @@ final class ExpandedSystemClaimTooltipTest {
                 buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL),
                 SystemColonyReading.NONE);
 
-            assertThat(entries.get(0).line().qualifierText())
+            assertThat(entries.get(0).line().qualifier())
                 .isNull();
         }
 
@@ -294,7 +295,7 @@ final class ExpandedSystemClaimTooltipTest {
                 buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                 SystemColonyReading.NONE);
 
-            assertThat(entries.get(0).line().qualifierText())
+            assertThat(entries.get(0).line().qualifier())
                 .isNull();
         }
     }

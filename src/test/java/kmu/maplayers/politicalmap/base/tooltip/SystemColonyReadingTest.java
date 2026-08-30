@@ -5,6 +5,7 @@ import kmlib.starsector.colonies.Colony;
 import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.maplayers.base.visibility.ColonyKindLookup;
@@ -263,8 +264,8 @@ final class SystemColonyReadingTest {
                 new ColonyConcealment(IS_FOUND, IS_OPEN, IS_A_SECRET),
                 IS_UNLISTED));
 
-            assertThat(line.qualifierText())
-                .isEqualTo("abandoned");
+            assertThat(line.qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("abandoned"));
             assertThat(line.noteText())
                 .isEqualTo(SystemColonyReadingFixture.LAST_SEEN);
         }

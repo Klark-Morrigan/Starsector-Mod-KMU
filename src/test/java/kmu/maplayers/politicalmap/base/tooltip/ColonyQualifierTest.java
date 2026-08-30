@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipLabelFinding;
+import kmu.maplayers.base.tooltip.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.ColonyKind;
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -291,7 +292,7 @@ final class ColonyQualifierTest {
 
             assertThat(line.labelFinding())
                 .isEqualTo(new CellTooltipLabelFinding(0, 9));
-            assertThat(line.qualifierText())
+            assertThat(line.qualifier())
                 .isNull();
         }
 
@@ -304,8 +305,8 @@ final class ColonyQualifierTest {
 
             assertThat(line.labelFinding())
                 .isNull();
-            assertThat(line.qualifierText())
-                .isEqualTo("abandoned");
+            assertThat(line.qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("abandoned"));
         }
 
         @Test
@@ -330,8 +331,8 @@ final class ColonyQualifierTest {
 
             assertThat(line.labelFinding())
                 .isEqualTo(new CellTooltipLabelFinding(0, 9));
-            assertThat(line.qualifierText())
-                .isEqualTo("undiscovered");
+            assertThat(line.qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
         }
 
         @Test
@@ -352,8 +353,8 @@ final class ColonyQualifierTest {
 
             assertThat(line.labelFinding())
                 .isNull();
-            assertThat(line.qualifierText())
-                .isEqualTo("abandoned");
+            assertThat(line.qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("abandoned"));
         }
 
         @Test
@@ -394,8 +395,8 @@ final class ColonyQualifierTest {
 
             assertThat(line.labelFinding())
                 .isEqualTo(new CellTooltipLabelFinding(0, 9));
-            assertThat(line.qualifierText())
-                .isEqualTo("undiscovered");
+            assertThat(line.qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
         }
 
         @Test
@@ -411,8 +412,8 @@ final class ColonyQualifierTest {
 
             assertThat(line.labelFinding())
                 .isEqualTo(new CellTooltipLabelFinding(0, 12));
-            assertThat(line.qualifierText())
-                .isEqualTo("abandoned");
+            assertThat(line.qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("abandoned"));
         }
 
         @Test
@@ -461,8 +462,8 @@ final class ColonyQualifierTest {
 
             assertThat(line.labelFinding())
                 .isNull();
-            assertThat(line.qualifierText())
-                .isEqualTo("abandoned, undiscovered");
+            assertThat(line.qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("abandoned, undiscovered"));
         }
 
         @Test
@@ -483,7 +484,13 @@ final class ColonyQualifierTest {
     // resolver reads it from: one rule gilds a word the colony is already called into its own name,
     // and it reads the label the line carries.
     private static String qualify(String colonyName, ColonyQualifierFacts facts) {
-        return qualifyLine(colonyName, facts).qualifierText();
+
+        var qualifier = qualifyLine(colonyName, facts).qualifier();
+
+        // A colony with nothing to call out carries no qualifier at all rather than a wordless one,
+        // which is exactly what one case below reads - so the words come off the qualifier where
+        // there is one instead of through it.
+        return qualifier == null ? null : qualifier.findingText();
     }
 
     // The whole line the resolver came back with, for the cases about a word the name already says -

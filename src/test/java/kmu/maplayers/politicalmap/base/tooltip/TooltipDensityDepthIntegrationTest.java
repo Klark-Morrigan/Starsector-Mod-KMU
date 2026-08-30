@@ -164,10 +164,10 @@ final class TooltipDensityDepthIntegrationTest {
 
         var entries = StandingRowResolver.resolveRows(
             sectorMock,
-            List.of(new GroupStanding(
+            List.of(RoutedStanding.routeWhole(new GroupStanding(
                 FACTION_ID,
                 7,
-                List.of(new WeighedFactionStanding(FACTION_ID, 7)))),
+                List.of(new WeighedFactionStanding(FACTION_ID, 7))))),
             HolderGrouping.identity(),
             standing -> MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildPatrolledColony()),
