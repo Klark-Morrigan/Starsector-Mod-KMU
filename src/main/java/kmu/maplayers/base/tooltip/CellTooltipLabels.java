@@ -45,10 +45,11 @@ import java.util.List;
  */
 final class CellTooltipLabels {
 
-    // The most runs a label comes to: the mark it leads with, then what stands before the finding in
-    // its name, the finding, and what stands after it. Fewer for almost every line, so the sizing is
-    // a ceiling rather than a promise.
-    private static final int MOST_LABEL_RUNS = 4;
+    // What a label with something to say beyond its name comes to: a mark, the name, and a run or
+    // two after it. A sizing hint and nothing more - a line that states a place, a marked status and
+    // a remark besides runs on past it and the list grows, while the plainest line of all comes to
+    // one run and leaves the rest of the room unused.
+    private static final int ORDINARY_LABEL_RUNS = 4;
 
     private CellTooltipLabels() {
     }
@@ -65,7 +66,7 @@ final class CellTooltipLabels {
     static List<LabelRun> resolveLabelRuns(CellTooltipEntryLine line, Color tierColour) {
 
         var lineColour = resolveLabelColour(line, tierColour);
-        var labelRuns = new ArrayList<LabelRun>(MOST_LABEL_RUNS);
+        var labelRuns = new ArrayList<LabelRun>(ORDINARY_LABEL_RUNS);
 
         // A line carrying no mark opens on its words rather than on an image run with nothing to
         // load, the same absence rule the banner shape holds to.

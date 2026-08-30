@@ -31,6 +31,8 @@ final class CellTooltipQualifierTest {
                 .isFalse();
             assertThat(qualifier.hasMark())
                 .isFalse();
+            assertThat(qualifier.hasTrailingWord())
+                .isFalse();
         }
 
         @Test

@@ -52,9 +52,7 @@ import java.util.List;
  * as one, with the bloc stated after its name instead: the alliance is still named on every row it lost, so
  * a reader is never left inferring a grouping from what is missing. Which factions those are is the
  * routing's answer; naming and cresting the bloc they came out of is this resolver's, off the same grouping
- * that names a bloc listed whole. Where the alliance is named after the faction on the row - the common
- * shape of an alliance called after the faction leading it - the name is stood in for by its initials and
- * closed with what kind of thing they are, so one line never says one name twice.
+ * that names a bloc listed whole, and in a shorter form where the bloc's name is the row's own.
  *
  * <p>How loudly a score is drawn is settled here too, on the standing's own kind: a faction or a bloc
  * the pass weighed nothing for carries its nought in the quiet shade. The distinction is the
@@ -71,7 +69,7 @@ public final class StandingRowResolver {
 
     // How many words a name has to run to before its initials stand in for it. One word abbreviates
     // to one letter, which is a poorer name than the word it replaced.
-    private static final int SHORTEST_ABBREVIATED_NAME_WORDS = 1;
+    private static final int SHORTEST_ABBREVIATED_NAME_WORDS = 2;
 
     private StandingRowResolver() {
     }
@@ -126,21 +124,19 @@ public final class StandingRowResolver {
 
             return CellTooltipEntry
                 .createEntry(attributeToAlliance(
+                    sector,
                     buildGroupLine(
                         groupMemberEntry.line().mark(),
                         groupMemberEntry.line().labelText(),
                         standing),
                     routedStanding,
-                    sector,
                     grouping))
                 .nesting(groupMemberEntry.children());
         }
         // An alliance carries the alliance's own name and its lead (colour) member's crest - the same
         // name and crest the alliances view paints the bloc's cluster by - over the factions in it.
         var allianceLine = buildGroupLine(
-            CellTooltipMark.resolveMarkAsAuthored(FactionPresentation
-                .resolvePresentation(sector, grouping.resolveColourFactionId(blocId))
-                .crestSpritePath()),
+            resolveAllianceCrest(sector, grouping, blocId),
             grouping.resolveAllianceName(blocId),
             standing);
 
@@ -163,9 +159,9 @@ public final class StandingRowResolver {
     // worked out about the row and reads as a finding; the words around it and the crest are the
     // sentence it sits in and stay quiet.
     private static CellTooltipEntryLine attributeToAlliance(
+            SectorAPI sector,
             CellTooltipEntryLine line,
             RoutedStanding routedStanding,
-            SectorAPI sector,
             HolderGrouping grouping) {
 
         if (!routedStanding.isDissolvedFromAlliance()) {
@@ -173,10 +169,7 @@ public final class StandingRowResolver {
         }
         var allianceBlocId = routedStanding.allianceBlocId();
         var allianceName = grouping.resolveAllianceName(allianceBlocId);
-
-        var allianceMark = CellTooltipMark.resolveMarkAsAuthored(FactionPresentation
-            .resolvePresentation(sector, grouping.resolveColourFactionId(allianceBlocId))
-            .crestSpritePath());
+        var allianceMark = resolveAllianceCrest(sector, grouping, allianceBlocId);
 
         // An alliance named after the faction on the row says the name a second time in the space of
         // one line - which is where an alliance is commonly named after the faction leading it, and
@@ -197,6 +190,19 @@ public final class StandingRowResolver {
             allianceName));
     }
 
+    // The crest a bloc shows: its colour (lead) faction's, which is the crest the alliances view
+    // paints that bloc's cluster by. Read here for both the line naming a bloc and the status
+    // attributing a row to one, so a bloc cannot end up crested two ways inside one box.
+    private static CellTooltipMark resolveAllianceCrest(
+            SectorAPI sector,
+            HolderGrouping grouping,
+            String blocId) {
+
+        return CellTooltipMark.resolveMarkAsAuthored(FactionPresentation
+            .resolvePresentation(sector, grouping.resolveColourFactionId(blocId))
+            .crestSpritePath());
+    }
+
     // Whether the alliance is called what the line is already called. Ignoring case, because what is
     // being asked is whether a reader would meet the same name twice, and two spellings differing
     // only in case read as one name.
@@ -215,7 +221,7 @@ public final class StandingRowResolver {
     // closing word, so "of the Hegemony alliance" reads as the sentence it is.
     private static String abbreviateAllianceName(String allianceName) {
 
-        return KmlibStrings.splitIntoWords(allianceName).size() > SHORTEST_ABBREVIATED_NAME_WORDS
+        return KmlibStrings.splitIntoWords(allianceName).size() >= SHORTEST_ABBREVIATED_NAME_WORDS
             ? KmlibStrings.abbreviateToInitials(allianceName)
             : allianceName;
     }

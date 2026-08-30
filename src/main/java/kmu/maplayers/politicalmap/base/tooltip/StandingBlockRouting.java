@@ -101,7 +101,7 @@ public final class StandingBlockRouting {
         // contestant would scan the same fold again for each of them to arrive at the same answer.
         var holderMemberFactionIds = rules.readMemberFactionIds(holderBlocId);
 
-        var rivalsByBlock = routeRivalSide(
+        var rivals = sortRivalsByDisposition(
             sides.selectSide(ContestSide.RIVAL, contestants, GroupStanding::blocId),
             holderMemberFactionIds,
             rules);
@@ -119,8 +119,8 @@ public final class StandingBlockRouting {
                 case HOLDER -> routeWhole(holder);
                 case ALLIED -> routeWhole(
                     sides.selectSide(ContestSide.ALLIED, contestants, GroupStanding::blocId));
-                case FRIENDLY -> List.copyOf(rivalsByBlock.get(StandingBlock.FRIENDLY));
-                case CONTESTED -> List.copyOf(rivalsByBlock.get(StandingBlock.CONTESTED));
+                case FRIENDLY -> List.copyOf(rivals.friendly());
+                case CONTESTED -> List.copyOf(rivals.contested());
                 case NON_POLITICAL -> List.copyOf(nonPolitical);
             });
         }
@@ -159,37 +159,31 @@ public final class StandingBlockRouting {
             .anyMatch(standings -> !standings.isEmpty());
     }
 
-    // The two blocks disposition sorts what alliance left standing against the holder into, walked
-    // once so a bloc's members are measured against the holder one time however it ends up listed.
-    //
-    // Both are seeded empty, so the switch above reads every block out of one map rather than
-    // guarding for the blocks a system happened to leave unfilled.
-    private static Map<StandingBlock, List<RoutedStanding>> routeRivalSide(
+    // Everything standing against the holder, sorted by how it is disposed toward it - walked once,
+    // so a bloc's members are measured against the holder one time however the bloc ends up listed.
+    private static RivalsByDisposition sortRivalsByDisposition(
             List<GroupStanding> rivals,
             Set<String> holderMemberFactionIds,
             StandingBlockRules rules) {
 
-        var rivalsByBlock = new EnumMap<StandingBlock, List<RoutedStanding>>(StandingBlock.class);
-
-        rivalsByBlock.put(StandingBlock.FRIENDLY, new ArrayList<>());
-        rivalsByBlock.put(StandingBlock.CONTESTED, new ArrayList<>());
+        var sortedRivals = new RivalsByDisposition(new ArrayList<>(), new ArrayList<>());
 
         for (var rival : rivals) {
-            appendRival(rivalsByBlock, rival, holderMemberFactionIds, rules);
+            appendRival(sortedRivals, rival, holderMemberFactionIds, rules);
         }
-        return rivalsByBlock;
+        return sortedRivals;
     }
 
     // One bloc standing against the holder, listed whole or broken up.
     //
     // The members present are sorted first, because it is their disagreement that decides which of
     // the two happens: a bloc none of them disagrees about is listed whole and a bloc they split
-    // over cannot be. Where it is listed whole, the block is the bloc-level answer over both whole
-    // memberships and not the present members' - so a bloc whose sour member holds nothing here
-    // still contests the system, which is the whole point of reading a membership rather than a
+    // over cannot be. Where it is listed whole, the side it takes is the bloc-level answer over both
+    // whole memberships and not the present members' - so a bloc whose sour member holds nothing
+    // here still contests the system, which is the whole point of reading a membership rather than a
     // system.
     private static void appendRival(
-            Map<StandingBlock, List<RoutedStanding>> rivalsByBlock,
+            RivalsByDisposition sortedRivals,
             GroupStanding rival,
             Set<String> holderMemberFactionIds,
             StandingBlockRules rules) {
@@ -212,30 +206,27 @@ public final class StandingBlockRouting {
                 rules.readMemberFactionIds(rival.blocId()),
                 holderMemberFactionIds);
 
-            rivalsByBlock
-                .get(resolveBlockFor(isBlocFriendly))
+            sortedRivals
+                .selectSideFor(isBlocFriendly)
                 .add(RoutedStanding.routeWhole(rival));
 
             return;
         }
-        appendDissolvedMembers(rivalsByBlock, friendlyMembers, rival.blocId(), StandingBlock.FRIENDLY);
-        appendDissolvedMembers(rivalsByBlock, sourMembers, rival.blocId(), StandingBlock.CONTESTED);
+        appendDissolvedMembers(sortedRivals.friendly(), friendlyMembers, rival.blocId());
+        appendDissolvedMembers(sortedRivals.contested(), sourMembers, rival.blocId());
     }
 
-    // The members of a broken-up bloc that landed in one block, each listed as the lone faction it
+    // The members of a broken-up bloc that landed on one side, each listed as the lone faction it
     // now stands as and each stating the bloc it came out of. They arrive in the order they ranked
     // beneath that bloc and are added in it, so a block reads strongest first whichever bloc its
     // rows came from.
     private static void appendDissolvedMembers(
-            Map<StandingBlock, List<RoutedStanding>> rivalsByBlock,
+            List<RoutedStanding> side,
             List<FactionStanding> members,
-            String allianceBlocId,
-            StandingBlock block) {
+            String allianceBlocId) {
 
         for (var member : members) {
-            rivalsByBlock
-                .get(block)
-                .add(RoutedStanding.dissolveFrom(member, allianceBlocId));
+            side.add(RoutedStanding.dissolveFrom(member, allianceBlocId));
         }
     }
 
@@ -251,13 +242,6 @@ public final class StandingBlockRouting {
         return rules.friendliness().areBlocsFriendly(
             Set.of(member.factionId()),
             holderMemberFactionIds);
-    }
-
-    // Which of the two blocks disposition sorts into a friendly or unfriendly answer means. Named
-    // once, so the whole bloc and a member listed on its own cannot be filed by two readings of the
-    // one answer.
-    private static StandingBlock resolveBlockFor(boolean isFriendly) {
-        return isFriendly ? StandingBlock.FRIENDLY : StandingBlock.CONTESTED;
     }
 
     // Groups listed exactly as they ranked, which is what a block placed by membership lists: it
@@ -280,5 +264,30 @@ public final class StandingBlockRouting {
             .map(GroupStanding::blocId)
             .findFirst()
             .orElse(null);
+    }
+
+    /**
+     * The two sides disposition parts the holder's rivals into, gathered while they are walked.
+     *
+     * <p>Two named lists rather than a map keyed by block, so both sides exist by construction: a
+     * map would answer null for a side nothing happened to land on, and for every block the walk has
+     * no business filling at all.
+     *
+     * <p>Mutable and private, which a value this package handed out could not be: it lives for the
+     * one walk that fills it, and the routing copies each side into the block it becomes.
+     *
+     * @param friendly  the rivals on good terms with the holder
+     * @param contested the rest, whether indifferent or hostile
+     */
+    private record RivalsByDisposition(
+        List<RoutedStanding> friendly,
+        List<RoutedStanding> contested) {
+
+        // The side a friendly or unfriendly answer puts a bloc on. Read here rather than at each
+        // caller, so a whole bloc and a member listed on its own cannot be filed by two readings of
+        // the one answer.
+        private List<RoutedStanding> selectSideFor(boolean isFriendly) {
+            return isFriendly ? friendly : contested;
+        }
     }
 }

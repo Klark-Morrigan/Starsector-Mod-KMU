@@ -274,6 +274,47 @@ final class StandingRowResolverTest {
         }
 
         @Test
+        void resolveRowsStandsInForABlocNameTheRowSaidInAnotherCase() {
+            // What is being asked is whether a reader would meet one name twice, and two spellings
+            // parted only by case are one name to a reader.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "luddic_church", "CHURCH OF GALACTIC REDEMPTION", "graphics/lc.png");
+
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                List.of(RoutedStanding.dissolveFrom(
+                    new WeighedFactionStanding("luddic_church", 1200),
+                    "alliance-1")),
+                buildNamesakeAllianceGrouping(),
+                NO_ACCOUNT);
+
+            assertThat(entries.get(0).line().qualifier().findingText())
+                .isEqualTo("C.O.G.R.");
+        }
+
+        @Test
+        void resolveRowsKeepsAnUnweighedMembersNoughtQuietOnceItIsListedApart() {
+            // A member listed out of its bloc is the standing the pass produced and not a new one,
+            // so a faction the pass weighed nothing for still carries the box's nought rather than
+            // one it looks to have competed with.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
+
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                List.of(RoutedStanding.dissolveFrom(
+                    new PresenceOnlyFactionStanding("astral_armada"),
+                    "alliance-1")),
+                buildAllianceGrouping(),
+                NO_ACCOUNT);
+
+            assertThat(entries.get(0).line().isValueUncounted())
+                .isTrue();
+        }
+
+        @Test
         void resolveRowsLeavesAOneWordBlocNameWholeWhereTheRowHasAlreadySaidIt() {
             // Standing a one-word name in for its initial says less than the word it replaced, so
             // the name is left whole - and the closing word makes the repetition read as the
