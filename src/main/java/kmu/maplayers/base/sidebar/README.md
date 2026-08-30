@@ -11,7 +11,7 @@ Part of [map layers](../../README.md); see the
 
 - [Hosts: what differs per screen](#hosts-what-differs-per-screen)
 - [Placement: one resolve, two consumers](#placement-one-resolve-two-consumers)
-- [Drawing and input on a screen with no seam](#drawing-and-input-on-a-screen-with-no-seam)
+- [Drawing and input outside the widget tree](#drawing-and-input-outside-the-widget-tree)
 - [Fold persistence](#fold-persistence)
 - [Picker state](#picker-state)
 - [Styling](#styling)
@@ -139,10 +139,17 @@ The layer selector is a single `ControlSpec.Tabs` whose action selects the layer
 index, so the switch rides on the control and no tab callback is threaded through the input pass.
 Each resolve also clamps the controller's stored scroll offset to the freshly laid-out overflow.
 
-## Drawing and input on a screen with no seam
+## Drawing and input outside the widget tree
 
-Both screens are vanilla core-UI surfaces with nowhere to attach a mod panel, so the panel is
-painted in UI coordinates and its input claimed ahead of the screen.
+The panel is painted in UI coordinates and its input claimed ahead of the screen, rather than
+attached to either screen as a mod panel of its own.
+
+Not for want of a seam, which is worth stating because the arrangement below looks like one forced
+on it. A `CustomPanelAPI` can be made a child of the vanilla map widget, and both draws over the map
+surface and takes input there - confirmed in play, on both of that screen's tabs. Painting here is a
+standing decision rather than a constraint: the toolkit and the hit-testing that goes with it exist
+already, and moving onto that seam is backlogged. Whether the intel screen's own map behaves the
+same way has not been tested.
 
 `SidebarRenderer` is a `CampaignUIRenderingListener` drawing in `renderInUICoordsAboveUIAndTooltips`
 - the only pass composited after the opaque core-UI screen, so the earlier passes are covered by the
