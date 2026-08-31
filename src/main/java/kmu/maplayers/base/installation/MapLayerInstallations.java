@@ -43,7 +43,12 @@ public final class MapLayerInstallations {
     // installation that nothing indexes and nothing releases. Shared, so every caller that reaches
     // it meets one holder rather than one each - which is the arrangement a sector-less caller has
     // always had, back when each holder was a static of its own.
-    private static final MapLayerInstallation DETACHED_INSTALLATION = new MapLayerInstallation();
+    //
+    // Made over no sector, which is the honest answer: a caller that reached it named none. A stage
+    // that reads the sector therefore finds nothing to read rather than falling through to the
+    // running game's, which would have it draw a sector nobody asked it about.
+    private static final MapLayerInstallation DETACHED_INSTALLATION =
+        new MapLayerInstallation(null);
 
     // One installation per sector, keyed by the sector itself rather than by any id it carries: a
     // sector is the thing being installed on, and two sectors are two objects whether or not
@@ -81,7 +86,7 @@ public final class MapLayerInstallations {
             if (replaced != null) {
                 replaced.disposeMachinery();
             }
-            return new MapLayerInstallation();
+            return new MapLayerInstallation(sector);
         });
 
         LOG.debug("Map layer machinery installed; installations=" + installationsBySector.size());

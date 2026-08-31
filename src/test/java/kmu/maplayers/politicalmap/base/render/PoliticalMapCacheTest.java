@@ -20,9 +20,10 @@ import static org.mockito.Mockito.mockStatic;
  */
 final class PoliticalMapCacheTest {
 
-    // The machinery the cache under test belongs to. Nothing here turns on which sector that is -
-    // what a cache reads from it is the movers, and neither case gets as far as a cut.
-    private final MapLayerInstallation installation = new MapLayerInstallation();
+    // The machinery the cache under test belongs to, installed on no sector - which is what makes
+    // the rebuild throw part way through, the case below being about what a cache leaves drawable
+    // when it does.
+    private final MapLayerInstallation installation = new MapLayerInstallation(null);
 
     private final PoliticalMapView viewMock = mock(PoliticalMapView.class);
 

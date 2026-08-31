@@ -127,7 +127,7 @@ final class MapFramePreparationClaimTest {
             // The counting only works if every surface over a map asks the same claim: two claims
             // over one sector would each grant its own first asker, which is the duplicated
             // preparation the type exists to stop.
-            var installation = new MapLayerInstallation();
+            var installation = new MapLayerInstallation(null);
 
             assertThat(MapFramePreparationClaim.resolveClaimIn(installation))
                 .isSameAs(MapFramePreparationClaim.resolveClaimIn(installation));
@@ -137,8 +137,8 @@ final class MapFramePreparationClaimTest {
         void resolveClaimInGivesEachSectorAClaimOfItsOwn() {
             // Two sectors drawing in one frame each owe their own draw lists a preparation, so one
             // sector taking its frame's must leave the other's standing.
-            var installation = new MapLayerInstallation();
-            var otherInstallation = new MapLayerInstallation();
+            var installation = new MapLayerInstallation(null);
+            var otherInstallation = new MapLayerInstallation(null);
 
             var claim = MapFramePreparationClaim.resolveClaimIn(installation);
             var otherClaim = MapFramePreparationClaim.resolveClaimIn(otherInstallation);

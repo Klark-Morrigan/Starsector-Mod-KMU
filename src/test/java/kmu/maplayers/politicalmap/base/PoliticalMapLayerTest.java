@@ -63,8 +63,8 @@ final class PoliticalMapLayerTest {
     // Two sectors' installed machinery, since what this tab now answers turns on which of them it
     // is asked about. The body cases below use neither: a tab's controls are the same wherever it
     // is drawn.
-    private final MapLayerInstallation installation = new MapLayerInstallation();
-    private final MapLayerInstallation otherInstallation = new MapLayerInstallation();
+    private final MapLayerInstallation installation = new MapLayerInstallation(null);
+    private final MapLayerInstallation otherInstallation = new MapLayerInstallation(null);
 
     private final PoliticalMapView viewWithControlsMock = mock(PoliticalMapView.class);
     private final PoliticalMapView viewWithoutControlsMock = mock(PoliticalMapView.class);

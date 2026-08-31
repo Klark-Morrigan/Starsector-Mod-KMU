@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -240,6 +241,51 @@ final class PoliticalMapStalenessSourceTest {
                     times(2));
             }
         }
+
+        @Test
+        void pollsTheSectorItsInstallationWasMadeForRatherThanTheRunningOne() {
+            // Vanilla drives this poll's cadence and names no sector, so it used to ask the running
+            // game which one it was polling - right only while the sector it was installed on and
+            // the sector loaded are the same. Posed with the two apart: a poll that read the loaded
+            // one would diff its holders against another sector's baselines and stage its drift
+            // into another sector's tracker, neither of which anything on screen would report.
+            var installedSector = buildOneSystemSector();
+            var polledSector = new AtomicReference<SectorAPI>();
+
+            try (var globalMock = mockStatic(Global.class);
+                    var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
+                    var snapshotMock = mockStatic(PoliticalMapSectorSnapshot.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(mock(SectorAPI.class));
+                globalMock
+                    .when(() -> Global.getLogger(any(Class.class)))
+                    .thenReturn(mock(Logger.class));
+
+                visibilityRulesMock
+                    .when(MapVisibilityRules::readFromLunaSettings)
+                    .thenReturn(MapVisibilityRules.BASE);
+
+                // Read off the pass rather than off any one passenger: the pass is the single
+                // reading every passenger below is handed, so what it was opened over is what the
+                // whole poll walked.
+                snapshotMock
+                    .when(() -> PoliticalMapSectorSnapshot.scan(any(MapVisibilityPass.class)))
+                    .thenAnswer(scan -> {
+                        polledSector.set(scan
+                            .<MapVisibilityPass>getArgument(0)
+                            .colonies()
+                            .getSector());
+                        return STEADY_SNAPSHOT;
+                    });
+
+                new PoliticalMapStalenessSource(new MapLayerInstallation(installedSector))
+                    .markChangesSinceLastPoll();
+            }
+            assertThat(polledSector)
+                .hasValue(installedSector);
+        }
     }
 
     // One empty star system and nothing else. The snapshot scan and the motion walk are both
@@ -281,7 +327,8 @@ final class PoliticalMapStalenessSourceTest {
     // The motion tracker is always stubbed to a mock rather than driven with real positions, so
     // every run reports its moving set explicitly and none of them depends on the motion-detection
     // math. It is reached through the installation the source is built against, which is the one
-    // collaborator this suite hands the source.
+    // collaborator this suite hands the source - and which is also where the sector it polls comes
+    // from, the running game answering the source nothing.
     private static RefreshOutcome pollThenReadRefreshOutcome(PollInputs inputs, int pollCount) {
 
         // Wired before the static stubbing opens, so Mockito sees no stubbing nested inside
@@ -293,9 +340,9 @@ final class PoliticalMapStalenessSourceTest {
                 var snapshotMock = mockStatic(PoliticalMapSectorSnapshot.class);
                 var alliancesMock = mockStatic(NexerelinAlliances.class)) {
 
-            globalMock
-                .when(Global::getSector)
-                .thenReturn(sector);
+            // Only the logger. The sector lookup is left unstubbed on purpose: a poll reads its
+            // installation's sector, so a run that only passed because the running game answered
+            // with one would fail here rather than read as a case about routing.
             globalMock
                 .when(() -> Global.getLogger(any(Class.class)))
                 .thenReturn(mock(Logger.class));
@@ -325,6 +372,8 @@ final class PoliticalMapStalenessSourceTest {
 
             when(installationMock.resolveMovingSystems())
                 .thenReturn(movingSystemsMock);
+            when(installationMock.resolveSector())
+                .thenReturn(sector);
 
             return runPollsAndReadOutcome(installationMock, pollCount);
         }

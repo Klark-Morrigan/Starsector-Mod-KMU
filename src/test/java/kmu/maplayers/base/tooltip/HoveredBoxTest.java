@@ -46,7 +46,7 @@ final class HoveredBoxTest {
     // The machinery of the sector the box would describe. One for the class, since every case here
     // is about one sector's box: which sector it is turns nothing, and a fresh one per assertion
     // would suggest it did.
-    private final MapLayerInstallation installation = new MapLayerInstallation();
+    private final MapLayerInstallation installation = new MapLayerInstallation(null);
 
     private final MapHoverTooltip tooltipMock = mock(MapHoverTooltip.class);
     private final MapLayer tooltipLayerMock = mock(MapLayer.class);

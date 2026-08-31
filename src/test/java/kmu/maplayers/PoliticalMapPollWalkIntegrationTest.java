@@ -57,8 +57,9 @@ import static org.mockito.Mockito.when;
  * routed to its own refresh, off snapshots a case states outright - and is exactly what leaves
  * it blind to how the sector was read.
  *
- * <p>Only the three reads by which the poll reaches its inputs at all are stubbed: the sector
- * lookup and the two live settings reads, neither of which anything but a running game answers.
+ * <p>Only the reads by which the poll reaches its inputs at all are stubbed: the two live settings
+ * reads and the logger, none of which anything but a running game answers. The sector is not among
+ * them - a poll walks the one its installation was made over, so it is staged by installing on it.
  * Nothing standing in for a collaborator.
  */
 final class PoliticalMapPollWalkIntegrationTest {
@@ -175,8 +176,9 @@ final class PoliticalMapPollWalkIntegrationTest {
     // Drives the real poll pollCount times and reports how far the geometry revision moved.
     // MapLayerRefresh is left real, so the revision is read as a delta and the stale set drained
     // either side, isolating the run from whatever else marked the shared counters. The poll is
-    // built against an installation of its own, which is what leaves each run's motion
-    // observations to itself rather than to whatever ran before it.
+    // built against an installation of its own over the run's sector - which is both where it reads
+    // that sector from and what leaves each run's motion observations to itself rather than to
+    // whatever ran before it.
     //
     // The interlude runs after the first poll, which is where a case moves the sector under a
     // poll that has already read it.
@@ -189,9 +191,8 @@ final class PoliticalMapPollWalkIntegrationTest {
                 var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
                 var dominanceRulesMock = mockStatic(DominanceRules.class)) {
 
-            globalMock
-                .when(Global::getSector)
-                .thenReturn(sector);
+            // Only the logger: a poll walks the sector its installation names, so the lookup the
+            // running game answers reaches nothing here.
             globalMock
                 .when(() -> Global.getLogger(any(Class.class)))
                 .thenReturn(mock(Logger.class));
@@ -208,7 +209,7 @@ final class PoliticalMapPollWalkIntegrationTest {
 
             var geometryBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY);
             var stalenessSource =
-                new PoliticalMapStalenessSource(new MapLayerInstallation());
+                new PoliticalMapStalenessSource(new MapLayerInstallation(sector));
 
             for (var poll = 0; poll < pollCount; poll++) {
 

@@ -51,8 +51,8 @@ class MapLayerInstallationTest {
     // once per case, since only a make waits.
     private static final int MAKE_PAUSE_MILLIS = 50;
 
-    private final MapLayerInstallation installation = new MapLayerInstallation();
-    private final MapLayerInstallation otherInstallation = new MapLayerInstallation();
+    private final MapLayerInstallation installation = new MapLayerInstallation(null);
+    private final MapLayerInstallation otherInstallation = new MapLayerInstallation(null);
 
     @Nested
     class ResolveHoverState {

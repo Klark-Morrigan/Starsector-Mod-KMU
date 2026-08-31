@@ -57,11 +57,14 @@ import java.util.Objects;
  *
  * <p>Everything held here is derived from one sector, and nothing here enters a save: the holder
  * belongs to that sector's installed map machinery and goes with it, so no field needs transient
- * marking and nothing needs emptying when a sector changes. One cache serves exactly one sector, and
- * the reason is the reconcile below it: {@link CellGeometryCache} diffs by system <em>id</em>, so
- * two sectors through one cache would not overwrite each other's cells, they would keep each
- * other's. Every revision starts at its rebuild-forcing seed, so the first frame after a sector is
- * installed on builds both halves from scratch.
+ * marking and nothing needs emptying when a sector changes. Every revision starts at its
+ * rebuild-forcing seed, so the first frame after a sector is installed on builds both halves from
+ * scratch.
+ *
+ * <p><b>One cache serves exactly one sector</b>, which is why the sector a rebuild reads is taken
+ * from the installation this cache was made for rather than passed in per frame - stated where that
+ * sector arrives, in {@code rebuildStaleHalves}, along with what {@link CellGeometryCache} does to a
+ * cache asked to hold two.
  */
 final class PoliticalMapCache {
     private static final Logger LOG = Global.getLogger(PoliticalMapCache.class);
@@ -74,10 +77,11 @@ final class PoliticalMapCache {
     // cache, so no two cuts of these cells can be mistaken for each other.
     private static final int FIRST_CUT_NUMBER = 0;
 
-    // The machinery installed on the sector this cache draws. Held rather than resolved per rebuild
-    // so the movers a cut leaves out come from the same sector the cut is made from: a cache that
-    // asked the running game would read another sector's drift the moment it belonged to a sector
-    // that is not the one loaded.
+    // The machinery installed on the sector this cache draws, and the whole of where a rebuild's
+    // sector comes from: the systems it cuts cells for and the movers that cut leaves out both
+    // arrive from here. Held rather than resolved per rebuild, and one handle rather than a sector
+    // beside it, so the two cannot name different sectors - a cut taken from the running game while
+    // the drift is this sector's would leave out systems that never moved.
     private final MapLayerInstallation installation;
 
     // Raw cell geometry keyed by system id, updated incrementally as systems gain or lose
@@ -254,10 +258,15 @@ final class PoliticalMapCache {
             applyStandingMapUpdates();
             return;
         }
-        // The sector this rebuild draws, looked up once. Every stage below is answered from this
-        // one reference rather than from the global lookup, so a rebuild cannot name one sector
-        // to its cut and another to its fills.
-        var sector = Global.getSector();
+        // The sector this rebuild draws, taken from the machinery this cache belongs to rather than
+        // from the running game. One cache serves exactly one sector and cannot serve two: the
+        // reconcile below it diffs by system id, so a second sector through this cache would not
+        // overwrite the first one's cells but keep them, cut around positions the second sector's
+        // systems never sat at. Asking the running game is how a cache comes to be handed a second
+        // sector at all - it draws whichever sector happens to be loaded, whatever it holds cells
+        // for. Every stage below is answered from this one reference, so a rebuild cannot name one
+        // sector to its cut and another to its fills.
+        var sector = installation.resolveSector();
 
         // The one reading of that sector this rebuild's stages share: the cell cut, the fills and
         // the bands each ask every system who lives there, so one walk per system serves all

@@ -45,6 +45,7 @@ import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.li
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -81,6 +82,11 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     private static final String ALPHA_ID = "alpha";
     private static final String BETA_ID = "beta";
 
+    // The only system of the sector staged as the one the game is running. Named apart from the two
+    // above so a cell cut from the running sector rather than the installed one is visible as a key
+    // that has no business being there, rather than as a count.
+    private static final String GAMMA_ID = "gamma";
+
     private static final String HEGEMONY_ID = "hegemony";
     private static final String TRITACHYON_ID = "tritachyon";
 
@@ -108,11 +114,15 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // the inner one is already gone.
     private final List<MockedStatic<?>> openStaticSeams = new ArrayList<>();
 
-    // The machinery the cache under test is built against, and a second sector's beside it. Two
-    // rather than one because the movers a cut leaves out are the whole of what the cache reads
-    // from an installation, and a claim about whose movers those are needs somebody else's.
-    private final MapLayerInstallation installation = new MapLayerInstallation();
-    private final MapLayerInstallation otherInstallation = new MapLayerInstallation();
+    // A second sector's machinery, standing beside the one the cache under test is built against.
+    // Its own sector reaches nothing here - what a case wants of it is its tracker, so that a claim
+    // about whose movers a cut consults has somebody else's to be made against.
+    private final MapLayerInstallation otherInstallation =
+        new MapLayerInstallation(mock(SectorAPI.class));
+
+    // The machinery the cache under test is built against, made over the sector a case stages -
+    // which is the sector its rebuild reads, and so has to exist before the installation does.
+    private MapLayerInstallation installation;
 
     private MockedStatic<Global> globalMock;
     private MockedStatic<MapVisibilityRules> visibilityRulesMock;
@@ -310,6 +320,25 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             assertThat(cache.getTerritories().getStyledCellByCellId())
                 .containsKeys(ALPHA_ID, BETA_ID);
         }
+
+        @Test
+        void refreshCutsTheSectorItsInstallationWasMadeForRatherThanTheRunningOne() {
+            // The question this whole rework was for. Vanilla's map hook names no sector, so a
+            // rebuild used to ask the running game which one it was drawing - which is right only
+            // while the sector it holds cells for and the sector that is loaded are the same. Posed
+            // with them apart: the cells have to come from the sector the machinery was installed
+            // on, and the running one has to reach nothing.
+            buildContestedSectorWithASettledNeighbour();
+            stageADifferentSectorAsTheRunningOne();
+
+            var cache = new PoliticalMapCache(installation);
+
+            cache.refresh(FactionsView.INSTANCE);
+
+            assertThat(cache.getTerritories().getStyledCellByCellId())
+                .containsKeys(ALPHA_ID, BETA_ID)
+                .doesNotContainKey(GAMMA_ID);
+        }
     }
 
     // One rebuild of the real cache over whatever sector the global lookup was staged with - what
@@ -370,9 +399,10 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // the reveal case and the plain one cannot drift apart on anything else, which is what makes
     // the rule the only thing between them.
     //
-    // Answered for by the global lookup the cache reaches through, with every system given a site
-    // to seed a cell at: without one neither seeds a cell and the rebuild would draw nothing for
-    // the count to be taken over.
+    // Installed on, since that is where a rebuild's sector comes from, and staged as the running one
+    // besides, which the incremental path still reaches for. Every system is given a site to seed a
+    // cell at: without one neither seeds a cell and the rebuild would draw nothing for the count to
+    // be taken over.
     private SectorAPI buildContestedSectorStagedBy(ColonyStaging stageColony) {
 
         var hegemony = SectorPoliticsFixtures.buildFaction(HEGEMONY_ID);
@@ -389,11 +419,34 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         for (var system : sector.getStarSystems()) {
             SectorPoliticsFixtures.placeSystemInHyperspace(system);
         }
+        installation = new MapLayerInstallation(sector);
+
         globalMock
             .when(Global::getSector)
             .thenReturn(sector);
 
         return sector;
+    }
+
+    // Puts a sector of one settled system under the global lookup, leaving the installed one where
+    // it is - so the two disagree, and a rebuild that asked the running game would cut a cell for
+    // this system and none for the installed sector's.
+    private void stageADifferentSectorAsTheRunningOne() {
+
+        var tritachyon = SectorPoliticsFixtures.buildFaction(TRITACHYON_ID);
+
+        var runningSector = SectorPoliticsFixtures.buildSectorWithSystems(
+            List.of(tritachyon),
+            listSystemMarkets(
+                GAMMA_ID,
+                SectorPoliticsFixtures.buildVisibleMarket(tritachyon, HOLDING_COLONY_SIZE)));
+
+        for (var system : runningSector.getStarSystems()) {
+            SectorPoliticsFixtures.placeSystemInHyperspace(system);
+        }
+        globalMock
+            .when(Global::getSector)
+            .thenReturn(runningSector);
     }
 
     // Settles the empty neighbour, which puts it on the drawn set and into the settled set - the

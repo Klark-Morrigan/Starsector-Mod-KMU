@@ -26,6 +26,10 @@ import static org.mockito.Mockito.when;
  * released sector's state to the installation after it, and that a sector with nothing installed
  * resolves to something rather than to null.
  *
+ * <p>What each installation is made <em>over</em> is pinned here too: the sector a rebuild cuts from
+ * and a poll walks is the one it was installed on, and the shared detached installation is over no
+ * sector at all.
+ *
  * <p>The location resolution is pinned beside the sector one: a render surface is terrain and reaches
  * only its containing location, so an installation has to be findable by the hyperspace its sector's
  * surfaces sit in - and has to stop being findable there the moment it is released.
@@ -83,6 +87,24 @@ class MapLayerInstallationsTest {
                 .isTrue();
             assertThat(MapLayerInstallations.resolveInstallationFor(sectorMock))
                 .isSameAs(secondInstallation);
+        }
+
+        @Test
+        void givesEachInstallationTheSectorItWasInstalledOn() {
+            // What the seams vanilla names no sector at read: the map hook and a terrain surface
+            // reach a factor and a location, so the sector a rebuild cuts from and a poll walks
+            // comes back out of the machinery rather than out of the running game. Two of them, so
+            // the claim is that each answers its own rather than that either answers something.
+            var sectorMock = mock(SectorAPI.class);
+            var otherSectorMock = mock(SectorAPI.class);
+
+            var installation = MapLayerInstallations.installMachineryOn(sectorMock);
+            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
+
+            assertThat(installation.resolveSector())
+                .isSameAs(sectorMock);
+            assertThat(otherInstallation.resolveSector())
+                .isSameAs(otherSectorMock);
         }
 
         @Test
@@ -287,6 +309,18 @@ class MapLayerInstallationsTest {
                 .isNotNull();
             assertThat(installation)
                 .isSameAs(MapLayerInstallations.resolveInstallationFor(otherSectorMock));
+        }
+
+        @Test
+        void yieldsADetachedInstallationOverNoSectorAtAll() {
+            // The detached one is shared by every sector-less caller, so it cannot answer with the
+            // sector of whichever of them asked - and answering with the running game's would have
+            // a stage reached through it draw a sector nobody asked it about. It has none, and says
+            // so.
+            var installation = MapLayerInstallations.resolveInstallationFor(mock(SectorAPI.class));
+
+            assertThat(installation.resolveSector())
+                .isNull();
         }
     }
 

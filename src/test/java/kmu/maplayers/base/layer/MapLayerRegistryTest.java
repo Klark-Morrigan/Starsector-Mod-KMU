@@ -41,7 +41,7 @@ final class MapLayerRegistryTest {
     // The machinery of the sector being drawn, which the registry passes through rather than
     // resolves. One for the class, so a case asserting it reached the layer is comparing against
     // the very object it handed in.
-    private final MapLayerInstallation installation = new MapLayerInstallation();
+    private final MapLayerInstallation installation = new MapLayerInstallation(null);
 
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);

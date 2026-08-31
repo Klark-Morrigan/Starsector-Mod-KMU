@@ -67,9 +67,11 @@ import java.util.Map;
 public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     private static final Logger LOG = Global.getLogger(PoliticalMapStalenessSource.class);
 
-    // The installed machinery of the sector being polled, which holds the motion observations this
-    // stages. Held from construction rather than resolved per poll because a source is built per
-    // load, against the sector it was installed on - the sector its baselines are diffs of.
+    // The installed machinery of the sector being polled: the sector this walks and the motion
+    // observations it stages both come from here. Held from construction rather than resolved per
+    // poll because a source is built per load, against the sector it was installed on - the sector
+    // its baselines are diffs of. One handle rather than a sector beside it, so a poll cannot walk
+    // the running game's sector while observing its drift into another's tracker.
     private final MapLayerInstallation installation;
 
     // Last poll's state; 0 and an empty map are also the empty-sector values, so a
@@ -92,7 +94,14 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     // alliance revision. The first poll only establishes the baselines.
     @Override
     public void markChangesSinceLastPoll() {
-        var sector = Global.getSector();
+
+        // The sector this poll is of, which is the one it was installed on rather than the one the
+        // game is running. The two part company the moment machinery stands on more than one, and a
+        // poll that walked the loaded sector would diff its holders against another sector's
+        // baselines and stage its drift into another sector's tracker. Null mid-load, before the
+        // sector stands up: every passenger below is handed a reading over nothing and answers
+        // emptily rather than faulting.
+        var sector = installation.resolveSector();
 
         // The one reading of the sector every passenger below shares, opened here. It samples
         // the live rules before it walks anything, so a toggle flipped mid-poll cannot leave the

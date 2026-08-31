@@ -1,5 +1,7 @@
 package kmu.maplayers.base.installation;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
+
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MovingSystems;
@@ -26,6 +28,13 @@ import java.util.function.Supplier;
  * <p>The holders it names are the framework's own. What a layer derives from the sector is held
  * through {@link #resolveMachinery} instead, which is what lets an installation own the lifetime of
  * a renderer and its caches without this package naming the layers those live in.
+ *
+ * <p>It carries the sector itself for the seams that have to read one. Vanilla's map hook names no
+ * sector and a terrain surface reaches a location rather than a sector, so a rebuild or a poll below
+ * either seam would otherwise have to ask the running game which sector it is looking at - and would
+ * then read the loaded sector's colonies while drawing another sector's cells. Reached from the
+ * installation rather than passed alongside it, so the sector a stage reads and the holders it reads
+ * beside them cannot name two different sectors.
  */
 public final class MapLayerInstallation {
 
@@ -38,6 +47,10 @@ public final class MapLayerInstallation {
     // non-volatile flag could go on answering "not released" for as long as the frame keeps
     // drawing through it - which is the one question this field exists to answer.
     private volatile boolean isDisposed;
+
+    // The sector this machinery was installed on, and so the sector everything below derives from.
+    // Null for the detached installation, which is nobody's sector.
+    private final SectorAPI sector;
 
     // What the cursor is over on this sector's map, carried from the render pass that can resolve
     // it to the highlight and the box that report it.
@@ -58,6 +71,15 @@ public final class MapLayerInstallation {
     // while a frame on the render thread resolves what it is about to draw through.
     private final Map<Class<? extends InstalledMachinery>, InstalledMachinery> machineryByType =
         new ConcurrentHashMap<>();
+
+    /**
+     * @param sector the sector this machinery is being installed on; null makes a detached
+     *               installation, which is what a caller with no sector - the switch flipped with no
+     *               game loaded, or a suite driving a seam directly - is answered with
+     */
+    public MapLayerInstallation(SectorAPI sector) {
+        this.sector = sector;
+    }
 
     /**
      * Releases what this installation holds, after which it answers {@link #isDisposed}.
@@ -132,5 +154,21 @@ public final class MapLayerInstallation {
      */
     public MapLayerRefreshBoard resolveRefreshBoard() {
         return refreshBoard;
+    }
+
+    /**
+     * The sector this machinery was installed on, for the stages that read the sector itself rather
+     * than a holder over it - the rebuild that cuts its cells from the sector's systems, and the
+     * poll that walks them.
+     *
+     * <p>Asking for it here is what keeps such a stage off the running game: a cut taken from the
+     * loaded sector while its cells are kept for another would draw one sector's borders around the
+     * other's colonies, and nothing on screen would report which half was which.
+     *
+     * @return that sector, or null for the detached installation, which is nobody's sector - a
+     *         stage reaching it has no sector to read and draws nothing
+     */
+    public SectorAPI resolveSector() {
+        return sector;
     }
 }

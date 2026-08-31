@@ -378,7 +378,7 @@ final class PoliticalMapLayerRendererTest {
     // which is how a renderer is reached in play - one sector's, and never shared.
     private PoliticalMapLayerRenderer buildRenderer(MapCover cover) {
         return new PoliticalMapLayerRenderer(
-            new PoliticalMapCache(new MapLayerInstallation()),
+            new PoliticalMapCache(new MapLayerInstallation(null)),
             new MapCoverReader(List.of(cover)),
             () -> hoverPublisherMock);
     }
