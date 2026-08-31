@@ -18,14 +18,12 @@ final class ScreenClaims {
 
     /** A screen nothing has claimed, which is where the panel is expected to draw. */
     static ScreenClaim createUnclaimedScreen() {
-        return createClaimOverConsole(new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake()));
+        return createClaimOverConsole(createClosedConsole());
     }
 
     /** A screen claimed by a modal a core screen has raised in front of itself. */
     static ScreenClaim createScreenClaimedByAModal() {
-        return new ScreenClaim(
-            new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake()),
-            () -> true);
+        return new ScreenClaim(createClosedConsole(), () -> true);
     }
 
     /**
@@ -37,5 +35,11 @@ final class ScreenClaims {
      */
     static ScreenClaim createClaimOverConsole(ConsoleCommandsOverlay consoleOverlay) {
         return new ScreenClaim(consoleOverlay, () -> false);
+    }
+
+    // A console read that answers shut, for the claims whose console half is not what they are about. Its
+    // own read rather than a shared instance, since a claim holding one is free to be driven by its caller.
+    private static ConsoleCommandsOverlay createClosedConsole() {
+        return new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake());
     }
 }

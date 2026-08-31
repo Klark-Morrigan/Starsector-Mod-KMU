@@ -61,22 +61,15 @@ the draw, the input routing and the hit-test alike, and ANDing the claim at each
 be three chances to forget it. The claim is asked first, so a screen read that walks live widgets is
 skipped while the panel is standing down anyway.
 
-Two things claim the screen, and `ScreenClaim` holds both: a text-entry console, and a modal a core
-screen has raised in front of itself (a confirmation prompt, a picker). Either stands the sidebar
-down entirely rather than being ordered above it, and for one reason - the panel draws after the
-whole core UI (see below), so nothing either of them draws can reach over it, while the pre-core
-input listener goes on taking the very input they were opened to receive. Hiding is also the better
-look, each dimming its own backdrop. Because the whole gate goes false, the renderer's early return
-zeroes the frame clock and drops the input motions and the input listener cancels a dangling drag, so
-either one arriving mid-drag leaves nothing stale behind.
+What can claim the screen, and why any of it stands the panel down rather than being ordered above
+it, is [`ScreenClaim`](runtime/ScreenClaim.java)'s to state. What belongs here is the rest of the
+frame that goes with it: because the whole gate goes false, the renderer's early return zeroes the
+frame clock and drops the input motions, and the input listener cancels a dangling drag - so a claim
+arriving mid-drag leaves nothing stale behind.
 
-Both reads are injected rather than reached for statically, so what a host does under a claim is
-settleable without a game running - each host's `INSTANCE` names the one live `ScreenClaim.INSTANCE`,
-and a suite hands in a claim it states. `kmlib.mods.consolecommands.ConsoleCommandsOverlay` answers
-the console half and `kmlib.starsector.ui.coreui.CoreUiDialogView` the modal half; both fail open,
-each documenting what it costs, so a claim that cannot be established leaves the sidebar exactly as it
-behaves without the seam. They are held as a disjunction for that reason: composed with an AND, an
-install without the console mod - or a build whose core UI cannot be walked - would silence the other.
+The claim is injected rather than reached for statically, so what a host does under one is settleable
+without a game running: each host's `INSTANCE` names the live `ScreenClaim.INSTANCE`, and a suite
+hands in a claim it states.
 
 Hiding the panel is only half of what a console owes the map, and the other half is not this
 package's: with the sidebar down, its cover over the map goes down with it, so the map's own hover

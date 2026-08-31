@@ -4,12 +4,9 @@ import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.animation.TraverseDurations;
 import kmlib.math.geometry.BoxEdge;
-import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
 import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
-import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
-import kmlib.testfixtures.starsector.settings.ModStateScopes;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
@@ -24,8 +21,6 @@ import org.mockito.MockedStatic;
 
 import java.util.List;
 import java.util.Set;
-
-import static kmlib.testfixtures.starsector.settings.StubbedModIds.CONSOLE_COMMANDS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -247,26 +242,10 @@ final class BaseSidebarHostTest {
     class IsOverlayShowing {
 
         @Test
-        void isOverlayShowingIsFalseWhileAConsoleIsUpOverTheHostsOwnScreen() {
-            // The whole point of the gate: the panel draws after the entire core UI, so a console overlay
-            // it did not stand down for would be drawn under it while its shortcut keys ate the keystrokes
-            // the console was opened to receive.
-            var consolePresenceFake = new ConsoleOverlayPresenceFake();
-            var host = createHostOnAShowingScreen(
-                ScreenClaims.createClaimOverConsole(new ConsoleCommandsOverlay(consolePresenceFake)));
-
-            consolePresenceFake.openConsole();
-
-            ModStateScopes.runWithModEnabled(CONSOLE_COMMANDS, true, () ->
-                assertThat(host.isOverlayShowing())
-                    .isFalse());
-        }
-
-        @Test
-        void isOverlayShowingIsFalseWhileAModalStandsOverTheHostsOwnScreen() {
-            // The claimant the panel used to draw straight over: a modal is raised inside the core UI, and
-            // the panel is painted after all of it, so an ungated panel covers the prompt while its own
-            // hit-testing goes on taking the pointer the prompt was raised to ask for.
+        void isOverlayShowingIsFalseWhileTheHostsOwnScreenIsClaimed() {
+            // The whole point of the gate: the panel draws after the entire core UI, so whatever claimed
+            // the screen is drawn under it while the panel's own hotkeys and hit-testing go on taking the
+            // input that thing was raised to receive. Which claimant it is does not reach the gate.
             var host = createHostOnAShowingScreen(ScreenClaims.createScreenClaimedByAModal());
 
             assertThat(host.isOverlayShowing())
@@ -284,7 +263,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsFalseOffTheHostsScreenWithNoConsoleUp() {
+        void isOverlayShowingIsFalseOffTheHostsScreenWithNothingClaimingIt() {
 
             var host = createHost(mock(ActiveLayerSelection.class));
 
@@ -293,16 +272,12 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingLeavesTheScreenUnreadWhileAConsoleIsUp() {
-            // A screen read walks live widgets, so the cheaper answer is asked first and the walk skipped
-            // while the panel is standing down anyway.
-            var consolePresenceFake = new ConsoleOverlayPresenceFake();
-            var host = createHostOnAShowingScreen(
-                ScreenClaims.createClaimOverConsole(new ConsoleCommandsOverlay(consolePresenceFake)));
+        void isOverlayShowingLeavesTheScreenUnreadWhileItIsClaimed() {
+            // A screen read walks live widgets, so the claim is asked first and the walk skipped while the
+            // panel is standing down anyway.
+            var host = createHostOnAShowingScreen(ScreenClaims.createScreenClaimedByAModal());
 
-            consolePresenceFake.openConsole();
-
-            ModStateScopes.runWithModEnabled(CONSOLE_COMMANDS, true, () -> host.isOverlayShowing());
+            host.isOverlayShowing();
 
             assertThat(host.screenReadCount)
                 .isZero();

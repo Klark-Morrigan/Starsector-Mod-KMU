@@ -37,7 +37,7 @@ public interface SidebarHost {
     /**
      * @return whether the sidebar is live on this host's screen this frame - the sole gate on drawing and
      *         routing; false leaves the screen untouched, whether because this host's screen is not up or
-     *         because something else has claimed the keyboard the panel's shortcuts would take
+     *         because something else has claimed the screen and the input the panel would otherwise take
      */
     boolean isOverlayShowing();
 
